@@ -63,6 +63,7 @@ type backend struct {
 	id                      string
 	config                  map[string]string
 	baseRedirectURLPath     string
+	connectorFactory        func() (callbackAndRefreshConnector, error)
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
 }
@@ -87,6 +88,7 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (*backen
 	b := &backend{
 		id:                  id,
 		baseRedirectURLPath: callbackURLPath,
+		connectorFactory:    createOpenshiftConnector,
 		openshiftConnector:  openshiftConnector,
 	}
 
@@ -109,7 +111,10 @@ func newBackendWithACMAccessControlDelegation(id string, callbackURLPath string,
 		id:                  id,
 		config:              config,
 		baseRedirectURLPath: callbackURLPath,
-		openshiftConnector:  openshiftConnector,
+		connectorFactory: func() (callbackAndRefreshConnector, error) {
+			return createOpenshiftConnectorForACMAccessControlDelegation(config)
+		},
+		openshiftConnector: openshiftConnector,
 	}
 
 	// Register backend for notification on openshift certificate updates.
@@ -254,13 +259,7 @@ func (b *backend) Validate(_ context.Context, _ *tokens.Claims) error {
 }
 
 func (b *backend) recreateOpenshiftConnector() {
-	var openshiftConnector callbackAndRefreshConnector
-	var err error
-	if b.config != nil {
-		openshiftConnector, err = createOpenshiftConnectorForACMAccessControlDelegation(b.config)
-	} else {
-		openshiftConnector, err = createOpenshiftConnector()
-	}
+	openshiftConnector, err := b.connectorFactory()
 	if err != nil {
 		log.Errorw("failed to create updated dex openshiftConnector for OpenShift's OAuth Server with new CAs, "+
 			"new certs will not be applied. This may lead to unwanted TLS connection issues.", logging.Err(err))
