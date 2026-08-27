@@ -809,7 +809,7 @@ func (s *NodeInventoryHandlerTestSuite) TestSendNodeIndex_RHCOSDetection() {
 			reports := make(chan *index.IndexReportWrap)
 			defer close(reports)
 
-			h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, tc.rhcosMatcher)
+			h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, tc.rhcosMatcher, nil)
 			s.NoError(h.Start())
 			h.Notify(common.SensorComponentEventCentralReachable)
 
