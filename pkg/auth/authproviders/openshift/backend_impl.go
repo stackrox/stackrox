@@ -143,6 +143,10 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 }
 
 func createOpenshiftConnectorForACMAccessControlDelegation(config map[string]string) (callbackAndRefreshConnector, error) {
+	if config[ClientNameConfigKey] == "" || config[ClientSecretConfigKey] == "" {
+		return nil, errors.New("ACM access control delegation requires both client name and client secret")
+	}
+
 	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
 	if err != nil {
 		return nil, err
