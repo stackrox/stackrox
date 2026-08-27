@@ -146,16 +146,19 @@ func TestWrapSCPError(t *testing.T) {
 		stderr        string
 		wantTransport bool
 		wantStalled   bool
+		wantAuth      bool
 	}{
 		"banner timeout is SSH transport": {
 			stderr:        scpBannerTimeoutStderr,
 			wantTransport: true,
 			wantStalled:   true,
 		},
+		"auth failure is terminal not transport": {
+			stderr:   "Permission denied (publickey).\r\n",
+			wantAuth: true,
+		},
 		"remote command failure is not SSH transport": {
-			stderr:        "install.sh: no such file\nexit status 1",
-			wantTransport: false,
-			wantStalled:   false,
+			stderr: "install.sh: no such file\nexit status 1",
 		},
 	}
 	for name, tc := range tests {
@@ -165,6 +168,7 @@ func TestWrapSCPError(t *testing.T) {
 			require.Error(t, err)
 			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
 			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
 		})
 	}
 }
@@ -179,6 +183,7 @@ func TestRetryCopyToGuest(t *testing.T) {
 		wantErr          bool
 		wantTransport    bool
 		wantStalled      bool
+		wantAuth         bool
 	}{
 		"retries banner timeout then succeeds": {
 			stderr:           scpBannerTimeoutStderr,
@@ -191,6 +196,12 @@ func TestRetryCopyToGuest(t *testing.T) {
 			wantErr:       true,
 			wantTransport: true,
 			wantStalled:   true,
+		},
+		"does not retry terminal SSH auth": {
+			stderr:       "Permission denied (publickey).\r\n",
+			wantAttempts: 1,
+			wantErr:      true,
+			wantAuth:     true,
 		},
 		"does not retry remote command failure": {
 			stderr:       "install.sh: permission denied",
@@ -217,6 +228,7 @@ func TestRetryCopyToGuest(t *testing.T) {
 			require.Error(t, err)
 			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
 			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
 		})
 	}
 }

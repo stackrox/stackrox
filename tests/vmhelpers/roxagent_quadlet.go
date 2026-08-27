@@ -135,24 +135,27 @@ func scpToGuest(ctx context.Context, virt Virtctl, namespace, vm, src, dst strin
 	})
 }
 
-// wrapSCPError maps virtctl scp failures onto the same SSH-transport sentinels
-// as runSSHCommandWithFramework so retryOnSSHTransport can retry a banner timeout.
+// wrapSCPError attaches errSSHTransport only for retryable SSH failures so
+// retryOnSSHTransport does not spin on terminal auth errors.
 func wrapSCPError(src, dst, stderr string, err error) error {
 	trimmed := strings.TrimSpace(stderr)
 	isSSH, retryable, category := classifySSHFailure(stderr, err)
 	if !isSSH {
 		return fmt.Errorf("virtctl scp %s -> %s: %w: %s", src, dst, err, trimmed)
 	}
-	kind := "retryable"
-	if !retryable {
-		kind = "terminal"
-	}
 	wrapped := err
 	if isSSHBannerTimeoutFailure(stderr) {
 		wrapped = errors.Join(err, ErrSSHConnectivityStalled)
 	}
-	return fmt.Errorf("%w: virtctl scp %s -> %s: %s SSH %s failure: %w: %s",
-		errSSHTransport, src, dst, kind, category, wrapped, trimmed)
+	if isSSHAuthenticationFailure(stderr) {
+		wrapped = errors.Join(wrapped, ErrSSHAuthenticationFailed)
+	}
+	if retryable {
+		return fmt.Errorf("%w: virtctl scp %s -> %s: retryable SSH %s failure: %w: %s",
+			errSSHTransport, src, dst, category, wrapped, trimmed)
+	}
+	return fmt.Errorf("virtctl scp %s -> %s: terminal SSH %s failure: %w: %s",
+		src, dst, category, wrapped, trimmed)
 }
 
 func retryCopyToGuest(ctx context.Context, logf func(string, ...any), src, dst string, attempts int, interval time.Duration, copyFn func() (string, error)) error {
