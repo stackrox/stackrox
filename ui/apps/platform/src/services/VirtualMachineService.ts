@@ -142,6 +142,18 @@ export type ListVMCVEAffectedVMsResponse = {
     totalCount: number;
 };
 
+export type VMCVEComponentRow = {
+    componentName: string;
+    componentVersion: string;
+    source: SourceType;
+    fixedBy: string;
+    advisory?: { name: string; link: string };
+};
+
+export type GetVMCVEComponentsResponse = {
+    components: VMCVEComponentRow[];
+};
+
 export type VMCVEByVMRow = {
     cve: string;
     severity: VulnerabilitySeverity;
@@ -287,6 +299,15 @@ export function listVMCVEAffectedVMs(
     });
     return axios
         .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
+        .then((response) => response.data);
+}
+
+export function getVMCVEComponents(
+    vmId: string,
+    cveId: string
+): Promise<GetVMCVEComponentsResponse> {
+    return axios
+        .get<GetVMCVEComponentsResponse>(`/v2/virtualmachines/${vmId}/cves/${cveId}/components`)
         .then((response) => response.data);
 }
 

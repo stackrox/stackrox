@@ -14,6 +14,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import type { VMCVEAffectedVMRow } from 'services/VirtualMachineService';
 
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+import AffectedComponentsTable from '../components/AffectedComponentsTable';
 import {
     CVE_SEVERITY_SORT_FIELD,
     CVSS_SORT_FIELD,
@@ -31,12 +32,14 @@ export const sortFields = [
 export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 export type AffectedVirtualMachinesTableProps = {
+    cveId: string;
     tableState: TableUIState<VMCVEAffectedVMRow>;
     getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
 };
 
 function AffectedVirtualMachinesTable({
+    cveId,
     tableState,
     getSortParams,
     onClearFilters,
@@ -119,7 +122,12 @@ function AffectedVirtualMachinesTable({
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            Affected component details coming soon
+                                            {isExpanded && (
+                                                <AffectedComponentsTable
+                                                    virtualMachineId={virtualMachine.vmId}
+                                                    cveId={cveId}
+                                                />
+                                            )}
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>
