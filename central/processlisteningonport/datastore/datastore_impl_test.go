@@ -2738,15 +2738,13 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
 	batchSize := 30000
 
-	// Use an explicit context timeout so that ContextWithTimeoutIfNotExists
-	// in the Postgres pool layer sees an existing deadline and skips the
-	// 60-second default per-query timeout, which is too short in some cases.
-	ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
-	defer cancel()
-
 	for plopBatch := range slices.Chunk(plops, batchSize) {
+		// Per-batch deadline so ContextWithTimeoutIfNotExists skips the
+		// 60-second default without sharing one budget across all batches.
+		ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
 		err := suite.datastore.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopBatch...)
-		suite.NoError(err)
+		cancel()
+		suite.Require().NoError(err)
 	}
 }
 
@@ -2873,24 +2871,4 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// that number.
 	suite.GreaterOrEqual(plopsWithoutPodUids, totalPrunedCount/2)
 	suite.LessOrEqual(plopsWithoutPodUids, totalPrunedCount)
-}
-
-func (suite *PLOPDataStoreTestSuite) TestSortMany() {
-	nport := 50
-	nprocess := 50
-	npod := 50
-
-	plops := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
-	suite.addTooMany(plops)
-
-	suite.addDeployments()
-
-	startTime := time.Now()
-	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
-	suite.NoError(err)
-	duration := time.Since(startTime)
-
-	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
-
 }
