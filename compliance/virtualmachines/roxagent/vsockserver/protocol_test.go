@@ -372,7 +372,7 @@ func TestHandleConn_GetReport_DoesNotApplyPending(t *testing.T) {
 
 	u.MarkScanIdleAndApplyPending()
 	assert.Equal(t, cpemapping.HashMapping([]byte(otherValidMappingJSON)), u.Hash())
-	waitForCacheContent(t, cachePath, otherValidMappingJSON)
+	waitForCacheContent(t, u, cachePath, otherValidMappingJSON)
 
 	resp = sendAndReceive(t, handler, getReportReq)
 	assert.Equal(t, scanHash, resp.GetMeta().GetRepoCpeMappingHash(),
