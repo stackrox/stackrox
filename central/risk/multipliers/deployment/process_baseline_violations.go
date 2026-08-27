@@ -62,8 +62,7 @@ func formatProcess(process *views.ProcessIndicatorRiskView) string {
 	sb.WriteString("Detected execution of suspicious process ")
 	sb.WriteString(strconv.Quote(process.SignalName))
 	if len(process.SignalArgs) > 0 {
-		sb.WriteString(" with args ")
-		sb.WriteString(strconv.Quote(process.SignalArgs))
+		sb.WriteString("redacted args")
 	}
 	sb.WriteString(" in container ")
 	sb.WriteString(process.ContainerName)
