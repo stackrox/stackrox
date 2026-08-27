@@ -85,6 +85,13 @@ test_ui_e2e() {
 
     export_test_environment
 
+    # The UI e2e Cypress specs (e.g. policies/policyCreateWorkflow) target the drag-and-drop
+    # policy criteria UI, which Central renders only when ROX_POLICY_CRITERIA_MODAL is disabled.
+    # The helm-based deploy this suite used never enabled the flag, but the roxie compat layer's
+    # collect_feature_flags() turns it on by default. Force it off here to preserve the
+    # pre-migration behavior the tests expect.
+    export ROX_POLICY_CRITERIA_MODAL=false
+
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
