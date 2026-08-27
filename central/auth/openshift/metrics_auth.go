@@ -10,14 +10,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -144,9 +142,8 @@ func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
 		Id:          permissionSetID,
 		Name:        permissionSetName,
 		Description: "For OpenShift Prometheus: read access to Administration for /metrics scraping",
-		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(
-			permissions.View(resources.Administration),
-		),
+		// Let's give no permissions by default to avoid unexpected sensitive data exposure.
+		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(),
 	}
 	if err := roleDS.AddPermissionSet(ctx, ps); err != nil {
 		log.Warnf("Failed to create OpenShift metrics permission set: %v", err)
