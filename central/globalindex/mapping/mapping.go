@@ -55,7 +55,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 
 	policiesSearchOptions := search.CombineOptionsMaps(
 		policycategory.CategorySearchOptions,
-		schema.PoliciesSchema()OptionsMap,
+		schema.PoliciesSchema().OptionsMap,
 	)
 
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
