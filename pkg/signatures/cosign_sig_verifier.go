@@ -564,9 +564,13 @@ func verifySigstoreBundle(ctx context.Context, sigstoreBundle []byte,
 ) ([]string, error) {
 	if cosignOpts.TrustedMaterial == nil {
 		var err error
-		cosignOpts.TrustedMaterial, err = sigstoreTrustedRoot()
+		if cosignOpts.IgnoreTlog {
+			cosignOpts.TrustedMaterial, err = root.NewTrustedRoot(root.TrustedRootMediaType01, nil, nil, nil, nil)
+		} else {
+			cosignOpts.TrustedMaterial, err = sigstoreTrustedRoot()
+		}
 		if err != nil {
-			return nil, fmt.Errorf("loading fallback trusted material for bundle verification: %w", err)
+			return nil, fmt.Errorf("loading trusted material for bundle verification: %w", err)
 		}
 	}
 
