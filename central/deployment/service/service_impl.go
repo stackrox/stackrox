@@ -65,7 +65,7 @@ type serviceImpl struct {
 func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
@@ -148,7 +148,7 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("deployment with id '%s' does not exist", request.GetId())
 	}
 	return deployment, nil
 }
@@ -160,7 +160,7 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("deployment with id '%s' does not exist", request.GetId())
 	}
 
 	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
@@ -179,7 +179,7 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	numDeployments, err := s.datastore.Count(ctx, parsedQuery)
@@ -194,7 +194,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Fill in pagination.

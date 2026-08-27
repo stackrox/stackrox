@@ -78,7 +78,7 @@ func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (
 		return nil, errors.Errorf("could not locate node %q for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
+		return nil, errox.NotFound.Newf("node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
 	return node, nil
 }
@@ -86,7 +86,7 @@ func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (
 func (s *nodeServiceImpl) ExportNodes(req *v1.ExportNodeRequest, srv v1.NodeService_ExportNodesServer) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {

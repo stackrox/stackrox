@@ -104,7 +104,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, errors.Wrapf(err, "failed to retrieve role %q", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve role %q", id.GetId())
+		return nil, errox.NotFound.Newf("failed to retrieve role %q", id.GetId())
 	}
 	return role, nil
 }
@@ -185,7 +185,7 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 		return nil, errors.Wrapf(err, "failed to retrieve permission set %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve permission set %s", id.GetId())
+		return nil, errox.NotFound.Newf("failed to retrieve permission set %s", id.GetId())
 	}
 
 	return permissionSet, nil
@@ -261,7 +261,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve access scope %s", id.GetId())
+		return nil, errox.NotFound.Newf("failed to retrieve access scope %s", id.GetId())
 	}
 
 	return scope, nil

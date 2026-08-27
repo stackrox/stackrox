@@ -279,7 +279,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 
 	clusterIDFromCert := serviceID.GetId()
 	if helmConfigInit == nil && centralsensor.IsInitCertClusterID(clusterIDFromCert) {
-		return nil, errors.Wrap(errox.InvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
+		return nil, errox.InvalidArgs.New("sensor using cluster init certificate must transmit a helm-managed configuration")
 	}
 
 	clusterID := helmConfigInit.GetClusterId()
@@ -287,7 +287,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		var err error
 		clusterID, err = centralsensor.GetClusterID(clusterID, clusterIDFromCert)
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
+			return nil, errox.InvalidArgs.CausedByf("incompatible cluster IDs in config init and certificate: %v", err)
 		}
 	}
 

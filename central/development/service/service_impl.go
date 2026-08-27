@@ -109,7 +109,7 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
 	u, err := url.Parse(req.GetUrl())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "invalid url %s", err.Error())
+		return nil, errox.InvalidArgs.Newf("invalid url %s", err.Error())
 	}
 
 	// Since we are using http.DefaultHttpClient, it relies on the same CA certificates as x509.SystemCertPool.
@@ -156,15 +156,15 @@ func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasVali
 func verifyProvidedCert(req *central.URLHasValidCertRequest, u *url.URL) error {
 	block, _ := pem.Decode([]byte(req.GetCertPEM()))
 	if block == nil {
-		return errors.Wrap(errox.InvalidArgs, "failed to decode certificate")
+		return errox.InvalidArgs.New("failed to decode certificate")
 	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "failed to parse certificate %s", err.Error())
+		return errox.InvalidArgs.Newf("failed to parse certificate %s", err.Error())
 	}
 	pool, err := x509.SystemCertPool()
 	if err != nil {
-		return errors.Wrapf(errox.ServerError, "failed to get system cert pool %s", err.Error())
+		return errox.ServerError.Newf("failed to get system cert pool %s", err.Error())
 	}
 
 	opts := x509.VerifyOptions{

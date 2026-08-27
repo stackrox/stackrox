@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/user/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -63,7 +62,7 @@ func (s *serviceImpl) GetUser(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.Wrapf(errox.NotFound, "user %s not found", id.GetId())
+		return nil, errox.NotFound.Newf("user %s not found", id.GetId())
 	}
 	return user, nil
 }

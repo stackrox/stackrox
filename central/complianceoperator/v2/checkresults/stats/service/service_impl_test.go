@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
@@ -172,7 +171,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 				ClusterId: "id",
 				Query:     &apiV2.RawQuery{Query: ""},
 			},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			expectedErr: errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, "id").ProtoQuery(),
@@ -264,7 +263,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 		{
 			desc:        "Query with non-existent field",
 			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			expectedErr: errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
@@ -368,7 +367,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			request: &apiV2.ComplianceProfileResultsRequest{
 				Query: &apiV2.RawQuery{Query: "Cluster ID:id"},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 
 			},
@@ -490,7 +489,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 		{
 			desc:        "Query with non-existent field",
 			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			expectedErr: errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
@@ -610,7 +609,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 			},
 		},
@@ -726,7 +725,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 				ClusterId: "",
 				Query:     &apiV2.RawQuery{Query: "Compliance Profile Name:" + "ocp4-cis-node"},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Cluster ID is required"),
+			expectedErr: errox.InvalidArgs.New("Cluster ID is required"),
 			setMocks: func() {
 			},
 		},
@@ -815,7 +814,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 			},
 		},
@@ -825,7 +824,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				ProfileName: "ocp4-cis",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Compliance check name is required"),
+			expectedErr: errox.InvalidArgs.New("Compliance check name is required"),
 			setMocks: func() {
 			},
 		},

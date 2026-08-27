@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -100,7 +99,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, errors.Wrapf(errox.NotFound, "group %q not found", protocompat.MarshalTextString(props))
+		return nil, errox.NotFound.Newf("group %q not found", protocompat.MarshalTextString(props))
 	}
 	return group, nil
 }

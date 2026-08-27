@@ -440,7 +440,7 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 		if len(invalidPeerTypes) > 0 {
 			errorList.AddStringf("invalid types for peers: %v", invalidPeerTypes)
 		}
-		return errors.Wrap(errox.InvalidArgs, errorList.String())
+		return errox.InvalidArgs.New(errorList.String())
 	}
 	return nil
 }
@@ -452,7 +452,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found || baseline == nil {
-		return errors.Wrapf(errox.InvalidArgs, "no baseline found for deployment id %q", deploymentID)
+		return errox.InvalidArgs.Newf("no baseline found for deployment id %q", deploymentID)
 	}
 	if err := m.validatePeers(modifyRequest.GetPeers()); err != nil {
 		return err
@@ -643,7 +643,7 @@ type clusterNamespacePair struct {
 func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found || baseline == nil {
-		return errors.Wrap(errox.InvalidArgs, "no baseline with given deployment ID found")
+		return errox.InvalidArgs.New("no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
 	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
@@ -800,7 +800,7 @@ func (m *manager) flushBaselineQueue() {
 		// Get the details about the deployment.
 		deployment, exists, err := m.deploymentDS.GetDeployment(managerCtx, observedDep.DeploymentID)
 		if !exists {
-			log.Error(errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", observedDep.DeploymentID))
+			log.Error(errox.NotFound.Newf("deployment with id %q does not exist", observedDep.DeploymentID))
 			continue
 		}
 		if err != nil {
@@ -828,7 +828,7 @@ func (m *manager) getFlowStore(ctx context.Context, clusterID string) (networkFl
 		return nil, errors.Errorf("could not obtain flow store for cluster %s: %v", clusterID, err)
 	}
 	if flowStore == nil {
-		return nil, errors.Wrapf(errox.NotFound, "no flow store found for cluster %s", clusterID)
+		return nil, errox.NotFound.Newf("no flow store found for cluster %s", clusterID)
 	}
 	return flowStore, nil
 }
@@ -911,7 +911,7 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	deployment, exists, err := m.deploymentDS.GetDeployment(managerCtx, deploymentID)
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", deploymentID)
+		return errox.NotFound.Newf("deployment with id %q does not exist", deploymentID)
 	}
 	if err != nil {
 		return err
@@ -942,7 +942,7 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 	}
 
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", deploymentID)
+		return nil, errox.NotFound.Newf("deployment with id %q does not exist", deploymentID)
 	}
 
 	entities, err := m.getEntitiesByQuery(ctx, deployment.GetClusterId(), query)
@@ -1051,7 +1051,7 @@ func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow) *v1.NetworkBaselineSt
 func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
 	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.

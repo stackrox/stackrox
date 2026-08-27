@@ -26,7 +26,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 
 	clusterID := params.ID
 	if clusterID == "" {
-		return nil, nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
+		return nil, nil, errox.InvalidArgs.New("no cluster ID specified")
 	}
 
 	cluster, _, err := s.clusters.GetCluster(r.Context(), clusterID)
@@ -34,7 +34,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, errors.Errorf("failed to retrieve cluster: %v", err)
 	}
 	if cluster == nil {
-		return nil, nil, errors.Wrapf(errox.NotFound, "cluster with ID %q not found", clusterID)
+		return nil, nil, errox.NotFound.Newf("cluster with ID %q not found", clusterID)
 	}
 
 	certs, err := zip.GenerateCertsAndAddToZip(nil, cluster, s.serviceIdentities)

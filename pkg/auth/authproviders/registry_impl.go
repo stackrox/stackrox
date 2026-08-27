@@ -227,7 +227,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, fo
 func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
+		return nil, errox.InvalidArgs.Newf("invalid auth provider type %q", typ)
 	}
 
 	providerID, _, err := factory.ResolveProviderAndClientState(state)
@@ -236,7 +236,7 @@ func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	}
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
-		return nil, errors.Wrapf(errox.NotFound, "could not locate auth provider %q", providerID)
+		return nil, errox.NotFound.Newf("could not locate auth provider %q", providerID)
 	}
 	return provider, nil
 }
@@ -244,7 +244,7 @@ func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, "", errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
+		return nil, "", errox.InvalidArgs.Newf("invalid auth provider type %q", typ)
 	}
 
 	providerID, clientState, err := factory.ResolveProviderAndClientState(state)
@@ -253,7 +253,7 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	}
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
-		return nil, clientState, errors.Wrapf(errox.NotFound, "could not locate auth provider %q", providerID)
+		return nil, clientState, errox.NotFound.Newf("could not locate auth provider %q", providerID)
 	}
 
 	backend, err := provider.GetOrCreateBackend(ctx)

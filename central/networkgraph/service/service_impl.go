@@ -203,7 +203,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 	// An error here implies one of the arguments is invalid.
 	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	if err := s.validateCluster(ctx, request.GetClusterId()); err != nil {
@@ -245,7 +245,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 
 func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v1.PatchNetworkEntityRequest) (*storage.NetworkEntity, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "network entity ID must be specified")
+		return nil, errox.InvalidArgs.New("network entity ID must be specified")
 	}
 
 	id := request.GetId()
@@ -272,7 +272,7 @@ func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "network entity %s not found", id)
+		return nil, errox.NotFound.Newf("network entity %s not found", id)
 	}
 	if entity.GetInfo().GetExternalSource().GetDefault() {
 		return nil, status.Error(codes.PermissionDenied, "StackRox-generated network entities are immutable")
@@ -292,7 +292,7 @@ func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*
 // PutNetworkGraphConfig updates Central's network graph config
 func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "network graph config must be specified")
+		return nil, errox.InvalidArgs.New("network graph config must be specified")
 	}
 
 	if err := s.graphConfig.UpdateNetworkGraphConfig(ctx, req.GetConfig()); err != nil {
@@ -307,14 +307,14 @@ func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (netwo
 		return nil, errors.Errorf("could not obtain flows for cluster %s: %v", clusterID, err)
 	}
 	if flowStore == nil {
-		return nil, errors.Wrapf(errox.NotFound, "no flows found for cluster %s", clusterID)
+		return nil, errox.NotFound.Newf("no flows found for cluster %s", clusterID)
 	}
 	return flowStore, nil
 }
 
 func (s *serviceImpl) validateCluster(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
+		return errox.InvalidArgs.New("cluster ID must be specified")
 	}
 	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkGraph)}
 	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
@@ -322,7 +322,7 @@ func (s *serviceImpl) validateCluster(ctx context.Context, clusterID string) err
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "cluster %s not found. It may have been deleted", clusterID)
+		return errox.NotFound.Newf("cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
 }
@@ -333,7 +333,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 
 func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
+		return nil, errox.InvalidArgs.New("cluster ID must be specified")
 	}
 
 	requestClone := request.CloneVT()
@@ -724,7 +724,7 @@ func filterFlowsAndMaskScopeAlienDeployments(
 func (s *serviceImpl) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
 	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.

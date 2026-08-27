@@ -56,20 +56,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetDeploymentForPod(_ context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	if req.GetPodName() == "" || req.GetNamespace() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "pod namespace and pod name must be provided")
+		return nil, errox.InvalidArgs.New("pod namespace and pod name must be provided")
 	}
 
 	pod := s.pods.GetByName(req.GetPodName(), req.GetNamespace())
 	if pod == nil {
-		return nil, errors.Wrapf(errox.NotFound,
-			"namespace/%s/pods/%s not found",
+		return nil, errox.NotFound.Newf("namespace/%s/pods/%s not found",
 			req.GetNamespace(), req.GetPodName())
 	}
 
 	dep := s.deployments.Get(pod.GetDeploymentId())
 	if dep == nil {
-		return nil, errors.Wrapf(errox.NotFound,
-			"no containing deployment found for namespace/%s/pods/%s",
+		return nil, errox.NotFound.Newf("no containing deployment found for namespace/%s/pods/%s",
 			req.GetNamespace(), req.GetPodName())
 	}
 	return dep, nil
