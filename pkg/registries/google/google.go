@@ -100,7 +100,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		manager,
 		[]byte(config.GetServiceAccount()),
 		config.GetWifEnabled(),
-		auth.GCPAuthScopes()...,
+		auth.DefaultAuthScopes()...,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
