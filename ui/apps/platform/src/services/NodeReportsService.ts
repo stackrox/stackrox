@@ -68,9 +68,7 @@ export function fetchNodeReportConfigurationsCount(
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ count: number }>(`/v2/reports/node/configuration-count?${params}`, { signal })
-            .then((response) => {
-                return response.data;
-            })
+            .then((response) => response.data)
     );
 }
 

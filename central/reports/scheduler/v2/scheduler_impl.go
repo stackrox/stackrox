@@ -336,8 +336,10 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 		return "", err
 	}
 
-	q.Enqueue(request)
-	s.readyForReports.Signal()
+	if s.isStarted.Load() {
+		q.Enqueue(request)
+		s.readyForReports.Signal()
+	}
 
 	return request.ReportSnapshot.GetReportId(), nil
 }

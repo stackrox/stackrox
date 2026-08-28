@@ -34,6 +34,9 @@ type SensorUpdater struct {
 	// persistMu serializes cachePath writes. persistActive is the only
 	// acquirer; it takes persistMu, then mu, never the reverse.
 	persistMu sync.Mutex
+	// persistWG tracks persistAndNotify's background writes so tests can
+	// drain them before TempDir cleanup.
+	persistWG sync.WaitGroup
 }
 
 // NewSensorUpdater seeds active from cachePath, else bundledPath, else
@@ -189,14 +192,21 @@ func (u *SensorUpdater) applyLocked(content []byte, hash string) {
 // background. Path is the write barrier if the file is needed before
 // that goroutine finishes.
 func (u *SensorUpdater) persistAndNotify() {
-	go func() {
+	u.persistWG.Go(func() {
 		if _, err := u.persistActive(); err != nil {
 			log.Warnf("Persisting repo-to-CPE mapping cache to %q: %v", u.cachePath, err)
 		}
-	}()
+	})
 	if u.onChange != nil {
 		u.onChange()
 	}
+}
+
+// waitPersist blocks until every persistAndNotify goroutine has finished
+// writing cachePath. Tests register it with t.Cleanup so TempDir removal
+// cannot race AtomicWriteFile's sibling .tmp files.
+func (u *SensorUpdater) waitPersist() {
+	u.persistWG.Wait()
 }
 
 // persistActive writes a copy of the current active mapping to cachePath.
