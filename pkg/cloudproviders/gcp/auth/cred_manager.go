@@ -6,6 +6,18 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// Instead of importing the full SDK to setup auth scopes,
+// we copied the GCP scope strings. Prior code (full SDK pulled into the binary):
+//     artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
+//     securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
+//     storagev1 "google.golang.org/api/storage/v1"
+//     scopes := slices.Concat(
+//             []string{storagev1.CloudPlatformScope},
+//             artifactv1.DefaultAuthScopes(),
+//             securitycenterv1.DefaultAuthScopes(),
+//     )
+
+// These are the 2 scopes from those 3 apis (artifactregistry has both, the others have only the first):
 const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
 const cloudPlatformScopeReadOnly = "https://www.googleapis.com/auth/cloud-platform.read-only"
 
