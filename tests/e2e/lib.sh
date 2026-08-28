@@ -150,8 +150,14 @@ deploy_stackrox_with_roxie() {
 
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
     # For Scanner V2 this means that it will also wait until vulnerabilities are loaded into the DB.
+    # The wait times default to 40m but can be extended by callers via ROXIE_CENTRAL_WAIT /
+    # ROXIE_SECURED_CLUSTER_WAIT (e.g. ui-e2e, where the Scanner V4 matcher must finish loading
+    # its vulnerability store under the small ci resource profile, which can take close to the
+    # 1h that the helm path allows via SCANNER_V4_VULN_READINESS_TIMEOUT).
+    local central_wait="${ROXIE_CENTRAL_WAIT:-40m}"
+    local secured_cluster_wait="${ROXIE_SECURED_CLUSTER_WAIT:-40m}"
     roxie deploy \
-        --early-readiness=false --central-wait=40m --secured-cluster-wait=40m \
+        --early-readiness=false --central-wait="$central_wait" --secured-cluster-wait="$secured_cluster_wait" \
         --envrc "$roxie_envrc" \
         --config "$config_file"
 

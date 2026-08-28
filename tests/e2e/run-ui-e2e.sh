@@ -176,6 +176,11 @@ EOF
     # vuln-management specs run against still-unscanned images.
     if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
         set_custom_env "$roxie_config" "central" "SCANNER_V4_MATCHER_READINESS" "vulnerability"
+        # Under the ci resource profile the matcher gets a single CPU, so loading the (allowlisted)
+        # vulnerability bundles is slow. Give the roxie deploy enough time to wait for it, matching
+        # the helm path's 1h scanner-v4 vuln-readiness wait; the default 40m is too short.
+        export ROXIE_CENTRAL_WAIT="${ROXIE_CENTRAL_WAIT:-70m}"
+        export ROXIE_SECURED_CLUSTER_WAIT="${ROXIE_SECURED_CLUSTER_WAIT:-70m}"
     fi
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
