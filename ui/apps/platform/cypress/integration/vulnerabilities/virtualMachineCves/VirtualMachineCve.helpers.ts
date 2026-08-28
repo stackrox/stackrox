@@ -4,35 +4,59 @@ import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/v
 
 export const listVirtualMachinesAlias = 'listVirtualMachines';
 export const getVirtualMachineAlias = 'getVirtualMachine';
+export const listVirtualMachineCvesAlias = 'listVirtualMachineCves';
+export const listVirtualMachineComponentsAlias = 'listVirtualMachineComponents';
 
 export const routeMatcherMapForVirtualMachines = {
     [listVirtualMachinesAlias]: {
         method: 'GET',
-        url: '/v2/virtualmachines?*',
+        url: '/v2/virtualmachines/vms?*',
     },
 };
 
 export const routeMatcherMapForVirtualMachine = {
     [getVirtualMachineAlias]: {
         method: 'GET',
-        url: '/v2/virtualmachines/*',
+        url: '/v2/virtualmachines/vms/*',
     },
 };
 
+export const routeMatcherMapForVirtualMachineVulnerabilities = {
+    ...routeMatcherMapForVirtualMachine,
+    [listVirtualMachineCvesAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/cves?*',
+    },
+};
+
+export const routeMatcherMapForVirtualMachineComponents = {
+    [listVirtualMachineComponentsAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/components?*',
+    },
+};
+
+function virtualMachineCvesOverviewPath(params?: Record<string, string>): string {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return `/main/vulnerabilities/virtual-machine-cves${query}`;
+}
+
 export function visitVirtualMachineCvesOverviewPage(
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
-    staticResponseMap?: Record<string, RouteHandler>
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
 ) {
-    visit('/main/vulnerabilities/virtual-machine-cves', routeMatcherMap, staticResponseMap);
+    visit(virtualMachineCvesOverviewPath(params), routeMatcherMap, staticResponseMap);
 }
 
 export function visitVirtualMachineCvesOverviewPageWithStaticPermissions(
     resourceToAccess: Record<string, string>,
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
-    staticResponseMap?: Record<string, RouteHandler>
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
 ) {
     visitWithStaticResponseForPermissions(
-        '/main/vulnerabilities/virtual-machine-cves',
+        virtualMachineCvesOverviewPath(params),
         { body: { resourceToAccess } },
         routeMatcherMap,
         staticResponseMap
