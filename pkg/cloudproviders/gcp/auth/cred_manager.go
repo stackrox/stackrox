@@ -19,7 +19,7 @@ import (
 
 // These are the 2 scopes from those 3 apis (artifactregistry has both, the others have only the first):
 const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
-const cloudPlatformScopeReadOnly = "https://www.googleapis.com/auth/cloud-platform.write-only"
+const cloudPlatformScopeReadOnly = "https://www.googleapis.com/auth/cloud-platform.read-only"
 
 var defaultAuthScopes = []string{
 	cloudPlatformScope,
