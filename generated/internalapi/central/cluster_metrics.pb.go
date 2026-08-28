@@ -28,8 +28,10 @@ type ClusterMetrics struct {
 	NodeCount                 int64                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`                                                  // The number of nodes in the cluster accessible by Sensor.
 	CpuCapacity               int64                  `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"`                                            // The total cpu capacity of all nodes accessible by Sensor.
 	ComplianceOperatorVersion string                 `protobuf:"bytes,3,opt,name=compliance_operator_version,json=complianceOperatorVersion,proto3" json:"compliance_operator_version,omitempty"` // Compliance operator version discovered by this Sensor.
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// Filled only when ROX_VIRTUAL_MACHINES is enabled on this Sensor.
+	VirtualMachineMetrics *VirtualMachineMetrics `protobuf:"bytes,4,opt,name=virtual_machine_metrics,json=virtualMachineMetrics,proto3" json:"virtual_machine_metrics,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ClusterMetrics) Reset() {
@@ -83,16 +85,93 @@ func (x *ClusterMetrics) GetComplianceOperatorVersion() string {
 	return ""
 }
 
+func (x *ClusterMetrics) GetVirtualMachineMetrics() *VirtualMachineMetrics {
+	if x != nil {
+		return x.VirtualMachineMetrics
+	}
+	return nil
+}
+
+type VirtualMachineMetrics struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	TrackedVms            int32                  `protobuf:"varint,1,opt,name=tracked_vms,json=trackedVms,proto3" json:"tracked_vms,omitempty"`                                                                                                              // VMs currently tracked for scraping.
+	VmsScanned            int32                  `protobuf:"varint,2,opt,name=vms_scanned,json=vmsScanned,proto3" json:"vms_scanned,omitempty"`                                                                                                              // Tracked VMs with at least one successful scrape ever.
+	RoxagentVersionCounts map[string]int32       `protobuf:"bytes,3,rep,name=roxagent_version_counts,json=roxagentVersionCounts,proto3" json:"roxagent_version_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Version (or "unknown"/"other") -> count of scanned VMs. Unscanned VMs are omitted.
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *VirtualMachineMetrics) Reset() {
+	*x = VirtualMachineMetrics{}
+	mi := &file_internalapi_central_cluster_metrics_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualMachineMetrics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualMachineMetrics) ProtoMessage() {}
+
+func (x *VirtualMachineMetrics) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_cluster_metrics_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualMachineMetrics.ProtoReflect.Descriptor instead.
+func (*VirtualMachineMetrics) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_cluster_metrics_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *VirtualMachineMetrics) GetTrackedVms() int32 {
+	if x != nil {
+		return x.TrackedVms
+	}
+	return 0
+}
+
+func (x *VirtualMachineMetrics) GetVmsScanned() int32 {
+	if x != nil {
+		return x.VmsScanned
+	}
+	return 0
+}
+
+func (x *VirtualMachineMetrics) GetRoxagentVersionCounts() map[string]int32 {
+	if x != nil {
+		return x.RoxagentVersionCounts
+	}
+	return nil
+}
+
 var File_internalapi_central_cluster_metrics_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_cluster_metrics_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/cluster_metrics.proto\x12\acentral\"\x92\x01\n" +
+	")internalapi/central/cluster_metrics.proto\x12\acentral\"\xea\x01\n" +
 	"\x0eClusterMetrics\x12\x1d\n" +
 	"\n" +
 	"node_count\x18\x01 \x01(\x03R\tnodeCount\x12!\n" +
 	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacity\x12>\n" +
-	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersionB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
+	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersion\x12V\n" +
+	"\x17virtual_machine_metrics\x18\x04 \x01(\v2\x1e.central.VirtualMachineMetricsR\x15virtualMachineMetrics\"\x96\x02\n" +
+	"\x15VirtualMachineMetrics\x12\x1f\n" +
+	"\vtracked_vms\x18\x01 \x01(\x05R\n" +
+	"trackedVms\x12\x1f\n" +
+	"\vvms_scanned\x18\x02 \x01(\x05R\n" +
+	"vmsScanned\x12q\n" +
+	"\x17roxagent_version_counts\x18\x03 \x03(\v29.central.VirtualMachineMetrics.RoxagentVersionCountsEntryR\x15roxagentVersionCounts\x1aH\n" +
+	"\x1aRoxagentVersionCountsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
 	file_internalapi_central_cluster_metrics_proto_rawDescOnce sync.Once
@@ -106,16 +185,20 @@ func file_internalapi_central_cluster_metrics_proto_rawDescGZIP() []byte {
 	return file_internalapi_central_cluster_metrics_proto_rawDescData
 }
 
-var file_internalapi_central_cluster_metrics_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_internalapi_central_cluster_metrics_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_cluster_metrics_proto_goTypes = []any{
-	(*ClusterMetrics)(nil), // 0: central.ClusterMetrics
+	(*ClusterMetrics)(nil),        // 0: central.ClusterMetrics
+	(*VirtualMachineMetrics)(nil), // 1: central.VirtualMachineMetrics
+	nil,                           // 2: central.VirtualMachineMetrics.RoxagentVersionCountsEntry
 }
 var file_internalapi_central_cluster_metrics_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: central.ClusterMetrics.virtual_machine_metrics:type_name -> central.VirtualMachineMetrics
+	2, // 1: central.VirtualMachineMetrics.roxagent_version_counts:type_name -> central.VirtualMachineMetrics.RoxagentVersionCountsEntry
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_cluster_metrics_proto_init() }
@@ -129,7 +212,7 @@ func file_internalapi_central_cluster_metrics_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_cluster_metrics_proto_rawDesc), len(file_internalapi_central_cluster_metrics_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
