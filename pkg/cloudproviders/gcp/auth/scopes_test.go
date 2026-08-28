@@ -21,20 +21,20 @@ func TestGCPAuthScopesMatchSDK(t *testing.T) {
 	}
 
 	expected := artifactv1.DefaultAuthScopes()
-	for _, item := range expected {
+	for _, item = range expected {
 		if !found[item] {
 			t.Fatalf("Expected GCP artifactregistry API DefaultAuthScopes '%d', to be in our copy: '%v'. Check %s and update our defaultAuthScopes.", item, actual, artifactregistryUrl)
 		}
 	}
 
-	expected := securitycenterv1.DefaultAuthScopes()
-	for _, item := range expected {
+	expected = securitycenterv1.DefaultAuthScopes()
+	for _, item = range expected {
 		if !found[item] {
 			t.Fatalf("Expected GCP securitycenter API DefaultAuthScopes '%d', to be in our copy: '%v'. Check %s and update our defaultAuthScopes.", item, actual, securitycenterUrl)
 		}
 	}
 
-	expected := storagev1.CloudPlatformScope
+	expected = storagev1.CloudPlatformScope
 	if !found[expected] {
 		t.Fatalf("Expected GCP storage API CloudPlatformScope '%d', to be in our copy: '%v'. Check %s and update our defaultAuthScopes.", expected, actual, storageUrl)
 	}
