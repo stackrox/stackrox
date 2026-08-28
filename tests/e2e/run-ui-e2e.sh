@@ -167,6 +167,16 @@ EOF
         set_custom_env "$roxie_config" "central" \
             "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "$SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"
     fi
+    # Make the scanner-v4-matcher report NotReady until its vulnerability store has finished
+    # loading, so the roxie deploy (--central-wait) blocks until scanning actually works before
+    # the tests run. The allowlist above bounds the load time to well under that wait. The
+    # helm/operator path does this whenever SCANNER_V4_VULN_READINESS is set (true by default
+    # via export_test_environment, tests/e2e/lib.sh); the roxie compat layer does not translate
+    # it, so without this the matcher is Ready immediately, the deploy returns, and the
+    # vuln-management specs run against still-unscanned images.
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        set_custom_env "$roxie_config" "central" "SCANNER_V4_MATCHER_READINESS" "vulnerability"
+    fi
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
