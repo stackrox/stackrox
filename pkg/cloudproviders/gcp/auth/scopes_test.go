@@ -4,16 +4,38 @@ import (
 	"testing"
 
 	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
+	securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
+	storagev1 "google.golang.org/api/storage/v1"
 )
 
 func TestGCPAuthScopesMatchSDK(t *testing.T) {
 	// This test will catch if the default scopes ever change in the API.
-	url := "https://github.com/googleapis/google-cloud-go/blob/artifactregistry/v1.26.0/artifactregistry/apiv1/helpers.go#L53-L59"
+	artifactregistryUrl := "https://pkg.go.dev/cloud.google.com/go/artifactregistry/apiv1#DefaultAuthScopes"
+	securitycenterUrl := "https://pkg.go.dev/cloud.google.com/go/securitycenter/apiv1#DefaultAuthScopes"
+	storageUrl := "https://pkg.go.dev/google.golang.org/api/storage/v1#pkg-constants"
 
 	actual := DefaultAuthScopes()
-	expected := artifactv1.DefaultAuthScopes()
+	found := make(map[string]bool)
+	for _, item := range actual {
+		found[item] = true
+	}
 
-	if actual != expected {
-		t.Fatalf("Expected API DefaultAuthScopres '%d', to match our copy: '%d'. Check %s and update our copy defaultAuthScopes to match.", expected, actual, url)
+	expected := artifactv1.DefaultAuthScopes()
+	for _, item := range expected {
+		if !found[item] {
+			t.Fatalf("Expected GCP artifactregistry API DefaultAuthScopes '%d', to be in our copy: '%d'. Check %s and update our defaultAuthScopes.", item, actual, artifactregistryUrl)
+		}
+	}
+
+	expected := securitycenterv1.DefaultAuthScopes()
+	for _, item := range expected {
+		if !found[item] {
+			t.Fatalf("Expected GCP securitycenter API DefaultAuthScopes '%d', to be in our copy: '%d'. Check %s and update our defaultAuthScopes.", item, actual, securitycenterUrl)
+		}
+	}
+
+	expected := storagev1.CloudPlatformScope
+	if !found[expected] {
+		t.Fatalf("Expected GCP storage API CloudPlatformScope '%d', to be in our copy: '%d'. Check %s and update our defaultAuthScopes.", expected, actual, storageUrl)
 	}
 }
