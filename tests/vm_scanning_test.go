@@ -126,7 +126,6 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				}
 
 				distinct := distinctCVEIDs(cves)
-				require.Equal(t, len(cves), len(distinct), "ListVMCVEsByVM CVE IDs must be unique")
 				require.Equal(t, int32(len(distinct)), vmhelpers.VulnCountBySeverityTotal(listed.GetCveSeverityCounts()),
 					"ListVMs.cveSeverityCounts totals must match distinct CVEs from ListVMCVEsByVM")
 
@@ -145,7 +144,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				for _, row := range cves {
 					require.NotEmpty(t, row.GetCve())
 				}
-				require.Equal(t, len(cves), len(distinctCVEIDs(cves)), "CVE IDs must be unique")
+				require.Equal(t, len(cves), len(distinctCVEIDs(cves)), "ListVMCVEsByVM CVE IDs must be unique")
 
 				var found bool
 				for _, row := range cves {
