@@ -10,4 +10,13 @@ message ClusterMetrics {
   int64 node_count = 1; // The number of nodes in the cluster accessible by Sensor.
   int64 cpu_capacity = 2; // The total cpu capacity of all nodes accessible by Sensor.
   string compliance_operator_version = 3; // Compliance operator version discovered by this Sensor.
+
+  // Filled only when ROX_VIRTUAL_MACHINES is enabled on this Sensor.
+  VirtualMachineMetrics virtual_machine_metrics = 4;
+}
+
+message VirtualMachineMetrics {
+  int32 tracked_vms = 1; // VMs currently tracked for scraping.
+  int32 vms_scanned = 2; // Tracked VMs with at least one successful scrape ever.
+  map<string, int32> roxagent_version_counts = 3; // Version (or "unknown"/"other") -> count of scanned VMs. Unscanned VMs are omitted.
 }

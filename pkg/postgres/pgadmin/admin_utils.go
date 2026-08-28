@@ -57,15 +57,11 @@ func DropDB(sourceMap map[string]string, adminConfig *postgres.Config, databaseN
 		utils.Should(errors.New("unexpected call, should not try to drop a database from an external Postgres."))
 	}
 
-	// Set the options for pg_dump from the connection config
-	options := []string{
-		"-f",
-		"--if-exists",
-		databaseName,
-	}
-
-	// Get the common DB connection info
-	options = append(options, GetConnectionOptions(adminConfig)...)
+	// Set the options for dropdb including the connection config
+	connectionOptions := GetConnectionOptions(adminConfig)
+	options := make([]string, 0, 3+len(connectionOptions))
+	options = append(options, "-f", "--if-exists", databaseName)
+	options = append(options, connectionOptions...)
 
 	cmd := exec.Command("dropdb", options...)
 
@@ -87,15 +83,11 @@ func CreateDB(sourceMap map[string]string, adminConfig *postgres.Config, dbTempl
 
 	log.Infof("CreateDB %q", dbName)
 
-	// Set the options for pg_dump from the connection config
-	options := []string{
-		"-T",
-		dbTemplate,
-		dbName,
-	}
-
-	// Get the common DB connection info
-	options = append(options, GetConnectionOptions(adminConfig)...)
+	// Set the options for createdb including the connection config
+	connectionOptions := GetConnectionOptions(adminConfig)
+	options := make([]string, 0, 3+len(connectionOptions))
+	options = append(options, "-T", dbTemplate, dbName)
+	options = append(options, connectionOptions...)
 
 	cmd := exec.Command("createdb", options...)
 

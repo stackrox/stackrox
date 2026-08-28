@@ -185,12 +185,16 @@ class IntegrationsTest extends BaseSpecification {
     def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.SplunkDeployment parts = null
+        SplunkNotifier notifier = null
+        String policyId = null
+        Deployment nginxdeployment = null
+        parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
         SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -205,11 +209,11 @@ class IntegrationsTest extends BaseSpecification {
                   .setKey("app")
                   .setValue(nginxName)))
               .addNotifiers(notifier.getId())
-        def policyId = PolicyService.createNewPolicy(policy.build())
+        policyId = PolicyService.createNewPolicy(policy.build())
 
         and:
         "Create a new deployment to trigger the violation against the policy"
-        Deployment nginxdeployment =
+        nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
@@ -223,16 +227,16 @@ class IntegrationsTest extends BaseSpecification {
 
         cleanup:
         "remove Deployment and services"
-        if (parts.deployment != null) {
+        if (nginxdeployment) {
             orchestrator.deleteDeployment(nginxdeployment)
         }
-        if (policy != null) {
+        if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
         if (parts) {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
-        notifier.deleteNotifier()
+        notifier?.deleteNotifier()
     }
 
     @Unroll

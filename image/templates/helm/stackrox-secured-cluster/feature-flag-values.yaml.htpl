@@ -1,10 +1,8 @@
 [<- if .FeatureFlags >]
-[</* There is no value in injecting this feature flag, because the Helm chart
-     will set this flag based on the chart configuration anyway. By excluding it
-     here we get rid of deployment warnings such as these:
-
-       Warning: spec.template.spec.containers[0].env[25].name: duplicate name "ROX_SCANNER_V4" */>]
-[<- $skipFeatureFlags := list "ROX_SCANNER_V4" >]
+[</* The chart already sets these from its own config (scanner V4 enablement,
+     virtualMachines.enabled). Injecting them again would produce duplicate env names,
+     which kubectl apply cannot patch onto an existing Sensor Deployment. */>]
+[<- $skipFeatureFlags := list "ROX_SCANNER_V4" "ROX_VIRTUAL_MACHINES" >]
 envVars:
 [<- $featureFlags := .FeatureFlags >]
 [<- range $flagName := keys $featureFlags | sortAlpha >]

@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMetadata from 'hooks/useMetadata';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
@@ -28,8 +27,6 @@ import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorCompatibility from './Components/SensorCompatibility';
 import SensorCompatibilityPanel from './Components/SensorCompatibilityPanel';
-import SensorUpgrade from './Components/SensorUpgrade';
-import SensorUpgradePanel from './Components/SensorUpgradePanel';
 
 export type ClustersTableProps = {
     centralVersion: string;
@@ -40,7 +37,6 @@ export type ClustersTableProps = {
     onDeleteCluster: (cluster: Cluster) => (event: MouseEvent) => void;
     toggleAllClusters: () => void;
     toggleCluster: (clusterId) => void;
-    upgradeSingleCluster: (clusterId: string) => void;
 };
 
 export const EXPANDABLE_COLUMN = {
@@ -60,16 +56,11 @@ function ClustersTable({
     onDeleteCluster,
     toggleAllClusters,
     toggleCluster,
-    upgradeSingleCluster,
 }: ClustersTableProps): ReactElement {
     const [expanded, setExpanded] = useState<ExpansionMap>({});
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const metadata = useMetadata();
     const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
-    const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
-    const sensorColumnLabel = isSensorCompatStatusEnabled
-        ? 'Sensor compatibility status'
-        : 'Sensor upgrade status';
+    const sensorColumnLabel = 'Sensor compatibility status';
 
     function toggle(clusterId: string, col: ExpandableColumnId) {
         setExpanded((prev) => ({
@@ -176,38 +167,23 @@ function ClustersTable({
                                             </Td>
                                             <Td
                                                 dataLabel={sensorColumnLabel}
-                                                compoundExpand={
-                                                    clusterInfo?.status?.upgradeStatus
-                                                        ? {
-                                                              isExpanded: isCellExpanded(
-                                                                  clusterId,
-                                                                  EXPANDABLE_COLUMN.SENSOR
-                                                              ),
-                                                              onToggle: () =>
-                                                                  toggle(
-                                                                      clusterId,
-                                                                      EXPANDABLE_COLUMN.SENSOR
-                                                                  ),
-                                                              rowIndex,
-                                                              columnIndex: 4,
-                                                          }
-                                                        : undefined
-                                                }
+                                                compoundExpand={{
+                                                    isExpanded: isCellExpanded(
+                                                        clusterId,
+                                                        EXPANDABLE_COLUMN.SENSOR
+                                                    ),
+                                                    onToggle: () =>
+                                                        toggle(clusterId, EXPANDABLE_COLUMN.SENSOR),
+                                                    rowIndex,
+                                                    columnIndex: 4,
+                                                }}
                                             >
-                                                {isSensorCompatStatusEnabled ? (
-                                                    <SensorCompatibility
-                                                        compatibility={
-                                                            clusterInfo.status
-                                                                ?.sensorVersionCompatibility
-                                                        }
-                                                    />
-                                                ) : (
-                                                    <SensorUpgrade
-                                                        upgradeStatus={
-                                                            clusterInfo.status?.upgradeStatus
-                                                        }
-                                                    />
-                                                )}
+                                                <SensorCompatibility
+                                                    compatibility={
+                                                        clusterInfo.status
+                                                            ?.sensorVersionCompatibility
+                                                    }
+                                                />
                                             </Td>
                                             <Td dataLabel="Credential expiration">
                                                 {/* TODO: needs update for upgrade */}
@@ -260,38 +236,17 @@ function ClustersTable({
                                             <Tr isExpanded>
                                                 <Td colSpan={colSpan}>
                                                     <ExpandableRowContent>
-                                                        {isSensorCompatStatusEnabled ? (
-                                                            <SensorCompatibilityPanel
-                                                                compatibility={
-                                                                    clusterInfo.status
-                                                                        ?.sensorVersionCompatibility
-                                                                }
-                                                                compatibleVersions={
-                                                                    compatibleVersions
-                                                                }
-                                                                sensorVersion={
-                                                                    clusterInfo.status
-                                                                        ?.sensorVersion
-                                                                }
-                                                                centralVersion={centralVersion}
-                                                            />
-                                                        ) : (
-                                                            <SensorUpgradePanel
-                                                                centralVersion={centralVersion}
-                                                                sensorVersion={
-                                                                    clusterInfo.status
-                                                                        ?.sensorVersion ?? ''
-                                                                }
-                                                                upgradeStatus={
-                                                                    clusterInfo.status
-                                                                        ?.upgradeStatus
-                                                                }
-                                                                actionProps={{
-                                                                    clusterId: clusterInfo.id,
-                                                                    upgradeSingleCluster,
-                                                                }}
-                                                            />
-                                                        )}
+                                                        <SensorCompatibilityPanel
+                                                            compatibility={
+                                                                clusterInfo.status
+                                                                    ?.sensorVersionCompatibility
+                                                            }
+                                                            compatibleVersions={compatibleVersions}
+                                                            sensorVersion={
+                                                                clusterInfo.status?.sensorVersion
+                                                            }
+                                                            centralVersion={centralVersion}
+                                                        />
                                                     </ExpandableRowContent>
                                                 </Td>
                                             </Tr>

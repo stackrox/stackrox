@@ -1,6 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
-import { interceptAndOverrideFeatureFlags } from '../../helpers/request';
 
 import { clustersAlias, visitClusters } from './Clusters.helpers';
 
@@ -103,14 +101,7 @@ const clustersResponse = {
 describe('Clusters Sensor Compatibility Status', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_SENSOR_COMPATIBILITY_STATUS')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        interceptAndOverrideFeatureFlags({ ROX_SENSOR_COMPATIBILITY_STATUS: true });
         cy.intercept('GET', 'v1/metadata', { body: metadata }).as('metadata');
     });
 

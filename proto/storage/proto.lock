@@ -6071,6 +6071,50 @@
             ]
           },
           {
+            "name": "VulnOrigin",
+            "enum_fields": [
+              {
+                "name": "VULN_ORIGIN_OTHER"
+              },
+              {
+                "name": "VULN_ORIGIN_OSV",
+                "integer": 1
+              },
+              {
+                "name": "VULN_ORIGIN_ALPINE",
+                "integer": 2
+              },
+              {
+                "name": "VULN_ORIGIN_AMAZON",
+                "integer": 3
+              },
+              {
+                "name": "VULN_ORIGIN_DEBIAN",
+                "integer": 4
+              },
+              {
+                "name": "VULN_ORIGIN_ORACLE",
+                "integer": 5
+              },
+              {
+                "name": "VULN_ORIGIN_PHOTON",
+                "integer": 6
+              },
+              {
+                "name": "VULN_ORIGIN_RED_HAT",
+                "integer": 7
+              },
+              {
+                "name": "VULN_ORIGIN_SUSE",
+                "integer": 8
+              },
+              {
+                "name": "VULN_ORIGIN_UBUNTU",
+                "integer": 9
+              }
+            ]
+          },
+          {
             "name": "CvssScoreVersion",
             "enum_fields": [
               {
@@ -6846,6 +6890,11 @@
                 "id": 17,
                 "name": "datasource",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "origin",
+                "type": "VulnOrigin"
               }
             ]
           },
@@ -21048,6 +21097,11 @@
                 "id": 28,
                 "name": "cisa_kev",
                 "type": "bool"
+              },
+              {
+                "id": 29,
+                "name": "origin",
+                "type": "VulnOrigin"
               }
             ],
             "reserved_ids": [

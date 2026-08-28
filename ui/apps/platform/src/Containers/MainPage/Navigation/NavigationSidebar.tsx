@@ -99,7 +99,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             type: 'link',
             content: 'Reports',
             path: vulnerabilityReportsPath,
-            routeKey: 'vulnerabilities/reports',
+            routeKey: ['vulnerabilities/reports/images', 'vulnerabilities/reports/nodes'],
         },
         {
             type: 'separator',

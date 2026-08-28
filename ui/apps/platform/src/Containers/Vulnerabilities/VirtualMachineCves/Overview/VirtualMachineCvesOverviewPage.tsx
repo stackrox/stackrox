@@ -1,31 +1,36 @@
-import {
-    Content,
-    Flex,
-    PageSection,
-    Title,
-    ToggleGroup,
-    ToggleGroupItem,
-} from '@patternfly/react-core';
+import { Content, Flex, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
+import { useManagedColumns } from 'hooks/useManagedColumns';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { virtualMachineEntityTabValues } from '../../types';
 import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
-import VirtualMachineCVEsTable from './VirtualMachineCVEsTable';
-import VirtualMachinesCvesTable from './VirtualMachinesCvesTable';
+import VirtualMachineCvesCveTable from './VirtualMachineCvesCveTable';
+import VirtualMachineCvesVmTable, { defaultColumns } from './VirtualMachineCvesVmTable';
 
 function VirtualMachineCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isEnhancedDataModelEnabled = isFeatureFlagEnabled(
         'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
     );
-    const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
-        'entityTab',
-        virtualMachineEntityTabValues
-    );
+    const [activeEntityTabKey] = useURLStringUnion('entityTab', virtualMachineEntityTabValues);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
+
+    const isFiltered = getHasSearchApplied(searchFilter);
+
+    function onClearFilters() {
+        setSearchFilter({});
+        pagination.setPage(1);
+    }
 
     return (
         <>
@@ -41,29 +46,26 @@ function VirtualMachineCvesOverviewPage() {
                     </Content>
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <VirtualMachineScanScopeAlert />
-                {isEnhancedDataModelEnabled && (
-                    <ToggleGroup aria-label="Entity type toggle items">
-                        <ToggleGroupItem
-                            text="CVEs"
-                            buttonId="CVE"
-                            isSelected={activeEntityTabKey === 'CVE'}
-                            onChange={() => setActiveEntityTabKey('CVE')}
-                        />
-                        <ToggleGroupItem
-                            text="Virtual Machines"
-                            buttonId="VirtualMachine"
-                            isSelected={activeEntityTabKey === 'VirtualMachine'}
-                            onChange={() => setActiveEntityTabKey('VirtualMachine')}
-                        />
-                    </ToggleGroup>
-                )}
+            </PageSection>
+            <PageSection isCenterAligned>
                 {isEnhancedDataModelEnabled && activeEntityTabKey === 'CVE' && (
-                    <VirtualMachineCVEsTable />
+                    <VirtualMachineCvesCveTable
+                        searchFilter={searchFilter}
+                        pagination={pagination}
+                        isFiltered={isFiltered}
+                        onClearFilters={onClearFilters}
+                    />
                 )}
                 {(!isEnhancedDataModelEnabled || activeEntityTabKey === 'VirtualMachine') && (
-                    <VirtualMachinesCvesTable />
+                    <VirtualMachineCvesVmTable
+                        searchFilter={searchFilter}
+                        pagination={pagination}
+                        managedColumnState={managedColumnState}
+                        isFiltered={isFiltered}
+                        onClearFilters={onClearFilters}
+                    />
                 )}
             </PageSection>
         </>

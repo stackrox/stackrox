@@ -148,8 +148,7 @@ func (m *ResponseMeta) CloneVT() *ResponseMeta {
 	r := new(ResponseMeta)
 	r.AgentVersion = m.AgentVersion
 	r.ReportGeneratedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ReportGeneratedAt).CloneVT())
-	r.ReportGeneration = m.ReportGeneration
-	r.Epoch = m.Epoch
+	r.ReportToken = m.ReportToken
 	if rhs := m.SupportedMethods; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -186,8 +185,7 @@ func (m *GetReportRequest) CloneVT() *GetReportRequest {
 		return (*GetReportRequest)(nil)
 	}
 	r := new(GetReportRequest)
-	r.LastKnownGeneration = m.LastKnownGeneration
-	r.KnownEpoch = m.KnownEpoch
+	r.LastKnownToken = m.LastKnownToken
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -525,7 +523,7 @@ func (this *ResponseMeta) EqualVT(that *ResponseMeta) bool {
 	if !(*timestamppb1.Timestamp)(this.ReportGeneratedAt).EqualVT((*timestamppb1.Timestamp)(that.ReportGeneratedAt)) {
 		return false
 	}
-	if this.ReportGeneration != that.ReportGeneration {
+	if this.ReportToken != that.ReportToken {
 		return false
 	}
 	if len(this.SupportedMethods) != len(that.SupportedMethods) {
@@ -549,9 +547,6 @@ func (this *ResponseMeta) EqualVT(that *ResponseMeta) bool {
 			return false
 		}
 	}
-	if this.Epoch != that.Epoch {
-		return false
-	}
 	if p, q := this.RepoCpeMappingHash, that.RepoCpeMappingHash; (p == nil && q != nil) || (p != nil && (q == nil || *p != *q)) {
 		return false
 	}
@@ -574,10 +569,7 @@ func (this *GetReportRequest) EqualVT(that *GetReportRequest) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.LastKnownGeneration != that.LastKnownGeneration {
-		return false
-	}
-	if this.KnownEpoch != that.KnownEpoch {
+	if this.LastKnownToken != that.LastKnownToken {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1008,19 +1000,14 @@ func (m *ResponseMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.RepoCpeMappingUpdatePath != nil {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.RepoCpeMappingUpdatePath))
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x38
 	}
 	if m.RepoCpeMappingHash != nil {
 		i -= len(*m.RepoCpeMappingHash)
 		copy(dAtA[i:], *m.RepoCpeMappingHash)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.RepoCpeMappingHash)))
 		i--
-		dAtA[i] = 0x3a
-	}
-	if m.Epoch != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Epoch))
-		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x32
 	}
 	if len(m.Facts) > 0 {
 		for k := range m.Facts {
@@ -1050,10 +1037,12 @@ func (m *ResponseMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0x22
 		}
 	}
-	if m.ReportGeneration != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ReportGeneration))
+	if len(m.ReportToken) > 0 {
+		i -= len(m.ReportToken)
+		copy(dAtA[i:], m.ReportToken)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ReportToken)))
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x1a
 	}
 	if m.ReportGeneratedAt != nil {
 		size, err := (*timestamppb1.Timestamp)(m.ReportGeneratedAt).MarshalToSizedBufferVT(dAtA[:i])
@@ -1105,15 +1094,12 @@ func (m *GetReportRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.KnownEpoch != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.KnownEpoch))
+	if len(m.LastKnownToken) > 0 {
+		i -= len(m.LastKnownToken)
+		copy(dAtA[i:], m.LastKnownToken)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LastKnownToken)))
 		i--
-		dAtA[i] = 0x10
-	}
-	if m.LastKnownGeneration != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LastKnownGeneration))
-		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1476,8 +1462,9 @@ func (m *ResponseMeta) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.ReportGeneratedAt).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.ReportGeneration != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ReportGeneration))
+	l = len(m.ReportToken)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.SupportedMethods) > 0 {
 		for _, s := range m.SupportedMethods {
@@ -1492,9 +1479,6 @@ func (m *ResponseMeta) SizeVT() (n int) {
 			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + 1 + len(v) + protohelpers.SizeOfVarint(uint64(len(v)))
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
-	}
-	if m.Epoch != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.Epoch))
 	}
 	if m.RepoCpeMappingHash != nil {
 		l = len(*m.RepoCpeMappingHash)
@@ -1513,11 +1497,9 @@ func (m *GetReportRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.LastKnownGeneration != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.LastKnownGeneration))
-	}
-	if m.KnownEpoch != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.KnownEpoch))
+	l = len(m.LastKnownToken)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2317,10 +2299,10 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReportGeneration", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportToken", wireType)
 			}
-			m.ReportGeneration = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2330,11 +2312,24 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReportGeneration |= uint32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReportToken = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SupportedMethods", wireType)
@@ -2495,25 +2490,6 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
-			}
-			m.Epoch = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Epoch |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingHash", wireType)
 			}
@@ -2546,7 +2522,7 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.RepoCpeMappingHash = &s
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingUpdatePath", wireType)
 			}
@@ -2618,10 +2594,10 @@ func (m *GetReportRequest) UnmarshalVT(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownGeneration", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownToken", wireType)
 			}
-			m.LastKnownGeneration = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2631,30 +2607,24 @@ func (m *GetReportRequest) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.LastKnownGeneration |= uint32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KnownEpoch", wireType)
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
 			}
-			m.KnownEpoch = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.KnownEpoch |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
 			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LastKnownToken = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3916,10 +3886,10 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReportGeneration", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportToken", wireType)
 			}
-			m.ReportGeneration = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -3929,11 +3899,28 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReportGeneration |= uint32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ReportToken = stringValue
+			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SupportedMethods", wireType)
@@ -4106,25 +4093,6 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
-			}
-			m.Epoch = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Epoch |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingHash", wireType)
 			}
@@ -4161,7 +4129,7 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			s := stringValue
 			m.RepoCpeMappingHash = &s
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingUpdatePath", wireType)
 			}
@@ -4233,10 +4201,10 @@ func (m *GetReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownGeneration", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownToken", wireType)
 			}
-			m.LastKnownGeneration = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -4246,30 +4214,28 @@ func (m *GetReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.LastKnownGeneration |= uint32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KnownEpoch", wireType)
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
 			}
-			m.KnownEpoch = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.KnownEpoch |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
 			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.LastKnownToken = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
