@@ -78,6 +78,31 @@ EOF
     #   the compat deploy layer.
     configure_endpoints_for_test "$roxie_config"
 
+    # Scanner V4's matcher must finish loading its vulnerability store before it can scan images
+    # (TestDelegatedScanning). Loading every vuln source takes far longer than the test window, so
+    # the matcher stays "not initialized" and scans fail. Limit the sources to the CI allowlist
+    # (matching the helm/operator path in tests/e2e/lib.sh) so the initial load finishes quickly.
+    # The env var goes on the Central CR's customize.envVars, which the operator propagates to the
+    # scanner-v4-matcher deployment.
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        set_custom_env "$roxie_config" "central" \
+            "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "$SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"
+    fi
+    # Make the scanner-v4-matcher report NotReady until its vulnerability store has finished
+    # loading, so the roxie deploy (--central-wait) blocks until scanning actually works before the
+    # tests run. The allowlist above bounds the load time. The helm/operator path does this
+    # whenever SCANNER_V4_VULN_READINESS is set (true by default via export_test_environment); the
+    # roxie compat layer does not translate it, so without this the matcher is Ready immediately,
+    # the deploy returns, and scanning tests run against a still-initializing matcher.
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        set_custom_env "$roxie_config" "central" "SCANNER_V4_MATCHER_READINESS" "vulnerability"
+        # Under the ci resource profile the matcher gets a single CPU, so loading the (allowlisted)
+        # vulnerability bundles is slow. Give the roxie deploy enough time to wait for it, matching
+        # the helm path's 1h scanner-v4 vuln-readiness wait; the default 40m is too short.
+        export ROXIE_CENTRAL_WAIT="${ROXIE_CENTRAL_WAIT:-70m}"
+        export ROXIE_SECURED_CLUSTER_WAIT="${ROXIE_SECURED_CLUSTER_WAIT:-70m}"
+    fi
+
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
