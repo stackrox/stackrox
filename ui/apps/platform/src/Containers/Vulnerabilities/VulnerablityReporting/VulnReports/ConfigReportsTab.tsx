@@ -43,11 +43,13 @@ import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverConten
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { deleteReportConfiguration, reportDownloadURL } from 'services/ReportsService';
-import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
+import type {
+    ImageVulnerabilityReportConfiguration,
+    ImageVulnerabilityReportResourceScope,
+} from 'services/ReportsService.types';
 
 import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportsModal from '../../Reports/components/DeleteReportsModal';
-import type { ImageVulnerabilityResourceScope } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
@@ -156,7 +158,7 @@ function ConfigReportsTab() {
 
     // Because callback function exists independent of conditional rendering,
     // TypeScript does not know for sure that it is has a collectionScope property.
-    function onClickCollectionLink(resourceScope: ImageVulnerabilityResourceScope) {
+    function onClickCollectionLink(resourceScope: ImageVulnerabilityReportResourceScope) {
         if ('collectionScope' in resourceScope) {
             setCollectionModalId(resourceScope.collectionScope.collectionId);
         }

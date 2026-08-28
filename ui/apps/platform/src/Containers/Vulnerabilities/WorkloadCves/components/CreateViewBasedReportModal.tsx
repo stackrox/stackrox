@@ -103,8 +103,8 @@ function CreateViewBasedReportModal({
             <Flex gap={{ default: 'gapMd' }}>
                 <FlexItem>
                     Generate a CSV report based on this view and the filters you’ve applied. Once
-                    completed, this report will be available in the view-based reports section until
-                    it is purged according to your retention settings.
+                    completed, this report will be available on the View-based jobs tab until it is
+                    purged according to your retention settings.
                 </FlexItem>
                 {message?.type === 'success' && (
                     <Alert
