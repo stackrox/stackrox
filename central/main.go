@@ -111,6 +111,8 @@ import (
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
+	lightspeedDetector "github.com/stackrox/rox/central/lightspeed/detector"
+	lightspeedService "github.com/stackrox/rox/central/lightspeed/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
@@ -415,6 +417,10 @@ func startServices() {
 	if features.BackgroundMigration.Enabled() {
 		backgroundmigrations.Singleton().Start()
 	}
+
+	if features.LightspeedRiskSummary.Enabled() {
+		lightspeedDetector.Singleton().Start()
+	}
 }
 
 func servicesToRegister() []pkgGRPC.APIService {
@@ -517,6 +523,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.OCPConsoleIntegration.Enabled() {
 		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
+	}
+
+	if features.LightspeedRiskSummary.Enabled() {
+		servicesToRegister = append(servicesToRegister, lightspeedService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

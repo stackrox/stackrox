@@ -193,6 +193,9 @@ var (
 	// VirtualMachines gates VM inventory, scanning, and VSOCK RBAC in Sensor.
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES", enabled)
 
+	// LightspeedRiskSummary enables the integration with OpenShift Lightspeed for AI-powered risk summaries.
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
+
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 

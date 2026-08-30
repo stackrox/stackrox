@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message LightspeedStatusResponse {
+  bool available = 1;
+}
+
+service LightspeedService {
+  rpc GetLightspeedStatus(Empty) returns (LightspeedStatusResponse) {
+    option (google.api.http) = {get: "/v1/lightspeed/status"};
+  }
+}
