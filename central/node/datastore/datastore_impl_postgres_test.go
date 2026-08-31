@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -35,6 +34,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -106,6 +106,9 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 	const freshWriters = 4
 	const metaWriters = 4
 	var wg sync.WaitGroup
+	// A writer that fails leaves the intended workload incomplete, so a zero regression count would be
+	// meaningless. Track upsert failures and assert none happened.
+	var upsertFailures atomic.Int64
 
 	// Simulates the nodeindex pipeline: always a fresh, monotonically increasing ScanTime.
 	for w := range freshWriters {
@@ -114,7 +117,9 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 				fresh := node.CloneVT()
 				t := baseTime.Add(time.Duration(w*iterations+i+1) * time.Millisecond)
 				fresh.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&t)
-				_ = suite.datastore.UpsertNode(allowAllCtx, fresh)
+				if err := suite.datastore.UpsertNode(allowAllCtx, fresh); err != nil {
+					upsertFailures.Add(1)
+				}
 			}
 		})
 	}
@@ -126,7 +131,9 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 				metaOnly := node.CloneVT()
 				metaOnly.Scan = nil
 				metaOnly.Labels = map[string]string{"writer": fmt.Sprintf("%d-%d", w, i)}
-				_ = suite.datastore.UpsertNode(allowAllCtx, metaOnly)
+				if err := suite.datastore.UpsertNode(allowAllCtx, metaOnly); err != nil {
+					upsertFailures.Add(1)
+				}
 			}
 		})
 	}
@@ -162,6 +169,9 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 	close(stop)
 	pollWG.Wait()
 
+	suite.Zero(upsertFailures.Load(),
+		"every concurrent UpsertNode must succeed; a failure means the intended workload did not complete, "+
+			"which would make the regression assertion below meaningless")
 	suite.Zero(regressions.Load(),
 		"scan_time must never regress through UpsertNode, since every real caller (nodeindex and nodes "+
 			"pipelines alike) goes through the per-node-ID keyedMutex that wraps the entire read-decide-write "+
