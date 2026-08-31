@@ -36,6 +36,8 @@ var (
 	// ErrUnknownAgentError indicates a well-formed ErrorResponse whose code
 	// this client doesn't recognize (e.g. a future ErrorCode value).
 	ErrUnknownAgentError = errors.New("unrecognized agent error code")
+	// ErrMappingRequired indicates the agent has no repository-to-CPE mapping yet.
+	ErrMappingRequired = errors.New("agent has no repository-to-CPE mapping yet")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -154,6 +156,8 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrRequestTooLarge, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_BUSY:
 		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED:
+		return fmt.Errorf("%w: %s", ErrMappingRequired, e.GetMessage())
 	default:
 		return fmt.Errorf("%w: agent error (%s): %s", ErrUnknownAgentError, e.GetCode(), e.GetMessage())
 	}

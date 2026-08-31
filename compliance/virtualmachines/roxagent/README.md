@@ -8,10 +8,10 @@ The sources live under `compliance/` because the agent reuses the Scanner V4 nod
 
 ## What it does
 
-1. Fetches the repository-to-CPE mapping file (required before the first scan).
-2. Scans the VM for installed packages and caches the index report with a content-hash token.
-3. Listens on a VSOCK port with mandatory mTLS.
-4. On each Sensor connection, handles a framed `VMServiceRequest` / `VMServiceResponse` (for example `get_report`).
+1. Listens on a VSOCK port with mandatory mTLS. Startup does not wait for a mapping or a first scan.
+2. Obtains a repository-to-CPE mapping (Sensor push over VSOCK by default, or a download URL). Until one is ready, GetReport returns `MAPPING_REQUIRED` and no scan runs.
+3. Scans the VM for installed packages and caches the index report with a content-hash token.
+4. On each Sensor connection, handles a framed `VMServiceRequest` / `VMServiceResponse` (for example `get_report` and `sync_repo_cpe_mapping`).
 5. Periodically rescans and atomically swaps the cached report.
 
 ## Usage
@@ -29,19 +29,20 @@ sudo ./roxagent serve --port 818 --host-path / --rescan-interval 4h
 |------|---------|-------|
 | `--port` | `818` | VSOCK listen port |
 | `--host-path` | `/` | Root filesystem path for package indexing |
-| `--repo-cpe-url` | Red Hat security data URL | Repository-to-CPE mapping download URL |
+| `--repo-cpe-url` | empty (Sensor-managed) | Mapping download URL. Empty means Sensor pushes the mapping over VSOCK. |
+| `--repo-cpe-bundled-path` | empty | Optional seed mapping file for Sensor-managed agents. Ignored when `--repo-cpe-url` is set. |
 | `--rescan-interval` | `4h` | Must be between `5m` and `168h` (7d) |
 | `--ca-fetch-timeout` | `10s` | Timeout for one KubeVirt CA fetch over VSOCK |
 | `--conn-deadline` | `30s` | Max time for one connection's TLS handshake plus request/response (`5s`-`5m`) |
 
 ## How it works
 
-1. **Mapping file:** On startup the agent downloads the repository-to-CPE mapping into a local cache and blocks until that succeeds. Every scan reads from that file. If a later refresh fails, the agent keeps the last good cache and continues scanning.
+1. **Mapping file:** Every scan reads a local cache file kept fresh by a mapping provider. With `--repo-cpe-url` empty (the default), Sensor pushes the mapping over VSOCK via `sync_repo_cpe_mapping`. `--repo-cpe-bundled-path` is an optional seed for that Sensor-managed path when there is no cache yet. With a URL set, the agent downloads in the background and never accepts a Sensor push or a bundled seed: a URL that never succeeds stays not-ready rather than looking configured. A failed later URL refresh keeps the last-good cache from a previous successful fetch of that URL.
 
-   The default `--repo-cpe-url` is `https://security.access.redhat.com/data/metrics/repository-to-cpe.json`, so the VM needs outbound HTTPS to that host (or a proxy that can reach it). On isolated networks, host a copy of `repository-to-cpe.json` somewhere the VM can reach and point `--repo-cpe-url` at that URL.
-2. **Initial scan:** Indexes `--host-path`, stores the report and discovered VM facts in an in-memory cache, then starts the VSOCK server and the rescan loop.
-3. **Serving reports:** Sensor connects and the agent serves the cached report. If Sensor already has the current content-hash token, the agent omits the payload. Sensor can still force a full report by sending an empty token (first request, NACK retry, or the 4h refresh).
-4. **Rescan:** On `--rescan-interval`, re-indexes the rpm/dnf database and swaps the cache. The token stays the same when the report and facts are unchanged.
+   A URL-backed agent needs outbound HTTPS to that host (or a proxy). Isolated networks either rely on Sensor (optionally with a bundled seed), or host a copy of `repository-to-cpe.json` the VM can reach and pass `--repo-cpe-url`.
+2. **Listen first:** VSOCK comes up immediately. The first scan runs when a mapping is ready (cached from a previous run, a bundled seed, a successful URL fetch, or a Sensor push), not at process start.
+3. **Serving reports:** Sensor connects and the agent serves the cached report. If Sensor already has the current content-hash token, the agent omits the payload. Sensor can still force a full report by sending an empty token (first request, NACK retry, or the 4h refresh). With no mapping yet, the response is `MAPPING_REQUIRED`.
+4. **Rescan:** On `--rescan-interval`, or sooner when the mapping changes, re-indexes the rpm/dnf database and swaps the cache. The token stays the same when the report and facts are unchanged.
 
 ### TLS (mandatory)
 
