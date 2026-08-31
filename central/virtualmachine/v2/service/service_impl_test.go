@@ -25,28 +25,28 @@ import (
 )
 
 type testCVEForVM struct {
-	cve            string
-	maxSeverity    int32
-	isFixable      bool
-	maxCVSS        float32
-	maxNVDCVSS     float32
+	cve             string
+	maxSeverity     int32
+	isFixable       bool
+	maxCVSS         float32
+	maxNVDCVSS      float32
 	epssProbability float32
-	componentCount int
-	publishDate    *time.Time
-	advisoryName   string
-	advisoryLink   string
+	componentCount  int
+	publishDate     *time.Time
+	advisoryName    string
+	advisoryLink    string
 }
 
-func (t *testCVEForVM) GetCVE() string                  { return t.cve }
-func (t *testCVEForVM) GetMaxSeverity() int32            { return t.maxSeverity }
-func (t *testCVEForVM) GetIsFixable() bool               { return t.isFixable }
-func (t *testCVEForVM) GetMaxCVSS() float32              { return t.maxCVSS }
-func (t *testCVEForVM) GetMaxNVDCVSS() float32           { return t.maxNVDCVSS }
-func (t *testCVEForVM) GetEPSSProbability() float32      { return t.epssProbability }
-func (t *testCVEForVM) GetAffectedComponentCount() int   { return t.componentCount }
-func (t *testCVEForVM) GetPublishDate() *time.Time       { return t.publishDate }
-func (t *testCVEForVM) GetAdvisoryName() string          { return t.advisoryName }
-func (t *testCVEForVM) GetAdvisoryLink() string          { return t.advisoryLink }
+func (t *testCVEForVM) GetCVE() string                 { return t.cve }
+func (t *testCVEForVM) GetMaxSeverity() int32          { return t.maxSeverity }
+func (t *testCVEForVM) GetIsFixable() bool             { return t.isFixable }
+func (t *testCVEForVM) GetMaxCVSS() float32            { return t.maxCVSS }
+func (t *testCVEForVM) GetMaxNVDCVSS() float32         { return t.maxNVDCVSS }
+func (t *testCVEForVM) GetEPSSProbability() float32    { return t.epssProbability }
+func (t *testCVEForVM) GetAffectedComponentCount() int { return t.componentCount }
+func (t *testCVEForVM) GetPublishDate() *time.Time     { return t.publishDate }
+func (t *testCVEForVM) GetAdvisoryName() string        { return t.advisoryName }
+func (t *testCVEForVM) GetAdvisoryLink() string        { return t.advisoryLink }
 
 func TestAuthz(t *testing.T) {
 	testutils.AssertAuthzWorks(t, &serviceImpl{})

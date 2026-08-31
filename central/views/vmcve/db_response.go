@@ -139,15 +139,15 @@ type cveForVMResponse struct {
 	AdvisoryURL            string     `db:"advisory_link"`
 }
 
-func (r *cveForVMResponse) GetCVE() string                  { return r.CVE }
-func (r *cveForVMResponse) GetMaxSeverity() int32            { return r.MaxSeverity }
-func (r *cveForVMResponse) GetIsFixable() bool               { return r.FixableCount > 0 }
-func (r *cveForVMResponse) GetMaxCVSS() float32              { return r.MaxCVSS }
-func (r *cveForVMResponse) GetMaxNVDCVSS() float32           { return r.MaxNVDCVSS }
-func (r *cveForVMResponse) GetAffectedComponentCount() int   { return r.AffectedComponentCount }
-func (r *cveForVMResponse) GetPublishDate() *time.Time       { return r.Published }
-func (r *cveForVMResponse) GetAdvisoryName() string          { return r.Advisory }
-func (r *cveForVMResponse) GetAdvisoryLink() string          { return r.AdvisoryURL }
+func (r *cveForVMResponse) GetCVE() string                 { return r.CVE }
+func (r *cveForVMResponse) GetMaxSeverity() int32          { return r.MaxSeverity }
+func (r *cveForVMResponse) GetIsFixable() bool             { return r.FixableCount > 0 }
+func (r *cveForVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
+func (r *cveForVMResponse) GetMaxNVDCVSS() float32         { return r.MaxNVDCVSS }
+func (r *cveForVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
+func (r *cveForVMResponse) GetPublishDate() *time.Time     { return r.Published }
+func (r *cveForVMResponse) GetAdvisoryName() string        { return r.Advisory }
+func (r *cveForVMResponse) GetAdvisoryLink() string        { return r.AdvisoryURL }
 func (r *cveForVMResponse) GetEPSSProbability() float32 {
 	if r.EPSSProbabilityMax == nil {
 		return 0
