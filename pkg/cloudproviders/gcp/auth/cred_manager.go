@@ -6,8 +6,8 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-// Instead of importing the full SDK to setup auth scopes,
-// we copied the GCP scope strings. Prior code (full SDK pulled into the binary):
+// Instead of importing the full SDK to setup auth scopes, we copied the GCP scope strings.
+// Prior code (full SDK pulled into the binary):
 //     artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
 //     securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
 //     storagev1 "google.golang.org/api/storage/v1"
