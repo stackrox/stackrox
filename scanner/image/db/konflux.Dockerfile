@@ -39,7 +39,7 @@ RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     dnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa \
         # Not needed by postgres, carry unfixable CVEs
-        'libcurl*' 'vim*' \
+        'libcurl*' 'vim*' 'rsync*' \
         # Flagged by "Curl in Image" and "Red Hat Package Manager in Image" default policies
         'curl*' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
