@@ -62,12 +62,12 @@ export type SelectExclusiveDoubleSearchFilterAttribute = {
 } & BaseSearchFilterAttribute;
 
 export type SelectExclusiveDoubleSearchFilterInputProps = {
-    category2: string;
+    category2: SearchFieldLabel;
     options: NonEmptyArray<SelectExclusiveDoubleSearchFilterOption>;
 };
 
 export type SelectExclusiveDoubleSearchFilterOption = {
-    category: string;
+    category: SearchFieldLabel;
 } & SelectSearchFilterOption;
 
 export type CompoundSearchFilterAttribute =
