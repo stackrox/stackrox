@@ -166,6 +166,40 @@ func TestStore_ApplyHeritageDataOnce_Concurrent(t *testing.T) {
 	assert.True(t, store.heritageApplied.IsDone())
 }
 
+// TestStore_ApplyHeritage_ConcurrentWithApply is a regression test for a data race between the
+// heritage apply and a concurrent Apply() call on the same EntityData. onDeploymentCreateOrUpdate
+// stores the deployment's EntityData via RememberCurrentSensorMetadata and then passes that same
+// object to Apply(); with the PubSub concurrent lane these run on separate goroutines. Serializing
+// the heritage apply is not enough: it must not mutate the shared object in place while Apply reads
+// it. Run with -race.
+func TestStore_ApplyHeritage_ConcurrentWithApply(t *testing.T) {
+	mockHM := &mockHeritageManager{
+		data: []*heritage.SensorMetadata{
+			{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
+		},
+		isEnabled: true,
+	}
+	store := NewStore(0, mockHM, false)
+
+	// The same object is remembered as current sensor metadata and passed to Apply below.
+	shared := createSensorEntityData("current123", "10.2.2.2")
+	shared.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 8443, net.TCP), EndpointTargetInfo{ContainerPort: 8443})
+	shared.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 9090, net.TCP), EndpointTargetInfo{ContainerPort: 9090})
+	store.RememberCurrentSensorMetadata("sensor-deploy-1", shared)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		store.ApplyDataFromHeritageOnce()
+	}()
+	go func() {
+		defer wg.Done()
+		store.Apply(map[string]*EntityData{"sensor-deploy-1": shared}, false)
+	}()
+	wg.Wait()
+}
+
 func TestApplyPastToEntityData(t *testing.T) {
 	tests := map[string]struct {
 		currentData    *EntityData
