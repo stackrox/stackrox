@@ -322,7 +322,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		// scan execution). This covers the case where a scan was triggered but
 		// results never arrived (sensor disconnect, watcher timeout in a
 		// previous cycle) and no watcher is currently running.
-		staleClusters := helpers.DetectStaleClusters(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.checkResultDataStore)
+		staleClusters := helpers.DetectStaleClusters(snapshot.GetReportData(), failedClusters)
 		for id, fc := range staleClusters {
 			failedClusters[id] = fc
 		}

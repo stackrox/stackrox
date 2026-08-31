@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	checkResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
@@ -242,8 +241,8 @@ func TestGetClusterData(t *testing.T) {
 func TestDetectStaleClusters(t *testing.T) {
 	now := time.Now()
 	lastExec := timestamppb.New(now)
-	oldResult := timestamppb.New(now.Add(-1 * time.Hour))
-	freshResult := timestamppb.New(now.Add(1 * time.Minute))
+	older := timestamppb.New(now.Add(-1 * time.Hour))
+	newer := timestamppb.New(now.Add(1 * time.Minute))
 
 	scanConfigID := "scan-config-1"
 	baseReportData := func(clusters ...*storage.ComplianceOperatorReportData_ClusterStatus) *storage.ComplianceOperatorReportData {
@@ -255,94 +254,73 @@ func TestDetectStaleClusters(t *testing.T) {
 			LastExecutedTime: lastExec,
 		}
 	}
-	cluster := func(id, name string) *storage.ComplianceOperatorReportData_ClusterStatus {
-		return &storage.ComplianceOperatorReportData_ClusterStatus{
+	// cluster builds a ClusterStatus whose suite last-transition time is set to
+	// transition (nil means the suite never transitioned).
+	cluster := func(id, name string, transition *timestamppb.Timestamp) *storage.ComplianceOperatorReportData_ClusterStatus {
+		cs := &storage.ComplianceOperatorReportData_ClusterStatus{
 			ClusterId:   id,
 			ClusterName: name,
 		}
+		if transition != nil {
+			cs.SuiteStatus = &storage.ComplianceOperatorReportData_SuiteStatus{
+				LastTransitionTime: transition,
+			}
+		}
+		return cs
 	}
 
 	cases := map[string]struct {
 		reportData             *storage.ComplianceOperatorReportData
 		existingFailed         map[string]*report.FailedCluster
-		mockResults            map[string][]*storage.ComplianceOperatorCheckResultV2 // clusterID -> results
-		mockErrors             map[string]error
 		expectedStaleClusters  int
 		expectedStaleClusterID string
 	}{
 		"nil lastExecutedTime returns nil": {
 			reportData: &storage.ComplianceOperatorReportData{
 				ScanConfiguration: &storage.ComplianceOperatorScanConfigurationV2{Id: scanConfigID},
-				ClusterStatus:     []*storage.ComplianceOperatorReportData_ClusterStatus{cluster("c1", "cluster-1")},
+				ClusterStatus:     []*storage.ComplianceOperatorReportData_ClusterStatus{cluster("c1", "cluster-1", older)},
 			},
 			expectedStaleClusters: 0,
 		},
-		"fresh results not marked stale": {
-			reportData:  baseReportData(cluster("c1", "cluster-1")),
-			mockResults: map[string][]*storage.ComplianceOperatorCheckResultV2{"c1": {{LastStartedTime: freshResult}}},
+		"cluster that completed latest execution not stale": {
+			reportData:            baseReportData(cluster("c1", "cluster-1", lastExec)),
 			expectedStaleClusters: 0,
 		},
-		"old results marked stale": {
-			reportData:             baseReportData(cluster("c1", "cluster-1")),
-			mockResults:            map[string][]*storage.ComplianceOperatorCheckResultV2{"c1": {{LastStartedTime: oldResult}}},
+		"cluster newer than lastExecutedTime not stale": {
+			reportData:            baseReportData(cluster("c1", "cluster-1", newer)),
+			expectedStaleClusters: 0,
+		},
+		"cluster older than lastExecutedTime marked stale": {
+			reportData:             baseReportData(cluster("c1", "cluster-1", older)),
 			expectedStaleClusters:  1,
 			expectedStaleClusterID: "c1",
 		},
-		"no results marked stale": {
-			reportData:             baseReportData(cluster("c1", "cluster-1")),
-			mockResults:            map[string][]*storage.ComplianceOperatorCheckResultV2{"c1": {}},
+		"cluster with no suite transition time marked stale": {
+			reportData:             baseReportData(cluster("c1", "cluster-1", nil)),
 			expectedStaleClusters:  1,
 			expectedStaleClusterID: "c1",
 		},
 		"already failed cluster skipped": {
-			reportData: baseReportData(cluster("c1", "cluster-1")),
+			reportData: baseReportData(cluster("c1", "cluster-1", older)),
 			existingFailed: map[string]*report.FailedCluster{
 				"c1": {ClusterId: "c1", Reasons: []string{"previous failure"}},
 			},
 			expectedStaleClusters: 0,
 		},
 		"mixed fresh and stale clusters": {
-			reportData: baseReportData(cluster("c1", "cluster-1"), cluster("c2", "cluster-2")),
-			mockResults: map[string][]*storage.ComplianceOperatorCheckResultV2{
-				"c1": {{LastStartedTime: freshResult}},
-				"c2": {{LastStartedTime: oldResult}},
-			},
+			reportData:             baseReportData(cluster("c1", "cluster-1", lastExec), cluster("c2", "cluster-2", older)),
 			expectedStaleClusters:  1,
 			expectedStaleClusterID: "c2",
-		},
-		"query error treated as no results": {
-			reportData:             baseReportData(cluster("c1", "cluster-1")),
-			mockErrors:             map[string]error{"c1": errors.New("db error")},
-			expectedStaleClusters:  1,
-			expectedStaleClusterID: "c1",
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			checkStore := checkResultDS.NewMockDataStore(ctrl)
-
 			if tc.existingFailed == nil {
 				tc.existingFailed = make(map[string]*report.FailedCluster)
 			}
 
-			// Set up mock expectations for each cluster not already failed.
-			for _, cs := range tc.reportData.GetClusterStatus() {
-				if _, failed := tc.existingFailed[cs.GetClusterId()]; failed {
-					continue
-				}
-				if tc.reportData.GetLastExecutedTime() == nil {
-					continue
-				}
-				results := tc.mockResults[cs.GetClusterId()]
-				err := tc.mockErrors[cs.GetClusterId()]
-				checkStore.EXPECT().
-					SearchComplianceCheckResults(gomock.Any(), gomock.Any()).
-					Return(results, err)
-			}
-
-			result := DetectStaleClusters(context.Background(), tc.reportData, tc.existingFailed, checkStore)
+			result := DetectStaleClusters(tc.reportData, tc.existingFailed)
 
 			if tc.expectedStaleClusters == 0 {
 				assert.Len(t, result, 0)

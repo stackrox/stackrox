@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	checkResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // GetFailedClusters returns the failed clusters metadata associated with a ScanConfiguration
@@ -86,16 +84,20 @@ func populateScanNames(ctx context.Context, data *report.ClusterData, reportData
 
 var log = logging.LoggerForModule()
 
-// DetectStaleClusters identifies clusters whose check results are older than
-// the scan configuration's last execution time. This happens when a scan was
-// triggered but results never arrived (e.g. sensor disconnect, watcher timeout).
-// Without this check, the on-demand report path silently serves stale data from
-// a previous scan cycle.
+// DetectStaleClusters identifies clusters that did not complete the scan
+// configuration's latest execution: their suite's last transition time is older
+// than the configuration's overall last execution time. This happens when a
+// scan was triggered but a cluster never produced fresh results (e.g. sensor
+// disconnect, watcher timeout in a previous cycle). Without this check, the
+// on-demand report path silently serves stale data from a previous scan cycle,
+// unlike the scheduled path which flags such clusters via the ScanConfigWatcher.
+//
+// The comparison is like-with-like: both the per-cluster suite time and the
+// config's LastExecutedTime are suite transition timestamps, so a cluster that
+// participated in the latest run compares equal (or newer) and is not flagged.
 func DetectStaleClusters(
-	ctx context.Context,
 	reportData *storage.ComplianceOperatorReportData,
 	existingFailedClusters map[string]*report.FailedCluster,
-	checkResultStore checkResultDS.DataStore,
 ) map[string]*report.FailedCluster {
 	lastExec := reportData.GetLastExecutedTime()
 	if lastExec == nil {
@@ -104,64 +106,35 @@ func DetectStaleClusters(
 	}
 
 	staleClusters := make(map[string]*report.FailedCluster)
-	scanConfigID := reportData.GetScanConfiguration().GetId()
-
 	for _, cluster := range reportData.GetClusterStatus() {
 		clusterID := cluster.GetClusterId()
 		if _, alreadyFailed := existingFailedClusters[clusterID]; alreadyFailed {
 			continue
 		}
 
-		latestResultTime := getLatestCheckResultTime(ctx, scanConfigID, clusterID, checkResultStore)
-		if latestResultTime == nil || protocompat.CompareTimestamps(latestResultTime, lastExec) < 0 {
-			var assessmentStr string
-			if latestResultTime == nil {
-				assessmentStr = "none"
-			} else {
-				assessmentStr = latestResultTime.AsTime().UTC().Format(time.RFC1123)
-			}
-			reason := fmt.Sprintf(report.SCAN_RESULTS_STALE_FMT,
-				assessmentStr,
-				lastExec.AsTime().UTC().Format(time.RFC1123),
-			)
-			log.Warnf("Cluster %s (%s) has stale scan results: %s",
-				clusterID, cluster.GetClusterName(), reason)
-			staleClusters[clusterID] = &report.FailedCluster{
-				ClusterId:   clusterID,
-				ClusterName: cluster.GetClusterName(),
-				Reasons:     []string{reason},
-			}
+		clusterTime := cluster.GetSuiteStatus().GetLastTransitionTime()
+		if clusterTime != nil && protocompat.CompareTimestamps(clusterTime, lastExec) >= 0 {
+			// Cluster completed the latest execution; not stale.
+			continue
+		}
+
+		assessmentStr := "none"
+		if clusterTime != nil {
+			assessmentStr = clusterTime.AsTime().UTC().Format(time.RFC1123)
+		}
+		reason := fmt.Sprintf(report.SCAN_RESULTS_STALE_FMT,
+			assessmentStr,
+			lastExec.AsTime().UTC().Format(time.RFC1123),
+		)
+		log.Warnf("Cluster %s (%s) has stale scan results: %s",
+			clusterID, cluster.GetClusterName(), reason)
+		staleClusters[clusterID] = &report.FailedCluster{
+			ClusterId:   clusterID,
+			ClusterName: cluster.GetClusterName(),
+			Reasons:     []string{reason},
 		}
 	}
 	return staleClusters
-}
-
-// getLatestCheckResultTime returns the most recent LastStartedTime among
-// check results for the given scan config and cluster, or nil if none exist.
-func getLatestCheckResultTime(
-	ctx context.Context,
-	scanConfigID, clusterID string,
-	checkResultStore checkResultDS.DataStore,
-) *timestamppb.Timestamp {
-	// Query one result sorted by LastStartedTime DESC.
-	q := search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
-		AddExactMatches(search.ClusterID, clusterID).
-		WithPagination(
-			search.NewPagination().
-				Limit(1).
-				AddSortOption(search.NewSortOption(search.ComplianceOperatorCheckLastStartedTime).Reversed(true)),
-		).
-		ProtoQuery()
-	results, err := checkResultStore.SearchComplianceCheckResults(ctx, q)
-	if err != nil {
-		log.Warnf("Failed to query check results for cluster %s: %v", clusterID, err)
-		return nil
-	}
-	if len(results) == 0 {
-		return nil
-	}
-	return results[0].GetLastStartedTime()
 }
 
 func populateFailedScans(ctx context.Context, failedScanNames []string, snapshotScans []*storage.ComplianceOperatorReportSnapshotV2_Scan, scanStore scanDS.DataStore) ([]*storage.ComplianceOperatorScanV2, error) {
