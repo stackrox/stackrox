@@ -48,7 +48,7 @@ function AffectedComponentsTable({ virtualMachineId, cveId }: AffectedComponents
                     title: 'There was an error loading affected components',
                 }}
                 emptyProps={{
-                    message: 'There are no affected components for this virtual machine',
+                    message: 'There are no affected components',
                 }}
                 renderer={({ data }) => (
                     <Tbody>
