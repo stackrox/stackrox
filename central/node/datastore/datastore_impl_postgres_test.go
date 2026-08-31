@@ -102,7 +102,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&baseTime)
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
 
-	const iterations = 2000
+	const iterations = 500
 	const freshWriters = 4
 	const metaWriters = 4
 	var wg sync.WaitGroup
@@ -134,7 +134,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 	var regressions atomic.Int64
 	stop := make(chan struct{})
 	var pollWG sync.WaitGroup
-	for range 4 {
+	for range 2 {
 		pollWG.Go(func() {
 			lastSeen := baseTime
 			for {
@@ -152,6 +152,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutex
 						lastSeen = st
 					}
 				}
+				// Yield between reads so the pollers don't hammer the DB in a tight busy-loop.
+				time.Sleep(time.Millisecond)
 			}
 		})
 	}

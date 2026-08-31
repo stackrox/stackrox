@@ -117,12 +117,15 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 		return nil
 	}
 
-	if errorList.Empty() && len(skippedScannerTypes) == len(scanners) {
-		// Every registered scanner was skipped as inapplicable to this payload (e.g. only a Clairify/v2
-		// integration is registered but this call carries an IndexReport, which only ScannerV4 consumes).
-		// This is NOT surfaced as an error (matching prior behavior: ToError() returns nil below), so node.Scan
-		// is left completely untouched by this call - the caller will upsert whatever scan the node already
-		// had. That upsert looks identical to a successful no-op scan refresh in logs/metrics downstream.
+	// Only warn for the v4/nodeindex path (indexReport != nil). A v4-only Central that still receives
+	// legacy v2 NodeInventory reports would otherwise log this on every such report, indefinitely - benign
+	// noise, since v2-on-a-v4-only-Central is an expected transitional state, not the bug we're hunting.
+	// When an IndexReport arrives and every registered scanner was still skipped, ScannerV4 is not
+	// registered and the node scan silently never refreshes - exactly the condition worth surfacing.
+	if indexReport != nil && errorList.Empty() && len(skippedScannerTypes) == len(scanners) {
+		// node.Scan is left completely untouched by this call (this is NOT surfaced as an error - ToError()
+		// returns nil below), so the caller will upsert whatever scan the node already had. That upsert looks
+		// identical to a successful no-op scan refresh in logs/metrics downstream.
 		log.Warnf("No applicable node scanner ran for node %s:%s (inventory=%t, indexReport=%t); registered "+
 			"scanner types were all skipped as inapplicable: %v. The node's existing scan, if any, was not "+
 			"refreshed by this call.",
