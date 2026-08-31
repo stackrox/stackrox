@@ -618,11 +618,9 @@ func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
 }
 
 // IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+// The legacy scanner is now permanently disabled
 func (s *ScannerComponentSpec) IsEnabled() bool {
-	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
-	}
-	return *s.ScannerComponent == ScannerComponentEnabled
+	return false
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
@@ -794,8 +792,9 @@ var (
 )
 
 // IsScannerEnabled returns true if scanner is enabled.
+// The legacy scanner is now always permanently disabled
 func (c *Central) IsScannerEnabled() bool {
-	return c.Spec.Scanner.IsEnabled()
+	return false
 }
 
 // IsScannerV4Enabled returns true if Scanner V4 is enabled.

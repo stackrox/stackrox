@@ -427,10 +427,9 @@ const (
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	// The default is: AutoSense.
+	// The Legacy Scanner has been disabled. Use the Scanner V4 component instead.
+	// These settings have been kept to prevent breakage but will no longer result in anything changing
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 
