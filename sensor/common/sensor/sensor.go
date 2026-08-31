@@ -94,9 +94,10 @@ type Sensor struct {
 
 	clusterID clusterIDPeekSetter
 
-	// scannerDefsHandler is kept regardless of whether the HTTP route is
-	// registered, so VM-only clusters can inject it into vmscraper.
+	// scannerDefsHandler is the HTTP proxy for scanner definitions.
+	// repo2CPE is the background mapping cache used by VM scanning.
 	scannerDefsHandler *scannerdefinitions.Handler
+	repo2CPE           *scannerdefinitions.Repo2CPE
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -243,12 +244,15 @@ func (s *Sensor) Start() {
 	// scanning is enabled: all three need access to the repo-to-CPE mapping file hosted by
 	// central, whether through the HTTP route below or, for VM scanning, via FetchRepo2CPE.
 	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() || features.VirtualMachines.Enabled() {
-		handler, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
+		handler, repo2cpe, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definitions handler"))
 		} else {
 			s.scannerDefsHandler = handler
+			s.repo2CPE = repo2cpe
 			s.AddNotifiable(handler)
+			s.AddNotifiable(repo2cpe)
+			s.components = append(s.components, repo2cpe)
 
 			// The HTTP route itself is only needed by Scanner/Collector/node-index callers.
 			if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
