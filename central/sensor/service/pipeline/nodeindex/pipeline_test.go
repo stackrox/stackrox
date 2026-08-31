@@ -2,6 +2,7 @@ package nodeindex
 
 import (
 	"testing"
+	"time"
 
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -12,12 +13,90 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
+
+const scanMismatchWarnSnippet = "does not match the freshly processed scan_time"
+
+func swapObservedLogger(t *testing.T) *observer.ObservedLogs {
+	core, logs := observer.New(zap.WarnLevel)
+	orig := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = orig })
+	return logs
+}
+
+// TestPipelineWarnsWhenPersistedScanTimeRegresses validates the ROX-36432 accept/post-upsert diagnostic:
+// after the upsert, the pipeline compares the scan_time it processed against what the store actually kept
+// (the store rewrites node.Scan in place when it rejects a scan as not-newer) and warns on a mismatch.
+func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	processed := time.Now()
+	stored := processed.Add(-time.Hour) // what the store keeps after rejecting the fresh scan
+
+	cases := map[string]struct {
+		persistedScanTime time.Time
+		expectWarning     bool
+	}{
+		"warns when the store rejected the fresh scan": {persistedScanTime: stored, expectWarning: true},
+		"silent when the fresh scan was accepted":      {persistedScanTime: processed, expectWarning: false},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			logs := swapObservedLogger(t)
+			node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
+
+			ctrl := gomock.NewController(t)
+			nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+			riskManager := riskManagerMocks.NewMockManager(ctrl)
+			enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+			gomock.InOrder(
+				nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(node, true, nil),
+				// Enrichment stamps a fresh scan_time, as the real enricher does with TimestampNow().
+				enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).
+					DoAndReturn(func(n *storage.Node, _ *storage.NodeInventory, _ *v4.IndexReport) error {
+						n.Scan = &storage.NodeScan{ScanTime: protocompat.ConvertTimeToTimestampOrNil(&processed)}
+						return nil
+					}),
+				// Upsert rewrites node.Scan in place to whatever was persisted (mimics isUpdated()).
+				riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).
+					DoAndReturn(func(n *storage.Node) error {
+						n.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&tc.persistedScanTime)
+						return nil
+					}),
+			)
+
+			p := &pipelineImpl{
+				nodeDatastore: nodeDatastore,
+				riskManager:   riskManager,
+				enricher:      enricher,
+			}
+
+			err := p.Run(t.Context(), node.GetClusterId(), createMsg(mockIndexReport), nil)
+			require.NoError(t, err)
+
+			got := logs.FilterMessageSnippet(scanMismatchWarnSnippet).All()
+			if tc.expectWarning {
+				assert.Len(t, got, 1)
+			} else {
+				assert.Empty(t, got)
+			}
+		})
+	}
+}
 
 func TestPipelineWithEmptyIndex(t *testing.T) {
 	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
