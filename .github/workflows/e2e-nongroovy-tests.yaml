@@ -11,6 +11,15 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+      ci-job-name:
+        description: "Unique job name, e.g. gke-nongroovy-e2e-tests-konflux. Used for test identification and artifact naming. Propagated as CI_JOB_NAME."
+        type: string
+        required: false
+        default: "gke-nongroovy-e2e-tests"
+      extra-env-vars:
+        description: "Additional environment variables as multi-line KEY=VALUE pairs (e.g., USE_ROXIE_DEPLOY=true)"
+        type: string
+        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -34,7 +43,7 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      CI_JOB_NAME: gke-nongroovy-e2e-tests
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
@@ -60,6 +69,17 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set additional env vars
+      if: inputs.extra-env-vars != ''
+      env:
+        EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+      run: |
+        while IFS= read -r line; do
+          if [[ -n "$line" ]]; then
+            echo "$line" >> "$GITHUB_ENV"
+          fi
+        done <<< "$EXTRA_ENV_VARS"
 
     - name: Docker login to Quay.io
       env:

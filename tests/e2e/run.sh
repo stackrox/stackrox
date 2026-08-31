@@ -15,6 +15,8 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/e2e/lib-compat.sh
+source "$ROOT/tests/e2e/lib-compat.sh"
 # shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
 source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
@@ -39,11 +41,29 @@ test_e2e() {
     "$ROOT/tests/complianceoperator/create.sh"
     kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
 
-    image_prefetcher_prebuilt_await
+    # Deployment strategy: roxie vs helm
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
+    if [[ "$use_roxie_deploy" == "true" ]]; then
+        info "Using roxie-based deployment for nongroovy e2e tests"
 
-    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
-    deploy_optional_e2e_components
-    deploy_stackrox
+        # Create roxie config
+        local config_file; config_file="$(mktemp)"
+
+        # Set Konflux images flag if needed
+        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]] || pr_has_label test-konflux-images; then
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        fi
+
+        deploy_stackrox_with_roxie_compat "$config_file"
+    else
+        info "Using helm-based deployment for nongroovy e2e tests"
+
+        image_prefetcher_prebuilt_await
+
+        # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
+        deploy_optional_e2e_components
+        deploy_stackrox
+    fi
 
     # Background streamers are not explicitly stopped. They die when the CI
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
