@@ -4,6 +4,7 @@ import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/v
 
 export const listVirtualMachinesAlias = 'listVirtualMachines';
 export const getVirtualMachineAlias = 'getVirtualMachine';
+export const getVirtualMachineCveComponentsAlias = 'getVirtualMachineCveComponents';
 export const listVirtualMachineCvesAlias = 'listVirtualMachineCves';
 export const listVirtualMachineComponentsAlias = 'listVirtualMachineComponents';
 
@@ -33,6 +34,13 @@ export const routeMatcherMapForVirtualMachineComponents = {
     [listVirtualMachineComponentsAlias]: {
         method: 'GET',
         url: '/v2/virtualmachines/*/components?*',
+    },
+};
+
+export const routeMatcherMapForVirtualMachineCveComponents = {
+    [getVirtualMachineCveComponentsAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/cves/*/components',
     },
 };
 

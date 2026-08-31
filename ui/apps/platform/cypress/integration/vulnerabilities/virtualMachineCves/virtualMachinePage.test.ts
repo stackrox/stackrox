@@ -5,9 +5,11 @@ import { assertCannotFindThePage } from '../../../helpers/visit';
 
 import {
     getVirtualMachineAlias,
+    getVirtualMachineCveComponentsAlias,
     listVirtualMachineComponentsAlias,
     listVirtualMachineCvesAlias,
     routeMatcherMapForVirtualMachineComponents,
+    routeMatcherMapForVirtualMachineCveComponents,
     routeMatcherMapForVirtualMachineVulnerabilities,
     visitVirtualMachinePage,
     visitVirtualMachinePageWithStaticPermissions,
@@ -17,6 +19,7 @@ const vmId = 'vm-001';
 const fixturePathGetVM = 'vulnerabilities/virtualMachineCves/getVM';
 const fixturePathListCves = 'vulnerabilities/virtualMachineCves/listVirtualMachineCves';
 const fixturePathListComponents = 'vulnerabilities/virtualMachineCves/listVirtualMachineComponents';
+const fixturePathCveComponents = 'vulnerabilities/virtualMachineCves/getVMCVEComponents';
 
 const staticResponseMapForVirtualMachineVulnerabilities = {
     [getVirtualMachineAlias]: { fixture: fixturePathGetVM },
@@ -103,11 +106,21 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
         it('should expand a row to show affected component details', () => {
             visitWithVulnFixtures();
 
+            // Components for a single CVE are fetched lazily on row expand, so stub that
+            // endpoint after the initial page load rather than in the visit route map.
+            interceptRequests(routeMatcherMapForVirtualMachineCveComponents, {
+                [getVirtualMachineCveComponentsAlias]: { fixture: fixturePathCveComponents },
+            });
+
             cy.get('tbody tr:not([class*="expandable"])').eq(0).find('td button').first().click();
+            cy.wait(`@${getVirtualMachineCveComponentsAlias}`);
 
             cy.get('tbody tr[class*="expandable"]')
                 .eq(0)
-                .should('contain.text', 'Affected component details coming soon');
+                .within(() => {
+                    cy.get('td[data-label="Component"]').contains('openssl');
+                    cy.get('td[data-label="Version"]').contains('3.0.7-20.el9');
+                });
         });
 
         it('should display an empty state when the VM has no vulnerabilities', () => {

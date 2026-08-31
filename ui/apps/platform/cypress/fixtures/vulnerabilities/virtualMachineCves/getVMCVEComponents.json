@@ -1,0 +1,14 @@
+{
+    "components": [
+        {
+            "componentName": "openssl",
+            "componentVersion": "3.0.7-20.el9",
+            "source": "OS",
+            "fixedBy": "3.0.7-21.el9",
+            "advisory": {
+                "name": "RHSA-2024:1234",
+                "link": "https://access.redhat.com/errata/RHSA-2024:1234"
+            }
+        }
+    ]
+}
