@@ -397,10 +397,19 @@ function launch_central {
       # Shorten signing key watcher poll for e2e tests (production default is 4h).
       helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
 
+      # Skip ROX_SCANNER_V4 / ROX_LEGACY_SCANNER: the chart already sets them
+      # from scanner config; customize.envVars would add a duplicate env name.
+      # See is_helm_owned_feature_flag in feature-flag-env.sh.
+      local helm_feature_flag_env=()
       if (( ${#feature_flag_env[@]} > 0 )); then
-        echo "Injecting feature flag env into Central: ${feature_flag_env[*]}"
+        while IFS= read -r _ff_assignment; do
+          helm_feature_flag_env+=("${_ff_assignment}")
+        done < <(printf '%s\n' "${feature_flag_env[@]}" | omit_helm_owned_feature_flags)
+      fi
+      if (( ${#helm_feature_flag_env[@]} > 0 )); then
+        echo "Injecting feature flag env into Central: ${helm_feature_flag_env[*]}"
         local _ff_var _ff_val
-        for _ff_assignment in "${feature_flag_env[@]}"; do
+        for _ff_assignment in "${helm_feature_flag_env[@]}"; do
           _ff_var="${_ff_assignment%%=*}"
           _ff_val="${_ff_assignment#*=}"
           helm_args+=(--set-string "customize.central.envVars.${_ff_var}=${_ff_val}")
