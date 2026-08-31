@@ -17,7 +17,7 @@ import (
 	common "github.com/stackrox/rox/central/views/common"
 	vmcve "github.com/stackrox/rox/central/views/vmcve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -350,21 +350,6 @@ func (mr *MockCveViewMockRecorder) CountComponentsPerCVE(ctx, q any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountComponentsPerCVE", reflect.TypeOf((*MockCveView)(nil).CountComponentsPerCVE), ctx, q)
 }
 
-// GetCVEsForVM mocks base method.
-func (m *MockCveView) GetCVEsForVM(ctx context.Context, q *v1.Query) ([]vmcve.CVEForVMCore, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCVEsForVM", ctx, q)
-	ret0, _ := ret[0].([]vmcve.CVEForVMCore)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCVEsForVM indicates an expected call of GetCVEsForVM.
-func (mr *MockCveViewMockRecorder) GetCVEsForVM(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForVM", reflect.TypeOf((*MockCveView)(nil).GetCVEsForVM), ctx, q)
-}
-
 // Get mocks base method.
 func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]vmcve.CveCore, error) {
 	m.ctrl.T.Helper()
@@ -408,6 +393,21 @@ func (m *MockCveView) GetCVEComponents(ctx context.Context, q *v1.Query) ([]vmcv
 func (mr *MockCveViewMockRecorder) GetCVEComponents(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEComponents", reflect.TypeOf((*MockCveView)(nil).GetCVEComponents), ctx, q)
+}
+
+// GetCVEsForVM mocks base method.
+func (m *MockCveView) GetCVEsForVM(ctx context.Context, q *v1.Query) ([]vmcve.CVEForVMCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEsForVM", ctx, q)
+	ret0, _ := ret[0].([]vmcve.CVEForVMCore)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEsForVM indicates an expected call of GetCVEsForVM.
+func (mr *MockCveViewMockRecorder) GetCVEsForVM(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForVM", reflect.TypeOf((*MockCveView)(nil).GetCVEsForVM), ctx, q)
 }
 
 // GetVMIDs mocks base method.
