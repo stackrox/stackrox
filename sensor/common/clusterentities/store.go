@@ -112,6 +112,24 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 	ed.containerIDs[containerID] = container
 }
 
+// Clone returns a deep copy of the EntityData that can be mutated independently of the original.
+func (ed *EntityData) Clone() *EntityData {
+	if ed == nil {
+		return nil
+	}
+	clone := &EntityData{
+		ips:          maps.Clone(ed.ips),
+		containerIDs: maps.Clone(ed.containerIDs),
+	}
+	if ed.endpoints != nil {
+		clone.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo, len(ed.endpoints))
+		for ep, infos := range ed.endpoints {
+			clone.endpoints[ep] = slices.Clone(infos)
+		}
+	}
+	return clone
+}
+
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
 // endpoint.
 type Store struct {
@@ -249,13 +267,20 @@ func (e *Store) applyHeritageData(dg dataGetter) bool {
 		return false
 	}
 
-	e.currentSensorLock.RLock()
-	defer e.currentSensorLock.RUnlock()
+	var deploymentID string
+	var modEntityData *EntityData
+	// Clone under the read lock and mutate the private copy. The shared currentSensorEntityData
+	// is also referenced by concurrent Apply() calls (see onDeploymentCreateOrUpdate), so mutating
+	// it in place would race with those readers.
+	concurrency.WithRLock(&e.currentSensorLock, func() {
+		deploymentID = e.currentSensorDeploymentID
+		modEntityData = e.currentSensorEntityData.Clone()
+	})
+
 	for _, entry := range past {
-		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
-		modEntityData := e.currentSensorEntityData
+		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), deploymentID)
 		if applyPastToEntityData(modEntityData, entry) {
-			e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+			e.Apply(map[string]*EntityData{deploymentID: modEntityData}, true)
 		}
 	}
 	return true
