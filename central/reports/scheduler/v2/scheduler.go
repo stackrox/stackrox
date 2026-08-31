@@ -16,6 +16,8 @@ type Scheduler interface {
 	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	// RemoveReportSchedule removes the given report configuration from scheduled execution.
 	RemoveReportSchedule(reportConfigID string)
+	// GetScheduledConfigIDs returns the IDs of all report configurations that have active schedules.
+	GetScheduledConfigIDs() []string
 
 	// CanSubmitReportRequest returns true if the given user can submit an on-demand report request for the given report configuration.
 	CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error)

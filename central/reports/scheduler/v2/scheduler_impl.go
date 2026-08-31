@@ -283,6 +283,17 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 	}
 }
 
+func (s *scheduler) GetScheduledConfigIDs() []string {
+	s.cronJobsLock.Lock()
+	defer s.cronJobsLock.Unlock()
+
+	ids := make([]string, 0, len(s.reportConfigToEntryIDs))
+	for id := range s.reportConfigToEntryIDs {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 /* Functions to add/remove report jobs from queue */
 
 // CancelReportRequest cancels a report request. If the report is waiting in queue, it is removed

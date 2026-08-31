@@ -11,13 +11,15 @@ import (
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
-const configResyncInterval = 5 * time.Minute
+var workerResyncIntervalMinutes = env.RegisterIntegerSetting("ROX_WORKER_RESYNC_INTERVAL_MINUTES", 5)
 
 var listenerCtx = sac.WithAllAccess(context.Background())
 
@@ -120,7 +122,7 @@ func (r *reportListener) handleRequestCancelled(snapshotID string) {
 }
 
 func (r *reportListener) periodicResync(ctx context.Context) {
-	ticker := time.NewTicker(configResyncInterval)
+	ticker := time.NewTicker(time.Duration(workerResyncIntervalMinutes.IntegerSetting()) * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
@@ -135,18 +137,30 @@ func (r *reportListener) periodicResync(ctx context.Context) {
 
 func (r *reportListener) resyncConfigs() {
 	query := search.NewQueryBuilder().
-		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
+		AddExactMatches(search.ReportType,
+			storage.ReportConfiguration_VULNERABILITY.String(),
+			storage.ReportConfiguration_NODE_VULNERABILITY.String(),
+		).
 		ProtoQuery()
 	configs, err := r.reportConfigStore.GetReportConfigurations(listenerCtx, query)
 	if err != nil {
 		log.Errorf("Error resyncing report configs: %v", err)
 		return
 	}
+
+	activeConfigIDs := set.NewStringSet()
 	for _, rc := range configs {
 		if rc.GetSchedule() != nil && common.HasValidResourceScope(rc.GetResourceScope()) {
+			activeConfigIDs.Add(rc.GetId())
 			if err := r.scheduler.UpsertReportSchedule(rc); err != nil {
 				log.Errorf("Error resyncing schedule for config %s: %v", rc.GetId(), err)
 			}
+		}
+	}
+
+	for _, id := range r.scheduler.GetScheduledConfigIDs() {
+		if !activeConfigIDs.Contains(id) {
+			r.scheduler.RemoveReportSchedule(id)
 		}
 	}
 }
