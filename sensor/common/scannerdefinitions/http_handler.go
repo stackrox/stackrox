@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -64,7 +65,6 @@ type repo2CPECache struct {
 	hash         string
 	etag         string
 	lastModified string
-	lastAttempt  time.Time
 	lastSuccess  time.Time
 }
 
@@ -142,10 +142,9 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// FetchRepo2CPE returns Sensor's cached repo-to-CPE mapping for in-process
-// callers such as vmscraper, starting the background refresh loop on first
-// call. ok is false only if Central has never been fetched successfully; a
-// copy served while central is unreachable is still ok, just possibly stale.
+// FetchRepo2CPE returns a copy of the cached mapping. ok is false only
+// when Central has never been fetched successfully; unreachable Central
+// still yields the last-good copy.
 func (h *Handler) FetchRepo2CPE(_ context.Context) (mapping []byte, hash string, ok bool) {
 	h.startRepo2CPERefresh()
 
@@ -156,7 +155,7 @@ func (h *Handler) FetchRepo2CPE(_ context.Context) (mapping []byte, hash string,
 		if !h.centralReachable.Load() {
 			log.Info("Serving stale repo-to-CPE mapping: central is unreachable")
 		}
-		return h.cache.mapping, h.cache.hash, true
+		return slices.Clone(h.cache.mapping), h.cache.hash, true
 	})
 }
 
@@ -197,14 +196,12 @@ func (h *Handler) attemptRepo2CPERefresh(ctx context.Context) bool {
 	req, err := h.newRepo2CPERequest(ctx, etag, lastModified)
 	if err != nil {
 		log.Warnf("Failed to build repo-to-CPE mapping request: %v", err)
-		h.recordRepo2CPEAttempt(false)
 		return false
 	}
 
 	resp, err := h.centralClient.Do(req)
 	if err != nil {
 		log.Warnf("Failed to fetch repo-to-CPE mapping from central: %v", err)
-		h.recordRepo2CPEAttempt(false)
 		return false
 	}
 	defer utils.IgnoreError(resp.Body.Close)
@@ -217,19 +214,16 @@ func (h *Handler) attemptRepo2CPERefresh(ctx context.Context) bool {
 		body, err := io.ReadAll(io.LimitReader(resp.Body, cpemapping.MaxMappingBytes+1))
 		if err != nil {
 			log.Warnf("Failed to read repo-to-CPE mapping response: %v", err)
-			h.recordRepo2CPEAttempt(false)
 			return false
 		}
-		if len(body) > cpemapping.MaxMappingBytes {
-			log.Warnf("Repo-to-CPE mapping response exceeds %d bytes, rejecting", cpemapping.MaxMappingBytes)
-			h.recordRepo2CPEAttempt(false)
+		if err := cpemapping.ValidateMapping(body); err != nil {
+			log.Warnf("Repo-to-CPE mapping failed validation, keeping last-good: %v", err)
 			return false
 		}
 		h.recordRepo2CPESuccess(body, resp)
 		return true
 	default:
 		log.Warnf("Unexpected status %d fetching repo-to-CPE mapping from central", resp.StatusCode)
-		h.recordRepo2CPEAttempt(false)
 		return false
 	}
 }
@@ -252,21 +246,12 @@ func (h *Handler) newRepo2CPERequest(ctx context.Context, etag, lastModified str
 	return req, nil
 }
 
-func (h *Handler) recordRepo2CPEAttempt(success bool) {
-	concurrency.WithLock(&h.cacheMu, func() {
-		h.cache.lastAttempt = time.Now()
-		if success {
-			h.cache.lastSuccess = h.cache.lastAttempt
-		}
-	})
-}
-
 func (h *Handler) recordRepo2CPEUnchanged(resp *http.Response) {
 	concurrency.WithLock(&h.cacheMu, func() {
-		h.cache.lastAttempt = time.Now()
-		h.cache.lastSuccess = h.cache.lastAttempt
+		h.cache.lastSuccess = time.Now()
 		h.updateRepo2CPEValidatorsLocked(resp)
 	})
+	log.Debug("Repo-to-CPE mapping unchanged (304)")
 }
 
 // recordRepo2CPESuccess keeps the existing cached bytes when the new content
@@ -274,14 +259,14 @@ func (h *Handler) recordRepo2CPEUnchanged(resp *http.Response) {
 func (h *Handler) recordRepo2CPESuccess(body []byte, resp *http.Response) {
 	hash := cpemapping.HashMapping(body)
 	concurrency.WithLock(&h.cacheMu, func() {
-		h.cache.lastAttempt = time.Now()
-		h.cache.lastSuccess = h.cache.lastAttempt
+		h.cache.lastSuccess = time.Now()
 		if hash != h.cache.hash {
 			h.cache.mapping = body
 			h.cache.hash = hash
 		}
 		h.updateRepo2CPEValidatorsLocked(resp)
 	})
+	log.Debugf("Fetched repo-to-CPE mapping from central, hash=%s", hash)
 }
 
 // updateRepo2CPEValidatorsLocked refreshes the cached conditional-GET

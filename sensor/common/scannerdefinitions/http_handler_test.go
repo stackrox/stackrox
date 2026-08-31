@@ -2,12 +2,12 @@ package scannerdefinitions
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -155,6 +155,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 	const mappingV2 = `{"data":{"bar":{"cpes":["cpe:/o:bar"]}}}`
 	hashV1 := cpemapping.HashMapping([]byte(mappingV1))
 	hashV2 := cpemapping.HashMapping([]byte(mappingV2))
+	seededSuccess := time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC)
 
 	tests := map[string]struct {
 		seedCache     repo2CPECache
@@ -175,7 +176,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:    hashV1,
 		},
 		"304 with matching validators keeps the cached mapping": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, `"v1"`, r.Header.Get(ifNoneMatchHeader))
 				w.WriteHeader(http.StatusNotModified)
@@ -185,7 +186,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:    hashV1,
 		},
 		"200 with a same-hash body is treated as unchanged": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV1))
 			},
@@ -194,7 +195,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:    hashV1,
 		},
 		"200 with a different hash replaces the cached mapping": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV2))
 			},
@@ -203,7 +204,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:    hashV2,
 		},
 		"an unexpected status leaves the cache untouched": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 			},
@@ -212,16 +213,25 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:    hashV1,
 		},
 		"a network error leaves the cache untouched": {
-			seedCache:   repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			seedCache:   repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			networkErr:  true,
 			wantOK:      false,
 			wantMapping: mappingV1,
 			wantHash:    hashV1,
 		},
 		"an oversized response leaves the cache untouched": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
 				_, _ = w.Write(bytes.Repeat([]byte("a"), cpemapping.MaxMappingBytes+1))
+			},
+			wantOK:      false,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"an invalid mapping body leaves the cache untouched": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
+			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(`{"not":"a mapping"}`))
 			},
 			wantOK:      false,
 			wantMapping: mappingV1,
@@ -242,16 +252,15 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 				h.centralClient = newTestCentralClient(t, tt.serverHandler)
 			}
 
-			ok := h.attemptRepo2CPERefresh(context.Background())
+			ok := h.attemptRepo2CPERefresh(t.Context())
 
 			assert.Equal(t, tt.wantOK, ok)
 			assert.Equal(t, tt.wantMapping, string(h.cache.mapping))
 			assert.Equal(t, tt.wantHash, h.cache.hash)
-			assert.False(t, h.cache.lastAttempt.IsZero(), "lastAttempt should be recorded regardless of outcome")
 			if tt.wantOK {
 				assert.False(t, h.cache.lastSuccess.IsZero())
 			} else {
-				assert.True(t, h.cache.lastSuccess.IsZero())
+				assert.Equal(t, tt.seedCache.lastSuccess, h.cache.lastSuccess)
 			}
 		})
 	}
@@ -273,15 +282,18 @@ func TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache(t *testing.T) {
 		_, _ = w.Write([]byte(mapping))
 	})}
 
-	require.True(t, h.attemptRepo2CPERefresh(context.Background()))
+	require.True(t, h.attemptRepo2CPERefresh(t.Context()))
 	assert.Equal(t, hash, h.cache.hash)
+	require.False(t, h.cache.lastSuccess.IsZero())
+	lastGood := h.cache.lastSuccess
 
 	fail.Store(true)
-	require.False(t, h.attemptRepo2CPERefresh(context.Background()))
+	require.False(t, h.attemptRepo2CPERefresh(t.Context()))
 	assert.Equal(t, hash, h.cache.hash, "a failed refresh must not drop the last good mapping")
+	assert.Equal(t, lastGood, h.cache.lastSuccess)
 
 	fail.Store(false)
-	require.True(t, h.attemptRepo2CPERefresh(context.Background()))
+	require.True(t, h.attemptRepo2CPERefresh(t.Context()))
 	assert.Equal(t, hash, h.cache.hash)
 }
 
@@ -293,7 +305,7 @@ func TestFetchRepo2CPE(t *testing.T) {
 		h := &Handler{centralClient: &http.Client{}}
 		h.centralReachable.Store(false)
 
-		gotMapping, gotHash, ok := h.FetchRepo2CPE(context.Background())
+		gotMapping, gotHash, ok := h.FetchRepo2CPE(t.Context())
 
 		assert.False(t, ok)
 		assert.Nil(t, gotMapping)
@@ -305,10 +317,21 @@ func TestFetchRepo2CPE(t *testing.T) {
 		h.cache = repo2CPECache{mapping: mapping, hash: hash, lastSuccess: time.Now()}
 		h.centralReachable.Store(false)
 
-		gotMapping, gotHash, ok := h.FetchRepo2CPE(context.Background())
+		gotMapping, gotHash, ok := h.FetchRepo2CPE(t.Context())
 
 		assert.True(t, ok)
 		assert.Equal(t, mapping, gotMapping)
 		assert.Equal(t, hash, gotHash)
+	})
+
+	t.Run("returned mapping is a copy of the cache", func(t *testing.T) {
+		h := &Handler{centralClient: &http.Client{}}
+		h.cache = repo2CPECache{mapping: slices.Clone(mapping), hash: hash, lastSuccess: time.Now()}
+		h.centralReachable.Store(false)
+
+		gotMapping, _, ok := h.FetchRepo2CPE(t.Context())
+		require.True(t, ok)
+		gotMapping[0] = 'X'
+		assert.Equal(t, mapping, h.cache.mapping)
 	})
 }
