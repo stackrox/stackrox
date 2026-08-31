@@ -85,6 +85,8 @@ type ImageViewTestSuite struct {
 	testImagesMap   map[string]*storage.Image
 	testImagesV2Map map[string]*storage.ImageV2
 	scopeToImageIDs map[string]set.StringSet
+	// zeroCveImageID is used by TestImageCVECountFiltering.
+	zeroCveImageID string
 }
 
 func (s *ImageViewTestSuite) SetupSuite() {
@@ -113,6 +115,15 @@ func (s *ImageViewTestSuite) SetupSuite() {
 			s.Require().True(found)
 			s.testImagesV2Map[actual.GetId()] = image
 		}
+
+		// For TestImageCVECountFiltering.
+		zeroCveImageV2 := utils.ConvertToV2(zeroCveTestImage())
+		s.Require().NoError(imageStore.UpsertImage(ctx, zeroCveImageV2))
+		actualZeroCve, found, err := imageStore.GetImage(ctx, zeroCveImageV2.GetId())
+		s.Require().NoError(err)
+		s.Require().True(found)
+		s.zeroCveImageID = actualZeroCve.GetId()
+		s.testImagesV2Map[s.zeroCveImageID] = zeroCveImageV2
 
 		s.imagesView = NewImageView(s.testDB.DB)
 
@@ -166,6 +177,15 @@ func (s *ImageViewTestSuite) SetupSuite() {
 			s.Require().True(found)
 			s.testImagesMap[actual.GetId()] = actual
 		}
+
+		// For TestImageCVECountFiltering.
+		zeroCveImage := zeroCveTestImage()
+		s.Require().NoError(imageStore.UpsertImage(ctx, zeroCveImage))
+		actualZeroCve, found, err := imageStore.GetImage(ctx, zeroCveImage.GetId())
+		s.Require().NoError(err)
+		s.Require().True(found)
+		s.zeroCveImageID = actualZeroCve.GetId()
+		s.testImagesMap[s.zeroCveImageID] = actualZeroCve
 
 		s.imagesView = NewImageView(s.testDB.DB)
 
@@ -484,6 +504,24 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			}
 		})
 	}
+}
+
+// TestImageCVECountFiltering verifies that "Image CVE Count > 0" excludes zero-CVE
+// images from ImageView results (see ROX-36389 for background on this field).
+func (s *ImageViewTestSuite) TestImageCVECountFiltering() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	query := search.NewQueryBuilder().AddStrings(search.ImageCVECount, ">0").ProtoQuery()
+	cores, err := s.imagesView.Get(ctx, query)
+	s.Require().NoError(err)
+
+	ids := make([]string, 0, len(cores))
+	for _, c := range cores {
+		ids = append(ids, c.GetImageID())
+	}
+
+	s.NotContains(ids, s.zeroCveImageID, "expected the 0-CVE image to be excluded by 'Image CVE Count > 0'")
+	s.NotEmpty(ids, "expected images with CVEs to still be returned")
 }
 
 func (s *ImageViewTestSuite) compileExpected(filter *filterImpl, less lessFunc, hasVulnFilters, hasSortBySeverityCounts bool) []ImageCore {
@@ -813,4 +851,21 @@ func testImages() []*storage.Image {
 		},
 	}
 	return []*storage.Image{img1, img2, img3, img4}
+}
+
+func zeroCveTestImage() *storage.Image {
+	return &storage.Image{
+		Id: "sha5",
+		Name: &storage.ImageName{
+			Registry: "reg5",
+			Remote:   "img5",
+			Tag:      "tag5",
+			FullName: "reg5/img5:tag5",
+		},
+		RiskScore: 1,
+		Scan: &storage.ImageScan{
+			OperatingSystem: "os5",
+			Components:      []*storage.EmbeddedImageScanComponent{},
+		},
+	}
 }

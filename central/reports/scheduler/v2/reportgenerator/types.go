@@ -45,9 +45,11 @@ type ImageCVEQueryResponse struct {
 	CVSS              *float64                       `db:"cvss"`
 	NVDCVSS           *float64                       `db:"nvd_cvss"`
 	EPSSProbability   *float64                       `db:"epss_probability"`
+	CisaKev           *bool                          `db:"cisa_kev"`
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
+	Origin            *storage.VulnOrigin            `db:"cve_origin"`
 
 	Link string
 }
@@ -136,6 +138,13 @@ func (res *ImageCVEQueryResponse) GetCVSS() float64 {
 	return *res.CVSS
 }
 
+func (res *ImageCVEQueryResponse) GetOrigin() storage.VulnOrigin {
+	if res.Origin == nil {
+		return storage.VulnOrigin_VULN_ORIGIN_OTHER
+	}
+	return *res.Origin
+}
+
 func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
 	if res.NVDCVSS == nil {
 		return 0.0
@@ -145,6 +154,10 @@ func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
 
 func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
 	return res.EPSSProbability
+}
+
+func (res *ImageCVEQueryResponse) GetCisaKev() *bool {
+	return res.CisaKev
 }
 
 func (res *ImageCVEQueryResponse) GetAdvisoryName() string {

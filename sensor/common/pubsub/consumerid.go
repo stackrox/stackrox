@@ -9,6 +9,7 @@ const (
 	EnrichedProcessConsumer
 	UnenrichedProcessConsumer
 	FileActivityEnrichedProcessConsumer
+	FakeFileActivityConsumer
 	DetectorProcessIndicatorConsumer
 	DetectorNetworkFlowConsumer
 	DetectorFileAccessConsumer
@@ -28,6 +29,7 @@ var (
 		ResolverConsumer:                       "Resolver",
 		EnrichedProcessConsumer:                "EnrichedProcess",
 		FileActivityEnrichedProcessConsumer:    "FileActivityEnrichedProcess",
+		FakeFileActivityConsumer:               "FakeFileActivity",
 		UnenrichedProcessConsumer:              "UnenrichedProcess",
 		DetectorProcessIndicatorConsumer:       "DetectorProcessIndicator",
 		DetectorNetworkFlowConsumer:            "DetectorNetworkFlow",

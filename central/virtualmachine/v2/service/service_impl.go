@@ -547,8 +547,8 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		searchQuery,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
-	searchQuery = common.UpdateSortAggs(searchQuery)
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+	searchQuery = common.UpdateSortAggs(searchQuery)
 
 	countQuery := searchQuery.CloneVT()
 	countQuery.Pagination = nil

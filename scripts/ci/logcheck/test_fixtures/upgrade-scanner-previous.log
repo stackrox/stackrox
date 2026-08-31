@@ -1,0 +1,3 @@
+{"Event":"searchKeyValue","Level":"info","Location":"pgsql.go:190","Time":"2026-07-23 07:30:25.123456"}
+{"Description":"searchKeyValue","Event":"Handled Database Error","Level":"error","Location":"pgsql.go:266","Time":"2026-07-23 07:31:06.037214","error":"dial tcp 34.118.224.96:5432: connect: connection refused"}
+{"Event":"Failed to initialize updater","Level":"fatal","Location":"main.go:169","Time":"2026-07-23 07:31:06.037376","error":"getting last updated time from DB: getting last updated time from DB: dial tcp 34.118.224.96:5432: connect: connection refused"}

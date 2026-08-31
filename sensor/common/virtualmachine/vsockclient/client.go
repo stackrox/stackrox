@@ -27,8 +27,17 @@ var (
 	ErrUnknownMethod = errors.New("agent does not support the requested method")
 	// ErrInternal indicates the agent encountered an internal error.
 	ErrInternal = errors.New("agent internal error")
+	// ErrMalformedRequest indicates the agent rejected the request as invalid.
+	ErrMalformedRequest = errors.New("agent rejected request as malformed")
+	// ErrRequestTooLarge indicates the request exceeded the agent's size limit.
+	ErrRequestTooLarge = errors.New("agent rejected request as too large")
 	// ErrBusy indicates the agent's single connection slot is held by another request.
 	ErrBusy = errors.New("agent is busy with another request")
+	// ErrUnknownAgentError indicates a well-formed ErrorResponse whose code
+	// this client doesn't recognize (e.g. a future ErrorCode value).
+	ErrUnknownAgentError = errors.New("unrecognized agent error code")
+	// ErrMappingRequired indicates the agent has no repository-to-CPE mapping yet.
+	ErrMappingRequired = errors.New("agent has no repository-to-CPE mapping yet")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -65,17 +74,15 @@ func NewClient(capabilities []string, maxResponseSize int) *Client {
 	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
 }
 
-// GetReport sends a GetReportRequest and returns the response. knownEpoch is
-// the last epoch Sensor observed for this VM (see ResponseMeta.epoch); pass 0
-// when unknown. Sending it lets the agent detect a restart-coincidence false
-// match and serve the full report in this same round trip, instead of the
-// caller needing a second, forced request.
+// GetReport sends a GetReportRequest and returns the response. lastKnownToken
+// is the last report_token Sensor observed for this VM; pass "" when unknown
+// or when forcing a full report (mandatory refresh).
 //
 // The stream must be an io.ReadWriteCloser (from MultiDialer.Dial). If ctx is
 // cancelled while a write or read is in progress, the stream is closed so the
 // blocked I/O unblocks promptly — needed on Sensor shutdown, where parent
 // cancel does not rewrite the dial-time socket deadline.
-func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*GetReportResult, error) {
+func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, lastKnownToken string) (*GetReportResult, error) {
 	stop := context.AfterFunc(ctx, func() {
 		_ = stream.Close()
 	})
@@ -88,8 +95,7 @@ func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNew
 		},
 		Method: &pb.VMServiceRequest_GetReport{
 			GetReport: &pb.GetReportRequest{
-				LastKnownGeneration: ifNewerThan,
-				KnownEpoch:          knownEpoch,
+				LastKnownToken: lastKnownToken,
 			},
 		},
 	}
@@ -144,9 +150,15 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrUnknownMethod, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_INTERNAL:
 		return fmt.Errorf("%w: %s", ErrInternal, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST:
+		return fmt.Errorf("%w: %s", ErrMalformedRequest, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE:
+		return fmt.Errorf("%w: %s", ErrRequestTooLarge, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_BUSY:
 		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED:
+		return fmt.Errorf("%w: %s", ErrMappingRequired, e.GetMessage())
 	default:
-		return fmt.Errorf("agent error (%s): %s", e.GetCode(), e.GetMessage())
+		return fmt.Errorf("%w: agent error (%s): %s", ErrUnknownAgentError, e.GetCode(), e.GetMessage())
 	}
 }

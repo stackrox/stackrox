@@ -6,27 +6,37 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"slices"
 	"sync/atomic"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const maxRequestSize = 1 << 20 // 1 MiB
+const (
+	// maxRequestSize must fit the largest message - a synced repo-to-CPE mapping (up to MaxMappingBytes) - plus envelope headroom.
+	maxRequestSize = cpemapping.MaxMappingBytes + 1<<20
+
+	methodGetReport          = "get_report"
+	methodSyncRepoCPEMapping = "sync_repo_cpe_mapping"
+)
 
 // reportSnapshot is an immutable point-in-time view of the cached report state.
 type reportSnapshot struct {
 	report      *v4.IndexReport
-	generation  uint32
+	token       string
 	generatedAt time.Time
 	facts       map[string]string
+	mappingHash string
 }
 
-// ReportCache holds the cached scan report with its generation counter.
+// ReportCache holds the cached scan report with its content-hash token.
 // Invariant: exactly one goroutine (the rescan loop) calls SetReport; multiple
 // HandleConn goroutines read via snap.Load(). This single-writer/multi-reader
 // pattern is safe with atomic.Pointer without CAS.
@@ -34,25 +44,57 @@ type ReportCache struct {
 	snap atomic.Pointer[reportSnapshot]
 }
 
-// SetReport atomically publishes a new report with updated facts in a single
-// store, incrementing the generation counter. Readers never observe a partial
-// (new report, stale facts) state.
+// Token returns the published content-hash, or empty before the first scan.
+func (c *ReportCache) Token() string {
+	if c == nil {
+		return ""
+	}
+	snap := c.snap.Load()
+	if snap == nil {
+		return ""
+	}
+	return snap.token
+}
+
+// SetReport atomically publishes a new report and facts. The token is an
+// XXH64 of that content, so identical rescans stay unchanged for Sensor.
+//
+// mappingHash is the repo-to-CPE mapping the scan used, so GetReport can send
+// it after a later Sync has already replaced the live mapping.
 //
 // r and facts are defensively copied so that a caller mutating its own copy
 // after this call (or reusing the same facts map across scans) can never
 // mutate the published, supposedly-immutable snapshot out from under
 // concurrent readers.
-func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string) {
-	var counter uint32
-	if old := c.snap.Load(); old != nil {
-		counter = old.generation
-	}
+func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string, mappingHash string) {
+	cloned := cloneIndexReport(r)
+	clonedFacts := cloneFacts(facts)
 	c.snap.Store(&reportSnapshot{
-		report:      cloneIndexReport(r),
-		generation:  counter + 1,
+		report:      cloned,
+		token:       reportToken(cloned, clonedFacts),
 		generatedAt: time.Now(),
-		facts:       cloneFacts(facts),
+		facts:       clonedFacts,
+		mappingHash: mappingHash,
 	})
+}
+
+// reportToken is XXH64 of the IndexReport and facts, as 16 lowercase hex
+// digits. Deterministic marshal keeps identical content stable across rescans.
+func reportToken(r *v4.IndexReport, facts map[string]string) string {
+	h := xxhash.New()
+	if r != nil {
+		b, err := proto.MarshalOptions{Deterministic: true}.Marshal(r)
+		if err == nil {
+			_, _ = h.Write(b)
+		}
+	}
+	for _, k := range slices.Sorted(maps.Keys(facts)) {
+		_, _ = h.Write([]byte(k))
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(facts[k]))
+		_, _ = h.Write([]byte{0})
+	}
+	return fmt.Sprintf("%016x", h.Sum64())
 }
 
 // cloneIndexReport returns a deep copy of r, or nil if r is nil.
@@ -78,32 +120,14 @@ func cloneFacts(in map[string]string) map[string]string {
 type Handler struct {
 	cache        *ReportCache
 	agentVersion string
-	// epoch is seeded once per process lifetime and never persisted to VM
-	// disk. It lets Sensor (and this handler itself, via GetReportRequest's
-	// known_epoch) distinguish "this agent restarted" from "this agent's
-	// generation counter coincidentally reset to a value Sensor already has
-	// cached" without changing report_generation's own sequential,
-	// human-readable semantics.
-	epoch uint32
+	provider     MappingProvider
+	updater      MappingUpdater
 }
 
-// NewHandler creates a protocol handler.
-func NewHandler(cache *ReportCache, agentVersion string) *Handler {
-	return &Handler{cache: cache, agentVersion: agentVersion, epoch: newEpoch()}
-}
-
-// newEpoch derives a process-lifetime epoch value. Time-derived rather than
-// cryptographically random: epoch only needs to differ across restarts with
-// overwhelming probability, not resist an adversary. Seconds (not
-// nanoseconds) since the Unix epoch, so the value only wraps every ~136
-// years instead of every ~4.3 seconds when truncated to uint32. 0 is
-// reserved to mean "agent predates this field" (see ResponseMeta.epoch doc),
-// so it's excluded.
-func newEpoch() uint32 {
-	if e := uint32(time.Now().Unix()); e != 0 {
-		return e
-	}
-	return 1
+// NewHandler creates a protocol handler. updater is nil for URL-managed
+// agents, so SyncRepoCPEMapping is rejected with MAPPING_NOT_SENSOR_MANAGED.
+func NewHandler(cache *ReportCache, agentVersion string, provider MappingProvider, updater MappingUpdater) *Handler {
+	return &Handler{cache: cache, agentVersion: agentVersion, provider: provider, updater: updater}
 }
 
 // HandleConn reads a framed request from conn, processes it, writes a framed response, and closes conn.
@@ -141,6 +165,7 @@ func (h *Handler) HandleConn(conn net.Conn) {
 	}
 	if err := vsockframing.WriteFrame(conn, respData); err != nil {
 		log.Errorf("Writing response frame: %v", err)
+		return
 	}
 }
 
@@ -148,44 +173,38 @@ func (h *Handler) dispatch(req *pb.VMServiceRequest) *pb.VMServiceResponse {
 	switch req.GetMethod().(type) {
 	case *pb.VMServiceRequest_GetReport:
 		return h.handleGetReport(req.GetGetReport())
+	case *pb.VMServiceRequest_SyncRepoCpeMapping:
+		return h.handleSyncRepoCPEMapping(req.GetSyncRepoCpeMapping())
 	default:
 		return h.errorResponse(pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD, "unknown or unset method")
 	}
 }
 
 func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceResponse {
+	if !h.provider.Ready() {
+		log.Info("GetReport: no repo-to-CPE mapping available yet")
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED, "repository-to-CPE mapping not yet available")
+	}
+
 	snap := h.cache.snap.Load()
 	if snap == nil || snap.report == nil {
 		log.Info("GetReport: not ready (initial scan in progress)")
 		return h.errorResponseFromSnap(snap, pb.ErrorCode_ERROR_CODE_NOT_READY, "initial scan in progress, try again later")
 	}
 
-	// Strict equality (not >=) so that after an agent restart — when the generation
-	// counter resets to 1 — a sensor still holding a higher generation from the
-	// previous instance will receive the full report instead of a false "unchanged".
-	//
-	// known_epoch guards against the opposite false positive: a restarted agent
-	// whose reset generation coincidentally re-matches last_known_generation.
-	// 0 means Sensor doesn't know our epoch yet (first-ever request for this VM,
-	// or a Sensor build that predates the field), so fall back to generation-only
-	// comparison exactly as before this field existed.
-	generationMatches := req.GetLastKnownGeneration() == snap.generation
-	knownEpoch := req.GetKnownEpoch()
-	epochMatches := knownEpoch == 0 || knownEpoch == h.epoch
-	if generationMatches && epochMatches {
-		log.Infof("GetReport: unchanged (generation=%d, last_known_generation=%d)", snap.generation, req.GetLastKnownGeneration())
+	// Empty last_known_token forces a full report (first request or Sensor
+	// refresh). A matching token is identical content; any other value
+	// means the published report or facts changed.
+	if lastKnown := req.GetLastKnownToken(); lastKnown != "" && lastKnown == snap.token {
+		log.Infof("GetReport: unchanged (token=%s)", snap.token)
 		resp := h.newResponseFromSnap(snap)
 		resp.Result = &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{Unchanged: true},
 		}
 		return resp
 	}
-	if generationMatches && !epochMatches {
-		log.Infof("GetReport: generation matches (%d) but epoch changed (known=%d, current=%d) — agent restarted, serving full report in this round trip",
-			snap.generation, knownEpoch, h.epoch)
-	}
 
-	log.Infof("GetReport: serving report (generation=%d, packages=%d)", snap.generation, len(snap.report.GetContents().GetPackages()))
+	log.Infof("GetReport: serving report (token=%s, packages=%d)", snap.token, len(snap.report.GetContents().GetPackages()))
 	resp := h.newResponseFromSnap(snap)
 	resp.Result = &pb.VMServiceResponse_GetReport{
 		GetReport: &pb.GetReportResponse{IndexReport: snap.report},
@@ -195,22 +214,48 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 
 func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceResponse {
 	var facts map[string]string
-	var gen uint32
+	var token string
+	mappingHash := h.provider.Hash()
 	if snap != nil {
 		facts = cloneFacts(snap.facts)
-		gen = snap.generation
+		token = snap.token
+		mappingHash = snap.mappingHash
+	}
+	updatePath := h.provider.UpdatePath()
+	methods := []string{methodGetReport}
+	if h.updater != nil {
+		methods = append(methods, methodSyncRepoCPEMapping)
 	}
 	meta := &pb.ResponseMeta{
-		AgentVersion:     h.agentVersion,
-		ReportGeneration: gen,
-		SupportedMethods: []string{"get_report"},
-		Facts:            facts,
-		Epoch:            h.epoch,
+		AgentVersion:             h.agentVersion,
+		ReportToken:              token,
+		SupportedMethods:         methods,
+		Facts:                    facts,
+		RepoCpeMappingHash:       new(mappingHash),
+		RepoCpeMappingUpdatePath: updatePath.Enum(),
 	}
 	if snap != nil && !snap.generatedAt.IsZero() {
 		meta.ReportGeneratedAt = timestamppb.New(snap.generatedAt)
 	}
 	return &pb.VMServiceResponse{Meta: meta}
+}
+
+// handleSyncRepoCPEMapping applies a Sensor-pushed mapping. URL-managed
+// agents (updater == nil) reject Sync outright; Update keeps the last-good
+// mapping on a validation failure.
+func (h *Handler) handleSyncRepoCPEMapping(req *pb.SyncRepoCPEMappingRequest) *pb.VMServiceResponse {
+	if h.updater == nil {
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED, "agent is URL-managed and does not accept pushed mappings")
+	}
+	updated, err := h.updater.Update(req.GetMapping())
+	if err != nil {
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST, fmt.Sprintf("invalid repository-to-CPE mapping: %v", err))
+	}
+	resp := h.newResponseFromSnap(h.cache.snap.Load())
+	resp.Result = &pb.VMServiceResponse_SyncRepoCpeMapping{
+		SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: updated},
+	}
+	return resp
 }
 
 func (h *Handler) errorResponse(code pb.ErrorCode, msg string) *pb.VMServiceResponse {

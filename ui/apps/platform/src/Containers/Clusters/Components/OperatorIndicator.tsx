@@ -6,9 +6,9 @@ import operatorLogo from 'images/operator-logo.png';
 function OperatorIndicator(): ReactElement {
     return (
         <Tooltip content="This cluster is managed by a Kubernetes Operator.">
-            <span className="w-5 h-5 inline-block pf-v6-u-flex-shrink-0">
+            <span className="pf-v6-u-display-inline-block pf-v6-u-flex-shrink-0">
                 <img
-                    className="w-5 h-5"
+                    style={{ width: '20px', height: '20px' }}
                     src={operatorLogo}
                     alt="Managed by a Kubernetes Operator"
                 />

@@ -1575,6 +1575,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnOrigin(0)))
 	utils.Must(builder.AddInput("VulnReqGlobalScope", []string{
 		"images: VulnReqImageScope",
 	}))
@@ -16912,6 +16913,24 @@ func toVolume_MountPropagations(values *[]string) []storage.Volume_MountPropagat
 	output := make([]storage.Volume_MountPropagation, len(*values))
 	for i, v := range *values {
 		output[i] = toVolume_MountPropagation(&v)
+	}
+	return output
+}
+
+func toVulnOrigin(value *string) storage.VulnOrigin {
+	if value != nil {
+		return storage.VulnOrigin(storage.VulnOrigin_value[*value])
+	}
+	return storage.VulnOrigin(0)
+}
+
+func toVulnOrigins(values *[]string) []storage.VulnOrigin {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VulnOrigin, len(*values))
+	for i, v := range *values {
+		output[i] = toVulnOrigin(&v)
 	}
 	return output
 }

@@ -224,7 +224,7 @@ func (d *Downloader) doDownload(ctx context.Context) error {
 		return fmt.Errorf("response body exceeds maximum size of %d bytes", d.maxSize)
 	}
 
-	if err := atomicWriteFile(d.filePath, body); err != nil {
+	if err := AtomicWriteFile(d.filePath, body); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 
@@ -232,7 +232,10 @@ func (d *Downloader) doDownload(ctx context.Context) error {
 	return nil
 }
 
-func atomicWriteFile(path string, data []byte) error {
+// AtomicWriteFile writes data to path via a temp file plus rename, so
+// concurrent readers never observe a partially written file. Creates
+// path's parent directory (mode 0700) if it does not already exist.
+func AtomicWriteFile(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("creating directory %q: %w", dir, err)
