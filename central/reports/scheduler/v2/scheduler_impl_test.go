@@ -291,6 +291,7 @@ func TestQueuePendingReports(t *testing.T) {
 	defer cronScheduler.Stop()
 
 	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, nil, nil, nil, nil, cronScheduler, nil)
+	s.isStarted.Store(true)
 	s.queuePendingReports()
 
 	assert.Equal(t, 2, s.queues[0].queue.Len())

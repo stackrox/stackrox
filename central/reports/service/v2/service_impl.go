@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -17,12 +18,16 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/postgres"
+	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -83,6 +88,7 @@ type serviceImpl struct {
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
 	validator           *validation.Validator
+	db                  postgres.DB
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -124,8 +130,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(createdReportConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id)
+	} else if err := s.scheduler.UpsertReportSchedule(createdReportConfig); err != nil {
 		return nil, err
 	}
 
@@ -172,8 +179,9 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(updatedConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId())
+	} else if err := s.scheduler.UpsertReportSchedule(updatedConfig); err != nil {
 		return nil, err
 	}
 	return &apiV2.Empty{}, nil
@@ -261,7 +269,11 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, err
 	}
 
-	s.scheduler.RemoveReportSchedule(id.GetId())
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId())
+	} else {
+		s.scheduler.RemoveReportSchedule(id.GetId())
+	}
 	return &apiV2.Empty{}, nil
 }
 
@@ -378,6 +390,17 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		return nil, err
 	}
 
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportID, err := s.persistSnapshotAndNotify(ctx, reportReq, pgNotify.ReportRequestSubmitted)
+		if err != nil {
+			return nil, err
+		}
+		return &apiV2.RunReportResponse{
+			ReportConfigId: req.GetReportConfigId(),
+			ReportId:       reportID,
+		}, nil
+	}
+
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
 		return nil, err
@@ -401,6 +424,11 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 	err := s.validator.ValidateCancelReportRequest(req.GetId(), slimUser)
 	if err != nil {
 		return nil, err
+	}
+
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportRequestCancelled, req.GetId())
+		return &apiV2.Empty{}, nil
 	}
 
 	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
@@ -484,7 +512,14 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 		return nil, err
 	}
 
-	// Submit to scheduler. view-based reports are always on-demand, not re-submissions.
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportID, err := s.persistSnapshotAndNotify(ctx, reportReq, pgNotify.ReportRequestSubmitted)
+		if err != nil {
+			return nil, err
+		}
+		return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
+	}
+
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
 		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
@@ -603,4 +638,27 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
+}
+
+func notifyWithRetry(ctx context.Context, db postgres.DB, channel, payload string) {
+	if db == nil {
+		return
+	}
+	err := retry.WithRetry(func() error {
+		return pgNotify.Notify(ctx, db, channel, payload)
+	}, retry.Tries(3), retry.BetweenAttempts(func(previousAttempt int) {
+		log.Errorf("pg_notify %s failed (attempt %d), retrying", channel, previousAttempt+1)
+	}))
+	if err != nil {
+		log.Errorf("pg_notify %s failed after retries: %v", channel, err)
+	}
+}
+
+func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *reportGen.ReportRequest, channel string) (string, error) {
+	reportID, err := s.validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
+	if err != nil {
+		return "", err
+	}
+	notifyWithRetry(ctx, s.db, channel, reportID)
+	return reportID, nil
 }

@@ -105,18 +105,37 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
-// Pull-mode request status label values for PullRequestsTotal.
+// Pull-mode outcome labels are split across three counters so transport,
+// GetReport protocol, and scrape-pipeline results stay distinct as more
+// VSOCK RPC methods are added later. Each per-VM pull attempt increments
+// exactly one of these counters (mutually exclusive partition).
+
+// Transport-layer status values for PullTransportTotal.
 const (
-	PullStatusSuccess       = "success"
-	PullStatusUnchanged     = "unchanged"
-	PullStatusDialError     = "dial_error"
-	PullStatusReadError     = "read_error"
-	PullStatusInvalidReport = "invalid_report"
-	PullStatusSendError     = "send_error"
-	PullStatusNotReady      = "not_ready"
-	PullStatusUnknownMethod = "unknown_method"
-	PullStatusTimeout       = "timeout"
-	PullStatusBusy          = "busy"
+	PullTransportDialError     = "dial_error"
+	PullTransportTimeout       = "timeout"
+	PullTransportReadError     = "read_error"
+	PullTransportAbnormalClose = "abnormal_close"
+	PullTransportUnexpected    = "unexpected"
+)
+
+// GetReport protocol status values for PullGetReportTotal.
+const (
+	PullGetReportUnchanged         = "unchanged"
+	PullGetReportNotReady          = "not_ready"
+	PullGetReportUnknownMethod     = "unknown_method"
+	PullGetReportBusy              = "busy"
+	PullGetReportInternalError     = "internal_error"
+	PullGetReportMalformedRequest  = "malformed_request"
+	PullGetReportRequestTooLarge   = "request_too_large"
+	PullGetReportUnknownAgentError = "unknown_agent_error"
+)
+
+// Scrape-pipeline status values for PullScrapeTotal (post-GetReport).
+const (
+	PullScrapeSuccess       = "success"
+	PullScrapeInvalidReport = "invalid_report"
+	PullScrapeSendError     = "send_error"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
@@ -191,13 +210,40 @@ var PullReportPackages = prometheus.NewHistogram(
 	},
 )
 
-// PullRequestsTotal counts per-VM pull attempts by status.
-var PullRequestsTotal = prometheus.NewCounterVec(
+// PullTransportTotal counts per-VM pull attempts that failed at the VSOCK
+// transport layer (dial / read / abnormal close) before a protocol result.
+var PullTransportTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_requests_total",
-		Help:      "Per-VM pull attempts by outcome status",
+		Name:      "vsock_pull_transport_total",
+		Help:      "Per-VM pull attempts that failed at the VSOCK transport layer",
+	},
+	[]string{"status"},
+)
+
+// PullGetReportTotal counts per-VM GetReport protocol outcomes (Unchanged,
+// ErrorCode sentinels). Transport failures are counted on PullTransportTotal
+// instead; successful full reports continue into the scrape pipeline and are
+// counted on PullScrapeTotal.
+var PullGetReportTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_get_report_total",
+		Help:      "Per-VM GetReport protocol outcomes (unchanged and agent ErrorCode results)",
+	},
+	[]string{"status"},
+)
+
+// PullScrapeTotal counts per-VM scrape-pipeline outcomes after a full
+// GetReport payload was received (viability check, send to Central, success).
+var PullScrapeTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_scrape_total",
+		Help:      "Per-VM scrape-pipeline outcomes after a full GetReport payload was received",
 	},
 	[]string{"status"},
 )
@@ -291,7 +337,9 @@ func init() {
 		PullTickDurationSeconds,
 		PullReportBytes,
 		PullReportPackages,
-		PullRequestsTotal,
+		PullTransportTotal,
+		PullGetReportTotal,
+		PullScrapeTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
 		PullDueVMs,

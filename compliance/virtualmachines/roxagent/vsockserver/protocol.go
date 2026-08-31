@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"slices"
 	"sync/atomic"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/vsockframing"
@@ -21,12 +23,12 @@ const maxRequestSize = 1 << 20 // 1 MiB
 // reportSnapshot is an immutable point-in-time view of the cached report state.
 type reportSnapshot struct {
 	report      *v4.IndexReport
-	generation  uint32
+	token       string
 	generatedAt time.Time
 	facts       map[string]string
 }
 
-// ReportCache holds the cached scan report with its generation counter.
+// ReportCache holds the cached scan report with its content-hash token.
 // Invariant: exactly one goroutine (the rescan loop) calls SetReport; multiple
 // HandleConn goroutines read via snap.Load(). This single-writer/multi-reader
 // pattern is safe with atomic.Pointer without CAS.
@@ -34,25 +36,41 @@ type ReportCache struct {
 	snap atomic.Pointer[reportSnapshot]
 }
 
-// SetReport atomically publishes a new report with updated facts in a single
-// store, incrementing the generation counter. Readers never observe a partial
-// (new report, stale facts) state.
+// SetReport atomically publishes a new report and facts. The token is an
+// XXH64 of that content, so identical rescans stay unchanged for Sensor.
 //
 // r and facts are defensively copied so that a caller mutating its own copy
 // after this call (or reusing the same facts map across scans) can never
 // mutate the published, supposedly-immutable snapshot out from under
 // concurrent readers.
 func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string) {
-	var counter uint32
-	if old := c.snap.Load(); old != nil {
-		counter = old.generation
-	}
+	cloned := cloneIndexReport(r)
+	clonedFacts := cloneFacts(facts)
 	c.snap.Store(&reportSnapshot{
-		report:      cloneIndexReport(r),
-		generation:  counter + 1,
+		report:      cloned,
+		token:       reportToken(cloned, clonedFacts),
 		generatedAt: time.Now(),
-		facts:       cloneFacts(facts),
+		facts:       clonedFacts,
 	})
+}
+
+// reportToken is XXH64 of the IndexReport and facts, as 16 lowercase hex
+// digits. Deterministic marshal keeps identical content stable across rescans.
+func reportToken(r *v4.IndexReport, facts map[string]string) string {
+	h := xxhash.New()
+	if r != nil {
+		b, err := proto.MarshalOptions{Deterministic: true}.Marshal(r)
+		if err == nil {
+			_, _ = h.Write(b)
+		}
+	}
+	for _, k := range slices.Sorted(maps.Keys(facts)) {
+		_, _ = h.Write([]byte(k))
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(facts[k]))
+		_, _ = h.Write([]byte{0})
+	}
+	return fmt.Sprintf("%016x", h.Sum64())
 }
 
 // cloneIndexReport returns a deep copy of r, or nil if r is nil.
@@ -78,32 +96,11 @@ func cloneFacts(in map[string]string) map[string]string {
 type Handler struct {
 	cache        *ReportCache
 	agentVersion string
-	// epoch is seeded once per process lifetime and never persisted to VM
-	// disk. It lets Sensor (and this handler itself, via GetReportRequest's
-	// known_epoch) distinguish "this agent restarted" from "this agent's
-	// generation counter coincidentally reset to a value Sensor already has
-	// cached" without changing report_generation's own sequential,
-	// human-readable semantics.
-	epoch uint32
 }
 
 // NewHandler creates a protocol handler.
 func NewHandler(cache *ReportCache, agentVersion string) *Handler {
-	return &Handler{cache: cache, agentVersion: agentVersion, epoch: newEpoch()}
-}
-
-// newEpoch derives a process-lifetime epoch value. Time-derived rather than
-// cryptographically random: epoch only needs to differ across restarts with
-// overwhelming probability, not resist an adversary. Seconds (not
-// nanoseconds) since the Unix epoch, so the value only wraps every ~136
-// years instead of every ~4.3 seconds when truncated to uint32. 0 is
-// reserved to mean "agent predates this field" (see ResponseMeta.epoch doc),
-// so it's excluded.
-func newEpoch() uint32 {
-	if e := uint32(time.Now().Unix()); e != 0 {
-		return e
-	}
-	return 1
+	return &Handler{cache: cache, agentVersion: agentVersion}
 }
 
 // HandleConn reads a framed request from conn, processes it, writes a framed response, and closes conn.
@@ -160,32 +157,19 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 		return h.errorResponseFromSnap(snap, pb.ErrorCode_ERROR_CODE_NOT_READY, "initial scan in progress, try again later")
 	}
 
-	// Strict equality (not >=) so that after an agent restart — when the generation
-	// counter resets to 1 — a sensor still holding a higher generation from the
-	// previous instance will receive the full report instead of a false "unchanged".
-	//
-	// known_epoch guards against the opposite false positive: a restarted agent
-	// whose reset generation coincidentally re-matches last_known_generation.
-	// 0 means Sensor doesn't know our epoch yet (first-ever request for this VM,
-	// or a Sensor build that predates the field), so fall back to generation-only
-	// comparison exactly as before this field existed.
-	generationMatches := req.GetLastKnownGeneration() == snap.generation
-	knownEpoch := req.GetKnownEpoch()
-	epochMatches := knownEpoch == 0 || knownEpoch == h.epoch
-	if generationMatches && epochMatches {
-		log.Infof("GetReport: unchanged (generation=%d, last_known_generation=%d)", snap.generation, req.GetLastKnownGeneration())
+	// Empty last_known_token forces a full report (first request or Sensor
+	// refresh). A matching token is identical content; any other value
+	// means the published report or facts changed.
+	if lastKnown := req.GetLastKnownToken(); lastKnown != "" && lastKnown == snap.token {
+		log.Infof("GetReport: unchanged (token=%s)", snap.token)
 		resp := h.newResponseFromSnap(snap)
 		resp.Result = &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{Unchanged: true},
 		}
 		return resp
 	}
-	if generationMatches && !epochMatches {
-		log.Infof("GetReport: generation matches (%d) but epoch changed (known=%d, current=%d) — agent restarted, serving full report in this round trip",
-			snap.generation, knownEpoch, h.epoch)
-	}
 
-	log.Infof("GetReport: serving report (generation=%d, packages=%d)", snap.generation, len(snap.report.GetContents().GetPackages()))
+	log.Infof("GetReport: serving report (token=%s, packages=%d)", snap.token, len(snap.report.GetContents().GetPackages()))
 	resp := h.newResponseFromSnap(snap)
 	resp.Result = &pb.VMServiceResponse_GetReport{
 		GetReport: &pb.GetReportResponse{IndexReport: snap.report},
@@ -195,17 +179,16 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 
 func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceResponse {
 	var facts map[string]string
-	var gen uint32
+	var token string
 	if snap != nil {
 		facts = cloneFacts(snap.facts)
-		gen = snap.generation
+		token = snap.token
 	}
 	meta := &pb.ResponseMeta{
 		AgentVersion:     h.agentVersion,
-		ReportGeneration: gen,
+		ReportToken:      token,
 		SupportedMethods: []string{"get_report"},
 		Facts:            facts,
-		Epoch:            h.epoch,
 	}
 	if snap != nil && !snap.generatedAt.IsZero() {
 		meta.ReportGeneratedAt = timestamppb.New(snap.generatedAt)

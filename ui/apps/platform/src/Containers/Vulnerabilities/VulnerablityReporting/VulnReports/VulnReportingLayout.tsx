@@ -27,8 +27,8 @@ function VulnReportingLayout() {
               ]
             : []),
         {
-            id: 'view-based-reports',
-            title: 'View-based reports',
+            id: 'view-based-jobs',
+            title: 'View-based jobs',
             path: vulnerabilityViewBasedJobsPath,
             content: <ViewBasedReportsTab />,
         },

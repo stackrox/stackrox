@@ -23,3 +23,4 @@ export const NODE_SCAN_TIME_SORT_FIELD = 'Node Scan Time';
 
 // Virtual Machine sort fields
 export const VIRTUAL_MACHINE_SORT_FIELD = 'Virtual Machine Name';
+export const GUEST_OS_SORT_FIELD = 'Guest OS';

@@ -1,41 +1,28 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, FlexItem, Pagination } from '@patternfly/react-core';
+import { ToolbarItem } from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    useManagedColumns,
-} from 'hooks/useManagedColumns';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { listVMs } from 'services/VirtualMachineService';
+import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import {
-    virtualMachinesClusterSearchFilterConfig,
-    virtualMachinesNamespaceSearchFilterConfig,
-    virtualMachinesSearchFilterConfig,
-} from '../../searchFilterConfig';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
+import VirtualMachineCvesFilterToolbar from './VirtualMachineCvesFilterToolbar';
+import VirtualMachineCvesToggleGroup from './VirtualMachineCvesToggleGroup';
 import VirtualMachinesCvesTableLegacy from './VirtualMachinesCvesTableLegacy';
-
-const searchFilterConfig = [
-    virtualMachinesClusterSearchFilterConfig,
-    virtualMachinesNamespaceSearchFilterConfig,
-    virtualMachinesSearchFilterConfig,
-];
 
 const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
 
@@ -69,14 +56,28 @@ export const defaultColumns = {
     },
 } as const;
 
-function VirtualMachinesCvesTableEnhanced() {
-    const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { searchFilter, setSearchFilter } = useURLSearch();
+type VirtualMachineCvesVmTableProps = {
+    searchFilter: SearchFilter;
+    pagination: UseURLPaginationResult;
+    managedColumnState: ManagedColumns<keyof typeof defaultColumns>;
+    isFiltered: boolean;
+    onClearFilters: () => void;
+};
+
+type VirtualMachineCvesVmTableEnhancedProps = VirtualMachineCvesVmTableProps;
+
+function VirtualMachineCvesVmTableEnhanced({
+    searchFilter,
+    pagination,
+    managedColumnState,
+    isFiltered,
+    onClearFilters,
+}: VirtualMachineCvesVmTableEnhancedProps) {
+    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1),
+        onSort: () => pagination.setPage(1, 'replace'),
     });
 
     const getVisibilityClass = generateVisibilityForColumns(managedColumnState.columns);
@@ -88,6 +89,9 @@ function VirtualMachinesCvesTableEnhanced() {
         [searchFilter, page, perPage, sortOption]
     );
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
+
+    const totalCount = data?.totalCount ?? 0;
+
     const tableState = getTableUIState({
         isLoading,
         data: data?.vms ?? [],
@@ -97,40 +101,26 @@ function VirtualMachinesCvesTableEnhanced() {
 
     return (
         <>
-            <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
-                <FlexItem fullWidth={{ default: 'fullWidth' }}>
-                    <AdvancedFiltersToolbar
-                        defaultSearchFilterEntity="Virtual Machine"
-                        includeCveSeverityFilters={false}
-                        includeCveStatusFilters={false}
-                        searchFilter={searchFilter}
-                        searchFilterConfig={searchFilterConfig}
-                        onFilterChange={(newFilter) => {
-                            setSearchFilter(newFilter);
-                            setPage(1, 'replace');
-                        }}
+            <TableEntityToolbar
+                filterToolbar={<VirtualMachineCvesFilterToolbar />}
+                entityToggleGroup={<VirtualMachineCvesToggleGroup />}
+                pagination={pagination}
+                tableRowCount={totalCount}
+                isFiltered={isFiltered}
+            >
+                <ToolbarItem>
+                    <ColumnManagementButton
+                        columnConfig={managedColumnState.columns}
+                        onApplyColumns={managedColumnState.setVisibility}
                     />
-                </FlexItem>
-                <ColumnManagementButton
-                    columnConfig={managedColumnState.columns}
-                    onApplyColumns={managedColumnState.setVisibility}
-                />
-                <Pagination
-                    itemCount={data?.totalCount ?? 0}
-                    perPage={perPage}
-                    page={page}
-                    onSetPage={(_, newPage) => setPage(newPage)}
-                    onPerPageSelect={(_, newPerPage) => {
-                        setPerPage(newPerPage);
-                    }}
-                />
-            </Flex>
+                </ToolbarItem>
+            </TableEntityToolbar>
             <InnerScrollContainer>
                 <Table
                     borders={tableState.type === 'COMPLETE'}
                     variant="compact"
                     aria-live="polite"
-                    aria-busy={false}
+                    aria-busy={isLoading}
                 >
                     <Thead>
                         <Tr>
@@ -161,6 +151,7 @@ function VirtualMachinesCvesTableEnhanced() {
                         emptyProps={{
                             message: 'No CVEs have been detected',
                         }}
+                        filteredEmptyProps={{ onClearFilters }}
                         renderer={({ data }) => (
                             <Tbody>
                                 {data.map((virtualMachine) => {
@@ -236,17 +227,17 @@ function VirtualMachinesCvesTableEnhanced() {
     );
 }
 
-function VirtualMachinesCvesTable() {
+function VirtualMachineCvesVmTable(props: VirtualMachineCvesVmTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isEnhancedDataModelEnabled = isFeatureFlagEnabled(
         'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
     );
 
     if (isEnhancedDataModelEnabled) {
-        return <VirtualMachinesCvesTableEnhanced />;
+        return <VirtualMachineCvesVmTableEnhanced {...props} />;
     }
 
     return <VirtualMachinesCvesTableLegacy />;
 }
 
-export default VirtualMachinesCvesTable;
+export default VirtualMachineCvesVmTable;
