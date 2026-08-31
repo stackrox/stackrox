@@ -128,6 +128,10 @@ type Store struct {
 	pastSensors HeritageManager
 	// heritageApplied ensures that past heritage data is applied to the current instance only once.
 	heritageApplied concurrency.Signal
+	// applyHeritageLock serializes concurrent ApplyDataFromHeritageOnce calls. With the PubSub
+	// concurrent lane, deployment events are processed on separate goroutines, so the heritage
+	// apply can be entered concurrently; without this lock the "apply once" guard would race.
+	applyHeritageLock sync.Mutex
 
 	// Cache enriched data for the current instance of Sensor.
 	// This data won't be stored into config map.
@@ -201,6 +205,13 @@ func (e *Store) GetHeritageManager() HeritageManager {
 
 // ApplyDataFromHeritageOnce adds heritage data about past sensors to the store if that hasn't happened yet.
 func (e *Store) ApplyDataFromHeritageOnce() {
+	if e.heritageApplied.IsDone() {
+		return
+	}
+	// Serialize concurrent callers and re-check under the lock: the initial IsDone check above
+	// is only a fast path. Two goroutines could both pass it before either signals completion.
+	e.applyHeritageLock.Lock()
+	defer e.applyHeritageLock.Unlock()
 	if e.heritageApplied.IsDone() {
 		return
 	}
