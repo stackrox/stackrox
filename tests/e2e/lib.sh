@@ -443,6 +443,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
@@ -620,6 +621,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
+    customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
     customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
@@ -713,8 +716,7 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
-    local vm_mode_setting="Disabled"
-    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 4h.
     local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
@@ -747,10 +749,6 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        vm_mode_setting="Enabled"
-    fi
-
     customize_envVars=""
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
@@ -776,7 +774,6 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
-      vm_mode_setting="$vm_mode_setting" \
       vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
@@ -1865,24 +1862,12 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}"
         check_deployment=true
-    else
-        local build_results="build results are unknown"
-        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
-            build_results="$(cat "${STATE_BUILD_RESULTS}")"
-        fi
-        read -r -d '' build_details <<- _EO_DETAILS_ || true
-Check the build workflow runs on GitHub:
-${build_results}
-_EO_DETAILS_
-        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     case "$CI_JOB_NAME" in

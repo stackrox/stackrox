@@ -81,8 +81,9 @@ jobs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         set -euo pipefail
-        bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
-        prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
+        bucket=$("$sc" bucket)
+        prefix=$("$sc" prefix)
         matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual.json.zst\"}]}"
         printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
 

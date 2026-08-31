@@ -127,6 +127,9 @@ func main() {
 		select {
 		case sig := <-sigs:
 			log.Infof("Caught %s signal", sig)
+			if workloadManager != nil {
+				workloadManager.Stop()
+			}
 			s.Stop()
 			gcp.Singleton().Stop()
 		case <-s.Stopped().Done():

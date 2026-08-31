@@ -1,5 +1,4 @@
 import { Card, CardBody, CardTitle, Grid, GridItem } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 
 type AffectedVirtualMachinesSummaryCardProps = {
     affectedVirtualMachinesCount: number;
@@ -21,7 +20,7 @@ function AffectedVirtualMachinesSummaryCard({
                         {`${affectedVirtualMachinesCount} / ${totalVirtualMachinesCount} affected virtual machines`}
                     </GridItem>
                     <GridItem span={12}>
-                        {`${affectedGuestOsCount} ${pluralize('Guest OS', affectedGuestOsCount)} affected`}
+                        {`${affectedGuestOsCount} ${affectedGuestOsCount === 1 ? 'Guest OS' : 'Guest OSes'} affected`}
                     </GridItem>
                 </Grid>
             </CardBody>

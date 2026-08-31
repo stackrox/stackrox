@@ -64,6 +64,7 @@ import type { ExceptionRequestModalProps } from '../../components/ExceptionReque
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { Origin } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import {
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -237,6 +238,7 @@ function ImagePageVulnerabilities({
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
@@ -244,6 +246,7 @@ function ImagePageVulnerabilities({
         cveSelection: hideColumnIf(!canSelectRows),
         nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
         epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        origin: hideColumnIf(!isOriginColumnEnabled),
         requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
         rowActions: hideColumnIf(createTableActions === undefined),
     });
@@ -254,10 +257,13 @@ function ImagePageVulnerabilities({
         // imageCVESearchFilterConfig,
         {
             ...imageCVESearchFilterConfig,
-            attributes: imageCVESearchFilterConfig.attributes.filter(
-                ({ searchTerm }) =>
-                    searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
-            ),
+            attributes: [
+                ...imageCVESearchFilterConfig.attributes.filter(
+                    ({ searchTerm }) =>
+                        searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
+                ),
+                Origin, // CVE origin filter is scoped to the single image page
+            ],
         },
         imageComponentSearchFilterConfig,
     ];

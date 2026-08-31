@@ -9,7 +9,7 @@ option go_package = "./internalapi/virtualmachine/v1;v1";
 
 // Protocol for pull-mode VM scanning over VSOCK between Sensor and roxagent.
 // See ADR-0006 §2 (Protocol) for the full design, exchange examples, and
-// generation-based deduplication semantics.
+// token-based deduplication semantics.
 
 // --- Envelope ---
 
@@ -51,52 +51,35 @@ message ResponseMeta {
   string agent_version = 1;
   // When the cached scan report was produced by the scanner.
   google.protobuf.Timestamp report_generated_at = 2;
-  // Monotonic counter incremented on each rescan; resets to 1 on agent restart.
-  // Sensor uses this for deduplication (see ADR-0006 §2, "Generation counter").
-  uint32 report_generation = 3;
+  // XXH64 of the cached IndexReport and facts. Identical content keeps the
+  // same token; Sensor still forces a full report with an empty last_known_token.
+  string report_token = 3;
   // Methods this agent accepts (e.g. ["get_report"]). Doubles as capability
   // discovery — no separate handshake needed. See ADR-0006 §2.
   repeated string supported_methods = 4;
   // VM metadata from the scan (detected_os, os_version, activation_status, etc.).
   // Future: may also carry roxagent operational metrics.
   map<string, string> facts = 5;
-  // Opaque value seeded once per agent process lifetime (random/time-derived),
-  // held in memory only, never persisted to VM disk. Changes on every agent
-  // restart, unlike report_generation which resets to 1. Sensor should treat
-  // an epoch mismatch as "changed" regardless of report_generation, to avoid
-  // false-negative dedup when a restarted agent's reset generation coincides
-  // with Sensor's cached value for that VM. Zero means the agent predates this
-  // field; Sensor falls back to generation-only comparison in that case.
-  uint32 epoch = 6;
   // XXH64 hex of active mapping; empty string means none. optional so absence
   // means an older agent that does not report mapping metadata.
-  optional string repo_cpe_mapping_hash = 7;
+  optional string repo_cpe_mapping_hash = 6;
   // SENSOR or URL only; UNSPECIFIED means Sensor must not sync.
-  optional RepoCPEMappingUpdatePath repo_cpe_mapping_update_path = 8;
+  optional RepoCPEMappingUpdatePath repo_cpe_mapping_update_path = 7;
 }
 
 // --- Methods ---
 
 message GetReportRequest {
-  // Generation last observed by Sensor for this VM (see ResponseMeta.report_generation).
-  // Use 0 when no prior generation is known, which forces a full report. See
-  // ADR-0006 §2, "Generation counter", for how the agent uses this value.
-  uint32 last_known_generation = 1;
-  // Epoch last observed by Sensor for this VM (see ResponseMeta.epoch). 0 means
-  // unknown (first-ever request for this VM, or a Sensor build that predates
-  // this field) -- the agent should ignore epoch and fall back to
-  // generation-only comparison, exactly as if this field did not exist. This
-  // lets the agent detect a restart-coincidence false match (last_known_generation
-  // happens to equal the post-restart generation) and serve the full report in
-  // the same round trip, instead of Sensor needing a second, forced request.
-  uint32 known_epoch = 2;
+  // Token last observed by Sensor for this VM (see ResponseMeta.report_token).
+  // Empty when none is known, which forces a full report.
+  string last_known_token = 1;
 }
 
 message GetReportResponse {
-  // Full scan report; set when generation changed or forced (generation 0).
+  // Full scan report; set when the content hash changed or last_known_token is empty.
   scanner.v4.IndexReport index_report = 1;
-  // True when agent's generation matches last_known_generation; index_report
-  // is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
+  // True when the agent's token matches last_known_token; index_report is nil.
+  // Sensor may still force a refresh after 4 h with an empty last_known_token.
   bool unchanged = 2;
 }
 

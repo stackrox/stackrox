@@ -24,6 +24,7 @@ func initialize() {
 		collectionDatastore,
 		notifierDS.Singleton(),
 		reportGen.Singleton(),
+		nil,
 		validation.Singleton(),
 	)
 }

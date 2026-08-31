@@ -24,3 +24,8 @@ rbacWorkload:
   numBindings: 1000
   numRoles: 1000
   numServiceAccounts: 1000
+fileActivityWorkload:
+  activityInterval: 50ms
+  batchSize: 10
+  numPaths: 500
+  nodeEventPercent: 50
