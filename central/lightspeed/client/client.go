@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,6 +26,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// LightspeedEndpoint is the URL of the OpenShift Lightspeed API. URL will be populated from integration in a follow up PR
 	LightspeedEndpoint = env.RegisterSetting("ROX_LIGHTSPEED_ENDPOINT",
 		env.WithDefault("https://lightspeed-app-server.openshift-lightspeed.svc:8443"))
@@ -94,6 +98,9 @@ func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryRespon
 	}
 
 	url := fmt.Sprintf("%s/v1/query", c.endpoint)
+	log.Debugf("OLS request URL: %s, body length: %d bytes", url, len(body))
+	log.Debugf("OLS request body: %s", string(body))
+
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, errors.Wrap(err, "building HTTP request")
@@ -109,7 +116,9 @@ func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryRespon
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("Lightspeed API returned HTTP %d", resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Errorf("OLS returned HTTP %d, response body: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("Lightspeed API returned HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	var result QueryResponse

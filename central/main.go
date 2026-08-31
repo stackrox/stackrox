@@ -16,6 +16,7 @@ import (
 	administrationUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	administrationUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
+	aiIntegrationService "github.com/stackrox/rox/central/aiintegration/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
@@ -500,6 +501,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceStats.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
+	}
+
+	if features.AiIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, aiIntegrationService.Singleton())
 	}
 
 	if features.VirtualMachines.Enabled() {

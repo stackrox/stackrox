@@ -14,6 +14,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
+	Add(ctx context.Context, integration *storage.AiIntegration) (string, error)
 	Get(ctx context.Context, id string) (*storage.AiIntegration, bool, error)
 	GetAll(ctx context.Context) ([]*storage.AiIntegration, error)
 	Upsert(ctx context.Context, integration *storage.AiIntegration) error

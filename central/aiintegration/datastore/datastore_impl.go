@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -16,6 +17,19 @@ var (
 
 type dataStore struct {
 	store store.Store
+}
+
+func (d *dataStore) Add(ctx context.Context, integration *storage.AiIntegration) (string, error) {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
+		return "", err
+	} else if !ok {
+		return "", sac.ErrResourceAccessDenied
+	}
+	integration.Id = uuid.NewV4().String()
+	if err := d.store.Upsert(ctx, integration); err != nil {
+		return "", err
+	}
+	return integration.GetId(), nil
 }
 
 func (d *dataStore) Get(ctx context.Context, id string) (*storage.AiIntegration, bool, error) {

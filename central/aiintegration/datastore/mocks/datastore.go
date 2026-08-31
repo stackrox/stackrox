@@ -41,6 +41,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// Add mocks base method.
+func (m *MockDataStore) Add(ctx context.Context, integration *storage.AiIntegration) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Add", ctx, integration)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockDataStoreMockRecorder) Add(ctx, integration any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, integration)
+}
+
 // Delete mocks base method.
 func (m *MockDataStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

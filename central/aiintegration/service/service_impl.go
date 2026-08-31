@@ -2,12 +2,9 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -22,15 +19,14 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-	testTimeout           = 10 * time.Second
+	testTimeout = 10 * time.Second
 )
 
 var (
@@ -79,19 +75,27 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // CreateAiIntegration creates a new AI integration.
+// Only one AI integration is allowed at a time.
 func (s *serviceImpl) CreateAiIntegration(ctx context.Context, req *v2.AiIntegration) (*v2.AiIntegration, error) {
 	if err := validateIntegration(req); err != nil {
 		return nil, err
 	}
 
-	storageObj := apiToStorage(req)
-	storageObj.Id = uuid.NewV4().String()
+	existing, err := s.datastore.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(existing) > 0 {
+		return nil, errors.Wrap(errox.AlreadyExists, "only one AI integration is allowed; delete the existing integration before creating a new one")
+	}
 
-	if err := s.datastore.Upsert(ctx, storageObj); err != nil {
+	storageObj := apiToStorage(req)
+	id, err := s.datastore.Add(ctx, storageObj)
+	if err != nil {
 		return nil, err
 	}
 
-	log.Infof("Created AI integration %q (id=%s, type=%s)", storageObj.GetName(), storageObj.GetId(), storageObj.GetType())
+	log.Infof("Created AI integration %q (id=%s, type=%s)", storageObj.GetName(), id, storageObj.GetType())
 	return storageToAPI(storageObj), nil
 }
 
@@ -208,27 +212,11 @@ func validateIntegration(integration *v2.AiIntegration) error {
 }
 
 func testConnectivity(serviceURL string) error {
-	// OpenShift Lightspeed service provides /liveness endpoint to verify if the service is running
 	healthURL := serviceURL + "/readiness"
 
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
-
-	if caData, err := os.ReadFile(serviceOperatorCAPath); err == nil {
-		pool, _ := x509.SystemCertPool()
-		if pool == nil {
-			pool = x509.NewCertPool()
-		}
-		pool.AppendCertsFromPEM(caData)
-		tlsConfig.RootCAs = pool
-	}
-
 	client := &http.Client{
-		Timeout: testTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
+		Timeout:   testTimeout,
+		Transport: tlsutils.TransportWithServiceCA(),
 	}
 
 	resp, err := client.Get(healthURL)

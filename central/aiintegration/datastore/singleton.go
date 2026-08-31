@@ -3,6 +3,7 @@ package datastore
 import (
 	pgStore "github.com/stackrox/rox/central/aiintegration/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,6 +14,9 @@ var (
 
 // Singleton returns the singleton instance of the AI integration DataStore.
 func Singleton() DataStore {
+	if !features.AiIntegration.Enabled() {
+		return nil
+	}
 	once.Do(func() {
 		store := pgStore.New(globaldb.GetPostgres())
 		instance = New(store)
