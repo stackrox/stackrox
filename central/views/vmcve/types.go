@@ -49,6 +49,21 @@ type CveView interface {
 	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
 	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)
 	CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error)
+	GetCVEsForVM(ctx context.Context, q *v1.Query) ([]CVEForVMCore, error)
+}
+
+// CVEForVMCore provides per-CVE aggregation scoped to a single VM.
+type CVEForVMCore interface {
+	GetCVE() string
+	GetMaxSeverity() int32
+	GetIsFixable() bool
+	GetMaxCVSS() float32
+	GetMaxNVDCVSS() float32
+	GetEPSSProbability() float32
+	GetAffectedComponentCount() int
+	GetPublishDate() *time.Time
+	GetAdvisoryName() string
+	GetAdvisoryLink() string
 }
 
 // VMSeverityCounts provides per-VM severity counts.

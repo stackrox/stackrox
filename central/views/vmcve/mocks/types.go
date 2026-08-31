@@ -350,6 +350,21 @@ func (mr *MockCveViewMockRecorder) CountComponentsPerCVE(ctx, q any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountComponentsPerCVE", reflect.TypeOf((*MockCveView)(nil).CountComponentsPerCVE), ctx, q)
 }
 
+// GetCVEsForVM mocks base method.
+func (m *MockCveView) GetCVEsForVM(ctx context.Context, q *v1.Query) ([]vmcve.CVEForVMCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEsForVM", ctx, q)
+	ret0, _ := ret[0].([]vmcve.CVEForVMCore)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEsForVM indicates an expected call of GetCVEsForVM.
+func (mr *MockCveViewMockRecorder) GetCVEsForVM(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForVM", reflect.TypeOf((*MockCveView)(nil).GetCVEsForVM), ctx, q)
+}
+
 // Get mocks base method.
 func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]vmcve.CveCore, error) {
 	m.ctrl.T.Helper()

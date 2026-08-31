@@ -339,26 +339,49 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 
 	countQuery := searchQuery.CloneVT()
 	countQuery.Pagination = nil
-	totalCount, err := s.cveDS.Count(ctx, countQuery)
+	totalCount, err := s.cveView.Count(ctx, countQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	cves, err := s.cveView.GetCVEsForVM(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	componentCountFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery()
-	componentCounts, err := s.cveView.CountComponentsPerCVE(ctx, componentCountFilter)
+	// Fetch one raw storage row per CVE for metadata not available through
+	// the view (summary, link). These are stored in the serialized blob.
+	cveIDs := make([]string, 0, len(cves))
+	for _, cve := range cves {
+		cveIDs = append(cveIDs, cve.GetCVE())
+	}
+	metadataByID, err := s.fetchCVEMetadata(ctx, request.GetVmId(), cveIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	items := make([]*v2.VMCVERow, 0, len(cves))
 	for _, cve := range cves {
-		row := storagetov2.VirtualMachineCVEV2ToRow(cve)
-		row.AffectedComponentCount = componentCounts[cve.GetCveBaseInfo().GetCve()]
+		row := &v2.VMCVERow{
+			Cve:                    cve.GetCVE(),
+			Severity:               v2.VulnerabilitySeverity(cve.GetMaxSeverity()),
+			IsFixable:              cve.GetIsFixable(),
+			Cvss:                   cve.GetMaxCVSS(),
+			NvdCvss:                cve.GetMaxNVDCVSS(),
+			EpssProbability:        cve.GetEPSSProbability(),
+			AffectedComponentCount: int32(cve.GetAffectedComponentCount()),
+			PublishedOn:            protocompat.ConvertTimeToTimestampOrNil(cve.GetPublishDate()),
+		}
+		if meta, ok := metadataByID[cve.GetCVE()]; ok {
+			row.Summary = meta.GetCveBaseInfo().GetSummary()
+			row.Link = meta.GetCveBaseInfo().GetLink()
+		}
+		if cve.GetAdvisoryName() != "" {
+			row.Advisory = &v2.Advisory{
+				Name: cve.GetAdvisoryName(),
+				Link: cve.GetAdvisoryLink(),
+			}
+		}
 		items = append(items, row)
 	}
 
@@ -366,6 +389,30 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 		Cves:       items,
 		TotalCount: int32(totalCount),
 	}, nil
+}
+
+// fetchCVEMetadata fetches one raw storage row per CVE for metadata fields
+// (summary, link) that aren't available through the SQL view.
+func (s *serviceImpl) fetchCVEMetadata(ctx context.Context, vmID string, cveIDs []string) (map[string]*storage.VirtualMachineCVEV2, error) {
+	if len(cveIDs) == 0 {
+		return nil, nil
+	}
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmID).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.CVE, cveIDs...).ProtoQuery(),
+	)
+	rows, err := s.cveDS.SearchRawVMCVEs(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]*storage.VirtualMachineCVEV2, len(cveIDs))
+	for _, row := range rows {
+		cveID := row.GetCveBaseInfo().GetCve()
+		if _, exists := result[cveID]; !exists {
+			result[cveID] = row
+		}
+	}
+	return result, nil
 }
 
 // GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
