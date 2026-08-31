@@ -487,8 +487,8 @@ func main() {
 		}()
 	}
 
-	// CreateSensor will set up the workload manager handlers (SetSignalHandlers,
-	// SetVMIndexReportSender, SetVMStore) if workloadManager is not nil.
+	// CreateSensor will set up the workload manager handlers (SetSignalHandlers)
+	// if workloadManager is not nil.
 	s, err := sensor.CreateSensor(sensorConfig)
 	if err != nil {
 		panic(err)

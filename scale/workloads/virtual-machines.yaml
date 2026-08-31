@@ -4,10 +4,10 @@
 #
 # The unified VirtualMachineWorkload config handles both:
 # 1. VM/VMI informer events (always generated when poolSize > 0)
-# 2. VM index reports (only generated when reportInterval > 0)
+# 2. VM index reports (when reportInterval > 0): VMScraper polls an in-process
+#    fake agent. Cadence is the scraper poll interval, not reportInterval.
 #
-# Reports are injected for VMs that informers have already stored. They are not
-# VSOCK-pulled. You can run just the informers or informers + reports.
+# You can run just the informers (reportInterval: 0) or informers + reports.
 #
 # Usage:
 #   ROX_VIRTUAL_MACHINES=true go run tools/local-sensor/main.go -no-mem-prof -no-cpu-prof -with-metrics -with-fakeworkload scale/workloads/virtual-machines.yaml
@@ -29,9 +29,9 @@ virtualMachineWorkload:
   updateInterval: 5m
   lifecycleDuration: 2h
   numLifecycles: 0
-  reportInterval: 5m # ±5% max deviation applied
+  reportInterval: 5m # > 0 enables fake agent reports; scrape cadence is independent
   numPackages: 700
-  initialReportDelay: 30s # ±20% max deviation applied
+  initialReportDelay: 30s # scraper start window spreads first polls
 
 deploymentWorkload:
 - deploymentType: Deployment

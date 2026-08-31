@@ -15,16 +15,13 @@ import (
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,44 +39,7 @@ const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
 
 	defaultNamespaceNum = 30
-
-	// reportGeneratorSeed is the seed for deterministic package selection in VM index reports.
-	reportGeneratorSeed = int64(42)
 )
-
-// vmReadiness is the gate before fake index reports may be injected.
-type vmReadiness struct {
-	senderReady  concurrency.Signal
-	storeReady   concurrency.Signal
-	centralReady concurrency.Signal
-}
-
-func newVMReadiness() *vmReadiness {
-	return &vmReadiness{
-		senderReady:  concurrency.NewSignal(),
-		storeReady:   concurrency.NewSignal(),
-		centralReady: concurrency.NewSignal(),
-	}
-}
-
-func (r *vmReadiness) signalSenderReady()  { r.senderReady.Signal() }
-func (r *vmReadiness) signalStoreReady()   { r.storeReady.Signal() }
-func (r *vmReadiness) signalCentralReady() { r.centralReady.Signal() }
-func (r *vmReadiness) resetCentralReady()  { r.centralReady.Reset() }
-
-// Wait returns false if ctx is cancelled before sender, store, and Central are ready.
-func (r *vmReadiness) Wait(ctx context.Context) bool {
-	if !concurrency.WaitInContext(&r.senderReady, ctx) {
-		return false
-	}
-	if !concurrency.WaitInContext(&r.storeReady, ctx) {
-		return false
-	}
-	if !concurrency.WaitInContext(&r.centralReady, ctx) {
-		return false
-	}
-	return true
-}
 
 var (
 	log = logging.LoggerForModule()
@@ -153,13 +113,10 @@ type WorkloadManager struct {
 	dockerSecretNamespaces    []string
 
 	// signals services
-	servicesInitialized  concurrency.Signal
-	processes            signal.Pipeline
-	networkManager       manager.Manager
-	pubSubDispatcher     common.PubSubDispatcher
-	vmIndexReportSender  vmscraper.IndexReportSender
-	vmStore              *vmStore.VirtualMachineStore
-	vmPrerequisitesReady *vmReadiness
+	servicesInitialized concurrency.Signal
+	processes           signal.Pipeline
+	networkManager      manager.Manager
+	pubSubDispatcher    common.PubSubDispatcher
 
 	// shutdown coordination
 	shutdownCtx    context.Context
@@ -275,19 +232,18 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
-		db:                   db,
-		workload:             &workload,
-		originatorCache:      NewOriginatorCache(),
-		labelsPool:           config.labelsPool,
-		endpointPool:         config.endpointPool,
-		ipPool:               config.ipPool,
-		externalIpPool:       config.externalIpPool,
-		containerPool:        config.containerPool,
-		processPool:          config.processPool,
-		servicesInitialized:  concurrency.NewSignal(),
-		vmPrerequisitesReady: newVMReadiness(),
-		shutdownCtx:          shutdownCtx,
-		shutdownCancel:       shutdownCancel,
+		db:                  db,
+		workload:            &workload,
+		originatorCache:     NewOriginatorCache(),
+		labelsPool:          config.labelsPool,
+		endpointPool:        config.endpointPool,
+		ipPool:              config.ipPool,
+		externalIpPool:      config.externalIpPool,
+		containerPool:       config.containerPool,
+		processPool:         config.processPool,
+		servicesInitialized: concurrency.NewSignal(),
+		shutdownCtx:         shutdownCtx,
+		shutdownCancel:      shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -326,32 +282,9 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
-// SetVMIndexReportSender sets the injector for fake VM index reports.
-func (w *WorkloadManager) SetVMIndexReportSender(sender vmscraper.IndexReportSender) {
-	w.vmIndexReportSender = sender
-	w.vmPrerequisitesReady.signalSenderReady()
-}
-
-// SetVMStore sets the informer-backed VirtualMachine store.
-// Reports are only injected for VMs that already exist in this store.
-func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
-	w.vmStore = store
-	w.vmPrerequisitesReady.signalStoreReady()
-}
-
 // SetPubSubDispatcher sets the pub/sub dispatcher for publishing synthetic file activities
 func (w *WorkloadManager) SetPubSubDispatcher(dispatcher common.PubSubDispatcher) {
 	w.pubSubDispatcher = dispatcher
-}
-
-// Notify implements common.Notifiable so report injection waits until Central is reachable.
-func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		w.vmPrerequisitesReady.signalCentralReady()
-	case common.SensorComponentEventOfflineMode:
-		w.vmPrerequisitesReady.resetCentralReady()
-	}
 }
 
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
@@ -538,25 +471,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	// Start VirtualMachine/VirtualMachineInstance workload if configured.
-	// Index reports are injected for live VMs after the store and Central are ready.
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
-		// Initialize report generator if index reports are enabled
-		var reportGen *vmindexreport.Generator
-		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
-			reportGen = vmindexreport.NewGeneratorWithSeed(
-				w.workload.VirtualMachineWorkload.NumPackages,
-				reportGeneratorSeed,
-			)
-			log.Infof("VM index reports enabled: interval=%s, packages=%d",
-				w.workload.VirtualMachineWorkload.ReportInterval,
-				w.workload.VirtualMachineWorkload.NumPackages)
-		}
-
-		// Fork management of VM/VMI resources (including index reports if enabled)
 		workload := w.workload.VirtualMachineWorkload
 		for i := range workload.PoolSize {
 			w.wg.Add(1)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, i, reportGen)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, i)
 		}
 	}
 }

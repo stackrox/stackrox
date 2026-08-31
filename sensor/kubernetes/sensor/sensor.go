@@ -57,6 +57,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
+	"github.com/stackrox/rox/sensor/kubernetes/fake/vmagent"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
@@ -185,17 +186,21 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.VirtualMachines.Enabled() {
 		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
 		var dialer vmscraper.VMDialer
-		d, err := vsockdialer.NewMultiDialer()
-		if err != nil {
-			log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
-		} else {
-			dialer = d
-		}
-		var vmProtoClient vmscraper.ProtocolClient = vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+		var vmProtoClient vmscraper.ProtocolClient
 		if cfg.workloadManager != nil && cfg.workloadManager.HasFakeVMWorkload() {
-			// Fake workloads inject reports via VMScraper.Send, no need to dial over VSOCK.
-			dialer = nil
-			vmProtoClient = nil
+			numPackages := cfg.workloadManager.FakeVMNumPackages()
+			reportsEnabled := cfg.workloadManager.HasFakeVMIndexReports()
+			dialer = vmagent.NewDialer()
+			vmProtoClient = vmagent.NewClient(numPackages, reportsEnabled)
+			log.Infof("VMScraper using in-process fake agent (reports=%t packages=%d)", reportsEnabled, numPackages)
+		} else {
+			d, err := vsockdialer.NewMultiDialer()
+			if err != nil {
+				log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
+			} else {
+				dialer = d
+			}
+			vmProtoClient = vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 		}
 		repo2CPE, err = scannerdefinitions.NewRepo2CPE(env.CentralEndpoint.Setting(), cfg.certLoader())
 		if err != nil {
@@ -305,11 +310,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetPubSubDispatcher(internalMessageDispatcher)
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
-		if features.VirtualMachines.Enabled() && vmScraper != nil && cfg.workloadManager.HasFakeVMWorkload() {
-			cfg.workloadManager.SetVMIndexReportSender(vmScraper)
-			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
-			s.AddNotifiable(cfg.workloadManager)
-		}
 	}
 
 	var networkFlowService service.Service

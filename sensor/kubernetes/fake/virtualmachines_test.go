@@ -103,32 +103,28 @@ func TestValidateVMWorkload(t *testing.T) {
 				`Setting "updateInterval"=1m40s causes none of the VMs to ever receive an update. ` +
 				`Lower the value of "updateInterval" or increase the 'lifecycleDuration'.`,
 		},
-		"reportInterval in jitter range warns": {
+		"reportInterval does not affect lifecycle validation": {
 			input: VirtualMachineWorkload{
 				PoolSize:          5,
 				LifecycleDuration: 60 * time.Second, // bounds: 30s-90s
 				UpdateInterval:    20 * time.Second, // < lower bound, OK
-				ReportInterval:    45 * time.Second, // in range
+				ReportInterval:    45 * time.Second,
 			},
 			wantLifecycleDuration: 60 * time.Second,
 			wantUpdateInterval:    20 * time.Second,
-			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
-				`Setting "reportInterval"=45s may cause some VMs to never send any index reports. ` +
-				`Lower the value of "reportInterval" or increase the 'lifecycleDuration'.`,
+			wantErr:               "",
 		},
-		"initialReportDelay in jitter range warns": {
+		"initialReportDelay does not affect lifecycle validation": {
 			input: VirtualMachineWorkload{
 				PoolSize:           5,
 				LifecycleDuration:  60 * time.Second, // bounds: 30s-90s
 				UpdateInterval:     20 * time.Second, // < lower bound, OK
-				ReportInterval:     20 * time.Second, // < lower bound, OK
-				InitialReportDelay: 45 * time.Second, // in range
+				ReportInterval:     20 * time.Second,
+				InitialReportDelay: 45 * time.Second,
 			},
 			wantLifecycleDuration: 60 * time.Second,
 			wantUpdateInterval:    20 * time.Second,
-			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
-				`Setting "initialReportDelay"=45s may cause some VMs to never send any index reports. ` +
-				`Lower the value of "initialReportDelay" or increase the 'lifecycleDuration'.`,
+			wantErr:               "",
 		},
 	}
 
@@ -245,6 +241,48 @@ func TestWorkloadManager_HasFakeVMWorkload(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tt.want, tt.mgr.HasFakeVMWorkload())
+		})
+	}
+}
+
+func TestWorkloadManager_HasFakeVMIndexReports(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want bool
+	}{
+		"nil manager": {},
+		"pool without reports": {
+			mgr: &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{PoolSize: 3}}},
+		},
+		"pool with reports": {
+			mgr: &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{
+				PoolSize:       3,
+				ReportInterval: time.Minute,
+			}}},
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.HasFakeVMIndexReports())
+		})
+	}
+}
+
+func TestWorkloadManager_FakeVMNumPackages(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want int
+	}{
+		"nil manager": {},
+		"packages set": {
+			mgr:  &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{NumPackages: 700}}},
+			want: 700,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.FakeVMNumPackages())
 		})
 	}
 }

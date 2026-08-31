@@ -91,7 +91,7 @@ type SecretWorkload struct {
 }
 
 // VirtualMachineWorkload defines the workload for VirtualMachine and VirtualMachineInstance CRDs.
-// Index reports are generated when ReportInterval > 0, and only for VMs in the informer-backed store.
+// ReportInterval > 0 enables the in-process fake agent; VMScraper poll and spread set cadence.
 type VirtualMachineWorkload struct {
 	// PoolSize is the number of VM/VMI templates to maintain in the pool.
 	// This controls how many unique VMs exist at any given time.
@@ -102,13 +102,11 @@ type VirtualMachineWorkload struct {
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
 	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
 	NumLifecycles int `yaml:"numLifecycles"`
-	// InitialReportDelay delays the first index report for each VM.
-	// A ±20% jitter is always applied to spread the initial burst; when unset, the first
-	// report is sent immediately once sender, store, and Central are ready.
+	// InitialReportDelay is unused; VMScraper spreads first polls with its start window.
 	InitialReportDelay time.Duration `yaml:"initialReportDelay"`
 
-	// ReportInterval is how often each live VM injects an index report (0 = no reports).
-	// Reports are only sent for VMs that already exist in the informer-backed store.
+	// ReportInterval greater than zero enables fake index reports. Cadence is
+	// VMScraper poll and spread, not this interval.
 	ReportInterval time.Duration `yaml:"reportInterval"`
 	// NumPackages is the number of fake packages to include in each index report
 	NumPackages int `yaml:"numPackages"`
