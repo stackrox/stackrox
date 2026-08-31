@@ -25,7 +25,10 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-const scanMismatchWarnSnippet = "does not match the freshly processed scan_time"
+const (
+	scanRejectedWarnSnippet   = "rejected this scan as not newer than the stored one"
+	scanRegressionWarnSnippet = "possible scan regression"
+)
 
 func swapObservedLogger(t *testing.T) *observer.ObservedLogs {
 	core, logs := observer.New(zap.WarnLevel)
@@ -43,14 +46,27 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
 
 	processed := time.Now()
-	stored := processed.Add(-time.Hour) // what the store keeps after rejecting the fresh scan
 
 	cases := map[string]struct {
+		// persistedScanTime is what the store leaves on node.Scan after the upsert returns.
 		persistedScanTime time.Time
-		expectWarning     bool
+		// expectSnippet is the warning we expect to see; empty means no warning at all.
+		expectSnippet string
 	}{
-		"warns when the store rejected the fresh scan": {persistedScanTime: stored, expectWarning: true},
-		"silent when the fresh scan was accepted":      {persistedScanTime: processed, expectWarning: false},
+		// A genuine isUpdated() rejection keeps a scan strictly newer than the one we just processed.
+		"warns (rejection) when the store kept a newer scan": {
+			persistedScanTime: processed.Add(time.Hour),
+			expectSnippet:     scanRejectedWarnSnippet,
+		},
+		// The store kept an older scan than the fresh one - a scan the freshness guard should have accepted.
+		"warns (regression) when the store kept an older scan": {
+			persistedScanTime: processed.Add(-time.Hour),
+			expectSnippet:     scanRegressionWarnSnippet,
+		},
+		"silent when the fresh scan was accepted": {
+			persistedScanTime: processed,
+			expectSnippet:     "",
+		},
 	}
 
 	for name, tc := range cases {
@@ -88,11 +104,18 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 			err := p.Run(t.Context(), node.GetClusterId(), createMsg(mockIndexReport), nil)
 			require.NoError(t, err)
 
-			got := logs.FilterMessageSnippet(scanMismatchWarnSnippet).All()
-			if tc.expectWarning {
-				assert.Len(t, got, 1)
-			} else {
-				assert.Empty(t, got)
+			rejections := logs.FilterMessageSnippet(scanRejectedWarnSnippet).All()
+			regressions := logs.FilterMessageSnippet(scanRegressionWarnSnippet).All()
+			switch tc.expectSnippet {
+			case scanRejectedWarnSnippet:
+				assert.Len(t, rejections, 1)
+				assert.Empty(t, regressions)
+			case scanRegressionWarnSnippet:
+				assert.Len(t, regressions, 1)
+				assert.Empty(t, rejections)
+			default:
+				assert.Empty(t, rejections)
+				assert.Empty(t, regressions)
 			}
 		})
 	}

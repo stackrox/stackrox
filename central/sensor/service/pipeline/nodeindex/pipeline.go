@@ -129,7 +129,22 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	// rewrites node.Scan in place to the previously stored one before returning - see isUpdated() in
 	// central/node/datastore/store/postgres/store.go. Comparing scan times here, on the same object we just
 	// tried to upsert, tells us definitively whether the fresh scan we just processed actually landed.
-	if persistedScanTime := node.GetScan().GetScanTime(); protocompat.CompareTimestamps(incomingScanTime, persistedScanTime) != 0 {
+	persistedScanTime := node.GetScan().GetScanTime()
+	switch cmp := protocompat.CompareTimestamps(incomingScanTime, persistedScanTime); {
+	case cmp > 0:
+		// The store kept a scan_time older than the one we just processed. isUpdated() only rejects scans that
+		// are not strictly newer than the stored one, so a fresh scan should have been accepted - this
+		// direction means the freshly processed scan silently lost to an older persisted one, which is the
+		// ROX-36432 symptom (scan_time stuck in the past while processing continues).
+		log.Warnf("Persisted scan_time for node %s is older than the freshly processed scan_time: "+
+			"processed=%s persisted=%s. The store kept an older scan than the one just processed, which the "+
+			"freshness guard should have accepted - possible scan regression.",
+			nodeDatastore.NodeString(node),
+			protocompat.ConvertTimestampToString(incomingScanTime, time.RFC3339Nano),
+			protocompat.ConvertTimestampToString(persistedScanTime, time.RFC3339Nano))
+	case cmp < 0:
+		// The store kept a scan_time newer than the one we just processed - the expected shape of an
+		// isUpdated() rejection, where node.Scan was rewritten back to the newer stored scan.
 		log.Warnf("Persisted scan_time for node %s does not match the freshly processed scan_time: "+
 			"processed=%s persisted=%s. The store rejected this scan as not newer than the stored one.",
 			nodeDatastore.NodeString(node),
