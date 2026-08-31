@@ -8,6 +8,10 @@ jobs:
   update-scanner-mappings:
     if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     env:
       REPOMAPPING_DIR: repomapping
     steps:
@@ -34,7 +38,8 @@ jobs:
         # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://definitions.stackrox.io/v4"
 
-    - name: Send Slack notification on workflow failure
+    - uses: ./.github/actions/notify-slack-on-failure
       if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Update Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        mention: "<!subteam^S04S96AAVND|acs-scanner-primary>"

@@ -61,17 +61,19 @@ jobs:
         } >> "$GITHUB_OUTPUT"
         echo "$result" > matrix-result.json
 
-    - name: Notify on matrix errors
+    - name: Log matrix errors
       if: github.event_name != 'pull_request' && steps.matrix-scheduled.outputs.has_errors == 'true'
       env:
         ERRORS: ${{ steps.matrix-scheduled.outputs.errors }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
         echo "::error::vulnerability updater scheduling errors: ${ERRORS}"
-        curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability updater scheduling errors: ${ERRORS}. <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
+
+    - name: Notify on matrix errors
+      if: github.event_name != 'pull_request' && steps.matrix-scheduled.outputs.has_errors == 'true'
+      uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        message: "Vulnerability updater scheduling errors: ${{ steps.matrix-scheduled.outputs.errors }}. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
 
     - name: Build updater matrix (PR)
       if: github.event_name == 'pull_request'
@@ -132,6 +134,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    # Propagates to scanner-updater-export.yaml's notify job.
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     uses: ./.github/workflows/scanner-updater-export.yaml
     with:
       source: ${{ matrix.source }}
@@ -144,3 +151,20 @@ jobs:
       GOOGLE_SA_CIRCLECI_SCANNER: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
       GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
       SLACK_ONCALL_SCANNER_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+
+  send-notification:
+    # Catches hard failures in build-matrix/plan, not just data-level errors
+    # reported by the matrix script (handled by "Notify on matrix errors" above).
+    needs: [build-matrix, plan]
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
