@@ -12,9 +12,10 @@ import {
     FlexItem,
     Spinner,
 } from '@patternfly/react-core';
-import { CopyIcon, MagicIcon, TimesIcon } from '@patternfly/react-icons';
+import { CopyIcon, TimesIcon } from '@patternfly/react-icons';
 
 import useClipboardCopy from 'hooks/useClipboardCopy';
+import AiExperienceIcon from 'images/aiExperience.svg?react';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type AiRiskSummaryCardProps = {
@@ -62,7 +63,7 @@ function AiRiskSummaryCard({
                         alignItems={{ default: 'alignItemsCenter' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <MagicIcon />
+                        <AiExperienceIcon />
                         <FlexItem>AI risk briefing</FlexItem>
                     </Flex>
                 </CardTitle>

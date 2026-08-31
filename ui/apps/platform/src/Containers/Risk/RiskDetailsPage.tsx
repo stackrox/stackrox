@@ -12,7 +12,6 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { MagicIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -28,6 +27,7 @@ import {
 } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import AiExperienceIcon from 'images/aiExperience.svg?react';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
@@ -107,12 +107,12 @@ function RiskDetailsPage(): ReactElement {
                                 <FlexItem>
                                     <Button
                                         variant="primary"
-                                        icon={<MagicIcon />}
+                                        icon={<AiExperienceIcon />}
                                         onClick={aiRiskSummary.investigate}
                                         isDisabled={aiRiskSummary.isOpen || aiRiskSummary.isLoading}
                                         isLoading={aiRiskSummary.isLoading}
                                     >
-                                        Investigate with Lightspeed
+                                        Investigate with AI
                                     </Button>
                                 </FlexItem>
                             )}
