@@ -1,0 +1,80 @@
+{
+    "cves": [
+        {
+            "cve": "CVE-2024-0001",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+            "isFixable": true,
+            "cvss": 9.8,
+            "nvdCvss": 9.8,
+            "epssProbability": 0.85,
+            "epssPercentile": 0.97,
+            "epss": {
+                "epssProbability": 0.85,
+                "epssPercentile": 0.97
+            },
+            "affectedComponentCount": 1,
+            "publishedOn": "2024-01-15T00:00:00.000Z",
+            "lastModified": "2024-02-01T00:00:00.000Z",
+            "firstSystemOccurrence": "2024-01-20T00:00:00.000Z",
+            "summary": "Critical vulnerability in openssl",
+            "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0001",
+            "fixedBy": "3.0.7-25.el9",
+            "cvssMetrics": [],
+            "advisory": {
+                "name": "RHSA-2024:0001",
+                "link": "https://access.redhat.com/errata/RHSA-2024:0001"
+            }
+        },
+        {
+            "cve": "CVE-2024-0002",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY",
+            "isFixable": true,
+            "cvss": 5.3,
+            "nvdCvss": 5.3,
+            "epssProbability": 0.12,
+            "epssPercentile": 0.45,
+            "epss": {
+                "epssProbability": 0.12,
+                "epssPercentile": 0.45
+            },
+            "affectedComponentCount": 1,
+            "publishedOn": "2024-02-10T00:00:00.000Z",
+            "lastModified": "2024-03-01T00:00:00.000Z",
+            "firstSystemOccurrence": "2024-02-15T00:00:00.000Z",
+            "summary": "Moderate vulnerability in openssl",
+            "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0002",
+            "fixedBy": "3.0.7-25.el9",
+            "cvssMetrics": [],
+            "advisory": {
+                "name": "RHSA-2024:0002",
+                "link": "https://access.redhat.com/errata/RHSA-2024:0002"
+            }
+        },
+        {
+            "cve": "CVE-2024-0003",
+            "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+            "isFixable": true,
+            "cvss": 7.5,
+            "nvdCvss": 7.5,
+            "epssProbability": 0.45,
+            "epssPercentile": 0.82,
+            "epss": {
+                "epssProbability": 0.45,
+                "epssPercentile": 0.82
+            },
+            "affectedComponentCount": 1,
+            "publishedOn": "2024-03-01T00:00:00.000Z",
+            "lastModified": "2024-03-15T00:00:00.000Z",
+            "firstSystemOccurrence": "2024-03-05T00:00:00.000Z",
+            "summary": "Important vulnerability in curl",
+            "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0003",
+            "fixedBy": "7.76.1-29.el9",
+            "cvssMetrics": [],
+            "advisory": {
+                "name": "RHSA-2024:0003",
+                "link": "https://access.redhat.com/errata/RHSA-2024:0003"
+            }
+        }
+    ],
+    "totalCount": 3
+}

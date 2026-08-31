@@ -37,6 +37,7 @@ export const searchFieldLabels = [
     'CVE Published On',
     'CVE Fix Available Timestamp',
     'CVE Created Time',
+    'CVE Origin',
     'CVE Snoozed',
     'CVE Snooze Expiry',
     'CVSS',
@@ -422,8 +423,10 @@ export const searchFieldLabels = [
     'AuthProvider Name',
     //
     // Virtual Machine fields.
+    'Guest OS',
     'Virtual Machine ID',
     'Virtual Machine Name',
+    'Virtual Machine Scan Time',
     'Scan Status', // frontend only pending backend
 ] as const;
 
