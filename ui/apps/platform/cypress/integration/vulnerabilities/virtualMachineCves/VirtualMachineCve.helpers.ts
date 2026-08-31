@@ -17,7 +17,7 @@ export const routeMatcherMapForVirtualMachines = {
 export const routeMatcherMapForVirtualMachine = {
     [getVirtualMachineAlias]: {
         method: 'GET',
-        url: '/v2/virtualmachines/vms/*',
+        url: '/v2/virtualmachines/*',
     },
 };
 
