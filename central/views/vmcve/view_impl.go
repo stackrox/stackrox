@@ -36,6 +36,14 @@ func (v *vmCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+	return v.countBySeverity(ctx, q, search.VirtualMachineID)
+}
+
+func (v *vmCVECoreViewImpl) CountCVEsBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+	return v.countBySeverity(ctx, q, search.CVE)
+}
+
+func (v *vmCVECoreViewImpl) countBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -43,7 +51,7 @@ func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (c
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[resourceCountByVMCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID))
+	result, err := pgSearch.RunSelectOneForSchema[resourceCountByVMCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, countOn))
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +127,7 @@ func (v *vmCVECoreViewImpl) CountBySeverityPerVM(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 
-	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID)
+	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.CVE)
 	cloned.Selects = append([]*v1.QuerySelect{
 		search.NewQuerySelect(search.VirtualMachineID).Proto(),
 	}, cloned.GetSelects()...)

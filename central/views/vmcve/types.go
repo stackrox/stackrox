@@ -40,7 +40,10 @@ type CVEComponentCore interface {
 //go:generate mockgen-wrapper
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	// CountBySeverity counts distinct VMs per severity. CVE-detail pages use this.
 	CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error)
+	// CountCVEsBySeverity counts distinct CVEs per severity. VM vuln summary uses this.
+	CountCVEsBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 	GetVMIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error)

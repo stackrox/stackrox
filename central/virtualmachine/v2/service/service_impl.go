@@ -303,7 +303,7 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 		vmFilter = search.ConjunctionQuery(vmFilter, additionalQuery)
 	}
 
-	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter)
+	severityCounts, err := s.cveView.CountCVEsBySeverity(ctx, vmFilter)
 	if err != nil {
 		return nil, err
 	}

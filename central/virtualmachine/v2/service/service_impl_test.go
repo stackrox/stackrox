@@ -134,7 +134,7 @@ func TestGetVMVulnSummary(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
-				mockView.EXPECT().CountBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+				mockView.EXPECT().CountCVEsBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
 					CriticalSeverityCount:         2,
 					FixableCriticalSeverityCount:  1,
 					ImportantSeverityCount:        3,
