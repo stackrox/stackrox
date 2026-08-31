@@ -40,6 +40,7 @@ import {
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
+import { Origin } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import {
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -195,10 +196,13 @@ function DeploymentPageVulnerabilities({
         // imageCVESearchFilterConfig,
         {
             ...imageCVESearchFilterConfig,
-            attributes: imageCVESearchFilterConfig.attributes.filter(
-                ({ searchTerm }) =>
-                    searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
-            ),
+            attributes: [
+                ...imageCVESearchFilterConfig.attributes.filter(
+                    ({ searchTerm }) =>
+                        searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
+                ),
+                Origin, // CVE origin filter is scoped to the single deployment page
+            ],
         },
         imageSearchFilterConfig,
         imageComponentSearchFilterConfig,
