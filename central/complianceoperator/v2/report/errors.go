@@ -10,6 +10,7 @@ const (
 	SCAN_REMOVED_FMT                     = "Scan %s was removed"
 	SCAN_TIMEOUT_FMT                     = "Timeout waiting for scan %s to finish"
 	SCAN_TIMEOUT_SENSOR_DISCONNECTED_FMT = "Timeout waiting for scan %s to finish (Sensor disconnect during the scan)"
+	SCAN_RESULTS_STALE_FMT               = "Scan results are outdated (last assessment: %s, last scan execution: %s)"
 )
 
 var (

@@ -318,6 +318,14 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		if err != nil {
 			log.Warnf("unable to retrieve failed clusters: %v", err)
 		}
+		// Detect clusters whose check results are stale (older than the last
+		// scan execution). This covers the case where a scan was triggered but
+		// results never arrived (sensor disconnect, watcher timeout in a
+		// previous cycle) and no watcher is currently running.
+		staleClusters := helpers.DetectStaleClusters(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.checkResultDataStore)
+		for id, fc := range staleClusters {
+			failedClusters[id] = fc
+		}
 		request.numFailedClusters = len(failedClusters)
 		request.clusterData, err = helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
 		if err != nil {
