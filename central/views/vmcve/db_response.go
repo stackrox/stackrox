@@ -184,3 +184,28 @@ func (r *affectedVMResponse) GetIsFixable() bool             { return r.FixableC
 func (r *affectedVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
 func (r *affectedVMResponse) GetGuestOS() string             { return r.GuestOS }
 func (r *affectedVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
+
+type cveByVMResponse struct {
+	CVE                    string     `db:"cve"`
+	MaxSeverity            int32      `db:"severity_max"`
+	FixableCount           int        `db:"fixable_count"`
+	MaxCVSS                float32    `db:"cvss_max"`
+	MaxNVDCVSS             float32    `db:"nvd_cvss_max"`
+	EPSSProbabilityMax     *float32   `db:"epss_probability_max"`
+	Published              *time.Time `db:"cve_published_on_min"`
+	AffectedComponentCount int        `db:"component_id_count"`
+}
+
+func (r *cveByVMResponse) GetCVE() string                 { return r.CVE }
+func (r *cveByVMResponse) GetMaxSeverity() int32          { return r.MaxSeverity }
+func (r *cveByVMResponse) GetIsFixable() bool             { return r.FixableCount > 0 }
+func (r *cveByVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
+func (r *cveByVMResponse) GetMaxNVDCVSS() float32         { return r.MaxNVDCVSS }
+func (r *cveByVMResponse) GetPublishedOn() *time.Time     { return r.Published }
+func (r *cveByVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
+func (r *cveByVMResponse) GetEPSSProbability() float32 {
+	if r.EPSSProbabilityMax == nil {
+		return 0
+	}
+	return *r.EPSSProbabilityMax
+}

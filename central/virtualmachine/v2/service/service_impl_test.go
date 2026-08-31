@@ -189,21 +189,6 @@ func TestGetVMVulnSummary(t *testing.T) {
 func TestListVMCVEsByVM(t *testing.T) {
 	ctx := context.Background()
 
-	cve1 := &storage.VirtualMachineCVEV2{
-		Id:            "cve-uuid-1",
-		VmV2Id:        "vm-1",
-		VmComponentId: "comp-1",
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:     "CVE-2024-1234",
-			Summary: "test vuln 1",
-			Link:    "https://example.com/1",
-		},
-		PreferredCvss:   7.5,
-		Severity:        storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		IsFixable:       true,
-		EpssProbability: 0.5,
-	}
-
 	tests := map[string]struct {
 		request       *v2.ListVMCVEsByVMRequest
 		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
@@ -231,8 +216,17 @@ func TestListVMCVEsByVM(t *testing.T) {
 				VmId: fixtureconsts.VirtualMachine1,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockCVE.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
-				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockView.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
+				row := cveViewMocks.NewMockCVEByVMCore(gomock.NewController(t))
+				row.EXPECT().GetCVE().Return("CVE-2024-1234").AnyTimes()
+				row.EXPECT().GetMaxSeverity().Return(int32(storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY)).AnyTimes()
+				row.EXPECT().GetIsFixable().Return(true).AnyTimes()
+				row.EXPECT().GetMaxCVSS().Return(float32(7.5)).AnyTimes()
+				row.EXPECT().GetMaxNVDCVSS().Return(float32(0)).AnyTimes()
+				row.EXPECT().GetEPSSProbability().Return(float32(0.5)).AnyTimes()
+				row.EXPECT().GetPublishedOn().Return(nil).AnyTimes()
+				row.EXPECT().GetAffectedComponentCount().Return(2).AnyTimes()
+				mockView.EXPECT().GetCVEsByVM(ctx, gomock.Any()).Return([]vmcve.CVEByVMCore{row}, nil)
 			},
 			expectedCount: 1,
 		},
@@ -274,6 +268,7 @@ func TestListVMCVEsByVM(t *testing.T) {
 					assert.Equal(t, v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, row.GetSeverity())
 					assert.True(t, row.GetIsFixable())
 					assert.Equal(t, float32(7.5), row.GetCvss())
+					assert.Equal(t, int32(2), row.GetAffectedComponentCount())
 				}
 			}
 		})

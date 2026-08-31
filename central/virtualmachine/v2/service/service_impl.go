@@ -339,19 +339,28 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 
 	countQuery := searchQuery.CloneVT()
 	countQuery.Pagination = nil
-	totalCount, err := s.cveDS.Count(ctx, countQuery)
+	totalCount, err := s.cveView.Count(ctx, countQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	cves, err := s.cveView.GetCVEsByVM(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	items := make([]*v2.VMCVERow, 0, len(cves))
 	for _, cve := range cves {
-		items = append(items, storagetov2.VirtualMachineCVEV2ToRow(cve))
+		items = append(items, &v2.VMCVERow{
+			Cve:                    cve.GetCVE(),
+			Severity:               v2.VulnerabilitySeverity(cve.GetMaxSeverity()),
+			IsFixable:              cve.GetIsFixable(),
+			Cvss:                   cve.GetMaxCVSS(),
+			NvdCvss:                cve.GetMaxNVDCVSS(),
+			EpssProbability:        cve.GetEPSSProbability(),
+			AffectedComponentCount: int32(cve.GetAffectedComponentCount()),
+			PublishedOn:            protocompat.ConvertTimeToTimestampOrNil(cve.GetPublishedOn()),
+		})
 	}
 
 	return &v2.ListVMCVEsByVMResponse{

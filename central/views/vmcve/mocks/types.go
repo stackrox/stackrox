@@ -379,6 +379,21 @@ func (mr *MockCveViewMockRecorder) GetCVEComponents(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEComponents", reflect.TypeOf((*MockCveView)(nil).GetCVEComponents), ctx, q)
 }
 
+// GetCVEsByVM mocks base method.
+func (m *MockCveView) GetCVEsByVM(ctx context.Context, q *v1.Query) ([]vmcve.CVEByVMCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEsByVM", ctx, q)
+	ret0, _ := ret[0].([]vmcve.CVEByVMCore)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEsByVM indicates an expected call of GetCVEsByVM.
+func (mr *MockCveViewMockRecorder) GetCVEsByVM(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsByVM", reflect.TypeOf((*MockCveView)(nil).GetCVEsByVM), ctx, q)
+}
+
 // GetVMIDs mocks base method.
 func (m *MockCveView) GetVMIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -566,4 +581,140 @@ func (m *MockAffectedVMCore) GetVMName() string {
 func (mr *MockAffectedVMCoreMockRecorder) GetVMName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMName", reflect.TypeOf((*MockAffectedVMCore)(nil).GetVMName))
+}
+
+// MockCVEByVMCore is a mock of CVEByVMCore interface.
+type MockCVEByVMCore struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVEByVMCoreMockRecorder
+	isgomock struct{}
+}
+
+// MockCVEByVMCoreMockRecorder is the mock recorder for MockCVEByVMCore.
+type MockCVEByVMCoreMockRecorder struct {
+	mock *MockCVEByVMCore
+}
+
+// NewMockCVEByVMCore creates a new mock instance.
+func NewMockCVEByVMCore(ctrl *gomock.Controller) *MockCVEByVMCore {
+	mock := &MockCVEByVMCore{ctrl: ctrl}
+	mock.recorder = &MockCVEByVMCoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVEByVMCore) EXPECT() *MockCVEByVMCoreMockRecorder {
+	return m.recorder
+}
+
+// GetAffectedComponentCount mocks base method.
+func (m *MockCVEByVMCore) GetAffectedComponentCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAffectedComponentCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetAffectedComponentCount indicates an expected call of GetAffectedComponentCount.
+func (mr *MockCVEByVMCoreMockRecorder) GetAffectedComponentCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAffectedComponentCount", reflect.TypeOf((*MockCVEByVMCore)(nil).GetAffectedComponentCount))
+}
+
+// GetCVE mocks base method.
+func (m *MockCVEByVMCore) GetCVE() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVE")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetCVE indicates an expected call of GetCVE.
+func (mr *MockCVEByVMCoreMockRecorder) GetCVE() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVE", reflect.TypeOf((*MockCVEByVMCore)(nil).GetCVE))
+}
+
+// GetEPSSProbability mocks base method.
+func (m *MockCVEByVMCore) GetEPSSProbability() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEPSSProbability")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetEPSSProbability indicates an expected call of GetEPSSProbability.
+func (mr *MockCVEByVMCoreMockRecorder) GetEPSSProbability() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEPSSProbability", reflect.TypeOf((*MockCVEByVMCore)(nil).GetEPSSProbability))
+}
+
+// GetIsFixable mocks base method.
+func (m *MockCVEByVMCore) GetIsFixable() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIsFixable")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetIsFixable indicates an expected call of GetIsFixable.
+func (mr *MockCVEByVMCoreMockRecorder) GetIsFixable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIsFixable", reflect.TypeOf((*MockCVEByVMCore)(nil).GetIsFixable))
+}
+
+// GetMaxCVSS mocks base method.
+func (m *MockCVEByVMCore) GetMaxCVSS() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxCVSS")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetMaxCVSS indicates an expected call of GetMaxCVSS.
+func (mr *MockCVEByVMCoreMockRecorder) GetMaxCVSS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxCVSS", reflect.TypeOf((*MockCVEByVMCore)(nil).GetMaxCVSS))
+}
+
+// GetMaxNVDCVSS mocks base method.
+func (m *MockCVEByVMCore) GetMaxNVDCVSS() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxNVDCVSS")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetMaxNVDCVSS indicates an expected call of GetMaxNVDCVSS.
+func (mr *MockCVEByVMCoreMockRecorder) GetMaxNVDCVSS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxNVDCVSS", reflect.TypeOf((*MockCVEByVMCore)(nil).GetMaxNVDCVSS))
+}
+
+// GetMaxSeverity mocks base method.
+func (m *MockCVEByVMCore) GetMaxSeverity() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxSeverity")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetMaxSeverity indicates an expected call of GetMaxSeverity.
+func (mr *MockCVEByVMCoreMockRecorder) GetMaxSeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxSeverity", reflect.TypeOf((*MockCVEByVMCore)(nil).GetMaxSeverity))
+}
+
+// GetPublishedOn mocks base method.
+func (m *MockCVEByVMCore) GetPublishedOn() *time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublishedOn")
+	ret0, _ := ret[0].(*time.Time)
+	return ret0
+}
+
+// GetPublishedOn indicates an expected call of GetPublishedOn.
+func (mr *MockCVEByVMCoreMockRecorder) GetPublishedOn() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublishedOn", reflect.TypeOf((*MockCVEByVMCore)(nil).GetPublishedOn))
 }

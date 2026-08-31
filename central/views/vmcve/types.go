@@ -47,6 +47,8 @@ type CveView interface {
 	CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error)
 	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
 	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)
+	// GetCVEsByVM groups by CVE and counts distinct components. ListVMCVEsByVM uses this.
+	GetCVEsByVM(ctx context.Context, q *v1.Query) ([]CVEByVMCore, error)
 }
 
 // VMSeverityCounts provides per-VM severity counts.
@@ -63,5 +65,17 @@ type AffectedVMCore interface {
 	GetIsFixable() bool
 	GetMaxCVSS() float32
 	GetGuestOS() string
+	GetAffectedComponentCount() int
+}
+
+// CVEByVMCore is one distinct CVE on a VM, with how many components it hits.
+type CVEByVMCore interface {
+	GetCVE() string
+	GetMaxSeverity() int32
+	GetIsFixable() bool
+	GetMaxCVSS() float32
+	GetMaxNVDCVSS() float32
+	GetEPSSProbability() float32
+	GetPublishedOn() *time.Time
 	GetAffectedComponentCount() int
 }

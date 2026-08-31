@@ -192,6 +192,44 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 	return ret, nil
 }
 
+func (v *vmCVECoreViewImpl) GetCVEsByVM(ctx context.Context, q *v1.Query) ([]CVEByVMCore, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return nil, err
+	}
+
+	cloned := q.CloneVT()
+	cloned = common.UpdateSortAggs(cloned)
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Count).
+			Filter("fixable_count",
+				search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.CVE.String()},
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	ret := make([]CVEByVMCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err := pgSearch.RunSelectRequestForSchemaFn[cveByVMResponse](queryCtx, v.db, v.schema, cloned, func(r *cveByVMResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 func (v *vmCVECoreViewImpl) GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error) {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
