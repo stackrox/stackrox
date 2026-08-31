@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stretchr/testify/assert"
 )
@@ -132,6 +133,37 @@ func TestStore_applyHeritageData(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// TestStore_ApplyHeritageDataOnce_Concurrent is a regression test for a "concurrent map writes"
+// crash: with the PubSub concurrent lane, deployment events are processed on separate goroutines,
+// so ApplyDataFromHeritageOnce could be entered concurrently. Both callers passed the "once" guard
+// and mutated the shared currentSensorEntityData maps at the same time. Run with -race.
+func TestStore_ApplyHeritageDataOnce_Concurrent(t *testing.T) {
+	mockHM := &mockHeritageManager{
+		data: []*heritage.SensorMetadata{
+			{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
+			{ContainerID: "past456", PodIP: "10.1.1.2", SensorStart: time.Now().Add(-2 * time.Hour)},
+		},
+		isEnabled: true,
+	}
+	store := NewStore(0, mockHM, false)
+
+	currentData := createSensorEntityData("current123", "10.2.2.2")
+	// Endpoints are required to exercise EntityData.AddEndpoint, the site of the original crash.
+	currentData.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 8443, net.TCP), EndpointTargetInfo{ContainerPort: 8443})
+	currentData.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 9090, net.TCP), EndpointTargetInfo{ContainerPort: 9090})
+	store.RememberCurrentSensorMetadata("sensor-deploy-1", currentData)
+
+	var wg sync.WaitGroup
+	for range 50 {
+		wg.Go(func() {
+			store.ApplyDataFromHeritageOnce()
+		})
+	}
+	wg.Wait()
+
+	assert.True(t, store.heritageApplied.IsDone())
 }
 
 func TestApplyPastToEntityData(t *testing.T) {
