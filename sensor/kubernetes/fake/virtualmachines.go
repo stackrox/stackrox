@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
@@ -88,8 +87,9 @@ func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload
 }
 
 func getRandomVMPair(slot int, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
-	// Deterministic UID so informer events and scraped reports share the same VM ID.
-	vmUID := types.UID(fakeVMUUID(slot))
+	// A new UID per lifecycle: Central REMOVE/CREATE and the scraper's
+	// UID-change path both treat a recycled slot as a new VM.
+	vmUID := newUUID()
 	vmName := fmt.Sprintf("vm-%d", slot)
 	os := guestOSes[slot%len(guestOSes)]
 
@@ -113,7 +113,7 @@ func getRandomVMPair(slot int, guestOSes []string) (*unstructured.Unstructured, 
 		},
 	}
 
-	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", slot))
+	vmiUID := newUUID()
 	vmiName := fmt.Sprintf("vm-%d-vmi", slot)
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{

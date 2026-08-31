@@ -214,11 +214,23 @@ func TestToUnstructuredVMI(t *testing.T) {
 }
 
 func TestGetRandomVMPair_OmitsVSOCKCID(t *testing.T) {
-	vm, vmi := getRandomVMPair(3, defaultGuestOSPool)
-	assert.Equal(t, fakeVMUUID(3), string(vm.GetUID()))
+	_, vmi := getRandomVMPair(3, defaultGuestOSPool)
 	_, found, err := unstructured.NestedInt64(vmi.Object, "status", "vsockCID")
 	require.NoError(t, err)
 	assert.False(t, found)
+}
+
+func TestGetRandomVMPair_NewUIDEachLifecycle(t *testing.T) {
+	vm1, vmi1 := getRandomVMPair(3, defaultGuestOSPool)
+	vm2, vmi2 := getRandomVMPair(3, defaultGuestOSPool)
+
+	require.NotEmpty(t, vm1.GetUID())
+	require.Len(t, vmi1.GetOwnerReferences(), 1)
+	assert.Equal(t, vm1.GetUID(), vmi1.GetOwnerReferences()[0].UID)
+	assert.NotEqual(t, vm1.GetUID(), vmi1.GetUID())
+
+	assert.NotEqual(t, vm1.GetUID(), vm2.GetUID(), "same slot must not reuse a VM UID across lifecycles")
+	assert.NotEqual(t, vmi1.GetUID(), vmi2.GetUID(), "same slot must not reuse a VMI UID across lifecycles")
 }
 
 func TestWorkloadManager_HasFakeVMWorkload(t *testing.T) {
