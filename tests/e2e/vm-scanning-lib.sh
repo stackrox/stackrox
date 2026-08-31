@@ -87,14 +87,20 @@ _fetch_cluster_ingress_ca() {
     printf '%s\n' "$ca_bundle"
 }
 
-# Directory to install a downloaded virtctl binary into (PATH is updated when dest is a temp dir).
+# Directory to install a downloaded virtctl binary into.
+# PATH is not updated here: callers invoke this via command substitution, which
+# would discard an export. Call _virtctl_add_install_dir_to_path after assigning dest.
 _virtctl_install_dir() {
     local dest="/usr/local/bin"
     if [[ ! -w "$dest" ]]; then
         dest="$(mktemp -d)"
-        export PATH="${dest}:${PATH}"
     fi
     printf '%s\n' "$dest"
+}
+
+_virtctl_add_install_dir_to_path() {
+    local dest="$1"
+    [[ "$dest" == "/usr/local/bin" ]] || export PATH="${dest}:${PATH}"
 }
 
 # Set to 1 when ConsoleCLIDownload returned a body that was not a gzip tarball.
@@ -110,6 +116,7 @@ _download_and_install_virtctl() {
     # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
     local dest
     dest="$(_virtctl_install_dir)"
+    _virtctl_add_install_dir_to_path "$dest"
     _VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP=0
 
     # ConsoleCLIDownload can exist while the ingress backend still serves HTML.
@@ -143,7 +150,7 @@ _download_and_install_virtctl() {
     attempt=0
     while (( attempt < 30 )); do
         attempt=$((attempt + 1))
-        if curl -sSL "$@" -o "$archive" "$download_url"; then
+        if curl -sSL --connect-timeout 30 --max-time 120 "$@" -o "$archive" "$download_url"; then
             if gzip -t "$archive" 2>/dev/null \
                 && tar xz -C "$dest" virtctl -f "$archive" \
                 && [[ -f "${dest}/virtctl" ]]; then
@@ -177,10 +184,11 @@ _install_virtctl_from_kubevirt_release() {
     fi
 
     dest="$(_virtctl_install_dir)"
+    _virtctl_add_install_dir_to_path "$dest"
     url="https://github.com/kubevirt/kubevirt/releases/download/${version}/virtctl-${version}-linux-amd64"
     bin="${dest}/virtctl"
     info "Downloading virtctl ${version} from ${url}"
-    if ! curl -fsSL --retry 5 --retry-delay 5 -o "$bin" "$url"; then
+    if ! curl -fsSL --connect-timeout 30 --max-time 120 --retry 5 --retry-delay 5 -o "$bin" "$url"; then
         warn "GitHub virtctl download failed from ${url}"
         rm -f "$bin"
         return 1
