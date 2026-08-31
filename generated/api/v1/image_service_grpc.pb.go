@@ -25,6 +25,7 @@ const (
 	ImageService_ListImages_FullMethodName                      = "/v1.ImageService/ListImages"
 	ImageService_ScanImage_FullMethodName                       = "/v1.ImageService/ScanImage"
 	ImageService_ScanImageInternal_FullMethodName               = "/v1.ImageService/ScanImageInternal"
+	ImageService_ScanImageInternalForAdmission_FullMethodName   = "/v1.ImageService/ScanImageInternalForAdmission"
 	ImageService_GetImageVulnerabilitiesInternal_FullMethodName = "/v1.ImageService/GetImageVulnerabilitiesInternal"
 	ImageService_EnrichLocalImageInternal_FullMethodName        = "/v1.ImageService/EnrichLocalImageInternal"
 	ImageService_UpdateLocalScanStatusInternal_FullMethodName   = "/v1.ImageService/UpdateLocalScanStatusInternal"
@@ -52,6 +53,12 @@ type ImageServiceClient interface {
 	ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
+	// ScanImageInternalForAdmission is used solely by the Admission Controller
+	// (via Sensor or directly) to send scan requests. For tag-only images it
+	// refreshes registry metadata but reuses an existing Central scan when
+	// the resolved digest is already known. For digest-based images it
+	// behaves identically to ScanImageInternal.
+	ScanImageInternalForAdmission(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(ctx context.Context, in *GetImageVulnerabilitiesInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
@@ -129,6 +136,16 @@ func (c *imageServiceClient) ScanImageInternal(ctx context.Context, in *ScanImag
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScanImageInternalResponse)
 	err := c.cc.Invoke(ctx, ImageService_ScanImageInternal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *imageServiceClient) ScanImageInternalForAdmission(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScanImageInternalResponse)
+	err := c.cc.Invoke(ctx, ImageService_ScanImageInternalForAdmission_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +268,12 @@ type ImageServiceServer interface {
 	ScanImage(context.Context, *ScanImageRequest) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
+	// ScanImageInternalForAdmission is used solely by the Admission Controller
+	// (via Sensor or directly) to send scan requests. For tag-only images it
+	// refreshes registry metadata but reuses an existing Central scan when
+	// the resolved digest is already known. For digest-based images it
+	// behaves identically to ScanImageInternal.
+	ScanImageInternalForAdmission(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(context.Context, *GetImageVulnerabilitiesInternalRequest) (*ScanImageInternalResponse, error)
@@ -297,6 +320,9 @@ func (UnimplementedImageServiceServer) ScanImage(context.Context, *ScanImageRequ
 }
 func (UnimplementedImageServiceServer) ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ScanImageInternal not implemented")
+}
+func (UnimplementedImageServiceServer) ScanImageInternalForAdmission(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ScanImageInternalForAdmission not implemented")
 }
 func (UnimplementedImageServiceServer) GetImageVulnerabilitiesInternal(context.Context, *GetImageVulnerabilitiesInternalRequest) (*ScanImageInternalResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetImageVulnerabilitiesInternal not implemented")
@@ -431,6 +457,24 @@ func _ImageService_ScanImageInternal_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ImageServiceServer).ScanImageInternal(ctx, req.(*ScanImageInternalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ImageService_ScanImageInternalForAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScanImageInternalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageServiceServer).ScanImageInternalForAdmission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ImageService_ScanImageInternalForAdmission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageServiceServer).ScanImageInternalForAdmission(ctx, req.(*ScanImageInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -616,6 +660,10 @@ var ImageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ScanImageInternal",
 			Handler:    _ImageService_ScanImageInternal_Handler,
+		},
+		{
+			MethodName: "ScanImageInternalForAdmission",
+			Handler:    _ImageService_ScanImageInternalForAdmission_Handler,
 		},
 		{
 			MethodName: "GetImageVulnerabilitiesInternal",

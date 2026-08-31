@@ -40,7 +40,7 @@ func TestSendGetReport_Success(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-1"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{
 				IndexReport: &v4.IndexReport{HashId: "test-hash"},
@@ -49,14 +49,14 @@ func TestSendGetReport_Success(t *testing.T) {
 	}, func(req *pb.VMServiceRequest) {
 		assert.NotEmpty(t, req.GetMeta().GetRequestId())
 		assert.Equal(t, []string{CapabilityReportV1}, req.GetMeta().GetCapabilities())
-		assert.Equal(t, uint32(0), req.GetGetReport().GetLastKnownGeneration())
+		assert.Empty(t, req.GetGetReport().GetLastKnownToken())
 	})
 
-	result, err := client.GetReport(context.Background(), clientConn, 0, 0)
+	result, err := client.GetReport(context.Background(), clientConn, "")
 	require.NoError(t, err)
 	assert.Equal(t, "test-hash", result.IndexReport.GetHashId())
 	assert.False(t, result.Unchanged)
-	assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
+	assert.Equal(t, "tok-1", result.Meta.GetReportToken())
 }
 
 func TestSendGetReport_Unchanged(t *testing.T) {
@@ -65,20 +65,19 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 5},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-5"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{Unchanged: true},
 		},
 	}, func(req *pb.VMServiceRequest) {
-		assert.Equal(t, uint32(5), req.GetGetReport().GetLastKnownGeneration())
-		assert.Equal(t, uint32(42), req.GetGetReport().GetKnownEpoch())
+		assert.Equal(t, "tok-5", req.GetGetReport().GetLastKnownToken())
 	})
 
-	result, err := client.GetReport(context.Background(), clientConn, 5, 42)
+	result, err := client.GetReport(context.Background(), clientConn, "tok-5")
 	require.NoError(t, err)
 	assert.Nil(t, result.IndexReport)
 	assert.True(t, result.Unchanged)
-	assert.Equal(t, uint32(5), result.Meta.GetReportGeneration())
+	assert.Equal(t, "tok-5", result.Meta.GetReportToken())
 }
 
 func TestSendGetReport_NilReportRejected(t *testing.T) {
@@ -87,13 +86,13 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-1"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{},
 		},
 	}, nil)
 
-	_, err := client.GetReport(context.Background(), clientConn, 0, 0)
+	_, err := client.GetReport(context.Background(), clientConn, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "IndexReport is nil")
 }
@@ -121,10 +120,28 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			wantErr:   ErrInternal,
 			wantInMsg: "scan crashed",
 		},
+		"should wrap ErrMalformedRequest for MALFORMED_REQUEST": {
+			code:      pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST,
+			message:   "empty request_id",
+			wantErr:   ErrMalformedRequest,
+			wantInMsg: "empty request_id",
+		},
+		"should wrap ErrRequestTooLarge for REQUEST_TOO_LARGE": {
+			code:      pb.ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE,
+			message:   "payload exceeds 10MB limit",
+			wantErr:   ErrRequestTooLarge,
+			wantInMsg: "10MB",
+		},
 		"should wrap ErrBusy for BUSY": {
-			code:    pb.ErrorCode_ERROR_CODE_BUSY,
-			message: "agent is already serving another request",
-			wantErr: ErrBusy,
+			code:      pb.ErrorCode_ERROR_CODE_BUSY,
+			message:   "agent is already serving another request",
+			wantErr:   ErrBusy,
+			wantInMsg: "another request",
+		},
+		"should wrap ErrUnknownAgentError for UNSPECIFIED": {
+			code:    pb.ErrorCode_ERROR_CODE_UNSPECIFIED,
+			message: "",
+			wantErr: ErrUnknownAgentError,
 		},
 	}
 	for name, tc := range cases {
@@ -140,7 +157,7 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 				},
 			}, nil)
 
-			_, err := client.GetReport(context.Background(), clientConn, 0, 0)
+			_, err := client.GetReport(context.Background(), clientConn, "")
 			require.Error(t, err)
 			assert.ErrorIs(t, err, tc.wantErr)
 			if tc.wantInMsg != "" {
@@ -171,7 +188,7 @@ func TestSendGetReport_ContextCancelUnblocks(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		_, err := client.GetReport(ctx, clientConn, 0, 0)
+		_, err := client.GetReport(ctx, clientConn, "")
 		errCh <- err
 	}()
 

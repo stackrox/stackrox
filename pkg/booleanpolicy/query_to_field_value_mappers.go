@@ -165,7 +165,7 @@ func invertBooleanMap(searchTerms []string) ([]string, bool) {
 }
 
 func leftRightCompoundMap(searchTerms []string) ([]string, bool) {
-	var mustBeCompound []string
+	mustBeCompound := make([]string, 0, len(searchTerms))
 	for _, term := range searchTerms {
 		if !strings.Contains(term, "=") {
 			term = term + "="

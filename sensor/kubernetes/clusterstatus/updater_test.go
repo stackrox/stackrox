@@ -22,7 +22,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/rest"
 )
 
 type updaterSuite struct {
@@ -37,10 +36,6 @@ func TestClusterStatusUpdater(t *testing.T) {
 type fakeClientSet struct {
 	k8s    kubernetes.Interface
 	config configVersioned.Interface
-}
-
-func (c *fakeClientSet) RESTConfig() *rest.Config {
-	return nil
 }
 
 func (c *fakeClientSet) Kubernetes() kubernetes.Interface {

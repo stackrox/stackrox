@@ -13,16 +13,37 @@ ensure_vm_scanning_cluster_prereqs() {
     require_environment "KUBECONFIG"
     require_environment "VM_IMAGES"
 
-    # Build a docker config JSON for pulling private container-disk images
-    # (e.g. quay.io/rhacs-eng/vm-images/*) inside the VM test namespace.
+    # Quadlet pulls the cluster main image. Construct MAIN_IMAGE the same way
+    # deploy.sh does when the caller only exported MAIN_IMAGE_TAG.
+    if [[ -z "${ROXAGENT_IMAGE:-}" && -z "${MAIN_IMAGE:-}" ]]; then
+        if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
+            MAIN_IMAGE_TAG="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" tag)"
+            export MAIN_IMAGE_TAG
+        fi
+        if [[ -z "${MAIN_IMAGE_REPO:-}" ]]; then
+            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/main"
+            export MAIN_IMAGE_REPO
+        fi
+        export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
+        info "MAIN_IMAGE set to ${MAIN_IMAGE} for Quadlet roxagent"
+    fi
+
+    # Kubernetes imagePullSecret (username/password dockerconfig) and a separate
+    # containers-auth file for guest Podman. RHEL 8 Podman requires the auth field.
     if [[ -n "${QUAY_RHACS_ENG_RO_USERNAME:-}" && -n "${QUAY_RHACS_ENG_RO_PASSWORD:-}" ]]; then
-        local vm_pull_secret
+        local vm_pull_secret vm_podman_auth quay_auth
         vm_pull_secret="$(mktemp)"
+        vm_podman_auth="$(mktemp)"
         cat > "$vm_pull_secret" <<EOF
 {"auths":{"quay.io":{"username":"${QUAY_RHACS_ENG_RO_USERNAME}","password":"${QUAY_RHACS_ENG_RO_PASSWORD}"}}}
 EOF
+        quay_auth="$(printf '%s:%s' "${QUAY_RHACS_ENG_RO_USERNAME}" "${QUAY_RHACS_ENG_RO_PASSWORD}" | base64 | tr -d '\n')"
+        printf '{"auths":{"quay.io":{"auth":"%s"}}}\n' "$quay_auth" > "$vm_podman_auth"
+        chmod 600 "$vm_podman_auth"
         export VM_IMAGE_PULL_SECRET_PATH="$vm_pull_secret"
+        export VM_PODMAN_AUTH_FILE="$vm_podman_auth"
         info "VM image pull secret written to ${vm_pull_secret}"
+        info "VM Podman auth file written to ${vm_podman_auth}"
     else
         info "QUAY_RHACS_ENG_RO_USERNAME/PASSWORD not set; VM images must be publicly accessible"
     fi

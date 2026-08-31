@@ -21,7 +21,7 @@ export function useDefaultWorkloadCveViewContext(): WorkloadCveView {
         const querySearchFilter = parseQuerySearchFilter(searchFilter);
         return {
             baseSearchFilter: {
-                'Image CVE Count': ['>0'],
+                'Vulnerability State': ['OBSERVED'],
                 Namespace:
                     activeNamespace === ALL_NAMESPACES_KEY
                         ? querySearchFilter.Namespace

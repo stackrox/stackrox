@@ -1,8 +1,14 @@
+import qs from 'qs';
+
 import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
-import type { SearchQueryOptions } from 'types/search';
-import { applyRegexSearchModifiers, buildNestedRawQueryParams } from 'utils/searchUtils';
+import type { SearchFilter, SearchQueryOptions } from 'types/search';
+import {
+    applyRegexSearchModifiers,
+    buildNestedRawQueryParams,
+    getRequestQueryStringForSearchFilter,
+} from 'utils/searchUtils';
 
 // Legacy API (v2/virtualmachines)
 
@@ -226,30 +232,59 @@ export function listVMs({
     perPage,
     searchFilter,
 }: SearchQueryOptions): Promise<ListVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        sortOption,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
 
-export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage });
+export function listVMCVEs({
+    searchFilter,
+    page,
+    perPage,
+}: SearchQueryOptions): Promise<ListVMCVEsResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
         .then((response) => response.data);
 }
 
-export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+export function getVMCVEDetail(cveId: string, searchFilter: SearchFilter): Promise<VMCVEDetail> {
+    // Might consider updating buildNestedRawQueryParams to handle this case (no pagination).
+    const params = qs.stringify(
+        {
+            query: {
+                query: getRequestQueryStringForSearchFilter(
+                    applyRegexSearchModifiers(searchFilter)
+                ),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
     return axios
-        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}?${params}`)
         .then((response) => response.data);
 }
 
 export function listVMCVEAffectedVMs(
     cveId: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { searchFilter, sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListVMCVEAffectedVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        sortOption,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
         .then((response) => response.data);
@@ -286,5 +321,5 @@ export function listVMComponents(
 }
 
 export function getVM(vmId: string): Promise<VMDetail> {
-    return axios.get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`).then((response) => response.data);
+    return axios.get<VMDetail>(`/v2/virtualmachines/${vmId}`).then((response) => response.data);
 }
