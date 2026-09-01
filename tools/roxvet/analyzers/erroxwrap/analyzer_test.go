@@ -8,5 +8,5 @@ import (
 
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, Analyzer, "erroxwrap")
+	analysistest.RunWithSuggestedFixes(t, testdata, Analyzer, "erroxwrap")
 }
