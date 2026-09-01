@@ -330,13 +330,13 @@ jobs:
         if: always()
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-          show: "fail, skip"
+          show: "fail"
       - name: Publish test summary
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
         if: always()
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-          show: "pass"
+          show: "pass, skip"
 
       - name: Report junit failures in jira
         if: (!cancelled())
