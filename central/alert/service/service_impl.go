@@ -154,7 +154,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errox.InvalidArgs.New(err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	count, err := s.dataStore.Count(ctx, parsedQuery, true)
