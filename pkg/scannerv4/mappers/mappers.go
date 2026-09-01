@@ -989,6 +989,20 @@ func ccEnvironment(env *v4.Environment) (*claircore.Environment, error) {
 	}, nil
 }
 
+// ecosystemsRequiringEncodedFixedInVersion lists OSV ecosystems for which
+// claircore's OSV updater always encodes FixedInVersion as a URL query
+// string (see quay/claircore updater/osv/osv.go, ecosystemRange.Encode()).
+// A plain, non-url-encoded FixedInVersion on a vulnerability whose repo is
+// one of these indicates the OSV updater ingested another ecosystem's
+// affected-range data into this record (see ROX-36628): the ecosystem's
+// affected-range entries aren't filtered by `af.Package.Ecosystem`, so e.g.
+// an npm entry's plain semver fix version can end up on a PyPI record.
+var ecosystemsRequiringEncodedFixedInVersion = map[string]struct{}{
+	"pypi":     {},
+	"maven":    {},
+	"rubygems": {},
+}
+
 // fixedInVersion returns the fixed in string, typically provided the report's
 // `FixedInVersion` as a plain string, but, in some OSV updaters, it can be an
 // urlencoded string.
@@ -996,10 +1010,20 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 	if v.FixedInVersion == "0" {
 		return ""
 	}
+	requiresEncoded := v.Repo != nil
+	if requiresEncoded {
+		_, requiresEncoded = ecosystemsRequiringEncodedFixedInVersion[strings.ToLower(v.Repo.Name)]
+	}
 	// Try to parse url encoded params; if expected values are not found, leave it.
 	q, err := url.ParseQuery(v.FixedInVersion)
 	switch {
 	case err != nil:
+		if requiresEncoded {
+			// This repo's FixedInVersion should always be url-encoded; an
+			// unparseable value is almost certainly contaminated data from a
+			// different ecosystem's advisory. Don't surface it.
+			return ""
+		}
 		// v.FixedInVersion is not url encoded, so just return it as-is.
 		return v.FixedInVersion
 	case q.Has("fixed"):
@@ -1007,6 +1031,11 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 	case q.Has("introduced"), q.Has("lastAffected"):
 		return ""
 	default:
+		if requiresEncoded {
+			// Same reasoning as above: a plain value on a repo that should
+			// always be url-encoded indicates cross-ecosystem contamination.
+			return ""
+		}
 		return v.FixedInVersion
 	}
 }

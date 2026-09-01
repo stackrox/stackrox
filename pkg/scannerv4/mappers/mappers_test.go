@@ -2781,6 +2781,51 @@ func Test_versionID(t *testing.T) {
 	}
 }
 
+func Test_fixedInVersion(t *testing.T) {
+	tests := map[string]struct {
+		v    *claircore.Vulnerability
+		want string
+	}{
+		"zero FixedInVersion returns empty": {
+			v:    &claircore.Vulnerability{FixedInVersion: "0"},
+			want: "",
+		},
+		"plain version on a non-restricted repo is returned as-is": {
+			v:    &claircore.Vulnerability{FixedInVersion: "1.2.3", Repo: &claircore.Repository{Name: "npm"}},
+			want: "1.2.3",
+		},
+		"url-encoded fixed on pypi repo is decoded": {
+			v:    &claircore.Vulnerability{FixedInVersion: "fixed=0.8.0", Repo: &claircore.Repository{Name: "pypi"}},
+			want: "0.8.0",
+		},
+		"url-encoded introduced on pypi repo returns empty": {
+			v:    &claircore.Vulnerability{FixedInVersion: "introduced=0.1.0", Repo: &claircore.Repository{Name: "pypi"}},
+			want: "",
+		},
+		"plain version on pypi repo is contaminated cross-ecosystem data, suppressed (ROX-36628)": {
+			v:    &claircore.Vulnerability{FixedInVersion: "0.6.0", Repo: &claircore.Repository{Name: "pypi"}},
+			want: "",
+		},
+		"plain version on maven repo is contaminated cross-ecosystem data, suppressed (ROX-36628)": {
+			v:    &claircore.Vulnerability{FixedInVersion: "0.6.0", Repo: &claircore.Repository{Name: "Maven"}},
+			want: "",
+		},
+		"unparseable value on rubygems repo is suppressed (ROX-36628)": {
+			v:    &claircore.Vulnerability{FixedInVersion: "1.2.3;rc1", Repo: &claircore.Repository{Name: "rubygems"}},
+			want: "",
+		},
+		"nil repo falls back to plain value": {
+			v:    &claircore.Vulnerability{FixedInVersion: "1.2.3"},
+			want: "1.2.3",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, fixedInVersion(tt.v))
+		})
+	}
+}
+
 func TestIsVersionAgnostic(t *testing.T) {
 	tests := map[string]struct {
 		did  string
