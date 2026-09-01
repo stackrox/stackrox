@@ -732,7 +732,11 @@ func (s *VMScraper) maybeSync(ctx context.Context, vm *virtualmachine.Info, key 
 		return
 	}
 	mapping, sensorHash, ok := s.fetcher.FetchRepo2CPE(ctx)
-	if !ok || sensorHash == meta.GetRepoCpeMappingHash() {
+	if !ok {
+		return
+	}
+	if sensorHash == meta.GetRepoCpeMappingHash() {
+		log.Debugf("VMScraper: repo-to-CPE mapping on %q is up to date (hash=%s)", key, sensorHash)
 		return
 	}
 
