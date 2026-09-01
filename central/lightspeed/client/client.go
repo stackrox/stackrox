@@ -31,8 +31,7 @@ var (
 
 // QueryRequest is the request payload for the OLS query API.
 type QueryRequest struct {
-	Query   string `json:"query"`
-	Context string `json:"context,omitempty"`
+	Query string `json:"query"`
 }
 
 // QueryResponse is the response payload from the OLS query API.
