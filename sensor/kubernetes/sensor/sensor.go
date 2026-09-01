@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -182,6 +183,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	var virtualMachineHandler vmIndex.Handler
 	var vmScraper *vmscraper.VMScraper
 	var vmStats clustermetrics.VMStatsSource
+	var repo2CPE *scannerdefinitions.Repo2CPE
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 
@@ -191,7 +193,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
 		} else {
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
+			repo2CPE, err = scannerdefinitions.NewRepo2CPE(env.CentralEndpoint.Setting(), cfg.certLoader())
+			if err != nil {
+				log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
+			}
+			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient, repo2CPE)
 			vmStats = vmScraper
 		}
 	}
@@ -218,6 +224,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 	if virtualMachineHandler != nil {
 		components = append(components, virtualMachineHandler)
+	}
+	if repo2CPE != nil {
+		components = append(components, repo2CPE)
 	}
 	if vmScraper != nil {
 		components = append(components, vmScraper)

@@ -98,6 +98,7 @@ type VMScraper struct {
 	sender                IndexReportSender
 	dialer                VMDialer
 	client                ProtocolClient
+	fetcher               Repo2CPEFetcher
 	interval              time.Duration
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
@@ -122,7 +123,6 @@ type VMScraper struct {
 	lastReconcile   time.Time
 	inFlight        set.StringSet
 	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
-	fetcher         Repo2CPEFetcher
 }
 
 type vmState struct {
@@ -136,14 +136,16 @@ type vmState struct {
 
 var _ common.SensorComponent = (*VMScraper)(nil)
 
-// New creates a VMScraper with production defaults.
-func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
+// New creates a VMScraper with production defaults. A nil fetcher leaves
+// maybeSync a no-op, so pull still works if the repo-to-CPE cache was not built.
+func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, fetcher Repo2CPEFetcher) *VMScraper {
 	interval := clampPollInterval(env.VirtualMachinesScraperPollInterval.DurationSetting())
 	return &VMScraper{
 		store:                 store,
 		sender:                sender,
 		dialer:                dialer,
 		client:                client,
+		fetcher:               fetcher,
 		interval:              interval,
 		tickInterval:          env.VirtualMachinesScraperTickInterval.DurationSetting(),
 		initialBackoff:        env.VirtualMachinesScraperInitialBackoff.DurationSetting(),
@@ -161,22 +163,6 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		now:          time.Now,
 		randFloat64:  rand.Float64,
 	}
-}
-
-// SetRepo2CPEFetcher wires the source maybeSync reads to decide whether a
-// VM's agent needs a pushed repo-to-CPE mapping. Nil-safe: if never called
-// (e.g. Sensor could not build the scanner definitions handler), maybeSync
-// stays a no-op.
-func (s *VMScraper) SetRepo2CPEFetcher(f Repo2CPEFetcher) {
-	concurrency.WithLock(&s.mu, func() {
-		s.fetcher = f
-	})
-}
-
-func (s *VMScraper) repo2CPEFetcher() Repo2CPEFetcher {
-	return concurrency.WithLock1(&s.mu, func() Repo2CPEFetcher {
-		return s.fetcher
-	})
 }
 
 func (s *VMScraper) Name() string { return "virtualmachine.vmscraper" }
@@ -742,11 +728,10 @@ func (s *VMScraper) maybeSync(ctx context.Context, vm *virtualmachine.Info, key 
 	if updatePath == pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED {
 		return
 	}
-	fetcher := s.repo2CPEFetcher()
-	if fetcher == nil {
+	if s.fetcher == nil {
 		return
 	}
-	mapping, sensorHash, ok := fetcher.FetchRepo2CPE(ctx)
+	mapping, sensorHash, ok := s.fetcher.FetchRepo2CPE(ctx)
 	if !ok || sensorHash == meta.GetRepoCpeMappingHash() {
 		return
 	}

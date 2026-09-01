@@ -1454,7 +1454,7 @@ func TestVMScraper_MaybeSync(t *testing.T) {
 			client := &mockProtocolClient{syncErr: tc.syncErr}
 			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, client)
 			if !tc.noFetcher {
-				s.SetRepo2CPEFetcher(tc.fetcher)
+				s.fetcher = tc.fetcher
 			}
 
 			var before float64
@@ -1564,7 +1564,7 @@ func TestVMScraper_DialAndGetReport_SyncTriggering(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := &mockProtocolClient{resultQueue: tc.resultQueue, errQueue: tc.errQueue}
 			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, client)
-			s.SetRepo2CPEFetcher(staleFetcher())
+			s.fetcher = staleFetcher()
 
 			_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
@@ -1608,7 +1608,7 @@ func TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync(t *testing.T) {
 		Meta:        metaWithMapping("old-hash", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR),
 	}}}
 	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
-	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
+	s.fetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
 
 	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
@@ -1627,7 +1627,7 @@ func TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync(t
 		errQueue:    []error{vsockclient.ErrMappingRequired},
 	}
 	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
-	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
+	s.fetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
 
 	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
