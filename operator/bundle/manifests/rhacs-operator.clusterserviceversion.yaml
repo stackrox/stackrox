@@ -1797,17 +1797,17 @@ spec:
                 - subjectaccessreviews
               verbs:
                 - create
-          serviceAccountName: stackrox-operator-controller-manager
+          serviceAccountName: rhacs-operator-controller-manager
       deployments:
         - label:
-            app: stackrox-operator
+            app: rhacs-operator
             control-plane: controller-manager
-          name: stackrox-operator-controller-manager
+          name: rhacs-operator-controller-manager
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: stackrox-operator
+                app: rhacs-operator
                 control-plane: controller-manager
             strategy: {}
             template:
@@ -1815,7 +1815,7 @@ spec:
                 annotations:
                   kubectl.kubernetes.io/default-container: manager
                 labels:
-                  app: stackrox-operator
+                  app: rhacs-operator
                   control-plane: controller-manager
               spec:
                 containers:
@@ -1874,7 +1874,7 @@ spec:
                           - ALL
                 securityContext:
                   runAsNonRoot: true
-                serviceAccountName: stackrox-operator-controller-manager
+                serviceAccountName: rhacs-operator-controller-manager
                 terminationGracePeriodSeconds: 10
       permissions:
         - rules:
@@ -1909,7 +1909,7 @@ spec:
               verbs:
                 - create
                 - patch
-          serviceAccountName: stackrox-operator-controller-manager
+          serviceAccountName: rhacs-operator-controller-manager
     strategy: deployment
   installModes:
     - supported: false
