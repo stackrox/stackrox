@@ -9,8 +9,6 @@ import (
 
 var log = logging.LoggerForModule()
 
-const repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-
 func RootCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
 		Use:          "agent",

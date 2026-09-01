@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
@@ -29,17 +31,22 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	maxDeploymentsReturned = 1000
 )
 
+var log = logging.LoggerForModule()
+
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			v1.DeploymentService_GetDeployment_FullMethodName,
 			v1.DeploymentService_GetDeploymentWithRisk_FullMethodName,
+			v1.DeploymentService_GetDeploymentRiskAISummary_FullMethodName,
 			v1.DeploymentService_CountDeployments_FullMethodName,
 			v1.DeploymentService_ListDeployments_FullMethodName,
 			v1.DeploymentService_GetLabels_FullMethodName,
@@ -60,6 +67,7 @@ type serviceImpl struct {
 	processBaselineResults processBaselineResultsStore.DataStore
 	risks                  riskDataStore.DataStore
 	manager                manager.Manager
+	lightspeedClient       olsClient.Client
 }
 
 func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
@@ -278,4 +286,38 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	slices.Sort(values)
 
 	return keyValuesMap, values
+}
+
+// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
+func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v1.ResourceByID) (*v1.DeploymentRiskAISummaryResponse, error) {
+	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
+	}
+
+	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	if err != nil {
+		return nil, errors.Wrap(err, "building risk context for AI summary")
+	}
+
+	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
+		Query:   aiSummaryPrompt,
+		Context: contextJSON,
+	})
+	if err != nil {
+		log.Errorf("Lightspeed query failed for deployment %s: %v", request.GetId(), err)
+		return nil, status.Error(codes.Unavailable, "AI service unavailable")
+	}
+
+	return &v1.DeploymentRiskAISummaryResponse{
+		Summary: olsResp.Response,
+	}, nil
 }

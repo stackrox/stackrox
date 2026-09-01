@@ -29,7 +29,7 @@ import {
     Name,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
-import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
+import { Origin, imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
 import {
     Annotation as namespaceAnnotation,
@@ -261,9 +261,12 @@ export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilter
 export const searchFilterConfigForImageVulnerabilityReport = [
     {
         ...imageCVESearchFilterConfig,
-        attributes: imageCVESearchFilterConfig.attributes.filter(
-            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
-        ),
+        attributes: [
+            ...imageCVESearchFilterConfig.attributes.filter(
+                ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+            ),
+            Origin, // CVE origin filter is scoped to reports (plus single image/deployment pages)
+        ],
     },
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
