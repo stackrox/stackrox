@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
   labels:
-    app: rhacs-operator
+    app: stackrox-operator
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -2269,8 +2269,8 @@ spec:
                 type: array
               scanner:
                 description: |-
-                  Settings for the Scanner component, which is responsible for vulnerability scanning of container
-                  images.
+                  Obsolete field. This field will be removed in a future release.
+                  Scanner V2 has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
