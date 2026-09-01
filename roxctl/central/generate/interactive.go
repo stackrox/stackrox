@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "central-db", "scanner", "scanner-v4"}
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner-v4"}
 )
 
 func readUserInput(prompt string) (string, error) {
@@ -318,8 +318,6 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 
 		// set default values for image-{main,scanner,scanner-db,scanner-v4,scanner-v4-db} flags
 		if fw.Flag.Name == flags.FlagNameMainImage ||
-			fw.Flag.Name == flags.FlagNameScannerImage ||
-			fw.Flag.Name == flags.FlagNameScannerDBImage ||
 			fw.Flag.Name == flags.FlagNameScannerV4Image ||
 			fw.Flag.Name == flags.FlagNameScannerV4DBImage ||
 			fw.Flag.Name == flags.FlagNameCentralDBImage {
@@ -335,14 +333,6 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			case flags.FlagNameMainImage:
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.MainImage()
-				}
-			case flags.FlagNameScannerImage:
-				if fw.Flag.DefValue == "" {
-					fw.Flag.DefValue = flavor.ScannerImage()
-				}
-			case flags.FlagNameScannerDBImage:
-				if fw.Flag.DefValue == "" {
-					fw.Flag.DefValue = flavor.ScannerDBImage()
 				}
 			case flags.FlagNameScannerV4Image:
 				if fw.Flag.DefValue == "" {
