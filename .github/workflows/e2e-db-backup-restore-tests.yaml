@@ -153,7 +153,6 @@ jobs:
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: all
-        folded: true
 
     - name: Report junit failures in jira
       if: (!cancelled())
