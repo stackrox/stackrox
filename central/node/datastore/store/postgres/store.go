@@ -265,7 +265,32 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 			inputRows = inputRows[:0]
 		}
 	}
-	return removeOrphanedNodeComponent(ctx, tx)
+
+	return nil
+}
+
+// getNodeComponentIDs returns the list of component IDs currently referenced by the specified node.
+// This is used to identify cleanup candidates when a node's component list changes.
+func getNodeComponentIDs(ctx context.Context, tx *postgres.Tx, nodeID string) ([]string, error) {
+	var componentIDs []string
+	rows, err := tx.Query(ctx, "SELECT DISTINCT nodecomponentid FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var componentID string
+		if err := rows.Scan(&componentID); err != nil {
+			return nil, err
+		}
+		componentIDs = append(componentIDs, componentID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return componentIDs, nil
 }
 
 func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
@@ -276,6 +301,13 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 		"nodeid",
 		"nodecomponentid",
 		"serialized",
+	}
+
+	// Capture component IDs that this node currently references before deleting edges.
+	// These are candidates for cleanup if they become orphaned after the edge deletion.
+	previousComponentIDs, err := getNodeComponentIDs(ctx, tx, nodeID)
+	if err != nil {
+		return err
 	}
 
 	// Copy does not upsert so have to delete first. This also ensures newly orphaned component edges are removed.
@@ -308,6 +340,14 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 			inputRows = inputRows[:0]
 		}
 	}
+
+	// Clean up components that were previously referenced by this node but are now orphaned.
+	if len(previousComponentIDs) > 0 {
+		if err := removeOrphanedNodeComponentsScoped(ctx, tx, previousComponentIDs); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -468,16 +508,18 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 			inputRows = inputRows[:0]
 		}
 	}
-	// Due to referential constraint orphaned component-cve edges are removed when orphaned image components are removed.
 	return nil
 }
 
-func removeOrphanedNodeComponent(ctx context.Context, tx *postgres.Tx) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+nodeComponentsTable+" WHERE not exists (select "+nodeComponentEdgesTable+".nodecomponentid from "+nodeComponentEdgesTable+" where "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
-	if err != nil {
-		return err
+// removeOrphanedNodeComponentsScoped removes components from the candidate list that are no longer referenced by any node.
+func removeOrphanedNodeComponentsScoped(ctx context.Context, tx *postgres.Tx, candidateComponentIDs []string) error {
+	if len(candidateComponentIDs) == 0 {
+		return nil
 	}
-	return nil
+
+	query := "DELETE FROM " + nodeComponentsTable + " WHERE id = ANY($1::text[]) AND NOT EXISTS (SELECT 1 FROM " + nodeComponentEdgesTable + " WHERE nodecomponentid = " + nodeComponentsTable + ".id)"
+	_, err := tx.Exec(ctx, query, candidateComponentIDs)
+	return err
 }
 
 func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {

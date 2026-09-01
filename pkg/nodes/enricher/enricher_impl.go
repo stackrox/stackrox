@@ -168,7 +168,6 @@ func FillScanStats(n *storage.Node) {
 		Components: int32(len(n.GetScan().GetComponents())),
 	}
 
-	var fixedByProvided bool
 	var nodeTopCVSS float32
 	vulns := make(map[string]bool)
 	for _, c := range n.GetScan().GetComponents() {
@@ -189,7 +188,6 @@ func FillScanStats(n *storage.Node) {
 				continue
 			}
 
-			fixedByProvided = true
 			if v.GetFixedBy() != "" {
 				vulns[v.GetCveBaseInfo().GetCve()] = true
 			}
@@ -216,13 +214,15 @@ func FillScanStats(n *storage.Node) {
 		}
 	}
 
-	if int32(len(vulns)) == 0 || fixedByProvided {
-		var numFixableVulns int32
-		for _, fixable := range vulns {
-			if fixable {
-				numFixableVulns++
-			}
+	var fixedByProvided bool
+	var numFixableVulns int32
+	for _, fixable := range vulns {
+		if fixable {
+			fixedByProvided = true
+			numFixableVulns++
 		}
+	}
+	if fixedByProvided || n.GetSetFixable() != nil {
 		n.SetFixable = &storage.Node_FixableCves{
 			FixableCves: numFixableVulns,
 		}
