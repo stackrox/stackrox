@@ -165,12 +165,10 @@ func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
 	protoassert.Equal(s.T(), foundNode, newNode)
 }
 
-// TestStore_FreshScanAlwaysWinsSequential is the direct, non-concurrent reproduction attempt for the
-// ccp-fc-ogob01a "scan_time never advances" symptom: upsert an old scan, then upsert a strictly newer
-// one for the same node ID, and confirm the newer one is what gets persisted. This is expected to pass;
-// it establishes the happy path is correct in isolation, which narrows the bug to something that only
-// shows up under concurrency or with specific payload shapes, not to a deterministic single-threaded
-// logic error.
+// TestStore_FreshScanAlwaysWinsSequential covers the sequential happy path of the isUpdated() freshness
+// guard: upsert an old scan, then upsert a strictly newer one for the same node ID, and confirm the newer
+// one is persisted (both scan_time and payload advance). This isolates single-threaded correctness of the
+// guard from the concurrency behavior exercised elsewhere.
 func (s *NodesStoreSuite) TestStore_FreshScanAlwaysWinsSequential() {
 	store := New(s.pool, false, concurrency.NewKeyFence())
 
@@ -198,7 +196,7 @@ func (s *NodesStoreSuite) TestStore_FreshScanAlwaysWinsSequential() {
 	s.Len(found.GetScan().GetComponents(), 1)
 }
 
-// TestStore_RejectionWarningFiresOnlyForRealStaleScan validates the ROX-36432 diagnostic in isUpdated():
+// TestStore_RejectionWarningFiresOnlyForRealStaleScan validates the rejection warning in isUpdated():
 // a real, non-nil incoming scan that is older than the stored one is rejected AND warned about, while a
 // metadata-only upsert (Scan == nil) - which is also "not newer" - is rejected silently (the gate).
 func (s *NodesStoreSuite) TestStore_RejectionWarningFiresOnlyForRealStaleScan() {

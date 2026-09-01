@@ -38,9 +38,9 @@ func swapObservedLogger(t *testing.T) *observer.ObservedLogs {
 	return logs
 }
 
-// TestPipelineWarnsWhenPersistedScanTimeRegresses validates the ROX-36432 accept/post-upsert diagnostic:
-// after the upsert, the pipeline compares the scan_time it processed against what the store actually kept
-// (the store rewrites node.Scan in place when it rejects a scan as not-newer) and warns on a mismatch.
+// TestPipelineWarnsWhenPersistedScanTimeRegresses validates the post-upsert diagnostic: after the upsert,
+// the pipeline compares the scan_time it processed against what the store actually kept (the store rewrites
+// node.Scan in place when it rejects a scan as not-newer) and warns on a mismatch.
 func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")

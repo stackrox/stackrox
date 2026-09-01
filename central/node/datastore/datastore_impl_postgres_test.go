@@ -85,15 +85,11 @@ func (suite *NodePostgresDataStoreTestSuite) TearDownTest() {
 // TestConcurrentUpsertNode_KeyedMutexPreventsRegression is the datastore-layer counterpart of
 // store_test.go's TestStore_ConcurrentUpsert_BypassingOuterLock. That test proves the store layer alone has
 // a check-then-act race in isUpdated(): the read-old-scan-and-decide step isn't covered by the store's own
-// keyFence lock. This test calls the same workload through UpsertNode instead, i.e. through the
-// production call path, which wraps the entire call (read, decide, and write) in a per-node-ID
-// keyedMutex (see UpsertNode in datastore_impl.go). Since every real caller in this codebase reaches the
-// store exclusively through UpsertNode, and the customer's Central runs as a single replica (confirmed
-// from their diagnostic bundle: one Deployment, replicas: 1, one Central pod), this is the path that
-// actually matters for reproducing their bug. If scan_time never regresses here even under heavy
-// concurrency, the "ccp-fc-ogob01a" symptom is not explained by an in-process concurrency race, and the
-// remaining suspects are either something specific to their exact payload/environment or a defect outside
-// what this workload exercises.
+// keyFence lock. This test drives the same workload through UpsertNode, the production call path, which
+// wraps the entire read-decide-write sequence in a per-node-ID keyedMutex (see UpsertNode in
+// datastore_impl.go). Every caller in this codebase reaches the store exclusively through UpsertNode, so
+// this path determines whether concurrent upserts can regress scan_time; the test asserts scan_time never
+// regresses even under heavy concurrency.
 func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutexPreventsRegression() {
 	allowAllCtx := sac.WithAllAccess(context.Background())
 

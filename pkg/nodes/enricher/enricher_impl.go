@@ -118,10 +118,10 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 	}
 
 	// Only warn for the v4/nodeindex path (indexReport != nil). A v4-only Central that still receives
-	// legacy v2 NodeInventory reports would otherwise log this on every such report, indefinitely - benign
-	// noise, since v2-on-a-v4-only-Central is an expected transitional state, not the bug we're hunting.
-	// When an IndexReport arrives and every registered scanner was still skipped, ScannerV4 is not
-	// registered and the node scan silently never refreshes - exactly the condition worth surfacing.
+	// legacy v2 NodeInventory reports would otherwise log this on every such report indefinitely - benign
+	// noise, since v2-on-a-v4-only-Central is an expected transitional state. When an IndexReport arrives and
+	// every registered scanner was still skipped, ScannerV4 is not registered and the node scan silently
+	// never refreshes - the condition worth surfacing.
 	if indexReport != nil && errorList.Empty() && len(skippedScannerTypes) == len(scanners) {
 		// node.Scan is left completely untouched by this call (this is NOT surfaced as an error - ToError()
 		// returns nil below), so the caller will upsert whatever scan the node already had. That upsert looks

@@ -132,10 +132,10 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	persistedScanTime := node.GetScan().GetScanTime()
 	switch cmp := protocompat.CompareTimestamps(incomingScanTime, persistedScanTime); {
 	case cmp > 0:
-		// The store kept a scan_time older than the one we just processed. isUpdated() only rejects scans that
-		// are not strictly newer than the stored one, so a fresh scan should have been accepted - this
-		// direction means the freshly processed scan silently lost to an older persisted one, which is the
-		// ROX-36432 symptom (scan_time stuck in the past while processing continues).
+		// The store kept a scan_time older than the one we just processed. isUpdated() only rejects scans
+		// that are not strictly newer than the stored one, so a fresh scan should have been accepted here;
+		// a persisted scan older than the processed one means the fresh scan was silently dropped, which the
+		// freshness guard should never do.
 		log.Warnf("Persisted scan_time for node %s is older than the freshly processed scan_time: "+
 			"processed=%s persisted=%s. The store kept an older scan than the one just processed, which the "+
 			"freshness guard should have accepted - possible scan regression.",
