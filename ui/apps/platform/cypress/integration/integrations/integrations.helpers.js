@@ -71,6 +71,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             return '/v1/signatureintegrations'; // lowercase in endpoint address
         case 'cloudSources':
             return '/v1/cloud-sources';
+        case 'aiIntegrations':
+            return '/v2/ai-integrations';
         default:
             return '';
     }
@@ -97,6 +99,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return 'signatureintegrations'; // lowercase in endpoint alias
         case 'cloudSources':
             return '/v1/cloud-sources';
+        case 'aiIntegrations':
+            return '/v2/ai-integrations';
         default:
             return '';
     }
@@ -155,6 +159,12 @@ const routeMatcherMapForIntegrationsTab = {
             url: getIntegrationsEndpointAddressForGET('cloudSources'),
         },
     },
+    aiIntegrations: {
+        [getIntegrationsEndpointAlias('aiIntegrations')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('aiIntegrations'),
+        },
+    },
     authProviders: {
         [getIntegrationsEndpointAlias('authProviders', 'apitoken')]: {
             method: 'GET',
@@ -172,6 +182,7 @@ const routeMatcherMapForIntegrationsTab = {
 const integrationsTitle = 'Integrations';
 
 const integrationSourceTitleMap = {
+    aiIntegrations: 'AI',
     authProviders: 'Authentication',
     backups: 'Backup',
     cloudSources: 'Cloud source',
@@ -224,6 +235,9 @@ const integrationTitleMap = {
     cloudSources: {
         paladinCloud: 'Paladin Cloud',
         ocm: 'OpenShift Cluster Manager',
+    },
+    aiIntegrations: {
+        lightspeed: 'OpenShift Lightspeed',
     },
 };
 
@@ -394,6 +408,27 @@ export function deleteIntegrationInTable(integrationSource, integrationType, int
         cy.get(`${pf6.dropdownItem}:contains("Delete integration")`).click();
         cy.get('.pf-v6-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
+}
+
+export const aiIntegrationTestNamePrefix = 'Cypress AI Integration';
+
+export function cleanupAiIntegrations(namePrefix = aiIntegrationTestNamePrefix) {
+    const endpointAddress = getIntegrationsEndpointAddress('aiIntegrations');
+
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
+
+        cy.request({ url: endpointAddress, auth }).as('listAiIntegrations');
+
+        cy.get('@listAiIntegrations').then((res) => {
+            const integrations = res.body.integrations ?? [];
+            integrations
+                .filter(({ name }) => name?.startsWith(namePrefix))
+                .forEach(({ id }) => {
+                    cy.request({ url: `${endpointAddress}/${id}`, auth, method: 'DELETE' });
+                });
+        });
+    });
 }
 
 export function revokeAuthProvidersIntegrationInTable(integrationType, integrationName) {

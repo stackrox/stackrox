@@ -6,5 +6,6 @@ export const selectors = {
         save: 'button:contains("Save")',
         generate: 'button:contains("Generate")',
         back: 'button:contains("Back")',
+        cancel: 'button:contains("Cancel")',
     },
 };
