@@ -43,7 +43,8 @@ create_exit_trap
 # dropped. Individual job scripts can opt out via os.environ["ROX_SCANNER_V4"].
 #
 # TODO(ROX-35345): remove this
-export ROX_SCANNER_V4=true
+# TODO: reenable scanner v4 once it's stable in tests
+# export ROX_SCANNER_V4=true
 
 ci_export CI_JOB_NAME "$ci_job"
 
