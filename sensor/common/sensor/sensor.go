@@ -94,10 +94,8 @@ type Sensor struct {
 
 	clusterID clusterIDPeekSetter
 
-	// scannerDefsHandler is the HTTP proxy for scanner definitions.
 	// repo2CPE is the background mapping cache used by VM scanning.
-	scannerDefsHandler *scannerdefinitions.Handler
-	repo2CPE           *scannerdefinitions.Repo2CPE
+	repo2CPE *scannerdefinitions.Repo2CPE
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -240,16 +238,16 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
+	// Enable endpoint to retrieve vulnerability definitions if local image scanning or Node Indexing is enabled.
+	// Node Indexing requires access to the repo to cpe mapping file hosted by central.
 	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
-		handler, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
+		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint, centralCertificates)
 		if err != nil {
-			utils.Should(errors.Wrap(err, "Failed to create scanner definitions handler"))
-		} else {
-			s.scannerDefsHandler = handler
-			s.AddNotifiable(handler)
-			customRoutes = append(customRoutes, s.newScannerDefinitionsRoute(handler))
-			s.AddNotifiable(scannerclient.ResetNotifiable())
+			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
+		customRoutes = append(customRoutes, *route)
+
+		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
 	if features.VirtualMachines.Enabled() {
@@ -334,14 +332,19 @@ func (s *Sensor) Start() {
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
-// definitions retrieved from Central via handler.
-func (s *Sensor) newScannerDefinitionsRoute(handler *scannerdefinitions.Handler) routes.CustomRoute {
+// definitions retrieved from Central.
+func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCertificates []*x509.Certificate) (*routes.CustomRoute, error) {
+	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating scanner definitions handler")
+	}
+	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
-	return routes.CustomRoute{
+	return &routes.CustomRoute{
 		Route:         scannerDefinitionsRoute,
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
-	}
+	}, nil
 }
 
 func (s *Sensor) registerSoftRestartHandler() {
