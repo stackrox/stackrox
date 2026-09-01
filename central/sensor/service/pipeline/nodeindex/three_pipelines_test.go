@@ -42,6 +42,12 @@ const (
 )
 
 func Test_ThreePipelines_Run(t *testing.T) {
+	// Most scenarios exercise the legacy scanner (Scanner V2) node paths, so the
+	// legacy scanner is enabled by default here. Individual scenarios that assert
+	// the legacy-disabled behavior (the shipping default going forward) override
+	// this to false in their own setUpMocksAndEnv.
+	t.Setenv(features.LegacyScanner.EnvVar(), "true")
+
 	nodeWithScore := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
@@ -91,6 +97,19 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
 	}
 
+	nodeWithUnsupportedScan := &storage.Node{
+		Id:            nodeID,
+		Name:          nodeName,
+		ClusterId:     clusterID,
+		ClusterName:   clusterID,
+		KernelVersion: "v1",
+		Notes:         []storage.Node_Note{},
+		RiskScore:     1,
+		Scan: &storage.NodeScan{
+			Notes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED},
+		},
+	}
+
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
 		nodeDatastore     *nodeDatastoreMocks.MockDataStore
@@ -109,6 +128,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		wantNodeExists            bool
 		wantKernelVersionNode     string
 		wantKernelVersionNodeScan string
+		wantUnsupportedScan       bool
 	}{
 		"lone node index should not find the node in the DB": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
@@ -286,6 +306,97 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantKernelVersionNode:     "v1",
 			wantKernelVersionNodeScan: "v2",
 		},
+
+		// The following scenarios cover the behavior when the legacy scanner
+		// (Scanner V2) is disabled, which is the default going forward. The v2
+		// node-inventory path is dead (discarded), the v1 node path can no longer
+		// be enriched (marked UNSUPPORTED), and only the v4 node-index path
+		// continues to produce scan data.
+		"node inventory arriving while legacy scanner is disabled is discarded": {
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
+				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
+				},
+			},
+			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				t.Setenv(features.LegacyScanner.EnvVar(), "false")
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				// The inventory is ACKed and discarded before any datastore
+				// interaction, so nothing is persisted. The only GetNode call is
+				// the final check below, which finds no node.
+				m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nil, false, nil)
+			},
+			wantNodeExists: false,
+		},
+
+		"node inventory then node index while legacy scanner is disabled persists only the v4 index data": {
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
+				// V2 node-scan (node inventory) for node1 arrives first and is discarded
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
+				},
+				// V4 node-scan (node index) for node1 arrives and is persisted
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
+					return nidxp.Run(context.Background(), clusterID, createNodeIndexMsg(nodeID, "v4"), nil)
+				},
+			},
+			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				t.Setenv(features.LegacyScanner.EnvVar(), "false")
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				gomock.InOrder(
+					// node inventory arrives and is discarded (no datastore calls)
+
+					// node index arrives, is enriched and persisted. We match the
+					// upserted node with gomock.Any() rather than a shared proto
+					// fixture to avoid the gomock.Eq/reflect.DeepEqual proto cache
+					// mismatch that is sensitive to test execution order; the stored
+					// kernel version is verified by the final assertion below.
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore.CloneVT(), true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+
+					// check what got stored in the DB
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
+				)
+			},
+			wantNodeExists:            true,
+			wantKernelVersionNode:     "v1",
+			wantKernelVersionNodeScan: "v4",
+		},
+
+		"node message on a non-scannable node while legacy scanner is disabled results in an unsupported scan": {
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
+				// V1 node-scan for node1 arrives over the node pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
+					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
+				},
+			},
+			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				t.Setenv(features.LegacyScanner.EnvVar(), "false")
+				gomock.InOrder(
+					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
+					// The node does not support v4 node scanning and the legacy
+					// scanner is disabled, so the scan is marked UNSUPPORTED and
+					// enrichment (EnrichNodeWithSuppressedCVEs/UpsertRisk) is skipped.
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).DoAndReturn(
+						func(_ context.Context, node *storage.Node) error {
+							assert.Contains(t, node.GetScan().GetNotes(), storage.NodeScan_UNSUPPORTED)
+							assert.Empty(t, node.GetScan().GetComponents())
+							return nil
+						}).Times(1),
+
+					// check what got stored in the DB
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithUnsupportedScan, true, nil),
+				)
+			},
+			wantNodeExists:        true,
+			wantKernelVersionNode: "v1",
+			wantUnsupportedScan:   true,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -370,14 +481,19 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			require.NoError(t, err)
 			if found {
 				assert.Equal(t, tt.wantKernelVersionNode, node.GetKernelVersion())
-				var kernelComponentFound bool
-				for _, component := range node.GetScan().GetComponents() {
-					if component.GetName() == kernelComponentName {
-						kernelComponentFound = true
-						assert.Equal(t, tt.wantKernelVersionNodeScan, component.GetVersion(), "kernel version in node scan should match")
+				if tt.wantUnsupportedScan {
+					assert.Contains(t, node.GetScan().GetNotes(), storage.NodeScan_UNSUPPORTED)
+					assert.Empty(t, node.GetScan().GetComponents())
+				} else {
+					var kernelComponentFound bool
+					for _, component := range node.GetScan().GetComponents() {
+						if component.GetName() == kernelComponentName {
+							kernelComponentFound = true
+							assert.Equal(t, tt.wantKernelVersionNodeScan, component.GetVersion(), "kernel version in node scan should match")
+						}
 					}
+					assert.True(t, kernelComponentFound)
 				}
-				assert.True(t, kernelComponentFound)
 			}
 		})
 	}

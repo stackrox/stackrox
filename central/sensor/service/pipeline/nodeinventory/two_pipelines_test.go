@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -40,6 +41,12 @@ const (
 )
 
 func Test_TwoPipelines_Run(t *testing.T) {
+	// All scenarios here exercise the legacy scanner (Scanner V2) node and
+	// node-inventory paths, so enable the flag. With it disabled (the shipping
+	// default going forward) the node-inventory pipeline ACKs and discards before
+	// touching the datastore, which these scenarios do not cover.
+	t.Setenv(features.LegacyScanner.EnvVar(), "true")
+
 	nodeWithScore := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
