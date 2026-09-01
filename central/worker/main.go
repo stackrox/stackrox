@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/pruning"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
@@ -72,6 +74,8 @@ func main() {
 		reportConfigDS.Singleton(),
 		reportSnapshotDS.Singleton(),
 		collectionDatastore,
+		notifierDS.Singleton(),
+		notifierProcessor.Singleton(),
 	)
 	rl.start(ctx)
 	log.Infof("Report LISTEN/NOTIFY listener started")

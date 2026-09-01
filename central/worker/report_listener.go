@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
@@ -11,6 +12,8 @@ import (
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/notifier"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
@@ -29,6 +32,8 @@ type reportListener struct {
 	reportConfigStore   reportConfigDS.DataStore
 	snapshotStore       reportSnapshotDS.DataStore
 	collectionDatastore collectionDS.DataStore
+	notifierStore       notifierDS.DataStore
+	notifierProcessor   notifier.Processor
 }
 
 func newReportListener(
@@ -37,6 +42,8 @@ func newReportListener(
 	reportConfigStore reportConfigDS.DataStore,
 	snapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore,
+	notifierStore notifierDS.DataStore,
+	notifierProcessor notifier.Processor,
 ) *reportListener {
 	return &reportListener{
 		db:                  db,
@@ -44,11 +51,14 @@ func newReportListener(
 		reportConfigStore:   reportConfigStore,
 		snapshotStore:       snapshotStore,
 		collectionDatastore: collectionDatastore,
+		notifierStore:       notifierStore,
+		notifierProcessor:   notifierProcessor,
 	}
 }
 
 func (r *reportListener) start(ctx context.Context) {
 	listener := pgNotify.NewListener(r.db, r.handleNotification,
+		pgNotify.NotifierChanged,
 		pgNotify.ReportConfigChanged,
 		pgNotify.ReportRequestSubmitted,
 		pgNotify.ReportRequestCancelled,
@@ -59,6 +69,8 @@ func (r *reportListener) start(ctx context.Context) {
 
 func (r *reportListener) handleNotification(channel, payload string) {
 	switch channel {
+	case pgNotify.NotifierChanged:
+		r.handleNotifierChanged(payload)
 	case pgNotify.ReportConfigChanged:
 		r.handleConfigChanged(payload)
 	case pgNotify.ReportRequestSubmitted:
@@ -66,6 +78,24 @@ func (r *reportListener) handleNotification(channel, payload string) {
 	case pgNotify.ReportRequestCancelled:
 		r.handleRequestCancelled(payload)
 	}
+}
+
+func (r *reportListener) handleNotifierChanged(notifierID string) {
+	protoNotifier, exists, err := r.notifierStore.GetNotifier(listenerCtx, notifierID)
+	if err != nil {
+		log.Errorf("Failed to load notifier %s: %v", notifierID, err)
+		return
+	}
+	if !exists {
+		r.notifierProcessor.RemoveNotifier(listenerCtx, notifierID)
+		return
+	}
+	n, err := pkgNotifiers.CreateNotifier(protoNotifier)
+	if err != nil {
+		log.Errorf("Failed to create notifier %s: %v", notifierID, err)
+		return
+	}
+	r.notifierProcessor.UpdateNotifier(listenerCtx, n)
 }
 
 func (r *reportListener) handleConfigChanged(configID string) {
