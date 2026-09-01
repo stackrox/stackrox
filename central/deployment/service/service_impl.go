@@ -308,9 +308,9 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, errors.Wrap(err, "building risk context for AI summary")
 	}
 
+	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
 	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
-		Query:   aiSummaryPrompt,
-		Context: contextJSON,
+		Query: query,
 	})
 	if err != nil {
 		log.Errorf("Lightspeed query failed for deployment %s: %v", request.GetId(), err)
