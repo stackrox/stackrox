@@ -277,9 +277,13 @@ func (e *Store) applyHeritageData(dg dataGetter) bool {
 		modEntityData = e.currentSensorEntityData.Clone()
 	})
 
+	// Snapshot the current Sensor's endpoints once. Each past entry derives its endpoints from
+	// this immutable snapshot; deriving from modEntityData.endpoints instead would compound the
+	// endpoints added for earlier past entries, growing exponentially with the number of entries.
+	srcEndpoints := maps.Clone(modEntityData.endpoints)
 	for _, entry := range past {
 		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), deploymentID)
-		if applyPastToEntityData(modEntityData, entry) {
+		if applyPastToEntityData(modEntityData, srcEndpoints, entry) {
 			e.Apply(map[string]*EntityData{deploymentID: modEntityData}, true)
 		}
 	}
@@ -302,7 +306,11 @@ func (e *Store) HasCurrentSensorMetadata() bool {
 }
 
 // applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.
-func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool {
+// srcEndpoints is an immutable snapshot of the current Sensor's endpoints; past endpoints are
+// derived from it rather than from data.endpoints so that endpoints added for earlier past entries
+// are neither re-derived (which compounds exponentially across past entries) nor mutated while
+// being ranged over.
+func applyPastToEntityData(data *EntityData, srcEndpoints map[net.NumericEndpoint][]EndpointTargetInfo, past *heritage.SensorMetadata) bool {
 	if _, found := data.containerIDs[past.ContainerID]; found {
 		// The cluster entities store knows about this past instance of sensor. Skip adding.
 		log.Debugf("Cluster entities store already knows about container %s. Skipping.", past.ContainerID)
@@ -313,8 +321,8 @@ func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool
 	pastIP := net.ParseIP(past.PodIP)
 	// Adding additional pod IP to the Sensor deployment
 	data.AddIP(pastIP)
-	for endpoint, infos := range data.endpoints {
-		// Craft endpoint with the same port and proto but with past IP
+	// Craft endpoints with the same port and proto but with the past IP.
+	for endpoint, infos := range srcEndpoints {
 		newEndpoint := net.MakeNumericEndpoint(pastIP, endpoint.IPAndPort.Port, endpoint.L4Proto)
 		// Container port and port name included in `infos` remain the same
 		for _, info := range infos {

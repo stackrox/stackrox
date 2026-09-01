@@ -253,7 +253,7 @@ func TestApplyPastToEntityData(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := applyPastToEntityData(tt.currentData, tt.pastSensor)
+			result := applyPastToEntityData(tt.currentData, maps.Clone(tt.currentData.endpoints), tt.pastSensor)
 			assert.Equal(t, tt.expectedResult, result)
 			containerIDs := tt.currentData.GetContainerIDs("sensor")
 			podIPs := tt.currentData.GetValidIPs()
@@ -291,7 +291,7 @@ func TestApplyPastToEntityData_NoDuplicateEndpoints(t *testing.T) {
 		data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), port, net.TCP), EndpointTargetInfo{ContainerPort: port})
 	}
 
-	added := applyPastToEntityData(data, &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.1.1.1"})
+	added := applyPastToEntityData(data, maps.Clone(data.endpoints), &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.1.1.1"})
 	assert.True(t, added)
 
 	// Every endpoint (current and past) must carry exactly one info; a longer slice means the map
@@ -311,6 +311,8 @@ func TestApplyPastToEntityData_MultiplePastNoCompounding(t *testing.T) {
 	data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 8443, net.TCP), EndpointTargetInfo{ContainerPort: 8443})
 	data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 9090, net.TCP), EndpointTargetInfo{ContainerPort: 9090})
 
+	// Mirror applyHeritageData: snapshot once, then apply every past entry against that snapshot.
+	srcEndpoints := maps.Clone(data.endpoints)
 	past := []*heritage.SensorMetadata{
 		{ContainerID: "past1", PodIP: "10.1.1.1"},
 		{ContainerID: "past2", PodIP: "10.1.1.2"},
@@ -318,7 +320,7 @@ func TestApplyPastToEntityData_MultiplePastNoCompounding(t *testing.T) {
 		{ContainerID: "past4", PodIP: "10.1.1.4"},
 	}
 	for _, entry := range past {
-		assert.True(t, applyPastToEntityData(data, entry))
+		assert.True(t, applyPastToEntityData(data, srcEndpoints, entry))
 	}
 
 	// 2 ports for the current IP plus 2 ports per past IP, each with exactly one info.
