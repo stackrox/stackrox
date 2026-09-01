@@ -1,11 +1,8 @@
 package defaults
 
 import (
-	"reflect"
-
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common"
 )
 
 var (
@@ -16,14 +13,11 @@ var (
 )
 
 // Only returns Enabled or Disabled.
-// Derive component policy based on status Defaults and spec.
-// This will be called from the preExtension to record the current setting.
+// Scanner V4 is now always on (scanner v2 has been removed), so we default to
+// Enabled unless the user explicitly set Disabled in the CR spec.
 //
 // Second return value is `true`, if defaulting has been applied due to lack of explicit setting.
-func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
-	defaultForUpgrades := platform.ScannerV4Disabled
-	defaultForNewInstallations := platform.ScannerV4Enabled
-
+func CentralScannerV4ComponentPolicy(logger logr.Logger, _ *platform.CentralStatus, _ map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
 	if spec != nil && spec.ScannerComponent != nil {
 		comp := *spec.ScannerComponent
 		if comp == platform.ScannerV4ComponentEnabled || comp == platform.ScannerV4ComponentDisabled {
@@ -32,48 +26,7 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 		}
 	}
 
-	// User is relying on defaulting.
-	// This includes the case spec.ScannerComponent == "Default".
-
-	// A default entry exists already, use recorded value.
-	recordedValue := platform.ScannerV4ComponentPolicy(annotations[common.FeatureDefaultKeyScannerV4])
-	if recordedValue == platform.ScannerV4Enabled || recordedValue == platform.ScannerV4Disabled {
-		logger.Info("using previously recorded ScannerV4 componentPolicy", "componentPolicy", recordedValue)
-		return recordedValue, true
-	}
-
-	// No or unexpected default set in the annotations.
-
-	if isNewInstallation(status) {
-		logger.Info("Assuming new installation due to incomplete status.")
-		return defaultForNewInstallations, true
-	}
-
-	// Upgrade.
-	logger.Info("assuming upgrade")
-
-	if annotations[common.FeatureDefaultKeyScannerV4] == "" {
-		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate
-		// statusDefaults with a ScannerV4ComponentPolicy.
-		logger.Info("empty feature-default annotation, using default ScannerV4 componentPolicy for upgrades",
-			"componentPolicy", defaultForUpgrades)
-		return defaultForUpgrades, true
-	}
-
-	// This should not happen, since we only store Enabled|Disabled, but just in case something unexpected happened
-	// and we need to make some decisions...
-	logger.Info("detected unexpected ScannerV4 componentPolicy in feature-default annotation, using default componentPolicy for upgrades",
-		"unexpectedComponentPolicy", recordedValue,
-		"componentPolicy", defaultForUpgrades)
-	return defaultForUpgrades, true
-}
-
-// isNewInstallation checks if this is a new installation based on the status.
-func isNewInstallation(status *platform.CentralStatus) bool {
-	// The ProductVersion is only set post installation.
-	return status == nil ||
-		reflect.DeepEqual(status, &platform.CentralStatus{}) ||
-		status.ProductVersion == ""
+	return platform.ScannerV4Enabled, true
 }
 
 func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.CentralSpec, defaults *platform.CentralSpec) error {
@@ -84,12 +37,8 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 		return nil
 	}
 
-	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
-
-	if annotations[common.FeatureDefaultKeyScannerV4] != string(componentPolicy) {
-		// Update feature default setting.
-		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
-	}
+	// User is relying on defaults. Set in-memory default only.
+	// We no longer persist the annotation to support downgrade scenarios.
 
 	if defaults.ScannerV4 == nil {
 		defaults.ScannerV4 = &platform.ScannerV4Spec{}

@@ -33,9 +33,9 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Central Component Settings"
 	Central *CentralComponentSpec `json:"central,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
+	// Obsolete field. This field will be removed in a future release.
+	// Scanner V2 has been removed. This field is ignored.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
@@ -617,14 +617,6 @@ func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
 	return s.Analyzer
 }
 
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (s *ScannerComponentSpec) IsEnabled() bool {
-	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
-	}
-	return *s.ScannerComponent == ScannerComponentEnabled
-}
-
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
 // +kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
@@ -795,7 +787,7 @@ var (
 
 // IsScannerEnabled returns true if scanner is enabled.
 func (c *Central) IsScannerEnabled() bool {
-	return c.Spec.Scanner.IsEnabled()
+	return false
 }
 
 // IsScannerV4Enabled returns true if Scanner V4 is enabled.

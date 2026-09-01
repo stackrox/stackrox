@@ -69,9 +69,9 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process Baselines Settings"
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images stored in a cluster-local image repository.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner Component Settings"
+	// Obsolete field. This field will be removed in a future release.
+	// Scanner V2 has been removed. This field is ignored.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
@@ -427,10 +427,7 @@ const (
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	// The default is: AutoSense.
+	// Obsolete: Scanner v2 has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 

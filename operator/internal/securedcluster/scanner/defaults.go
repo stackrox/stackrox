@@ -7,7 +7,4 @@ func SetScannerDefaults(spec *platform.SecuredClusterSpec) {
 	if spec.Scanner == nil {
 		spec.Scanner = &platform.LocalScannerComponentSpec{}
 	}
-	if spec.Scanner.ScannerComponent == nil {
-		spec.Scanner.ScannerComponent = platform.LocalScannerComponentAutoSense.Pointer()
-	}
 }
