@@ -49,7 +49,7 @@ export const defaultColumns = {
         isShownByDefault: true,
     },
     cveSeverity: {
-        title: 'CVE severity',
+        title: 'Top CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -145,7 +145,7 @@ function DeploymentVulnerabilitiesTable({
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
-                        CVE severity
+                        Top CVE severity
                     </Th>
                     <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
@@ -263,7 +263,7 @@ function DeploymentVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
                                         modifier="nowrap"
-                                        dataLabel="CVE severity"
+                                        dataLabel="Top CVE severity"
                                     >
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     </Td>

@@ -47,7 +47,7 @@ export const defaultColumns = {
         isUntoggleAble: true,
     },
     cveSeverity: {
-        title: 'CVE severity',
+        title: 'Top CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -55,7 +55,7 @@ export const defaultColumns = {
         isShownByDefault: true,
     },
     cvss: {
-        title: 'CVSS',
+        title: 'Top CVSS',
         isShownByDefault: true,
     },
     nvdCvss: {
@@ -165,13 +165,13 @@ function AffectedImagesTable({
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
-                        CVE severity
+                        Top CVE severity
                     </Th>
                     <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th className={getVisibilityClass('cvss')}>CVSS</Th>
+                    <Th className={getVisibilityClass('cvss')}>Top CVSS</Th>
                     <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
@@ -248,7 +248,7 @@ function AffectedImagesTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
-                                        dataLabel="CVE severity"
+                                        dataLabel="Top CVE severity"
                                         modifier="nowrap"
                                     >
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
@@ -264,7 +264,7 @@ function AffectedImagesTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cvss')}
-                                        dataLabel="CVSS"
+                                        dataLabel="Top CVSS"
                                         modifier="nowrap"
                                     >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
