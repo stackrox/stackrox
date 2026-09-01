@@ -223,12 +223,13 @@ class Kubernetes {
                 "found in namespace ${deployment.namespace}. Updating..."
         // Edit the live object rather than createOrReplace (CREATE then REPLACE).
         // createOrReplace is recorded as CREATE enforcement.
-        // Retry 409s: the deployment controller often updates status right after
-        // create, so a PATCH with the just-read resourceVersion conflicts.
-        // Do not retry 403; admission denials must fail immediately.
+        // Always retry 409s a few times: the deployment controller often updates
+        // status right after create, so a PATCH with a stale resourceVersion
+        // conflicts. maxRetries=0 still uses that floor; a larger maxRetries
+        // raises it. Do not retry 403; admission denials must fail immediately.
         K8sDeployment desired = toK8sDeployment(deployment)
-        int attempts = Math.max(maxRetries, 5)
-        for (int i = 0; i <= attempts; i++) {
+        int maxAttempts = Math.max(maxRetries, 5)
+        for (int i = 0; i < maxAttempts; i++) {
             try {
                 this.deployments.inNamespace(deployment.namespace)
                         .withName(deployment.name)
@@ -248,9 +249,9 @@ class Kubernetes {
                 log.debug "Told the orchestrator to update " + deployment.name
                 return true
             } catch (KubernetesClientException e) {
-                if (e.code == 409 && i < attempts) {
+                if (e.code == 409 && i < maxAttempts - 1) {
                     log.debug "Conflict updating ${deployment.name}, retrying " +
-                            "(attempt ${i + 1} of ${attempts})"
+                            "(attempt ${i + 1} of ${maxAttempts})"
                     sleep 1000
                     continue
                 }
