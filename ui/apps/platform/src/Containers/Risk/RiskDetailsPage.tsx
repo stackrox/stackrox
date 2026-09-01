@@ -103,14 +103,12 @@ function RiskDetailsPage(): ReactElement {
                                     </Button>
                                 </FlexItem>
                             )}
-                            {isRiskSummaryEnabled && data && (
+                            {isRiskSummaryEnabled && data && !aiRiskSummary.isPresent && (
                                 <FlexItem>
                                     <Button
                                         variant="primary"
                                         icon={<AiExperienceIcon />}
                                         onClick={aiRiskSummary.investigate}
-                                        isDisabled={aiRiskSummary.isOpen || aiRiskSummary.isLoading}
-                                        isLoading={aiRiskSummary.isLoading}
                                     >
                                         Investigate with AI
                                     </Button>
@@ -120,13 +118,15 @@ function RiskDetailsPage(): ReactElement {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            {isRiskSummaryEnabled && aiRiskSummary.isOpen && data && (
+            {isRiskSummaryEnabled && aiRiskSummary.isPresent && data && (
                 <PageSection>
                     <AiRiskSummaryCard
                         summary={aiRiskSummary.summary?.summary}
                         isLoading={aiRiskSummary.isLoading}
                         error={aiRiskSummary.error}
-                        onClose={aiRiskSummary.close}
+                        isExpanded={aiRiskSummary.isExpanded}
+                        onExpand={() => aiRiskSummary.setExpanded(!aiRiskSummary.isExpanded)}
+                        onRetry={aiRiskSummary.investigate}
                     />
                 </PageSection>
             )}

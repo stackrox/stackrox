@@ -9,23 +9,30 @@ import {
 } from './riskSummaryCache';
 
 export type UseAiRiskSummaryReturn = {
-    isOpen: boolean;
+    isPresent: boolean;
+    isExpanded: boolean;
     summary: DeploymentRiskSummary | undefined;
     isLoading: boolean;
     error: unknown;
     investigate: () => void;
-    close: () => void;
+    setExpanded: (isExpanded: boolean) => void;
 };
 
 export default function useAiRiskSummary(deploymentId: string): UseAiRiskSummaryReturn {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const { isLoading, error, mutate } = useRestMutation(fetchCachedDeploymentRiskSummary);
 
     // Read the summary from the session cache if it exists
     const summary = peekCachedDeploymentRiskSummary(deploymentId);
 
+    // The card is present (collapsed or expanded) whenever there is a cached result to
+    // surface, a request in flight, an error to report, or the user has expanded it this
+    // session. A cached result on a fresh mount renders the card collapsed, so navigating
+    // back to a deployment shows that recent results exist without re-spending tokens.
+    const isPresent = Boolean(summary) || isLoading || Boolean(error) || isExpanded;
+
     function investigate() {
-        setIsOpen(true);
+        setIsExpanded(true);
         // Already cached this session, or a request is in flight - nothing to fetch.
         if (summary || isLoading) {
             return;
@@ -33,9 +40,13 @@ export default function useAiRiskSummary(deploymentId: string): UseAiRiskSummary
         mutate(deploymentId);
     }
 
-    function close() {
-        setIsOpen(false);
-    }
-
-    return { isOpen, summary, isLoading, error, investigate, close };
+    return {
+        isPresent,
+        isExpanded,
+        summary,
+        isLoading,
+        error,
+        investigate,
+        setExpanded: setIsExpanded,
+    };
 }

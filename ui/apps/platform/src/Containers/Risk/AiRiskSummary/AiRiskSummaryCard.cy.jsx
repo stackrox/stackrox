@@ -2,40 +2,42 @@ import AiRiskSummaryCard from './AiRiskSummaryCard';
 
 const summaryText = 'sync-worker scores 67/100 (Important).\nMain drivers: suspicious processes.';
 
+function setup(props = {}) {
+    cy.mount(
+        <AiRiskSummaryCard
+            summary={undefined}
+            isLoading={false}
+            error={undefined}
+            isExpanded
+            onExpand={() => {}}
+            onRetry={() => {}}
+            {...props}
+        />
+    );
+}
+
 describe(Cypress.spec.relative, () => {
     it('should show a spinner while the summary is loading', () => {
-        cy.mount(
-            <AiRiskSummaryCard summary={undefined} isLoading error={undefined} onClose={() => {}} />
-        );
+        setup({ isLoading: true });
 
         cy.get('[aria-label="Generating AI risk summary"]').should('exist');
         cy.contains('Always review AI-generated content prior to use.').should('not.exist');
     });
 
-    it('should render an error alert when the request fails', () => {
-        cy.mount(
-            <AiRiskSummaryCard
-                summary={undefined}
-                isLoading={false}
-                error={new Error('something went wrong')}
-                onClose={() => {}}
-            />
-        );
+    it('should render an error alert with a retry action when the request fails', () => {
+        const onRetry = cy.stub().as('onRetry');
+        setup({ error: new Error('something went wrong'), onRetry });
 
         cy.contains('Unable to generate AI risk summary').should('exist');
         cy.contains('something went wrong').should('exist');
         cy.contains('Always review AI-generated content prior to use.').should('not.exist');
+
+        cy.contains('button', 'Try again').click();
+        cy.get('@onRetry').should('have.been.calledOnce');
     });
 
     it('should render the summary with the review disclaimer on success', () => {
-        cy.mount(
-            <AiRiskSummaryCard
-                summary={summaryText}
-                isLoading={false}
-                error={undefined}
-                onClose={() => {}}
-            />
-        );
+        setup({ summary: summaryText });
 
         cy.contains('AI risk briefing').should('exist');
         cy.contains('Always review AI-generated content prior to use.').should('exist');
@@ -44,14 +46,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should copy the summary to the clipboard', () => {
-        cy.mount(
-            <AiRiskSummaryCard
-                summary={summaryText}
-                isLoading={false}
-                error={undefined}
-                onClose={() => {}}
-            />
-        );
+        setup({ summary: summaryText });
 
         cy.get('button[aria-label="Copy AI summary to clipboard"]').click();
 
@@ -62,18 +57,20 @@ describe(Cypress.spec.relative, () => {
         });
     });
 
-    it('should invoke onClose when the close button is clicked', () => {
-        const onClose = cy.stub().as('onClose');
-        cy.mount(
-            <AiRiskSummaryCard
-                summary={summaryText}
-                isLoading={false}
-                error={undefined}
-                onClose={onClose}
-            />
-        );
+    it('should invoke onExpand when the collapse toggle is clicked', () => {
+        const onExpand = cy.stub().as('onExpand');
+        setup({ summary: summaryText, onExpand });
 
-        cy.get('button[aria-label="Close AI investigation"]').click();
-        cy.get('@onClose').should('have.been.calledOnce');
+        cy.get('button[aria-label="Collapse AI risk briefing"]').click();
+        cy.get('@onExpand').should('have.been.calledOnce');
+    });
+
+    it('should hide the summary body when collapsed', () => {
+        setup({ summary: summaryText, isExpanded: false });
+
+        // The title remains visible, but the body content is collapsed away.
+        cy.contains('AI risk briefing').should('exist');
+        cy.contains('sync-worker scores 67/100 (Important).').should('not.be.visible');
+        cy.get('button[aria-label="Expand AI risk briefing"]').should('exist');
     });
 });
