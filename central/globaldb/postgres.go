@@ -134,6 +134,12 @@ func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 
 // InitializePostgres creates and returns returns a global database instance.
 func InitializePostgres(ctx context.Context) postgres.DB {
+	return InitializePostgresWithPoolSize(ctx, 0)
+}
+
+// InitializePostgresWithPoolSize creates a global database instance with an overridden
+// connection pool size. If maxConns is 0, the default from the DSN is used.
+func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -141,11 +147,12 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 		}
 
 		if !pgconfig.IsExternalDatabase() {
-			// Get the active database name for the connection
 			activeDB := pgconfig.GetActiveDB()
-
-			// Set the connection to be the active database.
 			dbConfig.ConnConfig.Database = activeDB
+		}
+
+		if maxConns > 0 {
+			dbConfig.MaxConns = maxConns
 		}
 
 		if err := retry.WithRetry(func() error {

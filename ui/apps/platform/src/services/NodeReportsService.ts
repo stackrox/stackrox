@@ -68,9 +68,7 @@ export function fetchNodeReportConfigurationsCount(
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ count: number }>(`/v2/reports/node/configuration-count?${params}`, { signal })
-            .then((response) => {
-                return response.data;
-            })
+            .then((response) => response.data)
     );
 }
 
@@ -89,12 +87,10 @@ export function fetchNodeReportConfiguration(
 }
 
 // DeleteNodeReportConfiguration
-export function deleteNodeReportConfiguration(reportId: string): CancellableRequest<Empty> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .delete<Empty>(`/v2/reports/node/configurations/${reportId}`, { signal })
-            .then((response) => response.data)
-    );
+export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> {
+    return axios
+        .delete<Empty>(`/v2/reports/node/configurations/${reportId}`)
+        .then((response) => response.data);
 }
 
 // Configuration-based jobs

@@ -132,7 +132,7 @@ var (
 	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
-	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
@@ -148,6 +148,15 @@ var (
 
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
 	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+
+	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
+	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
+
+	// AIIntegrations enables AI integrations management
+	AIIntegrations = registerFeature("Enable AI integrations management", "ROX_AI_INTEGRATIONS")
+
+	// LightspeedRiskSummary enables Lightspeed AI risk summary
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
 )
 
 // The following feature flags are related to Scanner V4.

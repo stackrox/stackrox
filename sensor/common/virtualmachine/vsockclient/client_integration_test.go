@@ -2,6 +2,7 @@ package vsockclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -16,6 +17,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+// readyMappingProvider is Ready so GetReport reaches the cache path these
+// tests cover (empty cache → NOT_READY, seeded cache → report).
+type readyMappingProvider struct{}
+
+func (readyMappingProvider) Ready() bool  { return true }
+func (readyMappingProvider) Hash() string { return "" }
+func (readyMappingProvider) UpdatePath() pb.RepoCPEMappingUpdatePath {
+	return pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR
+}
+func (readyMappingProvider) Bytes() ([]byte, error) { return nil, errors.New("not implemented") }
+func (readyMappingProvider) Path() (string, error)  { return "", errors.New("not implemented") }
+
+var _ roxagentvsock.MappingProvider = readyMappingProvider{}
 
 // exchangeTimeout bounds a single client/handler exchange. Under synctest the
 // fake clock advances this duration instantly once every goroutine is durably
@@ -55,13 +70,13 @@ func newProtocolHarness(t *testing.T, opts protocolHarnessOptions) *protocolHarn
 
 	cache := &roxagentvsock.ReportCache{}
 	if opts.seedReport != nil {
-		cache.SetReport(opts.seedReport, opts.seedFacts)
+		cache.SetReport(opts.seedReport, opts.seedFacts, "")
 	}
 
 	return &protocolHarness{
 		client:  NewClient(opts.capabilities, opts.maxResponseSize),
 		cache:   cache,
-		handler: roxagentvsock.NewHandler(cache, opts.agentVersion),
+		handler: roxagentvsock.NewHandler(cache, opts.agentVersion, readyMappingProvider{}, nil),
 	}
 }
 

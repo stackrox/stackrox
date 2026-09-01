@@ -146,11 +146,11 @@ function ViewBasedReportsTab() {
 
     return (
         <>
-            <PageTitle title="Image vulnerability reports - View-based reports" />
+            <PageTitle title="Image vulnerability reports - View-based jobs" />
             <PageSection>
                 <Content component="p">
-                    Check job status and download view-based reports in CSV format. Requests are
-                    purged according to retention settings.
+                    Check job status and download view-based reports in CSV format. Jobs are purged
+                    according to retention settings.
                 </Content>
             </PageSection>
             <PageSection>
