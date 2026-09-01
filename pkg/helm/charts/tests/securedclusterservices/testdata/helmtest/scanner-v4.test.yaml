@@ -23,7 +23,6 @@ tests:
 - name: "scanner v4 with default settings with indexer enabled"
   set:
     imagePullSecrets.allowNone: true
-    scanner.disable: false
     scannerV4.disable: false
   expect: |
     container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
@@ -41,58 +40,31 @@ tests:
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V4 should not be installed by default for upgrades from < 4.8"
+- name: "scanner V4 should be installed by default for upgrades"
   release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
   expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V2 should be installed by default for new installations"
-  release: { "isInstall": true, "isUpgrade": false }
-  set:
-    imagePullSecrets.allowNone: true
-  expect: |
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
-
-- name: "scanner V2 should be not installed by default for upgrades from < 4.8"
-  release: { "isInstall": false, "isUpgrade": true}
+- name: "scanner V2 is not deployed"
   set:
     imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
-
-- name: "scanner V2 should be installed by default for upgrades from >= 4.8"
-  release: { "isInstall": false, "isUpgrade": true}
-  set:
-    imagePullSecrets.allowNone: true
-  expect: |
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
   tests:
-  - name: "from 4.8"
-    server:
-      objects:
-      - apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: stackrox-secured-cluster-helm
-          namespace: stackrox
-        data:
-          installXYVersion: "4.8"
-  - name: "from 4.9"
-    server:
-      objects:
-      - apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: stackrox-secured-cluster-helm
-          namespace: stackrox
-        data:
-          installXYVersion: "4.9"
+  - name: "for new installations"
+    release: { "isInstall": true, "isUpgrade": false }
+  - name: "for upgrades"
+    release: { "isInstall": false, "isUpgrade": true }
+  - name: "when scanner.disable is explicitly set to false"
+    set:
+      scanner.disable: false
+  - name: "when scanner.disable is explicitly set to true"
+    set:
+      scanner.disable: true
 
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
@@ -188,7 +160,6 @@ tests:
         namespace: stackrox
   set:
     scannerV4.disable: false
-    scanner.disable: true
   expect: |
     assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
     assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
@@ -240,28 +211,18 @@ tests:
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
     tests:
-    - name: "if only StackRox Scanner is enabled"
+    - name: "if Scanner V4 is enabled"
       set:
-        scanner.disable: false
-        scannerV4.disable: true
-    - name: "if both scanners are enabled"
-      set:
-        scanner.disable: false
         scannerV4.disable: false
     - name: "if localImageScanningScanner is enabled"
       set:
         sensor.localImageScanning.enabled: true
-    - name: "if StackRox Scanner is disabled and Scanner V4 is enabled"
-      set:
-        scanner.disable: true
-        scannerV4.disable: false
   - name: "disabled"
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. != "true")
     tests:
-    - name: "if both scanners are disabled"
+    - name: "if Scanner V4 is disabled"
       set:
-        scanner.disable: true
         scannerV4.disable: true
 - name: "sensor connects to local scanner using the correct gRPC endpoint"
   release:
@@ -286,21 +247,10 @@ tests:
   expect: |
     envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
 
-- name: "Disabling scanner V2 does not automatically enable scanner V4 as well"
-  values:
-    scanner:
-      disable: true
-    imagePullSecrets:
-      allowNone: true
-  expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. != null)
-
-- name: "Enabling scanner v2 does not enable scanner v4 if it has been explicitly disabled"
+- name: "Scanner V4 can be explicitly disabled"
   values:
     scannerV4:
       disable: true
-    scanner:
-      disable: false
     imagePullSecrets:
       allowNone: true
   expect: |
@@ -435,8 +385,6 @@ tests:
   values:
     imagePullSecrets:
       allowNone: true
-    scanner:
-      disable: false
   tests:
   - name: "reference to Scanner V4 if Scanner V4 is not disabled"
     expect: |
