@@ -189,10 +189,7 @@ func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGeneration() {
 
 func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
-		serviceTypes := scannerV2ServiceTypes
-		if features.ScannerV4.Enabled() {
-			serviceTypes = localScannerServiceTypes
-		}
+		serviceTypes := localScannerServiceTypes
 		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
 		for serviceType := range serviceTypes.All() {
 			serviceTypeNames = append(serviceTypeNames, serviceType.String())
@@ -203,7 +200,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 		namespace        string
 		clusterID        string
 		shouldFail       bool
-		scannerV4Enabled bool
+		scannerV4Enabled bool // V4 is always enabled now; kept to minimize diff
 	}{
 		"no parameter missing": {
 			namespace:  namespace,
