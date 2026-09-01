@@ -16,10 +16,10 @@ type ListAiIntegrationsResponse = {
     integrations: AiIntegration[];
 };
 
-export function fetchAiIntegrations(): Promise<AiIntegration[]> {
+export function fetchAiIntegrations(): Promise<{ integrations: AiIntegration[] }> {
     return axios
         .get<ListAiIntegrationsResponse>(aiIntegrationsUrl)
-        .then((response) => response.data.integrations);
+        .then((response) => response.data);
 }
 
 export function fetchAiIntegration(id: string): Promise<AiIntegration> {
