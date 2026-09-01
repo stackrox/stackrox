@@ -8,7 +8,7 @@
 #   - $MESSAGE is unset: collect ::error:: annotations and per-job status for
 #     the current workflow run via the GitHub API (optionally narrowed to
 #     jobs whose name contains $JOB_NAME_FILTER, useful when this script runs
-#     once per matrix leg of a reusable workflow), and build a rich message.
+#     once per matrix leg of a reusable workflow), and build a message from that data.
 #     If collection itself fails, a degraded but still-informative message is
 #     sent instead of nothing at all.
 #

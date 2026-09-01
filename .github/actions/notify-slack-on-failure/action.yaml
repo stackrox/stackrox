@@ -2,7 +2,7 @@ name: Notify Slack on failure
 description: >
   Posts a Slack failure notification for the current workflow run. By
   default, collects ::error:: annotations and per-job status via the GitHub
-  API and builds a rich message; pass `message` to post a fixed, pre-built
+  API and builds a message from that data; pass `message` to post a fixed, pre-built
   message instead (no GitHub API calls). Requires `permissions: {checks:
   read, actions: read}` on the calling job unless `message` is set.
 inputs:
@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ""
   context:
-    description: "Optional extra line of context inserted near the top of the rich message (e.g. 'Source: alpine'). Ignored when `message` is set."
+    description: "Optional extra line of context inserted near the top of the message (e.g. 'Source: alpine'). Ignored when `message` is set."
     required: false
     default: ""
   job-name-filter:
