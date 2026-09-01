@@ -27,6 +27,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Removed Features
 
+- Scanner V2 (StackRox Scanner) has been fully removed. Scanner V4 is now the only vulnerability scanner deployed by the operator, Helm charts, and manifest bundles. Upgrading via the operator or Helm automatically stops deploying Scanner V2 resources. For manifest bundle installations, Scanner V2 resources must be removed manually after upgrading.
+
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
