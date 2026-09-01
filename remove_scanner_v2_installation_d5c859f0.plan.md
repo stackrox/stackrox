@@ -172,10 +172,10 @@ Scanner v2 password/TLS reconcilers should be updated: if the operator no longer
 - Keep Scanner V4 image exports
 
 **File**: [deploy/common/local-dev-values.yaml](deploy/common/local-dev-values.yaml)
-- Set `scanner.disable: true`
+- Remove the `scanner:` block (lines 60-79) -- dead code since v2 is always disabled
 
 **File**: [deploy/common/scanner-local-patch.yaml](deploy/common/scanner-local-patch.yaml)
-- Remove or empty this file (it patches scanner v2 for local dev)
+- Remove file and change callers.
 
 ### 10. Central Helm `_init.tpl.htpl` -- Scanner v2 Feature Flag Injection and User Messaging
 
@@ -211,7 +211,26 @@ LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration"
 
 This sets the default to `false` (no `enabled` option) and makes it unchangeable (`Enabled()` always returns `false`, ignoring any env var override). All Go runtime code gated on `features.LegacyScanner.Enabled()` becomes permanently inactive.
 
-### 12. roxctl Scanner Commands
+### 12. Image Flavor Definitions -- Remove Scanner v2 Images
+
+**File**: [pkg/images/defaults/flavor.go](pkg/images/defaults/flavor.go)
+
+Remove scanner v2 image fields from the `ImageFlavor` struct and all three flavor constructors (opensource, RHACS, development):
+- Fields: `ScannerImageName`, `ScannerSlimImageName`, `ScannerImageTag`, `ScannerDBImageName`, `ScannerDBSlimImageName`
+- Methods: `ScannerImage()`, `ScannerSlimImage()`, `ScannerDBImage()`
+
+Note: `ScannerImageTag` is also used by scanner v4 images (via `ScannerV4ImageTag` or shared tag). Verify before removing that it is not shared with v4.
+
+**Consumers to update** (compile errors will guide this):
+- `pkg/renderer/images.go`, `kubernetes.go` -- bundle generation uses scanner v2 images
+- `pkg/helm/charts/meta.go` -- passes scanner images to chart meta
+- `central/clusters/deployer.go` -- cluster deployer references
+- `central/scanner/handler.go` -- scanner zip bundle generation
+- `roxctl/central/generate/interactive.go` -- interactive prompts for scanner images
+- `pkg/images/defaults/testutils/flavor.go` -- test flavor helper
+- Various test files in `pkg/helm/charts/tests/`, `pkg/renderer/`, `pkg/images/defaults/`
+
+### 13. roxctl Scanner Commands
 
 **File**: [roxctl/scanner/generate/generate.go](roxctl/scanner/generate/generate.go)
 - The `--scanner-image` flag references Scanner v2 image. Remove this flag (keep `--scanner-v4-image` and `--scanner-v4-db-image`).
