@@ -35,6 +35,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { runImageViewBasedReport } from 'services/ReportsService';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal, {
@@ -58,7 +60,7 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 
 const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -386,6 +388,8 @@ function ImagePage({
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
                     query={getRegexScopedQueryString(imageScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
+                    runViewBasedReport={runImageViewBasedReport}
+                    vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                 />
             )}
         </>

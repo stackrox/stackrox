@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     DropdownItem,
@@ -25,9 +26,11 @@ import useAnalytics, {
     NODE_CVE_ENTITY_CONTEXT_VIEWED,
     NODE_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
+import { runNodeViewBasedReport } from 'services/NodeReportsService';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+import { vulnerabilityNodeViewBasedJobsPath } from 'routePaths';
 
 import {
     clusterSearchFilterConfig,
@@ -36,6 +39,7 @@ import {
     nodeSearchFilterConfig,
 } from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
@@ -43,10 +47,12 @@ import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
 import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
+import { createScheduledReportForNodeVulnerabilitiesURL } from '../../Reports/NodeVulnerabilityReports/nodeVulnerabilityReports.utils';
 import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import { parseQuerySearchFilter } from '../../utils/searchUtils';
+import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 
+import CreateReportDropdown from '../components/CreateReportDropdown';
 import CVEsTable, {
     defaultSortOption as cveDefaultSortOption,
     sortFields as cveSortFields,
@@ -93,6 +99,11 @@ function NodeCvesOverviewPage() {
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
     const snoozedCveCount = useSnoozedCveCount('Node');
     const { version } = useMetadata();
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+    const navigate = useNavigate();
+
+    // Unlike WorkloadCves pages, 'CVE Snoozed' is in search filter of NodeCves page.
+    const viewBasedQueryString = getRegexScopedQueryString(querySearchFilter);
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -138,7 +149,18 @@ function NodeCvesOverviewPage() {
                 pagination.setPage(1);
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
-        />
+        >
+            {isFeatureFlagEnabled('ROX_NODE_VULNERABILITY_REPORTS') && (
+                <CreateReportDropdown
+                    onSelectExportReportAsCSV={() => {
+                        setIsCreateViewBasedReportModalOpen(true);
+                    }}
+                    onSelectCreateScheduledReport={() => {
+                        navigate(createScheduledReportForNodeVulnerabilitiesURL(querySearchFilter));
+                    }}
+                />
+            )}
+        </AdvancedFiltersToolbar>
     );
 
     const entityToggleGroup = (
@@ -269,6 +291,16 @@ function NodeCvesOverviewPage() {
                     />
                 )}
             </PageSection>
+            {isFeatureFlagEnabled('ROX_NODE_VULNERABILITY_REPORTS') && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={viewBasedQueryString}
+                    areaOfConcern="Nodes"
+                    runViewBasedReport={runNodeViewBasedReport}
+                    vulnerabilityViewBasedJobsPath={vulnerabilityNodeViewBasedJobsPath}
+                />
+            )}
         </>
     );
 }
