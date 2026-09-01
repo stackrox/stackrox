@@ -64,6 +64,7 @@ import type { ExceptionRequestModalProps } from '../../components/ExceptionReque
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { Origin } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import {
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -256,10 +257,13 @@ function ImagePageVulnerabilities({
         // imageCVESearchFilterConfig,
         {
             ...imageCVESearchFilterConfig,
-            attributes: imageCVESearchFilterConfig.attributes.filter(
-                ({ searchTerm }) =>
-                    searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
-            ),
+            attributes: [
+                ...imageCVESearchFilterConfig.attributes.filter(
+                    ({ searchTerm }) =>
+                        searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
+                ),
+                Origin, // CVE origin filter is scoped to the single image page
+            ],
         },
         imageComponentSearchFilterConfig,
     ];

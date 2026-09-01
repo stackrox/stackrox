@@ -20,9 +20,9 @@ var (
 
 var errSensorMappingNotReady = errors.New("no repo-to-CPE mapping available yet")
 
-// SensorUpdater applies repo-to-CPE mappings pushed in over VSOCK via
-// SyncRepoCPEMapping, deferring the apply while busy is set so an
-// in-flight scan's GetReport response never sees a mid-flight change.
+// SensorUpdater applies repo-to-CPE mappings pushed over VSOCK. A Sync
+// during a scan is deferred so it cannot replace the file that scan is
+// reading.
 type SensorUpdater struct {
 	active     []byte
 	activeHash string
@@ -145,27 +145,27 @@ func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 		return true, false
 	})
 	if !updated {
+		log.Debugf("SyncRepoCPEMapping: mapping unchanged (hash=%s)", hash)
 		return false, nil
 	}
 	if deferred {
 		log.Infof("SyncRepoCPEMapping: deferring apply of mapping (hash=%s) until the in-flight scan finishes", hash)
 		return true, nil
 	}
+	log.Infof("SyncRepoCPEMapping: applied mapping (hash=%s)", hash)
 	u.persistAndNotify()
 	return true, nil
 }
 
-// MarkScanBusy marks a VM-disk scan in progress, so a concurrent Update
-// stages new content as pending instead of mutating active underneath it.
+// MarkScanBusy sets busy=true so a mapping-Sync during this scan is saved into pending instead of replacing the mapping.
+// Replacing the mapping could cause race between the scan reading that mapping and the Sync writing it.
 func (u *SensorUpdater) MarkScanBusy() {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	u.busy = true
 }
 
-// MarkScanIdleAndApplyPending clears busy and, if Update staged content
-// while busy, promotes it to active now that the scan (and its GetReport
-// response) has finished.
+// MarkScanIdleAndApplyPending applies a mapping that arrived during the scan, now that the scan is no longer reading the file.
 func (u *SensorUpdater) MarkScanIdleAndApplyPending() {
 	pending := concurrency.WithLock1(&u.mu, func() []byte {
 		u.busy = false
@@ -178,6 +178,7 @@ func (u *SensorUpdater) MarkScanIdleAndApplyPending() {
 		return pending
 	})
 	if pending != nil {
+		log.Infof("Applying deferred mapping (hash=%s)", cpemapping.HashMapping(pending))
 		u.persistAndNotify()
 	}
 }

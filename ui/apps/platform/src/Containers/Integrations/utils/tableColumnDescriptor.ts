@@ -1,5 +1,6 @@
 import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import type { CloudSourceIntegration } from 'services/CloudSourceService';
+import type { AiIntegration } from 'services/AiIntegrationsService';
 import type { ApiToken } from 'types/apiToken.proto';
 import type { BaseBackupIntegration } from 'types/externalBackup.proto';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
@@ -12,6 +13,7 @@ import type {
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
 import type {
+    AiIntegrationType,
     AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
@@ -88,6 +90,7 @@ type IntegrationTableColumnDescriptorMap = {
         CloudSourceIntegrationType,
         IntegrationTableColumnDescriptor<CloudSourceIntegration>[]
     >;
+    aiIntegrations: Record<AiIntegrationType, IntegrationTableColumnDescriptor<AiIntegration>[]>;
 };
 
 const originColumnDescriptor = {
@@ -368,6 +371,12 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ocm: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'ocm.endpoint', Header: 'Endpoint' },
+        ],
+    },
+    aiIntegrations: {
+        lightspeed: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'serviceUrl', Header: 'Service URL' },
         ],
     },
 };
