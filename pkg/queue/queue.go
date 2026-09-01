@@ -87,6 +87,38 @@ func (q *Queue[T]) Pull() T {
 // PullBlocking will pull an item from the queue, potentially waiting until one is available.
 // In case the waitable signals done, the default value of T will be returned.
 func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
+	item, _ := q.pullWait(waitable)
+	return item
+}
+
+// Seq returns a iterator function that yields items from the queue as they become available.
+// The iterator will continue until the provided waitable signals done.
+func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		for {
+			// Ensure responsive cancellation even when queue has items
+			select {
+			case <-waitable.Done():
+				return
+			default:
+			}
+
+			item, ok := q.pullWait(waitable)
+			if !ok {
+				return
+			}
+
+			if !yield(item) {
+				return
+			}
+		}
+	}
+}
+
+// pullWait waits for an item to become available in the queue, blocking until
+// either an item is retrieved or the waitable signals done.
+// Returns the item and true if retrieved, or zero value and false if cancelled.
+func (q *Queue[T]) pullWait(waitable concurrency.Waitable) (T, bool) {
 	item, ok := q.pull()
 	// Keep retrying until we actually get an item or context is cancelled.
 	// This prevents lost wakeup: if we're signaled but another consumer
@@ -97,46 +129,12 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 		select {
 		case <-waitable.Done():
 			var nilT T
-			return nilT
+			return nilT, false
 		case <-q.notEmptySignal.Done():
 		}
 		item, ok = q.pull()
 	}
-	return item
-}
-
-// Seq returns a iterator function that yields items from the queue as they become available.
-// The iterator will continue until the provided waitable signals done.
-func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
-	return func(yield func(T) bool) {
-		for {
-			// Check for cancellation before every pull
-			select {
-			case <-waitable.Done():
-				return
-			default:
-			}
-
-			item, ok := q.pull()
-			// Keep retrying until we actually get an item or context is cancelled.
-			// This prevents lost wakeup: if we're signaled but another consumer
-			// takes the item before we pull, we must continue waiting.
-			for !ok {
-				// Reset stale signal before waiting to prevent spin-loop
-				q.notEmptySignal.Reset()
-				select {
-				case <-waitable.Done():
-					return
-				case <-q.notEmptySignal.Done():
-				}
-				item, ok = q.pull()
-			}
-
-			if !yield(item) {
-				return
-			}
-		}
-	}
+	return item, true
 }
 
 func (q *Queue[T]) innerPull() (T, bool) {
