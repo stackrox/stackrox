@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/reflectutils"
-	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -72,41 +70,6 @@ func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string,
 	return slice
 }
 
-func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind string, name string, jsonpath string, retainKeys []string, def map[string]interface{}) map[string]interface{} {
-	var objStrings map[string]interface{}
-	x := k.evaluate(ctx, kind, name, jsonpath)
-	if reflectutils.IsNil(x) {
-		return def
-	}
-
-	switch obj := x.(type) {
-	case map[interface{}]interface{}:
-		objStrings = make(map[string]interface{})
-		for k, v := range obj {
-			s, ok := k.(string)
-			if !ok {
-				continue
-			}
-			objStrings[s] = v
-		}
-	case map[string]interface{}:
-		objStrings = obj
-	default:
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
-		return def
-	}
-
-	// Remove any keys from object, which are not in retainKeys.
-	retainKeysSet := set.NewStringSet(retainKeys...)
-	for objKey := range objStrings {
-		if !retainKeysSet.Contains(objKey) {
-			delete(objStrings, objKey)
-		}
-	}
-
-	return objStrings
-}
-
 func (k *k8sObjectDescription) evaluateToString(ctx context.Context, kind string, name string, jsonpath string, def string) string {
 	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
 	s, ok := x.(string)
@@ -167,23 +130,6 @@ func (k *k8sObjectDescription) lookupSecretStringP(ctx context.Context, name str
 	}
 
 	return secret
-}
-
-func (k *k8sObjectDescription) evaluateToInt64(ctx context.Context, kind string, name string, jsonpath string, def int64) int64 {
-	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
-	switch i := x.(type) {
-	case int:
-		return int64(i)
-	case int16:
-		return int64(i)
-	case int32:
-		return int64(i)
-	case int64:
-		return i
-	default:
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
-		return def
-	}
 }
 
 func (k *k8sObjectDescription) Exists(ctx context.Context, kind string, name string) bool {

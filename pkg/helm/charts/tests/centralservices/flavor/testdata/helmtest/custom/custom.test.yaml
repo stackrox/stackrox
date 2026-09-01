@@ -2,5 +2,6 @@ tests:
 - name: validate image defaults
   expect: |
     assertCentral("example.io/custom-main:1.2.3")
-    assertScanner("example.io/custom-scanner:3.2.1")
-    assertScannerDB("example.io/custom-scanner-db:3.2.1")
+    assertScannerV4Indexer("example.io/custom-scanner-v4:4.2.1")
+    assertScannerV4Matcher("example.io/custom-scanner-v4:4.2.1")
+    assertScannerV4DB("example.io/custom-scanner-v4-db:4.2.1")

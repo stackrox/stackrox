@@ -26,7 +26,9 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "central-db", "scanner", "scanner-v4"}
+	// The "scanner" (StackRox Scanner / Scanner V2) group is intentionally omitted: Scanner V2
+	// is retired and its flags are deprecated no-ops that are not prompted for interactively.
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner-v4"}
 )
 
 func readUserInput(prompt string) (string, error) {
@@ -316,10 +318,9 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			continue
 		}
 
-		// set default values for image-{main,scanner,scanner-db,scanner-v4,scanner-v4-db} flags
+		// set default values for image-{main,scanner-v4,scanner-v4-db,central-db} flags
+		// (Scanner V2 image flags are retired/deprecated and skipped as hidden above)
 		if fw.Flag.Name == flags.FlagNameMainImage ||
-			fw.Flag.Name == flags.FlagNameScannerImage ||
-			fw.Flag.Name == flags.FlagNameScannerDBImage ||
 			fw.Flag.Name == flags.FlagNameScannerV4Image ||
 			fw.Flag.Name == flags.FlagNameScannerV4DBImage ||
 			fw.Flag.Name == flags.FlagNameCentralDBImage {
@@ -335,14 +336,6 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			case flags.FlagNameMainImage:
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.MainImage()
-				}
-			case flags.FlagNameScannerImage:
-				if fw.Flag.DefValue == "" {
-					fw.Flag.DefValue = flavor.ScannerImage()
-				}
-			case flags.FlagNameScannerDBImage:
-				if fw.Flag.DefValue == "" {
-					fw.Flag.DefValue = flavor.ScannerDBImage()
 				}
 			case flags.FlagNameScannerV4Image:
 				if fw.Flag.DefValue == "" {

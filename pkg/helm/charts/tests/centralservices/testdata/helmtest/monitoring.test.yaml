@@ -22,23 +22,16 @@ tests:
       ]
     .networkpolicys["central-monitoring"] | assertThat(. != null)
 
-- name: Scanner monitoring should not be exposed by default
-  expect: |
-    [.deployments.scanner.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)] | assertThat(length == 0)
-    [.services.scanner.spec.ports[] | select(.port == 9090)] | assertThat(length == 0)
-    .networkpolicys["scanner-monitoring"] | assertThat(. == null)
-
-- name: Scanner monitoring should be exposed when enabled
+# StackRox Scanner (Scanner V2) is retired and its workload is never rendered, so it
+# exposes no monitoring endpoint and its monitoring NetworkPolicy is not rendered either,
+# even when scanner.exposeMonitoring is explicitly set.
+- name: Scanner (V2) monitoring workload is never rendered
   set:
     scanner.exposeMonitoring: true
   expect: |
-    .deployments.scanner.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)
-      | assertThat(.name == "monitoring")
-    .services.scanner.spec.ports[] | select(.port == 9090) | [
-        assertThat(.targetPort == "monitoring"),
-        assertThat(.name == "monitoring")
-      ]
-    .networkpolicys["scanner-monitoring"] | assertThat(. != null)
+    .deployments.scanner | assertThat(. == null)
+    .services.scanner | assertThat(. == null)
+    .networkpolicys["scanner-monitoring"] | assertThat(. == null)
 
 - name: Scanner V4 monitoring should not be exposed by default
   expect: |

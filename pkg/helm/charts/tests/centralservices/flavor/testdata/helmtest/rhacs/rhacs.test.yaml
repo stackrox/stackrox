@@ -2,5 +2,6 @@ tests:
 - name: validate image defaults
   expect: |
     assertCentral("registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:3.0.99.0")
-    assertScanner("registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9:3.0.99.0")
-    assertScannerDB("registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:3.0.99.0")
+    assertScannerV4Indexer("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9:3.0.99.0")
+    assertScannerV4Matcher("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9:3.0.99.0")
+    assertScannerV4DB("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9:3.0.99.0")

@@ -200,9 +200,10 @@ func TestSetScannerComponentDisableValue(t *testing.T) {
 			},
 		},
 		"Enabled": {
+			// Scanner V2 is retired: an explicit Enabled is coerced off (disable=true).
 			scannerComponent: platform.ScannerComponentEnabled,
 			want: chartutil.Values{
-				"disable": false,
+				"disable": true,
 			},
 		},
 		"Invalid": {

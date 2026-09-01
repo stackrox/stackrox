@@ -43,5 +43,3 @@ tests:
     .deployments.central.spec.template.spec.priorityClassName | assertThat(. == "central")
     .deployments["central-db"].spec.template.spec.priorityClassName | assertThat(. == "central-db")
     .deployments["config-controller"].spec.template.spec.priorityClassName | assertThat(. == "config-controller")
-    .deployments.scanner.spec.template.spec.priorityClassName | assertThat(. == "scanner")
-    .deployments["scanner-db"].spec.template.spec.priorityClassName | assertThat(. == "scanner-db")

@@ -2,8 +2,8 @@
 
 This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
-Control. Optionally StackRox Scanner can be deployed, either alone or together
-with the new Scanner V4.
+Control. Optionally the Scanner V4 indexer can be deployed for local image scanning.
+(The legacy StackRox Scanner is retired and is no longer deployed.)
 
 If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
 refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
@@ -170,9 +170,9 @@ The Secured Cluster Services Helm chart contains example configuration files
 (called `values-public.yaml.example` and `values-private.yaml.example`), that list
 all the available configuration options, along with documentation.
 
-Furthermore, the files `values-scanner.yaml.example`, `values-public-scanner-v4.yaml.example`
+Furthermore, the files `values-public-scanner-v4.yaml.example`
 and `values-private-scanner-v4.yaml.example` list the most commonly used configuration options
-for StackRox Scanner and Scanner V4.
+for Scanner V4. (The legacy StackRox Scanner is retired and is no longer deployed.)
 
 The following sample configuration file (`secured-cluster.yaml`) uses a few of
 the options which you can configure:
@@ -321,8 +321,8 @@ non-standard environments:
 |`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
-|`scanner.disable`| Scan images stored in the cluster's local registries. | `true` |
-|`scannerV4.disable`| Enable Scanner V4. StackRox Scanner must be enabled as well (`scanner.disable=false``). | `true` |
+|`scanner.disable`| The legacy StackRox Scanner is retired; this setting is ignored and the scanner is never deployed. | `true` |
+|`scannerV4.disable`| Disable the Scanner V4 indexer used for scanning images in the cluster's local registries. | `false` when auto-sensed for local scanning |
 ### Default resources
 
 Each of the baseline container's default resource settings are defined in the
@@ -337,8 +337,8 @@ paths to the respective defaults for each container that this chart deploys:
 |NodeInventory    |`collector.nodeScanningResources`             |
 |Admission Control|`admissionControl.resources`                  |
 
-Furthermore, default resource settings for StackRox Scanner and Scanner V4 can be
-found in the files `internal/defaults/70-scanner.yaml` and `internal/defaults/70-scanner-v4.yaml`.
+Furthermore, default resource settings for the Scanner V4 indexer can be
+found in the file `internal/defaults/70-scanner-v4.yaml`.
 
 ### Customization settings
 

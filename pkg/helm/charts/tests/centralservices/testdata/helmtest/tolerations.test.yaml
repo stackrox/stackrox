@@ -32,8 +32,6 @@ tests:
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(length == 0)
     .deployments["config-controller"].spec.template.spec.tolerations | assertThat(length == 0)
-    .deployments.scanner.spec.template.spec.tolerations | assertThat(length == 0)
-    .deployments["scanner-db"].spec.template.spec.tolerations | assertThat(length == 0)
 
 - name: "with populated settings via dictionary"
   values:
@@ -63,5 +61,25 @@ tests:
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(length == 2)
     .deployments["config-controller"].spec.template.spec.tolerations | assertThat(length == 2)
-    .deployments.scanner.spec.template.spec.tolerations | assertThat(length == 2)
-    .deployments["scanner-db"].spec.template.spec.tolerations | assertThat(length == 2)
+
+# Scanner V4 (the current scanner) tolerations propagation to its components.
+- name: "with scannerV4 component tolerations"
+  values:
+    scannerV4:
+      disable: false
+      indexer:
+        tolerations:
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Exists"
+      matcher:
+        tolerations:
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Exists"
+      db:
+        tolerations:
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Exists"
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.tolerations | assertThat(length == 1)
+    .deployments["scanner-v4-matcher"].spec.template.spec.tolerations | assertThat(length == 1)
+    .deployments["scanner-v4-db"].spec.template.spec.tolerations | assertThat(length == 1)

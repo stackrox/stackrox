@@ -23,6 +23,7 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 			values.ImageTag = "custom-main"
 			values.CollectorImageTag = "custom-collector"
 			values.ScannerImageTag = "custom-scanner"
+			values.ScannerV4ImageTag = "custom-scanner-v4"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
 	})

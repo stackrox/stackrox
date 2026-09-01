@@ -5,11 +5,14 @@ defs: |
   def assertCentral(name):
     container(.deployments.central; "central") | assertThat(.image == name);
 
-  def assertScanner(name):
-    container(.deployments.scanner; "scanner") | assertThat(.image == name);
+  def assertScannerV4Indexer(name):
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == name);
 
-  def assertScannerDB(name):
-    container(.deployments["scanner-db"]; "db") | assertThat(.image == name);
+  def assertScannerV4Matcher(name):
+    container(.deployments["scanner-v4-matcher"]; "matcher") | assertThat(.image == name);
+
+  def assertScannerV4DB(name):
+    container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == name);
 
 server:
   visibleSchemas:

@@ -112,8 +112,13 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "The main image to use"+defaultImageHelp, "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "Whether to run StackRox in offline mode, which avoids reaching out to the Internet.", "central")
 	flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "The central-db image to use"+defaultImageHelp, "central")
+	// StackRox Scanner (Scanner V2) is retired: these flags are deprecated no-ops kept for
+	// backwards compatibility (existing invocations do not error). Scanner V4 is used instead.
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "The scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "The scanner-db image to use"+defaultImageHelp, "scanner")
+	const retiredScannerFlagMsg = "The StackRox Scanner is retired and is no longer deployed; this flag is ignored."
+	utils.Must(flagWrap.MarkDeprecated(flags.FlagNameScannerImage, retiredScannerFlagMsg))
+	utils.Must(flagWrap.MarkDeprecated(flags.FlagNameScannerDBImage, retiredScannerFlagMsg))
 	flagWrap.StringVar(&k8sConfig.ScannerV4Image, flags.FlagNameScannerV4Image, "", "The scanner-v4 image to use"+defaultImageHelp, "scanner-v4")
 	flagWrap.StringVar(&k8sConfig.ScannerV4DBImage, flags.FlagNameScannerV4DBImage, "", "The scanner-v4-db image to use"+defaultImageHelp, "scanner-v4")
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "Whether to enable telemetry.", "central")

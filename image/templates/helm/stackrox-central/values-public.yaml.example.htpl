@@ -334,13 +334,13 @@
 #               # been created.
 #               pdName: gke-pv
 #
-# # Public configuration options for the StackRox Scanner.
+# # Public configuration options for the (legacy) StackRox Scanner.
+# #
+# # NOTE: The legacy StackRox Scanner is RETIRED and is no longer installed. The settings
+# # below are ignored; Scanner V4 (see `scannerV4`) is used for image scanning instead.
 # scanner:
-#   # disable=true will cause the StackRox Kubernetes Security Platform to be
-#   # deployed without the StackRox Scanner, meaning that certain functionalities
-#   # may not be available. If this setting is changed prior to a `helm upgrade`
-#   # invocation, the existing StackRox scanner deployment will be removed.
-#   disable: false
+#   # This setting is ignored. The StackRox Scanner is never installed regardless of its value.
+#   disable: true
 #
 #   # The number of replicas for the Scanner deployment. If autoscaling is enabled (see below),
 #   # this determines the initial number of replicas.

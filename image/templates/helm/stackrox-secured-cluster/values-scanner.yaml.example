@@ -1,13 +1,7 @@
 # # NOTE:
-# # The Scanner is not available in the secured clusters installed via roxctl.
-#
-# # Public configuration options for the StackRox Scanner:
-# # When installing the Secured Cluster chart, a slim scanner mode is deployed with reduced image caching.
-# # To run the scanner in the secured cluster, you must connect the Scanner to Sensor.
-#
-# # WARNING:
-# # If deployed in the same namespace with Central it is only supported to install Scanner as part of Central's installation.
-# # Sensor will use the existing Scanner to scan for local images.
+# # The legacy StackRox Scanner (slim) is RETIRED and is no longer deployed in secured
+# # clusters. The `scanner.*` settings below are ignored. Local image scanning is provided by
+# # the Scanner V4 indexer instead; see `values-public-scanner-v4.yaml.example`.
 #
 # Image configuration for scanner:
 # # For a complete example, see the `values-public.yaml.example` file.

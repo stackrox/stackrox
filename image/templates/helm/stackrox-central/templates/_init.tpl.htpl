@@ -283,18 +283,18 @@
 
 {{ $scannerCfg := $._rox.scanner }}
 
-{{ if and $scannerCfg.disable (or $.Release.IsInstall $.Release.IsUpgrade) }}
-  {{/* We generally don't recommend customers run without scanner, so show a warning to the user */}}
-  {{ $action := ternary "deploy StackRox Central Services without Scanner" "upgrade StackRox Central Services without Scanner (possibly removing an existing Scanner deployment)" $.Release.IsInstall }}
-  {{ include "srox.warn" (list $ (printf "You have chosen to %s. Certain features dependent on image scanning might not work." $action)) }}
-{{ else if not $scannerCfg.disable }}
-  {{ if and (ne $scannerCfg.mode "full") (ne $scannerCfg.mode "") }}
-    {{ include "srox.fail" (print "Only scanner full mode is allowed in Central. To solve this, set to full mode: scanner.mode=full.") }}
-  {{ end }}
-  {{ include "srox.scannerInit" (list $ $scannerCfg) }}
+{{/*
+    The legacy StackRox Scanner is retired and is never installed, regardless of the
+    scanner.disable setting. Coerce it off so none of the 02-scanner-* templates render
+    and skip srox.scannerInit; warn if the user explicitly requested it. Scanner V4
+    (configured below) provides image scanning instead.
+   */}}
+{{ if not $scannerCfg.disable }}
+  {{ include "srox.warn" (list $ "The StackRox Scanner is retired and will not be installed; Scanner V4 will be used for image scanning instead.") }}
 {{ end }}
+{{ $_ := set $scannerCfg "disable" true }}
 
-{{ $_ := set $._rox "_legacyScannerEnabled" (not $scannerCfg.disable) }}
+{{ $_ := set $._rox "_legacyScannerEnabled" false }}
 
 {{/*
    ScannerV4 setup.

@@ -13,15 +13,11 @@
 
 {{- if kindIs "invalid" $scannerV4.disable -}}
   {{/* Scanner V4 neither explicitly enabled or disabled, apply defaulting logic. */}}
-  {{/* By default Scanner V4 will be installed. */}}
+  {{/* By default Scanner V4 will be installed, for both fresh installs and upgrades.
+       Since the legacy StackRox Scanner is retired, the previous pre-4.8 upgrade
+       exception (which left Scanner V4 disabled) has been removed so that upgrades that
+       relied on defaulting migrate to Scanner V4. An explicit scannerV4.disable: true is
+       still honored. */}}
   {{- $_ := set $scannerV4 "disable" false -}}
-  {{/* Currently there is one exception: when upgrading from a pre-4.8 version, which did not
-       install Scanner V4 by default. */}}
-  {{- $installVersionUnknown := kindIs "invalid" $stackroxHelm.installXYVersion -}}
-  {{- $upgradingFromPre4_8 := or $installVersionUnknown (semverCompare "< 4.8" $stackroxHelm.installXYVersion) -}}
-  {{- if and $helmRelease.IsUpgrade $upgradingFromPre4_8 -}}
-    {{- include "srox.note" (list $ "Scanner V4 disabled by default: this deployment was initially installed before version 4.8.") -}}
-    {{- $_ := set $scannerV4 "disable" true -}}
-  {{- end -}}
 {{- end -}}
 {{- end -}}

@@ -23,12 +23,13 @@ tests:
     chartLabel(.services.central) | length | assertThat(. <= 63)
     chartLabel(.services.central) | assertThat(test("[a-zA-Z0-9]$"))
 
-- name: Scanner deployment has valid truncated chart label
+# Scanner V2 is retired; use Scanner V4 (indexer) for truncation coverage instead.
+- name: Scanner V4 indexer deployment has valid truncated chart label
   expect: |
-    chartLabel(.deployments.scanner) | length | assertThat(. <= 63)
-    chartLabel(.deployments.scanner) | assertThat(test("[a-zA-Z0-9]$"))
+    chartLabel(.deployments["scanner-v4-indexer"]) | length | assertThat(. <= 63)
+    chartLabel(.deployments["scanner-v4-indexer"]) | assertThat(test("[a-zA-Z0-9]$"))
 
-- name: Scanner service has valid truncated chart label
+- name: Scanner V4 indexer service has valid truncated chart label
   expect: |
-    chartLabel(.services.scanner) | length | assertThat(. <= 63)
-    chartLabel(.services.scanner) | assertThat(test("[a-zA-Z0-9]$"))
+    chartLabel(.services["scanner-v4-indexer"]) | length | assertThat(. <= 63)
+    chartLabel(.services["scanner-v4-indexer"]) | assertThat(test("[a-zA-Z0-9]$"))
