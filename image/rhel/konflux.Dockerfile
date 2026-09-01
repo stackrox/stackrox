@@ -98,17 +98,16 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrat
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
-RUN cd /assets/downloads/cli && \
-    find . -maxdepth 1 -type f -name 'roxctl-*' -executable | while read f; do \
-        tar czf "${f#./}.tar.gz" "${f#./}"; \
-    done
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-RUN GOARCH=$(uname -m) ; \
+RUN cd /assets/downloads/cli && \
+    find . -maxdepth 1 -type f -name 'roxctl-*' -executable \
+        -exec sh -c 'f="${1#./}"; tar czf "$f.tar.gz" "$f"' _ {} \; && \
+    GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl
 
