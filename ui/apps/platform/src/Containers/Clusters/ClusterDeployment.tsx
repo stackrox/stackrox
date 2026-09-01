@@ -1,8 +1,15 @@
 import type { ReactElement } from 'react';
-import { Alert, Button, Content, Flex, FlexItem, Switch, Title } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    Content,
+    Flex,
+    FlexItem,
+    Spinner,
+    Switch,
+    Title,
+} from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
-import { CheckCircle } from 'react-feather';
-import { ClipLoader } from 'react-spinners';
 
 import type { ClusterManagerType } from 'types/cluster.proto';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
@@ -110,29 +117,23 @@ function ClusterDeployment({
                     </Flex>
                 </Flex>
             )}
-            {(!editing || !clusterCheckedIn) && (
-                <div className="flex flex-col text-primary-500 p-4">
-                    {clusterCheckedIn ? (
-                        <div className="flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
-                            <div className="flex-1 text-center">
-                                <CheckCircle />
-                            </div>
-                            <div className="flex-3 pl-2">
-                                Success! The cluster has been recognized.
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
-                            <div className="text-center px-4">
-                                <ClipLoader color="currentColor" loading size={20} />
-                            </div>
-                            <div className="flex-3 pl-2">
-                                Waiting for the cluster to check in successfully...
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
+            {(!editing || !clusterCheckedIn) &&
+                (clusterCheckedIn ? (
+                    <Alert
+                        variant="success"
+                        isInline
+                        title="Success! The cluster has been recognized."
+                        component="p"
+                    />
+                ) : (
+                    <Alert
+                        variant="info"
+                        isInline
+                        title="Waiting for the cluster to check in successfully..."
+                        component="p"
+                        customIcon={<Spinner size="md" />}
+                    />
+                ))}
         </Flex>
     );
 }

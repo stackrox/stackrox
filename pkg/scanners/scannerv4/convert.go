@@ -295,6 +295,7 @@ func buildEmbeddedVulnerability(ccVuln *v4.VulnerabilityReport_Vulnerability, en
 		CisaKev:               cisaKevEnabled(ccVuln),
 		FixAvailableTimestamp: ccVuln.GetFixedDate(),
 		Datasource:            vulnDataSource(ccVuln, envOS),
+		Origin:                vulnOrigin(ccVuln.GetUpdater()),
 	}
 	if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 		utils.Should(err)
@@ -844,6 +845,11 @@ func splitVersionNumbers(v string) []int {
 // mergeScoringFields overwrites scoring-related fields on dst when src has more
 // complete or higher-severity scoring data. Priority: more CVSS metrics, higher
 // severity, higher CVSS base score.
+//
+// Origin is set here defensively so that if in the future multiple updaters
+// report the same CVE, Origin reflects the source that won the scoring
+// comparison, keeping the assignment deterministic rather than dependent
+// on input order.
 func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	c := cmp.Or(
 		cmp.Compare(len(src.GetCvssMetrics()), len(dst.GetCvssMetrics())),
@@ -867,4 +873,37 @@ func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	dst.Epss = src.GetEpss()
 	dst.Exploit = src.GetExploit()
 	dst.CisaKev = src.GetExploit() != nil
+	dst.Origin = src.GetOrigin()
+}
+
+var updaterOrigins = []struct {
+	prefix string
+	origin storage.VulnOrigin
+}{
+	{"alpine-", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+	{"aws-", storage.VulnOrigin_VULN_ORIGIN_AMAZON},
+	{"debian/", storage.VulnOrigin_VULN_ORIGIN_DEBIAN},
+	{"oracle-", storage.VulnOrigin_VULN_ORIGIN_ORACLE},
+	{"osv/", storage.VulnOrigin_VULN_ORIGIN_OSV},
+	{"photon-", storage.VulnOrigin_VULN_ORIGIN_PHOTON},
+	{"rhel-", storage.VulnOrigin_VULN_ORIGIN_RED_HAT},
+	{"suse-", storage.VulnOrigin_VULN_ORIGIN_SUSE},
+	{"ubuntu/", storage.VulnOrigin_VULN_ORIGIN_UBUNTU},
+}
+
+// vulnOrigin translates a Claircore updater name into VulnOrigin.
+//
+// ASSUMPTION: updater names follow prefix conventions observed in Claircore.
+// These names are exposed via the API but their values are not guaranteed
+// to be stable.
+//
+// TODO(ROX-36340): Replace this prefix-based translation with something
+// more stable.
+func vulnOrigin(updater string) storage.VulnOrigin {
+	for _, e := range updaterOrigins {
+		if strings.HasPrefix(updater, e.prefix) {
+			return e.origin
+		}
+	}
+	return storage.VulnOrigin_VULN_ORIGIN_OTHER
 }

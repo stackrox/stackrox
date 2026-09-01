@@ -226,8 +226,15 @@
 #       reencrypt:
 #         enabled: true
 #
-#     # Additional volume mounts for the Central container. Only few people will require this.
-#     extraMounts:
+#
+#   # Name of a ConfigMap containing a Red Hat signing key bundle. The bundle must be stored with the key `bundle.json`.
+#   # When set, the ConfigMap is mounted into Central at /tmp/redhat-signing-keys/.
+#   # To rotate keys, update the ConfigMap directly — no helm upgrade needed.
+#   signingKeyBundle:
+#     configMapName: "redhat-signing-key-bundle"
+#
+#   # Additional volume mounts for the Central container. Only few people will require this.
+#   extraMounts:
 #     - name: my-configmap  # the name of the volume
 #       # The source of the volume. This will be embedded as-is in the `volume:` section of the
 #       # pod spec.

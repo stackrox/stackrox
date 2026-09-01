@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
@@ -310,6 +311,15 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 		})
 	}
 
+}
+
+// TestGetFeatureFlagsAsManifestBundleEnv_OmitsChartOwnedFlags checks that
+// certain flags (normally already set from chart config) are not also injected as EnvVars.
+func TestGetFeatureFlagsAsManifestBundleEnv_OmitsChartOwnedFlags(t *testing.T) {
+	t.Parallel()
+	env := getFeatureFlagsAsManifestBundleEnv()
+	assert.NotContains(t, env, features.ScannerV4.EnvVar())
+	assert.NotContains(t, env, features.VirtualMachines.EnvVar())
 }
 
 func TestRequiredFieldsArePresent(t *testing.T) {

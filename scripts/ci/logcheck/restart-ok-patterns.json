@@ -24,6 +24,12 @@
         "logline": "Unable to connect to Sensor at"
     },
     {
+        "comment": "fact restart when sensor is briefly unavailable during a rollout/bounce",
+        "job": ".*",
+        "logfile": "fact-previous",
+        "logline": "Reconnection attempts exhausted"
+    },
+    {
         "comment": "collector downloads throttled due to bouncing in upgrade test",
         "job": "upgrade",
         "logfile": "collector-previous",

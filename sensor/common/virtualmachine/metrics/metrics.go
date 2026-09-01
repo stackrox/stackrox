@@ -105,18 +105,38 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
-// Pull-mode request status label values for PullRequestsTotal.
+// Pull-mode outcome labels are split across three counters so transport,
+// GetReport protocol, and scrape-pipeline results stay distinct as more
+// VSOCK RPC methods are added later. Each per-VM pull attempt increments
+// exactly one of these counters (mutually exclusive partition).
+
+// Transport-layer status values for PullTransportTotal.
 const (
-	PullStatusSuccess       = "success"
-	PullStatusUnchanged     = "unchanged"
-	PullStatusDialError     = "dial_error"
-	PullStatusReadError     = "read_error"
-	PullStatusInvalidReport = "invalid_report"
-	PullStatusSendError     = "send_error"
-	PullStatusNotReady      = "not_ready"
-	PullStatusUnknownMethod = "unknown_method"
-	PullStatusTimeout       = "timeout"
-	PullStatusBusy          = "busy"
+	PullTransportDialError     = "dial_error"
+	PullTransportTimeout       = "timeout"
+	PullTransportReadError     = "read_error"
+	PullTransportAbnormalClose = "abnormal_close"
+	PullTransportUnexpected    = "unexpected"
+)
+
+// GetReport protocol status values for PullGetReportTotal.
+const (
+	PullGetReportUnchanged         = "unchanged"
+	PullGetReportNotReady          = "not_ready"
+	PullGetReportMappingRequired   = "mapping_required"
+	PullGetReportUnknownMethod     = "unknown_method"
+	PullGetReportBusy              = "busy"
+	PullGetReportInternalError     = "internal_error"
+	PullGetReportMalformedRequest  = "malformed_request"
+	PullGetReportRequestTooLarge   = "request_too_large"
+	PullGetReportUnknownAgentError = "unknown_agent_error"
+)
+
+// Scrape-pipeline status values for PullScrapeTotal (post-GetReport).
+const (
+	PullScrapeSuccess       = "success"
+	PullScrapeInvalidReport = "invalid_report"
+	PullScrapeSendError     = "send_error"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
@@ -191,13 +211,40 @@ var PullReportPackages = prometheus.NewHistogram(
 	},
 )
 
-// PullRequestsTotal counts per-VM pull attempts by status.
-var PullRequestsTotal = prometheus.NewCounterVec(
+// PullTransportTotal counts per-VM pull attempts that failed at the VSOCK
+// transport layer (dial / read / abnormal close) before a protocol result.
+var PullTransportTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_requests_total",
-		Help:      "Per-VM pull attempts by outcome status",
+		Name:      "vsock_pull_transport_total",
+		Help:      "Per-VM pull attempts that failed at the VSOCK transport layer",
+	},
+	[]string{"status"},
+)
+
+// PullGetReportTotal counts per-VM GetReport protocol outcomes (Unchanged,
+// ErrorCode sentinels). Transport failures are counted on PullTransportTotal
+// instead; successful full reports continue into the scrape pipeline and are
+// counted on PullScrapeTotal.
+var PullGetReportTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_get_report_total",
+		Help:      "Per-VM GetReport protocol outcomes (unchanged and agent ErrorCode results)",
+	},
+	[]string{"status"},
+)
+
+// PullScrapeTotal counts per-VM scrape-pipeline outcomes after a full
+// GetReport payload was received (viability check, send to Central, success).
+var PullScrapeTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_scrape_total",
+		Help:      "Per-VM scrape-pipeline outcomes after a full GetReport payload was received",
 	},
 	[]string{"status"},
 )
@@ -223,6 +270,60 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullDueVMs is how many VMs were eligible to scrape at the start of the last
+// tick (nextAttemptAt had arrived and they were not already in flight).
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help:      "How many VMs were eligible to scrape at the beginning of the last scraper tick",
+	},
+)
+
+// PullStartsPerTick is how many VM scrapes each tick launches. Idle ticks
+// (nobody due) are omitted so the histogram is not dominated by zeros.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick. " +
+			"Idle ticks are not observed. Compare with vsock_pull_due_vms: " +
+			"spread due times keep both small; a mass of large starts is a dump.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central. The first forward after start is not observed.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. The first forward after Sensor start does not count.",
+		// 10ms to ~47h. Sized for a 24h poll in extreme cases so those
+		// gaps stay in a finite bucket instead of +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 25),
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to cadence after success or a permanent non-retry outcome (retries/NACKs do not).
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
+		// 250ms to ~36h. Sized for a 24h poll in extreme cases (W up to 24h).
+		Buckets: prometheus.ExponentialBuckets(0.25, 2, 20),
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
@@ -237,8 +338,14 @@ func init() {
 		PullTickDurationSeconds,
 		PullReportBytes,
 		PullReportPackages,
-		PullRequestsTotal,
+		PullTransportTotal,
+		PullGetReportTotal,
+		PullScrapeTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullDueVMs,
+		PullStartsPerTick,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
 }

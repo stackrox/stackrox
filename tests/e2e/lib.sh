@@ -148,30 +148,30 @@ deploy_stackrox_with_roxie() {
     # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
+    # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
+    # For Scanner V2 this means that it will also wait until vulnerabilities are loaded into the DB.
     roxie deploy \
+        --early-readiness=false --central-wait=40m --secured-cluster-wait=40m \
         --envrc "$roxie_envrc" \
         --config "$config_file"
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
-    if [[ -n "${BASH_ENV:-}" ]]; then
-        cat "$roxie_envrc" >> "$BASH_ENV"
-    fi
     # shellcheck source=/dev/null
     source "$roxie_envrc"
 
+    # Re-export every variable from the envrc via ci_export so that it is
+    # persisted correctly for subsequent GHA steps (GITHUB_ENV) or Prow
+    # (BASH_ENV).  The envrc has already been sourced above, so we read
+    # the properly unquoted values from the current shell environment
+    # instead of trying to strip Go %q quoting from the file.
+    local var_name
+    while IFS= read -r envrc_line; do
+        var_name="${envrc_line#export }"  # strip "export " prefix
+        var_name="${var_name%%=*}"      # strip "=value" suffix
+        ci_export "$var_name" "${!var_name}"
+    done < <(grep '^export ' "$roxie_envrc")
     record_build_info "${central_namespace}"
-
-    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
-    # It just waits for sensor and collector workloads to be up and running.
-    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
-    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
-    # and we don't want to slow down this deployment path using roxie.
-    sensor_wait "$securedcluster_namespace"
-    wait_for_collectors_to_be_operational "$securedcluster_namespace"
-    if retrying_kubectl </dev/null -n "$central_namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "$central_namespace"
-    fi
 
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
@@ -268,6 +268,7 @@ extend_roxie_envrc() {
 export CLUSTER="${CLUSTER}"
 export API_HOSTNAME="${API_HOSTNAME}"
 export API_PORT="${API_PORT}"
+export ROX_USERNAME="admin"
 EOF
 }
 
@@ -442,7 +443,10 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
+    ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
+    ci_export ROX_LIGHTSPEED_RISK_SUMMARY "${ROX_LIGHTSPEED_RISK_SUMMARY:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -619,8 +623,14 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
+    customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
     customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
+    customize_envVars+=$'\n      - name: ROX_AI_INTEGRATIONS'
+    customize_envVars+=$'\n        value: "'"${ROX_AI_INTEGRATIONS}"'"'
+    customize_envVars+=$'\n      - name: ROX_LIGHTSPEED_RISK_SUMMARY'
+    customize_envVars+=$'\n        value: "'"${ROX_LIGHTSPEED_RISK_SUMMARY}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
@@ -703,14 +713,6 @@ deploy_sensor() {
         ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
         CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
-
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
-        # Sensor is CPU starved under OpenShift causing all manner of test failures:
-        # https://stack-rox.atlassian.net/browse/ROX-5334
-        # https://stack-rox.atlassian.net/browse/ROX-6891
-        # et al.
-        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
-    fi
 }
 
 # shellcheck disable=SC2120
@@ -720,8 +722,7 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
-    local vm_mode_setting="Disabled"
-    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 4h.
     local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
@@ -754,10 +755,6 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        vm_mode_setting="Enabled"
-    fi
-
     customize_envVars=""
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
@@ -783,7 +780,6 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
-      vm_mode_setting="$vm_mode_setting" \
       vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
@@ -1872,24 +1868,12 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}"
         check_deployment=true
-    else
-        local build_results="build results are unknown"
-        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
-            build_results="$(cat "${STATE_BUILD_RESULTS}")"
-        fi
-        read -r -d '' build_details <<- _EO_DETAILS_ || true
-Check the build workflow runs on GitHub:
-${build_results}
-_EO_DETAILS_
-        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     case "$CI_JOB_NAME" in

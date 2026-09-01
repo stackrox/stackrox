@@ -13,21 +13,59 @@ export type ReportConfigurationBase = {
     schedule: ReportSchedule | null;
 };
 
-export type NodeVulnerabilityReportFilters = {
-    allVuln: boolean;
-    query: string;
-};
-
 // Not exactly 1:1 with the proto, which uses a oneOf that technically allows mismatched
 // type/filters (e.g. node type with image filters). Backend confirmed that can't happen, so
 // we pin `type` to its matching filters to simplify the typing.
 export type NodeVulnerabilityReportConfiguration = {
     type: 'NODE_VULNERABILITY';
+} & ReportConfigurationBase &
+    NodeVulnerabilityReportFiltersConfiguration &
+    NodeVulnerabilityReportResourcesConfiguration;
+
+// Types of views and steps with only properties that they need to know:
+export type NodeVulnerabilityReportFiltersConfiguration = {
     nodeVulnReportFilters: NodeVulnerabilityReportFilters;
-    resourceScope: {
-        entityScope: EntityScope;
-    };
-} & ReportConfigurationBase;
+};
+
+export type NodeVulnerabilityReportResourcesConfiguration = {
+    resourceScope: NodeVulnerabilityReportResourceScope;
+};
+
+// Types of properties:
+export type NodeVulnerabilityReportFilters = {
+    allVuln: boolean;
+    query: string;
+};
+
+export type NodeVulnerabilityReportResourceScope = {
+    entityScope: EntityScope; // Cluster
+};
+
+// Draft of future configuration type.
+export type VirtualMachineVulnerabilityReportConfiguration = {
+    type: 'VIRTUAL_MACHINE_VULNERABILITY';
+} & ReportConfigurationBase &
+    VirtualMachineVulnerabilityReportFiltersConfiguration &
+    VirtualMachineVulnerabilityReportResourcesConfiguration;
+
+// Types of views and steps with only properties that they need to know:
+export type VirtualMachineVulnerabilityReportFiltersConfiguration = {
+    virtualMachineVulnReportFilters: VirtualMachineVulnerabilityReportFilters;
+};
+
+export type VirtualMachineVulnerabilityReportResourcesConfiguration = {
+    resourceScope: VirtualMachineVulnerabilityReportResourceScope;
+};
+
+// Types of properties:
+export type VirtualMachineVulnerabilityReportFilters = {
+    allVuln: boolean;
+    query: string;
+};
+
+export type VirtualMachineVulnerabilityReportResourceScope = {
+    entityScope: EntityScope; // Cluster and Namespace
+};
 
 // TODO temporary alias to limit changed files that might be superseded later anyway
 export type ReportConfiguration = ImageVulnerabilityReportConfiguration;
@@ -52,6 +90,48 @@ export type ImageVulnerabilityReportConfigurationForCollection = {
         collectionScope: CollectionScope;
     };
 } & ReportConfigurationBase;
+
+// Types of views and steps with only properties that they need to know:
+export type ImageVulnerabilityReportResourcesConfiguration = {
+    resourceScope: ImageVulnerabilityReportResourceScope;
+    vulnReportFilters: {
+        imageTypes: ImageType[]; // more closely related to resources although in vulnReportFilters
+    };
+};
+
+export type ImageVulnerabilityReportResourceScope =
+    | {
+          collectionScope: CollectionScope;
+      }
+    | {
+          entityScope: EntityScope;
+      };
+
+// Types because Resources and Filters for view and wizard combine data properties.
+export type ImageVulnerabilityReportFiltersConfiguration = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersWithoutCvesSince =
+    | ImageVulnerabilityReportFiltersForEntityWithoutCvesSince
+    | ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince;
+
+export type ImageVulnerabilityReportFiltersConfigurationForEntity = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersForEntityWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersForEntityWithoutCvesSince = {
+    query: string;
+};
+
+export type ImageVulnerabilityReportFiltersConfigurationForCollection = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince = {
+    fixability: Fixability;
+    severities: VulnerabilitySeverity[];
+};
 
 // Vulnerability report filters
 
@@ -195,7 +275,7 @@ export type ViewBasedReportSnapshot = Snapshot & {
     areaOfConcern: string;
 };
 
-// TODO temporary disjunction until snamshot has type property.
+// TODO temporary disjunction until snapshot has type property.
 type VulnerabilityReportFilters =
     | NodeVulnerabilityReportFilters
     | ImageVulnerabilityReportFiltersForCollection

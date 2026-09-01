@@ -19,7 +19,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { vulnerabilityConfigurationReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
@@ -28,6 +28,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
+import { deleteReportConfiguration } from 'services/ReportsService';
 import type { ReportConfiguration } from 'services/ReportsService.types';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -35,7 +36,7 @@ import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import type { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
 
-import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
+import ImageVulnerabilityReportView from '../../Reports/ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
 import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
     searchFilterConfigForImageVulnerabilityReport,
@@ -79,8 +80,9 @@ function ViewVulnReportPage() {
         onDelete,
         deleteResults,
     } = useDeleteModal({
+        deleteFunction: deleteReportConfiguration,
         onCompleted: () => {
-            navigate(vulnerabilityConfigurationReportsPath);
+            navigate(vulnerabilityConfigurationsReportsPath);
         },
     });
 
@@ -113,7 +115,7 @@ function ViewVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={fetchError || 'No data available'}
                 actionText="Go to reports"
-                url={vulnerabilityConfigurationReportsPath}
+                url={vulnerabilityConfigurationsReportsPath}
             />
         );
     }
@@ -153,7 +155,7 @@ function ViewVulnReportPage() {
             <PageTitle title="View vulnerability report" />
             <PageSection type="breadcrumb">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationsReportsPath}>
                         Image vulnerability reports
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>

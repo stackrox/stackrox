@@ -33,6 +33,9 @@ jobs:
       tag: ${{ needs.build.build-tag.outputs.tag }}
     outputs:
       tag: ${{ needs.build.build-tag.outputs.tag }}
+      wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
+      wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
+      jobs: ${{ steps.determine.outputs.jobs }}
     steps:
     - name: Show build tag
       run: |
