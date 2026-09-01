@@ -110,6 +110,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	)
 
 	parentDir := rep.GetReportConfigurationId()
+	// View-based report blobs are stored under "view-based-report" dir, not under a dir named after reportConfigID.
 	if status.GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
 		parentDir = "view-based-report"
 	}

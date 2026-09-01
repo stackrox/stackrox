@@ -198,6 +198,48 @@ func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query
 	protoassert.Equal(t, expected, actual)
 }
 
+func TestBuildClusterOnlyAccessScopeQuery(t *testing.T) {
+	testCases := map[string]struct {
+		rules     []*storage.SimpleAccessScope_Rules
+		expectedQ *v1.Query
+	}{
+		"nil rules returns empty query": {
+			rules:     nil,
+			expectedQ: search.EmptyQuery(),
+		},
+		"cluster included by name": {
+			rules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"remote"}},
+			},
+			expectedQ: search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].GetId()).ProtoQuery(),
+		},
+		"namespace-only rule grants cluster visibility": {
+			rules: []*storage.SimpleAccessScope_Rules{
+				{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{ClusterName: "secured", NamespaceName: "ns2"},
+					},
+				},
+			},
+			expectedQ: search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].GetId()).ProtoQuery(),
+		},
+		"exclude all rules returns match none": {
+			rules: []*storage.SimpleAccessScope_Rules{
+				{},
+			},
+			expectedQ: getMatchNoneQuery(),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			result, err := BuildClusterOnlyAccessScopeQuery(tc.rules, clusters, namespaces)
+			assert.NoError(t, err)
+			protoassert.Equal(t, tc.expectedQ, result)
+		})
+	}
+}
+
 func TestBuildEntityScopeQuery(t *testing.T) {
 	testCases := []struct {
 		name          string

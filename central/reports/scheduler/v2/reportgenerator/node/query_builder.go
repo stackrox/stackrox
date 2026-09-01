@@ -21,7 +21,7 @@ func newQueryBuilder(entityScope *storage.EntityScope, filters *storage.NodeVuln
 	}
 }
 
-func (q *queryBuilder) buildQuery(clusters []effectiveaccessscope.Cluster) (*v1.Query, error) {
+func (q *queryBuilder) buildQuery(clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace) (*v1.Query, error) {
 	var conjuncts []*v1.Query
 
 	if q.entityScope != nil {
@@ -32,7 +32,7 @@ func (q *queryBuilder) buildQuery(clusters []effectiveaccessscope.Cluster) (*v1.
 		conjuncts = append(conjuncts, scopeQuery)
 	}
 
-	accessScopeQuery, err := common.BuildClusterOnlyAccessScopeQuery(q.filters.GetAccessScopeRules(), clusters)
+	accessScopeQuery, err := common.BuildClusterOnlyAccessScopeQuery(q.filters.GetAccessScopeRules(), clusters, namespaces)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +48,8 @@ func (q *queryBuilder) buildQuery(clusters []effectiveaccessscope.Cluster) (*v1.
 }
 
 func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
-	rules := q.entityScope.GetRules()
-	if len(rules) == 0 {
-		return search.EmptyQuery(), nil
-	}
-
 	var conjuncts []*v1.Query
-	for _, rule := range rules {
+	for _, rule := range q.entityScope.GetRules() {
 		if len(rule.GetValues()) == 0 {
 			continue
 		}

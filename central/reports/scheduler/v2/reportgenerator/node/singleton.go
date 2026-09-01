@@ -5,6 +5,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	"github.com/stackrox/rox/central/globaldb"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -27,6 +28,7 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		blobDS.Singleton(),
 		clusterDS.Singleton(),
+		namespaceDS.Singleton(),
 		nodeCVEDS.Singleton(),
 	)
 }

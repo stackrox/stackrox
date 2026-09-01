@@ -215,8 +215,9 @@ func MapFieldQuery(fieldLabel search.FieldLabel, rule *storage.EntityScopeRule) 
 // ScalarFieldQuery builds a disjunction query for a scalar-type search field
 // (names, IDs) from the values in an entity scope rule.
 func ScalarFieldQuery(fieldLabel search.FieldLabel, rule *storage.EntityScopeRule) *v1.Query {
-	var ruleQueries []*v1.Query
-	for _, rv := range rule.GetValues() {
+	values := rule.GetValues()
+	ruleQueries := make([]*v1.Query, 0, len(values))
+	for _, rv := range values {
 		val := rv.GetValue()
 		if rv.GetMatchType() == storage.MatchType_REGEX {
 			ruleQueries = append(ruleQueries,

@@ -8,6 +8,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -60,6 +61,7 @@ type nodeReportGeneratorImpl struct {
 	notificationProcessor notifier.Processor
 	blobStore             blobDS.Datastore
 	clusterDatastore      clusterDS.DataStore
+	namespaceDatastore    namespaceDS.DataStore
 	nodeCVEDatastore      nodeCVEDS.DataStore
 	db                    postgres.DB
 }
@@ -186,7 +188,7 @@ func (rg *nodeReportGeneratorImpl) sendEmailNotification(req *reportGen.ReportRe
 }
 
 func (rg *nodeReportGeneratorImpl) getReportData(ctx context.Context, snap *storage.ReportSnapshot) ([]*NodeCVEQueryResponse, int, error) {
-	clusters, err := rg.getClustersForSAC(ctx)
+	clusters, namespaces, err := rg.getClustersAndNamespacesForSAC(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -197,7 +199,7 @@ func (rg *nodeReportGeneratorImpl) getReportData(ctx context.Context, snap *stor
 	}
 
 	qb := newQueryBuilder(entityScope, snap.GetNodeVulnReportFilters())
-	query, err := qb.buildQuery(clusters)
+	query, err := qb.buildQuery(clusters, namespaces)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "error building node report query")
 	}
@@ -210,16 +212,20 @@ func (rg *nodeReportGeneratorImpl) executeQuery(ctx context.Context, query *v1.Q
 	query.Selects = nodeQueryParts.Selects
 
 	var cveResponses []*NodeCVEQueryResponse
+	cveIDs := set.NewStringSet()
 	err := pgSearch.RunSelectRequestForSchemaFn[NodeCVEQueryResponse](ctx, rg.db,
 		nodeQueryParts.Schema, query, func(r *NodeCVEQueryResponse) error {
 			cveResponses = append(cveResponses, r)
+			if r.GetCVEID() != "" {
+				cveIDs.Add(r.GetCVEID())
+			}
 			return nil
 		})
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "Failed to collect node CVE report data")
 	}
 
-	cveResponses, err = rg.withCVEReferenceLinks(ctx, cveResponses)
+	cveResponses, err = rg.withCVEReferenceLinks(ctx, cveResponses, cveIDs)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -227,22 +233,19 @@ func (rg *nodeReportGeneratorImpl) executeQuery(ctx context.Context, query *v1.Q
 	return cveResponses, len(cveResponses), nil
 }
 
-func (rg *nodeReportGeneratorImpl) getClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
+func (rg *nodeReportGeneratorImpl) getClustersAndNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, []effectiveaccessscope.Namespace, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
-	return storagetoeffectiveaccessscope.Clusters(allClusters), nil
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return storagetoeffectiveaccessscope.Clusters(allClusters), storagetoeffectiveaccessscope.Namespaces(allNamespaces), nil
 }
 
-func (rg *nodeReportGeneratorImpl) withCVEReferenceLinks(ctx context.Context, responses []*NodeCVEQueryResponse) ([]*NodeCVEQueryResponse, error) {
-	cveIDs := set.NewStringSet()
-	for _, res := range responses {
-		if res.GetCVEID() != "" {
-			cveIDs.Add(res.GetCVEID())
-		}
-	}
-
+func (rg *nodeReportGeneratorImpl) withCVEReferenceLinks(ctx context.Context, responses []*NodeCVEQueryResponse, cveIDs set.StringSet) ([]*NodeCVEQueryResponse, error) {
 	nodeCVEs, err := rg.nodeCVEDatastore.GetBatch(ctx, cveIDs.AsSlice())
 	if err != nil {
 		return nil, err

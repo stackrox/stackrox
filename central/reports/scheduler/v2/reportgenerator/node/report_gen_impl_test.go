@@ -10,6 +10,7 @@ import (
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
+	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -37,14 +38,16 @@ func TestNodeReportGenerator(t *testing.T) {
 type NodeReportGeneratorTestSuite struct {
 	suite.Suite
 
-	ctx              context.Context
-	testDB           *pgtest.TestPostgres
-	clusterDatastore *clusterDSMocks.MockDataStore
-	nodeDatastore    nodeDS.DataStore
-	nodeCVEDatastore nodeCVEDS.DataStore
-	reportGenerator  *nodeReportGeneratorImpl
+	ctx                context.Context
+	testDB             *pgtest.TestPostgres
+	clusterDatastore   *clusterDSMocks.MockDataStore
+	namespaceDatastore *namespaceDSMocks.MockDataStore
+	nodeDatastore      nodeDS.DataStore
+	nodeCVEDatastore   nodeCVEDS.DataStore
+	reportGenerator    *nodeReportGeneratorImpl
 
-	clusters []*storage.Cluster
+	clusters   []*storage.Cluster
+	namespaces []*storage.NamespaceMetadata
 }
 
 func (s *NodeReportGeneratorTestSuite) SetupSuite() {
@@ -53,6 +56,7 @@ func (s *NodeReportGeneratorTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
+	s.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)
 
 	s.nodeDatastore = nodeDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	var err error
@@ -63,8 +67,14 @@ func (s *NodeReportGeneratorTestSuite) SetupSuite() {
 		{Id: uuid.NewV4().String(), Name: "c1"},
 		{Id: uuid.NewV4().String(), Name: "c2"},
 	}
+	s.namespaces = []*storage.NamespaceMetadata{
+		{Id: uuid.NewV4().String(), Name: "ns1", ClusterId: s.clusters[0].GetId(), ClusterName: "c1"},
+		{Id: uuid.NewV4().String(), Name: "ns2", ClusterId: s.clusters[1].GetId(), ClusterName: "c2"},
+	}
 	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
 		Return(s.clusters, nil).AnyTimes()
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
+		Return(s.namespaces, nil).AnyTimes()
 
 	nodes := s.testNodes()
 	for _, node := range nodes {
@@ -72,9 +82,10 @@ func (s *NodeReportGeneratorTestSuite) SetupSuite() {
 	}
 
 	s.reportGenerator = &nodeReportGeneratorImpl{
-		clusterDatastore: s.clusterDatastore,
-		nodeCVEDatastore: s.nodeCVEDatastore,
-		db:               s.testDB.DB,
+		clusterDatastore:   s.clusterDatastore,
+		namespaceDatastore: s.namespaceDatastore,
+		nodeCVEDatastore:   s.nodeCVEDatastore,
+		db:                 s.testDB.DB,
 	}
 }
 
@@ -199,6 +210,25 @@ func (s *NodeReportGeneratorTestSuite) TestGetReportData_EntityScope_SingleClust
 		},
 		collected.cveNames,
 	)
+}
+
+func (s *NodeReportGeneratorTestSuite) TestGetReportData_PartiallyIncludedCluster() {
+	// User has namespace-only access (no cluster-level rule) for c1.
+	// Nodes from c1 should still be visible because the cluster is partially included.
+	scopeRules := []*storage.SimpleAccessScope_Rules{
+		{
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "c1", NamespaceName: "ns1"},
+			},
+		},
+	}
+	snap := s.testNodeReportSnapshot(nil, "", scopeRules, storage.ReportStatus_VIEW_BASED)
+	cveResponses, _, err := s.reportGenerator.getReportData(s.ctx, snap)
+	s.NoError(err)
+
+	collected := collectNodeReportData(cveResponses)
+	s.ElementsMatch([]string{"c1"}, collected.clusterNames)
+	s.ElementsMatch([]string{"c1_node0", "c1_node1"}, collected.nodeNames)
 }
 
 func (s *NodeReportGeneratorTestSuite) TestGetReportData_EntityScope_WithCVSSFilter() {

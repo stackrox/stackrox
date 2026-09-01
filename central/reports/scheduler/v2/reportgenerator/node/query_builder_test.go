@@ -265,7 +265,7 @@ func TestBuildQuery(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			qb := newQueryBuilder(tc.entityScope, tc.filters)
-			result, err := qb.buildQuery(testClusters)
+			result, err := qb.buildQuery(testClusters, nil)
 			if tc.hasError {
 				assert.Error(t, err)
 				return

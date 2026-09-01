@@ -49,27 +49,21 @@ func HasValidResourceScope(scope *storage.ResourceScope) bool {
 	return true
 }
 
-// BuildClusterOnlyAccessScopeQuery builds a v1 query that filters to clusters
-// allowed by the given access scope rules. Unlike BuildAccessScopeQuery, it does
-// not consider namespace-level access — only cluster-level inclusion is checked.
+// BuildClusterOnlyAccessScopeQuery builds a v1 query that filters by cluster ID
+// only. Currently nodes from partially included clusters (where only a subset of
+// namespaces are accessible) are visible to users, so the scope is computed with
+// both clusters and namespaces to match that behavior.
 func BuildClusterOnlyAccessScopeQuery(
 	accessScopeRules []*storage.SimpleAccessScope_Rules,
 	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
 ) (*v1.Query, error) {
 	if accessScopeRules == nil {
 		return search.EmptyQuery(), nil
 	}
-	var scopeTree *effectiveaccessscope.ScopeTree
-	for _, rules := range accessScopeRules {
-		sct, err := effectiveaccessscope.ComputeEffectiveClusterAccessScope(rules, clusters, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
-		if err != nil {
-			return nil, err
-		}
-		if scopeTree == nil {
-			scopeTree = sct
-		} else {
-			scopeTree.Merge(sct)
-		}
+	scopeTree, err := computeScopeTree(accessScopeRules, clusters, namespaces)
+	if err != nil {
+		return nil, err
 	}
 	scopeQuery, err := sac.BuildClusterLevelSACQueryFilter(scopeTree)
 	if err != nil {
@@ -90,6 +84,25 @@ func BuildAccessScopeQuery(
 	if accessScopeRules == nil {
 		return search.EmptyQuery(), nil
 	}
+	scopeTree, err := computeScopeTree(accessScopeRules, clusters, namespaces)
+	if err != nil {
+		return nil, err
+	}
+	scopeQuery, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	if scopeQuery == nil {
+		return search.EmptyQuery(), nil
+	}
+	return scopeQuery, nil
+}
+
+func computeScopeTree(
+	accessScopeRules []*storage.SimpleAccessScope_Rules,
+	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
+) (*effectiveaccessscope.ScopeTree, error) {
 	var scopeTree *effectiveaccessscope.ScopeTree
 	for _, rules := range accessScopeRules {
 		sct, err := effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
@@ -102,12 +115,5 @@ func BuildAccessScopeQuery(
 			scopeTree.Merge(sct)
 		}
 	}
-	scopeQuery, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-	if scopeQuery == nil {
-		return search.EmptyQuery(), nil
-	}
-	return scopeQuery, nil
+	return scopeTree, nil
 }
