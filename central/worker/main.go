@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	_ "github.com/stackrox/rox/central/notifiers/all"
 	"github.com/stackrox/rox/central/pruning"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
