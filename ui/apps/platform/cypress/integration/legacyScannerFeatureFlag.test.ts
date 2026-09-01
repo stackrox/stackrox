@@ -2,7 +2,7 @@ import dateFns from 'date-fns';
 
 import withAuth from '../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../helpers/request';
-import { visit } from '../helpers/visit';
+import { assertCannotFindThePage, visit } from '../helpers/visit';
 import {
     credentialForScannerExpiryAlias,
     integrationHealthVulnDefinitionsAlias,
@@ -21,8 +21,6 @@ const scannerCertificateCardSelector = '.pf-v6-c-card:contains("Scanner certific
 const scannerCredentialExpiryBanner = '.pf-v6-c-banner:contains("Scanner certificate")';
 const stackRoxScannerTileSelector = '[data-testid="integration-tile"]:contains("StackRox Scanner")';
 const nodeCveScannerInfoBoxSelector = '.pf-v6-c-alert:contains("StackRox Scanner")';
-
-const disabledMessage = 'disabled by your administrator';
 
 describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
     withAuth();
@@ -56,30 +54,29 @@ describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
             cy.get(scannerCredentialExpiryBanner).should('not.exist');
         });
 
-        it('should show disabled vuln definitions card with message on System Health page', () => {
+        it('should not show vuln definitions card on System Health page', () => {
             visitSystemHealthWithKeysRemoved([
                 credentialForScannerExpiryAlias,
                 integrationHealthVulnDefinitionsAlias,
             ]);
 
-            cy.get(vulnDefinitionsCardSelector).should('contain', disabledMessage);
+            cy.get(vulnDefinitionsCardSelector).should('not.exist');
         });
 
-        it('should show disabled scanner certificate card with message on System Health page', () => {
+        it('should not show scanner certificate card on System Health page', () => {
             visitSystemHealthWithKeysRemoved([
                 credentialForScannerExpiryAlias,
                 integrationHealthVulnDefinitionsAlias,
             ]);
 
-            cy.get(scannerCertificateCardSelector).should('contain', disabledMessage);
+            cy.get(scannerCertificateCardSelector).should('not.exist');
         });
 
-        it('should show disabled feature page for Platform CVEs', () => {
+        it('should show generic 404 page for Platform CVEs', () => {
             visit('/main/vulnerabilities/platform-cves');
 
-            cy.get('h1').should('contain', 'Kubernetes components');
-            cy.get('body').should('contain', disabledMessage);
-            cy.get('a:contains("Go to Vulnerability Management")').should('exist');
+            assertCannotFindThePage();
+            cy.get('a:contains("Go to Vulnerability Management")').should('not.exist');
         });
     });
 

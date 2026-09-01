@@ -44,12 +44,5 @@ describe('Platform CVEs - Feature Flag Gating', () => {
             cy.get(`${pf6.dropdownItem}:contains("Kubernetes components")`).should('not.exist');
         });
 
-        it('should show a disabled feature page when navigated to directly', () => {
-            visitPlatformCvesOverviewPage();
-
-            cy.get('h1').should('contain', 'Kubernetes components');
-            cy.get('body').should('contain', 'disabled by your administrator');
-            cy.get('a:contains("Go to Vulnerability Management")').should('exist');
-        });
     });
 });
