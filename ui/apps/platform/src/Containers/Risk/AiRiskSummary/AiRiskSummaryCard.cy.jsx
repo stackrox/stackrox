@@ -68,9 +68,9 @@ describe(Cypress.spec.relative, () => {
     it('should hide the summary body when collapsed', () => {
         setup({ summary: summaryText, isExpanded: false });
 
-        // The title remains visible, but the body content is collapsed away.
+        // The title remains, but the collapsed card removes its body from the DOM.
         cy.contains('AI risk briefing').should('exist');
-        cy.contains('sync-worker scores 67/100 (Important).').should('not.be.visible');
+        cy.contains('sync-worker scores 67/100 (Important).').should('not.exist');
         cy.get('button[aria-label="Expand AI risk briefing"]').should('exist');
     });
 });
