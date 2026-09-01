@@ -244,10 +244,10 @@ func (s *Sensor) Start() {
 		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint, centralCertificates)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
+		} else {
+			customRoutes = append(customRoutes, *route)
+			s.AddNotifiable(scannerclient.ResetNotifiable())
 		}
-		customRoutes = append(customRoutes, *route)
-
-		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
 	if features.VirtualMachines.Enabled() {
