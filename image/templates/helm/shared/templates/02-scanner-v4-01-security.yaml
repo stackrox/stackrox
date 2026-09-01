@@ -9,7 +9,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: use-scanner-v4-scc
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "use-scanner-v4-scc") | nindent 4 }}
   annotations:
@@ -31,7 +31,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: scanner-v4-use-scc
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "scanner-v4-use-scc") | nindent 4 }}
   annotations:
@@ -43,6 +43,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: scanner-v4
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   {{- end }}
 {{- end }}

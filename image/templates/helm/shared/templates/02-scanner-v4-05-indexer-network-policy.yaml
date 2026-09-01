@@ -5,7 +5,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: scanner-v4-indexer
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer") | nindent 4 }}
   annotations:
@@ -48,7 +48,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: scanner-v4-indexer-monitoring
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer-monitoring") | nindent 4 }}
   annotations:
@@ -70,7 +70,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: scanner-v4-indexer-monitoring-tls
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer-monitoring-tls") | nindent 4 }}
   annotations:
