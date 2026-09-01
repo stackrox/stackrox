@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-var workerResyncIntervalMinutes = env.RegisterIntegerSetting("ROX_WORKER_RESYNC_INTERVAL_MINUTES", 5)
 
 var listenerCtx = sac.WithAllAccess(context.Background())
 
@@ -152,7 +151,7 @@ func (r *reportListener) handleRequestCancelled(snapshotID string) {
 }
 
 func (r *reportListener) periodicResync(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(workerResyncIntervalMinutes.IntegerSetting()) * time.Minute)
+	ticker := time.NewTicker(time.Duration(env.CentralWorkerResyncIntervalMins.IntegerSetting()) * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
