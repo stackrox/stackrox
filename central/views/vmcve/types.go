@@ -48,7 +48,6 @@ type CveView interface {
 	CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error)
 	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
 	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)
-	CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error)
 	GetCVEsForVM(ctx context.Context, q *v1.Query) ([]CVEForVMCore, error)
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -155,7 +156,7 @@ func TestGetVMVulnSummary(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
-				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), search.CVE).Return(&commonViews.ResourceCountByImageCVESeverity{
 					CriticalSeverityCount:         2,
 					FixableCriticalSeverityCount:  1,
 					ImportantSeverityCount:        3,
@@ -574,7 +575,7 @@ func TestGetVMCVEDetail(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
-				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), search.VirtualMachineID).Return(&commonViews.ResourceCountByImageCVESeverity{
 					CriticalSeverityCount: 2,
 				}, nil)
 				mockView.EXPECT().GetVMIDs(ctx, gomock.Any()).Return([]string{"vm-1"}, nil)
@@ -591,7 +592,7 @@ func TestGetVMCVEDetail(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
-				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), search.VirtualMachineID).Return(&commonViews.ResourceCountByImageCVESeverity{
 					CriticalSeverityCount: 2,
 				}, nil)
 				mockView.EXPECT().GetVMIDs(ctx, gomock.Any()).Return([]string{"vm-1"}, nil)
@@ -616,7 +617,7 @@ func TestGetVMCVEDetail(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
-				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{}, nil)
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any(), search.VirtualMachineID).Return(&commonViews.ResourceCountByImageCVESeverity{}, nil)
 				mockView.EXPECT().GetVMIDs(ctx, gomock.Any()).Return(nil, nil)
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(5, nil)
 			},

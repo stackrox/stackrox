@@ -192,30 +192,6 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 	return ret, nil
 }
 
-func (v *vmCVECoreViewImpl) CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error) {
-	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVE).Proto(),
-		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
-
-	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
-	defer cancel()
-
-	result := make(map[string]int32)
-	err := pgSearch.RunSelectRequestForSchemaFn[cveComponentCountResponse](queryCtx, v.db, v.schema, cloned, func(r *cveComponentCountResponse) error {
-		result[r.CVE] = int32(r.ComponentCount)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 func (v *vmCVECoreViewImpl) GetCVEsForVM(ctx context.Context, q *v1.Query) ([]CVEForVMCore, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
