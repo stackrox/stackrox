@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
   labels:
-    app: rhacs-operator
+    app: stackrox-operator
   name: securitypolicies.config.stackrox.io
 spec:
   group: config.stackrox.io
