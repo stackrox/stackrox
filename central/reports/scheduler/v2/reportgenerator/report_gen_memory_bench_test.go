@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -53,10 +52,9 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 	watchedImageDatastore := watchedImageDS.GetTestPostgresDataStore(b, testDB.DB)
 
 	var resolver *resolvers.Resolver
-	var schema *graphql.Schema
 	if features.FlattenImageData.Enabled() {
 		imgV2DataStore := resolvers.CreateTestImageV2Datastore(b, testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(b,
+		resolver, _ = resolvers.SetupTestResolver(b,
 			imagesView.NewImageView(testDB.DB),
 			imgV2DataStore,
 			resolvers.CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
@@ -66,7 +64,7 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 		)
 	} else {
 		imageDataStore := resolvers.CreateTestImageDatastore(b, testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(b,
+		resolver, _ = resolvers.SetupTestResolver(b,
 			imagesView.NewImageView(testDB.DB),
 			imageDataStore,
 			resolvers.CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
@@ -89,7 +87,7 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 
 	rg := newReportGeneratorImpl(testDB, reportSnapshotStore, resolver.DeploymentDataStore,
 		watchedImageDatastore, collectionQueryResolver, nil, blobStore, clusterDatastore,
-		nsDatastore, resolver.ImageCVEV2DataStore, schema)
+		nsDatastore, resolver.ImageCVEV2DataStore)
 
 	// pgtest limits all pools to pool_max_conns=1 which is too restrictive for
 	// report generation. Use a shared pool with enough connections.
