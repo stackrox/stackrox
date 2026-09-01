@@ -43,6 +43,5 @@ describe('Platform CVEs - Feature Flag Gating', () => {
             cy.get(`${pf6.menuToggle}:contains("More Views")`).click();
             cy.get(`${pf6.dropdownItem}:contains("Kubernetes components")`).should('not.exist');
         });
-
     });
 });
