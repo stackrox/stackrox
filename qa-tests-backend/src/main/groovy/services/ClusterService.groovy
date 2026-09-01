@@ -14,7 +14,10 @@ import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
 @CompileStatic
 @Slf4j
 class ClusterService extends BaseService {
-    static final DEFAULT_CLUSTER_NAME = "remote"
+    // Cluster name the harness expects. CI deploys name the secured cluster
+    // "remote"; allow an override so the suite can run against a manually
+    // deployed cluster with a different name (e.g. roxie's "sensor-NNNN").
+    static final DEFAULT_CLUSTER_NAME = System.getenv("ROX_TEST_CLUSTER_NAME") ?: "remote"
 
     static ClustersServiceGrpc.ClustersServiceBlockingStub getClusterServiceClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())

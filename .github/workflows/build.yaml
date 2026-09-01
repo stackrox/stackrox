@@ -7,16 +7,6 @@ on:
         required: true
         type: string
   workflow_call:
-  push:
-    tags:
-    - '*-nightly-*'
-    branches:
-    - master
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
 
 defaults:
   run:
