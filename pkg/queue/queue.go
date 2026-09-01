@@ -92,6 +92,8 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 	// This prevents lost wakeup: if we're signaled but another consumer
 	// takes the item before we pull, we must continue waiting.
 	for !ok {
+		// Reset stale signal before waiting to prevent spin-loop
+		q.notEmptySignal.Reset()
 		select {
 		case <-waitable.Done():
 			var nilT T
@@ -120,6 +122,8 @@ func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 			// This prevents lost wakeup: if we're signaled but another consumer
 			// takes the item before we pull, we must continue waiting.
 			for !ok {
+				// Reset stale signal before waiting to prevent spin-loop
+				q.notEmptySignal.Reset()
 				select {
 				case <-waitable.Done():
 					return
