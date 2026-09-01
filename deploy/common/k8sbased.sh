@@ -224,8 +224,6 @@ function launch_central {
     add_args -i "${MAIN_IMAGE}"
 
     add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    add_args "--scanner-image=${SCANNER_IMAGE}"
-    add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -369,10 +367,6 @@ function launch_central {
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
       fi
-      if [[ "$SCANNER_SUPPORT" != "true" ]]; then
-        helm_args+=(--set scanner.disable=true)
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -582,11 +576,6 @@ function launch_central {
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
-          echo "Deploying Scanner..."
-          if [[ -n "${REGISTRY_USERNAME}" ]]; then
-            "${unzip_dir}/scanner/scripts/setup.sh"
-          fi
-          launch_service "${unzip_dir}" scanner
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
               echo "Deploying ScannerV4..."
@@ -622,14 +611,6 @@ function launch_central {
               echo >&2 "WARNING: Scanner V4 will not be deployed now."
               echo >&2 "Possible reason for this: the roxctl in PATH does not support Scanner V4."
             fi
-          fi
-
-          if [[ -n "$CI" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-          elif [[ "${is_local_dev}" == "true" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
           fi
           echo
       fi
@@ -938,10 +919,6 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=true")
       else
         helm_args+=(--set "helmManaged=false")
-      fi
-
-      if [[ "$SENSOR_SCANNER_SUPPORT" == "true" ]]; then
-        helm_args+=(--set scanner.disable=false)
       fi
 
       if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
