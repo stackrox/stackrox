@@ -40,6 +40,10 @@ export function deleteAiIntegration(id: string): Promise<Empty> {
     return axios.delete<Empty>(`${aiIntegrationsUrl}/${id}`).then((response) => response.data);
 }
 
+export function deleteAiIntegrations(ids: string[]): Promise<Empty[]> {
+    return Promise.all(ids.map(deleteAiIntegration));
+}
+
 export function testAiIntegration(data: AiIntegration): Promise<Empty> {
     return axios.post<Empty>(`${aiIntegrationsUrl}/test`, data).then((response) => response.data);
 }
