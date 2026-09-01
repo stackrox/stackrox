@@ -237,18 +237,59 @@ Remove the `image.scanner` and `image.scannerDb` sections (registry, name, tag, 
 
 **File**: [tests/e2e/run-scanner-v4-install.bats](tests/e2e/run-scanner-v4-install.bats)
 
-This file calls `verify_scannerV2_deployed` (~20 times) across all test cases. With scanner v2 removed, these assertions must flip:
+This file calls `verify_scannerV2_deployed` (~20 times) across all test cases. With scanner v2 removed, specific assertions must flip to `verify_no_scannerV2_deployed` (helper already exists at line ~1090).
 
-- Replace all `verify_scannerV2_deployed` calls with `verify_no_scannerV2_deployed` (helper already exists at line ~1090)
-- For upgrade tests (old chart -> HEAD): after upgrading to HEAD, scanner v2 should no longer be present. The old deployment deployed v2, but the HEAD upgrade should remove it.
-- Remove scanner v2 resource/replica settings from the `base_helm_values` in `deploy_central_with_helm` (~lines 1278-1294: `scanner.resources`, `scanner.dbResources`, `scanner.replicas`, `scanner.autoscaling`) and `deploy_sensor_with_helm` (~lines 1418-1436: same)
-- Remove scanner v2 HPA patch logic in `patch_down_sensor_directly` (~lines 1573-1580: `hpa/scanner` patch)
-- Update the TODO comment at line ~1080 ("Scanner v2 is expected to run in parallel") -- remove it, the phase-out is done
-- The `SENSOR_SCANNER_SUPPORT=true` exports in some tests (~line 707, 784, 820, 854) can be set to `false` or removed
+**Principle**: Only flip v2 verification calls. Do NOT remove or modify any deployment configuration in the test suite (scanner v2 resource settings, HPA patches, `SENSOR_SCANNER_SUPPORT` exports, etc.) -- these are harmless since v2 is always disabled, and keeping them minimizes the diff.
 
-**File**: [tests/e2e/lib.sh](tests/e2e/lib.sh)
-- Remove scanner-db from log collection map (~lines 43-44)
-- Update comments about early-readiness waiting for v2 vuln DB load
+#### Test-by-test changes
+
+##### (a) "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" (line ~445)
+
+Structure: deploy old chart (central + sensor), upgrade to HEAD chart.
+
+- **Old chart deployment** (lines 465, 487): Keep `verify_scannerV2_deployed` -- the old chart still deploys v2.
+- **After upgrade to HEAD** (lines 474, 495): Change to `verify_no_scannerV2_deployed` -- HEAD chart must not deploy v2.
+- Consider adding `verify_deployment_deletion_with_timeout` for `scanner` and `scanner-db` before the no-v2 assertion, to handle any deletion lag during the Helm upgrade.
+
+**Note**: The upgrade uses `--reuse-values`, which carries forward the old chart's `scanner.disable: false`. The Helm chart init template (plan item 10) must unconditionally force `scanner.disable=true`, overriding any user-supplied or reused value. This is a hard requirement of the Helm chart implementation, not just a default change.
+
+##### (b) "Fresh installation of HEAD Helm charts in different namespaces and toggling Scanner V4" (line ~502)
+
+- Lines 540, 546, 567, 574: Flip all `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (c) "Fresh installation of HEAD Helm charts in the same namespace and toggling Scanner V4" (line ~604)
+
+- Lines 632, 659: Flip `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (d) "Fresh installation of HEAD Helm charts with Scanner V4 enabled in multi-namespace mode" (line ~694)
+
+- Line 712: Flip `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (e) "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" (line ~728)
+
+- Line 747: Flip `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (f) "[Operator] Fresh installation with Scanner V4 enabled" (line ~768)
+
+- Line 792: Flip `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (g) "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" (line ~804)
+
+- Lines 829, 833: Flip both `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (h) "[Operator] Upgrade multi-namespace installation" (line ~840)
+
+- **Before upgrade** (lines 866, 869): Keep `verify_scannerV2_deployed` -- old operator still deploys v2.
+- **After upgrade** (lines 888, 891): Flip to `verify_no_scannerV2_deployed`.
+
+##### (i) "Fresh installation using roxctl with Scanner V4 enabled" (line ~928)
+
+- Line 945: Flip `verify_scannerV2_deployed` to `verify_no_scannerV2_deployed`.
+
+##### (j) "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" (line ~952)
+
+- **Before upgrade** (line 968): Keep `verify_scannerV2_deployed` -- old roxctl deploys v2.
+- **After upgrade** (line 980): Flip to `verify_no_scannerV2_deployed`.
 
 ## What We Are NOT Changing (follow-up work)
 
