@@ -86,9 +86,8 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 		assert.True(t, foundMain)
 		assert.Equal(t, "compliance", complianceCont.Name)
 
-		value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
-		assert.True(t, exists)
-		assert.Equal(t, "false", value, "compliance should have %s=false", env.NodeInventoryContainerEnabled.EnvVar())
+		_, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
+		assert.False(t, exists, "compliance should not set %s; Go default is false", env.NodeInventoryContainerEnabled.EnvVar())
 
 		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
 			nInvCont, found := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
