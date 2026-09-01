@@ -216,7 +216,7 @@ func (r *Repo2CPE) newRepo2CPERequest(ctx context.Context, etag, lastModified st
 func (r *Repo2CPE) recordRepo2CPEUnchanged(resp *http.Response) {
 	concurrency.WithLock(&r.cacheMu, func() {
 		r.cache.lastSuccess = time.Now()
-		r.updateRepo2CPEValidatorsLocked(resp)
+		r.mergeRepo2CPEValidatorsNoLock(resp)
 	})
 	log.Debug("Repo-to-CPE mapping unchanged (304)")
 }
@@ -231,14 +231,22 @@ func (r *Repo2CPE) recordRepo2CPESuccess(body []byte, resp *http.Response) {
 			r.cache.mapping = body
 			r.cache.hash = hash
 		}
-		r.updateRepo2CPEValidatorsLocked(resp)
+		r.replaceRepo2CPEValidatorsNoLock(resp)
 	})
 	log.Debugf("Fetched repo-to-CPE mapping from central, hash=%s", hash)
 }
 
-// updateRepo2CPEValidatorsLocked refreshes the cached conditional-GET
-// validators from resp. Callers must hold r.cacheMu.
-func (r *Repo2CPE) updateRepo2CPEValidatorsLocked(resp *http.Response) {
+// replaceRepo2CPEValidatorsNoLock copies validators from a 200, including
+// empty values, so the next conditional GET cannot reuse a prior mapping's
+// ETag or Last-Modified.
+func (r *Repo2CPE) replaceRepo2CPEValidatorsNoLock(resp *http.Response) {
+	r.cache.etag = resp.Header.Get(etagHeader)
+	r.cache.lastModified = resp.Header.Get(lastModifiedHeader)
+}
+
+// mergeRepo2CPEValidatorsNoLock applies non-empty validators from a 304,
+// which may omit them.
+func (r *Repo2CPE) mergeRepo2CPEValidatorsNoLock(resp *http.Response) {
 	if etag := resp.Header.Get(etagHeader); etag != "" {
 		r.cache.etag = etag
 	}

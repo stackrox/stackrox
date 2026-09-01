@@ -66,12 +66,14 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 	seededSuccess := time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC)
 
 	tests := map[string]struct {
-		seedCache     repo2CPECache
-		serverHandler http.HandlerFunc
-		networkErr    bool
-		wantOK        bool
-		wantMapping   string
-		wantHash      string
+		seedCache        repo2CPECache
+		serverHandler    http.HandlerFunc
+		networkErr       bool
+		wantOK           bool
+		wantMapping      string
+		wantHash         string
+		wantEtag         string
+		wantLastModified string
 	}{
 		"first fetch succeeds and populates an empty cache": {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
@@ -82,16 +84,28 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantOK:      true,
 			wantMapping: mappingV1,
 			wantHash:    hashV1,
+			wantEtag:    `"v1"`,
 		},
 		"304 with matching validators keeps the cached mapping": {
-			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastSuccess: seededSuccess},
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastModified: "old", lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, `"v1"`, r.Header.Get(ifNoneMatchHeader))
 				w.WriteHeader(http.StatusNotModified)
 			},
+			wantOK:           true,
+			wantMapping:      mappingV1,
+			wantHash:         hashV1,
+			wantEtag:         `"v1"`,
+			wantLastModified: "old",
+		},
+		"200 without validators replaces previously cached validators": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastModified: "old", lastSuccess: seededSuccess},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte(mappingV2))
+			},
 			wantOK:      true,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			wantMapping: mappingV2,
+			wantHash:    hashV2,
 		},
 		"200 with a same-hash body is treated as unchanged": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
@@ -165,6 +179,8 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			assert.Equal(t, tt.wantOK, ok)
 			assert.Equal(t, tt.wantMapping, string(r.cache.mapping))
 			assert.Equal(t, tt.wantHash, r.cache.hash)
+			assert.Equal(t, tt.wantEtag, r.cache.etag)
+			assert.Equal(t, tt.wantLastModified, r.cache.lastModified)
 			if tt.wantOK {
 				assert.False(t, r.cache.lastSuccess.IsZero())
 			} else {
