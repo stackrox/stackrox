@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: scanner-v4-matcher
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     app: scanner-v4-matcher
     {{- include "srox.labels" (list . "deployment" "scanner-v4-matcher") | nindent 4 }}
@@ -22,7 +22,7 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ quote ._rox._namespace }}
       labels:
         app: scanner-v4-matcher
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-matcher") | nindent 8 }}
