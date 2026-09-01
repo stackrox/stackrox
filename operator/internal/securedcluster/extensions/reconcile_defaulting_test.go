@@ -292,17 +292,11 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Spec:            platform.SecuredClusterSpec{},
 			Status:          platform.SecuredClusterStatus{},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
-			},
 		},
-		"upgrade: disabled by default": {
+		"upgrade: auto-sense by default": {
 			Spec:            platform.SecuredClusterSpec{},
 			Status:          postInstallStatus,
-			ExpectedDefault: &platform.LocalScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 		},
 		"install: auto-sense explicitly": {
 			Spec: platform.SecuredClusterSpec{
@@ -322,47 +316,26 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          platform.SecuredClusterStatus{},
 			ExpectedDefault: nil,
 		},
-		"upgrade: pick up previously persisted default (AutoSense)": {
+		"upgrade: previously persisted annotation is ignored": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: postInstallStatus,
 			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
-			},
-		},
-		"upgrade: pick up previously persisted default (Disabled)": {
-			Spec:   platform.SecuredClusterSpec{},
-			Status: postInstallStatus,
-			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-			ExpectedDefault: &platform.LocalScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
-		"upgrade: ignoring bogus persisted default": {
+		"upgrade: bogus persisted annotation is ignored": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefault: &platform.LocalScannerV4Disabled,
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-		},
-		"previously persisted default is picked up even if status is empty": {
-			Spec: platform.SecuredClusterSpec{},
-			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-			ExpectedDefault: &platform.LocalScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
 		},
 	}
