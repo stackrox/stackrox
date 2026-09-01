@@ -36,6 +36,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 - ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.
+- ROX-36676: The default policy "Iptables or nftables Executed in Privileged Container" now excludes the `virt-handler` deployment in the `openshift-cnv` namespace, which runs iptables/nftables as expected OpenShift Virtualization node infrastructure. On upgrade, existing installations receive the exclusion via migration unless the policy has been customized.
 - ROX-32969: The `roxctl-linux` symlink has been removed from the `/assets/downloads/cli/` directory inside the main container image. Only the architecture-specific binaries (`roxctl-linux-amd64`, `roxctl-linux-arm64`, etc.) remain. This change does not affect CLI downloads from the Central UI or any other supported download path.
 - ROX-33078: Fixed telemetry gatherer failing to report database size metrics when using an external database. The database name is now read from the connection config instead of using the hardcoded default.
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
