@@ -18,8 +18,6 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 		storage.ServiceType_SENSOR_SERVICE:             certrepo.NewServiceCertSecretSpec(securedcluster.SensorTLSSecretName),
 		storage.ServiceType_COLLECTOR_SERVICE:          certrepo.NewServiceCertSecretSpec(securedcluster.CollectorTLSSecretName),
 		storage.ServiceType_ADMISSION_CONTROL_SERVICE:  certrepo.NewServiceCertSecretSpec(securedcluster.AdmissionControlTLSSecretName),
-		storage.ServiceType_SCANNER_SERVICE:            certrepo.NewServiceCertSecretSpec(securedcluster.ScannerTLSSecretName),
-		storage.ServiceType_SCANNER_DB_SERVICE:         certrepo.NewServiceCertSecretSpec(securedcluster.ScannerDbTLSSecretName),
 		storage.ServiceType_SCANNER_V4_INDEXER_SERVICE: certrepo.NewServiceCertSecretSpec(securedcluster.ScannerV4IndexerTLSSecretName),
 		storage.ServiceType_SCANNER_V4_DB_SERVICE:      certrepo.NewServiceCertSecretSpec(securedcluster.ScannerV4DbTLSSecretName),
 	}

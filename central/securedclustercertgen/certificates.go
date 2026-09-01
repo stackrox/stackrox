@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
@@ -21,9 +20,8 @@ var (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-var scannerV2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var scannerV4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
-var localScannerServiceTypes = scannerV2ServiceTypes.Union(scannerV4ServiceTypes)
+var localScannerServiceTypes = scannerV4ServiceTypes
 
 var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
 	storage.ServiceType_SENSOR_SERVICE,
@@ -99,12 +97,7 @@ func IssueSecuredClusterCertsWithCAs(
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
-	// In any case, generate certificates for Scanner v2.
-	serviceTypes := scannerV2ServiceTypes
-	if features.ScannerV4.Enabled() {
-		// Additionally, generate certificates for Scanner v4.
-		serviceTypes = localScannerServiceTypes
-	}
+	serviceTypes := scannerV4ServiceTypes
 
 	ca, err := mtls.CAForSigning()
 	if err != nil {
