@@ -491,6 +491,15 @@ func TestQueueSeq(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("Seq Stale Not Empty Signal Does Not Spin", func(t *testing.T) {
+		testStaleNotEmptySignalDoesNotSpin(t, func(q *Queue[int], ctx context.Context) int {
+			for item := range q.Seq(ctx) {
+				return item
+			}
+			return 0
+		})
+	})
 }
 
 func TestQueuePullBlocking(t *testing.T) {
@@ -514,5 +523,41 @@ func TestQueuePullBlocking(t *testing.T) {
 		testCancellationWithEmptyQueue(t, func(ctx context.Context, q *Queue[int]) int {
 			return q.PullBlocking(ctx)
 		})
+	})
+
+	t.Run("PullBlocking Stale Not Empty Signal Does Not Spin", func(t *testing.T) {
+		testStaleNotEmptySignalDoesNotSpin(t, func(q *Queue[int], ctx context.Context) int {
+			return q.PullBlocking(ctx)
+		})
+	})
+}
+
+// testStaleNotEmptySignalDoesNotSpin covers an empty queue whose notEmptySignal is
+// already triggered. Waiters must Reset that latch and block; otherwise synctest.Wait hangs.
+func testStaleNotEmptySignalDoesNotSpin(t *testing.T, consume func(*Queue[int], context.Context) int) {
+	synctest.Test(t, func(t *testing.T) {
+		q := NewQueue[int]()
+		q.notEmptySignal.Signal()
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		got := make(chan int, 1)
+		started := make(chan struct{})
+		go func() {
+			close(started)
+			got <- consume(q, ctx)
+		}()
+		<-started
+		synctest.Wait()
+		t.Logf("consumer blocked")
+		q.Push(7)
+		synctest.Wait()
+		select {
+		case item := <-got:
+			assert.Equal(t, 7, item)
+		default:
+			t.Fatal("consumer should have received the item after blocking")
+		}
 	})
 }
