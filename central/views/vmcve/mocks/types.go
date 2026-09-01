@@ -449,34 +449,6 @@ func (m *MockCVEForVMCore) EXPECT() *MockCVEForVMCoreMockRecorder {
 	return m.recorder
 }
 
-// GetAdvisoryLink mocks base method.
-func (m *MockCVEForVMCore) GetAdvisoryLink() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdvisoryLink")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetAdvisoryLink indicates an expected call of GetAdvisoryLink.
-func (mr *MockCVEForVMCoreMockRecorder) GetAdvisoryLink() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdvisoryLink", reflect.TypeOf((*MockCVEForVMCore)(nil).GetAdvisoryLink))
-}
-
-// GetAdvisoryName mocks base method.
-func (m *MockCVEForVMCore) GetAdvisoryName() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdvisoryName")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetAdvisoryName indicates an expected call of GetAdvisoryName.
-func (mr *MockCVEForVMCoreMockRecorder) GetAdvisoryName() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdvisoryName", reflect.TypeOf((*MockCVEForVMCore)(nil).GetAdvisoryName))
-}
-
 // GetAffectedComponentCount mocks base method.
 func (m *MockCVEForVMCore) GetAffectedComponentCount() int {
 	m.ctrl.T.Helper()

@@ -375,11 +375,11 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 		if meta, ok := metadataByID[cve.GetCVE()]; ok {
 			row.Summary = meta.GetCveBaseInfo().GetSummary()
 			row.Link = meta.GetCveBaseInfo().GetLink()
-		}
-		if cve.GetAdvisoryName() != "" {
-			row.Advisory = &v2.Advisory{
-				Name: cve.GetAdvisoryName(),
-				Link: cve.GetAdvisoryLink(),
+			if adv := meta.GetAdvisory(); adv != nil && adv.GetName() != "" {
+				row.Advisory = &v2.Advisory{
+					Name: adv.GetName(),
+					Link: adv.GetLink(),
+				}
 			}
 		}
 		items = append(items, row)

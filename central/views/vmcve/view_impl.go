@@ -235,15 +235,9 @@ func (v *vmCVECoreViewImpl) GetCVEsForVM(ctx context.Context, q *v1.Query) ([]CV
 		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
-		search.NewQuerySelect(search.AdvisoryName).Proto(),
-		search.NewQuerySelect(search.AdvisoryLink).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{
-			search.CVE.String(),
-			search.AdvisoryName.String(),
-			search.AdvisoryLink.String(),
-		},
+		Fields: []string{search.CVE.String()},
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)

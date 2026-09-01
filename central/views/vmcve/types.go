@@ -62,8 +62,6 @@ type CVEForVMCore interface {
 	GetEPSSProbability() float32
 	GetAffectedComponentCount() int
 	GetPublishDate() *time.Time
-	GetAdvisoryName() string
-	GetAdvisoryLink() string
 }
 
 // VMSeverityCounts provides per-VM severity counts.
