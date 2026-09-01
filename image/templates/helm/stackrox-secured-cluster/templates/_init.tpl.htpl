@@ -149,12 +149,12 @@
 
 [<- if not .KubectlOutput >]
 {{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
-{{ include "srox.scannerDefaulting" (list . .Release $._rox.scanner $.stackroxHelm) }}
-{{ if ne $._rox.scanner.mode "slim" }}
-  {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
-{{ end }}
-{{ $_ := set $._rox.scanner "slimImage" $._rox.image.scanner }}
-{{ $_ := set $._rox.scanner "slimDBImage" $._rox.image.scannerDb }}
+
+{{/* Scanner V2 has been removed. Force disable regardless of user input. */}}
+{{- if and $._rox.scanner (not (kindIs "invalid" $._rox.scanner.disable)) (not $._rox.scanner.disable) -}}
+  {{- include "srox.warn" (list $ "Scanner V2 has been removed. The `scanner.disable` setting is ignored. Scanner V4 is the replacement.") -}}
+{{- end -}}
+{{- $_ := set $._rox "scanner" (dict "disable" true) -}}
 [<- end >]
 
 {{/* Expand applicable config values */}}
@@ -264,7 +264,6 @@
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
 [<- if not .KubectlOutput >]
-{{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
 {{ include "srox.configureImage" (list $ ._rox.image.scannerV4) }}
 [<- end >]
 
@@ -348,22 +347,16 @@ The following block checks for the validity of the provided init bundle. (`helm 
   */}}
 
 
-{{ $anyScannerEnabled := or (eq ._rox.scanner.disable false) (eq ._rox.scannerV4.disable false) }}
+{{ $anyScannerEnabled := not ._rox.scannerV4.disable }}
 {{ if $anyScannerEnabled }}
   {{/* Check for sibling central in the same namespace. */}}
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
-    {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
 
   {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-{{ end }}
-
-{{ if eq ._rox.scanner.disable false }}
-  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner" }}
 {{ end }}
 
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
