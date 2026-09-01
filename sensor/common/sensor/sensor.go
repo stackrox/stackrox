@@ -240,25 +240,26 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
-	// Construct the scanner definitions handler if local image scanning, Node Indexing, or VM
-	// scanning is enabled: all three need access to the repo-to-CPE mapping file hosted by
-	// central, whether through the HTTP route below or, for VM scanning, via FetchRepo2CPE.
-	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() || features.VirtualMachines.Enabled() {
-		handler, repo2cpe, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
+	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
+		handler, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definitions handler"))
 		} else {
 			s.scannerDefsHandler = handler
-			s.repo2CPE = repo2cpe
 			s.AddNotifiable(handler)
+			customRoutes = append(customRoutes, s.newScannerDefinitionsRoute(handler))
+			s.AddNotifiable(scannerclient.ResetNotifiable())
+		}
+	}
+
+	if features.VirtualMachines.Enabled() {
+		repo2cpe, err := scannerdefinitions.NewRepo2CPE(s.centralEndpoint, centralCertificates)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Failed to create repo-to-CPE refresher"))
+		} else {
+			s.repo2CPE = repo2cpe
 			s.AddNotifiable(repo2cpe)
 			s.components = append(s.components, repo2cpe)
-
-			// The HTTP route itself is only needed by Scanner/Collector/node-index callers.
-			if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
-				customRoutes = append(customRoutes, s.newScannerDefinitionsRoute(handler))
-				s.AddNotifiable(scannerclient.ResetNotifiable())
-			}
 		}
 	}
 

@@ -198,7 +198,7 @@ func TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache(t *testing.T) {
 	hash := cpemapping.HashMapping([]byte(mapping))
 
 	var fail atomic.Bool
-	r := NewRepo2CPE(newTestCentralClient(t, func(w http.ResponseWriter, _ *http.Request) {
+	r := newRepo2CPE(newTestCentralClient(t, func(w http.ResponseWriter, _ *http.Request) {
 		if fail.Load() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -226,7 +226,7 @@ func TestFetchRepo2CPE(t *testing.T) {
 	hash := cpemapping.HashMapping(mapping)
 
 	t.Run("never fetched returns ok=false", func(t *testing.T) {
-		r := NewRepo2CPE(&http.Client{})
+		r := newRepo2CPE(&http.Client{})
 		r.centralReachable.Store(false)
 
 		gotMapping, gotHash, ok := r.FetchRepo2CPE(t.Context())
@@ -237,7 +237,7 @@ func TestFetchRepo2CPE(t *testing.T) {
 	})
 
 	t.Run("offline serves the last cached mapping with ok=true", func(t *testing.T) {
-		r := NewRepo2CPE(&http.Client{})
+		r := newRepo2CPE(&http.Client{})
 		r.cache = repo2CPECache{mapping: mapping, hash: hash, lastSuccess: time.Now()}
 		r.centralReachable.Store(false)
 
@@ -249,7 +249,7 @@ func TestFetchRepo2CPE(t *testing.T) {
 	})
 
 	t.Run("returned mapping is a copy of the cache", func(t *testing.T) {
-		r := NewRepo2CPE(&http.Client{})
+		r := newRepo2CPE(&http.Client{})
 		r.cache = repo2CPECache{mapping: slices.Clone(mapping), hash: hash, lastSuccess: time.Now()}
 		r.centralReachable.Store(false)
 
@@ -264,7 +264,7 @@ func TestRepo2CPERun(t *testing.T) {
 	tests := map[string]func(t *testing.T){
 		"should fetch when a tick arrives and central is reachable": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			r.centralReachable.Store(true)
 
 			ctx, cancel := context.WithCancel(t.Context())
@@ -280,7 +280,7 @@ func TestRepo2CPERun(t *testing.T) {
 		},
 		"should skip the fetch when central is unreachable": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			r.centralReachable.Store(false)
 
 			ctx, cancel := context.WithCancel(t.Context())
@@ -305,7 +305,7 @@ func TestRepo2CPEStart(t *testing.T) {
 	tests := map[string]func(t *testing.T){
 		"should fetch immediately on Start when central is reachable": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			t.Cleanup(r.Stop)
 			r.centralReachable.Store(true)
 
@@ -315,7 +315,7 @@ func TestRepo2CPEStart(t *testing.T) {
 		},
 		"should return an error on a second Start": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			t.Cleanup(r.Stop)
 			r.centralReachable.Store(true)
 
@@ -327,7 +327,7 @@ func TestRepo2CPEStart(t *testing.T) {
 		},
 		"should stop without further fetches": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			t.Cleanup(r.Stop)
 			r.centralReachable.Store(true)
 
@@ -343,7 +343,7 @@ func TestRepo2CPEStart(t *testing.T) {
 		},
 		"should refetch after the success interval": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			t.Cleanup(r.Stop)
 			r.centralReachable.Store(true)
 
@@ -357,7 +357,7 @@ func TestRepo2CPEStart(t *testing.T) {
 		},
 		"should refetch immediately when Notify kicks a running loop": func(t *testing.T) {
 			var fetches atomic.Int32
-			r := NewRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
+			r := newRepo2CPE(countingMappingClient(&fetches, testRepo2CPEMapping))
 			t.Cleanup(r.Stop)
 			r.centralReachable.Store(true)
 

@@ -2,6 +2,7 @@ package scannerdefinitions
 
 import (
 	"context"
+	"crypto/x509"
 	"io"
 	"net/http"
 	"net/url"
@@ -16,8 +17,25 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+)
+
+const (
+	// repo2CPEFileParam matches sensorMappingsFile in compliance/node/index/indexer.go.
+	repo2CPEFileParam = "repo2cpe"
+
+	// repo2CPERefreshInterval is the steady-state cadence other repo2cpe consumers use.
+	repo2CPERefreshInterval = 4 * time.Hour
+	// repo2CPERetryInterval is short so a cold cache reaches its first success quickly.
+	repo2CPERetryInterval = time.Minute
+	repo2CPEFetchTimeout  = 30 * time.Second
+
+	etagHeader            = "ETag"
+	ifNoneMatchHeader     = "If-None-Match"
+	lastModifiedHeader    = "Last-Modified"
+	ifModifiedSinceHeader = "If-Modified-Since"
 )
 
 var (
@@ -54,8 +72,16 @@ type repo2CPECache struct {
 	lastSuccess  time.Time
 }
 
-// NewRepo2CPE returns a refresher that fetches through client.
-func NewRepo2CPE(client *http.Client) *Repo2CPE {
+// NewRepo2CPE creates a refresher that fetches Central's repo-to-CPE mapping.
+func NewRepo2CPE(centralEndpoint string, centralCertificates []*x509.Certificate) (*Repo2CPE, error) {
+	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating central HTTP transport")
+	}
+	return newRepo2CPE(client), nil
+}
+
+func newRepo2CPE(client *http.Client) *Repo2CPE {
 	return &Repo2CPE{centralClient: client}
 }
 

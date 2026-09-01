@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync/atomic"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -20,22 +19,6 @@ import (
 
 const scannerDefsPath = "/api/extensions/scannerdefinitions"
 
-const (
-	// repo2CPEFileParam matches sensorMappingsFile in compliance/node/index/indexer.go.
-	repo2CPEFileParam = "repo2cpe"
-
-	// repo2CPERefreshInterval is the steady-state cadence other repo2cpe consumers use.
-	repo2CPERefreshInterval = 4 * time.Hour
-	// repo2CPERetryInterval is short so a cold cache reaches its first success quickly.
-	repo2CPERetryInterval = time.Minute
-	repo2CPEFetchTimeout  = 30 * time.Second
-
-	etagHeader            = "ETag"
-	ifNoneMatchHeader     = "If-None-Match"
-	lastModifiedHeader    = "Last-Modified"
-	ifModifiedSinceHeader = "If-Modified-Since"
-)
-
 var (
 	headersToProxy = set.NewFrozenStringSet("If-Modified-Since", "Accept-Encoding")
 	log            = logging.LoggerForModule()
@@ -48,14 +31,15 @@ type Handler struct {
 	centralReachable atomic.Bool
 }
 
-// NewDefinitionsHandler creates a new scanner definitions handler and a
-// repo-to-CPE refresher that share Central's HTTP client.
-func NewDefinitionsHandler(centralEndpoint string, centralCertificates []*x509.Certificate) (*Handler, *Repo2CPE, error) {
+// NewDefinitionsHandler creates a new scanner definitions handler.
+func NewDefinitionsHandler(centralEndpoint string, centralCertificates []*x509.Certificate) (*Handler, error) {
 	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "instantiating central HTTP transport")
+		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-	return &Handler{centralClient: client}, NewRepo2CPE(client), nil
+	return &Handler{
+		centralClient: client,
+	}, nil
 }
 
 // Notify reacts to sensor going into online/offline mode.
