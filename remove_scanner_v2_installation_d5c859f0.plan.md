@@ -48,7 +48,7 @@ isProject: false
 
 ## Background
 
-Scanner v2 (also called "StackRox Scanner" or "Clairify") is the legacy vulnerability scanner. Scanner v4 (ClairCore-based) is its replacement. The codebase already has a `ROX_LEGACY_SCANNER` feature flag (default: `enabled`) gating the runtime Go code. This plan removes Scanner v2 from **installation/deployment paths only** while keeping the runtime code intact behind the feature flag.
+Scanner v2 (also called "StackRox Scanner" or "Clairify") is the legacy vulnerability scanner. Scanner v4 (ClairCore-based) is its replacement. The codebase already has a `ROX_LEGACY_SCANNER` feature flag gating the runtime Go code. This plan removes Scanner v2 from all installation/deployment paths and makes the feature flag permanently disabled.
 
 ## Key Files and Components
 
@@ -177,17 +177,41 @@ Scanner v2 password/TLS reconcilers should be updated: if the operator no longer
 **File**: [deploy/common/scanner-local-patch.yaml](deploy/common/scanner-local-patch.yaml)
 - Remove or empty this file (it patches scanner v2 for local dev)
 
-### 10. Central Helm `_init.tpl.htpl` -- Scanner v2 Feature Flag Injection
+### 10. Central Helm `_init.tpl.htpl` -- Scanner v2 Feature Flag Injection and User Messaging
 
 **File**: [image/templates/helm/stackrox-central/templates/_init.tpl.htpl](image/templates/helm/stackrox-central/templates/_init.tpl.htpl)
 
-This file sets `_legacyScannerEnabled` based on `scanner.disable` and injects `ROX_LEGACY_SCANNER` as an environment variable on the Central deployment. With scanner v2 always disabled, this needs to be updated so `_legacyScannerEnabled` is always `false` (and `ROX_LEGACY_SCANNER=false` is injected on Central).
+This file sets `_legacyScannerEnabled` based on `scanner.disable` and injects `ROX_LEGACY_SCANNER` as an environment variable on the Central deployment. Changes needed:
+
+- Force `scanner.disable=true` unconditionally in the init template, overriding any user-supplied or `--reuse-values` value.
+- `_legacyScannerEnabled` becomes always `false`, so `ROX_LEGACY_SCANNER=false` is always emitted on Central.
+- **Replace the existing warning** (lines ~286-289) that says "You have chosen to deploy without Scanner. Certain features might not work." — this is now misleading since v2 is intentionally removed and v4 replaces it.
+- **Emit a warning** if the user explicitly set `scanner.disable=false` (i.e., tried to enable scanner v2): something like "Scanner V2 has been removed. The `scanner.disable` setting is ignored. Scanner V4 is the replacement."
+- **Emit an informational note** during upgrades (`$.Release.IsUpgrade`): something like "Scanner V2 (StackRox Scanner) has been removed in this release. Scanner V4 is the sole vulnerability scanner. Existing scanner/scanner-db resources will be removed."
+
+Use `srox.warn` for the explicit-enable warning and `srox.note` for the upgrade informational message (both helpers already exist in `_reporting.tpl`).
 
 **File**: [image/templates/helm/stackrox-central/templates/01-central-13-deployment.yaml.htpl](image/templates/helm/stackrox-central/templates/01-central-13-deployment.yaml.htpl)
 
 Reads `_legacyScannerEnabled` to emit `ROX_LEGACY_SCANNER` env var on Central -- will now always be `false`.
 
-### 11. roxctl Scanner Commands
+### 11. Feature Flag: Make ROX_LEGACY_SCANNER Permanently Disabled
+
+**File**: [pkg/features/list.go](pkg/features/list.go)
+
+Change the `LegacyScanner` feature flag from `enabled` (default true, overridable) to disabled and unchangeable:
+
+```go
+// Before:
+LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+
+// After:
+LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", withUnchangeable(true))
+```
+
+This sets the default to `false` (no `enabled` option) and makes it unchangeable (`Enabled()` always returns `false`, ignoring any env var override). All Go runtime code gated on `features.LegacyScanner.Enabled()` becomes permanently inactive.
+
+### 12. roxctl Scanner Commands
 
 **File**: [roxctl/scanner/generate/generate.go](roxctl/scanner/generate/generate.go)
 - The `--scanner-image` flag references Scanner v2 image. Remove this flag (keep `--scanner-v4-image` and `--scanner-v4-db-image`).
@@ -198,7 +222,7 @@ Reads `_legacyScannerEnabled` to emit `ROX_LEGACY_SCANNER` env var on Central --
 **File**: [roxctl/central/generate/interactive.go](roxctl/central/generate/interactive.go)
 - Interactive prompts for scanner/scanner-db images. Remove V2 prompts.
 
-### 12. Deploy Script `k8sbased.sh`
+### 13. Deploy Script `k8sbased.sh`
 
 **File**: [deploy/common/k8sbased.sh](deploy/common/k8sbased.sh)
 
@@ -209,13 +233,13 @@ Core deploy logic: passes `--scanner-image`/`--scanner-db-image` to roxctl; sets
 - [deploy/common/scanner-local-patch.yaml](deploy/common/scanner-local-patch.yaml) -- V2 local resources
 - [deploy/common/scanner-hpa-patch.yaml](deploy/common/scanner-hpa-patch.yaml) -- V2 HPA
 
-### 13. Secured Cluster Image Defaults
+### 14. Secured Cluster Image Defaults
 
 **File**: [image/templates/helm/stackrox-secured-cluster/internal/defaults/50-images.yaml.htpl](image/templates/helm/stackrox-secured-cluster/internal/defaults/50-images.yaml.htpl)
 
 Remove the `image.scanner` and `image.scannerDb` sections (registry, name, tag, repository, fullRef) -- these reference the slim scanner v2 images and are dead code with scanner v2 always disabled. Keep `image.scannerV4` and `image.scannerV4DB`.
 
-### 14. Helm Unit Tests
+### 15. Helm Unit Tests
 
 **Critical test files**:
 - [pkg/helm/charts/tests/centralservices/testdata/helmtest/scanner.test.yaml](pkg/helm/charts/tests/centralservices/testdata/helmtest/scanner.test.yaml) -- Full scanner v2 chart tests (deployment, services, netpol, PSP). These must be updated: tests that assert scanner v2 resources exist will fail since scanner is now always disabled.
@@ -223,7 +247,7 @@ Remove the `image.scanner` and `image.scannerDb` sections (registry, name, tag, 
 - [pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/scanner-slim.test.yaml](pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/scanner-slim.test.yaml) -- Secured cluster slim scanner tests.
 - [pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/scanner-v4.test.yaml](pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/scanner-v4.test.yaml) -- V2 default/upgrade rules.
 
-### 15. Operator Tests
+### 16. Operator Tests
 
 - Translation tests: `operator/internal/central/values/translation/translation_test.go`, `operator/internal/securedcluster/values/translation/translation_test.go`, `operator/internal/values/translation/translation_test.go`
 - Defaulting tests: `operator/internal/central/extensions/reconcile_defaulting_test.go`, `operator/internal/securedcluster/extensions/reconcile_defaulting_test.go`
@@ -233,7 +257,7 @@ Remove the `image.scanner` and `image.scannerDb` sections (registry, name, tag, 
 - Kuttl E2E fixtures: `operator/tests/common/central-cr-assert.yaml`, `central-cr-without-scanner-v4.yaml`, and other files that assert `scanner`/`scanner-db` deployments exist
 - Keep [tests/feature_flag_test.go](tests/feature_flag_test.go) as-is (it already skips `ROX_LEGACY_SCANNER`)
 
-### 16. E2E Bats Tests
+### 17. E2E Bats Tests
 
 **File**: [tests/e2e/run-scanner-v4-install.bats](tests/e2e/run-scanner-v4-install.bats)
 
@@ -291,9 +315,15 @@ Structure: deploy old chart (central + sensor), upgrade to HEAD chart.
 - **Before upgrade** (line 968): Keep `verify_scannerV2_deployed` -- old roxctl deploys v2.
 - **After upgrade** (line 980): Flip to `verify_no_scannerV2_deployed`.
 
+### 18. CHANGELOG
+
+**File**: [CHANGELOG.md](CHANGELOG.md)
+
+Add an entry under `[NEXT RELEASE]` > `Removed Features` documenting the complete removal of Scanner V2 (StackRox Scanner / Clairify) and its full replacement by Scanner V4. This qualifies as a "particularly noteworthy" user-visible change per the CHANGELOG guidelines.
+
 ## What We Are NOT Changing (follow-up work)
 
-- `ROX_LEGACY_SCANNER` feature flag definition and its Go default remain `enabled` -- runtime Go code continues to work
+- Go runtime code gated by `features.LegacyScanner.Enabled()` remains in the codebase (now permanently inactive)
 - `pkg/scanners/clairify/` package -- untouched
 - `central/cve/fetcher/` orchestrator CVE scanning code -- untouched
 - `central/sensor/service/pipeline/nodeinventory/` and `nodes/` pipelines -- untouched
