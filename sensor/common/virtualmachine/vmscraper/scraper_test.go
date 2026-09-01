@@ -269,9 +269,6 @@ func unchangedResult() *vsockclient.GetReportResult {
 	}
 }
 
-//go:fix inline
-func strPtr(s string) *string { return new(s) }
-
 func metaWithMapping(hash string, path pb.RepoCPEMappingUpdatePath) *pb.ResponseMeta {
 	return &pb.ResponseMeta{
 		RepoCpeMappingHash:       new(hash),
