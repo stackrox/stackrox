@@ -20,11 +20,9 @@
 #
 # scannerV4:
 #
-#   # If this is set to false, Scanner V4 will be enabled and deployed.
-#   # Note that currently Scanner V4 cannot be used as the only scanner component.
-#   # Instead it must be currently deployed side-by-side with StackRox Scanner (scanner.disable=false).
+#   # If this is set to true, Scanner V4 will not be deployed.
 #   # If it is set to true, no other setting in this section will have any effect.
-#   disable: true
+#   disable: false
 #
 #   # Scanner V4 consists of three components: indexer, matcher and db.
 #   # But when deployed as part of secured-cluster-services the only components

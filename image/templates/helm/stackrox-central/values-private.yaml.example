@@ -144,39 +144,6 @@
 #         <PEM-encoded Central DB cert private key>
 #         -----END RSA PRIVATE KEY-----
 #
-# # Secret configuration options for the StackRox Scanner deployment.
-# scanner:
-#   # The password to be used for authenticating database access. This is not user-relevant
-#   # and only serves to properly secure the database with a pre-shared secret. If this
-#   # setting is omitted, a password will be automatically generated upon initial deployment,
-#   # and the existing password will be used upon upgrades.
-#   dbPassword:
-#     value: <scanner database password value>
-#
-#   # Internal "scanner.stackrox.svc" service TLS certificate for the Scanner deployment.
-#   # Omit to auto-generate (initial deployment) or use existing (upgrade).
-#   serviceTLS:
-#     cert: |
-#       -----BEGIN CERTIFICATE-----
-#       <PEM-encoded Scanner service certificate>
-#       -----END CERTIFICATE-----
-#     key: |
-#       -----BEGIN RSA PRIVATE KEY-----
-#       <PEM-encoded Scanner service cert private key>
-#       -----END RSA PRIVATE KEY-----
-#
-#   # Internal "scanner-db.stackrox" service TLS certificate for the Scanner DB deployment.
-#   # Omit to auto-generate (initial deployment) or use existing (upgrade).
-#   dbServiceTLS:
-#     cert: |
-#       -----BEGIN CERTIFICATE-----
-#       <PEM-encoded Scanner DB service certificate>
-#       -----END CERTIFICATE-----
-#     key: |
-#       -----BEGIN RSA PRIVATE KEY-----
-#       <PEM-encoded Scanner DB service cert private key>
-#       -----END RSA PRIVATE KEY-----
-#
 # # Secret configuration options for the Scanner V4 deployment.
 # scannerV4:
 #   indexer:
