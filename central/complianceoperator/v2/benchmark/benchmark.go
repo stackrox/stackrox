@@ -22,11 +22,11 @@ var (
 		regexp.MustCompile(".+-nerc-cip$|.+-nerc-cip-.+"): {shortName: "NERC-CIP", provider: "NERC"},
 		regexp.MustCompile(".+-pci-dss$|.+-pci-dss-.+"):   {shortName: "PCI-DSS", provider: "PCI"},
 
-		regexp.MustCompile("^ocp[45]-cis(-.+)?"):                          {shortName: "CIS-OCP", provider: "CIS"},
-		regexp.MustCompile("^ocp[45]-high$|^ocp[45]-high-.+"):             {shortName: "NIST-800-53", provider: "NIST"},
-		regexp.MustCompile("^ocp[45]-moderate$|^ocp[45]-moderate-.+"):     {shortName: "NIST-800-53", provider: "NIST"},
-		regexp.MustCompile("^rhcos[45]-high$|^rhcos[45]-high-.+"):         {shortName: "NIST-800-53", provider: "NIST"},
-		regexp.MustCompile("^rhcos[45]-moderate$|^rhcos[45]-moderate-.+"): {shortName: "NIST-800-53", provider: "NIST"},
+		regexp.MustCompile("^ocp[45]-cis(-.+)?$"):        {shortName: "CIS-OCP", provider: "CIS"},
+		regexp.MustCompile("^ocp[45]-high(-.+)?$"):       {shortName: "NIST-800-53", provider: "NIST"},
+		regexp.MustCompile("^ocp[45]-moderate(-.+)?$"):   {shortName: "NIST-800-53", provider: "NIST"},
+		regexp.MustCompile("^rhcos[45]-high(-.+)?$"):     {shortName: "NIST-800-53", provider: "NIST"},
+		regexp.MustCompile("^rhcos[45]-moderate(-.+)?$"): {shortName: "NIST-800-53", provider: "NIST"},
 	}
 
 	log = logging.LoggerForModule()
