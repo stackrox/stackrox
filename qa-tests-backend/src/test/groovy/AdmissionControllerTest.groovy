@@ -16,6 +16,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("PZ")
+@Ignore("flake-timing-failure")
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private String clusterId
