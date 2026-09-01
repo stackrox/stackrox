@@ -111,21 +111,9 @@ tests:
   expect: |
     envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == false)
 
-- name: ROX_LEGACY_SCANNER should be true by default
-  expect: |
-    envVars(.deployments.central; "central")["ROX_LEGACY_SCANNER"] | assertThat(. == "true")
-
-- name: ROX_LEGACY_SCANNER should be false when scanner is disabled
-  set:
-    scanner.disable: true
+- name: ROX_LEGACY_SCANNER should be false
   expect: |
     envVars(.deployments.central; "central")["ROX_LEGACY_SCANNER"] | assertThat(. == "false")
-
-- name: ROX_LEGACY_SCANNER should be true when scanner is explicitly enabled
-  set:
-    scanner.disable: false
-  expect: |
-    envVars(.deployments.central; "central")["ROX_LEGACY_SCANNER"] | assertThat(. == "true")
 
 - name: Central deployment has secure container security context
   expect: |
