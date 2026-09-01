@@ -12,16 +12,15 @@ import (
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
-
 
 var listenerCtx = sac.WithAllAccess(context.Background())
 
