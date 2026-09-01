@@ -8,6 +8,12 @@
     { "profileName": "ocp4-bsi-2022" },
     { "profileName": "ocp4-bsi-node-2022" },
     { "profileName": "rhcos4-bsi" },
-    { "profileName": "rhcos4-bsi-2022" }
+    { "profileName": "rhcos4-bsi-2022" },
+    { "profileName": "ocp5-bsi" },
+    { "profileName": "ocp5-bsi-node" },
+    { "profileName": "ocp5-bsi-2022" },
+    { "profileName": "ocp5-bsi-node-2022" },
+    { "profileName": "rhcos5-bsi" },
+    { "profileName": "rhcos5-bsi-2022" }
   ]
 }

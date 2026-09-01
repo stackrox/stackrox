@@ -1,9 +1,0 @@
-{
-  "name": "CIS Red Hat OpenShift Container Platform 5 Benchmark",
-  "provider": "CIS",
-  "shortName": "CIS-OCP",
-  "profiles": [
-    { "profileName": "ocp5-cis" },
-    { "profileName": "ocp5-cis-node" }
-  ]
-}
