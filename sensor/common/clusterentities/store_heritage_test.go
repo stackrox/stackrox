@@ -278,6 +278,56 @@ func TestApplyPastToEntityData(t *testing.T) {
 	}
 }
 
+// TestApplyPastToEntityData_NoDuplicateEndpoints is a regression test for endpoints being
+// duplicated because applyPastToEntityData added entries to data.endpoints while ranging over it.
+// Adding keys to a map during iteration is nondeterministic in Go (a new key "may be produced or
+// may be skipped"); with enough endpoints the buggy version reliably re-visited freshly added
+// past-IP endpoints and appended their info a second time.
+func TestApplyPastToEntityData_NoDuplicateEndpoints(t *testing.T) {
+	const nPorts = 64
+	data := createSensorEntityData("current123", "10.2.2.2")
+	for i := range nPorts {
+		port := uint16(1000 + i)
+		data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), port, net.TCP), EndpointTargetInfo{ContainerPort: port})
+	}
+
+	added := applyPastToEntityData(data, &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.1.1.1"})
+	assert.True(t, added)
+
+	// Every endpoint (current and past) must carry exactly one info; a longer slice means the map
+	// was mutated while being ranged over and an entry was processed twice.
+	assert.Len(t, data.endpoints, 2*nPorts, "expected current + past endpoints and nothing else")
+	for ep, infos := range data.endpoints {
+		assert.Lenf(t, infos, 1, "endpoint %v has duplicate infos: %v", ep, infos)
+	}
+}
+
+// TestApplyPastToEntityData_MultiplePastNoCompounding is a regression test for endpoints compounding
+// across past entries: applyHeritageData reuses a single EntityData for all past sensors, so deriving
+// past endpoints from data.endpoints (which grows each entry) rather than from an immutable snapshot
+// caused the per-endpoint info slice to double with every additional past sensor (1, 2, 4, 8, ...).
+func TestApplyPastToEntityData_MultiplePastNoCompounding(t *testing.T) {
+	data := createSensorEntityData("current123", "10.2.2.2")
+	data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 8443, net.TCP), EndpointTargetInfo{ContainerPort: 8443})
+	data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 9090, net.TCP), EndpointTargetInfo{ContainerPort: 9090})
+
+	past := []*heritage.SensorMetadata{
+		{ContainerID: "past1", PodIP: "10.1.1.1"},
+		{ContainerID: "past2", PodIP: "10.1.1.2"},
+		{ContainerID: "past3", PodIP: "10.1.1.3"},
+		{ContainerID: "past4", PodIP: "10.1.1.4"},
+	}
+	for _, entry := range past {
+		assert.True(t, applyPastToEntityData(data, entry))
+	}
+
+	// 2 ports for the current IP plus 2 ports per past IP, each with exactly one info.
+	assert.Len(t, data.endpoints, 2*(1+len(past)), "unexpected number of endpoints")
+	for ep, infos := range data.endpoints {
+		assert.Lenf(t, infos, 1, "endpoint %v has duplicate infos: %v", ep, infos)
+	}
+}
+
 func TestEntityData_String_SlicesCollectFix(t *testing.T) {
 	// Test justification: Validates the slices.Collect fix for proper formatting
 	tests := map[string]struct {
