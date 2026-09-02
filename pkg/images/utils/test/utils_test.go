@@ -606,6 +606,38 @@ func TestFillScanStatsV2(t *testing.T) {
 	}
 }
 
+// TestFilterSuppressedCVEsNoCloneV2 confirms that filtering out suppressed CVEs also
+// updates ScanStats to match (ROX-36389).
+func TestFilterSuppressedCVEsNoCloneV2(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+
+	image := &storage.ImageV2{
+		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		Digest: "sha",
+		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Vulns: []*storage.EmbeddedVulnerability{
+						{Cve: "cve-1", Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY},
+						{Cve: "cve-2", Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY, State: storage.VulnerabilityState_DEFERRED},
+					},
+				},
+			},
+		},
+		// ScanStats reflects the unfiltered scan, as it would for an image already
+		// fetched from the datastore before filtering.
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 2},
+	}
+
+	utils.FilterSuppressedCVEsNoCloneV2(image)
+
+	if assert.Len(t, image.GetScan().GetComponents()[0].GetVulns(), 1) {
+		assert.Equal(t, "cve-1", image.GetScan().GetComponents()[0].GetVulns()[0].GetCve())
+	}
+	assert.Equal(t, int32(1), image.GetScanStats().GetCveCount())
+}
+
 func TestStripDatasourceNoClone(t *testing.T) {
 	original := &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{
