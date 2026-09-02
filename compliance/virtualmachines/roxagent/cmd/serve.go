@@ -167,6 +167,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		if err := urlUpdater.Start(serveCtx); err != nil {
 			return fmt.Errorf("starting repository-to-CPE mapping downloader: %w", err)
 		}
+		defer urlUpdater.Stop()
 	}
 
 	var wg sync.WaitGroup
@@ -178,21 +179,14 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		// Exiting, as systemd would kill this service anyway after TimeoutStartSec.
 		cancelServe()
 		wg.Wait()
-		if urlUpdater != nil {
-			urlUpdater.Stop()
-		}
 		return err
 	}
 
 	<-serveCtx.Done()
 	// Wait for Serve's graceful drain (in-flight connections) and the
 	// rescan loop to finish before returning, so the process doesn't exit
-	// mid-drain or mid-scan. urlUpdater.Stop waits for its own background
-	// refresh loop the same way, once serveCtx is already done.
+	// mid-drain or mid-scan.
 	wg.Wait()
-	if urlUpdater != nil {
-		urlUpdater.Stop()
-	}
 	return nil
 }
 

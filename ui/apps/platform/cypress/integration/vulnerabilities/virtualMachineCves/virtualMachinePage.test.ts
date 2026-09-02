@@ -74,9 +74,9 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
                 .eq(0)
                 .within(() => {
                     cy.get('td[data-label="CVE"]').contains('CVE-2024-0001');
-                    cy.get('td[data-label="CVE severity"]').contains('Critical');
+                    cy.get('td[data-label="Top CVE severity"]').contains('Critical');
                     cy.get('td[data-label="CVE status"]').contains('Fixable');
-                    cy.get('td[data-label="CVSS"]').contains('9.8');
+                    cy.get('td[data-label="Top CVSS"]').contains('9.8');
                     cy.get('td[data-label="EPSS probability"]').contains('85.000%');
                     cy.get('td[data-label="Affected components"]').contains('1 component');
                 });

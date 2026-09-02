@@ -31,7 +31,9 @@ func main() {
 	cfg := index.DefaultNodeIndexerConfig()
 
 	scanner := inventory.NewNodeInventoryComponentScanner(np)
-	scanner.Connect(env.NodeScanningEndpoint.Setting())
+	if env.NodeInventoryContainerEnabled.BooleanSetting() {
+		scanner.Connect(env.NodeScanningEndpoint.Setting())
+	}
 	cachedNodeIndexer := index.NewCachingNodeIndexer(cfg, env.NodeIndexCacheDuration.DurationSetting(), env.NodeIndexCachePath.Setting())
 
 	ctx, cancel := context.WithCancel(context.Background())
