@@ -36,6 +36,10 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 
 RUN make copy-go-binaries-to-image-dir
 
+RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
+    find . -maxdepth 1 -type f -name 'roxctl-*' \
+        -exec sh -c 'f="${1#./}"; tar czf "$f.tar.gz" "$f"' _ {} \;
+
 
 FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:57ad03c5db9382cd266af665819f60e5b1490fc27ee589320159df59f9eb453b as ui-builder
 
@@ -104,10 +108,7 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admiss
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-RUN cd /assets/downloads/cli && \
-    find . -maxdepth 1 -type f -name 'roxctl-*' -executable \
-        -exec sh -c 'f="${1#./}"; tar czf "$f.tar.gz" "$f"' _ {} \; && \
-    GOARCH=$(uname -m) ; \
+RUN GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl
 
