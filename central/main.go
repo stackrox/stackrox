@@ -581,6 +581,9 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		if features.ACMAccessControlDelegation.Enabled() {
+			authProviderBackendFactories[openshift.TypeNameWithACMAccessControlDelegation] = openshift.NewFactoryWithACMAccessControlDelegation
+		}
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
