@@ -173,7 +173,7 @@ func (res *ImageCVEQueryResponse) GetImageCreatedAt() string {
 	if res.ImageCreatedAt == nil {
 		return "Not Available"
 	}
-	return res.ImageCreatedAt.Format("January 02, 2006")
+	return res.ImageCreatedAt.Format("2006-01-02")
 }
 
 // ReportQueryParts contains the parts used to build the report query
