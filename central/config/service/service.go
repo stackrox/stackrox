@@ -138,13 +138,13 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	// Validation:
 
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
+		return nil, errox.InvalidArgs.New("config must be specified")
 	}
 	if req.GetConfig().GetPrivateConfig() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "private config must be specified")
+		return nil, errox.InvalidArgs.New("private config must be specified")
 	}
 	if req.GetConfig().GetPublicConfig() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "public config must be specified")
+		return nil, errox.InvalidArgs.New("public config must be specified")
 	}
 
 	if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
@@ -205,7 +205,7 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 // UpdateVulnerabilityExceptionConfig updates Central's vulnerability exception configuration.
 func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, req *v1.UpdateVulnerabilityExceptionConfigRequest) (*v1.UpdateVulnerabilityExceptionConfigResponse, error) {
 	if req == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "request cannot be nil")
+		return nil, errox.InvalidArgs.New("request cannot be nil")
 	}
 	exceptionCfg := v1tostorage.VulnerabilityExceptionConfig(req.GetConfig())
 	if err := validateExceptionConfigReq(exceptionCfg); err != nil {
@@ -276,11 +276,11 @@ func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex(_ context.Context, _ 
 
 func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) error {
 	if config == nil {
-		return errors.Wrap(errox.InvalidArgs, "vulnerability exception config must be specified")
+		return errox.InvalidArgs.New("vulnerability exception config must be specified")
 	}
 	expiryOptions := config.GetExpiryOptions()
 	if len(expiryOptions.GetDayOptions()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "number of days based vulnerability exception expiry options must be specified")
+		return errox.InvalidArgs.New("number of days based vulnerability exception expiry options must be specified")
 	}
 
 	var atLeastOneEnabled bool
@@ -291,15 +291,15 @@ func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) er
 		}
 		atLeastOneEnabled = true
 		if dayOption.GetNumDays() <= 0 {
-			return errors.Wrap(errox.InvalidArgs, "enabled number of days based vulnerability exception expiry option must be least one day")
+			return errox.InvalidArgs.New("enabled number of days based vulnerability exception expiry option must be least one day")
 		}
 		if !seenDays.Add(int(dayOption.GetNumDays())) {
-			return errors.Wrap(errox.InvalidArgs, "all enabled number of days based vulnerability exception expiry options must be unique")
+			return errox.InvalidArgs.New("all enabled number of days based vulnerability exception expiry options must be unique")
 		}
 	}
 
 	if expiryOptions.GetFixableCveOptions() == nil {
-		return errors.Wrap(errox.InvalidArgs, "fixability based vulnerability exception expiry options must be specified")
+		return errox.InvalidArgs.New("fixability based vulnerability exception expiry options must be specified")
 	}
 
 	atLeastOneEnabled = atLeastOneEnabled ||
@@ -308,7 +308,7 @@ func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) er
 		expiryOptions.GetCustomDate() ||
 		expiryOptions.GetIndefinite()
 	if !atLeastOneEnabled {
-		return errors.Wrap(errox.InvalidArgs, "at least one vulnerability exception expiry option must be enabled")
+		return errox.InvalidArgs.New("at least one vulnerability exception expiry option must be enabled")
 	}
 	return nil
 }

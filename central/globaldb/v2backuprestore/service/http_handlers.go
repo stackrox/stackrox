@@ -35,24 +35,24 @@ func (s *service) handleRestore(req *http.Request) error {
 	headerLenStr := queryValues.Get("headerLength")
 	headerLen, err := strconv.Atoi(headerLenStr)
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "invalid header length %q: %v", headerLenStr, err)
+		return errox.InvalidArgs.CausedByf("invalid header length %q: %v", headerLenStr, err)
 	}
 
 	id := queryValues.Get("id")
 	if id == "" {
 		id = uuid.NewV4().String()
 	} else if _, err := uuid.FromString(id); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "ID must be unset or a valid UUID (got: %q)", id)
+		return errox.InvalidArgs.Newf("ID must be unset or a valid UUID (got: %q)", id)
 	}
 
 	headerBytes := make([]byte, headerLen)
 	if _, err := io.ReadFull(req.Body, headerBytes); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "could not read request header (%d bytes): %v", headerLen, err)
+		return errox.InvalidArgs.CausedByf("could not read request header (%d bytes): %v", headerLen, err)
 	}
 
 	var header v1.DBRestoreRequestHeader
 	if err := header.UnmarshalVTUnsafe(headerBytes); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "could not parse restore request header: %v", err)
+		return errox.InvalidArgs.CausedByf("could not parse restore request header: %v", err)
 	}
 
 	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call
@@ -92,31 +92,31 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 	queryValues := req.URL.Query()
 	processID := queryValues.Get("id")
 	if processID == "" {
-		return errors.Wrap(errox.InvalidArgs, "need to specify a restore process ID for resuming")
+		return errox.InvalidArgs.New("need to specify a restore process ID for resuming")
 	}
 
 	attemptID := queryValues.Get("attemptId")
 	if _, err := uuid.FromString(attemptID); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "invalid attempt ID %q: %v", attemptID, err)
+		return errox.InvalidArgs.CausedByf("invalid attempt ID %q: %v", attemptID, err)
 	}
 
 	posStr := queryValues.Get("pos")
 	pos, err := strconv.ParseInt(posStr, 10, 64)
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "invalid position specification %q: %v", posStr, err)
+		return errox.InvalidArgs.CausedByf("invalid position specification %q: %v", posStr, err)
 	}
 
 	crc32Str := queryValues.Get("crc32")
 	crc32Val, err := strconv.ParseUint(crc32Str, 16, 32)
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "invalid CRC32 value %q: %v", crc32Str, err)
+		return errox.InvalidArgs.CausedByf("invalid CRC32 value %q: %v", crc32Str, err)
 	}
 
 	crc32 := uint32(crc32Val)
 
 	activeProcess := s.mgr.GetActiveRestoreProcess()
 	if activeProcess.Metadata().GetId() != processID {
-		return errors.Wrapf(errox.InvalidArgs, "specified process ID %s does not match ID of currently active restore process", processID)
+		return errox.InvalidArgs.Newf("specified process ID %s does not match ID of currently active restore process", processID)
 	}
 
 	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call

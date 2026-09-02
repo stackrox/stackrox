@@ -88,7 +88,7 @@ func (s *serviceImpl) GetCloudSource(ctx context.Context, request *v1.GetCloudSo
 ) (*v1.GetCloudSourceResponse, error) {
 	resourceID := request.GetId()
 	if resourceID == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id must be provided")
+		return nil, errox.InvalidArgs.New("id must be provided")
 	}
 	cloudSource, err := s.ds.GetCloudSource(ctx, resourceID)
 	if err != nil {
@@ -125,10 +125,10 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 ) (*v1.CreateCloudSourceResponse, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
+		return nil, errox.InvalidArgs.New("empty cloud source")
 	}
 	if v1CloudSource.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when creating a new cloud source")
+		return nil, errox.InvalidArgs.New("id field must be empty when creating a new cloud source")
 	}
 	v1CloudSource.Id = uuid.NewV4().String()
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
@@ -153,7 +153,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 ) (*v1.Empty, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
+		return nil, errox.InvalidArgs.New("empty cloud source")
 	}
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 
@@ -188,7 +188,7 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 ) (*v1.Empty, error) {
 	resourceID := request.GetId()
 	if resourceID == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id must be provided")
+		return nil, errox.InvalidArgs.New("id must be provided")
 	}
 	if err := s.ds.DeleteCloudSource(ctx, resourceID); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete cloud source %q", resourceID)
@@ -200,7 +200,7 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSourceRequest) (*v1.Empty, error) {
 	v1CloudSource := req.GetCloudSource()
 	if v1CloudSource == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
+		return nil, errox.InvalidArgs.New("empty cloud source")
 	}
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 

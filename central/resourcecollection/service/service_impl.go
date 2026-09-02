@@ -103,7 +103,7 @@ func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
+		return nil, errox.InvalidArgs.New("Id should be set when requesting a collection")
 	}
 
 	collection, exists, err := s.datastore.Get(ctx, request.GetId())
@@ -111,7 +111,7 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Errorf("Could not get collection: %s", err)
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "collection with id %q does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("collection with id %q does not exist", request.GetId())
 	}
 
 	deployments, err := s.tryDeploymentMatching(ctx, collection, request.GetOptions())
@@ -142,7 +142,7 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
+		return nil, errox.InvalidArgs.New("Non empty collection id must be specified to delete a collection")
 	}
 
 	if err := s.checkVulnerabilityReportReferences(ctx, request); err != nil {
@@ -171,7 +171,7 @@ func (s *serviceImpl) checkCollectionReferences(ctx context.Context, request *v1
 		for _, referencedCollection := range referencedCollections {
 			names = append(names, referencedCollection.GetName())
 		}
-		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following collections: %q.", strings.Join(names, ", "))
+		return errox.ReferencedByAnotherObject.Newf("Collection is in use by the following collections: %q.", strings.Join(names, ", "))
 	}
 	return nil
 }
@@ -190,7 +190,7 @@ func (s *serviceImpl) checkVulnerabilityReportReferences(ctx context.Context, re
 		for _, reportConfigurations := range reportConfigurations {
 			names = append(names, reportConfigurations.GetName())
 		}
-		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following report configuratios: %q.", strings.Join(names, ", "))
+		return errox.ReferencedByAnotherObject.Newf("Collection is in use by the following report configuratios: %q.", strings.Join(names, ", "))
 	}
 	return nil
 }
@@ -212,7 +212,7 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 
 func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
+		return nil, errox.InvalidArgs.New("Non empty collection id must be specified to update a collection")
 	}
 
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
@@ -231,7 +231,7 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
 	collectionName := strings.TrimSpace(request.GetName())
 	if collectionName == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
+		return nil, errox.InvalidArgs.New("Collection name should not be empty")
 	}
 
 	slimUser := authn.UserFromContext(ctx)
@@ -240,7 +240,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	}
 
 	if len(request.GetResourceSelectors())+len(request.GetEmbeddedCollectionIds()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors or embedded collections were provided")
+		return nil, errox.InvalidArgs.New("No resource selectors or embedded collections were provided")
 	}
 
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())

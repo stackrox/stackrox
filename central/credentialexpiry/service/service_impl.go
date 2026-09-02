@@ -62,7 +62,7 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_CENTRAL_DB:
 		return s.getCentralDBCertExpiry()
 	}
-	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
+	return nil, errox.InvalidArgs.Newf("invalid component: %v", request.GetComponent())
 }
 
 func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error) {
@@ -94,16 +94,16 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 		return nil, errors.Wrap(err, "Error reading central db config")
 	}
 	if pgConfigMap == nil {
-		return nil, errors.Wrap(errox.NotFound, "Central db config not found")
+		return nil, errox.NotFound.New("Central db config not found")
 	}
 
 	host, ok := pgConfigMap["host"]
 	if !ok {
-		return nil, errors.Wrap(errox.InvalidArgs, "'host' parameter not defined in central db config")
+		return nil, errox.InvalidArgs.New("'host' parameter not defined in central db config")
 	}
 	port, ok := pgConfigMap["port"]
 	if !ok {
-		return nil, errors.Wrap(errox.InvalidArgs, "'port' parameter not defined in central db config")
+		return nil, errox.InvalidArgs.New("'port' parameter not defined in central db config")
 	}
 	endpoint := net.JoinHostPort(host, port)
 
@@ -216,7 +216,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		}
 	}
 	if len(clairifyEndpoints) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
+		return nil, errox.InvalidArgs.New("StackRox Scanner is not integrated")
 	}
 	errC := make(chan error, len(clairifyEndpoints))
 	expiryC := make(chan *time.Time, len(clairifyEndpoints))
@@ -265,7 +265,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 
 func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
 	if !features.ScannerV4.Enabled() {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scanner V4 is not enabled/integrated")
+		return nil, errox.InvalidArgs.New("Scanner V4 is not enabled/integrated")
 	}
 	indexerConfig := s.scannerConfigs[mtls.ScannerV4IndexerSubject]
 	matcherConfig := s.scannerConfigs[mtls.ScannerV4MatcherSubject]

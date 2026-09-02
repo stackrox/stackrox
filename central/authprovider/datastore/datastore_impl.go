@@ -141,7 +141,7 @@ func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force
 
 func verifyAuthProviderOrigin(ctx context.Context, ap *storage.AuthProvider) error {
 	if !declarativeconfig.CanModifyResource(ctx, ap) {
-		return pkgErrors.Wrapf(errox.NotAuthorized, "auth provider %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.Newf("auth provider %q's origin is %s, cannot be modified or deleted with the current permission",
 			ap.GetName(), ap.GetTraits().GetOrigin())
 	}
 	return nil
@@ -166,7 +166,7 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 		return nil, errox.InvalidArgs.Newf("auth provider %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
-		utils.Should(pkgErrors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
+		utils.Should(errox.InvalidArgs.Newf("unknown mutability mode given: %q",
 			provider.GetTraits().GetMutabilityMode()))
 	}
 	return nil, errox.InvalidArgs.Newf("auth provider %q is immutable", id)

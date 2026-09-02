@@ -145,7 +145,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+		return nil, errox.InvalidArgs.New("Report configuration id is required")
 	}
 	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
@@ -156,7 +156,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("report configuration with id '%s' does not exist", request.GetId())
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, request.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
@@ -167,7 +167,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	slimUser := authn.UserFromContext(ctx)
 	for _, reportSnapshot := range reportSnapshots {
 		if slimUser.GetId() == reportSnapshot.GetRequester().GetId() {
-			return nil, errors.Wrap(errox.InvalidArgs, "User has a report job running for this configuration.")
+			return nil, errox.InvalidArgs.New("User has a report job running for this configuration.")
 		}
 	}
 
@@ -191,7 +191,7 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -214,19 +214,18 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 
 func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+		return nil, errox.InvalidArgs.New("Report configuration id is required")
 	}
 	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
+		return nil, errox.NotFound.Newf("report configuration with id '%s' does not exist", req.GetId())
 	}
 	// Remove report configs with empty scope. This can happen after downgrade to a version that has less scoping methods and doesn't support the new scoping method.
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
-		return nil, errors.Wrapf(errox.InvalidArgs,
-			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", req.GetId())
 	}
 
 	converted, err := s.convertProtoReportConfigurationToV2(config)
@@ -239,7 +238,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *apiV2.RawQuery) (*apiV2.CountReportConfigurationsResponse, error) {
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
 	if err != nil {
@@ -250,19 +249,19 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 
 func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.Empty, error) {
 	if id.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
+		return nil, errox.InvalidArgs.New("Report configuration id is required for deletion")
 	}
 	_, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding report config")
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
+		return nil, errox.NotFound.Newf("Report config ID '%s' not found", id.GetId())
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
 	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
 	if len(reportSnapshots) > 0 {
-		return &apiV2.Empty{}, errors.Wrapf(errox.InvalidArgs, "Report config ID '%s' has job in preparing or waiting state", id.GetId())
+		return &apiV2.Empty{}, errox.InvalidArgs.Newf("Report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}
 
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
@@ -279,14 +278,14 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 
 func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+		return nil, errox.InvalidArgs.New("Empty request or id")
 	}
 	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
+		return nil, errox.NotFound.Newf("Report snapshot not found for job id %s", req.GetId())
 	}
 	status := s.convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
@@ -294,11 +293,11 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+		return nil, errox.InvalidArgs.New("Empty request or id")
 	}
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
@@ -324,7 +323,7 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 
 func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+		return nil, errox.InvalidArgs.New("Empty request or id")
 	}
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
@@ -333,12 +332,12 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	err = verifyNoUserSearchLabels(parsedQuery)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
@@ -370,7 +369,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		return nil, err
 	}
 	if req.GetReportConfigId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
+		return nil, errox.InvalidArgs.New("Report configuration ID is empty")
 	}
 	requesterID := authn.IdentityFromContextOrNil(ctx)
 	if requesterID == nil {
@@ -414,7 +413,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report job ID is empty")
+		return nil, errox.InvalidArgs.New("Report job ID is empty")
 	}
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
@@ -436,7 +435,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, err
 	}
 	if !cancelled {
-		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report job ID '%s' no longer queued."+
+		return nil, errox.InvariantViolation.Newf("Cannot cancel. Report job ID '%s' no longer queued."+
 			"It might already be preparing", req.GetId())
 	}
 
@@ -445,7 +444,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 
 func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportRequest) (*apiV2.Empty, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
+		return nil, errox.InvalidArgs.New("Empty request or report job id")
 	}
 
 	slimUser := authn.UserFromContext(ctx)
@@ -459,24 +458,24 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 	}
 
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%q'.", req.GetId())
+		return nil, errox.NotFound.Newf("Error finding report snapshot with job ID '%q'.", req.GetId())
 	}
 
 	if slimUser.GetId() != rep.GetRequester().GetId() {
-		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be deleted by a user who did not request the report.")
+		return nil, errox.NotAuthorized.New("Report cannot be deleted by a user who did not request the report.")
 	}
 
 	status := rep.GetReportStatus()
 	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Report job id %q did not generate a downloadable report and hence no report to delete.", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Report job id %q did not generate a downloadable report and hence no report to delete.", req.GetId())
 	}
 
 	blobName := common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId())
 	switch status.GetRunState() {
 	case storage.ReportStatus_FAILURE:
-		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q has failed and no downloadable report to delete", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Report job %q has failed and no downloadable report to delete", req.GetId())
 	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
-		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
 	}
 
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
@@ -485,7 +484,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 			sac.ResourceScopeKeys(resources.Administration)),
 	)
 	if err = s.blobStore.Delete(ctx, blobName); err != nil {
-		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to delete downloadable report %q", req.GetId())
+		return nil, errox.InvariantViolation.Newf("Failed to delete downloadable report %q", req.GetId())
 	}
 	return &apiV2.Empty{}, nil
 }
@@ -494,11 +493,11 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.ReportRequestViewBased) (*apiV2.RunReportResponseViewBased, error) {
 	// Check if view-based reports feature is enabled
 	if !features.VulnerabilityViewBasedReports.Enabled() {
-		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+		return nil, errox.NotImplemented.New("View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
 	}
 
 	if req == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
+		return nil, errox.InvalidArgs.New("Empty Request Body")
 	}
 
 	requesterID := authn.IdentityFromContextOrNil(ctx)
@@ -522,7 +521,7 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
-		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
+		return nil, errox.ServerError.CausedByf("Scheduler error:%s", err)
 	}
 
 	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
@@ -531,12 +530,12 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	// Check if view-based reports feature is enabled
 	if !features.VulnerabilityViewBasedReports.Enabled() {
-		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+		return nil, errox.NotImplemented.New("View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
 	}
 
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
@@ -574,7 +573,7 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	// Check if view-based reports feature is enabled
 	if !features.VulnerabilityViewBasedReports.Enabled() {
-		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
+		return nil, errox.NotImplemented.New("View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
 	}
 
 	slimUser := authn.UserFromContext(ctx)
@@ -584,12 +583,12 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	err = verifyNoUserSearchLabels(parsedQuery)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(

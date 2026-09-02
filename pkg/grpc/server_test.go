@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
@@ -228,13 +227,13 @@ func (s *pingServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, fullMet
 }
 
 func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
-	return nil, errors.Wrap(errox.InvalidArgs, "missing argument")
+	return nil, errox.InvalidArgs.New("missing argument")
 }
 
 func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 	testPort := testutils.GetFreeTestPort()
 	url := fmt.Sprintf("https://localhost:%d/v1/ping", testPort)
-	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
+	jsonPayload := `{"code":3, "details":[], "error":"missing argument", "message":"missing argument"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 

@@ -588,7 +588,7 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 				return "", err
 			}
 			if userHasAnotherReport {
-				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+				return "", errox.AlreadyExists.Newf("User already has a report running for config ID '%s'",
 					snapshot.GetReportConfigurationId())
 			}
 		}

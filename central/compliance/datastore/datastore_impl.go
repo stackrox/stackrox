@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -119,7 +118,7 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.Wrapf(errox.NotFound, "ClusterID %s", clusterID)
+		return false, errox.NotFound.Newf("ClusterID %s", clusterID)
 	}
 	results, err := ds.storage.GetLatestRunMetadataBatch(ctx, clusterID, standardIDs)
 	if err != nil || len(results) == 0 {

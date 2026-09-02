@@ -64,7 +64,7 @@ func (s *serviceImpl) CountProcesses(ctx context.Context, request *v1.RawQuery) 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	numProcesses, err := s.processIndicators.Count(ctx, parsedQuery)
@@ -84,7 +84,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
+		return nil, errox.NotFound.Newf("deployment with id '%s' does not exist", req.GetDeploymentId())
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
@@ -128,7 +128,7 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", deploymentID)
+		return nil, errox.NotFound.Newf("deployment with id '%s' does not exist", deploymentID)
 	}
 
 	key := &storage.ProcessBaselineKey{

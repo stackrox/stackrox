@@ -59,7 +59,7 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotDatastore
 // ValidateReportConfiguration validates the given report configuration object
 func (v *Validator) ValidateReportConfiguration(config *apiV2.ReportConfiguration) error {
 	if config.GetName() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration name is empty")
+		return errox.InvalidArgs.New("Report configuration name is empty")
 	}
 
 	if err := v.validateSchedule(config); err != nil {
@@ -85,27 +85,27 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 	}
 	switch schedule.GetIntervalType() {
 	case apiV2.ReportSchedule_UNSET:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
+		return errox.InvalidArgs.New("Report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
 	case apiV2.ReportSchedule_DAILY:
 		if schedule.GetDaysOfWeek() != nil || schedule.GetDaysOfMonth() != nil {
-			return errors.Wrap(errox.InvalidArgs, "Daily schedule must not specify days of week or days of month")
+			return errox.InvalidArgs.New("Daily schedule must not specify days of week or days of month")
 		}
 	case apiV2.ReportSchedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for weekly schedule")
+			return errox.InvalidArgs.New("Report configuration must specify days of week for weekly schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
 			if day < 0 || day > 6 {
-				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
+				return errox.InvalidArgs.New("Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
 			}
 		}
 	case apiV2.ReportSchedule_MONTHLY:
 		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for monthly schedule")
+			return errox.InvalidArgs.New("Report configuration must specify days of the month for monthly schedule")
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
 			if day != 1 && day != 15 {
-				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th day of the month")
+				return errox.InvalidArgs.New("Reports can be sent out only 1st or 15th day of the month")
 			}
 		}
 	}
@@ -116,13 +116,13 @@ func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
 	notifiers := config.GetNotifiers()
 	if len(notifiers) == 0 {
 		if config.GetSchedule() != nil {
-			return errors.Wrap(errox.InvalidArgs, "Report configurations with a schedule must specify a notifier.")
+			return errox.InvalidArgs.New("Report configurations with a schedule must specify a notifier.")
 		}
 		return nil
 	}
 	for _, notifier := range notifiers {
 		if notifier.GetEmailConfig() == nil {
-			return errors.Wrap(errox.InvalidArgs, "Notifier must specify an email notifier configuration")
+			return errox.InvalidArgs.New("Notifier must specify an email notifier configuration")
 		}
 		if err := v.validateEmailConfig(notifier.GetEmailConfig()); err != nil {
 			return err
@@ -133,24 +133,24 @@ func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
 
 func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfiguration) error {
 	if emailConfig.GetNotifierId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
+		return errox.InvalidArgs.New("Report configuration must specify a valid email notifier")
 	}
 	if len(emailConfig.GetMailingLists()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
+		return errox.InvalidArgs.New("Report configuration must specify at least one email recipient to send the report to")
 	}
 	subjectMaxLen := env.ReportCustomEmailSubjectMaxLen.IntegerSetting()
 	if len(emailConfig.GetCustomSubject()) > subjectMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", subjectMaxLen)
+		return errox.InvalidArgs.Newf("Custom email subject must be fewer than %d characters", subjectMaxLen)
 	}
 	bodyMaxLen := env.ReportCustomEmailBodyMaxLen.IntegerSetting()
 	if len(emailConfig.GetCustomBody()) > bodyMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", bodyMaxLen)
+		return errox.InvalidArgs.Newf("Custom email body must be fewer than than %d characters", bodyMaxLen)
 	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
 	for _, addr := range emailConfig.GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
+			errorList.AddError(errox.InvalidArgs.Newf("Invalid email recipient address: %s", addr))
 		}
 	}
 	if !errorList.Empty() {
@@ -163,7 +163,7 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
+		return errox.NotFound.Newf("Notifier with ID %s not found.", emailConfig.GetNotifierId())
 	}
 	return nil
 }
@@ -171,24 +171,24 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) error {
 	scope := config.GetResourceScope()
 	if scope == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+		return errox.InvalidArgs.New("Report configuration must specify a valid resource scope")
 	}
 	switch ref := scope.GetScopeReference().(type) {
 	case *apiV2.ResourceScope_CollectionScope:
 		return v.validateCollectionScope(ref.CollectionScope)
 	case *apiV2.ResourceScope_EntityScope:
 		if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection as resource scope")
+			return errox.InvalidArgs.New("Report configuration must specify a valid collection as resource scope")
 		}
 		return validateEntityScope(ref.EntityScope)
 	default:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+		return errox.InvalidArgs.New("Report configuration must specify a valid resource scope")
 	}
 }
 
 func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionReference) error {
 	if collectionRef == nil || collectionRef.GetCollectionId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID")
+		return errox.InvalidArgs.New("Report configuration must specify a valid collection ID")
 	}
 	collectionID := collectionRef.GetCollectionId()
 	// Use allAccessCtx since report creator/updater might not have permissions for workflowAdministrationSAC
@@ -197,7 +197,7 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 		return errors.Errorf("Error trying to lookup attached collection, Collection: %s, Error: %s", collectionID, err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
+		return errox.NotFound.Newf("Collection %s not found.", collectionID)
 	}
 	return nil
 }
@@ -211,7 +211,7 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 // 5. a rule has no values, or a label rule contains values that are not in `key=value` format.
 func validateEntityScope(es *apiV2.EntityScope) error {
 	if es == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
+		return errox.InvalidArgs.New("Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
 	}
 	type entityFieldKey struct {
 		entity apiV2.ScopeEntity
@@ -220,23 +220,21 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 	seen := set.NewSet[entityFieldKey]()
 	for _, rule := range es.GetRules() {
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_UNSET {
-			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule: %s", rule.GetEntity())
+			return errox.InvalidArgs.Newf("Unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
-			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
+			return errox.InvalidArgs.Newf("Unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
-			return errors.Wrap(errox.InvalidArgs, "Annotation field is not supported for cluster entity scope rules")
+			return errox.InvalidArgs.New("Annotation field is not supported for cluster entity scope rules")
 		}
 		key := entityFieldKey{entity: rule.GetEntity(), field: rule.GetField()}
 		if !seen.Add(key) {
-			return errors.Wrapf(errox.InvalidArgs,
-				"One rule per (entity, field) pair in entity scope rules is expected. Duplicate (entity, field) pair found: entity=%v field=%v. ", rule.GetEntity(), rule.GetField())
+			return errox.InvalidArgs.Newf("One rule per (entity, field) pair in entity scope rules is expected. Duplicate (entity, field) pair found: entity=%v field=%v. ", rule.GetEntity(), rule.GetField())
 		}
 		if len(rule.GetValues()) == 0 {
-			return errors.Wrapf(errox.InvalidArgs,
-				"provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
+			return errox.InvalidArgs.Newf("provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
 		}
 		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
 		for _, rv := range rule.GetValues() {
@@ -244,19 +242,19 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			if isMapField {
 				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
 				if !found {
-					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
+					return errox.InvalidArgs.Newf("%v values must be in 'key=value' format", rule.GetField())
 				}
 				// Check the key for a Kubernetes qualified name.
 				if rv.GetMatchType() == apiV2.MatchType_EXACT {
 					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
-						return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+						return errox.InvalidArgs.Newf("invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
 					}
 				}
 				valOfValue = mapValue
 			}
 			if rv.GetMatchType() == apiV2.MatchType_REGEX {
 				if _, err := regexp.Compile(valOfValue); err != nil {
-					return errors.Wrapf(errox.InvalidArgs, "invalid regex %q: %v", valOfValue, err)
+					return errox.InvalidArgs.CausedByf("invalid regex %q: %v", valOfValue, err)
 				}
 			}
 		}
@@ -267,22 +265,22 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) error {
 	filters := config.GetVulnReportFilters()
 	if filters == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must include Vulnerability report filters")
+		return errox.InvalidArgs.New("Report configuration must include Vulnerability report filters")
 	}
 
 	if len(filters.GetImageTypes()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters should specify which image types to scan for CVEs. "+
+		return errox.InvalidArgs.New("Vulnerability report filters should specify which image types to scan for CVEs. " +
 			"The valid options are 'DEPLOYED' and 'WATCHED'.")
 	}
 
 	if filters.GetCvesSince() == nil {
-		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
+		return errox.InvalidArgs.New("Vulnerability report filters must specify how far back in time to look for CVEs. " +
 			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}
 	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
 		if q := filters.GetQuery(); q != "" {
 			if _, err := search.ParseQuery(q); err != nil {
-				return errors.Wrapf(errox.InvalidArgs, "Invalid query in vulnerability report filters: %s", err)
+				return errox.InvalidArgs.CausedByf("Invalid query in vulnerability report filters: %s", err)
 			}
 		}
 	}
@@ -301,18 +299,16 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
+		return nil, errox.NotFound.Newf("Report configuration id not found %s", configID)
 	}
 	// Verify ResourceScope is non-nil
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
-		return nil, errors.Wrapf(errox.InvalidArgs,
-			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
+		return nil, errox.InvalidArgs.Newf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
 			configID)
 	}
 
 	if notificationMethod == storage.ReportStatus_EMAIL && len(config.GetNotifiers()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs,
-			"Email request sent for a report configuration that does not have any email notifiers configured")
+		return nil, errox.InvalidArgs.New("Email request sent for a report configuration that does not have any email notifiers configured")
 	}
 
 	var collection *storage.ResourceCollection
@@ -324,7 +320,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 			return nil, errors.Wrapf(err, "Error finding collection ID '%s'", collectionID)
 		}
 		if !found {
-			return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", collectionID)
+			return nil, errox.NotFound.Newf("Collection ID '%s' not found", collectionID)
 		}
 	}
 
@@ -337,7 +333,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 		return nil, errors.Wrap(err, "Error finding attached notifiers")
 	}
 	if len(protoNotifiers) != len(notifierIDs) {
-		return nil, errors.Wrap(errox.NotFound, "Some of the attached notifiers not found")
+		return nil, errox.NotFound.New("Some of the attached notifiers not found")
 	}
 
 	return &reportGen.ReportRequest{
@@ -353,17 +349,17 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 		return errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", reportID)
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "Report snapshot with job ID '%s' does not exist", reportID)
+		return errox.NotFound.Newf("Report snapshot with job ID '%s' does not exist", reportID)
 	}
 
 	switch snapshot.GetReportStatus().GetRunState() {
 	case storage.ReportStatus_WAITING, storage.ReportStatus_PREPARING:
 		// valid states for cancellation — fall through
 	default:
-		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
+		return errox.InvalidArgs.Newf("Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
 	}
 	if requester.GetId() != snapshot.GetRequester().GetId() {
-		return errors.Wrap(errox.NotAuthorized, "Report job cannot be cancelled by a user who did not request the report.")
+		return errox.NotAuthorized.New("Report job cannot be cancelled by a user who did not request the report.")
 	}
 	return nil
 }
@@ -542,18 +538,18 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 	requesterID authn.Identity,
 ) (*reportGen.ReportRequest, error) {
 	if req == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request")
+		return nil, errox.InvalidArgs.New("Empty request")
 	}
 
 	// Currently only vulnerability view-based reports are supported.
 	if req.GetType() != apiV2.ReportRequestViewBased_VULNERABILITY {
-		return nil, errors.Wrap(errox.InvalidArgs, "unsupported report type")
+		return nil, errox.InvalidArgs.New("unsupported report type")
 	}
 
 	// Validate filters.
 	vbFilters := req.GetViewBasedVulnReportFilters()
 	if vbFilters == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "view-based vulnerability report filters must be provided")
+		return nil, errox.InvalidArgs.New("view-based vulnerability report filters must be provided")
 	}
 
 	// Convert API filters to storage filters.
