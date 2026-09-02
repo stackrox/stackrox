@@ -299,7 +299,6 @@
   {{- end -}}
 {{- end -}}
 
-{{ $_ := set $._rox "_legacyScannerEnabled" false }}
 
 {{/*
    ScannerV4 setup.
