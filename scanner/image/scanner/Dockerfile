@@ -57,7 +57,7 @@ COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-r
 # Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
 COPY --from=debugger /output/go/ /go/
 # Copy ci-minimal vulnerability bundle for fast CI/testing (18KB, 109 CVEs)
-COPY updater/ci/bundles/ci-minimal/vulnerabilities.zip /etc/scanner/ci-minimal-bundle.zip
+COPY bundles/ci-minimal/vulnerabilities.zip /etc/scanner/ci-minimal-bundle.zip
 
 RUN \
     chown -R 65534:65534 /tmp && \
