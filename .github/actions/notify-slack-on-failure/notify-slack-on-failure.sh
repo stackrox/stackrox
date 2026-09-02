@@ -14,7 +14,7 @@
 #
 # Required env vars: SLACK_WEBHOOK, RUN_URL, WORKFLOW, REPO
 # Used only when $MESSAGE is unset: GH_TOKEN, RUN_ID
-# Optional: MENTION, CONTEXT, MESSAGE, JOB_NAME_FILTER
+# Optional: MENTION, CONTEXT, MESSAGE, JOB_NAME_FILTER, INCLUDE_SUCCESSFUL_JOBS
 
 set -euo pipefail
 
@@ -27,6 +27,7 @@ MENTION="${MENTION:-}"
 CONTEXT="${CONTEXT:-}"
 MESSAGE="${MESSAGE:-}"
 JOB_NAME_FILTER="${JOB_NAME_FILTER:-}"
+INCLUDE_SUCCESSFUL_JOBS="${INCLUDE_SUCCESSFUL_JOBS:-}"
 
 max_messages_per_job=10
 
@@ -50,9 +51,18 @@ collect_annotations() {
             | jq --arg filter "$JOB_NAME_FILTER" '{ jobs: [.jobs[] | select(.name | contains($filter))] }')
     fi
 
+    # Jobs to inspect for annotations: only failure-like ones by default; every
+    # job (success included) when INCLUDE_SUCCESSFUL_JOBS is set. Either way,
+    # a successful job only ends up in SUMMARY below if it actually has real
+    # annotations (see the skip check in the loop).
+    local jobs_filter='.jobs[]'
+    if [ "$INCLUDE_SUCCESSFUL_JOBS" != "true" ]; then
+        jobs_filter='.jobs[] | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure"))'
+    fi
+
     # Plain text: rendered inside a Slack code block, not mrkdwn.
     SUMMARY=""
-    while IFS=$'\t' read -r job_id job_name failed_step; do
+    while IFS=$'\t' read -r job_id job_name job_conclusion failed_step; do
         # Exclude GitHub's generic "Process completed..." annotation (noise).
         # --paginate: a job can have >30 annotations (API's page size).
         local messages
@@ -60,6 +70,18 @@ collect_annotations() {
             --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message'); then
             # Distinct fallback so an API failure isn't confused with "no annotations".
             messages="(failed to fetch annotations for this job via the GitHub API; see the workflow run directly for details)"
+        fi
+
+        local is_failure_like=false
+        case "$job_conclusion" in
+            failure | timed_out | action_required | neutral | stale | startup_failure) is_failure_like=true ;;
+        esac
+
+        # A successful job with nothing to report contributes nothing (only
+        # relevant when INCLUDE_SUCCESSFUL_JOBS pulled it in above). A job
+        # that actually failed always shows up, even with no annotations.
+        if [ -z "$messages" ] && [ "$is_failure_like" = false ]; then
+            continue
         fi
 
         # Blank line between job blocks, but not before the first one.
@@ -77,7 +99,7 @@ collect_annotations() {
         else
             SUMMARY+="  - (no detailed error annotations found; see the workflow run for details)"
         fi
-    done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | [.id, .name, ([.steps[]? | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | .name][0] // "unknown step")] | @tsv')
+    done < <(printf '%s' "$jobs_json" | jq -r "$jobs_filter"' | [.id, .name, (.conclusion // "in_progress"), ([.steps[]? | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | .name][0] // "unknown step")] | @tsv')
 
     if [ -z "$SUMMARY" ]; then
         SUMMARY="(no failed jobs found; see the workflow run for details)"

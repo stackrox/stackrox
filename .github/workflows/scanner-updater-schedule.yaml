@@ -26,6 +26,8 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
       )
     runs-on: ubuntu-latest
+    outputs:
+      needs-notification: ${{ steps.matrix-scheduled.outputs.has_errors }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -62,18 +64,14 @@ jobs:
         echo "$result" > matrix-result.json
 
     - name: Log matrix errors
+      # This annotation is what send-notification (at the end of this
+      # workflow) picks up via include-successful-jobs, since this job
+      # doesn't fail just because some sources had scheduling errors.
       if: github.event_name != 'pull_request' && steps.matrix-scheduled.outputs.has_errors == 'true'
       env:
         ERRORS: ${{ steps.matrix-scheduled.outputs.errors }}
       run: |
         echo "::error::vulnerability updater scheduling errors: ${ERRORS}"
-
-    - name: Notify on matrix errors
-      if: github.event_name != 'pull_request' && steps.matrix-scheduled.outputs.has_errors == 'true'
-      uses: ./.github/actions/notify-slack-on-failure
-      with:
-        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        message: "Vulnerability updater scheduling errors: ${{ steps.matrix-scheduled.outputs.errors }}. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
 
     - name: Build updater matrix (PR)
       if: github.event_name == 'pull_request'
@@ -153,10 +151,12 @@ jobs:
       SLACK_ONCALL_SCANNER_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
 
   send-notification:
-    # Catches hard failures in build-matrix/plan, not just data-level errors
-    # reported by the matrix script (handled by "Notify on matrix errors" above).
+    # Covers both hard failures in build-matrix/plan and data-level scheduling
+    # errors reported by the matrix script (build-matrix succeeds either way).
     needs: [build-matrix, plan]
-    if: failure() && github.event_name != 'pull_request'
+    if: >-
+      github.event_name != 'pull_request' &&
+      (failure() || needs.build-matrix.outputs.needs-notification == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -168,3 +168,4 @@ jobs:
     - uses: ./.github/actions/notify-slack-on-failure
       with:
         slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        include-successful-jobs: "true"
