@@ -23,6 +23,8 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    # Use embedded ci-minimal bundle (18KB, 109 CVEs) for fast CI testing
+    vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
     resources:
       requests:
         cpu: "400m"
