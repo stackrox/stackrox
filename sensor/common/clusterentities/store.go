@@ -281,11 +281,18 @@ func (e *Store) applyHeritageData(dg dataGetter) bool {
 	// this immutable snapshot; deriving from modEntityData.endpoints instead would compound the
 	// endpoints added for earlier past entries, growing exponentially with the number of entries.
 	srcEndpoints := maps.Clone(modEntityData.endpoints)
+	changed := false
 	for _, entry := range past {
 		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), deploymentID)
 		if applyPastToEntityData(modEntityData, srcEndpoints, entry) {
-			e.Apply(map[string]*EntityData{deploymentID: modEntityData}, true)
+			changed = true
 		}
+	}
+	// modEntityData accumulates every past entry, so a single Apply after the loop suffices.
+	// Applying inside the loop re-sent the whole growing object as an incremental update on each
+	// iteration; the store dedupes with sets so the result was identical, just extra work.
+	if changed {
+		e.Apply(map[string]*EntityData{deploymentID: modEntityData}, true)
 	}
 	return true
 }
