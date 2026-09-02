@@ -37,6 +37,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
 - ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.
 - ROX-32969: The `roxctl-linux` symlink has been removed from the `/assets/downloads/cli/` directory inside the main container image. Only the architecture-specific binaries (`roxctl-linux-amd64`, `roxctl-linux-arm64`, etc.) remain. This change does not affect CLI downloads from the Central UI or any other supported download path.
 - ROX-33078: Fixed telemetry gatherer failing to report database size metrics when using an external database. The database name is now read from the connection config instead of using the hardcoded default.
