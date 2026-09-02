@@ -299,8 +299,6 @@
   {{- end -}}
 {{- end -}}
 
-{{/* Force scanner v2 disabled unconditionally. */}}
-{{- $_ := set $._rox "scanner" (dict "disable" true) -}}
 {{ $_ := set $._rox "_legacyScannerEnabled" false }}
 
 {{/*

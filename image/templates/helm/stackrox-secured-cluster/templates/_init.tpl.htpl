@@ -150,11 +150,10 @@
 [<- if not .KubectlOutput >]
 {{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
 
-{{/* Scanner V2 has been removed. Force disable regardless of user input. */}}
+{{/* Scanner V2 has been removed. Warn if a user still tries to enable it. */}}
 {{- if and $._rox.scanner (not (kindIs "invalid" $._rox.scanner.disable)) (not $._rox.scanner.disable) -}}
   {{- include "srox.warn" (list $ "Scanner V2 has been removed. The `scanner.disable` setting is ignored. Scanner V4 is the replacement.") -}}
 {{- end -}}
-{{- $_ := set $._rox "scanner" (dict "disable" true) -}}
 [<- end >]
 
 {{/* Expand applicable config values */}}
