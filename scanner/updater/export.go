@@ -31,6 +31,26 @@ import (
 
 const (
 	rhelVexUpdaterName = "rhel-vex"
+
+	// rhcosFixedInVersionCEL rewrites RHCOS dotted-quad OCI FixedInVersion
+	// tags (OCP 4.19+) to RHEL-style so they match node /etc/os-release VERSION.
+	// Example: 4.19.9.6.202506252250-0 → 9.6.20250625-0
+	// Compact (416.94.…), pre-4.19 dotted-quad, and already-RHEL-style tags are left alone.
+	rhcosFixedInVersionCEL = `
+type == "oci" && name.startsWith("rhcos")
+  ? cel.bind(base, fixed_in.split("-")[0],
+      cel.bind(rel, fixed_in.size() > base.size() ? fixed_in.substring(base.size()) : "",
+        cel.bind(parts, base.split("."),
+          parts.size() >= 5
+          && parts[0].matches("^[0-9]+$")
+          && parts[1].matches("^[0-9]+$")
+          && (int(parts[0]) > 4 || (int(parts[0]) == 4 && int(parts[1]) >= 19))
+            ? parts[2] + "." + parts[3] + "." +
+              (parts[4].size() > 8 ? parts[4].substring(0, 8) : parts[4]) +
+              rel
+            : fixed_in)))
+  : fixed_in
+`
 )
 
 var (
@@ -200,34 +220,37 @@ func rhelVexOpts() []updates.ManagerOption {
 	return []updates.ManagerOption{
 		updates.WithEnabled([]string{rhelVexUpdaterName}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
-			rhelVexUpdaterName: func(i any) error {
-				ctx := context.Background()
-				ctx = log.With(ctx, "updater", rhelVexUpdaterName)
-
-				// This function gets called for both the Factory and the Updater.
-				// We only need to configure the Factory (which has the CompressedFileTimeout field).
-				switch cfg := i.(type) {
-				case *vex.FactoryConfig:
-					// Configure the factory with custom timeout.
-					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
-					if timeout != "" {
-						parsedTimeout, err := time.ParseDuration(timeout)
-						if err != nil {
-							slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
-						} else {
-							cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
-							slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
-						}
-					}
-				case *vex.UpdaterConfig:
-					// Updater config - nothing to configure here.
-				default:
-					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
-				}
-				return nil
-			},
+			rhelVexUpdaterName: rhelVexConfig,
 		}),
 	}
+}
+
+// rhelVexConfig is called for both the Factory and the Updater.
+// Factory-only settings (timeout, FixedInVersion CEL) are applied here;
+// Claircore copies them onto the Updater in Factory.UpdaterSet.
+func rhelVexConfig(i any) error {
+	ctx := context.Background()
+	ctx = log.With(ctx, "updater", rhelVexUpdaterName)
+
+	switch cfg := i.(type) {
+	case *vex.FactoryConfig:
+		timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
+		if timeout != "" {
+			parsedTimeout, err := time.ParseDuration(timeout)
+			if err != nil {
+				slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
+			} else {
+				cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
+				slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
+			}
+		}
+		cfg.FixedInVersionCEL = rhcosFixedInVersionCEL
+	case *vex.UpdaterConfig:
+		// Updater config - nothing to configure here.
+	default:
+		return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
+	}
+	return nil
 }
 
 // TODO(ROX-26672): remove this.
