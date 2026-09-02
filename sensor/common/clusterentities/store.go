@@ -324,6 +324,11 @@ func applyPastToEntityData(data *EntityData, srcEndpoints map[net.NumericEndpoin
 	// Craft endpoints with the same port and proto but with the past IP.
 	for endpoint, infos := range srcEndpoints {
 		newEndpoint := net.MakeNumericEndpoint(pastIP, endpoint.IPAndPort.Port, endpoint.L4Proto)
+		if _, exists := data.endpoints[newEndpoint]; exists {
+			// The past pod IP coincides with an endpoint that already exists (e.g. the current
+			// Sensor's IP was previously used by this past instance); nothing new to add.
+			continue
+		}
 		// Container port and port name included in `infos` remain the same
 		for _, info := range infos {
 			data.AddEndpoint(newEndpoint, info)

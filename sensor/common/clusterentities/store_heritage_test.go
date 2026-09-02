@@ -330,6 +330,23 @@ func TestApplyPastToEntityData_MultiplePastNoCompounding(t *testing.T) {
 	}
 }
 
+// TestApplyPastToEntityData_PastIPEqualsCurrent is a regression test for a past pod IP that coincides
+// with the current Sensor's endpoint IP: deriving a past endpoint would collide with an existing key
+// and append a duplicate info to it. Applying the same past entry must leave one info per endpoint.
+func TestApplyPastToEntityData_PastIPEqualsCurrent(t *testing.T) {
+	data := createSensorEntityData("current123", "10.2.2.2")
+	data.AddEndpoint(net.MakeNumericEndpoint(net.ParseIP("10.2.2.2"), 8443, net.TCP), EndpointTargetInfo{ContainerPort: 8443})
+
+	srcEndpoints := maps.Clone(data.endpoints)
+	// Past sensor reused the current pod IP but has a different container ID.
+	assert.True(t, applyPastToEntityData(data, srcEndpoints, &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.2.2.2"}))
+
+	assert.Len(t, data.endpoints, 1, "no new endpoint expected for a coinciding IP")
+	for ep, infos := range data.endpoints {
+		assert.Lenf(t, infos, 1, "endpoint %v has duplicate infos: %v", ep, infos)
+	}
+}
+
 func TestEntityData_String_SlicesCollectFix(t *testing.T) {
 	// Test justification: Validates the slices.Collect fix for proper formatting
 	tests := map[string]struct {
