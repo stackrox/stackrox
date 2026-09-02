@@ -397,6 +397,9 @@ func FillScanStatsV2(i *storage.ImageV2) {
 	if i.GetScan() == nil {
 		return
 	}
+	if i.GetScanStats() != nil {
+		return
+	}
 	i.ScanStats = &storage.ImageV2_ScanStats{}
 	i.GetScanStats().ComponentCount = int32(len(i.GetScan().GetComponents()))
 
