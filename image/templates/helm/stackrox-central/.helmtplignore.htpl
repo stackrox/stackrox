@@ -1,4 +1,11 @@
-[< if eq .RenderMode "scannerV4TLSOnly" >]
+[< if eq .RenderMode "scannerOnly" >]
+!templates/_*.tpl
+!templates/02-scanner-v4-*.yaml
+templates/*
+[< else if eq .RenderMode "scannerTLSOnly" >]
+!templates/_*.tpl
+templates/*
+[< else if eq .RenderMode "scannerV4TLSOnly" >]
 !templates/_*.tpl
 !templates/02-scanner-v4-03-db-tls-secret.yaml
 !templates/02-scanner-v4-03-indexer-tls-secret.yaml
