@@ -21,8 +21,8 @@ set registry [lindex $argv 3]
 # exitWith is an integer interpreted as binary field, where each bit denotes a different error
 # 8 - a question has not been displayed
 # 4 - prompt for entering main-image       is missing default value hint
-# 2 - prompt for entering scanner-db-image is missing default value hint
-# 1 - prompt for entering scanner-image    is missing default value hint
+# 2 - prompt for entering scanner-v4-db-image is missing default value hint
+# 1 - prompt for entering scanner-v4-image    is missing default value hint
 # 0 - no error
 set exitWith 0
 
@@ -100,55 +100,7 @@ expect "List of config maps to add as declarative configuration*:" { send "\n" }
 expect "The deployment tool to use (kubectl, helm, helm-values)*:" { send "\n" }
 expect "Istio version when deploying into an Istio-enabled cluster*:" { send "\n" }
 
-# The scanner-db image to use (default: "docker.io/stackrox/scanner-db:2.21.0-15-g448f2dc8fa"):
-# The scanner-db image to use (default: "quay.io/stackrox-io/scanner-db:3.67.x-296-g56df6a892d"):
-# The scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
-expect {
-  default {
-    send_user "\nFATAL: No question about scanner-db image\n"
-    exit 8
-  }
-  "The scanner-db * (if unset, the default will be used):" {
-    send_user "WARNING: roxctl does not suggest any registry for scanner-db"
-    send "\n"
-    set exitWith [expr {$exitWith + 2}]
-  }
-  "The scanner-db * (default: \"$registry/scanner-db:*\"):" {
-    send_user "roxctl suggests correct registry for scanner-db"
-    send "\n"
-  }
-  # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner-db * (default: \"$registry/rhacs-scanner-db-rhel9:*\"):" {
-    send_user "roxctl suggests correct registry for scanner-db"
-    send "\n"
-  }
-}
-# The scanner image to use (default: "docker.io/stackrox/scanner:2.21.0-15-g448f2dc8fa"):
-# The scanner image to use (default: "quay.io/stackrox-io/scanner:3.67.x-296-g56df6a892d"):
-expect {
-  default {
-    send_user "\nFATAL: No question about scanner image\n"
-    exit 8
-  }
-  "The scanner * (if unset, the default will be used):" {
-    send_user "exitWith before $exitWith"
-    send_user "WARNING: roxctl does not suggest any registry for scanner"
-    send "\n"
-    set exitWith [expr {$exitWith + 1}]
-    send_user "exitWith is now $exitWith"
-  }
-  "The scanner * (default: \"$registry/scanner:*\"):" {
-    send_user "roxctl suggests correct registry for scanner"
-    send "\n"
-  }
-  # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner * (default: \"$registry/rhacs-scanner-rhel9:*\"):" {
-    send_user "roxctl suggests correct registry for scanner"
-    send "\n"
-  }
-}
-
-# The scanner-v4-db image to use (if unset, a default will be used according to --image-defaults) (default: "quay.io/rhacs-eng/scanner-v4:4.3.x-1304-g0b0cc2d4f7"):
+# The scanner-v4-db image to use (if unset, a default will be used according to --image-defaults) (default: "quay.io/rhacs-eng/scanner-v4-db:4.3.x-1304-g0b0cc2d4f7"):
 expect {
   default {
     send_user "\nFATAL: No question about scanner-v4-db image\n"
