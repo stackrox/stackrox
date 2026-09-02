@@ -93,9 +93,6 @@ type Sensor struct {
 	reconcile  atomic.Bool
 
 	clusterID clusterIDPeekSetter
-
-	// repo2CPE is the background mapping cache used by VM scanning.
-	repo2CPE *scannerdefinitions.Repo2CPE
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -247,17 +244,6 @@ func (s *Sensor) Start() {
 		} else {
 			customRoutes = append(customRoutes, *route)
 			s.AddNotifiable(scannerclient.ResetNotifiable())
-		}
-	}
-
-	if features.VirtualMachines.Enabled() {
-		repo2cpe, err := scannerdefinitions.NewRepo2CPE(s.centralEndpoint, centralCertificates)
-		if err != nil {
-			utils.Should(errors.Wrap(err, "Failed to create repo-to-CPE refresher"))
-		} else {
-			s.repo2CPE = repo2cpe
-			s.AddNotifiable(repo2cpe)
-			s.components = append(s.components, repo2cpe)
 		}
 	}
 
