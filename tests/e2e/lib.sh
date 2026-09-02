@@ -39,9 +39,6 @@ POD_CONTAINERS_MAP["pod: central - container: central"]="central-[A-Za-z0-9]+-[A
 POD_CONTAINERS_MAP["pod: central-db - container: init-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: central-db - container: central-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-central-db-previous.log"
 POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-controller-[A-Za-z0-9]+-[A-Za-z0-9]+-manager-previous.log"
-POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
@@ -50,7 +47,6 @@ POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za
 POD_CONTAINERS_MAP["pod: admission-control - container: admission-control"]="admission-control-[A-Za-z0-9]+-[A-Za-z0-9]+-admission-control-previous.log"
 POD_CONTAINERS_MAP["pod: collector - container: collector"]="collector-[A-Za-z0-9]+-collector-previous.log"
 POD_CONTAINERS_MAP["pod: collector - container: compliance"]="collector-[A-Za-z0-9]+-compliance-previous.log"
-POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
 
 # Note: the caller must make sure to redirect stdin to /dev/null where needed.
 retrying_kubectl() {
@@ -740,10 +736,6 @@ deploy_sensor_via_operator() {
         --insecure-skip-tls-verify \
         --output -' \
     | retrying_kubectl -n "${sensor_namespace}" apply -f -
-
-    if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
-        scanner_component_setting="AutoSense"
-    fi
 
     local secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr.envsubst.yaml"
     if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
