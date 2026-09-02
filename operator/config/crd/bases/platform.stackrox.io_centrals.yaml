@@ -3130,9 +3130,7 @@ spec:
                   scannerComponent:
                     description: |-
                       Can be specified as "Enabled" or "Disabled".
-                      If this field is not specified, the following defaulting takes place:
-                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
-                      * for new installations starting with ACS 4.8, the default is: Enabled.
+                      The default is: Enabled.
                     enum:
                     - Default
                     - Enabled
