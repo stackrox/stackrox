@@ -2,18 +2,11 @@ package extensions
 
 import (
 	"testing"
-	"time"
 
-	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
-	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func verifyScannerDBPassword(t *testing.T, data types.SecretDataMap, _ *time.Time) {
-	assert.NotEmpty(t, data[scannerDBPasswordKey])
-}
 
 func TestReconcileScannerDBPassword(t *testing.T) {
 	existingScannerDBPassword := &v1.Secret{
