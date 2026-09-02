@@ -4,8 +4,11 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -31,6 +34,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -76,6 +80,99 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 func (suite *NodePostgresDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 	suite.db.Close()
+}
+
+// TestConcurrentUpsertNode_KeyedMutexPreventsRegression is the datastore-layer counterpart of
+// store_test.go's TestStore_ConcurrentUpsert_BypassingOuterLock. That test proves the store layer alone has
+// a check-then-act race in isUpdated(): the read-old-scan-and-decide step isn't covered by the store's own
+// keyFence lock. This test drives the same workload through UpsertNode, the production call path, which
+// wraps the entire read-decide-write sequence in a per-node-ID keyedMutex (see UpsertNode in
+// datastore_impl.go). Every caller in this codebase reaches the store exclusively through UpsertNode, so
+// this path determines whether concurrent upserts can regress scan_time; the test asserts scan_time never
+// regresses even under heavy concurrency.
+func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutexPreventsRegression() {
+	allowAllCtx := sac.WithAllAccess(context.Background())
+
+	node := getTestNodeForPostgres(fixtureconsts.Node1, "concurrent-node")
+	baseTime := time.Now().Add(-24 * time.Hour)
+	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&baseTime)
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
+
+	const iterations = 500
+	const freshWriters = 4
+	const metaWriters = 4
+	var wg sync.WaitGroup
+	// A writer that fails leaves the intended workload incomplete, so a zero regression count would be
+	// meaningless. Track upsert failures and assert none happened.
+	var upsertFailures atomic.Int64
+
+	// Simulates the nodeindex pipeline: always a fresh, monotonically increasing ScanTime.
+	for w := range freshWriters {
+		wg.Go(func() {
+			for i := range iterations {
+				fresh := node.CloneVT()
+				t := baseTime.Add(time.Duration(w*iterations+i+1) * time.Millisecond)
+				fresh.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&t)
+				if err := suite.datastore.UpsertNode(allowAllCtx, fresh); err != nil {
+					upsertFailures.Add(1)
+				}
+			}
+		})
+	}
+
+	// Simulates the nodes pipeline: frequent metadata-only churn, Scan explicitly nil.
+	for w := range metaWriters {
+		wg.Go(func() {
+			for i := range iterations {
+				metaOnly := node.CloneVT()
+				metaOnly.Scan = nil
+				metaOnly.Labels = map[string]string{"writer": fmt.Sprintf("%d-%d", w, i)}
+				if err := suite.datastore.UpsertNode(allowAllCtx, metaOnly); err != nil {
+					upsertFailures.Add(1)
+				}
+			}
+		})
+	}
+
+	var regressions atomic.Int64
+	stop := make(chan struct{})
+	var pollWG sync.WaitGroup
+	for range 2 {
+		pollWG.Go(func() {
+			lastSeen := baseTime
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				current, exists, err := suite.datastore.GetNode(allowAllCtx, node.GetId())
+				if err == nil && exists {
+					st := current.GetScan().GetScanTime().AsTime()
+					if st.Before(lastSeen) {
+						regressions.Add(1)
+					} else {
+						lastSeen = st
+					}
+				}
+				// Yield between reads so the pollers don't hammer the DB in a tight busy-loop.
+				time.Sleep(time.Millisecond)
+			}
+		})
+	}
+
+	wg.Wait()
+	close(stop)
+	pollWG.Wait()
+
+	suite.Zero(upsertFailures.Load(),
+		"every concurrent UpsertNode must succeed; a failure means the intended workload did not complete, "+
+			"which would make the regression assertion below meaningless")
+	suite.Zero(regressions.Load(),
+		"scan_time must never regress through UpsertNode, since every real caller (nodeindex and nodes "+
+			"pipelines alike) goes through the per-node-ID keyedMutex that wraps the entire read-decide-write "+
+			"sequence; a non-zero count here would mean the keyedMutex itself has a bug, not just the store "+
+			"layer's already-known gap")
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {

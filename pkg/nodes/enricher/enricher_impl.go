@@ -100,11 +100,13 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 		return errorList.ToError()
 	}
 
+	skippedScannerTypes := make([]string, 0, len(scanners))
 	for _, scanner := range scanners {
 		// Prevent unnecessary scanner calls - v4 only works on indexReports, v2/Clairify only on nodeInventory.
 		// If both, indexReport and nodeInventory, are unset, we do not skip to keep the legacy NodeScan v1 working.
 		if (scanner.GetNodeScanner().Type() == types.ScannerV4 && indexReport == nil && nodeInventory != nil) ||
 			(scanner.GetNodeScanner().Type() == types.Clairify && nodeInventory == nil && indexReport != nil) {
+			skippedScannerTypes = append(skippedScannerTypes, scanner.GetNodeScanner().Type())
 			continue
 		}
 		log.Debugf("Enriching Node with Scanner %s / %s", scanner.GetNodeScanner().Type(), scanner.GetNodeScanner().Name())
@@ -113,6 +115,21 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 			continue
 		}
 		return nil
+	}
+
+	// Only warn for the v4/nodeindex path (indexReport != nil). A v4-only Central that still receives
+	// legacy v2 NodeInventory reports would otherwise log this on every such report indefinitely - benign
+	// noise, since v2-on-a-v4-only-Central is an expected transitional state. When an IndexReport arrives and
+	// every registered scanner was still skipped, ScannerV4 is not registered and the node scan silently
+	// never refreshes - the condition worth surfacing.
+	if indexReport != nil && errorList.Empty() && len(skippedScannerTypes) == len(scanners) {
+		// node.Scan is left completely untouched by this call (this is NOT surfaced as an error - ToError()
+		// returns nil below), so the caller will upsert whatever scan the node already had. That upsert looks
+		// identical to a successful no-op scan refresh in logs/metrics downstream.
+		log.Warnf("No applicable node scanner ran for node %s:%s (inventory=%t, indexReport=%t); registered "+
+			"scanner types were all skipped as inapplicable: %v. The node's existing scan, if any, was not "+
+			"refreshed by this call.",
+			node.GetClusterName(), node.GetName(), nodeInventory != nil, indexReport != nil, skippedScannerTypes)
 	}
 
 	return errorList.ToError()
