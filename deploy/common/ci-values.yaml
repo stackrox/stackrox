@@ -23,9 +23,13 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     resources:
       requests:
         cpu: "400m"
+        memory: "4Gi"
+      limits:
+        memory: "4Gi"
   indexer:
     replicas: 1
     autoscaling:
