@@ -1,8 +1,0 @@
-# Exclude intermediate uncompressed bundle files
-*.json.zst
-
-# Exclude full bundle directory (working directory for generation)
-/full/
-
-# Include the final ci-minimal bundle
-!/ci-minimal/vulnerabilities.zip
