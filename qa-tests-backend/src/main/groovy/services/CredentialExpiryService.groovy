@@ -23,4 +23,10 @@ class CredentialExpiryService extends BaseService {
             GetCertExpiry.Request.newBuilder().setComponent(GetCertExpiry.Component.SCANNER).build()
         ).getExpiry()
     }
+
+    static Timestamp getScannerV4CertExpiry() {
+        return getCredentialExpiryServiceClient().getCertExpiry(
+            GetCertExpiry.Request.newBuilder().setComponent(GetCertExpiry.Component.SCANNER_V4).build()
+        ).getExpiry()
+    }
 }
