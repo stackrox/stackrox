@@ -583,7 +583,7 @@ func newInitBundleMeta() (string, *storage.InitBundleMeta) {
 }
 
 func assertCertificateBundleComplete(s *sensorServiceTestSuite, certBundle map[string]string) {
-	s.Len(certBundle, 11, "expected 11 entries (1 CA cert, 5 service certs, 5 service keys) in bundle")
+	s.Len(certBundle, 15, "expected 15 entries (1 CA cert, 7 service certs, 7 service keys) in bundle")
 }
 
 type HandleConnectionFunc = func(ctx context.Context, _ *central.SensorHello, cluster *storage.Cluster, _ pipeline.ClusterPipeline, _ central.SensorService_CommunicateServer) error
