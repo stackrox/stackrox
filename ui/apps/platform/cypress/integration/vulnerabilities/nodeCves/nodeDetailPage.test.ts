@@ -122,11 +122,11 @@ describe('Node CVEs - Node Detail Page', () => {
             );
 
             // check sorting of Top Severity column
-            sortByTableHeader('Top severity');
+            sortByTableHeader('Top CVE severity');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'Severity', reversed: true })
             );
-            sortByTableHeader('Top severity');
+            sortByTableHeader('Top CVE severity');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'Severity', reversed: false })
             );
@@ -142,11 +142,11 @@ describe('Node CVEs - Node Detail Page', () => {
             );
 
             // check sorting of CVSS column
-            sortByTableHeader('CVSS');
+            sortByTableHeader('Top CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: true })
             );
-            sortByTableHeader('CVSS');
+            sortByTableHeader('Top CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: false })
             );
@@ -177,7 +177,7 @@ describe('Node CVEs - Node Detail Page', () => {
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
             );
-            assertOnEachRowForColumn('Top severity', (_, cell) => {
+            assertOnEachRowForColumn('Top CVE severity', (_, cell) => {
                 expect(cell.innerText).to.contain('Low');
             });
             filterHelpers.clearFilters();
@@ -195,7 +195,7 @@ describe('Node CVEs - Node Detail Page', () => {
             // filtering by CVSS should only display rows with a CVSS in range
             filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
             waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVSS:<8'));
-            assertOnEachRowForColumn('CVSS', (_, cell) => {
+            assertOnEachRowForColumn('Top CVSS', (_, cell) => {
                 const cvss = parseFloat(cell.innerText.replace(/[^0-9.]/g, ''));
                 expect(cvss).to.be.lessThan(8);
             });

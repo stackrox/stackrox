@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -27,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/admission-control/errors"
 	"github.com/stackrox/rox/sensor/admission-control/resources"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1"
@@ -64,7 +62,6 @@ type state struct {
 	eventOnlyK8sDetector   runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
-	enforcedOps                     map[admission.Operation]struct{}
 
 	centralConn *grpc.ClientConn
 }
@@ -80,11 +77,6 @@ func (s *state) clusterID() string {
 func (s *state) admissionTimeoutCtx() (context.Context, context.CancelFunc) {
 	timeout := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
 	return context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-}
-
-func (s *state) activeForOperation(op admission.Operation) bool {
-	_, active := s.enforcedOps[op]
-	return active
 }
 
 const (
@@ -379,11 +371,6 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	allK8sEventPolicies := detection.NewPolicySet(m, m)
 	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(m, m), detection.NewPolicySet(m, m)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
-		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-			log.Warn(errors.ImageScanUnavailableMsg(policy))
-			continue
-		}
-
 		if err := allK8sEventPolicies.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 		}
@@ -400,19 +387,13 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
 	}
 
-	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
-	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
+	enforce := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 
 	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
 	specOnlyPolicies := detection.NewPolicySet(m, m)
 	enrichmentRequiredPolicies := detection.NewPolicySet(m, m)
-	if enforceOnCreates || enforceOnUpdates {
+	if enforce {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-			if policyfields.AlertsOnMissingEnrichment(policy) &&
-				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-				log.Warn(errors.ImageScanUnavailableMsg(policy))
-				continue
-			}
 			compiled, err := detection.CompilePolicy(policy, m, m)
 			if err != nil {
 				log.Errorf("Unable to compile policy %q (%s): %v", policy.GetName(), policy.GetId(), err)
@@ -426,15 +407,6 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	enforcedOperations := make(map[admission.Operation]struct{})
-	if enforceOnCreates {
-		enforcedOperations[admission.Create] = struct{}{}
-	}
-
-	if enforceOnUpdates {
-		enforcedOperations[admission.Update] = struct{}{}
-	}
-
 	oldState := m.currentState()
 	newState := &state{
 		AdmissionControlSettings:         newSettings,
@@ -445,7 +417,6 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		eventOnlyK8sDetector:             runtime.NewDetector(k8sEventOnlyPolicies),
 		bypassForUsers:                   allowAlwaysUsers,
 		bypassForGroups:                  allowAlwaysGroups,
-		enforcedOps:                      enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {

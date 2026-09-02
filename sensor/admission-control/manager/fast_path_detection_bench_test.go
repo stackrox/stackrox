@@ -313,7 +313,6 @@ func benchSettings(fastPolicies, slowPolicies []*storage.Policy) *sensor.Admissi
 		ClusterConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
 				Enabled:        true,
-				ScanInline:     true,
 				TimeoutSeconds: 10,
 			},
 		},

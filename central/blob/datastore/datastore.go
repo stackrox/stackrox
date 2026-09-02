@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -27,6 +28,7 @@ var (
 type Datastore interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
+	UpsertWithWriter(ctx context.Context, tx *postgres.Tx, obj *storage.Blob, writeFn func(io.Writer) error) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
@@ -51,6 +53,12 @@ type datastoreImpl struct {
 // Upsert adds a new blob to the database
 func (d *datastoreImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error {
 	return d.store.Upsert(ctx, obj, reader)
+}
+
+// UpsertWithWriter writes a blob using the caller's transaction and a callback
+// that writes directly to the large object.
+func (d *datastoreImpl) UpsertWithWriter(ctx context.Context, tx *postgres.Tx, obj *storage.Blob, writeFn func(io.Writer) error) error {
+	return d.store.UpsertWithWriter(ctx, tx, obj, writeFn)
 }
 
 // Get retrieves a blob from the database

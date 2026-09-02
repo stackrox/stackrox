@@ -144,11 +144,11 @@ describe('Node CVEs - CVE Detail Page', () => {
             );
 
             // check sorting of CVE Severity column
-            sortByTableHeader('CVE severity');
+            sortByTableHeader('Top CVE severity');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'Severity', reversed: true })
             );
-            sortByTableHeader('CVE severity');
+            sortByTableHeader('Top CVE severity');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'Severity', reversed: false })
             );
@@ -164,11 +164,11 @@ describe('Node CVEs - CVE Detail Page', () => {
             );
 
             // check sorting of CVSS column
-            sortByTableHeader('CVSS');
+            sortByTableHeader('Top CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: true })
             );
-            sortByTableHeader('CVSS');
+            sortByTableHeader('Top CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: false })
             );
