@@ -21,8 +21,6 @@ var (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-// TODO(ROX-XXXXX): Remove Scanner V2 certs once 4.11 goes out of support.
-// Older Secured Clusters may still run Scanner V2 and need these certificates.
 var scannerV2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var scannerV4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 var localScannerServiceTypes = scannerV2ServiceTypes.Union(scannerV4ServiceTypes)
