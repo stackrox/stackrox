@@ -274,7 +274,9 @@
     Central setup.
    */}}
 
+[< if ne .RenderMode "scannerOnly" >]
 {{ include "srox.centralSetup" $ }}
+[< end >]
 
 {{/*
     Scanner V2 has been removed. Force disable and set legacy flag.
