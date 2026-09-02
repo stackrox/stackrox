@@ -32,12 +32,14 @@ const (
 	// renderAll renders all objects (central+scanner).
 	renderAll mode = iota
 	// scannerOnly renders only the scanner.
+	// TODO(ROX-XXXXX): remove after full scanner v2 cleanup.
 	scannerOnly
 	// centralTLSOnly renders only the central tls secret.
 	centralTLSOnly
 	// centralDBTLSOnly renders only the central-db tls secret
 	centralDBTLSOnly
 	// scannerTLSOnly renders only the scanner tls secret
+	// TODO(ROX-XXXXX): remove after full scanner v2 cleanup.
 	scannerTLSOnly
 	// centralDBOnly renders only the central db
 	centralDBOnly
