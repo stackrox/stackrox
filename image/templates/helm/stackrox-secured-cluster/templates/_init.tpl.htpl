@@ -37,11 +37,8 @@
 {{ $_ := set $ "_rox" $rox }}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{/* Only merge scanner config shapes if kubectl output is disabled */}}
+{{/* Only merge scanner-v4 config shapes if kubectl output is disabled */}}
 [<- if not .KubectlOutput >]
-  {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
-  {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
-  {{/* Only merge scanner-v4 config shapes if kubectl output is disabled and feature flag is enabled */}}
   {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
   {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
 [<- end >]

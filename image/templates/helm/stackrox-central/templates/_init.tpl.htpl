@@ -43,8 +43,6 @@
 {{- include "srox.checkVersionRequirements" $ -}}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
-{{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
 
 {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
 {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
