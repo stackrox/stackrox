@@ -681,10 +681,14 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
         when:
-        "Add Stackrox scanner"
-        String integrationId = StackroxScannerIntegration.createDefaultIntegration()
+        "Add scanner"
+        String integrationId = scannerV4Enabled ?
+                ScannerV4Integration.createDefaultIntegration() :
+                StackroxScannerIntegration.createDefaultIntegration()
         assert integrationId
-        integrationIds.add(integrationId)
+        if (!scannerV4Enabled) {
+            integrationIds.add(integrationId)
+        }
 
         and:
         "Image is scanned"
