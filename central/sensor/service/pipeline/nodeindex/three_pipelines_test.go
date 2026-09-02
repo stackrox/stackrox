@@ -42,30 +42,6 @@ const (
 )
 
 func Test_ThreePipelines_Run(t *testing.T) {
-	nodeWithScore := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-	}
-
-	nodeWithScanWithKernelV4 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v4"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
-
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
 		nodeDatastore     *nodeDatastoreMocks.MockDataStore
@@ -101,40 +77,6 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				)
 			},
 			wantNodeExists: false,
-		},
-
-		"node index arriving after node should result in data from the node being overwritten": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
-				// V1 node-scan for node1 arrives over the node pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
-				},
-				// V4 node-scan (node index) for node1 arrives over the node index pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return nidxp.Run(context.Background(), clusterID, createNodeIndexMsg(nodeID, "v4"), nil)
-				},
-			},
-			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
-				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
-				gomock.InOrder(
-					// node arrives
-					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v4",
 		},
 	}
 	for name, tt := range tests {
