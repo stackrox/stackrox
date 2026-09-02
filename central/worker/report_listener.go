@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var listenerCtx = sac.WithAllAccess(context.Background())
@@ -32,6 +33,7 @@ type reportListener struct {
 	collectionDatastore collectionDS.DataStore
 	notifierStore       notifierDS.DataStore
 	notifierProcessor   notifier.Processor
+	knownMu             sync.Mutex
 	knownReportIDs      set.StringSet
 }
 
@@ -143,7 +145,7 @@ func (r *reportListener) handleRequestSubmitted(snapshotID string) {
 	if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
 		log.Errorf("Failed to submit report request for snapshot %s: %v", snapshotID, err)
 	} else {
-		r.knownReportIDs.Add(snapshotID)
+		r.trackReportID(snapshotID)
 	}
 }
 
@@ -209,7 +211,7 @@ func (r *reportListener) resyncPendingRequests() {
 	}
 
 	for _, snap := range snapshots {
-		if r.knownReportIDs.Contains(snap.GetReportId()) {
+		if r.isReportIDKnown(snap.GetReportId()) {
 			continue
 		}
 
@@ -230,7 +232,19 @@ func (r *reportListener) resyncPendingRequests() {
 		if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
 			log.Errorf("Error resyncing pending report %s: %v", snap.GetReportId(), err)
 		} else {
-			r.knownReportIDs.Add(snap.GetReportId())
+			r.trackReportID(snap.GetReportId())
 		}
 	}
+}
+
+func (r *reportListener) trackReportID(id string) {
+	r.knownMu.Lock()
+	defer r.knownMu.Unlock()
+	r.knownReportIDs.Add(id)
+}
+
+func (r *reportListener) isReportIDKnown(id string) bool {
+	r.knownMu.Lock()
+	defer r.knownMu.Unlock()
+	return r.knownReportIDs.Contains(id)
 }
