@@ -85,7 +85,7 @@ function VirtualMachineCvesCveTable({
                         <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
                         <Th>Affected virtual machines</Th>
                         <Th>EPSS probability</Th>
-                        <Th sort={getSortParams(CVE_PUBLISHED_ON_SORT_FIELD)}>First discovered</Th>
+                        <Th sort={getSortParams(CVE_PUBLISHED_ON_SORT_FIELD)}>Published</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
@@ -138,7 +138,7 @@ function VirtualMachineCvesCveTable({
                                                 virtualMachineCve.epssProbability
                                             )}
                                         </Td>
-                                        <Td dataLabel="First discovered">
+                                        <Td dataLabel="Published">
                                             <DateDistance date={virtualMachineCve.publishedOn} />
                                         </Td>
                                     </Tr>
