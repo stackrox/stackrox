@@ -9,6 +9,16 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.10.8]
+
+### Technical Changes
+
+- ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
+
+**Full Changelog**: [4.10.7...4.10.8](https://github.com/stackrox/stackrox/compare/4.10.7...4.10.8)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.10/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [4.10.7]
 
 **Full Changelog**: [4.10.6...4.10.7](https://github.com/stackrox/stackrox/compare/4.10.6...4.10.7)
