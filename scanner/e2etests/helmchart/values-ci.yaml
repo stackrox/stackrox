@@ -1,7 +1,0 @@
-# Values for CI/PR tests - uses embedded ci-minimal bundle
-# Usage: helm install scanner ./helmchart -f values-ci.yaml
-
-app:
-  scanner:
-    # Use embedded ci-minimal bundle (18KB, 109 CVEs, no network download)
-    vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
