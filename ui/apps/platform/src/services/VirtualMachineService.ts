@@ -260,11 +260,13 @@ export function listVMCVEs({
     searchFilter,
     page,
     perPage,
+    sortOption,
 }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
     const params = buildNestedRawQueryParams({
         page,
         perPage,
         searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
     });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
