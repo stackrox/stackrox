@@ -4,27 +4,30 @@
 
 **18 KB bundle embedded in scanner image, 99.991% smaller than full bundle**
 
+## E2E Tests (Automatic)
+
+Scanner e2e tests use ci-minimal bundle by default:
 ```bash
-# Use in tests:
+helm install scanner ./helmchart
+# Automatically uses: vulnerabilitiesUrl: file:///etc/scanner/ci-minimal-bundle.zip
+```
+
+For nightly/scale tests with full bundle:
+```bash
+helm install scanner ./helmchart -f values-full.yaml
+```
+
+## Manual Usage
+
+Set environment variable:
+```bash
 export SCANNER_V4_MATCHER_VULNERABILITIES_URL=file:///etc/scanner/ci-minimal-bundle.zip
 ```
 
-## One-Line Examples
-
-### Scanner E2E Tests
-```bash
-SCANNER_V4_MATCHER_VULNERABILITIES_URL=file:///etc/scanner/ci-minimal-bundle.zip make -C scanner e2e-test
-```
-
-### Local Testing
-```bash
-docker run -e SCANNER_V4_MATCHER_VULNERABILITIES_URL=file:///etc/scanner/ci-minimal-bundle.zip scanner:latest
-```
-
-### GitHub Actions
+Or in config YAML:
 ```yaml
-env:
-  SCANNER_V4_MATCHER_VULNERABILITIES_URL: file:///etc/scanner/ci-minimal-bundle.zip
+matcher:
+  vulnerabilities_url: file:///etc/scanner/ci-minimal-bundle.zip
 ```
 
 ## What You Get
@@ -38,30 +41,11 @@ env:
 
 | Scenario | Bundle |
 |----------|--------|
-| PR/CI tests | ci-minimal (embedded) |
-| Local dev | ci-minimal (embedded) |
-| Nightly tests | full (GCS) |
-| Scale tests | full (GCS) |
-
-## Troubleshooting
-
-**Tests fail with "CVE not found"?**
-```bash
-# Check if CVE is in allowlist
-grep CVE-YYYY-NNNNN scanner/updater/ci/test-cves-allowlist.txt
-
-# Regenerate bundle if needed
-./scanner/updater/ci/generate-ci-bundle.sh
-```
-
-**Bundle not loading?**
-```bash
-# Verify bundle exists in image
-docker run --rm scanner:latest ls -lh /etc/scanner/ci-minimal-bundle.zip
-```
+| PR/CI tests | ci-minimal (default) |
+| Local dev | ci-minimal (default) |
+| Nightly tests | full (use values-full.yaml) |
+| Scale tests | full (use values-full.yaml) |
 
 ## More Info
 
-- 📖 Full docs: [README.md](./README.md)
-- 🔧 Usage guide: [USAGE.md](./USAGE.md)
-- 🚀 Integration: [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
+See [README.md](./README.md) for full documentation.
