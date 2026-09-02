@@ -198,6 +198,8 @@ func TestStore_ApplyHeritage_ConcurrentWithApply(t *testing.T) {
 		store.Apply(map[string]*EntityData{"sensor-deploy-1": shared}, false)
 	}()
 	wg.Wait()
+
+	assert.True(t, store.heritageApplied.IsDone())
 }
 
 func TestApplyPastToEntityData(t *testing.T) {
