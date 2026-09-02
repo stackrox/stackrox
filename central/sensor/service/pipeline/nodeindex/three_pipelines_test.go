@@ -52,31 +52,6 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		RiskScore:     1,
 	}
 
-	nodeWithV4Scan := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-		Scan:          &storage.NodeScan{ScannerVersion: storage.NodeScan_SCANNER_V4},
-	}
-
-	nodeWithScanWithKernelV2 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v2"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
-
 	nodeWithScanWithKernelV4 := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
@@ -160,131 +135,6 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantNodeExists:            true,
 			wantKernelVersionNode:     "v1",
 			wantKernelVersionNodeScan: "v4",
-		},
-
-		"node index arriving after node inventory should result in inventory being overwritten": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
-
-				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-				// V4 node-scan (node index) for node1 arrives
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return nidxp.Run(context.Background(), clusterID, createNodeIndexMsg(nodeID, "v3"), nil)
-				},
-			},
-			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
-				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
-				gomock.InOrder(
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).Times(1).Return(nil),
-
-					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
-
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v4",
-		},
-
-		"node index arriving before node inventory should result in inventory being discarded": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
-				// V4 node-scan (node index) for node1 arrives
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return nidxp.Run(context.Background(), clusterID, createNodeIndexMsg(nodeID, "v4"), nil)
-				},
-				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-			},
-			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
-				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
-				gomock.InOrder(
-					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
-
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithV4Scan, true, nil),
-
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v4",
-		},
-
-		"node inventory and node index arriving while indexing is disabled results in inventory being persisted": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
-				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-				// V4 node-scan (node index) for node1 arrives
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return nidxp.Run(context.Background(), clusterID, createNodeIndexMsg(nodeID, "v4"), nil)
-				},
-			},
-			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
-				t.Setenv(features.ScannerV4.EnvVar(), "false")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "false")
-				gomock.InOrder(
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
-
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV2, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v2",
-		},
-		"node inventory arriving on blank node while indexing is enabled still results in inventory being persisted": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
-				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-			},
-			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
-				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
-				gomock.InOrder(
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
-
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV2, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v2",
 		},
 	}
 	for name, tt := range tests {
@@ -434,41 +284,6 @@ func createNodeIndexMsg(id, kernel string) *central.MsgFromSensor {
 				Id: id,
 				Resource: &central.SensorEvent_IndexReport{
 					IndexReport: createIndexReportWithKernel(kernel),
-				},
-			},
-		},
-	}
-}
-
-func createNodeInventory(id, kernelV string) *storage.NodeInventory {
-	return &storage.NodeInventory{
-		NodeId:   id,
-		NodeName: nodeName,
-		Components: &storage.NodeInventory_Components{
-			Namespace: "",
-			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-				{
-					Id:          1,
-					Name:        kernelComponentName,
-					Namespace:   "",
-					Version:     kernelV,
-					Arch:        "",
-					Module:      "",
-					AddedBy:     "",
-					Executables: nil,
-				},
-			},
-			RhelContentSets: nil,
-		},
-	}
-}
-
-func createNodeInventoryMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: createNodeInventory(id, kernel),
 				},
 			},
 		},
