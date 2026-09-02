@@ -10,10 +10,10 @@
 
 import type {
     CompoundSearchFilterEntity,
+    GenericSelectSearchFilterAttribute,
     SelectExclusiveSingleSearchFilterAttribute,
     SelectSearchFilterAttribute,
     SelectSearchFilterOption,
-    SelectSingleSearchFilterAttribute,
 } from 'Components/CompoundSearchFilter/types';
 import {
     clusterIdAttribute,
@@ -334,7 +334,7 @@ export const attributesSeparateFromConfigForImageVulnerabilityReport = [
     attributeForFixableInBackendAndViewBasedReport,
 ];
 
-export const attributesSeparateFromConfigForNodeVulnerabilityReport: SelectSingleSearchFilterAttribute[] =
+export const attributesSeparateFromConfigForNodeVulnerabilityReport: GenericSelectSearchFilterAttribute[] =
     [
         attributeForSnoozed,
         attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters

@@ -77,6 +77,9 @@ export type SelectExclusiveDoubleSearchFilterOption = {
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
     | GenericSearchFilterAttribute
+    | GenericSelectSearchFilterAttribute;
+
+export type GenericSelectSearchFilterAttribute =
     | SelectSearchFilterAttribute
     | SelectExclusiveDoubleSearchFilterAttribute
     | SelectExclusiveSingleSearchFilterAttribute;
