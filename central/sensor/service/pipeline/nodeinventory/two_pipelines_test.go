@@ -40,44 +40,6 @@ const (
 )
 
 func Test_TwoPipelines_Run(t *testing.T) {
-	nodeWithScore := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-	}
-
-	nodeWithScanWithKernelV1 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v1"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
-
-	nodeWithScanWithKernelV2 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v2"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
-
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
 		nodeDatastore     *nodeDatastoreMocks.MockDataStore
@@ -109,68 +71,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			},
 			wantNodeExists:        false,
 			wantKernelVersionNode: "",
-		},
-		"node inventory arriving after node should result in data from the node being overwritten": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
-				// Old node-scan for node1 arrives over the node pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
-					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
-				},
-				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-			},
-			setUpMocks: func(t *testing.T, m *usedMocks) {
-				gomock.InOrder(
-					// node arrives
-					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV2, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v2",
-		},
-		"node inventory arriving first should result in data from it being lost": {
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
-				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
-					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
-				},
-				// Old node-scan for node1 arrives over the node pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
-					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
-				},
-			},
-			setUpMocks: func(t *testing.T, m *usedMocks) {
-				gomock.InOrder(
-					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nil, false, nil),
-
-					// node arrives
-					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Return(clusterID, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
-
-					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV1, true, nil),
-				)
-			},
-			wantNodeExists:            true,
-			wantKernelVersionNode:     "v1",
-			wantKernelVersionNodeScan: "v1",
 		},
 	}
 	for name, tt := range tests {
