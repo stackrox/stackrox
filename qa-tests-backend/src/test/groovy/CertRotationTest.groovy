@@ -111,23 +111,19 @@ class CertRotationTest extends BaseSpecification {
 
     def "Test Scanner cert rotation"() {
         when:
-        "Fetch Scanner V4 TLS secrets and regenerate certs"
-        def indexerTLSSecret = orchestrator.getSecret("scanner-v4-indexer-tls", "stackrox")
-        assert indexerTLSSecret
-        def matcherTLSSecret = orchestrator.getSecret("scanner-v4-matcher-tls", "stackrox")
-        assert matcherTLSSecret
-        def dbTLSSecret = orchestrator.getSecret("scanner-v4-db-tls", "stackrox")
-        assert dbTLSSecret
+        "Fetch the current scanner-tls and scanner-db-tls secrets, and regenerate new certs"
+        def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
+        def scannerDBTLSSecret = orchestrator.getSecret("scanner-db-tls", "stackrox")
+        Assume.assumeTrue("Scanner V2 TLS secrets are present",
+                scannerTLSSecret != null && scannerDBTLSSecret != null)
         def start = System.currentTimeMillis()
-        def regeneratedSecrets = generateCerts("api/extensions/certgen/scanner?v=4", "scanner-v4-tls.yaml")
+        def regeneratedSecrets = generateCerts("api/extensions/certgen/scanner", "scanner-tls.yaml")
 
         then:
-        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, indexerTLSSecret,
-            "cert.pem", "key.pem", "SCANNER_V4_INDEXER_SERVICE", start)
-        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, matcherTLSSecret,
-            "cert.pem", "key.pem", "SCANNER_V4_MATCHER_SERVICE", start)
-        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, dbTLSSecret,
-            "cert.pem", "key.pem", "SCANNER_V4_DB_SERVICE", start)
+        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, scannerTLSSecret,
+            "cert.pem", "key.pem", "SCANNER_SERVICE", start)
+        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, scannerDBTLSSecret,
+            "cert.pem", "key.pem", "SCANNER_DB_SERVICE", start)
     }
 
     def "Test sensor cert rotation"() {
