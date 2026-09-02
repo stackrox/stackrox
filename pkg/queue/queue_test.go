@@ -500,6 +500,15 @@ func TestQueueSeq(t *testing.T) {
 			return 0
 		})
 	})
+
+	t.Run("Seq Push Between Empty Pull And Reset Does Not Lose Item", func(t *testing.T) {
+		testPushBetweenEmptyPullAndResetDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
+			for item := range q.Seq(ctx) {
+				return item
+			}
+			return 0
+		})
+	})
 }
 
 func TestQueuePullBlocking(t *testing.T) {
@@ -527,6 +536,12 @@ func TestQueuePullBlocking(t *testing.T) {
 
 	t.Run("PullBlocking Stale Not Empty Signal Does Not Spin", func(t *testing.T) {
 		testStaleNotEmptySignalDoesNotSpin(t, func(q *Queue[int], ctx context.Context) int {
+			return q.PullBlocking(ctx)
+		})
+	})
+
+	t.Run("PullBlocking Push Between Empty Pull And Reset Does Not Lose Item", func(t *testing.T) {
+		testPushBetweenEmptyPullAndResetDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
 			return q.PullBlocking(ctx)
 		})
 	})
@@ -558,6 +573,38 @@ func testStaleNotEmptySignalDoesNotSpin(t *testing.T, consume func(*Queue[int], 
 			assert.Equal(t, 7, item)
 		default:
 			t.Fatal("consumer should have received the item after blocking")
+		}
+	})
+}
+
+// testPushBetweenEmptyPullAndResetDoesNotLoseItem covers the pullWait window
+// between an empty pull() and Reset(). synctest cannot preempt there, so
+// afterEmptyPull injects the Push.
+func testPushBetweenEmptyPullAndResetDoesNotLoseItem(t *testing.T, consume func(*Queue[int], context.Context) int) {
+	synctest.Test(t, func(t *testing.T) {
+		q := NewQueue[int]()
+		q.afterEmptyPull = func() {
+			q.Push(7)
+			q.afterEmptyPull = nil
+		}
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		got := make(chan int, 1)
+		started := make(chan struct{})
+		go func() {
+			close(started)
+			got <- consume(q, ctx)
+		}()
+		<-started
+		synctest.Wait()
+
+		select {
+		case item := <-got:
+			assert.Equal(t, 7, item)
+		default:
+			t.Fatal("Push between empty pull and Reset was lost; item is queued but the waiter is blocked")
 		}
 	})
 }

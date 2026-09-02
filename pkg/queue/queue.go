@@ -26,6 +26,9 @@ type Queue[T comparable] struct {
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
+	// afterEmptyPull runs after pullWait sees an empty queue and before it waits.
+	// Tests inject a Push in that window; production leaves it nil.
+	afterEmptyPull func()
 }
 
 // OptionFunc provides options for the queue.
@@ -124,6 +127,9 @@ func (q *Queue[T]) pullWait(waitable concurrency.Waitable) (T, bool) {
 	// This prevents lost wakeup: if we're signaled but another consumer
 	// takes the item before we pull, we must continue waiting.
 	for !ok {
+		if h := q.afterEmptyPull; h != nil {
+			h()
+		}
 		// Reset stale signal before waiting to prevent spin-loop
 		q.notEmptySignal.Reset()
 		select {
