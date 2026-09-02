@@ -75,7 +75,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
 		r.renderCache.Delete(r.centralObj)
 
-		for _, prefix := range []string{"central", "central-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
+		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
 				return errors.Wrapf(err, "reconciling %s-tls secret failed", prefix)
 			}
