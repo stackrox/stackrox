@@ -53,6 +53,16 @@ func (s *migrationTestSuite) SetupSuite() {
 	}
 }
 
+// SetupTest removes the migrated policy before each test so tests are
+// independent of execution order (each test inserts its own copy).
+func (s *migrationTestSuite) SetupTest() {
+	for _, diff := range policyDiffs {
+		beforePolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/before", diff.PolicyFileName))
+		s.Require().NoError(err)
+		s.Require().NoError(s.gormDB.Where(&schema.Policies{ID: beforePolicy.GetId()}).Delete(&schema.Policies{}).Error)
+	}
+}
+
 func (s *migrationTestSuite) TestMigration() {
 	// Insert the policies to be migrated
 	for _, diff := range policyDiffs {
@@ -70,7 +80,8 @@ func (s *migrationTestSuite) TestMigration() {
 	// Verify for each policy
 	for _, diff := range policyDiffs {
 		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
-			afterPolicy, _ := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
+			afterPolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
+			s.Require().NoError(err)
 			var foundPolicies []schema.Policies
 			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
 			s.Require().NoError(result.Error)
@@ -78,6 +89,43 @@ func (s *migrationTestSuite) TestMigration() {
 			s.Require().NoError(err)
 			protoassert.ElementsMatch(s.T(), migratedPolicy.GetExclusions(), afterPolicy.GetExclusions(), "exclusion do not match after migration")
 			protoassert.ElementsMatch(s.T(), migratedPolicy.GetPolicySections(), afterPolicy.GetPolicySections(), "policy sections do not match after migration")
+		})
+	}
+}
+
+// TestMigrationSkipsUserModifiedPolicy verifies that if a user has changed a
+// compared field (here: the policy name), the migration leaves the policy
+// untouched and does not append the new exclusion.
+func (s *migrationTestSuite) TestMigrationSkipsUserModifiedPolicy() {
+	for _, diff := range policyDiffs {
+		beforePolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/before", diff.PolicyFileName))
+		s.Require().NoError(err)
+		beforePolicy.Name += " (user modified)"
+		s.addPolicyToDB(beforePolicy)
+	}
+
+	s.Require().NoError(migration.Run(&types.Databases{
+		PostgresDB: s.db.DB,
+		GormDB:     s.gormDB,
+	}))
+
+	for _, diff := range policyDiffs {
+		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
+			beforePolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/before", diff.PolicyFileName))
+			s.Require().NoError(err)
+			afterPolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
+			s.Require().NoError(err)
+
+			var foundPolicies []schema.Policies
+			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
+			s.Require().NoError(result.Error)
+			s.Require().Len(foundPolicies, 1)
+			migratedPolicy, err := conversion.ConvertPolicyToProto(&foundPolicies[0])
+			s.Require().NoError(err)
+
+			// Migration must be skipped: exclusions stay as in "before", not "after".
+			protoassert.ElementsMatch(s.T(), beforePolicy.GetExclusions(), migratedPolicy.GetExclusions(), "modified policy should keep its original exclusions")
+			s.Less(len(migratedPolicy.GetExclusions()), len(afterPolicy.GetExclusions()), "modified policy should not receive the new exclusion")
 		})
 	}
 }
