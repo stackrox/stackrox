@@ -244,6 +244,14 @@ func (suite *ImageCriteriaTestSuite) TestFixableCriteriaWithUnsetFixedBy() {
 			),
 			expectedCVEs: []string{"CVE-UNFIXABLE"},
 		},
+		// Default policy "Fixable CVSS >= 7" stores Fixed By: .*, rewritten to .+ at match time.
+		"fixed by .* with CVSS >= 7 still matches only the fixable CVE": {
+			policy: policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+				policyGroupWithSingleKeyValue(fieldnames.FixedBy, ".*", false),
+				policyGroupWithSingleKeyValue(fieldnames.CVSS, ">= 7", false),
+			),
+			expectedCVEs: []string{"CVE-FIXABLE"},
+		},
 	} {
 		suite.Run(name, func() {
 			expected := set.NewFrozenStringSet(tc.expectedCVEs...)
