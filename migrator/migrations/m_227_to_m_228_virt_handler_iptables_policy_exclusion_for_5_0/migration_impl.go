@@ -72,7 +72,7 @@ func migrate(database *types.Databases) error {
 				return nil, result.Error
 			}
 
-			categories := make(map[string]string, 0)
+			categories := make(map[string]string)
 			for _, r := range results {
 				c, err := conversion.ConvertPolicyCategoryToProto(r)
 				if err != nil {
