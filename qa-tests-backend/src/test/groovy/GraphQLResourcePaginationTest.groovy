@@ -63,7 +63,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         // TODO: re-activate once fixed against postgres
         //"image"      | "Image:main" | null | "Sort(null)" | "deployments"
 
-        "secret"     | "Secret:scanner-v4-db-password" | null | "Sort(null)" | "deployments"
+        "secret"     | "Secret:central-tls" | null | "Sort(null)" | "deployments"
 
         "subject"    | "Subject:kubelet" | null | "Sort(null)" | "k8sRoles"
 
