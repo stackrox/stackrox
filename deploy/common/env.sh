@@ -16,9 +16,7 @@ echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 export COLLECTION_METHOD="${COLLECTION_METHOD:-${RUNTIME_SUPPORT:-core_bpf}}"
 echo "COLLECTION_METHOD set to $COLLECTION_METHOD"
 
-# Scanner v2 has been removed; default to false. Override still respected
-# because this variable also gates scanner v4 in the manifest deploy path.
-export SCANNER_SUPPORT=${SCANNER_SUPPORT:-false}
+export SCANNER_SUPPORT=${SCANNER_SUPPORT:-true}
 echo "SCANNER_SUPPORT set to $SCANNER_SUPPORT"
 
 export ROX_SCANNER_V4=${ROX_SCANNER_V4:-}
