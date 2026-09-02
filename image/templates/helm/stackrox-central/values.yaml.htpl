@@ -7,9 +7,13 @@
 ## Instead, create a file that contains only those settings you want to override,
 ## and pass it to helm or roxctl via the `-f` parameter.
 ##
-## For example, if you want to override some values, create a file
-## `values-override.yaml` (or any name you choose) with only the settings
-## you want to change, and then invoke helm by passing `-f values-override.yaml`
+## For example, if you want to disable Scanner V4, create a file
+## `values-override.yaml` (or any name you choose) with the following contents:
+##
+##  scannerV4:
+##    disable: true
+##
+## and then invoke helm by passing `-f values-override.yaml`
 ## to `helm install`/`helm upgrade`.
 ##
 ## Alternatively, you can set values directly via the `--set` command.
