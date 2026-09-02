@@ -38,7 +38,7 @@ RUN make copy-go-binaries-to-image-dir
 
 RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     find . -maxdepth 1 -type f -name 'roxctl-*' \
-        -exec sh -c 'f="${1#./}"; tar czf "$f.tar.gz" "$f"' _ {} \;
+        -exec sh -c 'f="${1#./}"; tar czf "${f%.exe}.tar.gz" "$f"' _ {} \;
 
 
 FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:57ad03c5db9382cd266af665819f60e5b1490fc27ee589320159df59f9eb453b as ui-builder
