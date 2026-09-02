@@ -47,11 +47,13 @@ export type ComplianceClusterOverallStats = {
     checkStats: ComplianceCheckStatusCount[];
     clusterErrors: string[];
     lastScanTime: string; // ISO 8601 date string
+    dataState?: ComplianceDataState;
 };
 
 export type ListComplianceClusterOverallStatsResponse = {
     scanStats: ComplianceClusterOverallStats[];
     totalCount: number;
+    outdatedClusterCount?: number;
 };
 
 export type ComplianceBenchmark = {
@@ -71,6 +73,11 @@ export const complianceProfileOperatorKindValues = [
 ] as const;
 
 export type ComplianceProfileOperatorKind = (typeof complianceProfileOperatorKindValues)[number];
+
+export type ComplianceDataState =
+    | 'COMPLIANCE_DATA_STATE_UNKNOWN'
+    | 'COMPLIANCE_DATA_STATE_CURRENT'
+    | 'COMPLIANCE_DATA_STATE_OUTDATED';
 
 export type ComplianceProfileSummary = {
     name: string;

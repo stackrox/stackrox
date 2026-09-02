@@ -59,3 +59,12 @@ type ResourceResultsByProfile struct {
 	RuleName           string `db:"compliance_rule_name"`
 	CheckRationale     string `db:"compliance_check_rationale"`
 }
+
+// MinLastStartedTimeByConfigCluster holds the MIN(last_started_time) grouped
+// by scan config name and cluster ID. Used for outdated-data detection.
+type MinLastStartedTimeByConfigCluster struct {
+	ScanConfigName string     `db:"compliance_scan_config_name"`
+	ClusterID      string     `db:"cluster_id"`
+	ClusterName    string     `db:"cluster"`
+	MinLastStarted *time.Time `db:"compliance_check_last_started_time_min"`
+}

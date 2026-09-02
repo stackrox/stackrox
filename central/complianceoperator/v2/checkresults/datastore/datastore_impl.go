@@ -392,6 +392,33 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
+func (d *datastoreImpl) MinLastStartedTimeByConfigCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByConfigCluster, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "MinLastStartedTimeByConfigCluster")
+
+	cloned := query.CloneVT()
+	cloned.Pagination = nil // Aggregate query — pagination must not apply.
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorScanConfigName).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckLastStartedTime).AggrFunc(aggregatefunc.Min).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorScanConfigName.String(),
+			search.ClusterID.String(),
+			search.Cluster.String(),
+		},
+	}
+
+	results, err := pgSearch.RunSelectRequestForSchema[MinLastStartedTimeByConfigCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, cloned)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query MIN(last_started_time) by config and cluster")
+	}
+
+	return results, nil
+}
+
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil

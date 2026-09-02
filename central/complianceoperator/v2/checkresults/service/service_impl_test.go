@@ -244,6 +244,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(
+					&storage.ComplianceOperatorScanConfigurationV2{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}, nil,
+				).AnyTimes()
 			},
 		},
 		{
@@ -532,6 +538,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(
+					&storage.ComplianceOperatorScanConfigurationV2{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}, nil,
+				).AnyTimes()
 			},
 		},
 		{

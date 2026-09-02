@@ -221,6 +221,21 @@ func (mr *MockDataStoreMockRecorder) GetComplianceCheckResult(ctx, complianceRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceCheckResult", reflect.TypeOf((*MockDataStore)(nil).GetComplianceCheckResult), ctx, complianceResultID)
 }
 
+// MinLastStartedTimeByConfigCluster mocks base method.
+func (m *MockDataStore) MinLastStartedTimeByConfigCluster(ctx context.Context, query *v1.Query) ([]*datastore.MinLastStartedTimeByConfigCluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MinLastStartedTimeByConfigCluster", ctx, query)
+	ret0, _ := ret[0].([]*datastore.MinLastStartedTimeByConfigCluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MinLastStartedTimeByConfigCluster indicates an expected call of MinLastStartedTimeByConfigCluster.
+func (mr *MockDataStoreMockRecorder) MinLastStartedTimeByConfigCluster(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MinLastStartedTimeByConfigCluster", reflect.TypeOf((*MockDataStore)(nil).MinLastStartedTimeByConfigCluster), ctx, query)
+}
+
 // SearchComplianceCheckResults mocks base method.
 func (m *MockDataStore) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
 	m.ctrl.T.Helper()

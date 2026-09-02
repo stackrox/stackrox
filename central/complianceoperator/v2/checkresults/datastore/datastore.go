@@ -58,6 +58,11 @@ type DataStore interface {
 	// WalkByQuery gets one row at a time and applies function per row
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error
 
+	// MinLastStartedTimeByConfigCluster returns MIN(last_started_time) grouped by
+	// (scan_config_name, cluster_id). Groups where all last_started_time values
+	// are NULL return nil MinLastStarted (SQL MIN ignores NULLs).
+	MinLastStartedTimeByConfigCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByConfigCluster, error)
+
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 }

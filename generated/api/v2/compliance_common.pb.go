@@ -86,6 +86,60 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
+// ComplianceDataState indicates whether compliance data is current relative to
+// the scan configuration's schedule.
+type ComplianceDataState int32
+
+const (
+	// Cannot evaluate: no schedule, unresolvable config, or no data.
+	ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN ComplianceDataState = 0
+	// Data reflects the most recent expected scan cycle.
+	ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT ComplianceDataState = 1
+	// Data predates the most recent expected scan cycle.
+	ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED ComplianceDataState = 2
+)
+
+// Enum value maps for ComplianceDataState.
+var (
+	ComplianceDataState_name = map[int32]string{
+		0: "COMPLIANCE_DATA_STATE_UNKNOWN",
+		1: "COMPLIANCE_DATA_STATE_CURRENT",
+		2: "COMPLIANCE_DATA_STATE_OUTDATED",
+	}
+	ComplianceDataState_value = map[string]int32{
+		"COMPLIANCE_DATA_STATE_UNKNOWN":  0,
+		"COMPLIANCE_DATA_STATE_CURRENT":  1,
+		"COMPLIANCE_DATA_STATE_OUTDATED": 2,
+	}
+)
+
+func (x ComplianceDataState) Enum() *ComplianceDataState {
+	p := new(ComplianceDataState)
+	*p = x
+	return p
+}
+
+func (x ComplianceDataState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ComplianceDataState) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+}
+
+func (ComplianceDataState) Type() protoreflect.EnumType {
+	return &file_api_v2_compliance_common_proto_enumTypes[1]
+}
+
+func (x ComplianceDataState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ComplianceDataState.Descriptor instead.
+func (ComplianceDataState) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{1}
+}
+
 // OperatorKind is the kind of the Compliance Operator resource that this
 // `ComplianceRule` was sourced from. ACS represents both Compliance Operator
 // `Rules` and `CustomRules` as compliance rules.
@@ -125,11 +179,11 @@ func (x ComplianceRule_OperatorKind) String() string {
 }
 
 func (ComplianceRule_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+	return file_api_v2_compliance_common_proto_enumTypes[2].Descriptor()
 }
 
 func (ComplianceRule_OperatorKind) Type() protoreflect.EnumType {
-	return &file_api_v2_compliance_common_proto_enumTypes[1]
+	return &file_api_v2_compliance_common_proto_enumTypes[2]
 }
 
 func (x ComplianceRule_OperatorKind) Number() protoreflect.EnumNumber {
@@ -180,11 +234,11 @@ func (x ComplianceProfileSummary_OperatorKind) String() string {
 }
 
 func (ComplianceProfileSummary_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_compliance_common_proto_enumTypes[2].Descriptor()
+	return file_api_v2_compliance_common_proto_enumTypes[3].Descriptor()
 }
 
 func (ComplianceProfileSummary_OperatorKind) Type() protoreflect.EnumType {
-	return &file_api_v2_compliance_common_proto_enumTypes[2]
+	return &file_api_v2_compliance_common_proto_enumTypes[3]
 }
 
 func (x ComplianceProfileSummary_OperatorKind) Number() protoreflect.EnumNumber {
@@ -732,6 +786,7 @@ type ComplianceClusterOverallStats struct {
 	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
 	ClusterErrors []string                      `protobuf:"bytes,3,rep,name=cluster_errors,json=clusterErrors,proto3" json:"cluster_errors,omitempty"`
 	LastScanTime  *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	DataState     ComplianceDataState           `protobuf:"varint,5,opt,name=data_state,json=dataState,proto3,enum=v2.ComplianceDataState" json:"data_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -794,13 +849,24 @@ func (x *ComplianceClusterOverallStats) GetLastScanTime() *timestamppb.Timestamp
 	return nil
 }
 
+func (x *ComplianceClusterOverallStats) GetDataState() ComplianceDataState {
+	if x != nil {
+		return x.DataState
+	}
+	return ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN
+}
+
 // ListComplianceCheckScanStatsResponse provides stats per cluster
 type ListComplianceClusterOverallStatsResponse struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	ScanStats     []*ComplianceClusterOverallStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	TotalCount    int32                            `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state      protoimpl.MessageState           `protogen:"open.v1"`
+	ScanStats  []*ComplianceClusterOverallStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
+	TotalCount int32                            `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	// Number of clusters with OUTDATED data in the current filtered scope
+	// (computed over the unpaginated result set). Non-zero signals the UI
+	// to show an outdated-data banner.
+	OutdatedClusterCount int32 `protobuf:"varint,3,opt,name=outdated_cluster_count,json=outdatedClusterCount,proto3" json:"outdated_cluster_count,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListComplianceClusterOverallStatsResponse) Reset() {
@@ -843,6 +909,13 @@ func (x *ListComplianceClusterOverallStatsResponse) GetScanStats() []*Compliance
 func (x *ListComplianceClusterOverallStatsResponse) GetTotalCount() int32 {
 	if x != nil {
 		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *ListComplianceClusterOverallStatsResponse) GetOutdatedClusterCount() int32 {
+	if x != nil {
+		return x.OutdatedClusterCount
 	}
 	return 0
 }
@@ -1173,18 +1246,21 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\x0fprofile_results\x18\x01 \x03(\v2$.v2.ComplianceCheckResultStatusCountR\x0eprofileResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCount\"\xfe\x01\n" +
+	"totalCount\"\xb6\x02\n" +
 	"\x1dComplianceClusterOverallStats\x123\n" +
 	"\acluster\x18\x01 \x01(\v2\x19.v2.ComplianceScanClusterR\acluster\x12?\n" +
 	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x12%\n" +
 	"\x0ecluster_errors\x18\x03 \x03(\tR\rclusterErrors\x12@\n" +
-	"\x0elast_scan_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\"\x8e\x01\n" +
+	"\x0elast_scan_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x126\n" +
+	"\n" +
+	"data_state\x18\x05 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\"\xc4\x01\n" +
 	")ListComplianceClusterOverallStatsResponse\x12@\n" +
 	"\n" +
 	"scan_stats\x18\x01 \x03(\v2!.v2.ComplianceClusterOverallStatsR\tscanStats\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"h\n" +
+	"totalCount\x124\n" +
+	"\x16outdated_cluster_count\x18\x03 \x01(\x05R\x14outdatedClusterCount\"h\n" +
 	"\x1fComplianceProfileResultsRequest\x12!\n" +
 	"\fprofile_name\x18\x01 \x01(\tR\vprofileName\x12\"\n" +
 	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x85\x01\n" +
@@ -1216,7 +1292,11 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aB'\n" +
+	"\fINCONSISTENT\x10\a*\x7f\n" +
+	"\x13ComplianceDataState\x12!\n" +
+	"\x1dCOMPLIANCE_DATA_STATE_UNKNOWN\x10\x00\x12!\n" +
+	"\x1dCOMPLIANCE_DATA_STATE_CURRENT\x10\x01\x12\"\n" +
+	"\x1eCOMPLIANCE_DATA_STATE_OUTDATED\x10\x02B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2b\x06proto3"
 
 var (
@@ -1231,48 +1311,50 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 	return file_api_v2_compliance_common_proto_rawDescData
 }
 
-var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v2_compliance_common_proto_goTypes = []any{
 	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
-	(ComplianceRule_OperatorKind)(0),                  // 1: v2.ComplianceRule.OperatorKind
-	(ComplianceProfileSummary_OperatorKind)(0),        // 2: v2.ComplianceProfileSummary.OperatorKind
-	(*ComplianceRule)(nil),                            // 3: v2.ComplianceRule
-	(*ComplianceScanCluster)(nil),                     // 4: v2.ComplianceScanCluster
-	(*ComplianceCheckStatusCount)(nil),                // 5: v2.ComplianceCheckStatusCount
-	(*ComplianceCheckResultStatusCount)(nil),          // 6: v2.ComplianceCheckResultStatusCount
-	(*ComplianceControl)(nil),                         // 7: v2.ComplianceControl
-	(*ComplianceBenchmark)(nil),                       // 8: v2.ComplianceBenchmark
-	(*ListComplianceProfileResults)(nil),              // 9: v2.ListComplianceProfileResults
-	(*ComplianceClusterOverallStats)(nil),             // 10: v2.ComplianceClusterOverallStats
-	(*ListComplianceClusterOverallStatsResponse)(nil), // 11: v2.ListComplianceClusterOverallStatsResponse
-	(*ComplianceProfileResultsRequest)(nil),           // 12: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
-	(*ComplianceProfileSummary)(nil),                  // 14: v2.ComplianceProfileSummary
-	(*ComplianceRule_Fix)(nil),                        // 15: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                     // 16: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                  // 17: v2.RawQuery
+	(ComplianceDataState)(0),                          // 1: v2.ComplianceDataState
+	(ComplianceRule_OperatorKind)(0),                  // 2: v2.ComplianceRule.OperatorKind
+	(ComplianceProfileSummary_OperatorKind)(0),        // 3: v2.ComplianceProfileSummary.OperatorKind
+	(*ComplianceRule)(nil),                            // 4: v2.ComplianceRule
+	(*ComplianceScanCluster)(nil),                     // 5: v2.ComplianceScanCluster
+	(*ComplianceCheckStatusCount)(nil),                // 6: v2.ComplianceCheckStatusCount
+	(*ComplianceCheckResultStatusCount)(nil),          // 7: v2.ComplianceCheckResultStatusCount
+	(*ComplianceControl)(nil),                         // 8: v2.ComplianceControl
+	(*ComplianceBenchmark)(nil),                       // 9: v2.ComplianceBenchmark
+	(*ListComplianceProfileResults)(nil),              // 10: v2.ListComplianceProfileResults
+	(*ComplianceClusterOverallStats)(nil),             // 11: v2.ComplianceClusterOverallStats
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 12: v2.ListComplianceClusterOverallStatsResponse
+	(*ComplianceProfileResultsRequest)(nil),           // 13: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 14: v2.ComplianceProfileCheckRequest
+	(*ComplianceProfileSummary)(nil),                  // 15: v2.ComplianceProfileSummary
+	(*ComplianceRule_Fix)(nil),                        // 16: v2.ComplianceRule.Fix
+	(*timestamppb.Timestamp)(nil),                     // 17: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 18: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
-	15, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
-	1,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
+	16, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
+	2,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
 	0,  // 2: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
-	5,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	7,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
-	6,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
-	4,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
-	5,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	16, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
-	10, // 9: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	17, // 10: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	17, // 11: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
-	8,  // 12: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	2,  // 13: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	6,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	8,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
+	7,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
+	5,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
+	6,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	17, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	1,  // 9: v2.ComplianceClusterOverallStats.data_state:type_name -> v2.ComplianceDataState
+	11, // 10: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
+	18, // 11: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	18, // 12: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	9,  // 13: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
+	3,  // 14: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }
@@ -1286,7 +1368,7 @@ func file_api_v2_compliance_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_common_proto_rawDesc), len(file_api_v2_compliance_common_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,

@@ -1,7 +1,10 @@
 package storagetov2
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	compliancedata "github.com/stackrox/rox/central/complianceoperator/v2/compliancedata"
 	compRule "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -9,12 +12,17 @@ import (
 )
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceClusterCheckStatus {
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, ruleName string, controlResults []*compRule.ControlResult, resolver *compliancedata.ConfigResolver) *v2.ComplianceClusterCheckStatus {
+	var dataState v2.ComplianceDataState
+	if resolver != nil {
+		assessmentTime := protoTimeToTime(incoming.GetLastStartedTime())
+		dataState = resolver.ResolveCheck(incoming.GetScanConfigName(), assessmentTime).ToProto()
+	}
 	converted := &v2.ComplianceClusterCheckStatus{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ClusterCheckStatus{
-			clusterStatus(incoming, lastScanTime),
+			clusterStatus(incoming, lastScanTime, dataState),
 		},
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
@@ -42,7 +50,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				CheckId:   result.GetCheckId(),
 				CheckName: result.GetCheckName(),
 				Clusters: []*v2.ClusterCheckStatus{
-					clusterStatus(result, nil),
+					clusterStatus(result, nil, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN),
 				},
 				Description:  result.GetDescription(),
 				Instructions: result.GetInstructions(),
@@ -54,7 +62,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				Controls:     controls,
 			}
 		} else {
-			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))
+			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN))
 		}
 	}
 
@@ -110,10 +118,15 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 }
 
 // ComplianceV2CheckClusterResults converts the storage check results to v2 scan results
-func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2, lastTimeMap map[string]*types.Timestamp) []*v2.ClusterCheckStatus {
+func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheckResultV2, lastTimeMap map[string]*types.Timestamp, resolver *compliancedata.ConfigResolver) []*v2.ClusterCheckStatus {
 	clusterResults := make([]*v2.ClusterCheckStatus, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.GetClusterId()]))
+		var dataState v2.ComplianceDataState
+		if resolver != nil {
+			assessmentTime := protoTimeToTime(result.GetLastStartedTime())
+			dataState = resolver.ResolveCheck(result.GetScanConfigName(), assessmentTime).ToProto()
+		}
+		clusterResults = append(clusterResults, clusterStatus(result, lastTimeMap[result.GetClusterId()], dataState))
 	}
 
 	return clusterResults
@@ -142,7 +155,7 @@ func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, 
 	return results
 }
 
-func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ClusterCheckStatus {
+func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, dataState v2.ComplianceDataState) *v2.ClusterCheckStatus {
 	return &v2.ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   incoming.GetClusterId(),
@@ -152,7 +165,16 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 		CreatedTime:  incoming.GetCreatedTime(),
 		CheckUid:     incoming.GetId(),
 		LastScanTime: lastScanTime,
+		DataState:    dataState,
 	}
+}
+
+func protoTimeToTime(ts *types.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+	t := ts.AsTime()
+	return &t
 }
 
 func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceCheckResult {

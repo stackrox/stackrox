@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
+	compliancedata "github.com/stackrox/rox/central/complianceoperator/v2/compliancedata"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -160,7 +163,15 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for result %q", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls), nil
+	// Build resolver for outdated detection
+	var resolver *compliancedata.ConfigResolver
+	if configName := scanResult.GetScanConfigName(); configName != "" {
+		if cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, configName); cfgErr == nil {
+			resolver = compliancedata.NewConfigResolver([]*storage.ComplianceOperatorScanConfigurationV2{cfg}, time.Now().UTC())
+		}
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls, resolver), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -315,8 +326,23 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		convertedControls = storagetov2.GetControls(ruleNames[0], controls)
 	}
 
+	// Build resolver for outdated detection
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	var scanConfigs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil {
+			continue
+		}
+		scanConfigs = append(scanConfigs, cfg)
+	}
+	resolver := compliancedata.NewConfigResolver(scanConfigs, time.Now().UTC())
+
 	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
+		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan, resolver),
 		ProfileName:  request.GetProfileName(),
 		CheckName:    request.GetCheckName(),
 		TotalCount:   int32(resultCount),

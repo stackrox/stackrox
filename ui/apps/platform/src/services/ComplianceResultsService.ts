@@ -6,6 +6,7 @@ import { complianceV2Url } from './ComplianceCommon';
 import type {
     ComplianceCheckStatus,
     ComplianceControl,
+    ComplianceDataState,
     ComplianceScanCluster,
     ListComplianceProfileResults,
 } from './ComplianceCommon';
@@ -18,6 +19,7 @@ export type ClusterCheckStatus = {
     createdTime: string; // ISO 8601 date string
     checkUid: string;
     lastScanTime: string; // ISO 8601 date string
+    dataState?: ComplianceDataState;
 };
 
 export type ComplianceCheckResult = {

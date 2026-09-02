@@ -32,6 +32,7 @@ func (m *ClusterCheckStatus) CloneVT() *ClusterCheckStatus {
 	r.CreatedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreatedTime).CloneVT())
 	r.CheckUid = m.CheckUid
 	r.LastScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastScanTime).CloneVT())
+	r.DataState = m.DataState
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -384,6 +385,9 @@ func (this *ClusterCheckStatus) EqualVT(that *ClusterCheckStatus) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.LastScanTime).EqualVT((*timestamppb1.Timestamp)(that.LastScanTime)) {
+		return false
+	}
+	if this.DataState != that.DataState {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -943,6 +947,11 @@ func (m *ClusterCheckStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.DataState != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DataState))
+		i--
+		dAtA[i] = 0x30
 	}
 	if m.LastScanTime != nil {
 		size, err := (*timestamppb1.Timestamp)(m.LastScanTime).MarshalToSizedBufferVT(dAtA[:i])
@@ -1849,6 +1858,9 @@ func (m *ClusterCheckStatus) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.LastScanTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.DataState != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DataState))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -2397,6 +2409,25 @@ func (m *ClusterCheckStatus) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -5202,6 +5233,25 @@ func (m *ClusterCheckStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
