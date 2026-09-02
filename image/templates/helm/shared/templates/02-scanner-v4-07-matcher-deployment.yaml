@@ -110,7 +110,7 @@ spec:
             port: 9443
           timeoutSeconds: 10
           periodSeconds: 10
-          failureThreshold: 5
+          failureThreshold: 15
           successThreshold: 1
         volumeMounts:
         - name: additional-ca-volume
