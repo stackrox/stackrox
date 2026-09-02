@@ -1303,6 +1303,7 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
 
 allowNonstandardNamespace: true
 EOT
@@ -1444,6 +1445,7 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
   db:
     persistence:
       none: true

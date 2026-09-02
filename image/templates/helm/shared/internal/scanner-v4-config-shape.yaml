@@ -27,6 +27,7 @@ scannerV4:
     metricsPort: null # int
     logLevel: null # string
     replicas: null # int
+    vulnerabilitiesUrl: null # string
     autoscaling:
       disable: null # bool
       minReplicas: null # int
