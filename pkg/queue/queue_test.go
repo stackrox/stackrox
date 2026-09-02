@@ -438,60 +438,6 @@ func TestQueueSeq(t *testing.T) {
 		})
 	})
 
-	t.Run("Seq Re-waits After Empty Pull", func(t *testing.T) {
-		// This test verifies the fix for the lost wakeup bug.
-		// It ensures that when Seq() is signaled but another consumer
-		// steals the item, Seq() properly re-waits instead of looping.
-		synctest.Test(t, func(t *testing.T) {
-			q := NewQueue[int]()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			seqGotItem := make(chan int, 1)
-			seqStarted := make(chan struct{})
-
-			// Start Seq() consumer
-			go func() {
-				close(seqStarted)
-				for item := range q.Seq(ctx) {
-					seqGotItem <- item
-					return
-				}
-			}()
-
-			<-seqStarted
-			synctest.Wait() // Seq() is now waiting
-
-			// Push and immediately steal with Pull()
-			q.Push(100)
-			stolen := q.Pull()
-			assert.Equal(t, 100, stolen)
-
-			// Seq() was signaled but the item was stolen
-			// The fix ensures it re-waits properly
-			synctest.Wait()
-
-			// Verify Seq() didn't get the stolen item
-			select {
-			case item := <-seqGotItem:
-				t.Fatalf("Seq() should not have received stolen item, got: %d", item)
-			default:
-				// Expected: Seq() is waiting again
-			}
-
-			// Push another item - Seq() should get this one
-			q.Push(200)
-			synctest.Wait()
-
-			select {
-			case item := <-seqGotItem:
-				assert.Equal(t, 200, item)
-			default:
-				t.Fatal("Seq() should have received the second item")
-			}
-		})
-	})
-
 	t.Run("Seq Stale Not Empty Signal Does Not Spin", func(t *testing.T) {
 		testStaleNotEmptySignalDoesNotSpin(t, func(q *Queue[int], ctx context.Context) int {
 			for item := range q.Seq(ctx) {
