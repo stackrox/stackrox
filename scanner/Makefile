@@ -163,6 +163,11 @@ image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
 	cp $< $@
 
+image/scanner/bundles/ci-minimal/vulnerabilities.zip: updater/ci/bundles/ci-minimal/vulnerabilities.zip
+	@echo "+ $@"
+	mkdir -p $(dir $@)
+	cp $< $@
+
 $(image-scripts-prefix)/%: ../image/rhel/static-bin/%
 	@echo "+ $@"
 	cp $< $@
@@ -174,6 +179,7 @@ copy-scripts: $(image-scripts-t)
 
 .PHONY: image-scanner
 image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
+               image/scanner/bundles/ci-minimal/vulnerabilities.zip \
                $(image-scripts-t) \
                ossls-notice
 	@echo "+ $@"
