@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: stackrox-operator
+    app: rhacs-operator
     control-plane: controller-manager
-  name: stackrox-operator-controller-manager-metrics-service
+  name: rhacs-operator-controller-manager-metrics-service
 spec:
   ports:
   - name: https
@@ -12,7 +12,7 @@ spec:
     protocol: TCP
     targetPort: https
   selector:
-    app: stackrox-operator
+    app: rhacs-operator
     control-plane: controller-manager
 status:
   loadBalancer: {}

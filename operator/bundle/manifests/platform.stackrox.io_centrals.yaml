@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
   labels:
-    app: stackrox-operator
+    app: rhacs-operator
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
