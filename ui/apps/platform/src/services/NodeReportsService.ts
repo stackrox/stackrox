@@ -23,28 +23,23 @@ import type { Empty } from './types';
 // PostNodeReportConfiguration
 export function createNodeReportConfiguration(
     configuration: NodeVulnerabilityReportConfiguration
-): CancellableRequest<NodeVulnerabilityReportConfiguration> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .post<NodeVulnerabilityReportConfiguration>(
-                '/v2/reports/node/configurations',
-                configuration,
-                { signal }
-            )
-            .then((response) => response.data)
-    );
+): Promise<NodeVulnerabilityReportConfiguration> {
+    return axios
+        .post<NodeVulnerabilityReportConfiguration>(
+            '/v2/reports/node/configurations',
+            configuration
+        )
+        .then((response) => response.data);
 }
 
 // UpdateNodeReportConfiguration
 export function updateNodeReportConfiguration(
     reportId: string,
     configuration: NodeVulnerabilityReportConfiguration
-): CancellableRequest<Empty> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .put<Empty>(`/v2/reports/node/configurations/${reportId}`, configuration, { signal })
-            .then((response) => response.data)
-    );
+): Promise<Empty> {
+    return axios
+        .put<Empty>(`/v2/reports/node/configurations/${reportId}`, configuration)
+        .then((response) => response.data);
 }
 
 // ListNodeReportConfigurations
@@ -82,15 +77,10 @@ export function fetchNodeReportConfigurationsCount(
 // GetNodeReportConfiguration
 export function fetchNodeReportConfiguration(
     reportId: string
-): CancellableRequest<NodeVulnerabilityReportConfiguration> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .get<NodeVulnerabilityReportConfiguration>(
-                `/v2/reports/node/configurations/${reportId}`,
-                { signal }
-            )
-            .then((response) => response.data)
-    );
+): Promise<NodeVulnerabilityReportConfiguration> {
+    return axios
+        .get<NodeVulnerabilityReportConfiguration>(`/v2/reports/node/configurations/${reportId}`)
+        .then((response) => response.data);
 }
 
 // DeleteNodeReportConfiguration
