@@ -1,13 +1,20 @@
 import queryString from 'qs';
 
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
-import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import {
+    buildNestedRawQueryParams,
+    getListQueryParams,
+    getRequestQueryStringForSearchFilter,
+} from 'utils/searchUtils';
 
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
-import type { NodeVulnerabilityReportConfiguration } from './ReportsService.types';
-import type { Empty } from './types';
 import axios from './instance';
+import type {
+    NodeViewBasedReportSnapshot,
+    NodeVulnerabilityReportConfiguration,
+} from './ReportsService.types';
+import type { Empty } from './types';
 
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/node_report_service.proto
 
@@ -114,7 +121,39 @@ export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> 
 // PostViewBasedNodeReport
 
 // GetViewBasedNodeReportHistory
+export function getViewBasedNodeReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+}: SearchQueryOptions): Promise<NodeViewBasedReportSnapshot[]> {
+    const params = buildNestedRawQueryParams(
+        { searchFilter, page, perPage, sortOption },
+        'reportParamQuery'
+    );
+
+    return axios
+        .get<{
+            reportSnapshots: NodeViewBasedReportSnapshot[];
+        }>(`/v2/reports/node/view-based/history?${params}`)
+        .then((response) => response.data?.reportSnapshots ?? []);
+}
 
 // GetViewBasedMyNodeReportHistory
+export function getViewBasedMyNodeReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+}: SearchQueryOptions): Promise<NodeViewBasedReportSnapshot[]> {
+    const params = buildNestedRawQueryParams(
+        { searchFilter, page, perPage, sortOption },
+        'reportParamQuery'
+    );
 
-// Job download
+    return axios
+        .get<{
+            reportSnapshots: NodeViewBasedReportSnapshot[];
+        }>(`/v2/reports/node/view-based/my-history?${params}`)
+        .then((response) => response.data?.reportSnapshots ?? []);
+}

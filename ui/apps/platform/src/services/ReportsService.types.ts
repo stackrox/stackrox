@@ -271,11 +271,17 @@ export type ReportHistoryResponse = {
 };
 
 export type ViewBasedReportSnapshot = Snapshot & {
+    type: 'VULNERABILITY';
     viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
     areaOfConcern: string;
 };
 
-// TODO temporary disjunction until snapshot has type property.
+export type NodeViewBasedReportSnapshot = Snapshot & {
+    type: 'NODE_VULNERABILITY';
+    nodeVulnReportFilters: NodeVulnerabilityReportFilters;
+    areaOfConcern: string;
+};
+
 type VulnerabilityReportFilters =
     | NodeVulnerabilityReportFilters
     | ImageVulnerabilityReportFiltersForCollection
@@ -283,6 +289,7 @@ type VulnerabilityReportFilters =
 
 // TODO distinguish configured versus view-based instead of combining them.
 export type ConfiguredReportSnapshot = Snapshot & {
+    type: ReportType;
     reportConfigId: string;
     vulnReportFilters: VulnerabilityReportFilters;
     collectionSnapshot: CollectionSnapshot;
@@ -290,7 +297,10 @@ export type ConfiguredReportSnapshot = Snapshot & {
     notifiers: NotifierConfiguration[];
 };
 
-export type ReportSnapshot = ConfiguredReportSnapshot | ViewBasedReportSnapshot;
+export type ReportSnapshot =
+    | ConfiguredReportSnapshot
+    | ViewBasedReportSnapshot
+    | NodeViewBasedReportSnapshot;
 
 // Type guard functions
 
