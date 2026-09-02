@@ -68,7 +68,9 @@ func migrate(database *types.Databases) error {
 		},
 		func(ctx context.Context) (map[string]string, error) {
 			var results []*schema.PolicyCategories
-			db.WithContext(ctx).Table(schema.PolicyCategoriesTableName).Find(&results)
+			if result := db.WithContext(ctx).Table(schema.PolicyCategoriesTableName).Find(&results); result.Error != nil {
+				return nil, result.Error
+			}
 
 			categories := make(map[string]string, 0)
 			for _, r := range results {
