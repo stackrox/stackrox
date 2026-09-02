@@ -39,6 +39,7 @@ type CentralSpec struct {
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	// TODO(ROX-XXXXX): renumber order annotations after Scanner V2 field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
 
