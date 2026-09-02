@@ -7,11 +7,7 @@ import {
     Flex,
     PageSection,
     Pagination,
-    Split,
-    SplitItem,
-    Title,
 } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -146,27 +142,19 @@ function VirtualMachineCvePage() {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <Split hasGutter className="pf-v6-u-align-items-baseline">
-                    <SplitItem isFilled>
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                            <Title headingLevel="h2">
-                                {`${affectedVMCount} ${pluralize('virtual machine', affectedVMCount)} affected`}
-                            </Title>
-                        </Flex>
-                    </SplitItem>
-                    <SplitItem>
-                        <Pagination
-                            itemCount={affectedVMCount}
-                            perPage={perPage}
-                            page={page}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </SplitItem>
-                </Split>
+                <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
+                    <Pagination
+                        itemCount={affectedVMCount}
+                        perPage={perPage}
+                        page={page}
+                        onSetPage={(_, newPage) => setPage(newPage)}
+                        onPerPageSelect={(_, newPerPage) => {
+                            setPerPage(newPerPage);
+                        }}
+                    />
+                </Flex>
                 <AffectedVirtualMachinesTable
+                    cveId={cveId ?? ''}
                     tableState={tableState}
                     getSortParams={getSortParams}
                     onClearFilters={() => {
