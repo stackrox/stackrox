@@ -323,11 +323,21 @@ export type RunReportResponse = {
     reportId: string;
 };
 
-export type ReportRequestViewBased = {
-    type: ReportType;
+export type ImageReportRequestViewBased = {
+    type: 'VULNERABILITY';
     viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
     areaOfConcern: string;
 };
+
+export type NodeReportRequestViewBased = {
+    type: 'NODE_VULNERABILITY';
+    // Although backend proto has NodeVulnerabilityReportFilters type,
+    // only query is relevant for view-based report.
+    nodeVulnReportFilters: ViewBasedVulnerabilityReportFilters;
+    areaOfConcern: string; // 'Nodes'
+};
+
+export type ReportRequestViewBased = ImageReportRequestViewBased | NodeReportRequestViewBased;
 
 export type RunReportResponseViewBased = {
     reportID: string;

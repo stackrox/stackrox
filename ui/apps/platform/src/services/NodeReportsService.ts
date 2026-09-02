@@ -130,7 +130,7 @@ export function runNodeViewBasedReport({
 }): Promise<RunReportResponseViewBased> {
     const requestBody: ReportRequestViewBased = {
         type: 'NODE_VULNERABILITY',
-        viewBasedVulnReportFilters: {
+        nodeVulnReportFilters: {
             query,
         },
         areaOfConcern, // 'Nodes' for analytics ony
