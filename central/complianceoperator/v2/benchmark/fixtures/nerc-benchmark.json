@@ -5,6 +5,9 @@
   "profiles": [
     { "profileName": "ocp4-nerc-cip" },
     { "profileName": "ocp4-nerc-cip-node" },
-    { "profileName": "rhcos4-nerc-cip" }
+    { "profileName": "rhcos4-nerc-cip" },
+    { "profileName": "ocp5-nerc-cip" },
+    { "profileName": "ocp5-nerc-cip-node" },
+    { "profileName": "rhcos5-nerc-cip" }
   ]
 }

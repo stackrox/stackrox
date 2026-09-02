@@ -88,8 +88,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 			ClusterId: uuid.NewDummy().String(),
 			ClusterConfig: &storage.DynamicClusterConfig{
 				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
-					EnforceOnUpdates: true,
-					Enabled:          true,
+					Enabled: true,
 				},
 			},
 		},

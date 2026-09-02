@@ -998,12 +998,14 @@ type OrchestratorMetadata_OpenshiftVersion struct {
 func (*OrchestratorMetadata_OpenshiftVersion) isOrchestratorMetadata_IsOpenshift() {}
 
 type AdmissionControllerConfig struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Enabled          bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	TimeoutSeconds   int32                  `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
-	ScanInline       bool                   `protobuf:"varint,3,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"`
-	DisableBypass    bool                   `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass,proto3" json:"disable_bypass,omitempty"`
-	EnforceOnUpdates bool                   `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates,proto3" json:"enforce_on_updates,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Enabled        bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	TimeoutSeconds int32                  `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
+	ScanInline    bool `protobuf:"varint,3,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"` // always true since 4.9
+	DisableBypass bool `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass,proto3" json:"disable_bypass,omitempty"`
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
+	EnforceOnUpdates bool `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates,proto3" json:"enforce_on_updates,omitempty"` // same as enabled since 4.9
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1052,6 +1054,7 @@ func (x *AdmissionControllerConfig) GetTimeoutSeconds() int32 {
 	return 0
 }
 
+// Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *AdmissionControllerConfig) GetScanInline() bool {
 	if x != nil {
 		return x.ScanInline
@@ -1066,6 +1069,7 @@ func (x *AdmissionControllerConfig) GetDisableBypass() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in storage/cluster.proto.
 func (x *AdmissionControllerConfig) GetEnforceOnUpdates() bool {
 	if x != nil {
 		return x.EnforceOnUpdates
@@ -2859,14 +2863,14 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\n" +
 	"build_date\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tbuildDate\x12!\n" +
 	"\fapi_versions\x18\x03 \x03(\tR\vapiVersionsB\x0e\n" +
-	"\fis_openshift\"\xd4\x01\n" +
+	"\fis_openshift\"\xdc\x01\n" +
 	"\x19AdmissionControllerConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12'\n" +
-	"\x0ftimeout_seconds\x18\x02 \x01(\x05R\x0etimeoutSeconds\x12\x1f\n" +
-	"\vscan_inline\x18\x03 \x01(\bR\n" +
+	"\x0ftimeout_seconds\x18\x02 \x01(\x05R\x0etimeoutSeconds\x12#\n" +
+	"\vscan_inline\x18\x03 \x01(\bB\x02\x18\x01R\n" +
 	"scanInline\x12%\n" +
-	"\x0edisable_bypass\x18\x04 \x01(\bR\rdisableBypass\x12,\n" +
-	"\x12enforce_on_updates\x18\x05 \x01(\bR\x10enforceOnUpdates\"/\n" +
+	"\x0edisable_bypass\x18\x04 \x01(\bR\rdisableBypass\x120\n" +
+	"\x12enforce_on_updates\x18\x05 \x01(\bB\x02\x18\x01R\x10enforceOnUpdates\"/\n" +
 	"\x11TolerationsConfig\x12\x1a\n" +
 	"\bdisabled\x18\x01 \x01(\bR\bdisabled\"\xf4\x04\n" +
 	"\x13StaticClusterConfig\x12(\n" +

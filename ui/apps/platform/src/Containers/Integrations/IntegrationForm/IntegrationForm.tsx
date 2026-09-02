@@ -51,6 +51,9 @@ import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 import OcmIntegrationForm from './Forms/CloudSourceIntegrations/OcmIntegrationForm';
 import PaladinCloudIntegrationForm from './Forms/CloudSourceIntegrations/PaladinCloudIntegrationForm';
 
+// AI integrations
+import LightspeedIntegrationForm from './Forms/AiIntegrations/LightspeedIntegrationForm';
+
 import './IntegrationForm.css';
 
 type IntegrationFormProps = {
@@ -74,6 +77,9 @@ const ComponentFormMap = {
         gcs: GcsIntegrationForm,
         s3: S3IntegrationForm,
         s3compatible: S3CompatibleIntegrationForm,
+    },
+    aiIntegrations: {
+        lightspeed: LightspeedIntegrationForm,
     },
     cloudSources: {
         ocm: OcmIntegrationForm,
@@ -140,6 +146,11 @@ function IntegrationForm({
     const Form: FunctionComponent<PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];
     if (!Form) {
+        // The Lightspeed (aiIntegrations) form is added in ROX-36378. Until then,
+        // render nearly nothing rather than crashing the details/create page.
+        if (source === 'aiIntegrations') {
+            return <></>;
+        }
         throw new Error(
             `There are no integration form components for source (${source}) and type (${type})`
         );
