@@ -1,0 +1,37 @@
+# Example scanner configuration for CI tests using embedded ci-minimal bundle
+#
+# This configuration can be used in:
+# - scanner/e2etests
+# - qa-tests-backend integration tests
+# - Local development/testing
+#
+# Usage:
+#   docker run -v $(pwd)/example-test-config.yaml:/etc/scanner/config.yaml scanner:latest
+
+http_listen_addr: :9443
+grpc_listen_addr: :8443
+
+indexer:
+  database:
+    conn_string: host=scanner-db port=5432 user=postgres sslmode=disable
+    password_file: /run/secrets/stackrox.io/postgresql/password
+  repository_to_cpe_url: file:///run/mappings/repository-to-cpe.json
+  repository_to_cpe_file: /run/mappings/repository-to-cpe.json
+  name_to_repos_url: file:///run/mappings/container-name-repos-map.json
+  name_to_repos_file: /run/mappings/container-name-repos-map.json
+
+matcher:
+  database:
+    conn_string: host=scanner-db port=5432 user=postgres sslmode=disable
+    password_file: /run/secrets/stackrox.io/postgresql/password
+
+  # CI-MINIMAL BUNDLE CONFIGURATION
+  # This uses the embedded 18KB bundle instead of downloading 200MB from GCS
+  vulnerabilities_url: file:///etc/scanner/ci-minimal-bundle.zip
+
+  # For full testing, use:
+  # vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
+
+  readiness: vulnerability
+
+log_level: info
