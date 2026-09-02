@@ -3,7 +3,6 @@ package zip
 import (
 	"bufio"
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/central/clusters"
@@ -88,18 +87,8 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 
 		_, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
 		assert.False(t, exists, "compliance should not set %s; Go default is false", env.NodeInventoryContainerEnabled.EnvVar())
-
-		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
-			nInvCont, found := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
-			assert.True(t, found, "node-inventory container should exist under collector DS")
-			assert.Equal(t, "node-inventory", nInvCont.Name)
-
-			expectedScannerParts := strings.Split(strings.ReplaceAll(complianceCont.Image, "/main:", "/scanner-slim:"), ":")
-			assert.Truef(t, strings.HasPrefix(nInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nInvCont.Image, complianceCont.Image)
-		} else {
-			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
-			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
-		}
+		_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
+		assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
 	}
 
 	cases := map[string]func(object runtime.Object){
