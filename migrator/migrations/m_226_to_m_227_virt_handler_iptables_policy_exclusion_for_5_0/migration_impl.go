@@ -78,7 +78,7 @@ func migrate(database *types.Databases) error {
 				if err != nil {
 					return nil, err
 				}
-				categories[c.Name] = c.Id
+				categories[c.GetName()] = c.GetId()
 			}
 			return categories, nil
 		},
