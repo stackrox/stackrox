@@ -75,6 +75,31 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			},
 		},
 		{
+			name: "when node is not full host scanned then enrich and upsert with risk",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
+				a.msg = createMsg("Something that is not RHCOS")
+				a.clusterID = "test cluster id"
+				gomock.InOrder(
+					m.clusterStore.EXPECT().
+						GetClusterName(gomock.Any(), gomock.Eq(a.clusterID)).
+						Times(1).
+						Return("test cluster name", true, nil),
+					m.enricher.EXPECT().
+						EnrichNode(gomock.Any()).
+						Times(1).
+						Return(nil),
+					m.riskManager.EXPECT().
+						CalculateRiskAndUpsertNode(gomock.Any()).
+						DoAndReturn(func(node *storage.Node) error {
+							assert.Equal(t, node.GetClusterName(), "test cluster name")
+							assert.Equal(t, node.GetClusterId(), a.clusterID)
+							return nil
+						}).Times(1),
+				)
+			},
+		},
+		{
 			name: "when LegacyScanner is disabled and node is non-RHCOS then set UNSUPPORTED note",
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				testutils.MustUpdateFeature(t, features.LegacyScanner, false)
