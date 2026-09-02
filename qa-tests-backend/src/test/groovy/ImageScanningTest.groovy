@@ -158,7 +158,9 @@ class ImageScanningTest extends BaseSpecification {
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
-        ImageIntegrationService.addStackroxScannerIntegration()
+        if (!scannerV4Enabled) {
+            ImageIntegrationService.addStackroxScannerIntegration()
+        }
         addGCRImagePullSecret(orchestrator)
 
         for (Policy policy : policiesScopedForTest) {
@@ -480,7 +482,9 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
-        ImageIntegrationService.addStackroxScannerIntegration()
+        if (!scannerV4Enabled) {
+            ImageIntegrationService.addStackroxScannerIntegration()
+        }
 
         when:
         "Add scanner"
@@ -509,7 +513,9 @@ class ImageScanningTest extends BaseSpecification {
         vuln != null
 
         cleanup:
-        deleteStackroxScanner = true
+        if (!scannerV4Enabled) {
+            deleteStackroxScanner = true
+        }
         imageToCleanup = image
 
         where:
