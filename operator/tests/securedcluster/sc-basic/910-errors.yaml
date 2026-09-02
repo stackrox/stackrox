@@ -1,0 +1,9 @@
+# The central CR and its operands are gone in the previous step.
+# Scanner V2 - including the secured-cluster "local scanner" that the reconciler used to
+# create on OpenShift once the central scanner was gone - has been removed. So the
+# SecuredCluster reconciler must NOT create a "scanner" deployment on any platform.
+# This errors file makes sure it is gone and not re-created.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner

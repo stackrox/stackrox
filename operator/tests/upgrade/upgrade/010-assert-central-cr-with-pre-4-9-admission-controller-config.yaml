@@ -42,6 +42,11 @@ metadata:
 status:
   availableReplicas: 3
 ---
+# Scanner V2 (the "scanner" deployment) is still expected here because this step runs against
+# the *previous released* operator, before the upgrade in step 020. The current operator no
+# longer deploys Scanner V2.
+# TODO(ROX-XXXXX): Remove this Scanner V2 deployment assertion once the oldest supported
+# upgrade-from operator version (see hack/upgrade-autoselect.sh) no longer deploys Scanner V2.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
