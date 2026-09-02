@@ -777,9 +777,7 @@ spec:
             path: scanner.monitoring.exposeEndpoint
           - description: |-
               Can be specified as "Enabled" or "Disabled".
-              If this field is not specified, the following defaulting takes place:
-              * for upgrades to 4.8 from previous releases, the default is: Disabled;
-              * for new installations starting with ACS 4.8, the default is: Enabled.
+              The default is: Enabled.
             displayName: Scanner V4 component
             path: scannerV4.scannerComponent
           - description: Settings pertaining to the indexer deployment.
@@ -1459,9 +1457,7 @@ spec:
               unless there is a Central resource in the same namespace.
               In that case typically a central Scanner V4 will be deployed as a component of Central.
               A value of "Disabled" means that Scanner V4 should not be installed.
-              If this field is not specified or set to "Default", the following defaulting takes place:
-              * for upgrades to 4.8 from previous releases, the default is: Disabled;
-              * for new installations starting with ACS 4.8, the default is: AutoSense.
+              The default is: AutoSense.
             displayName: Scanner V4 component
             path: scannerV4.scannerComponent
           - description: Settings pertaining to the indexer deployment.
@@ -1797,17 +1793,17 @@ spec:
                 - subjectaccessreviews
               verbs:
                 - create
-          serviceAccountName: rhacs-operator-controller-manager
+          serviceAccountName: stackrox-operator-controller-manager
       deployments:
         - label:
-            app: rhacs-operator
+            app: stackrox-operator
             control-plane: controller-manager
-          name: rhacs-operator-controller-manager
+          name: stackrox-operator-controller-manager
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: rhacs-operator
+                app: stackrox-operator
                 control-plane: controller-manager
             strategy: {}
             template:
@@ -1815,7 +1811,7 @@ spec:
                 annotations:
                   kubectl.kubernetes.io/default-container: manager
                 labels:
-                  app: rhacs-operator
+                  app: stackrox-operator
                   control-plane: controller-manager
               spec:
                 containers:
@@ -1874,7 +1870,7 @@ spec:
                           - ALL
                 securityContext:
                   runAsNonRoot: true
-                serviceAccountName: rhacs-operator-controller-manager
+                serviceAccountName: stackrox-operator-controller-manager
                 terminationGracePeriodSeconds: 10
       permissions:
         - rules:
@@ -1909,7 +1905,7 @@ spec:
               verbs:
                 - create
                 - patch
-          serviceAccountName: rhacs-operator-controller-manager
+          serviceAccountName: stackrox-operator-controller-manager
     strategy: deployment
   installModes:
     - supported: false

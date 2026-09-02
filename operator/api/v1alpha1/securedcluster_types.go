@@ -447,9 +447,7 @@ type LocalScannerV4ComponentSpec struct {
 	// unless there is a Central resource in the same namespace.
 	// In that case typically a central Scanner V4 will be deployed as a component of Central.
 	// A value of "Disabled" means that Scanner V4 should not be installed.
-	// If this field is not specified or set to "Default", the following defaulting takes place:
-	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
-	// * for new installations starting with ACS 4.8, the default is: AutoSense.
+	// The default is: AutoSense.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
