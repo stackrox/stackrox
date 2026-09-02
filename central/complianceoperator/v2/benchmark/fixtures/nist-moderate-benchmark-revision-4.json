@@ -8,6 +8,12 @@
     { "profileName": "rhcos4-moderate" },
     { "profileName": "ocp4-moderate-rev-4" },
     { "profileName": "ocp4-moderate-node-rev-4" },
-    { "profileName": "rhcos4-moderate-rev-4" }
+    { "profileName": "rhcos4-moderate-rev-4" },
+    { "profileName": "ocp5-moderate" },
+    { "profileName": "ocp5-moderate-node" },
+    { "profileName": "rhcos5-moderate" },
+    { "profileName": "ocp5-moderate-rev-4" },
+    { "profileName": "ocp5-moderate-node-rev-4" },
+    { "profileName": "rhcos5-moderate-rev-4" }
   ]
 }

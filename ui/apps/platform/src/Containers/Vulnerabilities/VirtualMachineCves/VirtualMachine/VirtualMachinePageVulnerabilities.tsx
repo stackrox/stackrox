@@ -112,9 +112,9 @@ function VirtualMachinePageVulnerabilities({
                     <Tr>
                         <Th screenReaderText="Row expansion" />
                         <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                        <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
+                        <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top CVE severity</Th>
                         <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
-                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
                         <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>
                             EPSS probability
                         </Th>
@@ -144,7 +144,7 @@ function VirtualMachinePageVulnerabilities({
                                         <Td dataLabel="CVE">
                                             <Truncate position="middle" content={cve.cve} />
                                         </Td>
-                                        <Td dataLabel="CVE severity" modifier="nowrap">
+                                        <Td dataLabel="Top CVE severity" modifier="nowrap">
                                             <VulnerabilitySeverityIconText
                                                 severity={cve.severity}
                                             />
@@ -154,7 +154,7 @@ function VirtualMachinePageVulnerabilities({
                                                 isFixable={cve.isFixable}
                                             />
                                         </Td>
-                                        <Td dataLabel="CVSS" modifier="nowrap">
+                                        <Td dataLabel="Top CVSS" modifier="nowrap">
                                             <CvssFormatted cvss={cve.cvss} />
                                         </Td>
                                         <Td dataLabel="EPSS probability">

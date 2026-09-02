@@ -238,10 +238,8 @@ func cachingBenchSettings() *sensor.AdmissionControlSettings {
 		ClusterId: uuid.NewDummy().String(),
 		ClusterConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
-				Enabled:          true,
-				EnforceOnUpdates: false,
-				TimeoutSeconds:   10,
-				ScanInline:       true,
+				Enabled:        true,
+				TimeoutSeconds: 10,
 			},
 		},
 		EnforcedDeployTimePolicies: &storage.PolicyList{Policies: []*storage.Policy{

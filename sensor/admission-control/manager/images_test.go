@@ -425,11 +425,6 @@ func (s *ImageCacheTestSuite) TestGetAvailableImagesInitContainerHandling() {
 	for name, tc := range cases {
 		s.Run(name, func() {
 			st := createTestState(false)
-			st.ClusterConfig = &storage.DynamicClusterConfig{
-				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
-					ScanInline: true,
-				},
-			}
 			s.manager.state.Store(st)
 
 			deployment := &storage.Deployment{

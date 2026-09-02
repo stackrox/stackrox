@@ -7,6 +7,7 @@ export const integrationSources = [
     'notifiers',
     'backups',
     'cloudSources',
+    'aiIntegrations',
     'authProviders',
     'apiClients',
 ] as const;
@@ -23,7 +24,8 @@ export type IntegrationType =
     | ImageIntegrationType
     | NotifierIntegrationType
     | SignatureIntegrationType
-    | CloudSourceIntegrationType;
+    | CloudSourceIntegrationType
+    | AiIntegrationType;
 
 export type AuthProviderType = 'apitoken' | 'machineAccess';
 
@@ -72,6 +74,8 @@ export type NotifierIntegrationType =
 export type SignatureIntegrationType = 'signature';
 
 export type CloudSourceIntegrationType = 'paladinCloud' | 'ocm';
+
+export type AiIntegrationType = 'lightspeed';
 
 export type BaseIntegration = {
     id: string;

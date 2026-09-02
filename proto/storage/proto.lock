@@ -2241,7 +2241,13 @@
               {
                 "id": 3,
                 "name": "scan_inline",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -2251,7 +2257,13 @@
               {
                 "id": 5,
                 "name": "enforce_on_updates",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           },

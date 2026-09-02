@@ -189,8 +189,7 @@ class AttemptedAlertsTest extends BaseSpecification {
         and:
         "Set admission controller settings to enforce on updates to #enforce"
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
-                .setEnabled(false)
-                .setEnforceOnUpdates(enforce)
+                .setEnabled(enforce)
                 .setTimeoutSeconds(3)
                 .build()
 

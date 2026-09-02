@@ -8,6 +8,12 @@
     { "profileName": "rhcos4-high" },
     { "profileName": "ocp4-high-rev-4" },
     { "profileName": "ocp4-high-node-rev-4" },
-    { "profileName": "rhcos4-high-rev-4" }
+    { "profileName": "rhcos4-high-rev-4" },
+    { "profileName": "ocp5-high" },
+    { "profileName": "ocp5-high-node" },
+    { "profileName": "rhcos5-high" },
+    { "profileName": "ocp5-high-rev-4" },
+    { "profileName": "ocp5-high-node-rev-4" },
+    { "profileName": "rhcos5-high-rev-4" }
   ]
 }

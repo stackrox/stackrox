@@ -75,30 +75,12 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     def "Verify Admission Controller Behavior for No Image Scans Policy"() {
         String gcrId
 
-        // Note: This test is intentionally not using @Unroll in order to depend on the order of
-        // operations.
-
         when:
+        "Enable admission controller enforcement"
         def ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
-                .setScanInline(false)
                 .setTimeoutSeconds(30)
 
-        assert ClusterService.updateAdmissionController(ac)
-        // Maximum time to wait for propagation to sensor
-        sleep 5000
-
-        then:
-        "Create deployment with a non-scannable image and inline scans disabled"
-        assert launchDeploymentWithImage(NON_EXISTENT_IMAGE)
-
-        and:
-        "Create deployment with a scannable image and inline scans disabled"
-        assert launchDeploymentWithImage(IMAGE_WITH_SCANS)
-
-        when:
-        "Enable inline scans"
-        ac.scanInline = true
         assert ClusterService.updateAdmissionController(ac)
         sleep 5000
 
@@ -113,31 +95,12 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
         sleep 5000
 
         then:
-        "Create deployment with a scannable image and inline scans enabled (w/ long timeout)"
+        "Create deployment with a scannable image"
         assert launchDeploymentWithImage(IMAGE_WITH_SCANS)
 
         and:
-        "Create deployment with a non-scannable image and inline scans enabled (w/ long timeout)"
+        "Create deployment with a non-scannable image"
         assert !launchDeploymentWithImage(NON_EXISTENT_IMAGE)
-
-        when:
-        "Disable inline scans again"
-        ac.scanInline = false
-        assert ClusterService.updateAdmissionController(ac)
-        sleep 5000
-
-        and:
-        "Enable image signature policy"
-        updateImageSignaturePolicy(true)
-        sleep 5000
-
-        then:
-        "Create deployment with a non-scannable image and inline scans disabled"
-        assert launchDeploymentWithImage(NON_EXISTENT_IMAGE)
-
-        and:
-        "Create deployment with a scannable image and inline scans disabled"
-        assert launchDeploymentWithImage(IMAGE_WITH_SCANS)
 
         cleanup:
         if (gcrId) {
