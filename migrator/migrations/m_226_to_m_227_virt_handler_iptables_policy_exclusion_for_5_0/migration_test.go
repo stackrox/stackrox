@@ -40,6 +40,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.db = pghelper.ForT(s.T(), false)
 	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePolicyCategoriesStmt)
 
 	// Insert some policies that won't be migrated to set the baseline
 	policies := []*storage.Policy{
