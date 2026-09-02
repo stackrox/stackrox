@@ -269,9 +269,6 @@
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
 {{ $_ = set $._rox "_renderMode" "[< .RenderMode >]" }}
 
-[< if or (eq .RenderMode "scannerOnly") (eq .RenderMode "scannerTLSOnly") >]
-{{ include "srox.fail" "Scanner V2 render modes (scannerOnly, scannerTLSOnly) have been removed." }}
-[< end >]
 
 {{/*
     Central setup.
