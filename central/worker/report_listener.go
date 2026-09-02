@@ -32,6 +32,7 @@ type reportListener struct {
 	collectionDatastore collectionDS.DataStore
 	notifierStore       notifierDS.DataStore
 	notifierProcessor   notifier.Processor
+	knownReportIDs      set.StringSet
 }
 
 func newReportListener(
@@ -51,6 +52,7 @@ func newReportListener(
 		collectionDatastore: collectionDatastore,
 		notifierStore:       notifierStore,
 		notifierProcessor:   notifierProcessor,
+		knownReportIDs:      set.NewStringSet(),
 	}
 }
 
@@ -140,6 +142,8 @@ func (r *reportListener) handleRequestSubmitted(snapshotID string) {
 	}
 	if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
 		log.Errorf("Failed to submit report request for snapshot %s: %v", snapshotID, err)
+	} else {
+		r.knownReportIDs.Add(snapshotID)
 	}
 }
 
@@ -205,6 +209,10 @@ func (r *reportListener) resyncPendingRequests() {
 	}
 
 	for _, snap := range snapshots {
+		if r.knownReportIDs.Contains(snap.GetReportId()) {
+			continue
+		}
+
 		var collection *storage.ResourceCollection
 		if collID := snap.GetCollection().GetId(); collID != "" {
 			var exists bool
@@ -221,7 +229,8 @@ func (r *reportListener) resyncPendingRequests() {
 		}
 		if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
 			log.Errorf("Error resyncing pending report %s: %v", snap.GetReportId(), err)
+		} else {
+			r.knownReportIDs.Add(snap.GetReportId())
 		}
 	}
-
 }
