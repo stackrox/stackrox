@@ -2,7 +2,7 @@
 
 This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
-Control.
+Control. It also deploys StackRox Scanner V4 by default.
 
 If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
 refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
