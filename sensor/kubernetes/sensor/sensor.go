@@ -197,7 +197,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			if err != nil {
 				log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
 			}
-			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient, repo2CPE)
+			// repo2CPEFetcher must be a typed-nil to avoid panics from maybeSync.
+			var repo2CPEFetcher vmscraper.Repo2CPEFetcher
+			if repo2CPE != nil {
+				repo2CPEFetcher = repo2CPE
+			}
+			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient, repo2CPEFetcher)
 			vmStats = vmScraper
 		}
 	}
