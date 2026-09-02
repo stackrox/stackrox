@@ -1,0 +1,7 @@
+# Values for nightly/scale tests - uses full GCS bundle
+# Usage: helm install scanner ./helmchart -f values-full.yaml
+
+app:
+  scanner:
+    # Use full bundle from GCS (200MB, complete vulnerability dataset)
+    vulnerabilitiesUrl: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip"
