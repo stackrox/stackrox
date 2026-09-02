@@ -320,7 +320,7 @@ non-standard environments:
 |`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
-|`scannerV4.disable`| Enable Scanner V4 for local image scanning. | `true` |
+|`scannerV4.disable`| Enable Scanner V4 for local image scanning. | `false` |
 ### Default resources
 
 Each of the baseline container's default resource settings are defined in the
