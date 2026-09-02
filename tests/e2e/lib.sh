@@ -1877,7 +1877,7 @@ handle_e2e_progress_failures() {
     fi
 
     case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
+    *gke-upgrade-tests*)
         record_upgrade_test_progess
         ;;
     *operator-e2e-tests|*-version-compatibility-tests|*-nongroovy-compatibility-tests)
