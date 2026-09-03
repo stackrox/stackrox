@@ -239,10 +239,10 @@ function NodeCvesOverviewPage() {
                     attribute={attributeForSnoozed}
                     onSelectTab={onSelectSnoozedTab}
                     searchFilter={searchFilter}
-                    tabContentId="TODO"
+                    tabContentId="node-cves"
                 />
             </PageSection>
-            <PageSection isCenterAligned>
+            <PageSection id="node-cves" isCenterAligned>
                 <TableEntityToolbar
                     filterToolbar={filterToolbar}
                     entityToggleGroup={entityToggleGroup}
