@@ -1918,7 +1918,7 @@ record_upgrade_test_progess() {
         return
     fi
 
-    # tests/upgrade/postgres_run.sh or tests/upgrade/postgres_upgrade_run.sh
+    # tests/upgrade/postgres_run.sh and tests/upgrade/postgres_upgrade_run.sh
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${STATE_DEPLOYED}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
@@ -1927,6 +1927,9 @@ record_upgrade_test_progess() {
         "postgres_run" "Bounced central"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" \
         "postgres_run" "Bounced central-db"
+
+    # tests/upgrade/postgres_run.sh only
+    [[ "$CI_JOB_NAME" == "gke-upgrade-tests-central" ]] || return
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" \
         "postgres_run" "Test migrations with an upgrade to current"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" \
