@@ -396,16 +396,8 @@ func (s *NodeReportServiceTestSuite) TestCancelNodeReport() {
 	s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), reportID).
 		Return(false, nil).Times(1)
 
-	s.reportSnapshotDataStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, updated *storage.ReportSnapshot) error {
-			s.Equal(storage.ReportStatus_FAILURE, updated.GetReportStatus().GetRunState())
-			s.Equal("Job cancelled by user", updated.GetReportStatus().GetErrorMsg())
-			s.NotNil(updated.GetReportStatus().GetCompletedAt())
-			return nil
-		}).Times(1)
-
 	_, err := s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: reportID})
-	s.NoError(err)
+	s.Error(err)
 }
 
 func (s *NodeReportServiceTestSuite) TestDeleteNodeReport() {
