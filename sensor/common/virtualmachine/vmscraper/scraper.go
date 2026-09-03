@@ -451,9 +451,6 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 	log.Infof("VMScraper: scraping %q (reason=%s backoff=%s)", key, reason, snap.backoff)
 
-	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
-	defer cancel()
-
 	totalStart := s.now()
 	port := getVsockPort()
 
@@ -467,7 +464,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	log.Debugf("VMScraper: dialing roxagent on %q with TLS", key)
-	result, outcome := s.dialAndGetReport(vmCtx, vm, key, port, lastKnownToken)
+	result, outcome := s.dialAndGetReport(ctx, vm, key, port, lastKnownToken)
 	if outcome != scrapeOK {
 		next := s.scheduleAfterAttempt(key, vm.ID, outcome)
 		kind := "retryable"
@@ -502,7 +499,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
-	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
+	// Mapping sync has its own deadline, so Send uses the scrape parent.
+	if err := s.sender.Send(ctx, vm, result.IndexReport); err != nil {
 		metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeSendError).Inc()
 		outcome := scrapeRetryable
 		if errors.Is(err, errox.NotImplemented) {
@@ -587,17 +585,20 @@ func (s *VMScraper) scheduleAfterAttempt(key string, vmID virtualmachine.VMID, o
 	})
 }
 
-// dialAndGetReport dials the VM and issues a single GetReport request,
-// recording dial/read latency metrics and classifying failures.
+// dialAndGetReport uses a separate perVMTimeout for GetReport and for the
+// mapping push so a slow report cannot abort the push.
 func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, lastKnownToken string) (*vsockclient.GetReportResult, scrapeOutcome) {
+	reportCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
+	defer cancel()
+
 	dialStart := s.now()
-	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
+	stream, err := s.dialer.Dial(reportCtx, vm.Namespace, vm.Name, port, true)
 	metrics.PullDialDurationSeconds.Observe(s.now().Sub(dialStart).Seconds())
 	if err != nil {
-		if ctx.Err() != nil {
+		if reportCtx.Err() != nil {
 			log.Warnf("VMScraper: dialing roxagent on %q timed out: %v", key, err)
 			metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportTimeout).Inc()
-			if errors.Is(ctx.Err(), context.Canceled) {
+			if errors.Is(reportCtx.Err(), context.Canceled) {
 				// Parent cancel (Sensor stop): do not keep retrying on the short tick.
 				return nil, scrapeNonRetryable
 			}
@@ -610,9 +611,12 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 	defer func() { _ = stream.Close() }()
 
 	readStart := s.now()
-	result, err := s.client.GetReport(ctx, stream, lastKnownToken)
+	result, err := s.client.GetReport(reportCtx, stream, lastKnownToken)
 	metrics.PullReadDurationSeconds.Observe(s.now().Sub(readStart).Seconds())
 	if err != nil {
+		// Classify before cancel(): cancel() looks like Sensor stop to
+		// handleGetReportError.
+		outcome := s.handleGetReportError(reportCtx, key, err)
 		// MAPPING_REQUIRED is the only error whose Meta still needs
 		// inspecting: a VM with no mapping at all has nothing to report
 		// except this error, and it's the only way Sensor learns to push one.
@@ -621,11 +625,13 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 			// enforces at most one connection at a time: this one must be
 			// closed first, not left to the deferred close on return.
 			_ = stream.Close()
+			cancel()
 			s.maybeSyncRepoCPEMapping(ctx, vm, key, port, resultMeta(result))
 		}
-		return nil, s.handleGetReportError(ctx, key, err)
+		return nil, outcome
 	}
 	_ = stream.Close()
+	cancel()
 	s.maybeSyncRepoCPEMapping(ctx, vm, key, port, result.Meta)
 	return result, scrapeOK
 }
@@ -749,19 +755,17 @@ func (s *VMScraper) maybeSyncRepoCPEMapping(ctx context.Context, vm *virtualmach
 	}
 }
 
-// syncRepoCPEMapping pushes mapping to the VM over a second, short-lived
-// VSOCK connection — GetReport's one-request-per-connection contract means
-// the push cannot ride the same connection as the report exchange.
+// syncRepoCPEMapping pushes mapping on a new connection (one request per
+// connection). The deadline is independent of GetReport's.
 func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, mapping []byte) {
-	if ctx.Err() != nil {
-		// ctx is the per-VM timeout GetReport already consumed; dialing
-		// with it already expired is an exhausted deadline, not a sync
-		// failure (dialAndGetReport/handleGetReportError apply the same rule).
-		log.Debugf("VMScraper: skipping repo-to-CPE mapping sync for %q: %v", key, ctx.Err())
+	syncCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
+	defer cancel()
+	if syncCtx.Err() != nil {
+		log.Debugf("VMScraper: skipping repo-to-CPE mapping sync for %q: %v", key, syncCtx.Err())
 		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout).Inc()
 		return
 	}
-	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
+	stream, err := s.dialer.Dial(syncCtx, vm.Namespace, vm.Name, port, true)
 	if err != nil {
 		log.Warnf("VMScraper: dialing roxagent on %q for repo-to-CPE mapping sync failed: %v", key, err)
 		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError).Inc()
@@ -769,7 +773,7 @@ func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.I
 	}
 	defer func() { _ = stream.Close() }()
 
-	updated, _, err := s.client.SyncRepoCPEMapping(ctx, stream, mapping)
+	updated, _, err := s.client.SyncRepoCPEMapping(syncCtx, stream, mapping)
 	if err != nil {
 		// NOT_SENSOR_MANAGED should never happen here: maybeSyncRepoCPEMapping only takes
 		// the SENSOR path for agents it believes accept a push. Counting it

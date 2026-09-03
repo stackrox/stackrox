@@ -70,8 +70,8 @@ var (
 	// min(poll interval, 30m).
 	VirtualMachinesScraperInitialBackoff = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF", 10*time.Second)
 
-	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
-	// and pulling a report in a single scrape cycle.
+	// VirtualMachinesScraperPerVMTimeout is the deadline for one Sensor-to-agent
+	// call (GetReport or a mapping sync). Doing both can take twice as long.
 	VirtualMachinesScraperPerVMTimeout = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_PER_VM_TIMEOUT", 30*time.Second)
 
 	// VirtualMachinesScraperMandatoryRefreshInterval defines the maximum age of a VM's last forwarded

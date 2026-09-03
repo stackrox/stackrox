@@ -139,10 +139,12 @@ type mockProtocolClient struct {
 	calls       []protocolCall
 	callIdx     int
 
-	syncCalls   [][]byte
-	syncUpdated bool
-	syncMeta    *pb.ResponseMeta
-	syncErr     error
+	getReportDelay time.Duration
+	syncDelay      time.Duration
+	syncCalls      [][]byte
+	syncUpdated    bool
+	syncMeta       *pb.ResponseMeta
+	syncErr        error
 }
 
 type protocolCall struct {
@@ -150,6 +152,9 @@ type protocolCall struct {
 }
 
 func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, lastKnownToken string) (*vsockclient.GetReportResult, error) {
+	if m.getReportDelay > 0 {
+		time.Sleep(m.getReportDelay)
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.calls = append(m.calls, protocolCall{lastKnownToken: lastKnownToken})
@@ -171,6 +176,9 @@ func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 }
 
 func (m *mockProtocolClient) SyncRepoCPEMapping(_ context.Context, _ io.ReadWriteCloser, mapping []byte) (bool, *pb.ResponseMeta, error) {
+	if m.syncDelay > 0 {
+		time.Sleep(m.syncDelay)
+	}
 	m.syncCalls = append(m.syncCalls, mapping)
 	return m.syncUpdated, m.syncMeta, m.syncErr
 }
@@ -202,9 +210,12 @@ type mockSender struct {
 	err  error
 }
 
-func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (m *mockSender) Send(ctx context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if m.err != nil {
 		return m.err
 	}
@@ -1571,11 +1582,9 @@ func TestVMScraper_DialAndGetReport_SyncTriggering(t *testing.T) {
 	}
 }
 
-// TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout covers
-// syncRepoCPEMapping's own ctx check: an already-expired context (GetReport
-// already consumed its deadline) must count as a timeout, not a sync
-// failure, matching dialAndGetReport's own ctx.Err() handling.
-func TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout(t *testing.T) {
+// TestVMScraper_SyncRepoCPEMapping_CanceledParent_ClassifiedAsTimeout covers
+// Sensor stop counting as PullSyncTimeout, not PullSyncError.
+func TestVMScraper_SyncRepoCPEMapping_CanceledParent_ClassifiedAsTimeout(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	dialer := &mockDialer{err: errors.New("dial must not be attempted")}
 	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, &mockProtocolClient{})
@@ -1587,10 +1596,64 @@ func TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout(t *test
 	cancel()
 	s.syncRepoCPEMapping(ctx, vm, "ns1/vm-a", 1, []byte("payload"))
 
-	assert.Zero(t, dialer.callIdx.Load(), "an already-expired context must not be dialed at all")
+	assert.Zero(t, dialer.callIdx.Load(), "a canceled parent must not be dialed at all")
 	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout)))
 	assert.Equal(t, syncErrBefore, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError)),
-		"an expired context must not be counted as a sync error")
+		"a canceled parent must not be counted as a sync error")
+}
+
+// TestVMScraper_SendSucceedsAfterSyncOverrunsGetReportDeadline covers Send
+// succeeding after GetReport and mapping sync each consume a full timeout.
+func TestVMScraper_SendSucceedsAfterSyncOverrunsGetReportDeadline(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		vm := makeVM("ns1", "vm-a", 100)
+		rep := makeReport("1")
+		rep.Meta.RepoCpeMappingHash = new("old-hash")
+		rep.Meta.RepoCpeMappingUpdatePath = pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR.Enum()
+		sender := &mockSender{}
+		client := &mockProtocolClient{
+			resultQueue:    []*vsockclient.GetReportResult{rep},
+			getReportDelay: 15 * time.Millisecond,
+			syncDelay:      15 * time.Millisecond,
+		}
+		s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, sender, &mockDialer{}, client)
+		s.perVMTimeout = 20 * time.Millisecond
+		s.repo2CPEFetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
+
+		s.pollOnce(t.Context())
+
+		require.Len(t, sender.sent, 1, "GetReport's deadline must not fail Send after a mapping sync")
+		require.Len(t, client.syncCalls, 1)
+	})
+}
+
+// TestVMScraper_MappingRequiredClassifiedDespiteSlowSync covers MAPPING_REQUIRED
+// staying mapping_required when mapping sync overruns GetReport's deadline.
+func TestVMScraper_MappingRequiredClassifiedDespiteSlowSync(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		vm := makeVM("ns1", "vm-a", 100)
+		client := &mockProtocolClient{
+			resultQueue: []*vsockclient.GetReportResult{{
+				Meta: metaWithMapping("old-hash", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR),
+			}},
+			errQueue:       []error{vsockclient.ErrMappingRequired},
+			getReportDelay: 15 * time.Millisecond,
+			syncDelay:      15 * time.Millisecond,
+		}
+		s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+		s.perVMTimeout = 20 * time.Millisecond
+		s.repo2CPEFetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
+
+		mappingBefore := testutil.ToFloat64(metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportMappingRequired))
+		timeoutBefore := testutil.ToFloat64(metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportTimeout))
+
+		s.pollOnce(t.Context())
+
+		require.Len(t, client.syncCalls, 1)
+		assert.Equal(t, mappingBefore+1, testutil.ToFloat64(metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportMappingRequired)))
+		assert.Equal(t, timeoutBefore, testutil.ToFloat64(metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportTimeout)),
+			"a slow mapping sync must not rewrite MAPPING_REQUIRED as a transport timeout")
+	})
 }
 
 // TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync guards against
