@@ -174,6 +174,12 @@ export type ListVMCVEsByVMResponse = {
     totalCount: number;
 };
 
+export type VMVulnSummary = {
+    severityCounts: VulnCountBySeverity;
+    fixableCount: number;
+    notFixableCount: number;
+};
+
 export type VMComponentScanStatus =
     | 'NOT_SCANNED'
     | 'SCAN_PENDING'
@@ -311,6 +317,26 @@ export function getVMCVEComponents(
 ): Promise<GetVMCVEComponentsResponse> {
     return axios
         .get<GetVMCVEComponentsResponse>(`/v2/virtualmachines/${vmId}/cves/${cveId}/components`)
+        .then((response) => response.data);
+}
+
+// Might consider updating buildNestedRawQueryParams to handle this case (no pagination).
+export function getVMVulnSummary(
+    virtualMachineId: string,
+    searchFilter: SearchFilter
+): Promise<VMVulnSummary> {
+    const params = qs.stringify(
+        {
+            query: {
+                query: getRequestQueryStringForSearchFilter(
+                    applyRegexSearchModifiers(searchFilter)
+                ),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<VMVulnSummary>(`/v2/virtualmachines/${virtualMachineId}/vuln-summary?${params}`)
         .then((response) => response.data);
 }
 

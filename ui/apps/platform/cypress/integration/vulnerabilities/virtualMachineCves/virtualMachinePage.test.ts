@@ -6,6 +6,7 @@ import { assertCannotFindThePage } from '../../../helpers/visit';
 import {
     getVirtualMachineAlias,
     getVirtualMachineCveComponentsAlias,
+    getVirtualMachineVulnSummaryAlias,
     listVirtualMachineComponentsAlias,
     listVirtualMachineCvesAlias,
     routeMatcherMapForVirtualMachineComponents,
@@ -20,10 +21,12 @@ const fixturePathGetVM = 'vulnerabilities/virtualMachineCves/getVM';
 const fixturePathListCves = 'vulnerabilities/virtualMachineCves/listVirtualMachineCves';
 const fixturePathListComponents = 'vulnerabilities/virtualMachineCves/listVirtualMachineComponents';
 const fixturePathCveComponents = 'vulnerabilities/virtualMachineCves/getVMCVEComponents';
+const fixturePathVulnSummary = 'vulnerabilities/virtualMachineCves/getVMVulnSummary';
 
 const staticResponseMapForVirtualMachineVulnerabilities = {
     [getVirtualMachineAlias]: { fixture: fixturePathGetVM },
     [listVirtualMachineCvesAlias]: { fixture: fixturePathListCves },
+    [getVirtualMachineVulnSummaryAlias]: { fixture: fixturePathVulnSummary },
 };
 
 function visitWithVulnFixtures() {
@@ -145,6 +148,19 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
                 },
                 [listVirtualMachineCvesAlias]: {
                     body: { cves: [], totalCount: 0 },
+                },
+                [getVirtualMachineVulnSummaryAlias]: {
+                    body: {
+                        severityCounts: {
+                            critical: { total: 0, fixable: 0 },
+                            important: { total: 0, fixable: 0 },
+                            moderate: { total: 0, fixable: 0 },
+                            low: { total: 0, fixable: 0 },
+                            unknown: { total: 0, fixable: 0 },
+                        },
+                        fixableCount: 0,
+                        notFixableCount: 0,
+                    },
                 },
             });
 

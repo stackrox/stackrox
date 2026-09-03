@@ -13,6 +13,8 @@ import axios from './instance';
 import type {
     NodeViewBasedReportSnapshot,
     NodeVulnerabilityReportConfiguration,
+    ReportRequestViewBased,
+    RunReportResponseViewBased,
 } from './ReportsService.types';
 import type { Empty } from './types';
 
@@ -109,6 +111,25 @@ export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> 
 // View-based jobs
 
 // PostViewBasedNodeReport
+export function runNodeViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'NODE_VULNERABILITY',
+        nodeVulnReportFilters: {
+            query,
+        },
+        areaOfConcern, // 'Nodes' for analytics ony
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/node/view-based/run', requestBody)
+        .then((response) => response.data);
+}
 
 // GetViewBasedNodeReportHistory
 export function getViewBasedNodeReportHistory({

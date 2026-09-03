@@ -3,9 +3,8 @@ import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
 import { Link } from 'react-router-dom';
 
-import { runViewBasedReport } from 'services/ReportsService';
-import { vulnerabilityViewBasedJobsPath } from 'routePaths';
 import useAnalytics, { VIEW_BASED_REPORT_GENERATED } from 'hooks/useAnalytics';
+import type { RunReportResponseViewBased } from 'services/ReportsService.types';
 
 type Message =
     | {
@@ -27,6 +26,14 @@ export type CreateViewBasedReportModalProps = {
     setIsOpen: (value: boolean) => void;
     query: string;
     areaOfConcern: string;
+    runViewBasedReport: ({
+        query,
+        areaOfConcern,
+    }: {
+        query: string;
+        areaOfConcern: string;
+    }) => Promise<RunReportResponseViewBased>;
+    vulnerabilityViewBasedJobsPath: string;
 };
 
 function CreateViewBasedReportModal({
@@ -34,6 +41,8 @@ function CreateViewBasedReportModal({
     setIsOpen,
     query,
     areaOfConcern,
+    runViewBasedReport,
+    vulnerabilityViewBasedJobsPath,
 }: CreateViewBasedReportModalProps) {
     const { analyticsTrack } = useAnalytics();
     const [isTriggeringReportGeneration, setIsTriggeringReportGeneration] = useState(false);
