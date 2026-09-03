@@ -110,20 +110,23 @@ func (x *ClusterCheckStatus) GetDataState() ComplianceDataState {
 
 // ComplianceCheckResult details of an instance of a compliance check result
 type ComplianceCheckResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CheckId       string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
-	CheckName     string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	CheckUid      string                 `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Instructions  string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Rationale     string                 `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	ValuesUsed    []string               `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
-	Warnings      []string               `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
-	Status        ComplianceCheckStatus  `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	RuleName      string                 `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	Labels        map[string]string      `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations   map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Controls      []*ComplianceControl   `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CheckId      string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
+	CheckName    string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	CheckUid     string                 `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	Description  string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Instructions string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	Rationale    string                 `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	ValuesUsed   []string               `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
+	Warnings     []string               `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Status       ComplianceCheckStatus  `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
+	RuleName     string                 `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	Labels       map[string]string      `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations  map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Controls     []*ComplianceControl   `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
+	// Per-check freshness for this cluster: OUTDATED if the check's assessment
+	// time predates the config's most recent expected scan.
+	DataState     ComplianceDataState `protobuf:"varint,16,opt,name=data_state,json=dataState,proto3,enum=v2.ComplianceDataState" json:"data_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,6 +250,13 @@ func (x *ComplianceCheckResult) GetControls() []*ComplianceControl {
 		return x.Controls
 	}
 	return nil
+}
+
+func (x *ComplianceCheckResult) GetDataState() ComplianceDataState {
+	if x != nil {
+		return x.DataState
+	}
+	return ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN
 }
 
 type ComplianceCheckData struct {
@@ -957,7 +967,7 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"\tcheck_uid\x18\x04 \x01(\tR\bcheckUid\x12@\n" +
 	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x126\n" +
 	"\n" +
-	"data_state\x18\x06 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\"\xa5\x05\n" +
+	"data_state\x18\x06 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\"\xdd\x05\n" +
 	"\x15ComplianceCheckResult\x12\x19\n" +
 	"\bcheck_id\x18\x01 \x01(\tR\acheckId\x12\x1d\n" +
 	"\n" +
@@ -975,7 +985,9 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"\trule_name\x18\f \x01(\tR\bruleName\x12=\n" +
 	"\x06labels\x18\r \x03(\v2%.v2.ComplianceCheckResult.LabelsEntryR\x06labels\x12L\n" +
 	"\vannotations\x18\x0e \x03(\v2*.v2.ComplianceCheckResult.AnnotationsEntryR\vannotations\x121\n" +
-	"\bcontrols\x18\x0f \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x1a9\n" +
+	"\bcontrols\x18\x0f \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x126\n" +
+	"\n" +
+	"data_state\x18\x10 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1112,40 +1124,41 @@ var file_api_v2_compliance_results_service_proto_depIdxs = []int32{
 	12, // 6: v2.ComplianceCheckResult.labels:type_name -> v2.ComplianceCheckResult.LabelsEntry
 	13, // 7: v2.ComplianceCheckResult.annotations:type_name -> v2.ComplianceCheckResult.AnnotationsEntry
 	20, // 8: v2.ComplianceCheckResult.controls:type_name -> v2.ComplianceControl
-	1,  // 9: v2.ComplianceCheckData.result:type_name -> v2.ComplianceCheckResult
-	0,  // 10: v2.ComplianceClusterCheckStatus.clusters:type_name -> v2.ClusterCheckStatus
-	14, // 11: v2.ComplianceClusterCheckStatus.labels:type_name -> v2.ComplianceClusterCheckStatus.LabelsEntry
-	15, // 12: v2.ComplianceClusterCheckStatus.annotations:type_name -> v2.ComplianceClusterCheckStatus.AnnotationsEntry
-	20, // 13: v2.ComplianceClusterCheckStatus.controls:type_name -> v2.ComplianceControl
-	3,  // 14: v2.ComplianceScanResult.check_results:type_name -> v2.ComplianceClusterCheckStatus
-	4,  // 15: v2.ListComplianceScanResultsResponse.scan_results:type_name -> v2.ComplianceScanResult
-	2,  // 16: v2.ListComplianceResultsResponse.scan_results:type_name -> v2.ComplianceCheckData
-	0,  // 17: v2.ListComplianceCheckClusterResponse.check_results:type_name -> v2.ClusterCheckStatus
-	20, // 18: v2.ListComplianceCheckClusterResponse.controls:type_name -> v2.ComplianceControl
-	1,  // 19: v2.ListComplianceCheckResultResponse.check_results:type_name -> v2.ComplianceCheckResult
-	18, // 20: v2.ListComplianceCheckResultResponse.last_scan_time:type_name -> google.protobuf.Timestamp
-	21, // 21: v2.ComplianceScanResultsRequest.query:type_name -> v2.RawQuery
-	21, // 22: v2.ComplianceProfileClusterRequest.query:type_name -> v2.RawQuery
-	21, // 23: v2.ComplianceCheckDetailRequest.query:type_name -> v2.RawQuery
-	22, // 24: v2.ComplianceResultsService.GetComplianceScanCheckResult:input_type -> v2.ResourceByID
-	21, // 25: v2.ComplianceResultsService.GetComplianceScanResults:input_type -> v2.RawQuery
-	9,  // 26: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:input_type -> v2.ComplianceScanResultsRequest
-	23, // 27: v2.ComplianceResultsService.GetComplianceProfileResults:input_type -> v2.ComplianceProfileResultsRequest
-	24, // 28: v2.ComplianceResultsService.GetComplianceProfileCheckResult:input_type -> v2.ComplianceProfileCheckRequest
-	10, // 29: v2.ComplianceResultsService.GetComplianceProfileClusterResults:input_type -> v2.ComplianceProfileClusterRequest
-	11, // 30: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:input_type -> v2.ComplianceCheckDetailRequest
-	3,  // 31: v2.ComplianceResultsService.GetComplianceScanCheckResult:output_type -> v2.ComplianceClusterCheckStatus
-	6,  // 32: v2.ComplianceResultsService.GetComplianceScanResults:output_type -> v2.ListComplianceResultsResponse
-	6,  // 33: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:output_type -> v2.ListComplianceResultsResponse
-	25, // 34: v2.ComplianceResultsService.GetComplianceProfileResults:output_type -> v2.ListComplianceProfileResults
-	7,  // 35: v2.ComplianceResultsService.GetComplianceProfileCheckResult:output_type -> v2.ListComplianceCheckClusterResponse
-	8,  // 36: v2.ComplianceResultsService.GetComplianceProfileClusterResults:output_type -> v2.ListComplianceCheckResultResponse
-	3,  // 37: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:output_type -> v2.ComplianceClusterCheckStatus
-	31, // [31:38] is the sub-list for method output_type
-	24, // [24:31] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	19, // 9: v2.ComplianceCheckResult.data_state:type_name -> v2.ComplianceDataState
+	1,  // 10: v2.ComplianceCheckData.result:type_name -> v2.ComplianceCheckResult
+	0,  // 11: v2.ComplianceClusterCheckStatus.clusters:type_name -> v2.ClusterCheckStatus
+	14, // 12: v2.ComplianceClusterCheckStatus.labels:type_name -> v2.ComplianceClusterCheckStatus.LabelsEntry
+	15, // 13: v2.ComplianceClusterCheckStatus.annotations:type_name -> v2.ComplianceClusterCheckStatus.AnnotationsEntry
+	20, // 14: v2.ComplianceClusterCheckStatus.controls:type_name -> v2.ComplianceControl
+	3,  // 15: v2.ComplianceScanResult.check_results:type_name -> v2.ComplianceClusterCheckStatus
+	4,  // 16: v2.ListComplianceScanResultsResponse.scan_results:type_name -> v2.ComplianceScanResult
+	2,  // 17: v2.ListComplianceResultsResponse.scan_results:type_name -> v2.ComplianceCheckData
+	0,  // 18: v2.ListComplianceCheckClusterResponse.check_results:type_name -> v2.ClusterCheckStatus
+	20, // 19: v2.ListComplianceCheckClusterResponse.controls:type_name -> v2.ComplianceControl
+	1,  // 20: v2.ListComplianceCheckResultResponse.check_results:type_name -> v2.ComplianceCheckResult
+	18, // 21: v2.ListComplianceCheckResultResponse.last_scan_time:type_name -> google.protobuf.Timestamp
+	21, // 22: v2.ComplianceScanResultsRequest.query:type_name -> v2.RawQuery
+	21, // 23: v2.ComplianceProfileClusterRequest.query:type_name -> v2.RawQuery
+	21, // 24: v2.ComplianceCheckDetailRequest.query:type_name -> v2.RawQuery
+	22, // 25: v2.ComplianceResultsService.GetComplianceScanCheckResult:input_type -> v2.ResourceByID
+	21, // 26: v2.ComplianceResultsService.GetComplianceScanResults:input_type -> v2.RawQuery
+	9,  // 27: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:input_type -> v2.ComplianceScanResultsRequest
+	23, // 28: v2.ComplianceResultsService.GetComplianceProfileResults:input_type -> v2.ComplianceProfileResultsRequest
+	24, // 29: v2.ComplianceResultsService.GetComplianceProfileCheckResult:input_type -> v2.ComplianceProfileCheckRequest
+	10, // 30: v2.ComplianceResultsService.GetComplianceProfileClusterResults:input_type -> v2.ComplianceProfileClusterRequest
+	11, // 31: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:input_type -> v2.ComplianceCheckDetailRequest
+	3,  // 32: v2.ComplianceResultsService.GetComplianceScanCheckResult:output_type -> v2.ComplianceClusterCheckStatus
+	6,  // 33: v2.ComplianceResultsService.GetComplianceScanResults:output_type -> v2.ListComplianceResultsResponse
+	6,  // 34: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:output_type -> v2.ListComplianceResultsResponse
+	25, // 35: v2.ComplianceResultsService.GetComplianceProfileResults:output_type -> v2.ListComplianceProfileResults
+	7,  // 36: v2.ComplianceResultsService.GetComplianceProfileCheckResult:output_type -> v2.ListComplianceCheckClusterResponse
+	8,  // 37: v2.ComplianceResultsService.GetComplianceProfileClusterResults:output_type -> v2.ListComplianceCheckResultResponse
+	3,  // 38: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:output_type -> v2.ComplianceClusterCheckStatus
+	32, // [32:39] is the sub-list for method output_type
+	25, // [25:32] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_results_service_proto_init() }

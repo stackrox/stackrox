@@ -38,6 +38,9 @@ message ComplianceCheckResult {
   map<string, string> labels = 13;
   map<string, string> annotations = 14;
   repeated ComplianceControl controls = 15;
+  // Per-check freshness for this cluster: OUTDATED if the check's assessment
+  // time predates the config's most recent expected scan.
+  ComplianceDataState data_state = 16;
 }
 
 message ComplianceCheckData {

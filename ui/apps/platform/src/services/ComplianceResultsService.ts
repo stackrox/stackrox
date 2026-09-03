@@ -36,6 +36,7 @@ export type ComplianceCheckResult = {
     ruleName: string;
     labels: { [key: string]: string };
     annotations: { [key: string]: string };
+    dataState?: ComplianceDataState;
 };
 
 export type ComplianceClusterCheckStatus = {

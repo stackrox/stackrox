@@ -140,11 +140,13 @@ func ComplianceV2CheckClusterResults(incoming []*storage.ComplianceOperatorCheck
 	return clusterResults
 }
 
-// ComplianceV2CheckResults converts the storage check results to v2 scan results
-func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string, controlResults []*compRule.ControlResult) []*v2.ComplianceCheckResult {
+// ComplianceV2CheckResults converts the storage check results to v2 scan results.
+// The resolver (may be nil) computes per-check freshness for the single-cluster
+// Coverage view's "Data status" column.
+func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string, controlResults []*compRule.ControlResult, resolver *compliancedata.ConfigResolver) []*v2.ComplianceCheckResult {
 	clusterResults := make([]*v2.ComplianceCheckResult, 0, len(incoming))
 	for _, result := range incoming {
-		clusterResults = append(clusterResults, checkResult(result, ruleMap[result.GetRuleRefId()], controlResults))
+		clusterResults = append(clusterResults, checkResult(result, ruleMap[result.GetRuleRefId()], controlResults, resolver))
 	}
 
 	return clusterResults
@@ -156,7 +158,7 @@ func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, 
 		results = append(results, &v2.ComplianceCheckData{
 			ClusterId: result.GetClusterId(),
 			ScanName:  result.GetScanConfigName(),
-			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], controlMap[result.GetCheckName()]),
+			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], controlMap[result.GetCheckName()], nil),
 		})
 	}
 
@@ -185,7 +187,11 @@ func protoTimeToTime(ts *types.Timestamp) *time.Time {
 	return &t
 }
 
-func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceCheckResult {
+func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult, resolver *compliancedata.ConfigResolver) *v2.ComplianceCheckResult {
+	var dataState v2.ComplianceDataState
+	if resolver != nil {
+		dataState = resolver.ResolveCheck(incoming.GetScanConfigName(), protoTimeToTime(incoming.GetLastStartedTime())).ToProto()
+	}
 	return &v2.ComplianceCheckResult{
 		CheckId:      incoming.GetCheckId(),
 		CheckName:    incoming.GetCheckName(),
@@ -200,6 +206,7 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 		RuleName:     ruleName,
 		Labels:       incoming.GetLabels(),
 		Annotations:  incoming.GetAnnotations(),
+		DataState:    dataState,
 	}
 }
 

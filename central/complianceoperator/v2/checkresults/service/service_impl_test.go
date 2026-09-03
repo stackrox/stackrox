@@ -762,12 +762,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))},
 					}, nil,
 				).Times(1)
+				// Loaded twice: once by the outdated-count helper, once by the
+				// per-check "Data status" column resolver.
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(
 					&storage.ComplianceOperatorScanConfigurationV2{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}, nil,
-				).Times(1)
+				).Times(2)
 			},
 		},
 		{
@@ -814,12 +816,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Now().UTC())},
 					}, nil,
 				).Times(1)
+				// Loaded twice: once by the outdated-count helper, once by the
+				// per-check "Data status" column resolver.
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(
 					&storage.ComplianceOperatorScanConfigurationV2{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}, nil,
-				).Times(1)
+				).Times(2)
 			},
 		},
 		{

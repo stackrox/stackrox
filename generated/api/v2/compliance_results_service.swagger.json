@@ -699,6 +699,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataState": {
+          "$ref": "#/definitions/v2ComplianceDataState",
+          "description": "Per-check freshness for this cluster: OUTDATED if the check's assessment\ntime predates the config's most recent expected scan."
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"

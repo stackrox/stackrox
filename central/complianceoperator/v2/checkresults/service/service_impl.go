@@ -527,8 +527,17 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		outdatedCount = 0
 	}
 
+	// Resolver for the per-check "Data status" column: load the configs referenced
+	// by the returned results so each row's assessment time can be compared to its
+	// config's expected refresh.
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	resolver := s.buildConfigResolver(ctx, configNames)
+
 	return &v2.ListComplianceCheckResultResponse{
-		CheckResults:         storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
+		CheckResults:         storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls, resolver),
 		ProfileName:          request.GetProfileName(),
 		ClusterId:            request.GetClusterId(),
 		TotalCount:           int32(resultCount),
