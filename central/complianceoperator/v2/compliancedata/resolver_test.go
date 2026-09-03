@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/robfig/cron.v2"
 )
 
@@ -54,7 +55,7 @@ func TestFindPreviousFireTime(t *testing.T) {
 			},
 		},
 		"no fire in lookback window": {
-			cronExpr: "0 0 29 2 *", // Feb 29 only
+			cronExpr: "0 0 29 2 *",                                // Feb 29 only
 			before:   time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), // 2026 is not a leap year
 			wantZero: true,
 		},
@@ -113,17 +114,17 @@ func TestResolveCheck(t *testing.T) {
 	}{
 		"healthy: assessment after reference": {
 			configName:     "daily-scan",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
 			want:           Current,
 		},
 		"frozen: assessment before reference": {
 			configName:     "daily-scan",
-			assessmentTime: timePtr(time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)),
 			want:           Outdated,
 		},
 		"long-broken: assessment months old": {
 			configName:     "daily-scan",
-			assessmentTime: timePtr(time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)),
 			want:           Outdated,
 		},
 		"nil assessment time": {
@@ -133,27 +134,27 @@ func TestResolveCheck(t *testing.T) {
 		},
 		"no schedule config": {
 			configName:     "no-sched",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
 			want:           Unknown,
 		},
 		"one-time scan config": {
 			configName:     "one-time",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
 			want:           Unknown,
 		},
 		"unknown config name": {
 			configName:     "nonexistent",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
 			want:           Unknown,
 		},
 		"skew boundary: within 2min of reference → CURRENT": {
 			configName:     "daily-scan",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 1, 58, 30, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 1, 58, 30, 0, time.UTC)),
 			want:           Current,
 		},
 		"just outside skew: 3min before reference → OUTDATED": {
 			configName:     "daily-scan",
-			assessmentTime: timePtr(time.Date(2026, 9, 2, 1, 56, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 1, 56, 0, 0, time.UTC)),
 			want:           Outdated,
 		},
 	}
@@ -234,6 +235,107 @@ func TestRollupState(t *testing.T) {
 	}
 }
 
-func timePtr(t time.Time) *time.Time {
-	return &t
+// TestResolveCheck_OnDemand covers the Phase 4 on-demand ("Scan now") term:
+// expectedRefresh = MAX(scheduledRefresh, requestedRefresh), with an in-flight
+// guard on requestedRefresh (counted only once it is older than grace).
+// now = 2026-09-02 15:00 UTC, grace = 85m (45+40) ⇒ now-grace = 13:35.
+func TestResolveCheck_OnDemand(t *testing.T) {
+	now := time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC)
+
+	// No cron schedule (interval UNSET): only the on-demand term can make it evaluable.
+	ondemandOnly := func(requested time.Time) *storage.ComplianceOperatorScanConfigurationV2 {
+		return &storage.ComplianceOperatorScanConfigurationV2{
+			ScanConfigName:        "ondemand-only",
+			Schedule:              &storage.Schedule{IntervalType: storage.Schedule_UNSET},
+			LastScanRequestedTime: timestamppb.New(requested),
+		}
+	}
+	// One-time config (has an hour but OneTimeScan ⇒ no recurring cron).
+	oneTime := func(requested time.Time) *storage.ComplianceOperatorScanConfigurationV2 {
+		return &storage.ComplianceOperatorScanConfigurationV2{
+			ScanConfigName:        "one-time",
+			OneTimeScan:           true,
+			Schedule:              &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+			LastScanRequestedTime: timestamppb.New(requested),
+		}
+	}
+	// Daily 02:00 cron PLUS an on-demand request (exercises MAX).
+	dailyPlus := func(requested time.Time) *storage.ComplianceOperatorScanConfigurationV2 {
+		return &storage.ComplianceOperatorScanConfigurationV2{
+			ScanConfigName:        "daily-plus",
+			Schedule:              &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2, Minute: 0},
+			LastScanRequestedTime: timestamppb.New(requested),
+		}
+	}
+
+	cases := map[string]struct {
+		config         *storage.ComplianceOperatorScanConfigurationV2
+		assessmentTime *time.Time
+		want           State
+	}{
+		// One-time / UNSET configs become evaluable after a recorded "Scan now".
+		"one-time evaluable after ScanNow, data fresh → CURRENT": {
+			config:         oneTime(time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)), // 3h ago > grace
+			assessmentTime: new(time.Date(2026, 9, 2, 12, 5, 0, 0, time.UTC)),
+			want:           Current,
+		},
+		// On-demand timeout / disconnected sensor: user requested a scan > grace ago,
+		// but the checks never refreshed (frozen assessment time) ⇒ OUTDATED. Central
+		// catches this without any sensor-forwarded scan start.
+		"on-demand timeout, data stale → OUTDATED": {
+			config:         oneTime(time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)), // yesterday
+			want:           Outdated,
+		},
+		"ondemand-only (UNSET), request > grace, stale → OUTDATED": {
+			config:         ondemandOnly(time.Date(2026, 9, 2, 11, 0, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)),
+			want:           Outdated,
+		},
+		// In-flight guard: a "Scan now" younger than grace must NOT force OUTDATED;
+		// with no schedule it stays UNKNOWN until grace elapses.
+		"in-flight ScanNow (within grace), no schedule → UNKNOWN": {
+			config:         ondemandOnly(time.Date(2026, 9, 2, 14, 30, 0, 0, time.UTC)), // 30m ago < grace
+			assessmentTime: new(time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)),
+			want:           Unknown,
+		},
+		// MAX picks the on-demand term when it is newer than the scheduled fire:
+		// data that would be CURRENT vs the 02:00 schedule is OUTDATED vs a 10:00 request.
+		"MAX picks requestedRefresh (newer) → OUTDATED": {
+			config:         dailyPlus(time.Date(2026, 9, 2, 10, 0, 0, 0, time.UTC)), // 5h ago > grace
+			assessmentTime: new(time.Date(2026, 9, 2, 9, 0, 0, 0, time.UTC)),        // after 02:00, before 10:00
+			want:           Outdated,
+		},
+		"MAX picks requestedRefresh (newer), fresh data → CURRENT": {
+			config:         dailyPlus(time.Date(2026, 9, 2, 10, 0, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 10, 5, 0, 0, time.UTC)),
+			want:           Current,
+		},
+		// MAX picks the scheduled fire when the on-demand request is older.
+		"MAX picks scheduledRefresh (request older) → CURRENT": {
+			config:         dailyPlus(time.Date(2026, 9, 1, 10, 0, 0, 0, time.UTC)), // yesterday
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),        // after today 02:00
+			want:           Current,
+		},
+		// In-flight on-demand request is ignored, detection falls back to the schedule.
+		"in-flight ScanNow ignored, falls back to schedule → OUTDATED": {
+			config:         dailyPlus(time.Date(2026, 9, 2, 14, 30, 0, 0, time.UTC)), // in-flight
+			assessmentTime: new(time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)),         // before today 02:00
+			want:           Outdated,
+		},
+		"in-flight ScanNow ignored, schedule satisfied → CURRENT": {
+			config:         dailyPlus(time.Date(2026, 9, 2, 14, 30, 0, 0, time.UTC)),
+			assessmentTime: new(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)),
+			want:           Current,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			resolver := NewConfigResolver(
+				[]*storage.ComplianceOperatorScanConfigurationV2{tc.config}, now,
+			)
+			assert.Equal(t, tc.want, resolver.ResolveCheck(tc.config.GetScanConfigName(), tc.assessmentTime))
+		})
+	}
 }

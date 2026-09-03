@@ -65,52 +65,87 @@ func RollupState(states ...State) State {
 	return result
 }
 
-// ConfigResolver pre-computes the reference fire time for a scan config's schedule.
+// ConfigResolver pre-computes the expected-refresh time for each scan config.
+// expectedRefresh = MAX(scheduledRefresh, requestedRefresh), the most recent
+// point at which a scan was expected to have refreshed the checks — whether
+// fired by the cron schedule or requested on demand via "Scan now".
 // Use ResolveCheck / ResolveGroupedMin to evaluate individual checks or grouped aggregates.
 type ConfigResolver struct {
-	referenceFires map[string]time.Time // scan_config_name → reference fire time (UTC)
+	expectedRefreshes map[string]time.Time // scan_config_name → expected refresh time (UTC)
 }
 
 // NewConfigResolver builds a resolver from a set of scan configurations.
-// now should be time.Now().UTC(). Configs with no schedule or unparseable
-// crontab degrade to UNKNOWN (zero reference fire).
+// now should be time.Now().UTC().
+//
+// For every config (INCLUDING no-schedule / one-time ones) it computes:
+//
+//	scheduledRefresh = FindPreviousFireTime(cron, now-grace)  // zero if no cron
+//	requestedRefresh = config.last_scan_requested_time        // on-demand "Scan now"
+//	                   counted only if (now - requestedRefresh) > grace (in-flight guard)
+//	expectedRefresh  = MAX(scheduledRefresh, requestedRefresh)
+//
+// A zero expectedRefresh (no cron AND no grace-elapsed on-demand request) resolves
+// to UNKNOWN. The on-demand term makes one-time / interval-UNSET configs evaluable
+// after a recorded "Scan now".
 func NewConfigResolver(configs []*storage.ComplianceOperatorScanConfigurationV2, now time.Time) *ConfigResolver {
 	cr := &ConfigResolver{
-		referenceFires: make(map[string]time.Time, len(configs)),
+		expectedRefreshes: make(map[string]time.Time, len(configs)),
 	}
 	g := grace()
 	for _, cfg := range configs {
-		sched := cfg.GetSchedule()
-		if sched == nil || sched.GetIntervalType() == storage.Schedule_UNSET {
-			continue
+		expected := scheduledRefresh(cfg, now, g)
+		if req := requestedRefresh(cfg, now, g); req.After(expected) {
+			expected = req
 		}
-		if cfg.GetOneTimeScan() {
-			continue
-		}
-		cronTab, err := schedule.ConvertToCronTab(sched)
-		if err != nil {
-			log.Warnf("compliance outdated: cannot convert schedule for config %q: %v", cfg.GetScanConfigName(), err)
-			continue
-		}
-		// Prefix with TZ=UTC: CO's CronJob fires in UTC (no spec.timeZone),
-		// and robfig/cron.v2 defaults to time.Local which would misalign if
-		// Central's container tz is not UTC.
-		cronSched, err := cron.Parse("TZ=UTC " + cronTab)
-		if err != nil {
-			log.Warnf("compliance outdated: cannot parse crontab %q for config %q: %v", cronTab, cfg.GetScanConfigName(), err)
-			continue
-		}
-		ref := FindPreviousFireTime(cronSched, now.Add(-g))
-		cr.referenceFires[cfg.GetScanConfigName()] = ref
+		cr.expectedRefreshes[cfg.GetScanConfigName()] = expected
 	}
 	return cr
+}
+
+// scheduledRefresh returns the most recent scheduled fire at least `g` in the
+// past (in-flight guard), or zero for a config with no usable cron schedule
+// (unset interval or one-time scan).
+func scheduledRefresh(cfg *storage.ComplianceOperatorScanConfigurationV2, now time.Time, g time.Duration) time.Time {
+	sched := cfg.GetSchedule()
+	if sched == nil || sched.GetIntervalType() == storage.Schedule_UNSET || cfg.GetOneTimeScan() {
+		return time.Time{}
+	}
+	cronTab, err := schedule.ConvertToCronTab(sched)
+	if err != nil {
+		log.Warnf("compliance outdated: cannot convert schedule for config %q: %v", cfg.GetScanConfigName(), err)
+		return time.Time{}
+	}
+	// Prefix with TZ=UTC: CO's CronJob fires in UTC (no spec.timeZone),
+	// and robfig/cron.v2 defaults to time.Local which would misalign if
+	// Central's container tz is not UTC.
+	cronSched, err := cron.Parse("TZ=UTC " + cronTab)
+	if err != nil {
+		log.Warnf("compliance outdated: cannot parse crontab %q for config %q: %v", cronTab, cfg.GetScanConfigName(), err)
+		return time.Time{}
+	}
+	return FindPreviousFireTime(cronSched, now.Add(-g))
+}
+
+// requestedRefresh returns the on-demand "Scan now" timestamp if it is at least
+// `g` in the past (in-flight guard: a just-requested scan hasn't had time to run
+// yet, so it must not force OUTDATED). Returns zero otherwise.
+func requestedRefresh(cfg *storage.ComplianceOperatorScanConfigurationV2, now time.Time, g time.Duration) time.Time {
+	ts := cfg.GetLastScanRequestedTime()
+	if ts == nil {
+		return time.Time{}
+	}
+	t := ts.AsTime() // UTC
+	if now.Sub(t) <= g {
+		return time.Time{}
+	}
+	return t
 }
 
 // ResolveCheck returns the data state for a single check result.
 // scanConfigName is the check's scan_config_name; assessmentTime is its
 // last_started_time (nil → UNKNOWN).
 func (cr *ConfigResolver) ResolveCheck(scanConfigName string, assessmentTime *time.Time) State {
-	ref, ok := cr.referenceFires[scanConfigName]
+	ref, ok := cr.expectedRefreshes[scanConfigName]
 	if !ok || ref.IsZero() {
 		return Unknown
 	}

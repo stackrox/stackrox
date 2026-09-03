@@ -198,6 +198,11 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
+	// Preserve the on-demand scan-request time (blob-only field, absent from the
+	// v2 API request): a config edit is not a "Scan now" and must not discard the
+	// outdated-detection on-demand term. Without this, editing a config after a
+	// rescan would revert one-time/UNSET configs to UNKNOWN.
+	scanRequest.LastScanRequestedTime = oldScanConfig.GetLastScanRequestedTime()
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err
@@ -532,6 +537,17 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 	err = validateClusterAccess(ctx, cs)
 	if err != nil {
 		return err
+	}
+
+	// Record the on-demand refresh time BEFORE the send loop so it persists
+	// regardless of per-cluster SendMessage success. Outdated-data detection
+	// uses this as the on-demand expected-refresh term: the user expected fresh
+	// data now, so if a scan does not refresh the checks within the grace period
+	// (scan timed out, or the sensor is disconnected), the shown data IS stale.
+	// Best-effort: a persistence failure must not block the rescan itself, which
+	// is this call's primary purpose; detection falls back to the scheduled term.
+	if err := m.scanSettingDS.UpdateScanConfigLastScanRequestedTime(ctx, scanID, protocompat.TimestampNow()); err != nil {
+		log.Warnf("compliance outdated: unable to record scan request time for configuration %q: %v", scanConfig.GetScanConfigName(), err)
 	}
 
 	errList := make([]string, 0)
