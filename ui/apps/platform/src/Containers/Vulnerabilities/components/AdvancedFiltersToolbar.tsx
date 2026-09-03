@@ -19,7 +19,6 @@ import {
     attributeForClusterCveFixableInFrontend,
     attributeForFixableInFrontendAndLocalStorage,
     attributeForSeverityInFrontendAndLocalStorage,
-    attributeForSnoozed,
 } from '../searchFilterConfig';
 import { normalizeSearchFilterKeys } from '../utils/searchUtils';
 
@@ -59,7 +58,7 @@ function AdvancedFiltersToolbar({
     // components render correctly even for bookmarked URLs from before the rename.
     const normalizedFilter = useMemo(() => normalizeSearchFilterKeys(searchFilter), [searchFilter]);
 
-    const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
+    const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [];
     if (includeCveSeverityFilters) {
         attributesSeparateFromConfig.push(attributeForSeverityInFrontendAndLocalStorage);
     }
