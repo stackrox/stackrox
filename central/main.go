@@ -16,6 +16,7 @@ import (
 	administrationUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	administrationUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
+	aiIntegrationService "github.com/stackrox/rox/central/aiintegration/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
@@ -502,6 +503,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
 	}
 
+	if features.AiIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, aiIntegrationService.Singleton())
+	}
+
 	if features.VirtualMachines.Enabled() {
 		if features.VirtualMachinesEnhancedDataModel.Enabled() {
 			// V2 service replaces V1 to avoid route conflicts on /v2/virtualmachines/{id}.
@@ -581,6 +586,9 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		if features.ACMAccessControlDelegation.Enabled() {
+			authProviderBackendFactories[openshift.TypeNameWithACMAccessControlDelegation] = openshift.NewFactoryWithACMAccessControlDelegation
+		}
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {

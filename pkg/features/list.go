@@ -206,7 +206,7 @@ var (
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
-	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING", enabled)
 
 	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
@@ -219,4 +219,7 @@ var (
 
 	// ScannerV4SuppressOSVWithRedHatVEX suppresses OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists.
 	ScannerV4SuppressOSVWithRedHatVEX = registerFeature("Scanner V4 will suppress OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists", "ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX", enabled)
+
+	// AiIntegration enables AI integration APIs for connecting to services like OpenShift Lightspeed.
+	AiIntegration = registerFeature("Enable AI integration", "ROX_AI_INTEGRATION")
 )

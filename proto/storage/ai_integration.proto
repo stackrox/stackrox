@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+enum AiIntegrationType {
+  AI_INTEGRATION_TYPE_UNSPECIFIED = 0;
+  AI_INTEGRATION_TYPE_OLS = 1;
+}
+
+message AiIntegration {
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2; // @gotags: sql:"unique"
+  AiIntegrationType type = 3;
+  string service_url = 4;
+}

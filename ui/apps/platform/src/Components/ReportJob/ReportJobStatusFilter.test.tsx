@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
-import ReportJobStatusFilter, { ensureReportJobStatuses } from './ReportJobStatusFilter';
+import ReportJobStatusFilter, { isReportJobStatus } from './ReportJobStatusFilter';
 import type { ReportJobStatus } from './types';
 
 const getCheckboxOption = (name: string) => {
@@ -93,22 +93,17 @@ describe('ReportJobStatusFilter', () => {
         expect(checkboxOptionForError).toBeChecked();
     });
 
-    // Tests for the "ensureReportJobStatuses" helper function
-    describe('ensureReportJobStatuses', () => {
+    // Tests for the "isReportJobStatus" helper function
+    describe('isReportJobStatus', () => {
         test('should filter out all incorrect values', async () => {
-            expect(ensureReportJobStatuses('')).toEqual([]);
-            expect(ensureReportJobStatuses(['TEST', 'BLAH', 'LOADING'])).toEqual([]);
+            expect(['TEST', 'BLAH', 'LOADING'].filter(isReportJobStatus)).toEqual([]);
         });
 
         test('should filter to show all correct values', async () => {
             expect(
-                ensureReportJobStatuses([
-                    'PREPARING',
-                    'WAITING',
-                    'DOWNLOAD_GENERATED',
-                    'EMAIL_DELIVERED',
-                    'ERROR',
-                ])
+                ['PREPARING', 'WAITING', 'DOWNLOAD_GENERATED', 'EMAIL_DELIVERED', 'ERROR'].filter(
+                    isReportJobStatus
+                )
             ).toEqual(['PREPARING', 'WAITING', 'DOWNLOAD_GENERATED', 'EMAIL_DELIVERED', 'ERROR']);
         });
     });

@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.26.5
+go 1.26.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.26.0
@@ -20,7 +20,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring/v2 v2.24.0
+	github.com/RoaringBitmap/roaring/v2 v2.26.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.20.3
