@@ -15,6 +15,9 @@ os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["SCANNER_V4_VULN_READINESS"] = "false"
+# Optimize Scanner V4 startup time by loading only RHEL vulnerability bundles
+# Install tests only scan RHEL/UBI9 images (StackRox components, PostgreSQL on CentOS Stream 9)
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
     cluster=GKECluster("scanner-v4-install-test", machine_type="e2-standard-8"),

@@ -12,6 +12,9 @@ from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["KUBERNETES_PROVIDER"] = "gke"
+# Optimize Scanner V4 startup time by loading only RHEL vulnerability bundles
+# Operator tests only deploy RHEL/UBI9 images (StackRox platform components)
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
     cluster=GKECluster("operator-e2e-test", num_nodes=4),

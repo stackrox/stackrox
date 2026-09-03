@@ -17,6 +17,9 @@ os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["SCANNER_V4_VULN_READINESS"] = "false"
 os.environ["ENABLE_OPERATOR_TESTS"] = "true"
+# Optimize Scanner V4 startup time by loading only RHEL vulnerability bundles
+# Install tests only scan RHEL/UBI9 images (StackRox components, PostgreSQL on CentOS Stream 9)
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 enable_sfa_for_ocp()
 

@@ -14,6 +14,9 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
+# On OCP only RHEL/UBI images are scanned with vuln assertions
+# Matches ocp_vm_scanning_e2e_tests.py and gke_nongroovy_e2e_tests.py allowlist
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
