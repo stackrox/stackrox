@@ -197,7 +197,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			if err != nil {
 				log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
 			}
-			// repo2CPEFetcher must be a typed-nil to avoid panics from maybeSync.
+			// A typed-nil *Repo2CPE is a non-nil Repo2CPEFetcher, so
+			// maybeSyncRepoCPEMapping would call FetchRepo2CPE on a nil receiver.
 			var repo2CPEFetcher vmscraper.Repo2CPEFetcher
 			if repo2CPE != nil {
 				repo2CPEFetcher = repo2CPE

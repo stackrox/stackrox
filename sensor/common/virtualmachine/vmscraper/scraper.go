@@ -78,7 +78,7 @@ type ProtocolClient interface {
 	SyncRepoCPEMapping(ctx context.Context, stream io.ReadWriteCloser, mapping []byte) (updated bool, meta *pb.ResponseMeta, err error)
 }
 
-// Repo2CPEFetcher supplies Sensor's cached repo-to-CPE mapping so maybeSync
+// Repo2CPEFetcher supplies Sensor's cached repo-to-CPE mapping so maybeSyncRepoCPEMapping
 // can tell whether a VM's agent needs a pushed update.
 type Repo2CPEFetcher interface {
 	FetchRepo2CPE(ctx context.Context) (mapping []byte, hash string, ok bool)
@@ -98,7 +98,7 @@ type VMScraper struct {
 	sender                IndexReportSender
 	dialer                VMDialer
 	client                ProtocolClient
-	fetcher               Repo2CPEFetcher
+	repo2CPEFetcher       Repo2CPEFetcher
 	interval              time.Duration
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
@@ -136,16 +136,16 @@ type vmState struct {
 
 var _ common.SensorComponent = (*VMScraper)(nil)
 
-// New creates a VMScraper with production defaults. A nil fetcher leaves
-// maybeSync a no-op, so pull still works if the repo-to-CPE cache was not built.
-func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, fetcher Repo2CPEFetcher) *VMScraper {
+// New creates a VMScraper with production defaults. A nil repo2CPEFetcher leaves
+// maybeSyncRepoCPEMapping a no-op, so pull still works if the repo-to-CPE cache was not built.
+func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, repo2CPEFetcher Repo2CPEFetcher) *VMScraper {
 	interval := clampPollInterval(env.VirtualMachinesScraperPollInterval.DurationSetting())
 	return &VMScraper{
 		store:                 store,
 		sender:                sender,
 		dialer:                dialer,
 		client:                client,
-		fetcher:               fetcher,
+		repo2CPEFetcher:       repo2CPEFetcher,
 		interval:              interval,
 		tickInterval:          env.VirtualMachinesScraperTickInterval.DurationSetting(),
 		initialBackoff:        env.VirtualMachinesScraperInitialBackoff.DurationSetting(),
@@ -617,16 +617,16 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 		// inspecting: a VM with no mapping at all has nothing to report
 		// except this error, and it's the only way Sensor learns to push one.
 		if errors.Is(err, vsockclient.ErrMappingRequired) {
-			// maybeSync dials a second connection to the same agent, which
+			// maybeSyncRepoCPEMapping dials a second connection to the same agent, which
 			// enforces at most one connection at a time: this one must be
 			// closed first, not left to the deferred close on return.
 			_ = stream.Close()
-			s.maybeSync(ctx, vm, key, port, resultMeta(result))
+			s.maybeSyncRepoCPEMapping(ctx, vm, key, port, resultMeta(result))
 		}
 		return nil, s.handleGetReportError(ctx, key, err)
 	}
 	_ = stream.Close()
-	s.maybeSync(ctx, vm, key, port, result.Meta)
+	s.maybeSyncRepoCPEMapping(ctx, vm, key, port, result.Meta)
 	return result, scrapeOK
 }
 
@@ -719,19 +719,18 @@ func isAbnormalClose(err error, target *closeCoder) bool {
 	return code != 0 && code != closeCodeNormalClosure
 }
 
-// maybeSync inspects meta from a completed GetReport exchange (success,
-// Unchanged, or a MAPPING_REQUIRED error) and pushes a fresh mapping when
-// the agent is Sensor-managed and its reported hash is stale. A URL-managed
-// agent with a stale hash is only logged and counted, since Sensor doesn't own it.
-func (s *VMScraper) maybeSync(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, meta *pb.ResponseMeta) {
+// maybeSyncRepoCPEMapping pushes a fresh mapping when the agent is
+// Sensor-managed and its reported hash is stale. A URL-managed agent with
+// a stale hash is only logged and counted, since Sensor doesn't own it.
+func (s *VMScraper) maybeSyncRepoCPEMapping(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, meta *pb.ResponseMeta) {
 	updatePath := meta.GetRepoCpeMappingUpdatePath()
 	if updatePath == pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED {
 		return
 	}
-	if s.fetcher == nil {
+	if s.repo2CPEFetcher == nil {
 		return
 	}
-	mapping, sensorHash, ok := s.fetcher.FetchRepo2CPE(ctx)
+	mapping, sensorHash, ok := s.repo2CPEFetcher.FetchRepo2CPE(ctx)
 	if !ok {
 		return
 	}
@@ -772,7 +771,7 @@ func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.I
 
 	updated, _, err := s.client.SyncRepoCPEMapping(ctx, stream, mapping)
 	if err != nil {
-		// NOT_SENSOR_MANAGED should never happen here: maybeSync only takes
+		// NOT_SENSOR_MANAGED should never happen here: maybeSyncRepoCPEMapping only takes
 		// the SENSOR path for agents it believes accept a push. Counting it
 		// (without retrying) turns a gating bug into a visible signal.
 		if errors.Is(err, vsockclient.ErrMappingNotSensorManaged) {

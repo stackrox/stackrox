@@ -1388,7 +1388,7 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 	}
 }
 
-func TestVMScraper_MaybeSync(t *testing.T) {
+func TestVMScraper_MaybeSyncRepoCPEMapping(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 
 	cases := map[string]struct {
@@ -1451,7 +1451,7 @@ func TestVMScraper_MaybeSync(t *testing.T) {
 			client := &mockProtocolClient{syncErr: tc.syncErr}
 			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, client)
 			if !tc.noFetcher {
-				s.fetcher = tc.fetcher
+				s.repo2CPEFetcher = tc.fetcher
 			}
 
 			var before float64
@@ -1459,7 +1459,7 @@ func TestVMScraper_MaybeSync(t *testing.T) {
 				before = testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(tc.wantMetric))
 			}
 
-			s.maybeSync(context.Background(), vm, "ns1/vm-a", 9999, tc.meta)
+			s.maybeSyncRepoCPEMapping(context.Background(), vm, "ns1/vm-a", 9999, tc.meta)
 
 			assert.Len(t, client.syncCalls, tc.wantSyncCalls)
 			if tc.wantMetric != "" {
@@ -1510,7 +1510,7 @@ func cachedNextAttemptAt(t *testing.T, s *VMScraper, key string) time.Time {
 	})
 }
 
-// TestVMScraper_DialAndGetReport_SyncTriggering exercises maybeSync's
+// TestVMScraper_DialAndGetReport_SyncTriggering exercises maybeSyncRepoCPEMapping's
 // integration point inside dialAndGetReport: only a successful exchange or
 // MAPPING_REQUIRED carries usable Meta, so only those should ever reach the
 // fetcher/second dial.
@@ -1561,7 +1561,7 @@ func TestVMScraper_DialAndGetReport_SyncTriggering(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := &mockProtocolClient{resultQueue: tc.resultQueue, errQueue: tc.errQueue}
 			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, client)
-			s.fetcher = staleFetcher()
+			s.repo2CPEFetcher = staleFetcher()
 
 			_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
@@ -1594,9 +1594,9 @@ func TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout(t *test
 }
 
 // TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync guards against
-// maybeSync's second dial racing the first GetReport connection: roxagent
+// maybeSyncRepoCPEMapping's second dial racing the first GetReport connection: roxagent
 // allows only one connection at a time, so dialAndGetReport must close its
-// stream before calling maybeSync, not rely solely on its deferred close.
+// stream before calling maybeSyncRepoCPEMapping, not rely solely on its deferred close.
 func TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	dialer := &singleConnDialer{}
@@ -1605,12 +1605,12 @@ func TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync(t *testing.T) {
 		Meta:        metaWithMapping("old-hash", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR),
 	}}}
 	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
-	s.fetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
+	s.repo2CPEFetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
 
 	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
 	require.Equal(t, scrapeOK, outcome)
-	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
+	require.Len(t, client.syncCalls, 1, "maybeSyncRepoCPEMapping's dial must succeed, not be rejected as busy by a still-open first connection")
 }
 
 // TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync
@@ -1624,12 +1624,12 @@ func TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync(t
 		errQueue:    []error{vsockclient.ErrMappingRequired},
 	}
 	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
-	s.fetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
+	s.repo2CPEFetcher = &fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")}
 
 	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
 
 	require.Equal(t, scrapeRetryable, outcome)
-	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
+	require.Len(t, client.syncCalls, 1, "maybeSyncRepoCPEMapping's dial must succeed, not be rejected as busy by a still-open first connection")
 }
 
 func TestClampPollInterval(t *testing.T) {
