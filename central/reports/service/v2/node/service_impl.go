@@ -8,9 +8,11 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	apiV2 "github.com/stackrox/rox/generated/api/v2"
 )
 
 type serviceImpl struct {
+	apiV2.UnimplementedNodeReportServiceServer
 	reportConfigStore   reportConfigDS.DataStore
 	snapshotDatastore   snapshotDS.DataStore
 	collectionDatastore collectionDS.DataStore
