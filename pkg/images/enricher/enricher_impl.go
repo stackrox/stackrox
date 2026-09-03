@@ -814,10 +814,12 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, nil
 	}
 
-	// Timeout is based on benchmark test result for 200 integrations with 1 config each (roughly 0.1 sec) + a grace
-	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
-	// changed accordingly when RPCs are required (i.e. cosign keyless).
-	verifySignatureCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	// Bound the time spent verifying signatures for a single image against all configured integrations.
+	// Public-key verification is local and fast, but keyless (cosign) verification performs remote RPCs
+	// (Sigstore TUF trust root, Fulcio/Rekor material, transparency log lookups) and can take several
+	// seconds. The timeout is configurable via ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT so it can be
+	// tuned for slow Sigstore infrastructure without silently marking valid signatures as unverified.
+	verifySignatureCtx, cancel := context.WithTimeout(ctx, env.ImageSignatureVerificationTimeout.DurationSetting())
 	defer cancel()
 
 	res := e.signatureVerifier(verifySignatureCtx, sigIntegrations, img)

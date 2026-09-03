@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -1046,6 +1047,43 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 		EnrichmentContext{FetchOpt: ForceRefetch}, img)
 	require.Error(t, err)
 	assert.False(t, updated)
+}
+
+// TestEnrichWithSignatureVerificationData_Timeout verifies that the signature verification
+// context is bounded by ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT. This guards against
+// regressing to a timeout too short for keyless (remote-RPC) verification, which caused valid
+// keyless Sigstore signatures to be marked unverified (ROX-36605).
+func TestEnrichWithSignatureVerificationData_Timeout(t *testing.T) {
+	t.Setenv(env.ImageSignatureVerificationTimeout.EnvVar(), "17s")
+
+	var observedDeadline time.Duration
+	haveDeadline := false
+	e := enricherImpl{
+		signatureIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
+		signatureVerifier: func(ctx context.Context, _ []*storage.SignatureIntegration,
+			_ *storage.Image) []*storage.ImageSignatureVerificationResult {
+			if deadline, ok := ctx.Deadline(); ok {
+				haveDeadline = true
+				observedDeadline = time.Until(deadline)
+			}
+			return []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+			}
+		},
+	}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "test:1.0"},
+		Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}}
+
+	updated, err := e.enrichWithSignatureVerificationData(emptyCtx,
+		EnrichmentContext{FetchOpt: ForceRefetch}, img)
+	require.NoError(t, err)
+	assert.True(t, updated)
+	require.True(t, haveDeadline, "verification context should carry a deadline")
+	// The observed remaining time must reflect the configured 17s timeout (allowing for scheduling
+	// slack), and must be well above the old hardcoded 1s that was insufficient for keyless verification.
+	assert.Greater(t, observedDeadline, 10*time.Second)
+	assert.LessOrEqual(t, observedDeadline, 17*time.Second)
 }
 
 func TestDelegateEnrichImage(t *testing.T) {
