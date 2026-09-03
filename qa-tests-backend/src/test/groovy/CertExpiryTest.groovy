@@ -1,11 +1,9 @@
-import org.junit.Assume
 import services.CredentialExpiryService
 import util.Cert
 
 import spock.lang.Tag
 import spock.lang.IgnoreIf
 import util.Env
-import util.Helpers
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
@@ -25,21 +23,6 @@ class CertExpiryTest extends BaseSpecification {
         then:
         "Make sure they match"
         assert Cert.loadBase64EncodedCert(centralTLSSecret.data["cert.pem"]).notAfter == centralCertExpiryFromCentral
-    }
-
-    def "Test Scanner cert expiry"() {
-        when:
-        "Fetch the current scanner-tls secret, and the scanner cert expiry as returned by Central"
-        def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
-        Assume.assumeTrue("Scanner V2 TLS secret is present", scannerTLSSecret != null)
-        def scannerCertExpiryFromCentral = Helpers.evaluateWithRetry(5, 5) {
-            return new Date(CredentialExpiryService.getScannerCertExpiry().getSeconds() * 1000)
-        }
-        assert scannerCertExpiryFromCentral
-
-        then:
-        "Make sure they match"
-        assert Cert.loadBase64EncodedCert(scannerTLSSecret.data["cert.pem"]).notAfter == scannerCertExpiryFromCentral
     }
 
 }

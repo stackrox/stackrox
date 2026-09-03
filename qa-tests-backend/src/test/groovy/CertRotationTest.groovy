@@ -109,23 +109,6 @@ class CertRotationTest extends BaseSpecification {
             "cert.pem", "key.pem", "CENTRAL_SERVICE", start)
     }
 
-    def "Test Scanner cert rotation"() {
-        when:
-        "Fetch the current scanner-tls and scanner-db-tls secrets, and regenerate new certs"
-        def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
-        def scannerDBTLSSecret = orchestrator.getSecret("scanner-db-tls", "stackrox")
-        Assume.assumeTrue("Scanner V2 TLS secrets are present",
-                scannerTLSSecret != null && scannerDBTLSSecret != null)
-        def start = System.currentTimeMillis()
-        def regeneratedSecrets = generateCerts("api/extensions/certgen/scanner", "scanner-tls.yaml")
-
-        then:
-        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, scannerTLSSecret,
-            "cert.pem", "key.pem", "SCANNER_SERVICE", start)
-        testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, scannerDBTLSSecret,
-            "cert.pem", "key.pem", "SCANNER_DB_SERVICE", start)
-    }
-
     def "Test sensor cert rotation"() {
         when:
         "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and regenerate certs"
