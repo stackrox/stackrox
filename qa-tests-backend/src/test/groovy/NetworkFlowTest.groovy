@@ -663,6 +663,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("NetworkFlowVisualization")
     def "Verify intra-cluster connection via internal IP"() {
+        // Skip on IPv6 primary as the LoadBalancer IP might not be reachable
+        Assume.assumeFalse(Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true")
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
         // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.

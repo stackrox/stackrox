@@ -69,6 +69,8 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
+        // Skip on IPv6 primary as the mock MailServer only supports IPv4
+        Assume.assumeFalse(Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true")
         given:
         "mailserver is running"
         def mailServer = MailServer.createMailServer(orchestrator, authenticated, !disableTLS)
