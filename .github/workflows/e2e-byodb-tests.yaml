@@ -44,6 +44,7 @@ jobs:
       BYODB_TEST: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
+      ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 150
     steps:
