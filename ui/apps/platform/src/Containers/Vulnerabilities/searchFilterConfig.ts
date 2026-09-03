@@ -180,14 +180,14 @@ export const virtualMachinesNamespaceSearchFilterConfig: CompoundSearchFilterEnt
 // attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file
 
 export const attributeForSnoozed: SelectExclusiveSingleSearchFilterAttribute = {
-    displayName: 'CVE snoozed', // corresponds to Show snoozed CVEs
-    filterChipLabel: 'CVE snoozed',
+    displayName: 'Vulnerability state',
+    filterChipLabel: 'Vulnerability state',
     searchTerm: 'CVE Snoozed',
-    inputType: 'select-exclusive-single', // placeholder because interaction is Show snoozed CVEs button
+    inputType: 'select-exclusive-single',
     inputProps: {
         options: [
-            { label: 'true', value: 'true' }, // Snoozed
-            { label: 'false', value: 'false' }, // Observed
+            { label: 'Observed', value: 'false' },
+            { label: 'Snoozed', value: 'true' },
         ],
     },
 };
@@ -245,6 +245,7 @@ export const attributeForSeverityInFrontendAndLocalStorage: SelectSearchFilterAt
         ],
     },
 };
+
 export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilterAttribute = {
     displayName: 'CVE severity',
     filterChipLabel: 'CVE severity',
@@ -264,7 +265,7 @@ export const searchFilterConfigForImageVulnerabilityReport = [
         ...imageCVESearchFilterConfig,
         attributes: [
             ...imageCVESearchFilterConfig.attributes.filter(
-                ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+                ({ searchTerm }) => searchTerm !== 'CVE Created Time' // created in **system** is confusing for report
             ),
             Origin, // CVE origin filter is scoped to reports (plus single image/deployment pages)
         ],
@@ -287,7 +288,7 @@ export const searchFilterConfigForNodeVulnerabilityReport = [
     {
         ...nodeCVESearchFilterConfig,
         attributes: nodeCVESearchFilterConfig.attributes.filter(
-            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+            ({ searchTerm }) => searchTerm !== 'CVE Created Time' // created in **system** is confusing for report
         ),
     },
     nodeSearchFilterConfig,
@@ -330,6 +331,7 @@ export const attributeForVulnerabilityState: SelectSearchFilterAttribute = {
 };
 
 // For scheduled and view-based report.
+
 export const attributesSeparateFromConfigForImageVulnerabilityReport = [
     attributeForPlatformComponent,
     attributeForVulnerabilityState,
