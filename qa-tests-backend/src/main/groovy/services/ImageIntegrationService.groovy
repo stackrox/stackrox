@@ -158,6 +158,10 @@ class ImageIntegrationService extends BaseService {
     }
 
     static String addStackroxScannerIntegration() {
+        if (FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4")) {
+            log.debug("Not adding ${Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION}; Scanner V4 is enabled")
+            return ""
+        }
         ImageIntegrationOuterClass.ImageIntegration existing =
             getImageIntegrationByName(Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION)
         if (existing) {

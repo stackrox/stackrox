@@ -77,33 +77,19 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Query().Get("v") != "4" {
+		httputil.WriteErrorf(w, http.StatusBadRequest,
+			"scanner v2 certificate generation is not supported; pass v=4 for Scanner V4")
+		return
+	}
+
 	secrets, ca, err := initializeSecretsWithCACertAndKey()
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
 
-	namespace := env.Namespace.Setting()
-	if r.URL.Query().Get("v") == "4" {
-		s.scannerV4Handler(w, secrets, ca, namespace)
-		return
-	}
-
-	if err := certgen.IssueScannerCerts(secrets, ca, mtls.WithNamespace(namespace)); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-
-	rendered, err := renderer.RenderScannerTLSSecretOnly(renderer.Config{
-		K8sConfig:      &renderer.K8sConfig{},
-		SecretsByteMap: secrets,
-	}, defaults.GetImageFlavorFromEnv())
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render scanner TLS file: %v", err)
-		return
-	}
-
-	writeFile(w, rendered, "scanner-tls.yaml")
+	s.scannerV4Handler(w, secrets, ca, env.Namespace.Setting())
 }
 
 func (s *serviceImpl) scannerV4Handler(w http.ResponseWriter, secrets map[string][]byte, ca mtls.CA, namespace string) {
