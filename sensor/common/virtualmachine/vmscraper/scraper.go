@@ -767,6 +767,11 @@ func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.I
 	}
 	stream, err := s.dialer.Dial(syncCtx, vm.Namespace, vm.Name, port, true)
 	if err != nil {
+		if syncCtx.Err() != nil {
+			log.Warnf("VMScraper: dialing roxagent on %q for repo-to-CPE mapping sync timed out: %v", key, err)
+			metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout).Inc()
+			return
+		}
 		log.Warnf("VMScraper: dialing roxagent on %q for repo-to-CPE mapping sync failed: %v", key, err)
 		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError).Inc()
 		return
@@ -781,6 +786,11 @@ func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.I
 		if errors.Is(err, vsockclient.ErrMappingNotSensorManaged) {
 			log.Warnf("VMScraper: roxagent on %q rejected repo-to-CPE mapping sync as not Sensor-managed", key)
 			metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncNotManaged).Inc()
+			return
+		}
+		if syncCtx.Err() != nil {
+			log.Warnf("VMScraper: repo-to-CPE mapping sync to %q timed out: %v", key, err)
+			metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout).Inc()
 			return
 		}
 		log.Warnf("VMScraper: repo-to-CPE mapping sync to %q failed: %v", key, err)

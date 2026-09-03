@@ -139,12 +139,13 @@ type mockProtocolClient struct {
 	calls       []protocolCall
 	callIdx     int
 
-	getReportDelay time.Duration
-	syncDelay      time.Duration
-	syncCalls      [][]byte
-	syncUpdated    bool
-	syncMeta       *pb.ResponseMeta
-	syncErr        error
+	getReportDelay  time.Duration
+	syncDelay       time.Duration
+	syncBlocksOnCtx bool
+	syncCalls       [][]byte
+	syncUpdated     bool
+	syncMeta        *pb.ResponseMeta
+	syncErr         error
 }
 
 type protocolCall struct {
@@ -175,7 +176,12 @@ func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 	return nil, errors.New("unexpected call: no more queued results")
 }
 
-func (m *mockProtocolClient) SyncRepoCPEMapping(_ context.Context, _ io.ReadWriteCloser, mapping []byte) (bool, *pb.ResponseMeta, error) {
+func (m *mockProtocolClient) SyncRepoCPEMapping(ctx context.Context, _ io.ReadWriteCloser, mapping []byte) (bool, *pb.ResponseMeta, error) {
+	if m.syncBlocksOnCtx {
+		m.syncCalls = append(m.syncCalls, mapping)
+		<-ctx.Done()
+		return false, nil, ctx.Err()
+	}
 	if m.syncDelay > 0 {
 		time.Sleep(m.syncDelay)
 	}
@@ -1600,6 +1606,44 @@ func TestVMScraper_SyncRepoCPEMapping_CanceledParent_ClassifiedAsTimeout(t *test
 	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout)))
 	assert.Equal(t, syncErrBefore, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError)),
 		"a canceled parent must not be counted as a sync error")
+}
+
+// TestVMScraper_SyncRepoCPEMapping_DialTimeout_ClassifiedAsTimeout covers
+// perVMTimeout expiring during Dial counting as PullSyncTimeout, not
+// PullSyncError (same rule as dialAndGetReport).
+func TestVMScraper_SyncRepoCPEMapping_DialTimeout_ClassifiedAsTimeout(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, blockingDialer{}, &mockProtocolClient{})
+	s.perVMTimeout = 20 * time.Millisecond
+
+	timeoutBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout))
+	syncErrBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError))
+
+	s.syncRepoCPEMapping(context.Background(), vm, "ns1/vm-a", 1, []byte("payload"))
+
+	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout)))
+	assert.Equal(t, syncErrBefore, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError)),
+		"a dial timeout must not be counted as a sync error")
+}
+
+// TestVMScraper_SyncRepoCPEMapping_SyncTimeout_ClassifiedAsTimeout covers
+// perVMTimeout expiring during SyncRepoCPEMapping counting as
+// PullSyncTimeout, not PullSyncError (same rule as handleGetReportError).
+func TestVMScraper_SyncRepoCPEMapping_SyncTimeout_ClassifiedAsTimeout(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	client := &mockProtocolClient{syncBlocksOnCtx: true}
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, client)
+	s.perVMTimeout = 20 * time.Millisecond
+
+	timeoutBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout))
+	syncErrBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError))
+
+	s.syncRepoCPEMapping(context.Background(), vm, "ns1/vm-a", 1, []byte("payload"))
+
+	require.Len(t, client.syncCalls, 1)
+	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout)))
+	assert.Equal(t, syncErrBefore, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError)),
+		"a sync timeout must not be counted as a sync error")
 }
 
 // TestVMScraper_SendSucceedsAfterSyncOverrunsGetReportDeadline covers Send
