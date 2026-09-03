@@ -37,6 +37,7 @@ import (
 
 const (
 	maxDeploymentsReturned = 1000
+	testTimeout            = 10 * time.Second
 )
 
 var log = logging.LoggerForModule()
@@ -47,6 +48,7 @@ var (
 			v1.DeploymentService_GetDeployment_FullMethodName,
 			v1.DeploymentService_GetDeploymentWithRisk_FullMethodName,
 			v1.DeploymentService_GetDeploymentRiskAISummary_FullMethodName,
+			v1.DeploymentService_TestLightspeedConnection_FullMethodName,
 			v1.DeploymentService_CountDeployments_FullMethodName,
 			v1.DeploymentService_ListDeployments_FullMethodName,
 			v1.DeploymentService_GetLabels_FullMethodName,
@@ -320,4 +322,28 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 	return &v1.DeploymentRiskAISummaryResponse{
 		Summary: olsResp.Response,
 	}, nil
+}
+
+// TestLightspeedConnection tests connectivity to the Lightspeed AI service.
+func (s *serviceImpl) TestLightspeedConnection(ctx context.Context, _ *v1.Empty) (*v1.TestLightspeedConnectionResponse, error) {
+	if s.lightspeedClient == nil {
+		return &v1.TestLightspeedConnectionResponse{
+			Success: false,
+			Message: "Lightspeed client not configured",
+		}, nil
+	}
+	err := s.lightspeedClient.TestConnectivity()
+	if err != nil {
+		resp := &v1.TestLightspeedConnectionResponse{
+			Success: false,
+			Message: "Lightspeed connection failed",
+		}
+		return resp, errors.Wrap(errox.NotFound, err.Error())
+	}
+	resp := &v1.TestLightspeedConnectionResponse{
+		Success: true,
+		Message: "Lightspeed connection established",
+	}
+
+	return resp, nil
 }
