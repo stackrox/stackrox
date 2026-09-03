@@ -206,29 +206,28 @@ jobs:
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
 
     - name: Notify on partial failure
-      if: always() && steps.download-validate.outcome == 'success'
-      env:
-        FAILED: ${{ steps.download-validate.outputs.failed }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: |
-        [ -n "$FAILED" ] || exit 0
-        curl --fail --show-error --max-time 10 \
-          -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability bundler: validation failures for stream '${STREAM}' (sources: ${FAILED}): <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
+      if: >-
+        always() && steps.download-validate.outcome == 'success' &&
+        steps.download-validate.outputs.failed != ''
+      uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        message: >-
+          Vulnerability bundler: validation failures for stream '${{ env.STREAM }}'
+          (sources: ${{ steps.download-validate.outputs.failed }}):
+          <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>
 
   notify:
     needs: [bundle]
     if: always() && needs.bundle.result == 'failure'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     steps:
-    - name: Notify on failure
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: |
-        curl --fail --show-error --max-time 10 \
-          -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability bundler failed: <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

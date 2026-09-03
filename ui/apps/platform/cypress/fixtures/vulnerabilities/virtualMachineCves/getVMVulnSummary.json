@@ -1,0 +1,11 @@
+{
+    "severityCounts": {
+        "critical": { "total": 1, "fixable": 1 },
+        "important": { "total": 1, "fixable": 1 },
+        "moderate": { "total": 1, "fixable": 1 },
+        "low": { "total": 0, "fixable": 0 },
+        "unknown": { "total": 0, "fixable": 0 }
+    },
+    "fixableCount": 3,
+    "notFixableCount": 0
+}

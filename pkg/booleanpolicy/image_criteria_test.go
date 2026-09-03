@@ -178,6 +178,191 @@ func (suite *ImageCriteriaTestSuite) TestFixableAndFixTimestampAvailableCriteria
 
 }
 
+func (suite *ImageCriteriaTestSuite) TestFixableCriteriaWithUnsetFixedBy() {
+	dep := &storage.Deployment{
+		Id: "MIXEDFIXABLEDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:  "nginx",
+				Image: &storage.ContainerImage{Id: "MIXEDFIXABLESHA"},
+			},
+		},
+	}
+
+	img := &storage.Image{
+		Id:   "MIXEDFIXABLESHA",
+		Name: &storage.ImageName{FullName: "mixed-fixable"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "openssl", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve:        "CVE-FIXABLE",
+						Cvss:       9,
+						Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+						SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+					},
+					{
+						Cve:      "CVE-UNFIXABLE",
+						Cvss:     8,
+						Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						// Scanner V4 leaves the oneof unset when there is no fix.
+					},
+					{
+						Cve:        "CVE-EMPTY-FIXEDBY",
+						Cvss:       7,
+						Severity:   storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+						SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{},
+					},
+				}},
+			},
+		},
+	}
+	suite.addDepAndImages(dep, img)
+
+	allCVEs := []string{"CVE-FIXABLE", "CVE-UNFIXABLE", "CVE-EMPTY-FIXEDBY"}
+
+	for name, tc := range map[string]struct {
+		policy       *storage.Policy
+		expectedCVEs []string
+	}{
+		"fixable true matches only CVEs with a fix version": {
+			policy:       policyWithSingleKeyValue(fieldnames.Fixable, "true", false),
+			expectedCVEs: []string{"CVE-FIXABLE"},
+		},
+		"fixable false matches unset and empty FixedBy": {
+			policy:       policyWithSingleKeyValue(fieldnames.Fixable, "false", false),
+			expectedCVEs: []string{"CVE-UNFIXABLE", "CVE-EMPTY-FIXEDBY"},
+		},
+		"negated Fixed By matches not-fixable CVEs": {
+			policy:       policyWithSingleKeyValue(fieldnames.FixedBy, "v1.2", true),
+			expectedCVEs: []string{"CVE-UNFIXABLE", "CVE-EMPTY-FIXEDBY"},
+		},
+		"fixable false combined with CVE stays linked to that CVE": {
+			policy: policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+				policyGroupWithSingleKeyValue(fieldnames.Fixable, "false", false),
+				policyGroupWithSingleKeyValue(fieldnames.CVE, "CVE-UNFIXABLE", false),
+			),
+			expectedCVEs: []string{"CVE-UNFIXABLE"},
+		},
+		// Default policy "Fixable CVSS >= 7" stores Fixed By: .*, rewritten to .+ at match time.
+		"fixed by .* with CVSS >= 7 still matches only the fixable CVE": {
+			policy: policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+				policyGroupWithSingleKeyValue(fieldnames.FixedBy, ".*", false),
+				policyGroupWithSingleKeyValue(fieldnames.CVSS, ">= 7", false),
+			),
+			expectedCVEs: []string{"CVE-FIXABLE"},
+		},
+	} {
+		suite.Run(name, func() {
+			expected := set.NewFrozenStringSet(tc.expectedCVEs...)
+
+			depMatcher, err := BuildDeploymentMatcher(tc.policy)
+			suite.Require().NoError(err)
+			depViolations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+			suite.Require().NoError(err)
+			assertFixableCVEMatches(suite.T(), depViolations, allCVEs, expected)
+
+			imgMatcher, err := BuildImageMatcher(tc.policy)
+			suite.Require().NoError(err)
+			imgViolations, err := imgMatcher.MatchImage(nil, img)
+			suite.Require().NoError(err)
+			assertFixableCVEMatches(suite.T(), imgViolations, allCVEs, expected)
+		})
+	}
+}
+
+// TestCustomerFixableNotYetFixableOnMixedCVEDeployment reproduces the customer-reported regression where a
+// "Fixable → CVE is not yet fixable" policy (fieldnames.Fixable = "false") returned no violations in Policy
+// Preview even when the deployment's image contained unfixable CVEs (SetFixedBy unset, Scanner V4 style).
+// The test runs both the fixable=true and fixable=false policies against the same single deployment so that the
+// side-by-side comparison that exposed the bug is explicit.
+func (suite *ImageCriteriaTestSuite) TestCustomerFixableNotYetFixableOnMixedCVEDeployment() {
+	const (
+		fixableCVE   = "CVE-CUSTOMER-FIXABLE"
+		unfixableCVE = "CVE-CUSTOMER-UNFIXABLE"
+	)
+
+	dep := &storage.Deployment{
+		Id: "CUSTMIXEDDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:  "app",
+				Image: &storage.ContainerImage{Id: "CUSTMIXEDIMGSHA"},
+			},
+		},
+	}
+
+	img := &storage.Image{
+		Id:   "CUSTMIXEDIMGSHA",
+		Name: &storage.ImageName{FullName: "registry.example.com/app:latest"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "openssl", Version: "3.0", Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve:        fixableCVE,
+						Cvss:       9,
+						Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+						SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+					},
+					{
+						Cve:      unfixableCVE,
+						Cvss:     8,
+						Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						// Scanner V4 leaves SetFixedBy nil when no fix is available.
+					},
+				}},
+			},
+		},
+	}
+	suite.addDepAndImages(dep, img)
+
+	ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
+
+	suite.Run("fixable=true matches only the fixable CVE", func() {
+		matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.Fixable, "true", false))
+		suite.Require().NoError(err)
+		violations, err := matcher.MatchDeployment(nil, ed)
+		suite.Require().NoError(err)
+		suite.Require().Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), fixableCVE,
+			"fixable=true must produce a violation for the fixable CVE")
+		suite.NotContains(violations.AlertViolations[0].GetMessage(), unfixableCVE,
+			"fixable=true must not mention the unfixable CVE")
+	})
+
+	suite.Run("fixable=false matches only the not-yet-fixable CVE (regression)", func() {
+		matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.Fixable, "false", false))
+		suite.Require().NoError(err)
+		violations, err := matcher.MatchDeployment(nil, ed)
+		suite.Require().NoError(err)
+		suite.Require().Len(violations.AlertViolations, 1,
+			"fixable=false must produce exactly one violation for the CVE with no fix (was zero before the fix)")
+		suite.Contains(violations.AlertViolations[0].GetMessage(), unfixableCVE,
+			"fixable=false must produce a violation for the not-yet-fixable CVE")
+		suite.NotContains(violations.AlertViolations[0].GetMessage(), fixableCVE,
+			"fixable=false must not mention the fixable CVE")
+	})
+}
+
+func assertFixableCVEMatches(t *testing.T, violations Violations, allCVEs []string, expected set.FrozenStringSet) {
+	t.Helper()
+	require.Len(t, violations.AlertViolations, expected.Cardinality())
+	for _, cve := range allCVEs {
+		var found bool
+		for _, v := range violations.AlertViolations {
+			if strings.Contains(v.GetMessage(), cve) {
+				found = true
+				break
+			}
+		}
+		if expected.Contains(cve) {
+			assert.True(t, found, "expected a violation mentioning %s, got %v", cve, violations.AlertViolations)
+			continue
+		}
+		assert.False(t, found, "did not expect a violation mentioning %s, got %v", cve, violations.AlertViolations)
+	}
+}
+
 func (suite *ImageCriteriaTestSuite) TestDaysSinceCVEPublishedCriteria() {
 	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",
