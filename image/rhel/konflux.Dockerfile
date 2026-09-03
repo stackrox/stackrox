@@ -39,7 +39,7 @@ RUN make copy-go-binaries-to-image-dir
 RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     shopt -s nullglob && \
     for f in roxctl-*; do \
-        [[ -f "$f" ]] || continue; \
+        [[ -f "$f" && -x "$f" ]] || continue; \
         tar cvzf "${f%.exe}.tar.gz" "$f"; \
     done
 
