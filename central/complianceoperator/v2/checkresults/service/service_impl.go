@@ -245,11 +245,60 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
 
+	// Per-check freshness rollup for the Checks tab. Computed over countQuery
+	// (unpaginated, profile-scoped) so a check's state reflects every reporting
+	// cluster, not just the current page. Best-effort: on error the column is blank.
+	checkDataStates, err := s.computeCheckDataStates(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute per-check data states: %v", err)
+		checkDataStates = make(map[string]v2.ComplianceDataState)
+	}
+
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls, checkDataStates),
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(count),
 	}, nil
+}
+
+// computeCheckDataStates returns a map check_name → rolled-up freshness state,
+// mirroring computeClusterDataStates in the stats service but grouped by
+// (scan_config_name, cluster_id, check_name) so a stale sibling check in the
+// same cluster does not drag a current check to OUTDATED.
+func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Query) (map[string]v2.ComplianceDataState, error) {
+	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByCheckCluster(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	configNames := make(map[string]struct{})
+	for _, mt := range minTimes {
+		configNames[mt.ScanConfigName] = struct{}{}
+	}
+
+	var configs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil {
+			log.Warnf("compliance outdated: cannot load config %q: %v", name, cfgErr)
+			continue
+		}
+		configs = append(configs, cfg)
+	}
+
+	resolver := compliancedata.NewConfigResolver(configs, time.Now().UTC())
+
+	perCheckStates := make(map[string][]compliancedata.State)
+	for _, mt := range minTimes {
+		state := resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted)
+		perCheckStates[mt.CheckName] = append(perCheckStates[mt.CheckName], state)
+	}
+
+	result := make(map[string]v2.ComplianceDataState, len(perCheckStates))
+	for checkName, states := range perCheckStates {
+		result[checkName] = compliancedata.RollupState(states...).ToProto()
+	}
+	return result, nil
 }
 
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result

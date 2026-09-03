@@ -34,6 +34,7 @@ export type ComplianceCheckResultStatusCount = {
     ruleName: string;
     checkStats: ComplianceCheckStatusCount[];
     controls: ComplianceControl[];
+    dataState?: ComplianceDataState;
 };
 
 export type ListComplianceProfileResults = {

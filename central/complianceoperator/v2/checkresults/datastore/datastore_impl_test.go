@@ -809,6 +809,67 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMinLastStartedTimeByConfig
 	s.Require().Equal(1, rows, "a cluster rename must not split the (config, cluster_id) group")
 }
 
+// TestMinLastStartedTimeByCheckCluster verifies the per-check aggregate groups by
+// (scan_config_name, cluster_id, check_name), returns the MIN across each group,
+// and yields a nil MinLastStarted for an all-NULL group (SQL MIN ignores NULLs).
+func (s *complianceCheckResultDataStoreTestSuite) TestMinLastStartedTimeByCheckCluster() {
+	tOld := time.Date(2026, 8, 30, 2, 0, 0, 0, time.UTC)
+	tMid := time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)
+	tNew := time.Date(2026, 9, 2, 2, 0, 0, 0, time.UTC)
+	oldTS, err := protocompat.ConvertTimeToTimestampOrError(tOld)
+	s.Require().NoError(err)
+	midTS, err := protocompat.ConvertTimeToTimestampOrError(tMid)
+	s.Require().NoError(err)
+	newTS, err := protocompat.ConvertTimeToTimestampOrError(tNew)
+	s.Require().NoError(err)
+
+	// (cluster1, check-a): two rows ⇒ MIN = tMid.
+	recC1ANew := getTestRec(testconsts.Cluster1)
+	recC1ANew.CheckName = "check-a"
+	recC1ANew.LastStartedTime = newTS
+	recC1AMid := getTestRec(testconsts.Cluster1)
+	recC1AMid.CheckName = "check-a"
+	recC1AMid.LastStartedTime = midTS
+	// (cluster1, check-b): single row with NULL last_started ⇒ MIN = nil.
+	recC1BNull := getTestRec(testconsts.Cluster1)
+	recC1BNull.CheckName = "check-b"
+	recC1BNull.LastStartedTime = nil
+	// (cluster2, check-a): single row ⇒ MIN = tOld.
+	recC2A := getTestRec(testconsts.Cluster2)
+	recC2A.CheckName = "check-a"
+	recC2A.LastStartedTime = oldTS
+
+	for _, rec := range []*storage.ComplianceOperatorCheckResultV2{recC1ANew, recC1AMid, recC1BNull, recC2A} {
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+	}
+
+	results, err := s.dataStore.MinLastStartedTimeByCheckCluster(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+
+	type key struct {
+		cluster string
+		check   string
+	}
+	got := make(map[key]*time.Time)
+	for _, r := range results {
+		if r.ScanConfigName != "scanConfig1" {
+			continue
+		}
+		got[key{r.ClusterID, r.CheckName}] = r.MinLastStarted
+	}
+
+	s.Require().Contains(got, key{testconsts.Cluster1, "check-a"})
+	s.Require().NotNil(got[key{testconsts.Cluster1, "check-a"}])
+	s.Require().True(tMid.Equal(*got[key{testconsts.Cluster1, "check-a"}]), "MIN across a (check,cluster) group")
+
+	s.Require().Contains(got, key{testconsts.Cluster1, "check-b"})
+	s.Require().Nil(got[key{testconsts.Cluster1, "check-b"}], "all-NULL group ⇒ nil MIN")
+
+	s.Require().Contains(got, key{testconsts.Cluster2, "check-a"})
+	s.Require().NotNil(got[key{testconsts.Cluster2, "check-a"}])
+	s.Require().True(tOld.Equal(*got[key{testconsts.Cluster2, "check-a"}]))
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCluster() {
 	s.setupTestData()
 	testCases := []struct {

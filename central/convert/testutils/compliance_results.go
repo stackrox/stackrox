@@ -555,8 +555,9 @@ func GetComplianceProfileScanV2Count(_ *testing.T, profileName string, benchmark
 	}
 }
 
-// GetComplianceProfileResultsV2 returns V2 count matching that from GetComplianceStorageProfileResults
-func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListComplianceProfileResults {
+// GetComplianceProfileResultsV2 returns V2 count matching that from GetComplianceStorageProfileResults.
+// dataState is the expected per-check freshness (pass UNKNOWN for paths that do not compute it).
+func GetComplianceProfileResultsV2(_ *testing.T, profileName string, dataState v2.ComplianceDataState) *v2.ListComplianceProfileResults {
 	return &v2.ListComplianceProfileResults{
 		ProfileName: profileName,
 		TotalCount:  1,
@@ -565,6 +566,7 @@ func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListCom
 				CheckName: "check-name",
 				Rationale: "",
 				RuleName:  "rule-name",
+				DataState: dataState,
 				Controls: []*v2.ComplianceControl{
 					{Standard: "OCP-CIS", Control: "1.2.2"},
 					{Standard: "OCP-CIS", Control: "1.3.3"},

@@ -75,8 +75,9 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 	return converted
 }
 
-// ComplianceV2ProfileResults converts the counts to the v2 stats
-func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile, controlResults []*compRule.ControlResult) []*v2.ComplianceCheckResultStatusCount {
+// ComplianceV2ProfileResults converts the counts to the v2 stats.
+// checkDataStates maps check_name → rolled-up freshness (nil/absent ⇒ UNKNOWN).
+func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile, controlResults []*compRule.ControlResult, checkDataStates map[string]v2.ComplianceDataState) []*v2.ComplianceCheckResultStatusCount {
 	profileResults := make([]*v2.ComplianceCheckResultStatusCount, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
@@ -87,6 +88,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 			Rationale: resultCount.CheckRationale,
 			RuleName:  resultCount.RuleName,
 			Controls:  controls,
+			DataState: checkDataStates[resultCount.CheckName],
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),

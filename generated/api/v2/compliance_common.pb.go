@@ -513,12 +513,15 @@ func (x *ComplianceCheckStatusCount) GetStatus() ComplianceCheckStatus {
 
 // Group the number of occurrences by status
 type ComplianceCheckResultStatusCount struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	CheckName     string                        `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	Rationale     string                        `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	RuleName      string                        `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	Controls      []*ComplianceControl          `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	state      protoimpl.MessageState        `protogen:"open.v1"`
+	CheckName  string                        `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	Rationale  string                        `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	RuleName   string                        `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	CheckStats []*ComplianceCheckStatusCount `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	Controls   []*ComplianceControl          `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	// Rolled-up freshness across all clusters reporting this check: OUTDATED if
+	// any contributing cluster has stale data (OUTDATED > CURRENT > UNKNOWN).
+	DataState     ComplianceDataState `protobuf:"varint,6,opt,name=data_state,json=dataState,proto3,enum=v2.ComplianceDataState" json:"data_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -586,6 +589,13 @@ func (x *ComplianceCheckResultStatusCount) GetControls() []*ComplianceControl {
 		return x.Controls
 	}
 	return nil
+}
+
+func (x *ComplianceCheckResultStatusCount) GetDataState() ComplianceDataState {
+	if x != nil {
+		return x.DataState
+	}
+	return ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN
 }
 
 type ComplianceControl struct {
@@ -1223,7 +1233,7 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\"e\n" +
 	"\x1aComplianceCheckStatusCount\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\x121\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x19.v2.ComplianceCheckStatusR\x06status\"\xf0\x01\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x19.v2.ComplianceCheckStatusR\x06status\"\xa8\x02\n" +
 	" ComplianceCheckResultStatusCount\x12\x1d\n" +
 	"\n" +
 	"check_name\x18\x01 \x01(\tR\tcheckName\x12\x1c\n" +
@@ -1231,7 +1241,9 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\trule_name\x18\x03 \x01(\tR\bruleName\x12?\n" +
 	"\vcheck_stats\x18\x04 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x121\n" +
-	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\"I\n" +
+	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x126\n" +
+	"\n" +
+	"data_state\x18\x06 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\"I\n" +
 	"\x11ComplianceControl\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x18\n" +
 	"\acontrol\x18\x02 \x01(\tR\acontrol\"\xa0\x01\n" +
@@ -1340,21 +1352,22 @@ var file_api_v2_compliance_common_proto_depIdxs = []int32{
 	0,  // 2: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
 	6,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
 	8,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
-	7,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
-	5,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
-	6,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	17, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
-	1,  // 9: v2.ComplianceClusterOverallStats.data_state:type_name -> v2.ComplianceDataState
-	11, // 10: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	18, // 11: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	18, // 12: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
-	9,  // 13: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	3,  // 14: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	1,  // 5: v2.ComplianceCheckResultStatusCount.data_state:type_name -> v2.ComplianceDataState
+	7,  // 6: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
+	5,  // 7: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
+	6,  // 8: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	17, // 9: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	1,  // 10: v2.ComplianceClusterOverallStats.data_state:type_name -> v2.ComplianceDataState
+	11, // 11: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
+	18, // 12: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	18, // 13: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	9,  // 14: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
+	3,  // 15: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }

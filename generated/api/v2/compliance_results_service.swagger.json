@@ -728,6 +728,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataState": {
+          "$ref": "#/definitions/v2ComplianceDataState",
+          "description": "Rolled-up freshness across all clusters reporting this check: OUTDATED if\nany contributing cluster has stale data (OUTDATED > CURRENT > UNKNOWN)."
         }
       },
       "title": "Group the number of occurrences by status"

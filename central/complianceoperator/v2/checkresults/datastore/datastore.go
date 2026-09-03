@@ -63,6 +63,11 @@ type DataStore interface {
 	// are NULL return nil MinLastStarted (SQL MIN ignores NULLs).
 	MinLastStartedTimeByConfigCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByConfigCluster, error)
 
+	// MinLastStartedTimeByCheckCluster returns MIN(last_started_time) grouped by
+	// (scan_config_name, cluster_id, check_name), for the per-check outdated rollup.
+	// Groups where all last_started_time values are NULL return nil MinLastStarted.
+	MinLastStartedTimeByCheckCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByCheckCluster, error)
+
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 }

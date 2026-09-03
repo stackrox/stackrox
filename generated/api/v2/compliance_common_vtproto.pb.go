@@ -121,6 +121,7 @@ func (m *ComplianceCheckResultStatusCount) CloneVT() *ComplianceCheckResultStatu
 	r.CheckName = m.CheckName
 	r.Rationale = m.Rationale
 	r.RuleName = m.RuleName
+	r.DataState = m.DataState
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -522,6 +523,9 @@ func (this *ComplianceCheckResultStatusCount) EqualVT(that *ComplianceCheckResul
 				return false
 			}
 		}
+	}
+	if this.DataState != that.DataState {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1125,6 +1129,11 @@ func (m *ComplianceCheckResultStatusCount) MarshalToSizedBufferVT(dAtA []byte) (
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.DataState != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DataState))
+		i--
+		dAtA[i] = 0x30
 	}
 	if len(m.Controls) > 0 {
 		for iNdEx := len(m.Controls) - 1; iNdEx >= 0; iNdEx-- {
@@ -1829,6 +1838,9 @@ func (m *ComplianceCheckResultStatusCount) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.DataState != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DataState))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3074,6 +3086,25 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -5554,6 +5585,25 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVTUnsafe(dAtA []byte) error 
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

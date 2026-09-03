@@ -71,6 +71,9 @@ message ComplianceCheckResultStatusCount {
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
   repeated ComplianceControl controls = 5;
+  // Rolled-up freshness across all clusters reporting this check: OUTDATED if
+  // any contributing cluster has stale data (OUTDATED > CURRENT > UNKNOWN).
+  ComplianceDataState data_state = 6;
 }
 
 message ComplianceControl {

@@ -466,7 +466,8 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 	}
 
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
+		// Single-check stats view (not the Checks tab); no per-check freshness rollup here.
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls, nil),
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(1),
 	}, nil
