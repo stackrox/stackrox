@@ -56,3 +56,42 @@ func TestComplianceV2SpecificCheckResult_DataState(t *testing.T) {
 		}
 	}
 }
+
+// TestComplianceV2CheckResults_DataState verifies the single-cluster Coverage
+// view converter sets the per-check "Data status" from the resolver.
+func TestComplianceV2CheckResults_DataState(t *testing.T) {
+	now := time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC)
+	cfg := &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName: "daily",
+		Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2, Minute: 0},
+	}
+	resolver := compliancedata.NewConfigResolver([]*storage.ComplianceOperatorScanConfigurationV2{cfg}, now)
+
+	results := []*storage.ComplianceOperatorCheckResultV2{
+		{
+			CheckName: "check-current", RuleRefId: "ref", ScanConfigName: "daily",
+			Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+			LastStartedTime: timestamppb.New(time.Date(2026, 9, 2, 2, 5, 0, 0, time.UTC)), // after fire
+		},
+		{
+			CheckName: "check-outdated", RuleRefId: "ref", ScanConfigName: "daily",
+			Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+			LastStartedTime: timestamppb.New(time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)), // before fire
+		},
+	}
+
+	converted := ComplianceV2CheckResults(results, map[string]string{"ref": "rule"}, nil, resolver)
+	if assert.Len(t, converted, 2) {
+		byName := map[string]v2.ComplianceDataState{}
+		for _, r := range converted {
+			byName[r.GetCheckName()] = r.GetDataState()
+		}
+		assert.Equal(t, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, byName["check-current"])
+		assert.Equal(t, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED, byName["check-outdated"])
+	}
+
+	// nil resolver ⇒ UNKNOWN default.
+	for _, r := range ComplianceV2CheckResults(results, map[string]string{"ref": "rule"}, nil, nil) {
+		assert.Equal(t, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, r.GetDataState())
+	}
+}
