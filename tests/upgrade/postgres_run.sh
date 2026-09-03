@@ -229,6 +229,8 @@ test_upgrade_paths() {
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
 
+    upgrade_central_helm_to_head
+
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     rm -rf sensor-remote

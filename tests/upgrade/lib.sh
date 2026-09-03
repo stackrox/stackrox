@@ -130,6 +130,63 @@ deploy_earlier_postgres_central() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
+# upgrade_central_helm_to_head applies the HEAD central-services chart after a
+# kubectl-only image walk so Scanner V4 is installed for smoke tests.
+upgrade_central_helm_to_head() {
+    local namespace="${1:-stackrox}"
+    local image_tag="${2:-$CURRENT_TAG}"
+    local registry="${3:-$REGISTRY}"
+
+    info "Upgrading central Helm release to HEAD chart with Scanner V4"
+
+    local chart_dir
+    chart_dir="$(mktemp -d)"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services \
+        --image-defaults opensource \
+        --output-dir "${chart_dir}" --remove
+
+    local helm_generated_values_file
+    helm_generated_values_file="$(mktemp)"
+    kubectl -n "$namespace" get secrets -o json \
+        | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
+        > "$helm_generated_values_file"
+    if [[ ! -s "$helm_generated_values_file" ]]; then
+        die "No stackrox-generated Helm values secret found in namespace ${namespace}"
+    fi
+
+    local helm_extra_args=()
+    if [[ "${SCANNER_V4_DB_STORAGE_CLASS:-}" == "faster" ]]; then
+        kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=faster")
+    fi
+
+    helm -n "$namespace" upgrade --install --reuse-values \
+        -f "$helm_generated_values_file" \
+        -f - \
+        "${helm_extra_args[@]}" \
+        stackrox-central-services "${chart_dir}" <<EOT
+image:
+  registry: "${registry}"
+central:
+  db:
+    image:
+      tag: "${image_tag}"
+  image:
+    tag: "${image_tag}"
+scannerV4:
+  disable: false
+  image:
+    tag: "${image_tag}"
+  db:
+    image:
+      tag: "${image_tag}"
+EOT
+
+    wait_for_api "$namespace"
+    wait_for_central_db
+    wait_for_scanner_V4 "$namespace"
+}
+
 restore_4_6_backup() {
     info "Restoring a 4.6 backup into a newer central"
 
