@@ -8,6 +8,7 @@ import (
 	v2 "github.com/stackrox/rox/central/reports/service/v2"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -34,6 +35,9 @@ var (
 		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_DELIVERED,
 		storage.ReportStatus_FAILURE:   apiV2.ReportStatus_FAILURE,
 	}
+
+	// Use this context only to populate notifier, collection names and IsDownloadAvailable fields in converted responses
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 // convertV2ReportConfigurationToProto converts v2.ReportConfiguration to storage.ReportConfiguration for node reports
@@ -100,13 +104,6 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 
 	ret := &storage.ResourceScope{}
 	switch ref := scope.GetScopeReference().(type) {
-	case *apiV2.ResourceScope_CollectionScope:
-		if ref.CollectionScope == nil {
-			return nil, errors.New("collection scope reference is nil")
-		}
-		ret.ScopeReference = &storage.ResourceScope_CollectionId{
-			CollectionId: ref.CollectionScope.GetCollectionId(),
-		}
 	case *apiV2.ResourceScope_EntityScope:
 		ret.ScopeReference = &storage.ResourceScope_EntityScope{
 			EntityScope: convertV2EntityScopeToStorage(ref.EntityScope),
@@ -171,24 +168,26 @@ func v2MatchTypeToStorage(m apiV2.MatchType) storage.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertV2NotifierConfigToProto(config *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
-	if config == nil {
+func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
+	if notifier == nil {
 		return nil
 	}
 
-	ret := &storage.NotifierConfiguration{}
+	ret := &storage.NotifierConfiguration{
+		Ref: &storage.NotifierConfiguration_Id{
+			Id: notifier.GetEmailConfig().GetNotifierId(),
+		},
+	}
 
-	if emailConfig := config.GetEmailConfig(); emailConfig != nil {
+	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
 		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
 			EmailConfig: &storage.EmailNotifierConfiguration{
-				NotifierId:    emailConfig.GetNotifierId(),
 				MailingLists:  emailConfig.GetMailingLists(),
 				CustomSubject: emailConfig.GetCustomSubject(),
 				CustomBody:    emailConfig.GetCustomBody(),
 			},
 		}
 	}
-
 	return ret
 }
 
@@ -313,25 +312,34 @@ func storageMatchTypeToV2(m storage.MatchType) apiV2.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertProtoNotifierConfigToV2(config *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
-	if config == nil {
+func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
+	if notifierConfig == nil {
 		return nil, nil
 	}
 
-	ret := &apiV2.NotifierConfiguration{}
-
-	if emailConfig := config.GetEmailConfig(); emailConfig != nil {
-		ret.NotifierConfig = &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    emailConfig.GetNotifierId(),
-				MailingLists:  emailConfig.GetMailingLists(),
-				CustomSubject: emailConfig.GetCustomSubject(),
-				CustomBody:    emailConfig.GetCustomBody(),
-			},
-		}
+	if notifierConfig.GetEmailConfig() == nil {
+		return nil, nil
 	}
 
-	return ret, nil
+	notifier, found, err := s.notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
+	}
+
+	return &apiV2.NotifierConfiguration{
+		NotifierName: notifier.GetName(),
+		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
+			EmailConfig: &apiV2.EmailNotifierConfiguration{
+				NotifierId:    notifierConfig.GetId(),
+				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
+				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
+				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
+			},
+		},
+	}, nil
 }
 
 func isDownloadAvailable(blobNames set.FrozenStringSet, configID, reportID string) bool {
@@ -380,27 +388,27 @@ func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSna
 	return ret, nil
 }
 
-func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifier *storage.NotifierSnapshot) *apiV2.NotifierConfiguration {
-	if notifier == nil {
+func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot) *apiV2.NotifierConfiguration {
+	if notifierSnapshot == nil {
 		return nil
 	}
-
-	ret := &apiV2.NotifierConfiguration{
-		NotifierName: notifier.GetNotifierName(),
-	}
-
-	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
-		ret.NotifierConfig = &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    emailConfig.GetNotifierId(),
-				MailingLists:  emailConfig.GetMailingLists(),
-				CustomSubject: emailConfig.GetCustomSubject(),
-				CustomBody:    emailConfig.GetCustomBody(),
-			},
+	if notifierSnapshot.GetEmailConfig() == nil {
+		return &apiV2.NotifierConfiguration{
+			NotifierName: notifierSnapshot.GetNotifierName(),
 		}
 	}
 
-	return ret
+	return &apiV2.NotifierConfiguration{
+		NotifierName: notifierSnapshot.GetNotifierName(),
+		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
+			EmailConfig: &apiV2.EmailNotifierConfiguration{
+				NotifierId:    notifierSnapshot.GetEmailConfig().GetNotifierId(),
+				MailingLists:  notifierSnapshot.GetEmailConfig().GetMailingLists(),
+				CustomSubject: notifierSnapshot.GetEmailConfig().GetCustomSubject(),
+				CustomBody:    notifierSnapshot.GetEmailConfig().GetCustomBody(),
+			},
+		},
+	}
 }
 
 func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportStatus {
@@ -429,7 +437,11 @@ func (s *serviceImpl) getExistingBlobNames(ctx context.Context, snapshots []*sto
 		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
-				blobNames = append(blobNames, common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId()))
+				parentDir := snapshot.GetReportConfigurationId()
+				if snapshot.GetViewBasedVulnReportFilters() != nil {
+					parentDir = "view-based-report"
+				}
+				blobNames = append(blobNames, common.GetReportBlobPath(parentDir, snapshot.GetReportId()))
 			}
 		}
 	}

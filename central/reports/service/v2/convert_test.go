@@ -750,7 +750,7 @@ func TestConvertProtoNotifierSnapshotToV2(t *testing.T) {
 		}
 		result := service.convertProtoNotifierSnapshotToV2(snapshot)
 		assert.NotNil(t, result)
-		assert.Empty(t, result.GetNotifierName())
+		assert.Equal(t, "test-notifier", result.GetNotifierName())
 	})
 
 	t.Run("snapshot with email config", func(t *testing.T) {

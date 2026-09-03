@@ -517,7 +517,9 @@ func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage
 		return nil
 	}
 	if notifierSnapshot.GetEmailConfig() == nil {
-		return &apiV2.NotifierConfiguration{}
+		return &apiV2.NotifierConfiguration{
+			NotifierName: notifierSnapshot.GetNotifierName(),
+		}
 	}
 
 	return &apiV2.NotifierConfiguration{
