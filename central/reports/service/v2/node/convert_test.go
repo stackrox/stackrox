@@ -138,8 +138,15 @@ func (s *ConversionTestSuite) TestNotifierConversions() {
 
 	protoNotifier := s.service.convertV2NotifierConfigToProto(v2Notifier)
 	assert.NotNil(s.T(), protoNotifier)
-	assert.Equal(s.T(), "notifier-123", protoNotifier.GetEmailConfig().GetNotifierId())
+	assert.Equal(s.T(), "notifier-123", protoNotifier.GetId())
 	assert.Equal(s.T(), "Custom Subject", protoNotifier.GetEmailConfig().GetCustomSubject())
+
+	// Mock GetNotifier for the conversion back
+	notifierDataStore := s.service.notifierDatastore.(*notifierDSMocks.MockDataStore)
+	notifierDataStore.EXPECT().GetNotifier(gomock.Any(), "notifier-123").Return(&storage.Notifier{
+		Id:   "notifier-123",
+		Name: "Test Notifier",
+	}, true, nil).Times(1)
 
 	v2NotifierBack, err := s.service.convertProtoNotifierConfigToV2(protoNotifier)
 	assert.NoError(s.T(), err)
@@ -324,6 +331,13 @@ func (s *ConversionTestSuite) TestReportConfigurationRoundTrip() {
 	assert.Equal(s.T(), v2Config.GetName(), protoConfig.GetName())
 	assert.Equal(s.T(), storage.ReportConfiguration_NODE_VULNERABILITY, protoConfig.GetType())
 	protoassert.Equal(s.T(), creator, protoConfig.GetCreator())
+
+	// Mock GetNotifier for the conversion back
+	notifierDataStore := s.service.notifierDatastore.(*notifierDSMocks.MockDataStore)
+	notifierDataStore.EXPECT().GetNotifier(gomock.Any(), "email-1").Return(&storage.Notifier{
+		Id:   "email-1",
+		Name: "Email Notifier",
+	}, true, nil).Times(1)
 
 	v2ConfigBack, err := s.service.convertProtoReportConfigurationToV2(protoConfig)
 	assert.NoError(s.T(), err)
@@ -540,6 +554,9 @@ func (s *ConversionTestSuite) TestProtoReportConfigurationToV2() {
 		},
 		Notifiers: []*storage.NotifierConfiguration{
 			{
+				Ref: &storage.NotifierConfiguration_Id{
+					Id: "notifier-1",
+				},
 				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
 					EmailConfig: &storage.EmailNotifierConfiguration{
 						NotifierId:   "notifier-1",
@@ -549,6 +566,13 @@ func (s *ConversionTestSuite) TestProtoReportConfigurationToV2() {
 			},
 		},
 	}
+
+	// Mock GetNotifier for the conversion
+	notifierDataStore := s.service.notifierDatastore.(*notifierDSMocks.MockDataStore)
+	notifierDataStore.EXPECT().GetNotifier(gomock.Any(), "notifier-1").Return(&storage.Notifier{
+		Id:   "notifier-1",
+		Name: "Notifier 1",
+	}, true, nil).Times(1)
 
 	v2Config, err := s.service.convertProtoReportConfigurationToV2(protoConfig)
 	assert.NoError(s.T(), err)
