@@ -429,7 +429,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
 				// Per-check freshness: a fresh MIN(last_started) against a DAILY schedule ⇒ CURRENT.
-				s.setupCheckDataStateMocks(countQuery, timePtr(time.Now().UTC()))
+				s.setupCheckDataStateMocks(countQuery, new(time.Now().UTC()))
 			},
 		},
 		{
@@ -456,7 +456,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
-				s.setupCheckDataStateMocks(countQuery, timePtr(time.Now().UTC()))
+				s.setupCheckDataStateMocks(countQuery, new(time.Now().UTC()))
 			},
 		},
 		{
@@ -482,7 +482,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
 				// A years-old MIN(last_started) predates the last DAILY fire ⇒ OUTDATED.
-				s.setupCheckDataStateMocks(countQuery, timePtr(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)))
+				s.setupCheckDataStateMocks(countQuery, new(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)))
 			},
 		},
 		{
@@ -520,8 +520,6 @@ func getExpectedControlResults() []*ruleDS.ControlResult {
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.4.4"},
 	}
 }
-
-func timePtr(t time.Time) *time.Time { return &t }
 
 // setupCheckDataStateMocks wires the per-check freshness aggregate + config load
 // used by GetComplianceProfileResults. minLastStarted drives the resolved state
