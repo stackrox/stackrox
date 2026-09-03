@@ -58,6 +58,7 @@ export type ListComplianceCheckClusterResponse = {
     checkName: string;
     totalCount: number;
     controls: ComplianceControl[];
+    outdatedClusterCount?: number;
 };
 
 export type ListComplianceCheckResultResponse = {
@@ -66,6 +67,7 @@ export type ListComplianceCheckResultResponse = {
     clusterId: string;
     totalCount: number;
     lastScanTime: string; // ISO 8601 date string
+    outdatedClusterCount?: number;
 };
 
 /**

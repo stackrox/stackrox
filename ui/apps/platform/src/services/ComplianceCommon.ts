@@ -41,6 +41,7 @@ export type ListComplianceProfileResults = {
     profileResults: ComplianceCheckResultStatusCount[];
     profileName: string;
     totalCount: number;
+    outdatedClusterCount?: number;
 };
 
 export type ComplianceClusterOverallStats = {

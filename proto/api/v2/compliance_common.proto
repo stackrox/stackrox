@@ -96,6 +96,10 @@ message ListComplianceProfileResults {
   repeated ComplianceCheckResultStatusCount profile_results = 1;
   string profile_name = 2;
   int32 total_count = 3;
+  // Number of clusters with OUTDATED data in the current filtered scope
+  // (computed over the unpaginated result set). Non-zero signals the UI
+  // to show an outdated-data banner.
+  int32 outdated_cluster_count = 4;
 }
 
 // ComplianceDataState indicates whether compliance data is current relative to

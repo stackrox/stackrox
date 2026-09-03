@@ -921,6 +921,11 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with OUTDATED data in the current filtered scope\n(computed over the unpaginated result set). Non-zero signals the UI\nto show an outdated-data banner."
         }
       },
       "title": "ListComplianceProfileResults provides scan stats overview based on profile"

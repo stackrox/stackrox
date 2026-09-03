@@ -254,10 +254,21 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		checkDataStates = make(map[string]v2.ComplianceDataState)
 	}
 
+	// Scope-level outdated-cluster count for the banner. Cluster-scoped signal
+	// (grouped by config,cluster), NOT the per-check aggregate above; over the
+	// unpaginated, profile-scoped countQuery. Best-effort: on error the banner
+	// is hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls, checkDataStates),
-		ProfileName:    request.GetProfileName(),
-		TotalCount:     int32(count),
+		ProfileResults:       storagetov2.ComplianceV2ProfileResults(scanResults, controls, checkDataStates),
+		ProfileName:          request.GetProfileName(),
+		TotalCount:           int32(count),
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -275,18 +286,7 @@ func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Quer
 	for _, mt := range minTimes {
 		configNames[mt.ScanConfigName] = struct{}{}
 	}
-
-	var configs []*storage.ComplianceOperatorScanConfigurationV2
-	for name := range configNames {
-		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
-		if cfgErr != nil {
-			log.Warnf("compliance outdated: cannot load config %q: %v", name, cfgErr)
-			continue
-		}
-		configs = append(configs, cfg)
-	}
-
-	resolver := compliancedata.NewConfigResolver(configs, time.Now().UTC())
+	resolver := s.buildConfigResolver(ctx, configNames)
 
 	perCheckStates := make(map[string][]compliancedata.State)
 	for _, mt := range minTimes {
@@ -299,6 +299,53 @@ func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Quer
 		result[checkName] = compliancedata.RollupState(states...).ToProto()
 	}
 	return result, nil
+}
+
+// computeOutdatedClusterCount returns the number of clusters with OUTDATED data
+// in the query's scope, rolled up per cluster over the (scan_config_name,
+// cluster_id) MIN aggregate. Used to gate the outdated-data banner across the
+// Coverage views. For a single-cluster-scoped query this returns 0 or 1.
+func (s *serviceImpl) computeOutdatedClusterCount(ctx context.Context, query *v1.Query) (int32, error) {
+	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	configNames := make(map[string]struct{})
+	for _, mt := range minTimes {
+		configNames[mt.ScanConfigName] = struct{}{}
+	}
+	resolver := s.buildConfigResolver(ctx, configNames)
+
+	perClusterStates := make(map[string][]compliancedata.State)
+	for _, mt := range minTimes {
+		state := resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted)
+		perClusterStates[mt.ClusterID] = append(perClusterStates[mt.ClusterID], state)
+	}
+
+	var outdated int32
+	for _, states := range perClusterStates {
+		if compliancedata.RollupState(states...).ToProto() == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED {
+			outdated++
+		}
+	}
+	return outdated, nil
+}
+
+// buildConfigResolver loads the named scan configs (best-effort; unloadable
+// configs are skipped and resolve to UNKNOWN) and returns a resolver anchored
+// at the current time.
+func (s *serviceImpl) buildConfigResolver(ctx context.Context, configNames map[string]struct{}) *compliancedata.ConfigResolver {
+	var configs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil {
+			log.Warnf("compliance outdated: cannot load config %q: %v", name, cfgErr)
+			continue
+		}
+		configs = append(configs, cfg)
+	}
+	return compliancedata.NewConfigResolver(configs, time.Now().UTC())
 }
 
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result
@@ -390,12 +437,21 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	}
 	resolver := compliancedata.NewConfigResolver(scanConfigs, time.Now().UTC())
 
+	// Scope-level outdated-cluster count for the banner, over the unpaginated,
+	// profile+check-scoped countQuery. Best-effort: on error the banner is hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
 	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan, resolver),
-		ProfileName:  request.GetProfileName(),
-		CheckName:    request.GetCheckName(),
-		TotalCount:   int32(resultCount),
-		Controls:     convertedControls,
+		CheckResults:         storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan, resolver),
+		ProfileName:          request.GetProfileName(),
+		CheckName:            request.GetCheckName(),
+		TotalCount:           int32(resultCount),
+		Controls:             convertedControls,
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -463,12 +519,21 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, err
 	}
 
+	// Single-cluster outdated signal for the inline note, over the unpaginated,
+	// profile+cluster-scoped countQuery (0 or 1). Best-effort: on error hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
 	return &v2.ListComplianceCheckResultResponse{
-		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
-		ProfileName:  request.GetProfileName(),
-		ClusterId:    request.GetClusterId(),
-		TotalCount:   int32(resultCount),
-		LastScanTime: lastExecutedTime,
+		CheckResults:         storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
+		ProfileName:          request.GetProfileName(),
+		ClusterId:            request.GetClusterId(),
+		TotalCount:           int32(resultCount),
+		LastScanTime:         lastExecutedTime,
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 

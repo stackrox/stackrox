@@ -734,8 +734,12 @@ type ListComplianceProfileResults struct {
 	ProfileResults []*ComplianceCheckResultStatusCount `protobuf:"bytes,1,rep,name=profile_results,json=profileResults,proto3" json:"profile_results,omitempty"`
 	ProfileName    string                              `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
 	TotalCount     int32                               `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Number of clusters with OUTDATED data in the current filtered scope
+	// (computed over the unpaginated result set). Non-zero signals the UI
+	// to show an outdated-data banner.
+	OutdatedClusterCount int32 `protobuf:"varint,4,opt,name=outdated_cluster_count,json=outdatedClusterCount,proto3" json:"outdated_cluster_count,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListComplianceProfileResults) Reset() {
@@ -785,6 +789,13 @@ func (x *ListComplianceProfileResults) GetProfileName() string {
 func (x *ListComplianceProfileResults) GetTotalCount() int32 {
 	if x != nil {
 		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *ListComplianceProfileResults) GetOutdatedClusterCount() int32 {
+	if x != nil {
+		return x.OutdatedClusterCount
 	}
 	return 0
 }
@@ -1253,12 +1264,13 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1a\n" +
 	"\bprovider\x18\x04 \x01(\tR\bprovider\x12\x1d\n" +
 	"\n" +
-	"short_name\x18\x05 \x01(\tR\tshortName\"\xb1\x01\n" +
+	"short_name\x18\x05 \x01(\tR\tshortName\"\xe7\x01\n" +
 	"\x1cListComplianceProfileResults\x12M\n" +
 	"\x0fprofile_results\x18\x01 \x03(\v2$.v2.ComplianceCheckResultStatusCountR\x0eprofileResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCount\"\xb6\x02\n" +
+	"totalCount\x124\n" +
+	"\x16outdated_cluster_count\x18\x04 \x01(\x05R\x14outdatedClusterCount\"\xb6\x02\n" +
 	"\x1dComplianceClusterOverallStats\x123\n" +
 	"\acluster\x18\x01 \x01(\v2\x19.v2.ComplianceScanClusterR\acluster\x12?\n" +
 	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +

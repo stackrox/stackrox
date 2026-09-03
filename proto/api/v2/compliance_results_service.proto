@@ -90,6 +90,9 @@ message ListComplianceCheckClusterResponse {
   string check_name = 3;
   int32 total_count = 4;
   repeated ComplianceControl controls = 5;
+  // Number of clusters with OUTDATED data for this check in the current
+  // filtered scope (computed over the unpaginated result set).
+  int32 outdated_cluster_count = 6;
 }
 
 message ListComplianceCheckResultResponse {
@@ -98,6 +101,8 @@ message ListComplianceCheckResultResponse {
   string cluster_id = 3;
   int32 total_count = 4;
   google.protobuf.Timestamp last_scan_time = 5;
+  // 1 if this cluster's data is OUTDATED, 0 otherwise (single-cluster scope).
+  int32 outdated_cluster_count = 6;
 }
 
 message ComplianceScanResultsRequest {

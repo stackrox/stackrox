@@ -603,14 +603,17 @@ func (x *ListComplianceResultsResponse) GetTotalCount() int32 {
 
 // ListComplianceCheckClusterResponse provides stats per cluster
 type ListComplianceCheckClusterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CheckResults  []*ClusterCheckStatus  `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName   string                 `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	CheckName     string                 `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	Controls      []*ComplianceControl   `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CheckResults []*ClusterCheckStatus  `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	ProfileName  string                 `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	CheckName    string                 `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	TotalCount   int32                  `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	Controls     []*ComplianceControl   `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	// Number of clusters with OUTDATED data for this check in the current
+	// filtered scope (computed over the unpaginated result set).
+	OutdatedClusterCount int32 `protobuf:"varint,6,opt,name=outdated_cluster_count,json=outdatedClusterCount,proto3" json:"outdated_cluster_count,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListComplianceCheckClusterResponse) Reset() {
@@ -678,15 +681,24 @@ func (x *ListComplianceCheckClusterResponse) GetControls() []*ComplianceControl 
 	return nil
 }
 
+func (x *ListComplianceCheckClusterResponse) GetOutdatedClusterCount() int32 {
+	if x != nil {
+		return x.OutdatedClusterCount
+	}
+	return 0
+}
+
 type ListComplianceCheckResultResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	CheckResults  []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName   string                   `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId     string                   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	TotalCount    int32                    `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	LastScanTime  *timestamppb.Timestamp   `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState   `protogen:"open.v1"`
+	CheckResults []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	ProfileName  string                   `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	ClusterId    string                   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	TotalCount   int32                    `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	LastScanTime *timestamppb.Timestamp   `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	// 1 if this cluster's data is OUTDATED, 0 otherwise (single-cluster scope).
+	OutdatedClusterCount int32 `protobuf:"varint,6,opt,name=outdated_cluster_count,json=outdatedClusterCount,proto3" json:"outdated_cluster_count,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListComplianceCheckResultResponse) Reset() {
@@ -752,6 +764,13 @@ func (x *ListComplianceCheckResultResponse) GetLastScanTime() *timestamppb.Times
 		return x.LastScanTime
 	}
 	return nil
+}
+
+func (x *ListComplianceCheckResultResponse) GetOutdatedClusterCount() int32 {
+	if x != nil {
+		return x.OutdatedClusterCount
+	}
+	return 0
 }
 
 type ComplianceScanResultsRequest struct {
@@ -1000,7 +1019,7 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"\x1dListComplianceResultsResponse\x12:\n" +
 	"\fscan_results\x18\x01 \x03(\v2\x17.v2.ComplianceCheckDataR\vscanResults\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"\xf7\x01\n" +
+	"totalCount\"\xad\x02\n" +
 	"\"ListComplianceCheckClusterResponse\x12;\n" +
 	"\rcheck_results\x18\x01 \x03(\v2\x16.v2.ClusterCheckStatusR\fcheckResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1d\n" +
@@ -1008,7 +1027,8 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"check_name\x18\x03 \x01(\tR\tcheckName\x12\x1f\n" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x121\n" +
-	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\"\x88\x02\n" +
+	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x124\n" +
+	"\x16outdated_cluster_count\x18\x06 \x01(\x05R\x14outdatedClusterCount\"\xbe\x02\n" +
 	"!ListComplianceCheckResultResponse\x12>\n" +
 	"\rcheck_results\x18\x01 \x03(\v2\x19.v2.ComplianceCheckResultR\fcheckResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1d\n" +
@@ -1016,7 +1036,8 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1f\n" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12@\n" +
-	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\"l\n" +
+	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x124\n" +
+	"\x16outdated_cluster_count\x18\x06 \x01(\x05R\x14outdatedClusterCount\"l\n" +
 	"\x1cComplianceScanResultsRequest\x12(\n" +
 	"\x10scan_config_name\x18\x01 \x01(\tR\x0escanConfigName\x12\"\n" +
 	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x87\x01\n" +

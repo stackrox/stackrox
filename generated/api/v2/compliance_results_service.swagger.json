@@ -880,6 +880,11 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with OUTDATED data for this check in the current\nfiltered scope (computed over the unpaginated result set)."
         }
       },
       "title": "ListComplianceCheckClusterResponse provides stats per cluster"
@@ -907,6 +912,11 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 if this cluster's data is OUTDATED, 0 otherwise (single-cluster scope)."
         }
       }
     },
@@ -926,6 +936,11 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with OUTDATED data in the current filtered scope\n(computed over the unpaginated result set). Non-zero signals the UI\nto show an outdated-data banner."
         }
       },
       "title": "ListComplianceProfileResults provides scan stats overview based on profile"
