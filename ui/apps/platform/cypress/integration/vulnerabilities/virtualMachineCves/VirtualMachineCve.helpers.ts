@@ -7,6 +7,7 @@ export const getVirtualMachineAlias = 'getVirtualMachine';
 export const getVirtualMachineCveComponentsAlias = 'getVirtualMachineCveComponents';
 export const listVirtualMachineCvesAlias = 'listVirtualMachineCves';
 export const listVirtualMachineComponentsAlias = 'listVirtualMachineComponents';
+export const getVirtualMachineVulnSummaryAlias = 'getVirtualMachineVulnSummary';
 
 export const routeMatcherMapForVirtualMachines = {
     [listVirtualMachinesAlias]: {
@@ -27,6 +28,10 @@ export const routeMatcherMapForVirtualMachineVulnerabilities = {
     [listVirtualMachineCvesAlias]: {
         method: 'GET',
         url: '/v2/virtualmachines/*/cves?*',
+    },
+    [getVirtualMachineVulnSummaryAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/vuln-summary?*',
     },
 };
 
