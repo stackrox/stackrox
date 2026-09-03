@@ -26,8 +26,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Removed Features
 
-- Scanner V2 (StackRox Scanner) has been fully removed. Scanner V4 is now the only vulnerability scanner deployed by the operator, Helm charts, and manifest bundles. Upgrading via the operator or Helm automatically stops deploying Scanner V2 resources. For manifest bundle installations, Scanner V2 resources must be removed manually after upgrading.
-
 - Compliance container no longer collects Scanner V2 node inventories. Node scanning continues via Scanner V4 index reports, as long as Scanner V4 is enabled.
 
 ### Deprecated Features
