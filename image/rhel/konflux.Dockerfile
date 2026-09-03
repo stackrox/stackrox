@@ -3,7 +3,7 @@ ARG PG_VERSION=15
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:e74b03198cccc24c24a27071ad4d6c2edcfe0bb10c6de99c609ce6e3c06d6d04 AS go-builder
 
-RUN dnf -y install --allowerasing jq
+RUN dnf -y install --allowerasing jq pigz
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -35,6 +35,13 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh 2 generated/api/v2 >image/rhel/docs/api/v2/swagger.json
 
 RUN make copy-go-binaries-to-image-dir
+
+RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
+    shopt -s nullglob && \
+    for f in roxctl-*; do \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
+    done
 
 
 FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:7679e533a1b91b206351b2b0b574f23de0697de57e98244cafbd30ed6879a336 as ui-builder
