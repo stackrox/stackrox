@@ -4,36 +4,26 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/migrator/migrations/loghelper"
+	"github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type/schema"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
-	log = logging.LoggerForModule()
-)
-
-const (
-	migrationStmt = `
-		ALTER TABLE report_snapshots ADD COLUMN IF NOT EXISTS type INTEGER DEFAULT 0;
-		UPDATE report_snapshots SET type = 0 WHERE type IS NULL;
-	`
+	log = loghelper.LogWrapper{}
 )
 
 func migrate(database *types.Databases) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
-	log.Info("Adding type column and backfilling report_snapshots.type: setting type=0 for existing reports")
+	pgutils.CreateTableFromModel(ctx, database.GormDB, schema.CreateTableReportSnapshotsStmt)
 
-	// Execute both ALTER TABLE and UPDATE in a single statement
-	// This is idempotent - safe to re-run:
-	// - ADD COLUMN IF NOT EXISTS won't fail if column exists
-	// - UPDATE WHERE type IS NULL won't modify rows already set to 0
-	_, err := database.PostgresDB.Exec(ctx, migrationStmt)
+	result, err := database.PostgresDB.Exec(ctx, `UPDATE report_snapshots SET type = 0 WHERE type IS NULL`)
 	if err != nil {
-		return errors.Wrap(err, "failed to add type column and backfill report_snapshots")
+		return errors.Wrap(err, "failed to backfill report_snapshots.type")
 	}
-
-	log.Info("Successfully added type column and backfilled existing report snapshots with type=0")
-
+	log.WriteToStderrf("Backfilled type=0 for %d report snapshots", result.RowsAffected())
 	return nil
 }

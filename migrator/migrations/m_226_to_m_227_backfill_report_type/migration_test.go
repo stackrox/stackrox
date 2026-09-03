@@ -4,11 +4,15 @@ package m226tom227
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type/schema"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -28,159 +32,116 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-
-	// Create the table manually (simulating pre-migration state without type column)
-	// The migration will add the type column
-	_, err := s.db.DB.Exec(s.ctx, `
-		CREATE TABLE IF NOT EXISTS report_snapshots (
-			reportid UUID PRIMARY KEY,
-			reportconfigurationid VARCHAR,
-			name VARCHAR,
-			serialized BYTEA
-		)
-	`)
-	s.Require().NoError(err)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
 	s.db.Teardown(s.T())
 }
 
-func (s *migrationTestSuite) TestMigration() {
-	dbs := &types.Databases{
+func (s *migrationTestSuite) databases() *types.Databases {
+	return &types.Databases{
 		GormDB:     s.db.GetGormDB(),
 		PostgresDB: s.db.DB,
 		DBCtx:      s.ctx,
 	}
+}
 
-	// Insert test data without type column (simulating pre-migration state)
-	testReportIDs := []string{
-		uuid.NewV4().String(),
-		uuid.NewV4().String(),
-		uuid.NewV4().String(),
+func (s *migrationTestSuite) setupPreMigrationTable() {
+	_, err := s.db.DB.Exec(s.ctx, "DROP TABLE IF EXISTS report_snapshots")
+	s.Require().NoError(err)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldSchema.CreateTableReportSnapshotsStmt)
+}
+
+func (s *migrationTestSuite) insertOldSnapshot(name string) {
+	snapshot := oldSchema.ReportSnapshots{
+		ReportID:              uuid.NewV4().String(),
+		ReportConfigurationID: uuid.NewV4().String(),
+		Name:                  name,
+		Serialized:            []byte("{}"),
 	}
+	s.Require().NoError(s.db.GetGormDB().Create(&snapshot).Error)
+}
 
-	for i, reportID := range testReportIDs {
-		_, err := s.db.DB.Exec(s.ctx, `
-			INSERT INTO report_snapshots (reportid, reportconfigurationid, name, serialized)
-			VALUES ($1, $2, $3, $4)
-		`, reportID, uuid.NewV4().String(), "Test Report "+string(rune(i+1)), []byte("{}"))
-		s.Require().NoError(err)
-	}
-
-	// Verify table has no type column yet
-	var columnExists bool
+func (s *migrationTestSuite) typeColumnExists() bool {
+	var exists bool
 	err := s.db.DB.QueryRow(s.ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM information_schema.columns
 			WHERE table_name = 'report_snapshots' AND column_name = 'type'
 		)
-	`).Scan(&columnExists)
+	`).Scan(&exists)
 	s.Require().NoError(err)
-	s.Require().False(columnExists, "Type column should not exist before migration")
+	return exists
+}
 
-	// Run the migration
+func (s *migrationTestSuite) countWhere(where string) int {
+	var count int
+	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE "+where).Scan(&count))
+	return count
+}
+
+func (s *migrationTestSuite) TestMigration() {
+	s.setupPreMigrationTable()
+	dbs := s.databases()
+
+	const numReports = 3
+	for i := range numReports {
+		s.insertOldSnapshot(fmt.Sprintf("Test Report %d", i+1))
+	}
+
+	s.Require().False(s.typeColumnExists(), "Type column should not exist before migration")
+
 	s.Require().NoError(migration.Run(dbs))
 
-	// Verify type column was added
-	err = s.db.DB.QueryRow(s.ctx, `
-		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns
-			WHERE table_name = 'report_snapshots' AND column_name = 'type'
-		)
-	`).Scan(&columnExists)
-	s.Require().NoError(err)
-	s.Require().True(columnExists, "Type column should exist after migration")
+	s.Require().True(s.typeColumnExists(), "Type column should exist after migration")
+	s.Require().Equal(numReports, s.countWhere("type = 0"), "All reports should have type=0 after migration")
+	s.Require().Equal(0, s.countWhere("type IS NULL"), "No reports should have NULL type after migration")
 
-	// Verify all existing reports have type=0 (VULNERABILITY)
-	var backfilledCount int
-	err = s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 0").Scan(&backfilledCount)
-	s.Require().NoError(err)
-	s.Require().Equal(len(testReportIDs), backfilledCount, "All reports should have type=0 after migration")
-
-	// Verify no NULL values remain
-	var nullCount int
-	err = s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type IS NULL").Scan(&nullCount)
-	s.Require().NoError(err)
-	s.Require().Equal(0, nullCount, "No reports should have NULL type after migration")
-
-	// Test idempotency: running again should not error and should not change anything
 	s.Require().NoError(migration.Run(dbs))
-
-	// Verify count is still correct after second run
-	err = s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 0").Scan(&backfilledCount)
-	s.Require().NoError(err)
-	s.Require().Equal(len(testReportIDs), backfilledCount, "Count should remain the same after idempotent run")
+	s.Require().Equal(numReports, s.countWhere("type = 0"), "Count should remain the same after idempotent run")
 }
 
 func (s *migrationTestSuite) TestMigrationWithMixedData() {
-	dbs := &types.Databases{
-		GormDB:     s.db.GetGormDB(),
-		PostgresDB: s.db.DB,
-		DBCtx:      s.ctx,
-	}
+	s.setupPreMigrationTable()
+	dbs := s.databases()
 
-	// Clear previous test data
-	_, err := s.db.DB.Exec(s.ctx, "DELETE FROM report_snapshots")
-	s.Require().NoError(err)
+	s.insertOldSnapshot("Pre-column Report")
 
-	// Drop type column to simulate pre-migration state
-	_, err = s.db.DB.Exec(s.ctx, "ALTER TABLE report_snapshots DROP COLUMN IF EXISTS type")
-	s.Require().NoError(err)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), updatedSchema.CreateTableReportSnapshotsStmt)
 
-	// Re-run migration to add type column
-	s.Require().NoError(migration.Run(dbs))
-
-	// Insert mixed data: some with NULL, some with existing values
 	vulnerabilityType := int32(storage.ReportSnapshot_VULNERABILITY)
 	nodeVulnerabilityType := int32(storage.ReportSnapshot_NODE_VULNERABILITY)
-
 	testData := []struct {
-		id   string
 		name string
 		typ  *int32
 	}{
-		{uuid.NewV4().String(), "Null Report 1", nil}, // NULL - should be backfilled
-		{uuid.NewV4().String(), "Existing Report 1", &vulnerabilityType},
-		{uuid.NewV4().String(), "Node Report 1", &nodeVulnerabilityType},
-		{uuid.NewV4().String(), "Null Report 2", nil}, // NULL - should be backfilled
+		{"Null Report 1", nil},
+		{"Existing Report 1", &vulnerabilityType},
+		{"Node Report 1", &nodeVulnerabilityType},
 	}
-
 	for _, td := range testData {
 		if td.typ == nil {
 			_, err := s.db.DB.Exec(s.ctx, `
 				INSERT INTO report_snapshots (reportid, reportconfigurationid, name, serialized, type)
 				VALUES ($1, $2, $3, $4, NULL)
-			`, td.id, uuid.NewV4().String(), td.name, []byte("{}"))
+			`, uuid.NewV4().String(), uuid.NewV4().String(), td.name, []byte("{}"))
 			s.Require().NoError(err)
-		} else {
-			_, err := s.db.DB.Exec(s.ctx, `
-				INSERT INTO report_snapshots (reportid, reportconfigurationid, name, serialized, type)
-				VALUES ($1, $2, $3, $4, $5)
-			`, td.id, uuid.NewV4().String(), td.name, []byte("{}"), *td.typ)
-			s.Require().NoError(err)
+			continue
 		}
+		_, err := s.db.DB.Exec(s.ctx, `
+			INSERT INTO report_snapshots (reportid, reportconfigurationid, name, serialized, type)
+			VALUES ($1, $2, $3, $4, $5)
+		`, uuid.NewV4().String(), uuid.NewV4().String(), td.name, []byte("{}"), *td.typ)
+		s.Require().NoError(err)
 	}
 
-	// Verify initial state
-	var nullCount, vulnerabilityCount, nodeVulnerabilityCount int
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type IS NULL").Scan(&nullCount))
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 0").Scan(&vulnerabilityCount))
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 1").Scan(&nodeVulnerabilityCount))
+	s.Require().Equal(2, s.countWhere("type IS NULL"))
+	s.Require().Equal(1, s.countWhere("type = 0"))
+	s.Require().Equal(1, s.countWhere("type = 1"))
 
-	s.Require().Equal(2, nullCount)
-	s.Require().Equal(1, vulnerabilityCount)
-	s.Require().Equal(1, nodeVulnerabilityCount)
-
-	// Run migration
 	s.Require().NoError(migration.Run(dbs))
 
-	// Verify post-migration state
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type IS NULL").Scan(&nullCount))
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 0").Scan(&vulnerabilityCount))
-	s.Require().NoError(s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM report_snapshots WHERE type = 1").Scan(&nodeVulnerabilityCount))
-
-	s.Require().Equal(0, nullCount, "No NULL values should remain")
-	s.Require().Equal(3, vulnerabilityCount, "NULL values should be backfilled to 0, existing 0 unchanged")
-	s.Require().Equal(1, nodeVulnerabilityCount, "NODE_VULNERABILITY reports should remain unchanged")
+	s.Require().Equal(0, s.countWhere("type IS NULL"), "No NULL values should remain")
+	s.Require().Equal(3, s.countWhere("type = 0"), "NULL values should be backfilled to 0, existing 0 unchanged")
+	s.Require().Equal(1, s.countWhere("type = 1"), "NODE_VULNERABILITY reports should remain unchanged")
 }
