@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/dexconnector"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +23,11 @@ import (
 const (
 	openshiftAPIUrl    = "https://openshift.default.svc"
 	roxTokenExpiration = 5 * time.Minute
+)
+
+const (
+	ClientNameConfigKey   = "client_name"
+	ClientSecretConfigKey = "client_secret"
 )
 
 // This is the location for CA files which shall be used for certificate validation within
@@ -55,7 +61,9 @@ type callbackAndRefreshConnector interface {
 
 type backend struct {
 	id                      string
+	config                  map[string]string
 	baseRedirectURLPath     string
+	connectorFactory        func() (callbackAndRefreshConnector, error)
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
 }
@@ -80,7 +88,33 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (*backen
 	b := &backend{
 		id:                  id,
 		baseRedirectURLPath: callbackURLPath,
+		connectorFactory:    createOpenshiftConnector,
 		openshiftConnector:  openshiftConnector,
+	}
+
+	// Register backend for notification on openshift certificate updates.
+	// And refresh connection to OpenShift in case certificates changed
+	// between the backend creation and its registration.
+	registerBackend(b)
+	b.recreateOpenshiftConnector()
+
+	return b, nil
+}
+
+func newBackendWithACMAccessControlDelegation(id string, callbackURLPath string, config map[string]string) (*backend, error) {
+	openshiftConnector, err := createOpenshiftConnectorForACMAccessControlDelegation(config)
+	if err != nil {
+		return nil, err
+	}
+
+	b := &backend{
+		id:                  id,
+		config:              config,
+		baseRedirectURLPath: callbackURLPath,
+		connectorFactory: func() (callbackAndRefreshConnector, error) {
+			return createOpenshiftConnectorForACMAccessControlDelegation(config)
+		},
+		openshiftConnector: openshiftConnector,
 	}
 
 	// Register backend for notification on openshift certificate updates.
@@ -105,7 +139,32 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 		TrustedCertPool: settings.trustedCertPool,
 	}
 
-	openshiftConnector, err := dexCfg.Open()
+	openshiftConnector, err := dexCfg.Open([]string{"user:info"})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+	}
+
+	return openshiftConnector, nil
+}
+
+func createOpenshiftConnectorForACMAccessControlDelegation(config map[string]string) (callbackAndRefreshConnector, error) {
+	if config[ClientNameConfigKey] == "" || config[ClientSecretConfigKey] == "" {
+		return nil, errors.New("ACM access control delegation requires both client name and client secret")
+	}
+
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
+	if err != nil {
+		return nil, err
+	}
+
+	dexCfg := dexconnector.Config{
+		Issuer:          openshiftAPIUrl,
+		ClientID:        config[ClientNameConfigKey],
+		ClientSecret:    config[ClientSecretConfigKey],
+		TrustedCertPool: certPool,
+	}
+
+	openshiftConnector, err := dexCfg.Open([]string{"user:info", "user:full"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
@@ -115,6 +174,9 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 
 // There is no config but static settings instead.
 func (b *backend) Config() map[string]string {
+	if features.ACMAccessControlDelegation.Enabled() {
+		return b.config
+	}
 	return nil
 }
 
@@ -197,7 +259,7 @@ func (b *backend) Validate(_ context.Context, _ *tokens.Claims) error {
 }
 
 func (b *backend) recreateOpenshiftConnector() {
-	openshiftConnector, err := createOpenshiftConnector()
+	openshiftConnector, err := b.connectorFactory()
 	if err != nil {
 		log.Errorw("failed to create updated dex openshiftConnector for OpenShift's OAuth Server with new CAs, "+
 			"new certs will not be applied. This may lead to unwanted TLS connection issues.", logging.Err(err))

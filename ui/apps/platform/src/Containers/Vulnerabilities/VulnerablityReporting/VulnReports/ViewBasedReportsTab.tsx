@@ -21,7 +21,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import { fetchViewBasedReportHistory } from 'services/ReportsService';
 import PageTitle from 'Components/PageTitle';
 import ReportJobStatusFilter, {
-    ensureReportJobStatuses,
+    isReportJobStatus,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import type { ReportJobStatus } from 'Components/ReportJob/types';
@@ -33,7 +33,7 @@ const sortOptions = {
     defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
 };
 
-function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
+function createQueryFromReportJobStatusFilters(reportJobStatuses: ReportJobStatus[]) {
     const query: Record<string, string[]> = {
         'Report State': [],
     };
@@ -47,8 +47,6 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
             value: 'GENERATED',
         },
     };
-
-    const reportJobStatuses = ensureReportJobStatuses(jobStatusFilters);
 
     reportJobStatuses.forEach((jobStatus) => {
         const queryMapping = jobStatusQueryMappings[jobStatus];
@@ -73,7 +71,7 @@ function ViewBasedReportsTab() {
     ]);
 
     const reportJobStatusFilters = useMemo(() => {
-        return ensureStringArray(searchFilter['Report Job Status']);
+        return ensureStringArray(searchFilter['Report Job Status']).filter(isReportJobStatus);
     }, [searchFilter]);
 
     const fetchViewBasedReportsHistoryCallback = useCallback(() => {
@@ -110,7 +108,7 @@ function ViewBasedReportsTab() {
         );
         setSearchFilter({
             ...searchFilter,
-            'Report Job Status': ensureReportJobStatuses(newFilters),
+            'Report Job Status': newFilters,
         });
         setPage(1);
 
@@ -164,7 +162,7 @@ function ViewBasedReportsTab() {
                                     'DOWNLOAD_GENERATED',
                                     'ERROR',
                                 ]}
-                                selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}
+                                selectedStatuses={reportJobStatusFilters}
                                 onChange={onReportJobStatusFilterChange}
                             />
                         </ToolbarItem>
