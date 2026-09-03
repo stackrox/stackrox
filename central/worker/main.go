@@ -86,7 +86,6 @@ func main() {
 	waitForTerminationSignal()
 
 	log.Infof("central-worker shutting down")
-	cancel()
 
 	pruning.Singleton().Stop()
 	scheduler.Stop()

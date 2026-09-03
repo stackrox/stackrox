@@ -142,11 +142,7 @@ func (r *reportListener) handleRequestSubmitted(snapshotID string) {
 		ReportSnapshot: snap,
 		Collection:     collection,
 	}
-	if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
-		log.Errorf("Failed to submit report request for snapshot %s: %v", snapshotID, err)
-	} else {
-		r.trackReportID(snapshotID)
-	}
+	r.submitIfNew(snapshotID, req)
 }
 
 func (r *reportListener) handleRequestCancelled(snapshotID string) {
@@ -211,10 +207,6 @@ func (r *reportListener) resyncPendingRequests() {
 	}
 
 	for _, snap := range snapshots {
-		if r.isReportIDKnown(snap.GetReportId()) {
-			continue
-		}
-
 		var collection *storage.ResourceCollection
 		if collID := snap.GetCollection().GetId(); collID != "" {
 			var exists bool
@@ -229,22 +221,20 @@ func (r *reportListener) resyncPendingRequests() {
 			ReportSnapshot: snap,
 			Collection:     collection,
 		}
-		if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
-			log.Errorf("Error resyncing pending report %s: %v", snap.GetReportId(), err)
-		} else {
-			r.trackReportID(snap.GetReportId())
-		}
+		r.submitIfNew(snap.GetReportId(), req)
 	}
 }
 
-func (r *reportListener) trackReportID(id string) {
+func (r *reportListener) submitIfNew(reportID string, req *reportGen.ReportRequest) {
 	r.knownMu.Lock()
 	defer r.knownMu.Unlock()
-	r.knownReportIDs.Add(id)
-}
 
-func (r *reportListener) isReportIDKnown(id string) bool {
-	r.knownMu.Lock()
-	defer r.knownMu.Unlock()
-	return r.knownReportIDs.Contains(id)
+	if r.knownReportIDs.Contains(reportID) {
+		return
+	}
+	if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
+		log.Errorf("Failed to submit report request %s: %v", reportID, err)
+		return
+	}
+	r.knownReportIDs.Add(reportID)
 }
