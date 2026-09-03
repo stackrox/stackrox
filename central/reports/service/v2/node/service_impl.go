@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -41,22 +40,22 @@ var (
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_ListNodeReportConfigurations_FullMethodName,
 			apiV2.NodeReportService_GetNodeReportConfiguration_FullMethodName,
 			apiV2.NodeReportService_CountNodeReportConfigurations_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Node)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_PostNodeReportConfiguration_FullMethodName,
 			apiV2.NodeReportService_UpdateNodeReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Node)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_DeleteNodeReportConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_RunNodeReport_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_GetNodeReportStatus_FullMethodName,
 			apiV2.NodeReportService_GetNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_GetMyNodeReportHistory_FullMethodName,
@@ -66,7 +65,7 @@ var (
 			apiV2.NodeReportService_GetViewBasedMyNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_PostViewBasedNodeReport_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_DeleteNodeReport_FullMethodName,
 			apiV2.NodeReportService_CancelNodeReport_FullMethodName,
 		},
@@ -247,7 +246,7 @@ func (s *serviceImpl) GetNodeReportConfiguration(ctx context.Context, req *apiV2
 	}
 
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
-		return nil, errox.InvalidArgs.CausedByf("report configuration '%s' has an empty resource scope (no collection ID or entity scope)", req.GetId())
+		return nil, errox.InvalidArgs.CausedByf("report configuration '%s' has an empty resource scope (no entity scope)", req.GetId())
 	}
 
 	converted, err := s.convertProtoReportConfigurationToV2(config)
@@ -461,13 +460,7 @@ func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceB
 		return nil, err
 	}
 	if !cancelled {
-		reportStatus.RunState = storage.ReportStatus_FAILURE
-		reportStatus.ErrorMsg = "Job cancelled by user"
-		reportStatus.CompletedAt = protocompat.TimestampNow()
-		snapshot.ReportStatus = reportStatus
-		if err := s.snapshotDatastore.UpdateReportSnapshot(ctx, snapshot); err != nil {
-			return nil, err
-		}
+		return nil, errors.Errorf("failed to cancel report job %s", req.GetId())
 	}
 
 	return &apiV2.Empty{}, nil
@@ -543,7 +536,7 @@ func (s *serviceImpl) PostViewBasedNodeReport(ctx context.Context, req *apiV2.Re
 func (s *serviceImpl) GetViewBasedNodeReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
-		AddStrings(search.ReportConfigID, "")
+		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
 	return s.getReportHistory(ctx, queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), "")
 }
 
@@ -555,7 +548,7 @@ func (s *serviceImpl) GetViewBasedMyNodeReportHistory(ctx context.Context, req *
 
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
-		AddStrings(search.ReportConfigID, "")
+		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
 	return s.getReportHistory(ctx, queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), slimUser.GetId())
 }
 
