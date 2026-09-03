@@ -4,6 +4,7 @@
 packages:
 # builder stage in image/rhel/konflux.Dockerfile
 - jq
+- pigz
 # final stage in image/rhel/konflux.Dockerfile
 - findutils
 - postgresql
