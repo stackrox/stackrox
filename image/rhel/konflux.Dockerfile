@@ -3,7 +3,7 @@ ARG PG_VERSION=15
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:e74b03198cccc24c24a27071ad4d6c2edcfe0bb10c6de99c609ce6e3c06d6d04 AS go-builder
 
-RUN dnf -y install --allowerasing jq
+RUN dnf -y install --allowerasing jq pigz
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -40,7 +40,7 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     shopt -s nullglob && \
     for f in roxctl-*; do \
         [[ -f "$f" && -x "$f" ]] || continue; \
-        tar cvzf "${f%.exe}.tar.gz" "$f"; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
     done
 
 
