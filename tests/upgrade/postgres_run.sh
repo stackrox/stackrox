@@ -182,6 +182,15 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
+
+      roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+              central backup --output --timeout 5m "postgres_db_${PREVIOUS_RELEASES[@]}.sql.zip"
+
+      info "SHREWS"
+      ls ./postgres*
+      info "END SHREWS"
+
+#      gsutil cp ./postgres_db_4_6.sql.zip gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
     done
 
     ########################################################################################
