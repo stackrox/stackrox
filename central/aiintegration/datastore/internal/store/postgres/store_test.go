@@ -48,6 +48,7 @@ func (s *AiIntegrationsStoreSuite) TestStore() {
 
 	aiIntegration := &storage.AiIntegration{}
 	s.NoError(testutils.FullInit(aiIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	testutils.NormalizeTimestampsToMicros(aiIntegration)
 
 	foundAiIntegration, exists, err := store.Get(ctx, aiIntegration.GetId())
 	s.NoError(err)
@@ -87,6 +88,7 @@ func (s *AiIntegrationsStoreSuite) TestStore() {
 	for i := 0; i < 200; i++ {
 		aiIntegration := &storage.AiIntegration{}
 		s.NoError(testutils.FullInit(aiIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		testutils.NormalizeTimestampsToMicros(aiIntegration)
 		aiIntegrations = append(aiIntegrations, aiIntegration)
 		aiIntegrationIDs = append(aiIntegrationIDs, aiIntegration.GetId())
 	}

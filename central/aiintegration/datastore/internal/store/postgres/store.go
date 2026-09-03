@@ -8,14 +8,12 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -36,35 +34,19 @@ type (
 )
 
 // Store is the interface to interact with the storage for storage.AiIntegration
-type Store interface {
-	Upsert(ctx context.Context, obj *storeType) error
-	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
-	DeleteMany(ctx context.Context, identifiers []string) error
-	PruneMany(ctx context.Context, identifiers []string) error
-
-	Count(ctx context.Context, q *v1.Query) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-
-	Get(ctx context.Context, id string) (*storeType, bool, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-	GetIDs(ctx context.Context) ([]string, error)
-
-	Walk(ctx context.Context, fn callback) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
-}
+type Store = pgSearch.NoSerializedStore[storeType]
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
+	return pgSearch.NewNoSerializedGloballyScopedGenericStore[storeType](
 		db,
 		schema,
 		pkGetter,
 		insertIntoAiIntegrations,
 		copyFromAiIntegrations,
+		scanRow,
+		scanRows,
+		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
@@ -89,19 +71,15 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoAiIntegrations(batch *pgx.Batch, obj *storage.AiIntegration) error {
 
-	serialized, marshalErr := obj.MarshalVT()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		serialized,
+		obj.GetType(),
+		obj.GetServiceUrl(),
 	}
 
-	finalStr := "INSERT INTO ai_integrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO ai_integrations (Id, Name, Type, ServiceUrl) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ServiceUrl = EXCLUDED.ServiceUrl"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -110,7 +88,8 @@ func insertIntoAiIntegrations(batch *pgx.Batch, obj *storage.AiIntegration) erro
 var copyColsAiIntegrations = []string{
 	"id",
 	"name",
-	"serialized",
+	"type",
+	"serviceurl",
 }
 
 func copyFromAiIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AiIntegration) error {
@@ -138,15 +117,11 @@ func copyFromAiIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return nil, marshalErr
-		}
-
 		return []interface{}{
 			obj.GetId(),
 			obj.GetName(),
-			serialized,
+			obj.GetType(),
+			obj.GetServiceUrl(),
 		}, nil
 	})
 
@@ -156,5 +131,36 @@ func copyFromAiIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgre
 
 	return nil
 }
+
+// region No-serialized scan functions
+
+func scanRow(row pgx.Row) (*storeType, error) {
+	obj := &storeType{}
+
+	// Initialize sub-messages before scanning
+
+	// Declare intermediate scan variables for types needing conversion
+
+	if err := row.Scan(
+		&obj.Id,
+		&obj.Name,
+		&obj.Type,
+		&obj.ServiceUrl,
+	); err != nil {
+		return nil, err
+	}
+
+	// Post-scan conversions
+
+	return obj, nil
+}
+
+func scanRows(rows pgx.Rows) ([]*storeType, error) {
+	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (*storeType, error) {
+		return scanRow(r)
+	})
+}
+
+// endregion No-serialized scan functions
 
 // endregion Helper functions

@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AiIntegration)(nil)), "ai_integrations")
+		schema = walker.Walk(reflect.TypeOf((*storage.AiIntegration)(nil)), "ai_integrations", walker.WithNoSerialized())
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableAiIntegrationsStmt)
 		return schema
@@ -38,7 +38,8 @@ const (
 
 // AiIntegrations holds the Gorm model for Postgres table `ai_integrations`.
 type AiIntegrations struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string `gorm:"column:name;type:varchar;unique"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID         string                    `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string                    `gorm:"column:name;type:varchar;unique"`
+	Type       storage.AiIntegrationType `gorm:"column:type;type:integer"`
+	ServiceUrl string                    `gorm:"column:serviceurl;type:varchar"`
 }
