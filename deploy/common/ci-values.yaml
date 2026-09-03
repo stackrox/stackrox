@@ -25,9 +25,13 @@ scannerV4:
       disable: true
     # Use embedded ci-minimal bundle (18KB, 109 CVEs) for fast CI testing
     vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
+    # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     resources:
       requests:
         cpu: "400m"
+        memory: "4Gi"
+      limits:
+        memory: "4Gi"
   indexer:
     replicas: 1
     autoscaling:

@@ -110,7 +110,8 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	)
 
 	parentDir := rep.GetReportConfigurationId()
-	if rep.GetViewBasedVulnReportFilters() != nil {
+	// View-based report blobs are stored under "view-based-report" dir, not under a dir named after reportConfigID.
+	if status.GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
 		parentDir = "view-based-report"
 	}
 	_, exists, err := h.blobStore.Get(ctx, common.GetReportBlobPath(parentDir, id), buf)

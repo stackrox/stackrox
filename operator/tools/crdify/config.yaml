@@ -1,4 +1,7 @@
+# Please order alphabetically by name
 validations:
+  - name: description
+    enforcement: Warn
   - name: enum
     enforcement: Error
     configuration:
