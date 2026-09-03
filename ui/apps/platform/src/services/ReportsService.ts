@@ -215,7 +215,7 @@ export function fetchViewBasedReportHistory({
 }
 
 // PostViewBasedReport
-export function runViewBasedReport({
+export function runImageViewBasedReport({
     query,
     areaOfConcern,
 }: {

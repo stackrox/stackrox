@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityConfigurationsReportsPath, vulnerabilityViewBasedJobsPath } from 'routePaths';
+import {
+    vulnerabilityConfigurationsReportsPath,
+    vulnerabilityImageViewBasedJobsPath,
+} from 'routePaths';
 
 import ConfigReportsTab from './ConfigReportsTab';
 import ViewBasedReportsTab from './ViewBasedReportsTab';
@@ -29,7 +32,7 @@ function VulnReportingLayout() {
         {
             id: 'view-based-jobs',
             title: 'View-based jobs',
-            path: vulnerabilityViewBasedJobsPath,
+            path: vulnerabilityImageViewBasedJobsPath,
             content: <ViewBasedReportsTab />,
         },
     ];
