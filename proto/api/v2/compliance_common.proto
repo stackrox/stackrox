@@ -99,9 +99,9 @@ message ListComplianceProfileResults {
 // the scan configuration's schedule.
 enum ComplianceDataState {
   // Cannot evaluate: no schedule, unresolvable config, or no data.
-  COMPLIANCE_DATA_STATE_UNKNOWN  = 0;
+  COMPLIANCE_DATA_STATE_UNKNOWN = 0;
   // Data reflects the most recent expected scan cycle.
-  COMPLIANCE_DATA_STATE_CURRENT  = 1;
+  COMPLIANCE_DATA_STATE_CURRENT = 1;
   // Data predates the most recent expected scan cycle.
   COMPLIANCE_DATA_STATE_OUTDATED = 2;
 }
