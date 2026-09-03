@@ -25,8 +25,8 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import {
-    vulnerabilityConfigurationsReportsDetailsPath,
-    vulnerabilityConfigurationsReportsPath,
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
 } from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -65,7 +65,7 @@ function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfig
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityConfigurationsReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityImageConfigurationsReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -384,7 +384,7 @@ function ConfigReportsTab() {
                         )}
                         {reportConfigurations.map((report, rowIndex) => {
                             const vulnReportURL = generatePath(
-                                vulnerabilityConfigurationsReportsDetailsPath,
+                                vulnerabilityImageConfigurationsReportsDetailsPath,
                                 {
                                     reportId: report.id,
                                 }

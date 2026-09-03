@@ -20,8 +20,8 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    vulnerabilityConfigurationsReportsDetailsPath,
-    vulnerabilityConfigurationsReportsPath,
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 
@@ -85,7 +85,7 @@ function ViewVulnReportPage() {
     } = useDeleteModal({
         deleteFunction: deleteReportConfiguration,
         onCompleted: () => {
-            navigate(vulnerabilityConfigurationsReportsPath);
+            navigate(vulnerabilityImageConfigurationsReportsPath);
         },
     });
 
@@ -118,12 +118,12 @@ function ViewVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={fetchError || 'No data available'}
                 actionText="Go to reports"
-                url={vulnerabilityConfigurationsReportsPath}
+                url={vulnerabilityImageConfigurationsReportsPath}
             />
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityConfigurationsReportsDetailsPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityImageConfigurationsReportsDetailsPath, {
         reportId: reportConfiguration.id,
     });
 
@@ -161,7 +161,7 @@ function ViewVulnReportPage() {
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reports
                     </BreadcrumbItemLink>
-                    <BreadcrumbItemLink to={vulnerabilityConfigurationsReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityImageConfigurationsReportsPath}>
                         Image vulnerability reports
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>

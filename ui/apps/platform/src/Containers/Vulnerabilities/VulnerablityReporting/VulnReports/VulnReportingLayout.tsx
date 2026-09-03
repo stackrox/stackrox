@@ -13,7 +13,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
 import {
-    vulnerabilityConfigurationsReportsPath,
+    vulnerabilityImageConfigurationsReportsPath,
     vulnerabilityImageViewBasedJobsPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -34,7 +34,7 @@ function VulnReportingLayout() {
                   {
                       id: 'report-configuration',
                       title: 'Report configurations',
-                      path: vulnerabilityConfigurationsReportsPath,
+                      path: vulnerabilityImageConfigurationsReportsPath,
                       content: <ConfigReportsTab />,
                   },
               ]
