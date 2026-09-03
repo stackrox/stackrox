@@ -589,6 +589,10 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 				return nil, err
 			}
 		}
+		parentDir := snapshot.GetReportConfigurationId()
+		if snapshot.GetViewBasedVulnReportFilters() != nil {
+			parentDir = "view-based-report"
+		}
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
 			ReportConfigId:     snapshot.GetReportConfigurationId(),
@@ -603,7 +607,7 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			},
 			Schedule:            ConvertProtoScheduleToV2(snapshot.GetSchedule()),
 			ResourceScope:       resourceScope,
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(parentDir, snapshot.GetReportId())),
 		}
 
 		switch snapshot.GetType() {
