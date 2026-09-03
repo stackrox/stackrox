@@ -151,6 +151,7 @@ func (s *ConversionTestSuite) TestNotifierConversions() {
 	v2NotifierBack, err := s.service.convertProtoNotifierConfigToV2(protoNotifier)
 	assert.NoError(s.T(), err)
 	assert.NotNil(s.T(), v2NotifierBack)
+	assert.Equal(s.T(), "Test Notifier", v2NotifierBack.GetNotifierName())
 	assert.Equal(s.T(), v2Notifier.GetEmailConfig().GetNotifierId(), v2NotifierBack.GetEmailConfig().GetNotifierId())
 	assert.Equal(s.T(), v2Notifier.GetEmailConfig().GetMailingLists(), v2NotifierBack.GetEmailConfig().GetMailingLists())
 }
@@ -345,6 +346,8 @@ func (s *ConversionTestSuite) TestReportConfigurationRoundTrip() {
 	assert.Equal(s.T(), v2Config.GetId(), v2ConfigBack.GetId())
 	assert.Equal(s.T(), v2Config.GetName(), v2ConfigBack.GetName())
 	assert.Equal(s.T(), apiV2.ReportConfiguration_NODE_VULNERABILITY, v2ConfigBack.GetType())
+	assert.Len(s.T(), v2ConfigBack.GetNotifiers(), 1)
+	assert.Equal(s.T(), "Email Notifier", v2ConfigBack.GetNotifiers()[0].GetNotifierName())
 }
 
 func (s *ConversionTestSuite) TestNilConversions() {
@@ -581,6 +584,7 @@ func (s *ConversionTestSuite) TestProtoReportConfigurationToV2() {
 	assert.Equal(s.T(), "Proto Config", v2Config.GetName())
 	assert.Equal(s.T(), apiV2.ReportConfiguration_NODE_VULNERABILITY, v2Config.GetType())
 	assert.Len(s.T(), v2Config.GetNotifiers(), 1)
+	assert.Equal(s.T(), "Notifier 1", v2Config.GetNotifiers()[0].GetNotifierName())
 }
 
 func (s *ConversionTestSuite) TestGetExistingBlobNames_NotDownloadMethod() {
