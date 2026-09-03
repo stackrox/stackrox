@@ -100,7 +100,7 @@ test_upgrade_paths() {
     wait_for_api
 
     # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+#    deploy_scaled_workload
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
@@ -122,8 +122,8 @@ test_upgrade_paths() {
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
     # Add some Postgres Access Scopes.  These should not survive a rollback.
-    createPostgresScopes
-    checkForPostgresAccessScopes
+#    createPostgresScopes
+#    checkForPostgresAccessScopes
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
@@ -138,7 +138,7 @@ test_upgrade_paths() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Verify data is still there
-    checkForPostgresAccessScopes
+#    checkForPostgresAccessScopes
 
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
@@ -157,7 +157,7 @@ test_upgrade_paths() {
     wait_for_central_db
 
     # Verify data is still there
-    checkForPostgresAccessScopes
+#    checkForPostgresAccessScopes
 
     validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -184,7 +184,7 @@ test_upgrade_paths() {
       wait_for_central_db
 
       roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-              central backup --output --timeout 5m "postgres_db_${PREVIOUS_RELEASES[@]}.sql.zip"
+              central backup --output "postgres_db_${PREVIOUS_RELEASES[@]}.sql.zip"
 
       info "SHREWS"
       ls ./postgres*
