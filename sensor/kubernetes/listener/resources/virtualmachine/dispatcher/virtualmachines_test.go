@@ -317,3 +317,9 @@ func newVirtualMachine(uid, name, namespace string, status v1.VirtualMachinePrin
 		},
 	}
 }
+
+func getFactsForTest(_ *testing.T, guestOS string) map[string]string {
+	return map[string]string{
+		pkgVM.GuestOSKey: guestOS,
+	}
+}
