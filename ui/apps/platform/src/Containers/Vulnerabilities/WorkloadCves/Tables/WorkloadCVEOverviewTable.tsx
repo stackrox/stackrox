@@ -152,6 +152,9 @@ export const cveListQuery = gql`
                     epss {
                         epssProbability
                     }
+                    exploit {
+                        knownRansomwareCampaignUse
+                    }
                 }
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -351,10 +354,6 @@ function WorkloadCVEOverviewTable({
                                 isFeatureFlagEnabled('ROX_CISA_KEV') &&
                                 hasKnownExploit(cveBaseInfo?.exploit)
                             ) {
-                                // Add in cveListQuery following epss:
-                                // exploit {
-                                //     knownRansomwareCampaignUse
-                                // }
                                 labels.push(<KnownExploitLabel key="exploit" isCompact />);
                                 if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                     labels.push(

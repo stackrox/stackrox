@@ -15,12 +15,14 @@ import {
 // Items that are allowed independent of context.
 const allowListForItems = [
     'API',
+    'CISA',
     'CPU',
     'CVE',
     'CVSS',
     'Dockerfile',
     'IP',
     'IPC',
+    'KEV',
     'Kubernetes',
     'MUST',
     'NOT',
@@ -33,6 +35,7 @@ const allowListForItems = [
 
 // Items that are allowed only in the content of an entire string.
 const allowListForNames = [
+    'CISA Known Exploited Vulnerabilities catalog',
     'Common Vulnerability Scoring System (CVSS) score',
     'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
     'Volume type (e.g. secret, configMap, hostPath) is',
