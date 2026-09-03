@@ -60,6 +60,13 @@ spec:
         limits:
           cpu: "1000m"
           memory: "2500Mi"
+  # NOTE: Unlike the other central-cr*.yaml copies, this file intentionally keeps spec.scanner,
+  # so the "keep central-misc/010-central-cr.yaml in sync" note above does not apply to it.
+  # TODO(ROX-XXXXX): spec.scanner configures the removed Scanner V2. It is kept here (and only
+  # here) because the operator upgrade test reuses this file via a symlink as its pre-upgrade CR,
+  # where the previous released operator still deploys Scanner V2. It is an obsolete-but-tolerated
+  # field that the current operator ignores, so it is harmless for the non-upgrade suites that also
+  # use this file. Remove once the oldest upgrade-from operator version no longer deploys Scanner V2.
   scanner:
     analyzer:
       scaling:
