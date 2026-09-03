@@ -58,7 +58,6 @@ import {
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
 
-import FeatureDisabledMessage from 'Components/FeatureDisabledMessage';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
@@ -383,22 +382,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         const { component: Component, path } = routeComponentMap[routeKey];
                         return <Route key={routeKey} path={`${path}/*`} element={<Component />} />;
                     })}
-                {!isFeatureFlagEnabled('ROX_LEGACY_SCANNER') && (
-                    <Route
-                        path={`${vulnerabilitiesPlatformCvesPath}/*`}
-                        element={
-                            <PageSection>
-                                <PageTitle title="Kubernetes components - Disabled" />
-                                <FeatureDisabledMessage
-                                    title="Kubernetes components"
-                                    message="The Legacy Scanner [deprecated] has been disabled by your administrator."
-                                    actionText="Go to Vulnerability Management"
-                                    url={vulnerabilitiesUserWorkloadsPath}
-                                />
-                            </PageSection>
-                        }
-                    />
-                )}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
             {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
