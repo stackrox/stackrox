@@ -20,7 +20,7 @@ import (
 
 const (
 	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-	defaultRequestTimeout = 30 * time.Second
+	defaultRequestTimeout = 120 * time.Second
 )
 
 var (
