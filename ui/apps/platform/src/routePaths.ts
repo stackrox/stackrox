@@ -101,6 +101,7 @@ export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:view
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityImageReportsPath = `${vulnerabilityReportsPath}/images`;
 export const vulnerabilityConfigurationsReportsPath = `${vulnerabilityImageReportsPath}/configurations`;
+export const vulnerabilityConfigurationsReportsDetailsPath = `${vulnerabilityConfigurationsReportsPath}/:reportId`;
 export const vulnerabilityImageViewBasedJobsPath = `${vulnerabilityImageReportsPath}/view-based-jobs`;
 
 export const vulnerabilityNodeReportsPath = `${vulnerabilityReportsPath}/nodes`;

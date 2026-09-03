@@ -19,7 +19,11 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
+import {
+    vulnerabilityConfigurationsReportsDetailsPath,
+    vulnerabilityConfigurationsReportsPath,
+    vulnerabilityReportsPath,
+} from 'routePaths';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
@@ -46,7 +50,6 @@ import useFetchReport from '../api/useFetchReport';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
-import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -120,7 +123,7 @@ function ViewVulnReportPage() {
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityConfigurationsReportsDetailsPath, {
         reportId: reportConfiguration.id,
     });
 
@@ -155,6 +158,9 @@ function ViewVulnReportPage() {
             <PageTitle title="View vulnerability report" />
             <PageSection type="breadcrumb">
                 <Breadcrumb>
+                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                        Vulnerability reports
+                    </BreadcrumbItemLink>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationsReportsPath}>
                         Image vulnerability reports
                     </BreadcrumbItemLink>
