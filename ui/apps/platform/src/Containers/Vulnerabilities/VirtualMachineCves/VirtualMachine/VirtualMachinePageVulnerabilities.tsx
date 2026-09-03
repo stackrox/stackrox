@@ -17,6 +17,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import AffectedComponentsTable from '../components/AffectedComponentsTable';
 import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
 import {
     virtualMachineCVESearchFilterConfig,
@@ -168,7 +169,12 @@ function VirtualMachinePageVulnerabilities({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                Affected component details coming soon
+                                                {isExpanded && (
+                                                    <AffectedComponentsTable
+                                                        virtualMachineId={virtualMachineId}
+                                                        cveId={cve.cve}
+                                                    />
+                                                )}
                                             </ExpandableRowContent>
                                         </Td>
                                     </Tr>

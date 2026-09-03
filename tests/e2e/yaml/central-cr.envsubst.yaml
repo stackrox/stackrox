@@ -55,13 +55,9 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          # Test-only bump: the default (1.5Gi req / 3Gi limit) OOM-kills the
-          # matcher under heavy scan load (e.g. compliance). Requesting 3Gi also
-          # raises the Go soft limit (ROX_MEMLIMIT=95% of requests) to ~2.85Gi,
-          # and the 6Gi limit gives spike headroom. Not a product default.
-          memory: "3Gi"
+          memory: "4Gi"
         limits:
-          memory: "6Gi"
+          memory: "4Gi"
     db:
 $scannerV4DbPersistenceYaml
       resources:

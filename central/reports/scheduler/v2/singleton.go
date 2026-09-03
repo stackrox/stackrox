@@ -4,6 +4,7 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
+	nodeReportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/node"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -24,7 +25,7 @@ func initialize() {
 		collectionDatastore,
 		notifierDS.Singleton(),
 		reportGen.Singleton(),
-		nil,
+		nodeReportGen.Singleton(),
 		validation.Singleton(),
 	)
 }

@@ -34,7 +34,18 @@ jobs:
         # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://definitions.stackrox.io/v4"
 
-    - name: Send Slack notification on workflow failure
-      if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Update Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+  send-notification:
+    needs: update-scanner-mappings
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        mention: "<!subteam^S04S96AAVND|acs-scanner-primary>"

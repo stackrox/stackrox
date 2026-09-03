@@ -10,6 +10,7 @@
 
 import type {
     CompoundSearchFilterEntity,
+    GenericSelectSearchFilterAttribute,
     SelectExclusiveSingleSearchFilterAttribute,
     SelectSearchFilterAttribute,
     SelectSearchFilterOption,
@@ -281,6 +282,25 @@ export const searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport
     namespaceSearchFilterConfig,
 ];
 
+// Scheduled report has resources instead of cluster.
+export const searchFilterConfigForNodeVulnerabilityReport = [
+    {
+        ...nodeCVESearchFilterConfig,
+        attributes: nodeCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+        ),
+    },
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+];
+
+export const searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport = [
+    clusterSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+];
+
 export const attributeForPlatformComponent: SelectSearchFilterAttribute = {
     displayName: 'Area of concern', // corresponds to horizontal navigation
     filterChipLabel: 'Area of concern',
@@ -316,3 +336,10 @@ export const attributesSeparateFromConfigForImageVulnerabilityReport = [
     attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
     attributeForFixableInBackendAndViewBasedReport,
 ];
+
+export const attributesSeparateFromConfigForNodeVulnerabilityReport: GenericSelectSearchFilterAttribute[] =
+    [
+        attributeForSnoozed,
+        attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
+        attributeForFixableInBackendAndViewBasedReport,
+    ];

@@ -6,15 +6,6 @@ spec:
         resources:
           requests:
             cpu: "400m"
-            # Test-only bump (applied CI-only from k8sbased.sh). The default
-            # (1.5Gi req / 3Gi limit) OOM-kills the matcher under heavy scan load
-            # (e.g. compliance/BAT), which shows up as "unexpected pod restarts /
-            # scanner" and, because the severity policies then have no cached
-            # scan, as AdmissionControllerTest enforcement failures. Requesting
-            # 3Gi also raises the Go soft limit (ROX_MEMLIMIT = 95% of requests)
-            # to ~2.85Gi; the 6Gi limit gives spike headroom. Mirrors the
-            # operator CR bump in tests/e2e/yaml/central-cr.envsubst.yaml. Not a
-            # product default.
-            memory: "3Gi"
+            memory: "4Gi"
           limits:
-            memory: "6Gi"
+            memory: "4Gi"
