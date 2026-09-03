@@ -56,6 +56,11 @@ message DeploymentRiskAISummaryResponse {
   string summary = 1;
 }
 
+message TestLightspeedConnectionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
   // GetDeployment returns a deployment given its ID.
@@ -71,6 +76,11 @@ service DeploymentService {
   // GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
   rpc GetDeploymentRiskAISummary(ResourceByID) returns (DeploymentRiskAISummaryResponse) {
     option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}/ai-summary"};
+  }
+
+  // TestLightspeedConnection tests connectivity to the Lightspeed AI service.
+  rpc TestLightspeedConnection(Empty) returns (TestLightspeedConnectionResponse) {
+    option (google.api.http) = {post: "/v1/deploymentswithrisk/ai-summary/test"};
   }
 
   // CountDeployments returns the number of deployments.

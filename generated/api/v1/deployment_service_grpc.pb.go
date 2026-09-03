@@ -23,6 +23,7 @@ const (
 	DeploymentService_GetDeployment_FullMethodName                  = "/v1.DeploymentService/GetDeployment"
 	DeploymentService_GetDeploymentWithRisk_FullMethodName          = "/v1.DeploymentService/GetDeploymentWithRisk"
 	DeploymentService_GetDeploymentRiskAISummary_FullMethodName     = "/v1.DeploymentService/GetDeploymentRiskAISummary"
+	DeploymentService_TestLightspeedConnection_FullMethodName       = "/v1.DeploymentService/TestLightspeedConnection"
 	DeploymentService_CountDeployments_FullMethodName               = "/v1.DeploymentService/CountDeployments"
 	DeploymentService_ListDeployments_FullMethodName                = "/v1.DeploymentService/ListDeployments"
 	DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName = "/v1.DeploymentService/ListDeploymentsWithProcessInfo"
@@ -42,6 +43,8 @@ type DeploymentServiceClient interface {
 	GetDeploymentWithRisk(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetDeploymentWithRiskResponse, error)
 	// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
 	GetDeploymentRiskAISummary(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*DeploymentRiskAISummaryResponse, error)
+	// TestLightspeedConnection tests connectivity to the Lightspeed AI service.
+	TestLightspeedConnection(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TestLightspeedConnectionResponse, error)
 	// CountDeployments returns the number of deployments.
 	CountDeployments(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountDeploymentsResponse, error)
 	// ListDeployments returns the list of deployments.
@@ -85,6 +88,16 @@ func (c *deploymentServiceClient) GetDeploymentRiskAISummary(ctx context.Context
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeploymentRiskAISummaryResponse)
 	err := c.cc.Invoke(ctx, DeploymentService_GetDeploymentRiskAISummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) TestLightspeedConnection(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TestLightspeedConnectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestLightspeedConnectionResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_TestLightspeedConnection_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +175,8 @@ type DeploymentServiceServer interface {
 	GetDeploymentWithRisk(context.Context, *ResourceByID) (*GetDeploymentWithRiskResponse, error)
 	// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
 	GetDeploymentRiskAISummary(context.Context, *ResourceByID) (*DeploymentRiskAISummaryResponse, error)
+	// TestLightspeedConnection tests connectivity to the Lightspeed AI service.
+	TestLightspeedConnection(context.Context, *Empty) (*TestLightspeedConnectionResponse, error)
 	// CountDeployments returns the number of deployments.
 	CountDeployments(context.Context, *RawQuery) (*CountDeploymentsResponse, error)
 	// ListDeployments returns the list of deployments.
@@ -188,6 +203,9 @@ func (UnimplementedDeploymentServiceServer) GetDeploymentWithRisk(context.Contex
 }
 func (UnimplementedDeploymentServiceServer) GetDeploymentRiskAISummary(context.Context, *ResourceByID) (*DeploymentRiskAISummaryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDeploymentRiskAISummary not implemented")
+}
+func (UnimplementedDeploymentServiceServer) TestLightspeedConnection(context.Context, *Empty) (*TestLightspeedConnectionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TestLightspeedConnection not implemented")
 }
 func (UnimplementedDeploymentServiceServer) CountDeployments(context.Context, *RawQuery) (*CountDeploymentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CountDeployments not implemented")
@@ -274,6 +292,24 @@ func _DeploymentService_GetDeploymentRiskAISummary_Handler(srv interface{}, ctx 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).GetDeploymentRiskAISummary(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_TestLightspeedConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).TestLightspeedConnection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_TestLightspeedConnection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).TestLightspeedConnection(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,6 +415,10 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDeploymentRiskAISummary",
 			Handler:    _DeploymentService_GetDeploymentRiskAISummary_Handler,
+		},
+		{
+			MethodName: "TestLightspeedConnection",
+			Handler:    _DeploymentService_TestLightspeedConnection_Handler,
 		},
 		{
 			MethodName: "CountDeployments",
