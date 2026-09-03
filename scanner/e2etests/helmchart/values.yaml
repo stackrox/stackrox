@@ -10,10 +10,9 @@ app:
       name: scanner-v4
       tag: latest
     # Vulnerability bundle URL
-    # Default: Use embedded ci-minimal bundle (18KB) for fast CI testing
-    # Override: file:///etc/scanner/ci-minimal-bundle.zip for CI tests
-    #           https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip for full bundle
-    vulnerabilitiesUrl: "file:///etc/scanner/ci-minimal-bundle.zip"
+    # Default: Use ci-minimal bundle (18KB) from GitHub for fast CI testing
+    # Override: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip for full bundle
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/604dc32bb0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
   db:
     name: scanner-v4-db
     image:
