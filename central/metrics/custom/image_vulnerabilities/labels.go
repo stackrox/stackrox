@@ -14,6 +14,7 @@ var lazyLabels = tracker.LazyLabelGetters[*finding]{
 	"Deployment":         func(f *finding) string { return f.deployment.GetName() },
 	"Type":               func(f *finding) string { return f.deployment.GetType() },
 	"IsActive":           func(f *finding) string { return strconv.FormatBool(!f.deployment.GetInactive()) },
+	"IsSuppressed":       func(f *finding) string { return strconv.FormatBool(f.vuln.GetSuppressed()) },
 	"IsPlatformWorkload": isPlatformWorkload,
 
 	"ImageID":          func(f *finding) string { return f.image.GetId() },
@@ -33,7 +34,14 @@ var lazyLabels = tracker.LazyLabelGetters[*finding]{
 	"EPSSPercentile": func(f *finding) string {
 		return strconv.FormatFloat(float64(f.vuln.GetEpss().GetEpssPercentile()), 'f', 1, 32)
 	},
-	"IsFixable": func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") },
+	"Origin": func(f *finding) string { return f.vuln.GetOrigin().String() },
+
+	"IsFixable":             func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") },
+	"FixAvailable":          func(f *finding) string { return strconv.FormatInt(f.vuln.GetFixAvailableTimestamp().GetSeconds(), 10) },
+	"CisaKev":               func(f *finding) string { return strconv.FormatBool(f.vuln.GetCisaKev()) },
+	"Published":             func(f *finding) string { return strconv.FormatInt(f.vuln.GetPublishedOn().GetSeconds(), 10) },
+	"FirstImageOccurrence":  func(f *finding) string { return strconv.FormatInt(f.vuln.GetFirstImageOccurrence().GetSeconds(), 10) },
+	"FirstSystemOccurrence": func(f *finding) string { return strconv.FormatInt(f.vuln.GetFirstSystemOccurrence().GetSeconds(), 10) },
 }
 
 // finding holds all information for computing any label in this category.
