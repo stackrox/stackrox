@@ -23,8 +23,7 @@ type MappingUpdater interface {
 	Update(content []byte) (updated bool, err error)
 }
 
-// ScanBusyGate is implemented by the Sensor updater so rescanner/Handler
-// can defer active applies across an in-flight scan + GetReport send.
+// ScanBusyGate keeps a mapping Sync from replacing the file a scan is reading.
 type ScanBusyGate interface {
 	MarkScanBusy()
 	MarkScanIdleAndApplyPending()

@@ -16,6 +16,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	postgres "github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -162,4 +163,18 @@ func (m *MockStore) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 func (mr *MockStoreMockRecorder) Upsert(ctx, obj, reader any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj, reader)
+}
+
+// UpsertWithWriter mocks base method.
+func (m *MockStore) UpsertWithWriter(ctx context.Context, tx *postgres.Tx, obj *storage.Blob, writeFn func(io.Writer) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertWithWriter", ctx, tx, obj, writeFn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertWithWriter indicates an expected call of UpsertWithWriter.
+func (mr *MockStoreMockRecorder) UpsertWithWriter(ctx, tx, obj, writeFn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithWriter", reflect.TypeOf((*MockStore)(nil).UpsertWithWriter), ctx, tx, obj, writeFn)
 }

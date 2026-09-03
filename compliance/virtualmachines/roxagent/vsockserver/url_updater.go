@@ -13,9 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 )
 
-// Retry/refresh policy for the periodic mapping download, mirroring
-// cmd.newMappingDownloader: WaitMin=5s with the default WaitMax=30s covers
-// four HTTP attempts (5+10+20=35s) within urlMappingClientTimeout.
+// Retry/refresh policy for the periodic mapping download. WaitMin=5s with
+// retryablehttp's default WaitMax=30s covers four HTTP attempts (5+10+20=35s)
+// within urlMappingClientTimeout.
 const (
 	urlMappingFetchRetryMax     = 3
 	urlMappingFetchRetryWaitMin = 5 * time.Second

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="uuid-2115ce3e-8d8d-4994-a59e-ef89374dbc96" xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 38 38">
+  <title>Red Hat Lightspeed icon</title>
+  <desc>IBM watsonx code assistant, AI, ML, artificial intelligence, machine learning</desc>
+  <metadata>
+    <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+    <x:xmpmeta xmlns:x="adobe:ns:meta/"
+      x:xmptk="Adobe XMP Core 8.0-c001 1.000000, 0000/00/00-00:00:00        ">
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        <rdf:Description rdf:about=""
+          xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/"
+          xmlns:cq="http://www.day.com/jcr/cq/1.0"
+          xmlns:tiff="http://ns.adobe.com/tiff/1.0/"
+          xmlns:xmpRights="http://ns.adobe.com/xap/1.0/rights/">
+          <xmp:rhcc-effective-on>2024-03-01T15:25:40.503Z</xmp:rhcc-effective-on>
+          <xmp:rhcc-metadata-complete-moderator>pending</xmp:rhcc-metadata-complete-moderator>
+          <xmp:rhcc-translation-id>TRA042cdfc0-8130-4acf-88da-1a324d8a8d9c</xmp:rhcc-translation-id>
+          <xmp:brand-content-type>Icon</xmp:brand-content-type>
+          <xmp:CreateDate>2024-03-01T15:25:40.503Z</xmp:CreateDate>
+          <xmp:rhcc-aspect-ratio>square</xmp:rhcc-aspect-ratio>
+          <xmp:rhcc-effective-on-set-on-upload>true</xmp:rhcc-effective-on-set-on-upload>
+          <xmp:rhcc-metadata-complete-uploader>pending</xmp:rhcc-metadata-complete-uploader>
+          <xmp:rhcc-file-last-modified>2024-07-12T23:52:22.997Z</xmp:rhcc-file-last-modified>
+          <xmp:rhcc-audience>rhcc-audience:internal</xmp:rhcc-audience>
+          <xmp:rhcc-rights-restricted>no</xmp:rhcc-rights-restricted>
+          <xmp:brand-content-subtype>Technology icon</xmp:brand-content-subtype>
+          <xmp:rhcc-derivative-id>DER042cdfc0-8130-4acf-88da-1a324d8a8d9c</xmp:rhcc-derivative-id>
+          <xmp:rhcc-uploaded-by>pmeilleu@redhat.com</xmp:rhcc-uploaded-by>
+          <xmp:brand-logo-color>Black</xmp:brand-logo-color>
+          <xmp:rhcc-notify-portal-subscribers-on-change>yes</xmp:rhcc-notify-portal-subscribers-on-change>
+          <xmp:rhcc-product>
+            <rdf:Bag>
+              <rdf:li>rhcc-product:red-hat-ansible-automation-platform</rdf:li>
+              <rdf:li>rhcc-product:red-hat-enterprise-linux</rdf:li>
+              <rdf:li>rhcc-product:red-hat-openshift</rdf:li>
+            </rdf:Bag>
+          </xmp:rhcc-product>
+          <xmp:brand-subtype>
+            <rdf:Bag>
+              <rdf:li>Technology icon</rdf:li>
+            </rdf:Bag>
+          </xmp:brand-subtype>
+          <dc:format>image/svg+xml</dc:format>
+          <dc:modified>2024-05-10T12:27:57.413Z</dc:modified>
+          <dc:title>
+            <rdf:Alt>
+              <rdf:li xml:lang="x-default">Red Hat Lightspeed icon</rdf:li>
+            </rdf:Alt>
+          </dc:title>
+          <dc:description>
+            <rdf:Alt>
+              <rdf:li xml:lang="x-default">IBM watsonx code assistant, AI, ML, artificial
+                intelligence, machine learning</rdf:li>
+            </rdf:Alt>
+          </dc:description>
+          <cq:lastReplicationAction_scene7>Activate</cq:lastReplicationAction_scene7>
+          <cq:lastReplicationAction_publish>Activate</cq:lastReplicationAction_publish>
+          <cq:lastReplicated_publish>2024-10-02T19:50:21.898Z</cq:lastReplicated_publish>
+          <cq:lastReplicatedBy>workflow-process-service</cq:lastReplicatedBy>
+          <cq:lastReplicationAction>Activate</cq:lastReplicationAction>
+          <cq:lastReplicatedBy_publish>workflow-process-service</cq:lastReplicatedBy_publish>
+          <cq:isDelivered>false</cq:isDelivered>
+          <cq:lastReplicated>2024-10-02T19:50:21.898Z</cq:lastReplicated>
+          <cq:lastReplicatedBy_scene7>workflow-process-service</cq:lastReplicatedBy_scene7>
+          <cq:lastReplicated_scene7>2024-10-02T19:50:21.898Z</cq:lastReplicated_scene7>
+          <tiff:ImageLength>38</tiff:ImageLength>
+          <tiff:ImageWidth>38</tiff:ImageWidth>
+          <xmpRights:UsageTerms>
+            <rdf:Alt>
+              <rdf:li xml:lang="x-default">Use technology icons to represent Red Hat products and
+                components. Do not remove the icon from the bounding shape.</rdf:li>
+            </rdf:Alt>
+          </xmpRights:UsageTerms>
+        </rdf:Description>
+      </rdf:RDF>
+    </x:xmpmeta>
+    <?xpacket end="w"?>
+  </metadata>
+  <path class="text"
+    d="m28,1H10C5.02942,1,1,5.02942,1,10v18c0,4.97058,4.02942,9,9,9h18c4.97058,0,9-4.02942,9-9V10c0-4.97058-4.02942-9-9-9Zm7.75,27c0,4.27338-3.47668,7.75-7.75,7.75H10c-4.27332,0-7.75-3.47662-7.75-7.75V10c0-4.27338,3.47668-7.75,7.75-7.75h18c4.27332,0,7.75,3.47662,7.75,7.75v18Z" />
+  <path class="text"
+    d="m20,15.625c.34473,0,.625-.28027.625-.625v-7c0-.34473-.28027-.625-.625-.625s-.625.28027-.625.625v7c0,.34473.28027.625.625.625Z" />
+  <path class="text"
+    d="m16.625,19c0-.34473-.28027-.625-.625-.625h-7c-.34473,0-.625.28027-.625.625s.28027.625.625.625h7c.34473,0,.625-.28027.625-.625Z" />
+  <path class="text"
+    d="m20,22.375c-.34473,0-.625.28027-.625.625v7c0,.34473.28027.625.625.625s.625-.28027.625-.625v-7c0-.34473-.28027-.625-.625-.625Z" />
+  <path class="text"
+    d="m30.57654,18.76056c-.02002-.04791-.05383-.08667-.08447-.12775-.01807-.02448-.02759-.05304-.04968-.0752l-2-2c-.24414-.24414-.64062-.24414-.88477,0-.24316.24414-.24316.64062,0,.88477l.93323.93262h-9.49084c-.34473,0-.625.28027-.625.625s.28027.625.625.625h9.49084l-.93323.93262c-.24316.24414-.24316.64062,0,.88477.12207.12207.28223.18262.44238.18262s.32031-.06055.44238-.18262l2-2c.02209-.02216.03162-.05072.04968-.0752.03064-.04108.06445-.07983.08447-.12775.02795-.06769.03955-.13947.04285-.21149.00049-.00983.00562-.01807.00562-.02795s-.00513-.01813-.00562-.02795c-.0033-.07202-.01489-.1438-.04285-.21149Z" />
+  <path class="text"
+    d="m16.55762,16.44238c.12207.12207.28223.18262.44238.18262s.32031-.06055.44238-.18262c.24316-.24414.24316-.64062,0-.88477l-4-4c-.24414-.24414-.64062-.24414-.88477,0-.24316.24414-.24316.64062,0,.88477l4,4Z" />
+  <path class="text"
+    d="m17.44238,21.55762c-.24414-.24414-.64062-.24414-.88477,0l-4,4c-.24316.24414-.24316.64062,0,.88477.12207.12207.28223.18262.44238.18262s.32031-.06055.44238-.18262l4-4c.24316-.24414.24316-.64062,0-.88477Z" />
+  <path class="text"
+    d="m17.61133,10.87012c-.07129-.33789-.40234-.55664-.74121-.48145-.33789.07129-.55273.40332-.48145.74121l.4248,2c.0625.29395.32227.49512.61035.49512.04297,0,.08691-.00391.13086-.01367.33789-.07129.55273-.40332.48145-.74121l-.4248-2Z" />
+  <path class="text"
+    d="m11.87012,16.61133l2,.4248c.04395.00977.08789.01367.13086.01367.28809,0,.54785-.20117.61035-.49512.07129-.33789-.14355-.66992-.48145-.74121l-2-.4248c-.33887-.07715-.66895.14355-.74121.48145-.07129.33789.14355.66992.48145.74121Z" />
+  <path class="text"
+    d="m17.55469,24.38867c-.33984-.07422-.66895.14355-.74121.48145l-.4248,2c-.07129.33789.14355.66992.48145.74121.04395.00977.08789.01367.13086.01367.28809,0,.54785-.20117.61035-.49512l.4248-2c.07129-.33789-.14355-.66992-.48145-.74121Z" />
+  <path class="text"
+    d="m14.61133,21.44531c-.07129-.33789-.40039-.55762-.74121-.48145l-2,.4248c-.33789.07129-.55273.40332-.48145.74121.0625.29395.32227.49512.61035.49512.04297,0,.08691-.00391.13086-.01367l2-.4248c.33789-.07129.55273-.40332.48145-.74121Z" />
+  <path class="text"
+    d="m8.55957,15.43945c.12012.12012.28027.19043.44043.19043s.31934-.07031.43945-.19043c.06055-.05957.11035-.12012.14062-.19922.0293-.08008.0498-.16016.0498-.24023,0-.16016-.07031-.32031-.19043-.44043-.22949-.24023-.64941-.22949-.87988,0-.12012.12012-.18945.28027-.18945.44043,0,.08008.01953.16016.0498.24023.04004.0791.08008.13965.13965.19922Z" />
+  <path class="text"
+    d="m8.55957,22.55957c-.12012.12012-.18945.28027-.18945.44043s.06934.33008.18945.43945c.12012.12012.28027.19043.44043.19043s.31934-.07031.43945-.19043c.12012-.10938.19043-.2793.19043-.43945s-.07031-.32031-.19043-.44043c-.23926-.24023-.64941-.22949-.87988,0Z" />
+</svg>

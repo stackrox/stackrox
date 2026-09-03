@@ -292,24 +292,25 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
+	nDue := len(due)
 	nTracked := concurrency.WithLock1(&s.mu, func() int {
 		n := len(s.vmState)
 		metrics.PullTrackedVMs.Set(float64(n))
 		return n
 	})
-	metrics.PullDueVMs.Set(float64(len(due)))
+	metrics.PullDueVMs.Set(float64(nDue))
 	capN := min(s.concurrency, startBudget(nTracked, s.tickInterval, newVMIndexReportWindow(s.interval)))
-	if capN < len(due) {
+	if capN < nDue {
 		due = due[:capN]
 	}
-	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
-	metrics.PullTicksTotal.Inc()
-
-	// A tick launches every due VM, so this is the start count.
 	started := len(due)
+	// Idle ticks stay silent so a 10s scheduler step does not look like an empty cluster.
 	if started > 0 {
+		log.Debugf("VMScraper: tick: %d due of %d tracked, starting %d %v (concurrency=%d, reconcile=%v)",
+			nDue, nTracked, started, due, s.concurrency, reconcile)
 		metrics.PullStartsPerTick.Observe(float64(started))
 	}
+	metrics.PullTicksTotal.Inc()
 
 	var successCount atomic.Int32
 	g, gCtx := errgroup.WithContext(ctx)
@@ -326,7 +327,10 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	_ = g.Wait()
 
 	elapsed := s.now().Sub(tickStart)
-	log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
+	if started > 0 {
+		log.Debugf("VMScraper: tick done: %d/%d started of %d tracked succeeded in %s",
+			successCount.Load(), started, nTracked, elapsed.Truncate(time.Millisecond))
+	}
 	metrics.PullTickDurationSeconds.Observe(elapsed.Seconds())
 }
 
@@ -620,6 +624,10 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	case errors.Is(err, vsockclient.ErrNotReady):
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)
 		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportNotReady).Inc()
+		return scrapeRetryable
+	case errors.Is(err, vsockclient.ErrMappingRequired):
+		log.Debugf("VMScraper: roxagent on %q has no repository-to-CPE mapping yet", key)
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportMappingRequired).Inc()
 		return scrapeRetryable
 	case errors.Is(err, vsockclient.ErrUnknownMethod):
 		log.Warnf("VMScraper: roxagent on %q does not support the GetReport method", key)

@@ -1,6 +1,7 @@
 package pathutil
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,11 @@ func TestAugmentedObj(t *testing.T) {
 	require.NoError(t, o.AddPlainObjAt(stringObj, FieldStep("Nested"), IndexStep(1), FieldStep("StringObj")))
 
 	value := o.Value()
+	assert.Equal(t, topLevelObj, value.Underlying().Interface())
+
+	zeroed := value.WithUnderlying(reflect.ValueOf(""))
+	assert.Equal(t, "", zeroed.Underlying().Interface())
+	assert.Equal(t, value.PathFromRoot().String(), zeroed.PathFromRoot().String())
 	assert.Equal(t, topLevelObj, value.Underlying().Interface())
 
 	intObjValue, found := value.TakeStep(MetaStep{FieldName: "IntObj"})

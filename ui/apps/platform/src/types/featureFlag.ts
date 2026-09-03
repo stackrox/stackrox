@@ -2,6 +2,7 @@
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add or delete strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
+    | 'ROX_AI_INTEGRATIONS'
     | 'ROX_BASE_IMAGE_DETECTION'
     | 'ROX_CISA_KEV'
     | 'ROX_CVE_FIX_TIMESTAMP'
@@ -11,6 +12,7 @@ export type FeatureFlagEnvVar =
     | 'ROX_INIT_CONTAINER_SUPPORT'
     | 'ROX_LABEL_BASED_POLICY_SCOPING'
     | 'ROX_LEGACY_SCANNER'
+    | 'ROX_LIGHTSPEED_RISK_SUMMARY'
     | 'ROX_NODE_INDEX_ENABLED'
     | 'ROX_NODE_VULNERABILITY_REPORTS'
     | 'ROX_POLICY_CRITERIA_MODAL'

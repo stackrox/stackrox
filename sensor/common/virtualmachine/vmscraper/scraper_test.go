@@ -890,6 +890,7 @@ func allPullOutcomeSamples() []pullOutcomeSample {
 	for _, label := range []string{
 		metrics.PullGetReportUnchanged,
 		metrics.PullGetReportNotReady,
+		metrics.PullGetReportMappingRequired,
 		metrics.PullGetReportUnknownMethod,
 		metrics.PullGetReportBusy,
 		metrics.PullGetReportInternalError,
@@ -942,6 +943,12 @@ func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
 			err:         fmt.Errorf("%w: still scanning", vsockclient.ErrNotReady),
 			wantMetric:  metrics.PullGetReportTotal,
 			wantLabel:   metrics.PullGetReportNotReady,
+			wantOutcome: scrapeRetryable,
+		},
+		"MAPPING_REQUIRED maps to get_report mapping_required": {
+			err:         fmt.Errorf("%w: no mapping yet", vsockclient.ErrMappingRequired),
+			wantMetric:  metrics.PullGetReportTotal,
+			wantLabel:   metrics.PullGetReportMappingRequired,
 			wantOutcome: scrapeRetryable,
 		},
 		"UNKNOWN_METHOD maps to get_report unknown_method": {
@@ -1240,6 +1247,12 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 		},
 		"ErrInternal should retry using backoff": {
 			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrInternal}},
+			sender:      &mockSender{},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"ErrMappingRequired should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrMappingRequired}},
 			sender:      &mockSender{},
 			wantBackoff: initialBackoff,
 			wantGap:     initialBackoff,

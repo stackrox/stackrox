@@ -8,6 +8,12 @@
     { "profileName": "rhcos4-stig" },
     { "profileName": "ocp4-stig-v2r3" },
     { "profileName": "ocp4-stig-node-v2r3" },
-    { "profileName": "rhcos4-stig-v2r3" }
+    { "profileName": "rhcos4-stig-v2r3" },
+    { "profileName": "ocp5-stig" },
+    { "profileName": "ocp5-stig-node" },
+    { "profileName": "rhcos5-stig" },
+    { "profileName": "ocp5-stig-v2r3" },
+    { "profileName": "ocp5-stig-node-v2r3" },
+    { "profileName": "rhcos5-stig-v2r3" }
   ]
 }

@@ -123,6 +123,7 @@ const (
 const (
 	PullGetReportUnchanged         = "unchanged"
 	PullGetReportNotReady          = "not_ready"
+	PullGetReportMappingRequired   = "mapping_required"
 	PullGetReportUnknownMethod     = "unknown_method"
 	PullGetReportBusy              = "busy"
 	PullGetReportInternalError     = "internal_error"

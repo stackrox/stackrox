@@ -23,10 +23,11 @@ const (
 )
 
 type GetImageRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Image         *storage.ContainerImage `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
-	Namespace     string                  `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	ScanInline    bool                    `protobuf:"varint,2,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"`
+	state     protoimpl.MessageState  `protogen:"open.v1"`
+	Image     *storage.ContainerImage `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	Namespace string                  `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// Deprecated: Marked as deprecated in internalapi/sensor/image_iservice.proto.
+	ScanInline    bool `protobuf:"varint,2,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"` // always true; AC is the only client
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,6 +76,7 @@ func (x *GetImageRequest) GetNamespace() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in internalapi/sensor/image_iservice.proto.
 func (x *GetImageRequest) GetScanInline() bool {
 	if x != nil {
 		return x.ScanInline
@@ -130,11 +132,11 @@ var File_internalapi_sensor_image_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_image_iservice_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"\x7f\n" +
+	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"\x83\x01\n" +
 	"\x0fGetImageRequest\x12-\n" +
 	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageR\x05image\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x1f\n" +
-	"\vscan_inline\x18\x02 \x01(\bR\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12#\n" +
+	"\vscan_inline\x18\x02 \x01(\bB\x02\x18\x01R\n" +
 	"scanInline\"8\n" +
 	"\x10GetImageResponse\x12$\n" +
 	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2M\n" +
