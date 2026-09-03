@@ -2,7 +2,6 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	sensorVirtualMachine "github.com/stackrox/rox/sensor/common/virtualmachine"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,18 +16,6 @@ func getVirtualMachineOwnerReference(owners []metav1.OwnerReference) (*metav1.Ow
 		}
 	}
 	return nil, false
-}
-
-func getVirtualMachineState(vm *sensorVirtualMachine.Info) virtualMachineV1.VirtualMachine_State {
-	return sensorVirtualMachine.State(vm)
-}
-
-func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
-	return sensorVirtualMachine.VSockCID(vm)
-}
-
-func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
-	return sensorVirtualMachine.Facts(vm)
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
