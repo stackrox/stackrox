@@ -770,6 +770,45 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
 	}
 }
 
+// TestMinLastStartedTimeByConfigClusterGrouping is a regression test for the
+// aggregate contract: it must group by (scan_config_name, cluster_id) ONLY. A
+// cluster rename leaves rows with the same cluster_id but different cluster names;
+// those must not split into multiple aggregate rows (which would let one freshness
+// state overwrite another downstream).
+func (s *complianceCheckResultDataStoreTestSuite) TestMinLastStartedTimeByConfigClusterGrouping() {
+	older := time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC)
+	newer := time.Date(2026, 9, 2, 2, 0, 0, 0, time.UTC)
+	olderTS, err := protocompat.ConvertTimeToTimestampOrError(older)
+	s.Require().NoError(err)
+	newerTS, err := protocompat.ConvertTimeToTimestampOrError(newer)
+	s.Require().NoError(err)
+
+	// Two results: same cluster_id + scan_config, DIFFERENT cluster names.
+	rec1 := getTestRec(testconsts.Cluster1)
+	rec1.ClusterName = "old-name"
+	rec1.LastStartedTime = newerTS
+	rec2 := getTestRec(testconsts.Cluster1)
+	rec2.ClusterName = "new-name"
+	rec2.LastStartedTime = olderTS
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+
+	results, err := s.dataStore.MinLastStartedTimeByConfigCluster(s.hasReadCtx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery())
+	s.Require().NoError(err)
+
+	var rows int
+	for _, r := range results {
+		if r.ScanConfigName == "scanConfig1" && r.ClusterID == testconsts.Cluster1 {
+			rows++
+			s.Require().NotNil(r.MinLastStarted)
+			s.Require().True(older.Equal(*r.MinLastStarted), "MIN must be the earliest across renamed rows")
+		}
+	}
+	s.Require().Equal(1, rows, "a cluster rename must not split the (config, cluster_id) group")
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCluster() {
 	s.setupTestData()
 	testCases := []struct {

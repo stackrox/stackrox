@@ -490,7 +490,22 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		convertedControls = storagetov2.GetControls(rules[0].GetName(), controls)
 	}
 
-	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName(), convertedControls), nil
+	// Build resolver for outdated detection across the returned clusters' configs.
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	var scanConfigs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil || cfg == nil {
+			continue
+		}
+		scanConfigs = append(scanConfigs, cfg)
+	}
+	resolver := compliancedata.NewConfigResolver(scanConfigs, time.Now().UTC())
+
+	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName(), convertedControls, resolver), nil
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {

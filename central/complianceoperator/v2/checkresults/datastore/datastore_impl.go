@@ -397,17 +397,19 @@ func (d *datastoreImpl) MinLastStartedTimeByConfigCluster(ctx context.Context, q
 
 	cloned := query.CloneVT()
 	cloned.Pagination = nil // Aggregate query — pagination must not apply.
+	// Group by the contract key only: (scan_config_name, cluster_id). Cluster NAME
+	// must NOT be a grouping key — a cluster rename would otherwise split one
+	// (config, cluster_id) into multiple rows, and downstream code that indexes by
+	// scan_config_name would let one freshness state overwrite another.
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorScanConfigName).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),
-		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorCheckLastStartedTime).AggrFunc(aggregatefunc.Min).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ComplianceOperatorScanConfigName.String(),
 			search.ClusterID.String(),
-			search.Cluster.String(),
 		},
 	}
 

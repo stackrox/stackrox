@@ -555,6 +555,25 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanReq
 	s.Require().True(requested.AsTime().Equal(updated.GetLastScanRequestedTime().AsTime()))
 	// ...and last_updated_time is preserved: a rescan is not a configuration edit.
 	s.Require().True(originalUpdated.AsTime().Equal(updated.GetLastUpdatedTime().AsTime()))
+
+	// Simulate an unrelated config edit: a fresh object that cannot carry the blob-only
+	// last_scan_requested_time. UpsertScanConfiguration must preserve it atomically under
+	// the lock (so a concurrent "Scan now" is not clobbered) while bumping last_updated_time.
+	edit := s.getTestRec(mockScanName)
+	edit.Id = configID
+	edit.Description = "edited description"
+	s.Require().Nil(edit.GetLastScanRequestedTime())
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, edit))
+
+	afterEdit, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal("edited description", afterEdit.GetDescription())
+	// The on-demand time survived the edit...
+	s.Require().NotNil(afterEdit.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(afterEdit.GetLastScanRequestedTime().AsTime()))
+	// ...and last_updated_time advanced (an edit bumps it, unlike a rescan).
+	s.Require().False(afterEdit.GetLastUpdatedTime().AsTime().Before(updated.GetLastUpdatedTime().AsTime()))
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -520,47 +519,6 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			}
 		})
 	}
-}
-
-// TestUpdateScanRequestPreservesLastScanRequestedTime ensures an unrelated config
-// edit does not discard the on-demand scan-request time recorded by "Scan now".
-// The field is blob-only and absent from the v2 API request, so the update flow
-// must carry it over from the stored config (like created_time).
-func (suite *complianceManagerTestSuite) TestUpdateScanRequestPreservesLastScanRequestedTime() {
-	requested := protocompat.TimestampNow()
-	oldConfig := getTestRec()
-	oldConfig.LastScanRequestedTime = requested
-
-	// Incoming update request has no on-demand time (API cannot set it).
-	updateReq := getTestRec()
-	suite.Require().Nil(updateReq.GetLastScanRequestedTime())
-
-	suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(oldConfig, true, nil).Times(1)
-	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
-	suite.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
-		getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
-	}, nil).Times(1)
-
-	var persisted *storage.ComplianceOperatorScanConfigurationV2
-	suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ any, cfg *storage.ComplianceOperatorScanConfigurationV2) error {
-			persisted = cfg
-			return nil
-		}).Times(1)
-	suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
-	suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
-	suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), testconsts.Cluster1, "", "test_cluster")
-
-	config, err := suite.manager.UpdateScanRequest(suite.testContexts[testutils.UnrestrictedReadWriteCtx], updateReq, []string{testconsts.Cluster1})
-	suite.Require().NoError(err)
-	suite.Require().NotNil(config)
-
-	// The edit must preserve the on-demand scan-request time from the stored config.
-	suite.Require().NotNil(persisted)
-	suite.Require().NotNil(persisted.GetLastScanRequestedTime())
-	suite.Require().True(requested.AsTime().Equal(persisted.GetLastScanRequestedTime().AsTime()))
-	suite.Require().True(requested.AsTime().Equal(config.GetLastScanRequestedTime().AsTime()))
 }
 
 func (suite *complianceManagerTestSuite) TestProcessScanRequestSendsProfileRefsWithKinds() {

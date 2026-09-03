@@ -198,11 +198,9 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
-	// Preserve the on-demand scan-request time (blob-only field, absent from the
-	// v2 API request): a config edit is not a "Scan now" and must not discard the
-	// outdated-detection on-demand term. Without this, editing a config after a
-	// rescan would revert one-time/UNSET configs to UNKNOWN.
-	scanRequest.LastScanRequestedTime = oldScanConfig.GetLastScanRequestedTime()
+	// NOTE: last_scan_requested_time (the on-demand "Scan now" term) is a blob-only field
+	// the API cannot carry. It is preserved atomically inside UpsertScanConfiguration under
+	// the datastore lock, so it survives config edits without racing a concurrent rescan.
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err

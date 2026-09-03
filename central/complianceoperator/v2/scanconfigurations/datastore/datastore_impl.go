@@ -142,6 +142,17 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
+	// Preserve last_scan_requested_time atomically under the lock. It is a blob-only field
+	// the v2 API cannot carry, written independently by UpdateScanConfigLastScanRequestedTime
+	// ("Scan now"). Reading the current value here (instead of trusting the caller's copy,
+	// which was read earlier without the lock) prevents a concurrent rescan stamp from being
+	// clobbered by an unrelated config edit. Elevated read: internal field carry-over, not
+	// user-facing data. Missing row (create) leaves the caller's value (nil) untouched.
+	elevatedReadCtx := sac.WithAllAccess(context.Background())
+	if existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId()); err == nil && found {
+		scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
+	}
+
 	// Update the last updated time
 	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
 }

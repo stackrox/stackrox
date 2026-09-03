@@ -37,12 +37,18 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 	return converted
 }
 
-// ComplianceV2SpecificCheckResult converts a storage check result to a v2 check result
-func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string, controls []*v2.ComplianceControl) *v2.ComplianceClusterCheckStatus {
+// ComplianceV2SpecificCheckResult converts a storage check result to a v2 check result.
+// resolver may be nil (per-cluster data state then defaults to UNKNOWN).
+func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheckResultV2, checkName string, controls []*v2.ComplianceControl, resolver *compliancedata.ConfigResolver) *v2.ComplianceClusterCheckStatus {
 	var converted *v2.ComplianceClusterCheckStatus
 	for _, result := range incoming {
 		if result.GetCheckName() != checkName {
 			continue
+		}
+
+		dataState := v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN
+		if resolver != nil {
+			dataState = resolver.ResolveCheck(result.GetScanConfigName(), protoTimeToTime(result.GetLastStartedTime())).ToProto()
 		}
 
 		if converted == nil {
@@ -50,7 +56,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				CheckId:   result.GetCheckId(),
 				CheckName: result.GetCheckName(),
 				Clusters: []*v2.ClusterCheckStatus{
-					clusterStatus(result, nil, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN),
+					clusterStatus(result, nil, dataState),
 				},
 				Description:  result.GetDescription(),
 				Instructions: result.GetInstructions(),
@@ -62,7 +68,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 				Controls:     controls,
 			}
 		} else {
-			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN))
+			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil, dataState))
 		}
 	}
 

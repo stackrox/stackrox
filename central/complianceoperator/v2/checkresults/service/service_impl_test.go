@@ -586,6 +586,13 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the config for each returned result.
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(
+					&storage.ComplianceOperatorScanConfigurationV2{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}, nil,
+				).AnyTimes()
 			},
 		},
 		{
@@ -787,6 +794,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the config for each returned result.
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -820,6 +829,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the config for each returned result.
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
