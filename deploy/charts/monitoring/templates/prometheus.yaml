@@ -58,6 +58,27 @@ data:
 {{ toYaml .Values.cadvisorMetricRelabelConfigs | indent 10 }}
 {{- end }}
 
+      # Kubelet /metrics exposes kubelet_volume_stats_* (PVC used/capacity),
+      # which cadvisor does not. Used for central-db PVC space alerting.
+      - job_name: "kubernetes-kubelet"
+        scheme: https
+        metrics_path: /metrics
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+        metric_relabel_configs:
+          # Keep only the central-db PVC volume stats needed for space alerting.
+          - source_labels: [__name__, persistentvolumeclaim]
+            action: keep
+            regex: kubelet_volume_stats_(used|capacity)_bytes;central-db
+
       - job_name: stackrox
         tls_config:
           insecure_skip_verify: false
@@ -109,3 +130,31 @@ data:
           annotations:
             summary: Kubernetes ReplicaSet mismatch (replicaset {{ "{{" }} $labels.replicaset {{ "}}" }})
             description: "Replicas mismatch in ReplicaSet {{ "{{" }} $labels.exported_namespace {{ "}}" }}/{{ "{{" }} $labels.replicaset {{ "}}" }}"
+
+  rules_alerts_stackrox.yml: |-
+    groups:
+    - name: StackRox
+      rules:
+        # Central DB PVC space utilization (used / filesystem capacity) from the
+        # kubelet volume stats. Exposed as a stable metric for dashboards and
+        # reused by the alerts below.
+        - record: stackrox:central_db_pvc_usage_ratio
+          expr: kubelet_volume_stats_used_bytes{persistentvolumeclaim="central-db"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="central-db"}
+
+        - alert: StackRoxCentralDbPvcSpaceWarning
+          expr: stackrox:central_db_pvc_usage_ratio > {{ .Values.centralDbPvcUsageWarningRatio }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Central DB PVC filling up (pvc {{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }})
+            description: "Central DB PVC {{ "{{" }} $labels.namespace {{ "}}" }}/{{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full."
+
+        - alert: StackRoxCentralDbPvcSpaceCritical
+          expr: stackrox:central_db_pvc_usage_ratio > {{ .Values.centralDbPvcUsageCriticalRatio }}
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Central DB PVC almost full (pvc {{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }})
+            description: "Central DB PVC {{ "{{" }} $labels.namespace {{ "}}" }}/{{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full."
