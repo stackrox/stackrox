@@ -150,10 +150,12 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		obj.GetServiceAccountPermissionLevel(),
 		obj.GetRiskScore(),
 		obj.GetPlatformComponent(),
+		protocompat.NilOrTime(obj.GetDeleted()),
+		obj.GetState(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO deployments (Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, PlatformComponent, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, PlatformComponent = EXCLUDED.PlatformComponent, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO deployments (Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, PlatformComponent, Deleted, State, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, PlatformComponent = EXCLUDED.PlatformComponent, Deleted = EXCLUDED.Deleted, State = EXCLUDED.State, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -355,6 +357,8 @@ var copyColsDeployments = []string{
 	"serviceaccountpermissionlevel",
 	"riskscore",
 	"platformcomponent",
+	"deleted",
+	"state",
 	"serialized",
 }
 
@@ -408,6 +412,8 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetServiceAccountPermissionLevel(),
 			obj.GetRiskScore(),
 			obj.GetPlatformComponent(),
+			protocompat.NilOrTime(obj.GetDeleted()),
+			obj.GetState(),
 			serialized,
 		}, nil
 	})
