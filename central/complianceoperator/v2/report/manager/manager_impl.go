@@ -364,11 +364,15 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
-		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) && !watcher.IsScanNotApplicable(scan) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
 			return nil
 		}
-		return err
+		if !errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			return err
+		}
+		log.Debugf("Scan %s was already handled but is NOT-APPLICABLE, allowing through", scan.GetScanName())
+		id = fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId())
 	}
 	numChecks, err := watcher.GetExpectedNumChecks(scan)
 	if err != nil {
@@ -546,7 +550,7 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "unable to retrieve snapshots from the store")
 		}
-		if len(snapshot) > 0 {
+		if len(snapshot) > 0 && !watcher.IsScanNotApplicable(results.Scan) {
 			// We already handled a scan newer than this one, we ignore this scanResults
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
