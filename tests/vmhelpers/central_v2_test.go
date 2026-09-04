@@ -11,6 +11,8 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -274,6 +276,38 @@ func TestWaitForV2ScanReady(t *testing.T) {
 					TotalCount: 1,
 					Components: []*v2.VMComponentRow{{Name: "bash", ScanStatus: v2.ScanStatus_NOT_SCANNED}},
 				}, nil
+			}
+			return &v2.ListVMComponentsResponse{
+				TotalCount: 1,
+				Components: []*v2.VMComponentRow{{Name: "bash", ScanStatus: v2.ScanStatus_SCANNED}},
+			}, nil
+		},
+	}
+	vm, err := WaitForV2ScanReady(ctx, client, opts, "vid")
+	require.NoError(t, err)
+	require.Equal(t, "vid", vm.GetId())
+	require.GreaterOrEqual(t, calls, 2)
+}
+
+func TestWaitForV2ScanReady_RetriesTransientListError(t *testing.T) {
+	ctx := t.Context()
+	opts := WaitOptions{Timeout: 400 * time.Millisecond, PollInterval: 5 * time.Millisecond}
+	var calls int
+	client := &stubV2Client{
+		getVMFn: func(_ context.Context, req *v2.GetVMRequest) (*v2.VMDetail, error) {
+			return &v2.VMDetail{
+				Id:      req.GetId(),
+				GuestOs: "rhel",
+				LatestScan: &v2.VMScanInfo{
+					ScanTime: timestamppb.Now(),
+					ScanOs:   "rhel",
+				},
+			}, nil
+		},
+		listVMComponentsFn: func(context.Context, *v2.ListVMComponentsRequest) (*v2.ListVMComponentsResponse, error) {
+			calls++
+			if calls == 1 {
+				return nil, status.Error(codes.Unavailable, "central busy")
 			}
 			return &v2.ListVMComponentsResponse{
 				TotalCount: 1,
