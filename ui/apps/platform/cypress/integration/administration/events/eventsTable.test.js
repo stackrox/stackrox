@@ -79,7 +79,12 @@ describe('Administration Events table', () => {
 
         cy.get('h1:contains("Image Scanning")');
         cy.get(getDescriptionListGroupSelector('Resource type', resourceType));
-        cy.get(getDescriptionListGroupSelector('Resource name', resourceName));
+        // Image resource names link to the Risk page filtered by image
+        cy.get(getDescriptionListGroupSelector('Resource name', resourceName))
+            .find('a')
+            .should('have.attr', 'href')
+            .and('include', '/main/risk/workloads')
+            .and('include', 'Image');
         cy.get(getDescriptionListTermSelector('Resource ID')).should('not.exist');
         cy.get(getDescriptionListGroupSelector('Event type', 'Log'));
         cy.get(getDescriptionListGroupSelector('Event ID', id));

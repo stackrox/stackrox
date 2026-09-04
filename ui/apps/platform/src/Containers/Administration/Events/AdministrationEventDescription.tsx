@@ -12,6 +12,7 @@ import type { AdministrationEvent } from 'services/AdministrationEventsService';
 
 import { getLevelText, getLevelVariant, getTypeText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
+import AdministrationEventResourceLink from './AdministrationEventResourceLink';
 
 export type AdministrationEventDescriptionProps = {
     event: AdministrationEvent;
@@ -41,7 +42,9 @@ function AdministrationEventDescription({
                 {resourceName && (
                     <DescriptionListGroup>
                         <DescriptionListTerm>Resource name</DescriptionListTerm>
-                        <DescriptionListDescription>{resourceName}</DescriptionListDescription>
+                        <DescriptionListDescription>
+                            <AdministrationEventResourceLink resource={resource} />
+                        </DescriptionListDescription>
                     </DescriptionListGroup>
                 )}
                 {resourceID && (
