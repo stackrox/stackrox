@@ -278,7 +278,8 @@ func makeReport(token string) *vsockclient.GetReportResult {
 			State: "IndexFinished",
 		},
 		Meta: &pb.ResponseMeta{
-			ReportToken: token,
+			ReportToken:  token,
+			AgentVersion: "roxagent-test",
 			Facts: map[string]string{
 				"detected_os":         "RHEL",
 				"activation_status":   "ACTIVE",
@@ -332,11 +333,11 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	assert.Equal(t, 2, forwardedCount(s))
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
-	expectedFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+	expectedFacts := virtualmachine.AgentFactsFromResponse(map[string]string{
 		"detected_os":         "RHEL",
 		"activation_status":   "ACTIVE",
 		"dnf_metadata_status": "AVAILABLE",
-	})
+	}, "roxagent-test")
 	assert.Equal(t, expectedFacts, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
 	assert.Equal(t, expectedFacts, store.Get(virtualmachine.VMID("ns2/vm-b")).AgentFacts)
 }
@@ -346,21 +347,24 @@ func TestPersistAgentFactsDoesNotAliasStorePointer(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{vm.Copy()}}
 	s := &VMScraper{store: store}
 
-	s.persistAgentFacts(vm, map[string]string{
-		"detected_os":         "RHEL",
-		"activation_status":   "ACTIVE",
-		"dnf_metadata_status": "AVAILABLE",
+	s.persistAgentFacts(vm, &pb.ResponseMeta{
+		AgentVersion: "roxagent-test",
+		Facts: map[string]string{
+			"detected_os":         "RHEL",
+			"activation_status":   "ACTIVE",
+			"dnf_metadata_status": "AVAILABLE",
+		},
 	})
 	vm.GuestOS = "mutated-after-persist"
 
 	stored := store.Get(vm.ID)
 	require.NotNil(t, stored)
 	assert.NotEqual(t, "mutated-after-persist", stored.GuestOS)
-	assert.Equal(t, virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+	assert.Equal(t, virtualmachine.AgentFactsFromResponse(map[string]string{
 		"detected_os":         "RHEL",
 		"activation_status":   "ACTIVE",
 		"dnf_metadata_status": "AVAILABLE",
-	}), stored.AgentFacts)
+	}, "roxagent-test"), stored.AgentFacts)
 }
 
 // TestVMScraper_SkipsWhenCentralLacksCapability covers a store already
@@ -477,6 +481,43 @@ func TestVMScraper_ForwardsChangedAgentFactsOnUnchangedReport(t *testing.T) {
 	clock.Advance(s.interval)
 	s.pollOnce(context.Background())
 	assert.Empty(t, drainToCentral(s), "should not emit a VM update when agent facts are unchanged")
+}
+
+func TestVMScraper_ForwardsAgentVersionChangeOnUnchangedReport(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, forwardedCount(s))
+
+	sameFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken:  "1",
+			AgentVersion: "roxagent-upgraded",
+			Facts:        sameFacts,
+		},
+	}}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	expected := virtualmachine.AgentFactsFromResponse(sameFacts, "roxagent-upgraded")
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1)
+	assert.Equal(t, expected[pkgVM.AgentVersionKey], updates[0].GetFacts()[pkgVM.AgentVersionKey])
+	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
 }
 
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {

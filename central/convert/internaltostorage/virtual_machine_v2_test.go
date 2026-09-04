@@ -49,6 +49,34 @@ func TestVirtualMachineV2(t *testing.T) {
 			},
 		},
 		{
+			name: "copies agent facts and keeps informer GuestOs column",
+			input: &virtualMachineV1.VirtualMachine{
+				Id:        "VM-ID-3",
+				Namespace: "ns",
+				Name:      "vm-agent-facts",
+				ClusterId: uuid.NewTestUUID(3).String(),
+				Facts: map[string]string{
+					pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
+					pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
+					pkgVM.AgentVersionKey:    "4.10.0",
+				},
+				State: virtualMachineV1.VirtualMachine_RUNNING,
+			},
+			expected: &storage.VirtualMachineV2{
+				Id:        "VM-ID-3",
+				Namespace: "ns",
+				Name:      "vm-agent-facts",
+				ClusterId: uuid.NewTestUUID(3).String(),
+				Facts: map[string]string{
+					pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
+					pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
+					pkgVM.AgentVersionKey:    "4.10.0",
+				},
+				GuestOs: "Red Hat Enterprise Linux",
+				State:   storage.VirtualMachineV2_RUNNING,
+			},
+		},
+		{
 			name: "virtual machine without guestOS fact",
 			input: &virtualMachineV1.VirtualMachine{
 				Id:        "VM-ID-2",

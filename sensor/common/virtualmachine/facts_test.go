@@ -122,6 +122,50 @@ func TestAgentFactsFromResponseFacts(t *testing.T) {
 	}
 }
 
+func TestAgentFactsFromResponse(t *testing.T) {
+	cases := map[string]struct {
+		facts        map[string]string
+		agentVersion string
+		expected     map[string]string
+	}{
+		"attaches agent version to mapped facts": {
+			facts: map[string]string{
+				"detected_os":       v1.DetectedOS_RHEL.String(),
+				"os_version":        "9.2",
+				"activation_status": v1.ActivationStatus_ACTIVE.String(),
+			},
+			agentVersion: "4.10.0",
+			expected: map[string]string{
+				pkgVM.DetectedGuestOSKey:  "Red Hat Enterprise Linux 9.2",
+				pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+				pkgVM.AgentVersionKey:     "4.10.0",
+			},
+		},
+		"version only when facts do not map": {
+			facts:        map[string]string{"detected_os": v1.DetectedOS_UNKNOWN.String()},
+			agentVersion: "4.10.0",
+			expected:     map[string]string{pkgVM.AgentVersionKey: "4.10.0"},
+		},
+		"omits empty agent version": {
+			facts: map[string]string{
+				"activation_status": v1.ActivationStatus_ACTIVE.String(),
+			},
+			expected: map[string]string{
+				pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+			},
+		},
+		"empty facts and empty version": {
+			expected: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, AgentFactsFromResponse(tc.facts, tc.agentVersion))
+		})
+	}
+}
+
 func TestState(t *testing.T) {
 	cases := map[string]struct {
 		input    *Info
