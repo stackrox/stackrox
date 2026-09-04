@@ -108,6 +108,8 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NotNil(t, detail.GetLatestScan())
 				require.NotNil(t, detail.GetLatestScan().GetScanTime())
 				requireForwardedAgentFacts(t, detail.GetFacts())
+				require.Equal(t, detail.GetFacts()[pkgVM.DetectedGuestOSKey], detail.GetGuestOs(),
+					"GetVM.guest_os should prefer facts.detectedGuestOS")
 			})
 
 			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
@@ -119,6 +121,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NotEmpty(t, listed.GetClusterId())
 				require.NotEmpty(t, listed.GetClusterName())
 				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, listed.GetState())
+
+				detail := s.mustGetVMV2(snapshot.ID)
+				require.Equal(t, detail.GetGuestOs(), listed.GetGuestOs(),
+					"ListVMs.guest_os should match GetVM.guest_os")
 
 				cves, total, err := vmhelpers.ListAllVMCVEsByVM(s.ctx, s.vmV2Client, snapshot.ID)
 				require.NoError(t, err)
