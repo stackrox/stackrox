@@ -524,7 +524,9 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
-	s.persistAgentFacts(vm, result.Meta)
+	if mapped, ok := snapshotAgentFacts(result.Meta); ok {
+		vm.AgentFacts = mapped
+	}
 
 	// Mapping sync has its own deadline, so forward uses the scrape parent.
 	if err := s.forwardReport(ctx, vm, result.IndexReport); err != nil {
@@ -547,7 +549,11 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 		return false
 	}
-	s.tryEnqueueVMUpdate(vm)
+	// Persist facts only after the UPDATE is queued so a dropped send
+	// retries on the next unchanged poll instead of looking like a no-op.
+	if s.tryEnqueueVMUpdate(vm) {
+		s.persistAgentFacts(vm, result.Meta)
+	}
 
 	newToken := result.Meta.GetReportToken()
 	s.commitVMState(key, vm.ID, newToken, result.Meta.GetAgentVersion())
@@ -953,19 +959,22 @@ func (s *VMScraper) vmUpdateMessage(vm *virtualmachine.Info) *message.ExpiringMe
 }
 
 // tryEnqueueVMUpdate best-effort enqueues a facts UPDATE after a successful
-// index forward. It must not block: forwardReport already waited on toCentral,
-// and a second blocking send would stall the scrape if the buffer is full.
-func (s *VMScraper) tryEnqueueVMUpdate(vm *virtualmachine.Info) {
+// index forward. It must not block: a second wait on toCentral would stall
+// the scrape if the buffer is full.
+func (s *VMScraper) tryEnqueueVMUpdate(vm *virtualmachine.Info) bool {
 	if vm == nil || vm.AgentFacts == nil {
-		return
+		return false
 	}
 	msg := s.vmUpdateMessage(vm)
 	if msg == nil {
-		return
+		return false
 	}
 	select {
 	case s.toCentral <- msg:
+		return true
 	default:
+		log.Debugf("VMScraper: agent facts for %q not forwarded; will retry", vm.Key())
+		return false
 	}
 }
 

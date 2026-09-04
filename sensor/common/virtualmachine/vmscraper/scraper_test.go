@@ -520,6 +520,48 @@ func TestVMScraper_ForwardsAgentVersionChangeOnUnchangedReport(t *testing.T) {
 	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
 }
 
+func TestVMScraper_RetriesAgentFactsAfterIndexEnqueueFillsBuffer(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.toCentral = make(chan *message.ExpiringMessage, 1)
+
+	s.pollOnce(context.Background())
+	msgs := drainToCentral(s)
+	require.Len(t, msgs, 1)
+	assert.NotNil(t, msgs[0].GetEvent().GetVirtualMachineIndexReport())
+	assert.Nil(t, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+
+	sameFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken:  "1",
+			AgentVersion: "roxagent-test",
+			Facts:        sameFacts,
+		},
+	}}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	expected := virtualmachine.AgentFactsFromResponse(sameFacts, "roxagent-test")
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1)
+	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
+	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+}
+
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
@@ -704,7 +746,7 @@ func TestVMScraper_NACK(t *testing.T) {
 			require.Equal(t, 1, forwardedCount(s))
 
 			// Flip Running only after the first poll, so the VM is scraped normally
-			// once before the ACK/NACK under test is delivered. persistAgentFacts
+			// once before the ACK/NACK under test is delivered. The scraper
 			// stores a copy, so mutate the store's current object rather than vmA.
 			concurrency.WithLock(&store.mu, func() {
 				store.vms[0].Running = tc.vmRunning
