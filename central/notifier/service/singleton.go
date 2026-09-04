@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
@@ -33,6 +34,7 @@ func initialize() {
 		policycleaner.Singleton(),
 		reporter.Singleton(),
 		cryptoKey,
+		globaldb.GetPostgres(),
 	)
 }
 

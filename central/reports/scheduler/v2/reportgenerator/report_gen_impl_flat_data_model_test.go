@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -73,10 +72,9 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	var resolver *resolvers.Resolver
-	var schema *graphql.Schema
 	if features.FlattenImageData.Enabled() {
 		imgV2DataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(s.T(),
+		resolver, _ = resolvers.SetupTestResolver(s.T(),
 			imagesView.NewImageView(s.testDB.DB),
 			imgV2DataStore,
 			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
@@ -86,7 +84,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		)
 	} else {
 		imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(s.T(),
+		resolver, _ = resolvers.SetupTestResolver(s.T(),
 			imagesView.NewImageView(s.testDB.DB),
 			imageDataStore,
 			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
@@ -165,7 +163,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, resolver.DeploymentDataStore,
 		s.watchedImageDatastore, collectionQueryResolver, nil, blobStore, s.clusterDatastore,
-		s.namespaceDatastore, resolver.ImageCVEV2DataStore, schema)
+		s.namespaceDatastore, resolver.ImageCVEV2DataStore)
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
