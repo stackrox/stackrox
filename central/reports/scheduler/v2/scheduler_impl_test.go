@@ -174,7 +174,7 @@ func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 	defer cronScheduler.Stop()
 
 	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, nil, cronScheduler, nil)
-	imageQueue := s.queues[0].queue
+	imageQueue := s.queueByType[storage.ReportSnapshot_VULNERABILITY]
 
 	started := make(chan struct{})
 	done := make(chan struct{})
@@ -192,6 +192,7 @@ func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 		ReportSnapshot: &storage.ReportSnapshot{
 			ReportId:              "running-report-id",
 			ReportConfigurationId: "test-config-id",
+			Type:                  storage.ReportSnapshot_VULNERABILITY,
 			ReportStatus: &storage.ReportStatus{
 				RunState: storage.ReportStatus_WAITING,
 			},
@@ -306,13 +307,14 @@ func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
 	defer cronScheduler.Stop()
 
 	s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, nil, nil, cronScheduler, nil)
-	imageQueue := s.queues[0].queue
+	imageQueue := s.queueByType[storage.ReportSnapshot_VULNERABILITY]
 
 	req := &reportGen.ReportRequest{
 		ReportSnapshot: &storage.ReportSnapshot{
 			ReportId:              "waiting-report-id",
 			ReportConfigurationId: "test-config-id",
 			Name:                  "test-report",
+			Type:                  storage.ReportSnapshot_VULNERABILITY,
 			ReportStatus: &storage.ReportStatus{
 				RunState: storage.ReportStatus_WAITING,
 			},

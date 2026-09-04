@@ -2,6 +2,7 @@ package node
 
 import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
@@ -28,6 +29,7 @@ func Singleton() Service {
 			schedulerV2.Singleton(),
 			blobDS.Singleton(),
 			validation.Singleton(),
+			globaldb.GetPostgres(),
 		)
 	})
 	return svc

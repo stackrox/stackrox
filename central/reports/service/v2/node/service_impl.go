@@ -10,22 +10,28 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
+	reportsv2 "github.com/stackrox/rox/central/reports/service/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
+	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
@@ -35,8 +41,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -64,8 +68,6 @@ var (
 			apiV2.NodeReportService_GetViewBasedNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_GetViewBasedMyNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_PostViewBasedNodeReport_FullMethodName,
-		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_DeleteNodeReport_FullMethodName,
 			apiV2.NodeReportService_CancelNodeReport_FullMethodName,
 		},
@@ -81,6 +83,7 @@ type serviceImpl struct {
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
 	validator           *validation.Validator
+	db                  postgres.DB
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -129,8 +132,9 @@ func (s *serviceImpl) PostNodeReportConfiguration(ctx context.Context, request *
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(createdReportConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportsv2.NotifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id)
+	} else if err := s.scheduler.UpsertReportSchedule(createdReportConfig); err != nil {
 		return nil, err
 	}
 
@@ -192,8 +196,9 @@ func (s *serviceImpl) UpdateNodeReportConfiguration(ctx context.Context, request
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(updatedConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportsv2.NotifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId())
+	} else if err := s.scheduler.UpsertReportSchedule(updatedConfig); err != nil {
 		return nil, err
 	}
 	return &apiV2.Empty{}, nil
@@ -304,7 +309,11 @@ func (s *serviceImpl) DeleteNodeReportConfiguration(ctx context.Context, id *api
 		return nil, err
 	}
 
-	s.scheduler.RemoveReportSchedule(id.GetId())
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportsv2.NotifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId())
+	} else {
+		s.scheduler.RemoveReportSchedule(id.GetId())
+	}
 	return &apiV2.Empty{}, nil
 }
 
@@ -325,17 +334,29 @@ func (s *serviceImpl) RunNodeReport(ctx context.Context, req *apiV2.RunReportReq
 		return nil, errox.InvalidArgs.CausedByf("report configuration '%s' is not a node vulnerability report", req.GetReportConfigId())
 	}
 
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
+		return nil, errors.New("could not determine user identity from provided context")
+	}
+
 	reportRequest, err := s.validator.ValidateAndGenerateReportRequest(
 		req.GetReportConfigId(),
 		storage.ReportStatus_NotificationMethod(req.GetReportNotificationMethod()),
 		storage.ReportStatus_ON_DEMAND,
-		authn.IdentityFromContextOrNil(ctx),
+		requesterID,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "error validating report request")
 	}
 
-	// Submit to scheduler. on-demand reports are not re-submissions.
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportID, err := s.persistSnapshotAndNotify(ctx, reportRequest, pgNotify.ReportRequestSubmitted)
+		if err != nil {
+			return nil, err
+		}
+		return &apiV2.RunReportResponse{ReportConfigId: req.GetReportConfigId(), ReportId: reportID}, nil
+	}
+
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportRequest, false)
 	if err != nil {
 		return nil, errox.ServerError.CausedByf("scheduler error: %s", err)
@@ -353,7 +374,10 @@ func (s *serviceImpl) getReportHistory(ctx context.Context, queryBuilder *search
 
 	baseQuery := queryBuilder.ProtoQuery()
 	if userID != "" {
-		userIDQuery := search.NewQueryBuilder().AddExactMatches(search.RequesterUserID, userID).ProtoQuery()
+		if err := verifyNoUserSearchLabels(parsedQuery); err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err.Error())
+		}
+		userIDQuery := search.NewQueryBuilder().AddExactMatches(search.UserID, userID).ProtoQuery()
 		baseQuery = search.ConjunctionQuery(baseQuery, userIDQuery)
 	}
 
@@ -365,7 +389,7 @@ func (s *serviceImpl) getReportHistory(ctx context.Context, queryBuilder *search
 		return nil, err
 	}
 
-	blobNames, err := s.getExistingBlobNames(ctx, results)
+	blobNames, err := s.getExistingBlobNames(results)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check blob availability")
 	}
@@ -420,8 +444,11 @@ func (s *serviceImpl) GetNodeReportStatus(ctx context.Context, req *apiV2.Resour
 	if !found {
 		return nil, errox.NotFound.CausedByf("report snapshot not found for job id %s", req.GetId())
 	}
+	if rep.GetType() != storage.ReportSnapshot_NODE_VULNERABILITY {
+		return nil, errox.InvalidArgs.CausedByf("report snapshot '%s' is not a node vulnerability report", req.GetId())
+	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
-	return &apiV2.ReportStatusResponse{Status: status}, err
+	return &apiV2.ReportStatusResponse{Status: status}, nil
 }
 
 func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
@@ -453,6 +480,11 @@ func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceB
 	reportStatus := snapshot.GetReportStatus()
 	if reportStatus.GetRunState() != storage.ReportStatus_WAITING && reportStatus.GetRunState() != storage.ReportStatus_PREPARING {
 		return nil, errox.InvalidArgs.CausedBy("cannot cancel a job that is not in WAITING or PREPARING state")
+	}
+
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportsv2.NotifyWithRetry(ctx, s.db, pgNotify.ReportRequestCancelled, req.GetId())
+		return &apiV2.Empty{}, nil
 	}
 
 	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
@@ -487,23 +519,29 @@ func (s *serviceImpl) DeleteNodeReport(ctx context.Context, req *apiV2.DeleteRep
 		return nil, errors.New("could not determine user identity from provided context")
 	}
 	if slimUser.GetId() != snapshot.GetRequester().GetId() {
-		if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-			return nil, errors.Wrap(err, "user can only delete a job created by the user unless they have Modify(WorkflowAdministration) permission")
-		}
+		return nil, errox.NotAuthorized.CausedBy("report cannot be deleted by a user who did not request the report")
 	}
 
-	if err := s.snapshotDatastore.DeleteReportSnapshot(ctx, req.GetId()); err != nil {
-		return nil, err
+	status := snapshot.GetReportStatus()
+	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
+		return nil, errox.InvalidArgs.CausedByf("report job id %q did not generate a downloadable report and hence no report to delete", req.GetId())
+	}
+	switch status.GetRunState() {
+	case storage.ReportStatus_FAILURE:
+		return nil, errox.InvalidArgs.CausedByf("report job %q has failed and no downloadable report to delete", req.GetId())
+	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
+		return nil, errox.InvalidArgs.CausedByf("report job %q is still running. Please cancel it or wait for its completion", req.GetId())
 	}
 
-	// Delete associated blob if it exists
-	parentDir := snapshot.GetReportConfigurationId()
-	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
-		parentDir = "view-based-report"
-	}
-	blobPath := common.GetReportBlobPath(parentDir, snapshot.GetReportId())
-	if err := s.blobStore.Delete(ctx, blobPath); err != nil {
-		log.Errorf("Error deleting blob %s: %v", blobPath, err)
+	blobPath := common.GetReportBlobPath(reportBlobParentDir(snapshot), snapshot.GetReportId())
+	blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+	if err := s.blobStore.Delete(blobCtx, blobPath); err != nil {
+		return nil, errox.InvariantViolation.CausedByf("failed to delete downloadable report %q", req.GetId())
 	}
 
 	return &apiV2.Empty{}, nil
@@ -524,7 +562,14 @@ func (s *serviceImpl) PostViewBasedNodeReport(ctx context.Context, req *apiV2.Re
 		return nil, errors.Wrap(err, "error validating view-based report request")
 	}
 
-	// Submit to scheduler. view-based reports are always on-demand, not re-submissions.
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		reportID, err := s.persistSnapshotAndNotify(ctx, reportRequest, pgNotify.ReportRequestSubmitted)
+		if err != nil {
+			return nil, err
+		}
+		return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportRequest.ReportSnapshot.GetName()}, nil
+	}
+
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportRequest, false)
 	if err != nil {
 		return nil, errox.ServerError.CausedByf("scheduler error: %s", err)
@@ -537,7 +582,7 @@ func (s *serviceImpl) GetViewBasedNodeReportHistory(ctx context.Context, req *ap
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
-	return s.getReportHistory(ctx, queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), "")
+	return s.getReportHistory(snapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), "")
 }
 
 func (s *serviceImpl) GetViewBasedMyNodeReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -549,7 +594,38 @@ func (s *serviceImpl) GetViewBasedMyNodeReportHistory(ctx context.Context, req *
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
-	return s.getReportHistory(ctx, queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), slimUser.GetId())
+	return s.getReportHistory(snapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), slimUser.GetId())
+}
+
+func snapshotReadContext(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+}
+
+func verifyNoUserSearchLabels(q *v1.Query) error {
+	unexpectedLabels := set.NewStringSet(search.UserID.String(), search.UserName.String())
+	var err error
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && unexpectedLabels.Contains(mfQ.MatchFieldQuery.GetField()) {
+			err = errors.New("query contains user search labels")
+			return
+		}
+	})
+	return err
+}
+
+func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *reportGen.ReportRequest, channel string) (string, error) {
+	reportID, err := s.validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
+	if err != nil {
+		return "", err
+	}
+	reportsv2.NotifyWithRetry(ctx, s.db, channel, reportID)
+	return reportID, nil
 }
 
 var _ Service = (*serviceImpl)(nil)

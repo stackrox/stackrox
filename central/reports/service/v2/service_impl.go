@@ -109,6 +109,10 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
+	if request.GetType() == apiV2.ReportConfiguration_NODE_VULNERABILITY {
+		return nil, errox.InvalidArgs.New("node vulnerability reports must be created via the node report service")
+	}
+
 	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
@@ -158,6 +162,9 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
 	}
+	if err := rejectNodeReportConfiguration(currentConfig); err != nil {
+		return nil, err
+	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, request.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
 	reportSnapshots, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
@@ -193,6 +200,10 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	parsedQuery = search.ConjunctionQuery(
+		parsedQuery,
+		search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery(),
+	)
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
@@ -223,6 +234,9 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
+	if err := rejectNodeReportConfiguration(config); err != nil {
+		return nil, err
+	}
 	// Remove report configs with empty scope. This can happen after downgrade to a version that has less scoping methods and doesn't support the new scoping method.
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,
@@ -241,6 +255,10 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	parsedQuery = search.ConjunctionQuery(
+		parsedQuery,
+		search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery(),
+	)
 	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
@@ -252,12 +270,15 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
-	_, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding report config")
 	}
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
+	}
+	if err := rejectNodeReportConfiguration(config); err != nil {
+		return nil, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
 	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
@@ -389,6 +410,9 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if err != nil {
 		return nil, err
 	}
+	if reportReq.ReportSnapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
+		return nil, errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", req.GetReportConfigId())
+	}
 
 	if env.CentralWorkerEnabled.BooleanSetting() {
 		reportID, err := s.persistSnapshotAndNotify(ctx, reportReq, pgNotify.ReportRequestSubmitted)
@@ -500,6 +524,9 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
 	}
+	if req.GetType() == apiV2.ReportRequestViewBased_NODE_VULNERABILITY {
+		return nil, errox.InvalidArgs.New("node vulnerability reports must be created via the node report service")
+	}
 
 	requesterID := authn.IdentityFromContextOrNil(ctx)
 	if requesterID == nil {
@@ -542,7 +569,9 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(
 			search.ReportRequestType,
-			storage.ReportStatus_VIEW_BASED.String()).ProtoQuery(),
+			storage.ReportStatus_VIEW_BASED.String()).
+			AddExactMatches(search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()).
+			ProtoQuery(),
 		parsedQuery,
 	)
 	// Fill in pagination.
@@ -596,6 +625,7 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 		search.NewQueryBuilder().
 			AddExactMatches(search.UserID, slimUser.GetId()).
 			AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+			AddExactMatches(search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()).
 			ProtoQuery(),
 		parsedQuery,
 	)
@@ -641,6 +671,12 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 }
 
 func notifyWithRetry(ctx context.Context, db postgres.DB, channel, payload string) {
+	NotifyWithRetry(ctx, db, channel, payload)
+}
+
+// NotifyWithRetry sends a pg_notify on the given channel, retrying a few times on failure.
+// Failures are logged and not returned so that the originating RPC can still succeed.
+func NotifyWithRetry(ctx context.Context, db postgres.DB, channel, payload string) {
 	if db == nil {
 		return
 	}
@@ -661,4 +697,11 @@ func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *r
 	}
 	notifyWithRetry(ctx, s.db, channel, reportID)
 	return reportID, nil
+}
+
+func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
+	if config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
+		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
+	}
+	return nil
 }
