@@ -3,8 +3,10 @@ package vmscraper
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -31,8 +33,10 @@ import (
 )
 
 var (
-	log                  = logging.LoggerForModule()
-	errStartMoreThanOnce = errors.New("unable to start the VM scraper more than once")
+	log                       = logging.LoggerForModule()
+	errStartMoreThanOnce      = errors.New("unable to start the VM scraper more than once")
+	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
+	errCentralNotReachable    = errors.New("Central is not reachable")
 )
 
 const (
@@ -67,11 +71,6 @@ type VMDialer interface {
 	Dial(ctx context.Context, namespace, name string, port uint32, useTLS bool) (io.ReadWriteCloser, error)
 }
 
-// IndexReportSender sends index reports toward Central.
-type IndexReportSender interface {
-	Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error
-}
-
 // ProtocolClient performs the request/response protocol over a stream.
 type ProtocolClient interface {
 	GetReport(ctx context.Context, stream io.ReadWriteCloser, lastKnownToken string) (*vsockclient.GetReportResult, error)
@@ -95,10 +94,11 @@ type closeCoder interface {
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
 	store                 RunningVMStore
-	sender                IndexReportSender
 	dialer                VMDialer
 	client                ProtocolClient
 	repo2CPEFetcher       Repo2CPEFetcher
+	toCentral             chan *message.ExpiringMessage
+	centralReady          concurrency.Signal
 	interval              time.Duration
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
@@ -138,14 +138,15 @@ var _ common.SensorComponent = (*VMScraper)(nil)
 
 // New creates a VMScraper with production defaults. A nil repo2CPEFetcher leaves
 // maybeSyncRepoCPEMapping a no-op, so pull still works if the repo-to-CPE cache was not built.
-func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, repo2CPEFetcher Repo2CPEFetcher) *VMScraper {
+func New(store RunningVMStore, dialer VMDialer, client ProtocolClient, repo2CPEFetcher Repo2CPEFetcher) *VMScraper {
 	interval := clampPollInterval(env.VirtualMachinesScraperPollInterval.DurationSetting())
 	return &VMScraper{
 		store:                 store,
-		sender:                sender,
 		dialer:                dialer,
 		client:                client,
 		repo2CPEFetcher:       repo2CPEFetcher,
+		toCentral:             make(chan *message.ExpiringMessage, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting()),
+		centralReady:          concurrency.NewSignal(),
 		interval:              interval,
 		tickInterval:          env.VirtualMachinesScraperTickInterval.DurationSetting(),
 		initialBackoff:        env.VirtualMachinesScraperInitialBackoff.DurationSetting(),
@@ -180,8 +181,18 @@ func (s *VMScraper) Stop() {
 	s.stopper.Client().Stop()
 }
 
-func (s *VMScraper) Capabilities() []centralsensor.SensorCapability { return nil }
-func (s *VMScraper) Notify(_ common.SensorComponentEvent)           {}
+func (s *VMScraper) Capabilities() []centralsensor.SensorCapability {
+	return []centralsensor.SensorCapability{centralsensor.SensorACKSupport}
+}
+
+func (s *VMScraper) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		s.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		s.centralReady.Reset()
+	}
+}
 
 // Accepts reports whether this component wants to see SensorACK messages
 // for VM index reports.
@@ -214,7 +225,7 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 // handleNACK clears the cached token and applies the shared backoff so
 // the next tick resends a full report without tight-looping on persistent NACKs.
 //
-// Race with commitVMState after Send is accepted: a fast NACK may be
+// Race with commitVMState after forward is accepted: a fast NACK may be
 // overwritten by a late success commit.
 func (s *VMScraper) handleNACK(resourceID string) {
 	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
@@ -260,11 +271,17 @@ func vmIDFromResourceID(resourceID string) string {
 	return vmID
 }
 
-func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
+func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return s.toCentral }
 
 func (s *VMScraper) run() {
 	defer s.stopper.Flow().ReportStopped()
 	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
+
+	// Block until stop: there is nothing to poll, but the component stays registered.
+	if s.dialer == nil || s.client == nil {
+		<-ctx.Done()
+		return
+	}
 
 	// Reconcile + scrape immediately so VMs don't wait a full tick on start.
 	s.tick(ctx, true)
@@ -499,8 +516,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
-	// Mapping sync has its own deadline, so Send uses the scrape parent.
-	if err := s.sender.Send(ctx, vm, result.IndexReport); err != nil {
+	// Mapping sync has its own deadline, so forward uses the scrape parent.
+	if err := s.forwardReport(ctx, vm, result.IndexReport); err != nil {
 		metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeSendError).Inc()
 		outcome := scrapeRetryable
 		if errors.Is(err, errox.NotImplemented) {
@@ -828,7 +845,7 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 // commitVMState records the token from a just-sent report as key's cached scrape state.
 //
 // Race: If a NACK arrives from Central faster than this function completes, for example, due to:
-//   - a scheduling delay on the caller's goroutine between Send returning and this function
+//   - a scheduling delay on the caller's goroutine between forward returning and this function
 //     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
 //   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
 //     function's lock acquisition,
@@ -845,5 +862,59 @@ func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, newToken
 		state.lastToken = newToken
 		state.lastForwardedAt = s.now()
 		state.lastAgentVersion = agentVersion
+	})
+}
+
+func (s *VMScraper) forwardReport(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
+	}
+	if !s.centralReady.IsDone() {
+		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
+		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
+	}
+
+	msg := newIndexReportMessage(vm, report)
+	select {
+	case <-ctx.Done():
+	case s.toCentral <- msg:
+		metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
+		return nil
+	default:
+		metrics.IndexReportEnqueueBlockedTotal.Inc()
+	}
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("waiting to forward index report: %w", ctx.Err())
+	case s.toCentral <- msg:
+		metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
+		return nil
+	}
+}
+
+func newIndexReportMessage(vm *virtualmachine.Info, report *v4.IndexReport) *message.ExpiringMessage {
+	var cidStr string
+	if vm.VSOCKCID != nil {
+		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
+	}
+	indexReport := &pb.IndexReport{
+		VsockCid: cidStr,
+		VmId:     string(vm.ID),
+		IndexV4:  report,
+	}
+	return message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     string(vm.ID),
+				Action: central.ResourceAction_SYNC_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachineIndexReport{
+					VirtualMachineIndexReport: &pb.IndexReportEvent{
+						Id:    string(vm.ID),
+						Index: indexReport,
+					},
+				},
+			},
+		},
 	})
 }
