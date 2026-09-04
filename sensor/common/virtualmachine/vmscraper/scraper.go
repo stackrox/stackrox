@@ -91,11 +91,6 @@ type closeCoder interface {
 	CloseCode() (code int, reason string)
 }
 
-// IndexReportSender injects a VM index report onto the Sensor→Central path.
-type IndexReportSender interface {
-	Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error
-}
-
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
 	store                 RunningVMStore
@@ -140,7 +135,6 @@ type vmState struct {
 }
 
 var _ common.SensorComponent = (*VMScraper)(nil)
-var _ IndexReportSender = (*VMScraper)(nil)
 
 // New creates a VMScraper with production defaults. A nil repo2CPEFetcher leaves
 // maybeSyncRepoCPEMapping a no-op, so pull still works if the repo-to-CPE cache was not built.
@@ -279,16 +273,11 @@ func vmIDFromResourceID(resourceID string) string {
 
 func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return s.toCentral }
 
-// Send forwards a report to Central using the scraper's ResponsesC and Central-ready gate.
-func (s *VMScraper) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
-	return s.forwardReport(ctx, vm, report)
-}
-
 func (s *VMScraper) run() {
 	defer s.stopper.Flow().ReportStopped()
 	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
 
-	// Without a dialer there is nothing to poll; Send still writes ResponsesC.
+	// Block until stop: there is nothing to poll, but the component stays registered.
 	if s.dialer == nil || s.client == nil {
 		<-ctx.Done()
 		return

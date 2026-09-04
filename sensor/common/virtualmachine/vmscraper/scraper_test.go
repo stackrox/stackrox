@@ -1702,14 +1702,14 @@ func TestVMScraper_Capabilities(t *testing.T) {
 	assert.Equal(t, []centralsensor.SensorCapability{centralsensor.SensorACKSupport}, s.Capabilities())
 }
 
-func TestVMScraper_Send(t *testing.T) {
+func TestVMScraper_ForwardReport(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
-	require.NoError(t, s.Send(t.Context(), vm, makeReport("tok-1").IndexReport))
+	require.NoError(t, s.forwardReport(t.Context(), vm, makeReport("tok-1").IndexReport))
 	assert.Equal(t, 1, forwardedCount(s))
 }
 
-func TestVMScraper_Send_EnqueueBlocked(t *testing.T) {
+func TestVMScraper_ForwardReport_EnqueueBlocked(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		vm := makeVM("ns1", "vm-a", 100)
 		s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
@@ -1717,7 +1717,7 @@ func TestVMScraper_Send_EnqueueBlocked(t *testing.T) {
 		blockedBefore := testutil.ToFloat64(metrics.IndexReportEnqueueBlockedTotal)
 		done := make(chan error, 1)
 		go func() {
-			done <- s.Send(t.Context(), vm, makeReport("tok-1").IndexReport)
+			done <- s.forwardReport(t.Context(), vm, makeReport("tok-1").IndexReport)
 		}()
 		synctest.Wait()
 		assert.Equal(t, blockedBefore+1, testutil.ToFloat64(metrics.IndexReportEnqueueBlockedTotal))

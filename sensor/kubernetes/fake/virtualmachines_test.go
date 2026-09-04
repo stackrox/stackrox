@@ -114,18 +114,6 @@ func TestValidateVMWorkload(t *testing.T) {
 			wantUpdateInterval:    20 * time.Second,
 			wantErr:               "",
 		},
-		"initialReportDelay does not affect lifecycle validation": {
-			input: VirtualMachineWorkload{
-				PoolSize:           5,
-				LifecycleDuration:  60 * time.Second, // bounds: 30s-90s
-				UpdateInterval:     20 * time.Second, // < lower bound, OK
-				ReportInterval:     20 * time.Second,
-				InitialReportDelay: 45 * time.Second,
-			},
-			wantLifecycleDuration: 60 * time.Second,
-			wantUpdateInterval:    20 * time.Second,
-			wantErr:               "",
-		},
 	}
 
 	for name, tt := range tests {

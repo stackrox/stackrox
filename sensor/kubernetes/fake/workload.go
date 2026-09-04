@@ -102,8 +102,6 @@ type VirtualMachineWorkload struct {
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
 	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
 	NumLifecycles int `yaml:"numLifecycles"`
-	// InitialReportDelay is unused; VMScraper spreads first polls with its start window.
-	InitialReportDelay time.Duration `yaml:"initialReportDelay"`
 
 	// ReportInterval greater than zero enables fake index reports. Cadence is
 	// VMScraper poll and spread, not this interval.

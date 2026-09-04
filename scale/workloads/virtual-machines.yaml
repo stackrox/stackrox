@@ -31,7 +31,6 @@ virtualMachineWorkload:
   numLifecycles: 0
   reportInterval: 5m # > 0 enables fake agent reports; scrape cadence is independent
   numPackages: 700
-  initialReportDelay: 30s # scraper start window spreads first polls
 
 deploymentWorkload:
 - deploymentType: Deployment
