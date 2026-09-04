@@ -735,3 +735,10 @@ func PersistSnapshotAndNotify(ctx context.Context, validator *validation.Validat
 	NotifyWithRetry(ctx, db, channel, reportID)
 	return reportID, nil
 }
+
+func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
+	if config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
+		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
+	}
+	return nil
+}
