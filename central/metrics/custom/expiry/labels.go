@@ -6,10 +6,12 @@ import (
 
 var LazyLabels = tracker.LazyLabelGetters[*finding]{
 	"Component": func(f *finding) string { return f.component },
+	"Name":      func(f *finding) string { return f.name },
 }
 
 type finding struct {
 	component            string
+	name                 string
 	hoursUntilExpiration int
 }
 
