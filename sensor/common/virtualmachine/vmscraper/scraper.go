@@ -200,11 +200,8 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 	return nil
 }
 
-// handleNACK clears the cached token and applies the shared backoff so
-// the next tick resends a full report without tight-looping on persistent NACKs.
-//
-// Race with commitVMState after Send is accepted: a fast NACK may be
-// overwritten by a late success commit.
+// handleNACK clears lastToken and applies retry backoff so the next tick
+// resends a full report without tight-looping on persistent NACKs.
 func (s *VMScraper) handleNACK(resourceID string) {
 	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
 	if key == "" {
@@ -513,9 +510,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	newToken := result.Meta.GetReportToken()
-	s.commitVMState(key, vm.ID, newToken, result.Meta.GetAgentVersion())
+	next := s.commitVMState(key, vm.ID, snap.lastToken, snap.backoff, newToken, result.Meta.GetAgentVersion())
 	s.observeForwardInterarrival()
-	next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
 	totalElapsed := s.now().Sub(totalStart)
@@ -710,25 +706,27 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 	})
 }
 
-// commitVMState records the token from a just-sent report as key's cached scrape state.
-//
-// Race: If a NACK arrives from Central faster than this function completes, for example, due to:
-//   - a scheduling delay on the caller's goroutine between Send returning and this function
-//     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
-//   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
-//     function's lock acquisition,
-//
-// then the NACK will overwrite lastToken / backoff / nextAttemptAt, and then this code
-// will set the token (and a later scheduleAfterAttempt(scrapeOK) will reset backoff schedule).
-// This race is accepted for v1.
-func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, newToken string, agentVersion string) {
-	concurrency.WithLock(&s.mu, func() {
+// commitVMState records the just-sent report's token and agent version and
+// applies poll-cadence scheduling in the same lock, so a concurrent NACK
+// that changed lastToken or backoff is not overwritten.
+func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, expectedToken string, expectedBackoff time.Duration, newToken string, agentVersion string) time.Duration {
+	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		state, ok := s.vmState[key]
 		if !ok || state.vmID != vmID {
-			return
+			return 0
 		}
+		if state.lastToken != expectedToken || state.backoff != expectedBackoff {
+			return max(0, state.nextAttemptAt.Sub(s.now()))
+		}
+		now := s.now()
 		state.lastToken = newToken
-		state.lastForwardedAt = s.now()
+		state.lastForwardedAt = now
 		state.lastAgentVersion = agentVersion
+		state.backoff = 0
+		offset := randOffset(steadySpreadWidth(s.interval, s.spreadFraction), s.randFloat64())
+		metrics.PullScheduleOffsetSeconds.Observe(offset.Seconds())
+		delay := s.interval + offset
+		state.nextAttemptAt = now.Add(delay)
+		return delay
 	})
 }

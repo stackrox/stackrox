@@ -43,4 +43,4 @@ Using only the vsock CID is unsafe because a CID can be reused by a different VM
 
 The pair is not a per-report unique ID: multiple in-flight reports from the same VM with the same CID are still not fully distinguishable, so a stale ACK can match the latest entry instead of the one it was actually for.
 
-A NACK can also lose a race with the post-`Send` commit of `lastToken`, in which case the next poll may still see an "unchanged" delta.
+A NACK that changes `lastToken` or backoff before `commitVMState` runs is not overwritten by that commit. If `lastToken` is already empty and backoff is already at the cap, `nextBackoff` is a no-op, so that NACK is invisible to the commit.
