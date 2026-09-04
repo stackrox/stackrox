@@ -834,52 +834,13 @@ func deleteNamespace(t *testing.T, name string) {
 	}
 }
 
-// transientExecErrSubstrings are lower-cased substrings of `kubectl exec`
-// output/errors that indicate a transient transport-level failure (e.g. a
-// dropped SPDY/exec stream), as opposed to a non-zero exit from the command
-// that was actually executed in the pod.
-var transientExecErrSubstrings = []string{
-	"error: eof",
-	"unable to upgrade connection",
-	"broken pipe",
-	"connection reset",
-	"connection refused",
-	"the server has asked for the client to provide credentials",
-	"i/o timeout",
-	"tls handshake timeout",
-	"http2: client conn not usable",
-}
-
-// isTransientExecError reports whether err/output from a `kubectl exec`
-// invocation looks like a transient transport-level failure rather than a
-// genuine non-zero exit from the executed command.
-func isTransientExecError(err error, output string) bool {
-	if errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
-	lower := strings.ToLower(output)
-	for _, substr := range transientExecErrSubstrings {
-		if strings.Contains(lower, substr) {
-			return true
-		}
-	}
-	return false
-}
-
 // execInDeployment executes a command in a pod from the given deployment.
 // Assumes deployment pods have label app=<deploymentName> (set by privilegedDeploymentSpec).
 //
-// The pod is (re-)resolved and `kubectl exec` is retried on every attempt for a
-// bounded window, but only for transient transport-level failures (see
-// isTransientExecError), e.g. "error: EOF" from a dropped SPDY/websocket exec
-// channel, especially shortly after the target deployment has been
-// rolled/restarted (the pod name changes and the fresh pod's exec channel may
-// not be immediately usable). Re-listing pods each attempt also ensures we
-// exec into the current pod rather than a stale one. Without this, a single
-// transient exec failure would flake the test (see ROX-36497). A non-transient
-// failure (e.g. an invalid command or a genuine non-zero exit from the
-// executed command) fails the test immediately instead of retrying for the
-// full window.
+// The pod is re-resolved and `kubectl exec` is retried within a bounded window
+// to tolerate transient exec failures (e.g. "error: EOF" from a dropped exec
+// stream) shortly after the deployment has been rolled/restarted (see
+// ROX-36497).
 func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName, namespace string, command ...string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
@@ -907,14 +868,10 @@ func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName,
 		defer execCancel()
 		output, err := exec.CommandContext(execCtx, "kubectl", args...).CombinedOutput()
 		if err != nil {
-			wrapped := fmt.Errorf("executing command %v in pod %q: %w: %s", command, podName, err, string(output))
-			if !isTransientExecError(err, string(output)) {
-				t.Fatalf("kubectl exec failed (non-transient), not retrying: %s", wrapped)
-			}
-			return wrapped
+			return fmt.Errorf("executing command %v in pod %q: %w: %s", command, podName, err, string(output))
 		}
 		return nil
-	}, 3*time.Second, "kubectl exec failed (transient), retrying")
+	}, 3*time.Second, "kubectl exec failed, retrying")
 
 	t.Logf("Executed command %v in pod %q (deployment %q)", command, lastPod, deploymentName)
 }
