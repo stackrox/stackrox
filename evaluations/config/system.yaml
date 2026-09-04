@@ -1,0 +1,128 @@
+# lightspeed-evaluation system config for the deployment risk AI-summary harness.
+#
+# The harness runs in STATIC mode (agents.enabled: false): we generate the
+# candidate responses ourselves (harness/generate.py, direct LiteLLM calls) and
+# this framework only JUDGES them. Nothing here calls OpenShift Lightspeed.
+#
+# To change the judge model/provider, edit llm_pool.models + judge_panel below.
+# API keys are read from the environment (OPENAI_API_KEY, ANTHROPIC_API_KEY, ...).
+
+core:
+  max_threads: 1
+  cache_enabled: false
+
+llm_pool:
+  defaults:
+    timeout: 120
+    num_retries: 2
+    parameters:
+      temperature: 0.0
+      max_completion_tokens: 1024
+  models:
+    # The judge. Swap provider/model here to judge with a different LLM.
+    anthropic-judge:
+      provider: vertex_ai
+      model: claude-opus-4-8@default
+      parameters:
+        temperature: 1.0
+    # gpt-judge:
+    #   provider: openai
+    #   model: gpt-5.6-terra
+    #   parameters:
+    #     temperature: 1.0
+
+judge_panel:
+  judges:
+    - anthropic-judge
+    # - gpt-judge
+
+# We supply responses ourselves; the framework must not call any endpoint.
+agents:
+  enabled: false
+
+# Single holistic LLM-as-judge metric (GEval). It sees the query (which is the
+# FULL production prompt, including the DEPLOYMENT AND RISK DATA JSON) and the
+# candidate response, so no ground-truth expected_response is required. The four
+# former dimensions (format, grounding, concision, safety) are folded into one
+# criterion: one judge call per response instead of four, and a single score +
+# holistic reason to read.
+metrics_metadata:
+  turn_level:
+    "geval:risk_summary_quality":
+      threshold: 0.7
+      default: true
+      description: "Holistic quality of the risk summary: format, grounding, concision, and safety."
+      evaluation_params: [query, response]
+      criteria: |
+        Judge the response as a deployment risk summary produced from the
+        DEPLOYMENT AND RISK DATA JSON embedded in the query. Score overall
+        quality across the four dimensions below. A serious failure in any
+        single dimension must hold the overall score down. In the reason,
+        name which dimension(s) failed and quote the offending text.
+
+        1. FORMAT & STYLE
+        - Uses the exact section labels SUMMARY and RISK BREAKDOWN (omit
+          RISK BREAKDOWN only when it correctly states the deployment has no
+          significant risk, i.e. normalized score below 5).
+        - Plain text only: no markdown (no **, no backticks, no #). The only
+          exception is RISK BREAKDOWN bullet lines, which each start with "- ".
+        - RISK BREAKDOWN uses at most 4 bullets, one sentence each.
+        - Images are referenced by name only, without any tag or version
+          (e.g. "nginx", not "nginx:1.27.2").
+        - Suspicious processes are named by executable only, without any
+          technical suffix (e.g. "runc", not "runc:[1:CHILD]").
+        - Does NOT echo the instructions or section descriptions back.
+
+        2. FACTUAL GROUNDING
+        - Every concrete claim (image names, CVE counts, permission levels,
+          security-context flags, risk factors) is supported by the
+          DEPLOYMENT AND RISK DATA JSON.
+        - A CLUSTER_ADMIN service account, if present in the data, is
+          surfaced as a top-priority finding.
+        - Findings tied to a policy or compliance guideline are described as
+          the security risk they represent, not by the guideline name or code
+          (e.g. CIS, NIST, BSI, PCI-DSS).
+        - Penalize fabricated or invented images, numbers, findings, fields,
+          or compliance benchmarks not present in the data.
+
+        3. CONCISENESS & PRIORITIZATION
+        - Brief, declarative sentences with no filler or hedging.
+        - SUMMARY is 2-3 sentences and opens with the insight (why the risk
+          is high and the single most dangerous finding), not restated
+          name/namespace/cluster/score metadata already shown in the UI.
+
+        4. SAFETY
+        - No remediation instructions or commands the user could execute.
+
+        Penalize markdown, wrong or missing labels, exceeded item limits,
+        image tags/versions, process technical suffixes, guideline-name
+        dropping, hallucinations, padding, restating obvious metadata, or
+        any remediation.
+
+storage:
+  - type: file
+    output_dir: evaluations/output/framework
+    base_filename: evaluation
+    enabled_outputs:
+      - csv
+      - json
+      - txt
+    csv_columns:
+      - conversation_group_id
+      - turn_id
+      - metric_identifier
+      - score
+      - threshold
+      - result
+      - reason
+      - query
+      - response
+
+environment:
+  LITELLM_LOG: ERROR
+
+logging:
+  source_level: INFO
+  package_level: WARNING
+  log_format: '%(asctime)s - %(levelname)s - %(message)s'
+  show_timestamps: true
