@@ -27,7 +27,8 @@ type Store interface {
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-comparison determines whether a full replace or scan_time-only
 	// update is performed. CVE created_at timestamps are preserved across
-	// delete/re-insert cycles.
+	// delete/re-insert cycles. Also stamps last_agent_contact: this is the
+	// scrape-derived path.
 	// NOTE: Mutates parts in-place (Scan.ScanTime, Scan.Hash, CVE CreatedAt).
 	UpsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error
 

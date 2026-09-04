@@ -35,6 +35,7 @@ func (m *VirtualMachineV2) CloneVT() *VirtualMachineV2 {
 	r.GuestOs = m.GuestOs
 	r.State = m.State
 	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
+	r.LastAgentContact = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastAgentContact).CloneVT())
 	r.VsockCid = m.VsockCid
 	r.Hash = m.Hash
 	if rhs := m.Facts; rhs != nil {
@@ -117,6 +118,9 @@ func (this *VirtualMachineV2) EqualVT(that *VirtualMachineV2) bool {
 	if this.Hash != that.Hash {
 		return false
 	}
+	if !(*timestamppb1.Timestamp)(this.LastAgentContact).EqualVT((*timestamppb1.Timestamp)(that.LastAgentContact)) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -156,6 +160,16 @@ func (m *VirtualMachineV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.LastAgentContact != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastAgentContact).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x6a
 	}
 	if m.Hash != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Hash))
@@ -324,6 +338,10 @@ func (m *VirtualMachineV2) SizeVT() (n int) {
 	}
 	if m.Hash != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Hash))
+	}
+	if m.LastAgentContact != nil {
+		l = (*timestamppb1.Timestamp)(m.LastAgentContact).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -839,6 +857,42 @@ func (m *VirtualMachineV2) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastAgentContact", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastAgentContact == nil {
+				m.LastAgentContact = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastAgentContact).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1403,6 +1457,42 @@ func (m *VirtualMachineV2) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastAgentContact", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastAgentContact == nil {
+				m.LastAgentContact = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastAgentContact).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

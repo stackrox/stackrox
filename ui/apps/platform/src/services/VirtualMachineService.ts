@@ -217,7 +217,7 @@ export type VMNote =
     | 'VM_NOTE_MISSING_SCANNER'
     | 'VM_NOTE_SCAN_FAILED';
 
-export type AgentStatus = 'AGENT_STATUS_UNKNOWN' | 'AGENT_STATUS_ACTIVE';
+export type AgentStatus = 'AGENT_STATUS_UNKNOWN' | 'AGENT_STATUS_ACTIVE' | 'AGENT_STATUS_INACTIVE';
 
 export type VMScanInfo = {
     scanId: string;
