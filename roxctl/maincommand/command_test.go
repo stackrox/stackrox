@@ -5,8 +5,14 @@ import (
 	"strings"
 	"testing"
 
+	"encoding/json"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	versiontestutils "github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	cliIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
@@ -127,6 +133,34 @@ func buildCmdTree(c *cobra.Command) *cmdNode {
 		command.Commands[cmd.Name()] = buildCmdTree(cmd)
 	}
 	return command
+}
+
+func TestVersionCommand_TextOutput_ShowsCompatibleVersions(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	require.NoError(t, cmd.Execute())
+
+	output := out.String()
+	assert.Contains(t, output, "5.0.0")
+	assert.Contains(t, output, "Compatible Central versions:")
+}
+
+func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	cmd.SetArgs([]string{"--json"})
+	require.NoError(t, cmd.Execute())
+
+	var result roxctlVersions
+	require.NoError(t, json.Unmarshal(out.Bytes(), &result))
+	assert.Equal(t, "5.0.0", result.MainVersion)
+	assert.NotEmpty(t, result.CompatibleCentralVersions)
 }
 
 func Test_commandTree(t *testing.T) {
