@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/service/aisummary"
 	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
@@ -303,12 +304,11 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, err
 	}
 
-	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	query, err := aisummary.BuildQuery(deployment, risk)
 	if err != nil {
 		return nil, errors.Wrap(err, "building risk context for AI summary")
 	}
 
-	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
 	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
 		Query: query,
 	})
