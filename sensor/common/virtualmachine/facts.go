@@ -93,6 +93,20 @@ func AgentFactsFromResponseFacts(facts map[string]string) map[string]string {
 	return out
 }
 
+// AgentFactsFromResponse merges ResponseMeta.facts with AgentVersion. Version
+// is a sibling proto field, not a fact key, so it is attached here.
+func AgentFactsFromResponse(facts map[string]string, agentVersion string) map[string]string {
+	out := AgentFactsFromResponseFacts(facts)
+	if agentVersion == "" {
+		return out
+	}
+	if out == nil {
+		out = make(map[string]string, 1)
+	}
+	out[pkgVM.AgentVersionKey] = agentVersion
+	return out
+}
+
 // State is RUNNING when the VM instance is up, otherwise STOPPED.
 func State(vm *Info) v1.VirtualMachine_State {
 	if vm == nil {

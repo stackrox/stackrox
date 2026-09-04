@@ -501,7 +501,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	if result.Unchanged {
-		s.forwardAgentFactsIfChanged(ctx, vm, result.Meta.GetFacts())
+		s.forwardAgentFactsIfChanged(ctx, vm, result.Meta)
 		next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 		log.Debugf("VMScraper: unchanged report from roxagent on %q (token=%s)", key, snap.lastToken)
@@ -524,7 +524,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
-	s.persistAgentFacts(vm, result.Meta.GetFacts())
+	s.persistAgentFacts(vm, result.Meta)
 
 	// Mapping sync has its own deadline, so forward uses the scrape parent.
 	if err := s.forwardReport(ctx, vm, result.IndexReport); err != nil {
@@ -969,8 +969,8 @@ func (s *VMScraper) tryEnqueueVMUpdate(vm *virtualmachine.Info) {
 	}
 }
 
-func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]string) {
-	mapped, ok := snapshotAgentFacts(facts)
+func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, meta *pb.ResponseMeta) {
+	mapped, ok := snapshotAgentFacts(meta)
 	if !ok {
 		return
 	}
@@ -980,25 +980,25 @@ func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]
 	s.store.AddOrUpdate(vm.Copy())
 }
 
-// snapshotAgentFacts maps ResponseMeta.facts. ok is false when nothing maps,
-// so stored values stay as they are.
-func snapshotAgentFacts(facts map[string]string) (mapped map[string]string, ok bool) {
-	if len(facts) == 0 {
+// snapshotAgentFacts maps ResponseMeta onto AgentFacts. ok is false when
+// nothing maps, so stored values stay as they are.
+func snapshotAgentFacts(meta *pb.ResponseMeta) (mapped map[string]string, ok bool) {
+	if meta == nil {
 		return nil, false
 	}
-	mapped = virtualmachine.AgentFactsFromResponseFacts(facts)
+	mapped = virtualmachine.AgentFactsFromResponse(meta.GetFacts(), meta.GetAgentVersion())
 	return mapped, len(mapped) > 0
 }
 
 // forwardAgentFactsIfChanged emits a VM update when roxagent facts changed
 // even if the index report is unchanged. The store is updated only after
 // enqueue succeeds so a failed send is retried on the next unchanged scrape.
-func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, facts map[string]string) {
-	mapped, ok := snapshotAgentFacts(facts)
+func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, meta *pb.ResponseMeta) {
+	mapped, ok := snapshotAgentFacts(meta)
 	if !ok {
 		return
 	}
-	logAndRecordDiscoveredFacts(vm.Key(), facts)
+	logAndRecordDiscoveredFacts(vm.Key(), meta.GetFacts())
 	var prevFacts map[string]string
 	if prev := s.store.Get(vm.ID); prev != nil {
 		prevFacts = prev.AgentFacts

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
 )
@@ -68,6 +69,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.Equal(t, v2.VirtualMachine_RUNNING, first.GetState())
 				require.NotNil(t, first.GetScan())
 				require.NotNil(t, first.GetScan().GetScanTime())
+				requireForwardedAgentFacts(t, first.GetFacts())
 			})
 
 			t.Run("CentralScanComponents", func(t *testing.T) {
@@ -105,6 +107,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, detail.GetState())
 				require.NotNil(t, detail.GetLatestScan())
 				require.NotNil(t, detail.GetLatestScan().GetScanTime())
+				requireForwardedAgentFacts(t, detail.GetFacts())
 			})
 
 			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
@@ -263,6 +266,15 @@ func componentRowNames(comps []*v2.VMComponentRow) []string {
 		}
 	}
 	return names
+}
+
+func requireForwardedAgentFacts(t *testing.T, facts map[string]string) {
+	t.Helper()
+	require.NotEmpty(t, facts)
+	require.Regexp(t, `^Red Hat Enterprise Linux \d`, facts[pkgVM.DetectedGuestOSKey],
+		"facts.detectedGuestOS should be the versioned guest OS from roxagent")
+	require.NotEmpty(t, facts[pkgVM.AgentVersionKey],
+		"facts.agentVersion should be the roxagent version from ResponseMeta")
 }
 
 func distinctCVEIDs(cves []*v2.VMCVERow) []string {

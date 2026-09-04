@@ -13,6 +13,8 @@ const (
 	// DetectedGuestOSKey is the guest OS reported by roxagent, kept separate
 	// from GuestOSKey so KubeVirt informer data is not overwritten.
 	DetectedGuestOSKey = "detectedGuestOS"
+	// AgentVersionKey is the roxagent version from ResponseMeta.AgentVersion.
+	AgentVersionKey = "agentVersion"
 	// ActivationStatusKey is whether the guest OS is activated.
 	ActivationStatusKey = "activationStatus"
 	// DNFMetadataStatusKey is whether DNF metadata is available on the guest.
