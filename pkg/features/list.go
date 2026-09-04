@@ -146,6 +146,9 @@ var (
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 
+	// PolicyReports enables ingestion of wgpolicyk8s.io PolicyReport CRDs from external policy engines.
+	PolicyReports = registerFeature("Enables PolicyReport CRD ingestion from external policy engines", "ROX_POLICY_REPORTS")
+
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
