@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { defaultCountKeyMap as countKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import { getVulnerabilityManagementEntityTypesByRelationship } from 'utils/entityRelationships';
 import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
@@ -20,12 +21,18 @@ function RelatedEntitiesSideList({
     entityContext,
 }: RelatedEntitiesSideListProps): ReactNode {
     const workflowState = useContext(workflowStateContext);
+    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const { useCase } = workflowState;
     if (!useCase) {
         return null;
     }
 
-    const matches = getVulnerabilityManagementEntityTypesByRelationship(entityType, 'MATCHES')
+    const matchRelationships = getVulnerabilityManagementEntityTypesByRelationship(
+        entityType,
+        'MATCHES'
+    ).filter((rel) => isLegacyScannerEnabled || rel !== 'CLUSTER_CVE');
+
+    const matches = matchRelationships
         .map((matchEntity) => {
             const count = data[countKeyMap[matchEntity]];
 
