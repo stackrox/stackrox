@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -31,7 +31,21 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceIntegration)(nil)), "compliance_integrations")
+		schema = &walker.Schema{
+			Table:    "compliance_integrations",
+			Type:     "*storage.ComplianceIntegration",
+			TypeName: "ComplianceIntegration",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Compliance Operator Integration ID", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVersion()", false), Search: walker.SearchField{FieldName: "Compliance Operator Version", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "OperatorInstalled", ProtoBufName: "operator_installed", ColumnName: "OperatorInstalled", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetOperatorInstalled()", false), Search: walker.SearchField{FieldName: "Compliance Operator Installed", Enabled: true}},
+			{Schema: schema, Name: "OperatorStatus", ProtoBufName: "operator_status", ColumnName: "OperatorStatus", Type: "storage.COStatus", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.COStatus", ObjectGetter: walker.MakeObjectGetter("GetOperatorStatus()", false), Search: walker.SearchField{FieldName: "Compliance Operator Status", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[2].SetReference("Cluster", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -39,7 +53,15 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, "complianceintegration", (*storage.ComplianceIntegration)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                         {FieldPath: "complianceintegration.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_INTEGRATIONS},
+			"Compliance Operator Installed":      {FieldPath: "complianceintegration.operator_installed", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_INTEGRATIONS},
+			"Compliance Operator Integration ID": {FieldPath: "complianceintegration.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_INTEGRATIONS},
+			"Compliance Operator Status":         {FieldPath: "complianceintegration.operator_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_COMPLIANCE_INTEGRATIONS},
+			"Compliance Operator Version":        {FieldPath: "complianceintegration.version", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_INTEGRATIONS},
+		}))
+		enumregistry.AddValues("complianceintegration.operator_status", map[string]int32{"HEALTHY": 0, "UNHEALTHY": 1})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTERS,
 		}...)

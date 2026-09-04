@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -35,7 +35,43 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorReportSnapshotV2)(nil)), "compliance_operator_report_snapshot_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_report_snapshot_v2",
+			Type:     "*storage.ComplianceOperatorReportSnapshotV2",
+			TypeName: "ComplianceOperatorReportSnapshotV2",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_report_snapshot_v2_scans",
+			Type:         "*storage.ComplianceOperatorReportSnapshotV2_Scan",
+			TypeName:     "ComplianceOperatorReportSnapshotV2_Scan",
+			ObjectGetter: "GetScans()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "complianceOperatorReportSnapshotV2ReportId", ProtoBufName: "", ColumnName: "compliance_operator_report_snapshot_v2_ReportId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorReportSnapshotV2ReportId", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "ScanRefId", ProtoBufName: "scan_ref_id", ColumnName: "ScanRefId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanRefId()", false), Search: walker.SearchField{FieldName: "Scan Ref ID", Enabled: true}},
+			{Schema: child0, Name: "LastStartedTime", ProtoBufName: "last_started_time", ColumnName: "LastStartedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastStartedTime()", false), Search: walker.SearchField{FieldName: "Compliance Scan Last Started Time", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "ReportId")
+		child0.Fields[2].SetReference("ComplianceOperatorScanV2", "scan_ref_id", true, false, false, false)
+		child0.Fields[3].SetReference("ComplianceOperatorScanV2", "last_started_time", true, false, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "ReportId", ProtoBufName: "report_id", ColumnName: "ReportId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetReportId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "ScanConfigurationId", ProtoBufName: "scan_configuration_id", ColumnName: "ScanConfigurationId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanConfigurationId()", false), Search: walker.SearchField{FieldName: "Compliance Scan Config ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Compliance Report Name", Enabled: true}},
+			{Schema: schema, Name: "RunState", ProtoBufName: "run_state", ColumnName: "ReportStatus_RunState", Type: "storage.ComplianceOperatorReportStatus_RunState", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ComplianceOperatorReportStatus_RunState", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetRunState()", false), Search: walker.SearchField{FieldName: "Compliance Report State", Enabled: true}},
+			{Schema: schema, Name: "StartedAt", ProtoBufName: "started_at", ColumnName: "ReportStatus_StartedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetStartedAt()", false), Search: walker.SearchField{FieldName: "Compliance Report Started Time", Enabled: true}},
+			{Schema: schema, Name: "CompletedAt", ProtoBufName: "completed_at", ColumnName: "ReportStatus_CompletedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetCompletedAt()", false), Search: walker.SearchField{FieldName: "Compliance Report Completed Time", Enabled: true}},
+			{Schema: schema, Name: "ReportRequestType", ProtoBufName: "report_request_type", ColumnName: "ReportStatus_ReportRequestType", Type: "storage.ComplianceOperatorReportStatus_RunMethod", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ComplianceOperatorReportStatus_RunMethod", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetReportRequestType()", false), Search: walker.SearchField{FieldName: "Compliance Report Request Type", Enabled: true}},
+			{Schema: schema, Name: "ReportNotificationMethod", ProtoBufName: "report_notification_method", ColumnName: "ReportStatus_ReportNotificationMethod", Type: "storage.ComplianceOperatorReportStatus_NotificationMethod", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ComplianceOperatorReportStatus_NotificationMethod", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetReportNotificationMethod()", false), Search: walker.SearchField{FieldName: "Compliance Report Notification Method", Enabled: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "User_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetUser().GetId()", false), Search: walker.SearchField{FieldName: "User ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "User_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetUser().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("ComplianceOperatorScanConfigurationV2", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
 			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
@@ -44,7 +80,23 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, "complianceoperatorreportsnapshotv2", (*storage.ComplianceOperatorReportSnapshotV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, map[search.FieldLabel]*search.Field{
+			"Compliance Report Completed Time":      {FieldPath: "complianceoperatorreportsnapshotv2.report_status.completed_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Report Name":                {FieldPath: "complianceoperatorreportsnapshotv2.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Report Notification Method": {FieldPath: "complianceoperatorreportsnapshotv2.report_status.report_notification_method", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Report Request Type":        {FieldPath: "complianceoperatorreportsnapshotv2.report_status.report_request_type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Report Started Time":        {FieldPath: "complianceoperatorreportsnapshotv2.report_status.started_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Report State":               {FieldPath: "complianceoperatorreportsnapshotv2.report_status.run_state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Scan Config ID":             {FieldPath: "complianceoperatorreportsnapshotv2.scan_configuration_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Compliance Scan Last Started Time":     {FieldPath: "complianceoperatorreportsnapshotv2.scans.last_started_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"Scan Ref ID":                           {FieldPath: "complianceoperatorreportsnapshotv2.scans.scan_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"User ID":                               {FieldPath: "complianceoperatorreportsnapshotv2.user.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+			"User Name":                             {FieldPath: "complianceoperatorreportsnapshotv2.user.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT},
+		}))
+		enumregistry.AddValues("complianceoperatorreportsnapshotv2.report_status.report_notification_method", map[string]int32{"DOWNLOAD": 1, "EMAIL": 0})
+		enumregistry.AddValues("complianceoperatorreportsnapshotv2.report_status.report_request_type", map[string]int32{"ON_DEMAND": 0, "SCHEDULED": 1})
+		enumregistry.AddValues("complianceoperatorreportsnapshotv2.report_status.run_state", map[string]int32{"DELIVERED": 3, "FAILURE": 4, "GENERATED": 2, "PARTIAL_ERROR": 5, "PARTIAL_SCAN_ERROR_DOWNLOAD": 6, "PARTIAL_SCAN_ERROR_EMAIL": 7, "PREPARING": 1, "WAITING": 0})
+
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorReportSnapshotV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, schema)

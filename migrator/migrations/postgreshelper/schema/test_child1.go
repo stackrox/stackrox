@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,8 +19,22 @@ var (
 
 	// TestChild1Schema is the go schema for table `test_child1`.
 	TestChild1Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestChild1)(nil)), "test_child1")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(63), "testchild1", (*storage.TestChild1)(nil)))
+		var schema *walker.Schema
+		schema = &walker.Schema{
+			Table:    "test_child1",
+			Type:     "*storage.TestChild1",
+			TypeName: "TestChild1",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test Child1 ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test child1 count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Child1 Val", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(63), map[search.FieldLabel]*search.Field{
+			"Test Child1 ID":  {FieldPath: "testchild1.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(63)},
+			"Test Child1 Val": {FieldPath: "testchild1.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(63)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		return schema
 	}()

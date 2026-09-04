@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +29,23 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ClusterHealthStatus)(nil)), "cluster_health_statuses")
+		schema = &walker.Schema{
+			Table:    "cluster_health_statuses",
+			Type:     "*storage.ClusterHealthStatus",
+			TypeName: "ClusterHealthStatus",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "SensorHealthStatus", ProtoBufName: "sensor_health_status", ColumnName: "SensorHealthStatus", Type: "storage.ClusterHealthStatus_HealthStatusLabel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterHealthStatus_HealthStatusLabel", ObjectGetter: walker.MakeObjectGetter("GetSensorHealthStatus()", false), Search: walker.SearchField{FieldName: "Sensor Status", Enabled: true}},
+			{Schema: schema, Name: "CollectorHealthStatus", ProtoBufName: "collector_health_status", ColumnName: "CollectorHealthStatus", Type: "storage.ClusterHealthStatus_HealthStatusLabel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterHealthStatus_HealthStatusLabel", ObjectGetter: walker.MakeObjectGetter("GetCollectorHealthStatus()", false), Search: walker.SearchField{FieldName: "Collector Status", Enabled: true}},
+			{Schema: schema, Name: "OverallHealthStatus", ProtoBufName: "overall_health_status", ColumnName: "OverallHealthStatus", Type: "storage.ClusterHealthStatus_HealthStatusLabel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterHealthStatus_HealthStatusLabel", ObjectGetter: walker.MakeObjectGetter("GetOverallHealthStatus()", false), Search: walker.SearchField{FieldName: "Cluster Status", Enabled: true}},
+			{Schema: schema, Name: "AdmissionControlHealthStatus", ProtoBufName: "admission_control_health_status", ColumnName: "AdmissionControlHealthStatus", Type: "storage.ClusterHealthStatus_HealthStatusLabel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterHealthStatus_HealthStatusLabel", ObjectGetter: walker.MakeObjectGetter("GetAdmissionControlHealthStatus()", false), Search: walker.SearchField{FieldName: "Admission Control Status", Enabled: true}},
+			{Schema: schema, Name: "ScannerHealthStatus", ProtoBufName: "scanner_health_status", ColumnName: "ScannerHealthStatus", Type: "storage.ClusterHealthStatus_HealthStatusLabel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterHealthStatus_HealthStatusLabel", ObjectGetter: walker.MakeObjectGetter("GetScannerHealthStatus()", false), Search: walker.SearchField{FieldName: "Scanner Status", Enabled: true}},
+			{Schema: schema, Name: "LastContact", ProtoBufName: "last_contact", ColumnName: "LastContact", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastContact()", false), Search: walker.SearchField{FieldName: "Last Contact", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[0].SetReference("Cluster", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -37,7 +53,20 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_HEALTH, "clusterhealthstatus", (*storage.ClusterHealthStatus)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_HEALTH, map[search.FieldLabel]*search.Field{
+			"Admission Control Status": {FieldPath: "clusterhealthstatus.admission_control_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_HEALTH},
+			"Cluster Status":           {FieldPath: "clusterhealthstatus.overall_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_HEALTH},
+			"Collector Status":         {FieldPath: "clusterhealthstatus.collector_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_HEALTH},
+			"Last Contact":             {FieldPath: "clusterhealthstatus.last_contact.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_CLUSTER_HEALTH},
+			"Scanner Status":           {FieldPath: "clusterhealthstatus.scanner_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_HEALTH},
+			"Sensor Status":            {FieldPath: "clusterhealthstatus.sensor_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_HEALTH},
+		}))
+		enumregistry.AddValues("clusterhealthstatus.admission_control_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("clusterhealthstatus.collector_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("clusterhealthstatus.overall_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("clusterhealthstatus.scanner_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("clusterhealthstatus.sensor_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+
 		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_HEALTH, schema)

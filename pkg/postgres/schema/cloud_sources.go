@@ -3,14 +3,13 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,8 +26,24 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.CloudSource)(nil)), "cloud_sources")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLOUD_SOURCES, "cloudsource", (*storage.CloudSource)(nil)))
+		schema = &walker.Schema{
+			Table:    "cloud_sources",
+			Type:     "*storage.CloudSource",
+			TypeName: "CloudSource",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Integration Name", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.CloudSource_Type", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.CloudSource_Type", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Integration Type", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLOUD_SOURCES, map[search.FieldLabel]*search.Field{
+			"Integration Name": {FieldPath: "cloudsource.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_CLOUD_SOURCES},
+			"Integration Type": {FieldPath: "cloudsource.type", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_CLOUD_SOURCES},
+		}))
+		enumregistry.AddValues("cloudsource.type", map[string]int32{"TYPE_OCM": 2, "TYPE_PALADIN_CLOUD": 1, "TYPE_UNSPECIFIED": 0})
+
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableCloudSourcesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLOUD_SOURCES, schema)

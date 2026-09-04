@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,7 +37,49 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Node)(nil)), "nodes")
+		schema = &walker.Schema{
+			Table:    "nodes",
+			Type:     "*storage.Node",
+			TypeName: "Node",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "nodes_taints",
+			Type:         "*storage.Taint",
+			TypeName:     "Taint",
+			ObjectGetter: "GetTaints()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "nodeID", ProtoBufName: "", ColumnName: "nodes_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("nodeID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Key", ProtoBufName: "key", ColumnName: "Key", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey()", false), Search: walker.SearchField{FieldName: "Taint Key", Enabled: true}},
+			{Schema: child0, Name: "Value", ProtoBufName: "value", ColumnName: "Value", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetValue()", false), Search: walker.SearchField{FieldName: "Taint Value", Enabled: true}},
+			{Schema: child0, Name: "TaintEffect", ProtoBufName: "taint_effect", ColumnName: "TaintEffect", Type: "storage.TaintEffect", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TaintEffect", ObjectGetter: walker.MakeObjectGetter("GetTaintEffect()", false), Search: walker.SearchField{FieldName: "Taint Effect", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Node ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "node count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Node", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Node Label", Enabled: true}},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Search: walker.SearchField{FieldName: "Node Annotation", Enabled: true}},
+			{Schema: schema, Name: "JoinedAt", ProtoBufName: "joined_at", ColumnName: "JoinedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetJoinedAt()", false), Search: walker.SearchField{FieldName: "Node Join Time", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "ContainerRuntime_Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetContainerRuntime().GetVersion()", false), Search: walker.SearchField{FieldName: "Container Runtime", Enabled: true}},
+			{Schema: schema, Name: "OsImage", ProtoBufName: "os_image", ColumnName: "OsImage", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetOsImage()", false), Search: walker.SearchField{FieldName: "Operating System", Enabled: true}},
+			{Schema: schema, Name: "LastUpdated", ProtoBufName: "last_updated", ColumnName: "LastUpdated", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdated()", false), Search: walker.SearchField{FieldName: "Last Updated", Enabled: true}},
+			{Schema: schema, Name: "ScanTime", ProtoBufName: "scan_time", ColumnName: "Scan_ScanTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetScan().GetScanTime()", false), Search: walker.SearchField{FieldName: "Node Scan Time", Enabled: true}},
+			{Schema: schema, Name: "Components", ProtoBufName: "components", ColumnName: "Components", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetComponents()", false), Search: walker.SearchField{FieldName: "Component Count", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "Cves", ProtoBufName: "cves", ColumnName: "Cves", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetCves()", false), Search: walker.SearchField{FieldName: "CVE Count", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "FixableCves", ProtoBufName: "fixable_cves", ColumnName: "FixableCves", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetFixableCves()", false), Search: walker.SearchField{FieldName: "Fixable CVE Count", Enabled: true}},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Node Risk Priority", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "RiskScore", ProtoBufName: "risk_score", ColumnName: "RiskScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetRiskScore()", false), Search: walker.SearchField{FieldName: "Node Risk Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "node risk priority", DerivationType: search.SimpleReverseSortDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "TopCvss", ProtoBufName: "top_cvss", ColumnName: "TopCvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetTopCvss()", false), Search: walker.SearchField{FieldName: "Node Top CVSS", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[2].SetReference("Cluster", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -45,7 +87,121 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODES, "node", (*storage.Node)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODES, map[search.FieldLabel]*search.Field{
+			"Advisory Link":       {FieldPath: "node.scan.components.vulns.advisory.link", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Advisory Name":       {FieldPath: "node.scan.components.vulns.advisory.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"CISA KEV":            {FieldPath: "node.scan.components.vulnerabilities.cve_base_info.cisa_kev", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_NODES},
+			"CVE":                 {FieldPath: "node.scan.components.vulnerabilities.cve_base_info.cve", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"CVE Count":           {FieldPath: "node.SetCves.Cves", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_NODES},
+			"CVE Created Time":    {FieldPath: "node.scan.components.vulnerabilities.cve_base_info.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_NODES},
+			"CVE Published On":    {FieldPath: "node.scan.components.vulnerabilities.cve_base_info.published_on.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_NODES},
+			"CVE Snoozed":         {FieldPath: "node.scan.components.vulns.suppressed", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_NODES},
+			"CVSS":                {FieldPath: "node.scan.components.vulns.cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_NODES},
+			"Cluster":             {FieldPath: "node.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Cluster ID":          {FieldPath: "node.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Component":           {FieldPath: "node.scan.components.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Component Count":     {FieldPath: "node.SetComponents.Components", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_NODES},
+			"Component Version":   {FieldPath: "node.scan.components.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Container Runtime":   {FieldPath: "node.container_runtime.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"EPSS Probability":    {FieldPath: "node.scan.components.vulnerabilities.cve_base_info.epss.epss_probability", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_NODES},
+			"Fixable CVE Count":   {FieldPath: "node.SetFixable.FixableCves", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_NODES},
+			"Fixed By":            {FieldPath: "node.scan.components.vulns.SetFixedBy.FixedBy", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NODES},
+			"Last Updated":        {FieldPath: "node.last_updated.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_NODES},
+			"NVD CVSS":            {FieldPath: "node.scan.components.vulns.nvd_cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_NODES},
+			"Node":                {FieldPath: "node.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Node Annotation":     {FieldPath: "node.annotations", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_NODES},
+			"Node ID":             {FieldPath: "node.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Node Join Time":      {FieldPath: "node.joined_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_NODES},
+			"Node Label":          {FieldPath: "node.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_NODES},
+			"Node Risk Priority":  {FieldPath: "node.priority", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_NODES},
+			"Node Risk Score":     {FieldPath: "node.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_NODES},
+			"Node Scan Time":      {FieldPath: "node.scan.scan_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_NODES},
+			"Node Top CVSS":       {FieldPath: "node.SetTopCvss.TopCvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_NODES},
+			"Operating System":    {FieldPath: "node.os_image", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Taint Effect":        {FieldPath: "node.taints.taint_effect", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_NODES},
+			"Taint Key":           {FieldPath: "node.taints.key", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Taint Value":         {FieldPath: "node.taints.value", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_NODES},
+			"Vulnerability State": {FieldPath: "node.scan.components.vulns.state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_NODES},
+		}))
+		enumregistry.AddValues("node.container_runtime.type", map[string]int32{"CRIO_CONTAINER_RUNTIME": 2, "DOCKER_CONTAINER_RUNTIME": 1, "UNKNOWN_CONTAINER_RUNTIME": 0})
+		enumregistry.AddValues("node.notes", map[string]int32{"MISSING_SCAN_DATA": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_metrics.source", map[string]int32{"SOURCE_NVD": 3, "SOURCE_OSV": 2, "SOURCE_RED_HAT": 1, "SOURCE_UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.cvss_v3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.cve_base_info.score_version", map[string]int32{"UNKNOWN": 2, "V2": 0, "V3": 1})
+		enumregistry.AddValues("node.scan.components.vulnerabilities.severity", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_metrics.source", map[string]int32{"SOURCE_NVD": 3, "SOURCE_OSV": 2, "SOURCE_RED_HAT": 1, "SOURCE_UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("node.scan.components.vulns.cvss_v3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("node.scan.components.vulns.score_version", map[string]int32{"V2": 0, "V3": 1})
+		enumregistry.AddValues("node.scan.components.vulns.severity", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("node.scan.components.vulns.state", map[string]int32{"DEFERRED": 1, "FALSE_POSITIVE": 2, "OBSERVED": 0})
+		enumregistry.AddValues("node.scan.components.vulns.vulnerability_type", map[string]int32{"IMAGE_VULNERABILITY": 1, "ISTIO_VULNERABILITY": 3, "K8S_VULNERABILITY": 2, "NODE_VULNERABILITY": 4, "OPENSHIFT_VULNERABILITY": 5, "UNKNOWN_VULNERABILITY": 0})
+		enumregistry.AddValues("node.scan.components.vulns.vulnerability_types", map[string]int32{"IMAGE_VULNERABILITY": 1, "ISTIO_VULNERABILITY": 3, "K8S_VULNERABILITY": 2, "NODE_VULNERABILITY": 4, "OPENSHIFT_VULNERABILITY": 5, "UNKNOWN_VULNERABILITY": 0})
+		enumregistry.AddValues("node.scan.notes", map[string]int32{"CERTIFIED_RHEL_CVES_UNAVAILABLE": 3, "KERNEL_UNSUPPORTED": 2, "UNSET": 0, "UNSUPPORTED": 1})
+		enumregistry.AddValues("node.scan.scanner_version", map[string]int32{"SCANNER": 0, "SCANNER_V4": 1})
+		enumregistry.AddValues("node.taints.taint_effect", map[string]int32{"NO_EXECUTE_TAINT_EFFECT": 3, "NO_SCHEDULE_TAINT_EFFECT": 1, "PREFER_NO_SCHEDULE_TAINT_EFFECT": 2, "UNKNOWN_TAINT_EFFECT": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,

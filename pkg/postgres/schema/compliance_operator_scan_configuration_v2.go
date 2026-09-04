@@ -4,15 +4,14 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -45,7 +44,61 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanConfigurationV2)(nil)), "compliance_operator_scan_configuration_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_scan_configuration_v2",
+			Type:     "*storage.ComplianceOperatorScanConfigurationV2",
+			TypeName: "ComplianceOperatorScanConfigurationV2",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_scan_configuration_v2_profiles",
+			Type:         "*storage.ComplianceOperatorScanConfigurationV2_ProfileName",
+			TypeName:     "ComplianceOperatorScanConfigurationV2_ProfileName",
+			ObjectGetter: "GetProfiles()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "complianceOperatorScanConfigurationV2ID", ProtoBufName: "", ColumnName: "compliance_operator_scan_configuration_v2_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorScanConfigurationV2ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "ProfileName", ProtoBufName: "profile_name", ColumnName: "ProfileName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProfileName()", false), Search: walker.SearchField{FieldName: "Compliance Config Profile Name", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("ComplianceOperatorProfileV2", "name", true, false, false, false)
+		child1 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_scan_configuration_v2_clusters",
+			Type:         "*storage.ComplianceOperatorScanConfigurationV2_Cluster",
+			TypeName:     "ComplianceOperatorScanConfigurationV2_Cluster",
+			ObjectGetter: "GetClusters()",
+		}
+		child1.Fields = []walker.Field{
+			{Schema: child1, Name: "complianceOperatorScanConfigurationV2ID", ProtoBufName: "", ColumnName: "compliance_operator_scan_configuration_v2_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorScanConfigurationV2ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+		}
+		child1.Fields[0].SetParentReference(schema, "Id")
+		child1.Fields[2].SetReference("Cluster", "id", true, false, false, false)
+		child2 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_scan_configuration_v2_notifiers",
+			Type:         "*storage.NotifierConfiguration",
+			TypeName:     "NotifierConfiguration",
+			ObjectGetter: "GetNotifiers()",
+		}
+		child2.Fields = []walker.Field{
+			{Schema: child2, Name: "complianceOperatorScanConfigurationV2ID", ProtoBufName: "", ColumnName: "compliance_operator_scan_configuration_v2_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorScanConfigurationV2ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child2, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child2, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false)},
+		}
+		child2.Fields[0].SetParentReference(schema, "Id")
+		child2.Fields[2].SetReference("Notifier", "id", false, true, false, false)
+		schema.Children = []*walker.Schema{child0, child1, child2}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Compliance Scan Config ID", Enabled: true}},
+			{Schema: schema, Name: "ScanConfigName", ProtoBufName: "scan_config_name", ColumnName: "ScanConfigName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanConfigName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Compliance Scan Config Name", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "ModifiedBy_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetModifiedBy().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":                     ClustersSchema,
 			"storage.ComplianceOperatorProfileV2": ComplianceOperatorProfileV2Schema,
@@ -55,7 +108,18 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, "complianceoperatorscanconfigurationv2", (*storage.ComplianceOperatorScanConfigurationV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                     {FieldPath: "complianceoperatorscanconfigurationv2.clusters.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+			"Compliance Config Profile Name": {FieldPath: "complianceoperatorscanconfigurationv2.profiles.profile_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+			"Compliance Scan Config ID":      {FieldPath: "complianceoperatorscanconfigurationv2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+			"Compliance Scan Config Name":    {FieldPath: "complianceoperatorscanconfigurationv2.scan_config_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+			"User ID":                        {FieldPath: "complianceoperatorscanconfigurationv2.modified_by.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+			"User Name":                      {FieldPath: "complianceoperatorscanconfigurationv2.modified_by.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG},
+		}))
+		enumregistry.AddValues("complianceoperatorscanconfigurationv2.node_roles", map[string]int32{"INFRA": 0, "MASTER": 2, "WORKER": 1})
+		enumregistry.AddValues("complianceoperatorscanconfigurationv2.profile_refs.kind", map[string]int32{"OPERATOR_KIND_UNSPECIFIED": 0, "PROFILE": 1, "TAILORED_PROFILE": 2})
+		enumregistry.AddValues("complianceoperatorscanconfigurationv2.schedule.interval_type", map[string]int32{"DAILY": 1, "MONTHLY": 3, "UNSET": 0, "WEEKLY": 2})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_COMPLIANCE_SCAN_CONFIG,
 		}...)

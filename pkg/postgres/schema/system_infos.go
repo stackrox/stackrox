@@ -3,9 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,7 +24,16 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.SystemInfo)(nil)), "system_infos")
+		schema = &walker.Schema{
+			Table:    "system_infos",
+			Type:     "*storage.SystemInfo",
+			TypeName: "SystemInfo",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "BackupInfo_Requestor_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetBackupInfo().GetRequestor().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSystemInfosStmt)
 		return schema

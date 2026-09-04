@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,8 +26,22 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "api_tokens")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_API_TOKEN, "tokenmetadata", (*storage.TokenMetadata)(nil)))
+		schema = &walker.Schema{
+			Table:    "api_tokens",
+			Type:     "*storage.TokenMetadata",
+			TypeName: "TokenMetadata",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Expiration", ProtoBufName: "expiration", ColumnName: "Expiration", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetExpiration()", false), Search: walker.SearchField{FieldName: "Expiration", Enabled: true}},
+			{Schema: schema, Name: "Revoked", ProtoBufName: "revoked", ColumnName: "Revoked", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetRevoked()", false), Search: walker.SearchField{FieldName: "Revoked", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_API_TOKEN, map[search.FieldLabel]*search.Field{
+			"Expiration": {FieldPath: "tokenmetadata.expiration.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_API_TOKEN},
+			"Revoked":    {FieldPath: "tokenmetadata.revoked", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_API_TOKEN},
+		}))
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableAPITokensStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_API_TOKEN, schema)

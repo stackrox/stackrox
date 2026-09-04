@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,8 +26,24 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.SecuredUnits)(nil)), "secured_units")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_USAGE, "securedunits", (*storage.SecuredUnits)(nil)))
+		schema = &walker.Schema{
+			Table:    "secured_units",
+			Type:     "*storage.SecuredUnits",
+			TypeName: "SecuredUnits",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Timestamp", ProtoBufName: "timestamp", ColumnName: "Timestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamp()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Administration Usage Timestamp", Enabled: true}},
+			{Schema: schema, Name: "NumNodes", ProtoBufName: "num_nodes", ColumnName: "NumNodes", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetNumNodes()", false), Search: walker.SearchField{FieldName: "Administration Usage Nodes", Enabled: true}},
+			{Schema: schema, Name: "NumCpuUnits", ProtoBufName: "num_cpu_units", ColumnName: "NumCpuUnits", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetNumCpuUnits()", false), Search: walker.SearchField{FieldName: "Administration Usage CPU Units", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_USAGE, map[search.FieldLabel]*search.Field{
+			"Administration Usage CPU Units": {FieldPath: "securedunits.num_cpu_units", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_USAGE},
+			"Administration Usage Nodes":     {FieldPath: "securedunits.num_nodes", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_USAGE},
+			"Administration Usage Timestamp": {FieldPath: "securedunits.timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_USAGE},
+		}))
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSecuredUnitsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_USAGE, schema)

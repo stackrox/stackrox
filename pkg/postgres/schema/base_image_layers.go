@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,18 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageLayer)(nil)), "base_image_layers")
+		schema = &walker.Schema{
+			Table:    "base_image_layers",
+			Type:     "*storage.BaseImageLayer",
+			TypeName: "BaseImageLayer",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "LayerDigest", ProtoBufName: "layer_digest", ColumnName: "LayerDigest", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetLayerDigest()", false), Search: walker.SearchField{FieldName: "Base Image Layer Digest", Enabled: true}},
+			{Schema: schema, Name: "Index", ProtoBufName: "index", ColumnName: "Index", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetIndex()", false), Search: walker.SearchField{FieldName: "Base Image Index", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.BaseImage": BaseImagesSchema,
 		}
@@ -36,7 +45,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_BASE_IMAGE_LAYERS, "baseimagelayer", (*storage.BaseImageLayer)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BASE_IMAGE_LAYERS, map[search.FieldLabel]*search.Field{
+			"Base Image Index":        {FieldPath: "baseimagelayer.index", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_BASE_IMAGE_LAYERS},
+			"Base Image Layer Digest": {FieldPath: "baseimagelayer.layer_digest", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_BASE_IMAGE_LAYERS},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_BASE_IMAGES,
 			v1.SearchCategory_BASE_IMAGE_LAYERS,

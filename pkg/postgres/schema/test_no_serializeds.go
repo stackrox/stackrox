@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,8 +34,60 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestNoSerialized)(nil)), "test_no_serializeds", walker.WithNoSerialized())
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(200), "testnoserialized", (*storage.TestNoSerialized)(nil)))
+		schema = &walker.Schema{
+			Table:        "test_no_serializeds",
+			Type:         "*storage.TestNoSerialized",
+			TypeName:     "TestNoSerialized",
+			NoSerialized: true,
+			SubMessages: map[string]string{
+				"Metadata": "storage.TestNoSerialized_Metadata",
+			},
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "test_no_serializeds_labels",
+			Type:         "*storage.TestNoSerialized_Label",
+			TypeName:     "TestNoSerialized_Label",
+			ObjectGetter: "GetLabels()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "testNoSerializedID", ProtoBufName: "", ColumnName: "test_no_serializeds_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("testNoSerializedID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Key", ProtoBufName: "key", ColumnName: "Key", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey()", false)},
+			{Schema: child0, Name: "Value", ProtoBufName: "value", ColumnName: "Value", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetValue()", false)},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test NoSer ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Test NoSer Name", Enabled: true}},
+			{Schema: schema, Name: "Description", ProtoBufName: "description", ColumnName: "Description", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDescription()", false)},
+			{Schema: schema, Name: "Int32Val", ProtoBufName: "int32_val", ColumnName: "Int32Val", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetInt32Val()", false)},
+			{Schema: schema, Name: "Int64Val", ProtoBufName: "int64_val", ColumnName: "Int64Val", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetInt64Val()", false)},
+			{Schema: schema, Name: "Uint64Val", ProtoBufName: "uint64_val", ColumnName: "Uint64Val", Type: "uint64", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "uint64", ObjectGetter: walker.MakeObjectGetter("GetUint64Val()", false)},
+			{Schema: schema, Name: "BoolVal", ProtoBufName: "bool_val", ColumnName: "BoolVal", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetBoolVal()", false)},
+			{Schema: schema, Name: "FloatVal", ProtoBufName: "float_val", ColumnName: "FloatVal", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetFloatVal()", false)},
+			{Schema: schema, Name: "DoubleVal", ProtoBufName: "double_val", ColumnName: "DoubleVal", Type: "float64", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float64", ObjectGetter: walker.MakeObjectGetter("GetDoubleVal()", false)},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "storage.TestNoSerialized_Priority", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TestNoSerialized_Priority", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Test NoSer Priority", Enabled: true}},
+			{Schema: schema, Name: "CreatedAt", ProtoBufName: "created_at", ColumnName: "CreatedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCreatedAt()", false), Search: walker.SearchField{FieldName: "Test NoSer Created At", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test NoSer Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Tags", ProtoBufName: "tags", ColumnName: "Tags", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetTags()", false), Search: walker.SearchField{FieldName: "Test NoSer Tags", Enabled: true}},
+			{Schema: schema, Name: "Author", ProtoBufName: "author", ColumnName: "Metadata_Author", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetAuthor()", false)},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Metadata_Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetVersion()", false)},
+			{Schema: schema, Name: "Revision", ProtoBufName: "revision", ColumnName: "Metadata_Revision", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetRevision()", false)},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "[]*storage.TestNoSerialized_Annotation", DataType: postgres.MessageBytes, SQLType: "bytea", ModelType: "[]*storage.TestNoSerialized_Annotation", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Options: walker.PostgresOptions{RepeatedStrategy: "bytea"}},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(200), map[search.FieldLabel]*search.Field{
+			"Test NoSer Cluster ID": {FieldPath: "testnoserialized.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(200)},
+			"Test NoSer Created At": {FieldPath: "testnoserialized.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory(200)},
+			"Test NoSer ID":         {FieldPath: "testnoserialized.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory(200)},
+			"Test NoSer Name":       {FieldPath: "testnoserialized.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(200)},
+			"Test NoSer Priority":   {FieldPath: "testnoserialized.priority", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory(200)},
+			"Test NoSer Tags":       {FieldPath: "testnoserialized.tags", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(200)},
+		}))
+		enumregistry.AddValues("testnoserialized.priority", map[string]int32{"CRITICAL_PRIORITY": 4, "HIGH_PRIORITY": 3, "LOW_PRIORITY": 1, "MEDIUM_PRIORITY": 2, "UNSET_PRIORITY": 0})
+
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestNoSerializedsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(200), schema)
