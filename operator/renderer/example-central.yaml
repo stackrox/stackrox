@@ -1,0 +1,41 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+spec:
+  central:
+    adminPasswordGenerationDisabled: false
+    exposure:
+      loadBalancer:
+        enabled: false
+      nodePort:
+        enabled: false
+      route:
+        enabled: false
+    notifierSecretsEncryption:
+      enabled: false
+    persistence:
+      persistentVolumeClaim:
+        claimName: ""
+        createClaim: true
+        size: 100Gi
+        storageClass: ""
+    telemetry:
+      enabled: true
+  egress:
+    connectivityPolicy: Online
+  scanner:
+    analyzer:
+      scaling:
+        autoScaling: Enabled
+        maxReplicas: 5
+        minReplicas: 2
+        replicas: 3
+    db:
+      persistence:
+        persistentVolumeClaim:
+          claimName: ""
+          createClaim: true
+          size: 100Gi
+          storageClass: ""
