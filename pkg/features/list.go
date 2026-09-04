@@ -219,4 +219,7 @@ var (
 
 	// ScannerV4SuppressOSVWithRedHatVEX suppresses OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists.
 	ScannerV4SuppressOSVWithRedHatVEX = registerFeature("Scanner V4 will suppress OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists", "ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX", enabled)
+
+	// AiIntegration enables AI integration APIs for connecting to services like OpenShift Lightspeed.
+	AiIntegration = registerFeature("Enable AI integration", "ROX_AI_INTEGRATION")
 )

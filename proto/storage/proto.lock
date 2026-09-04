@@ -195,6 +195,65 @@
       }
     },
     {
+      "protopath": "ai_integration.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "AiIntegrationType",
+            "enum_fields": [
+              {
+                "name": "AI_INTEGRATION_TYPE_UNSPECIFIED"
+              },
+              {
+                "name": "AI_INTEGRATION_TYPE_OLS",
+                "integer": 1
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "AiIntegration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "AiIntegrationType"
+              },
+              {
+                "id": 4,
+                "name": "service_url",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
       "protopath": "alert.proto",
       "def": {
         "enums": [

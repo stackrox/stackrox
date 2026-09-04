@@ -7,13 +7,14 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,16 +24,18 @@ const (
 	defaultRequestTimeout = 30 * time.Second
 )
 
-var (
-	// LightspeedEndpoint is the URL of the OpenShift Lightspeed API. URL will be populated from integration in a follow up PR
-	LightspeedEndpoint = env.RegisterSetting("ROX_LIGHTSPEED_ENDPOINT",
-		env.WithDefault("https://lightspeed-app-server.openshift-lightspeed.svc:8443"))
-)
+var log = logging.LoggerForModule()
+
+// EndpointResolver provides the AI integration endpoint. If no integration
+// is configured it returns ("", false, nil) so the client can fall back to
+// the environment variable.
+type EndpointResolver interface {
+	GetEndpoint(ctx context.Context) (string, bool, error)
+}
 
 // QueryRequest is the request payload for the OLS query API.
 type QueryRequest struct {
-	Query   string `json:"query"`
-	Context string `json:"context,omitempty"`
+	Query string `json:"query"`
 }
 
 // QueryResponse is the response payload from the OLS query API.
@@ -47,10 +50,11 @@ type Client interface {
 
 // NewClient creates a Client that authenticates with the OLS API using the
 // pod's Kubernetes service account token and trusts the service CA.
-func NewClient() Client {
+// The resolver is used to look up the endpoint from a stored AI integration.
+func NewClient(resolver EndpointResolver) Client {
 	return &clientImpl{
 		loadToken: satoken.LoadTokenFromFile,
-		endpoint:  LightspeedEndpoint.Setting(),
+		resolver:  resolver,
 		httpClient: &http.Client{
 			Transport: transportWithServiceCA(),
 			Timeout:   defaultRequestTimeout,
@@ -60,7 +64,7 @@ func NewClient() Client {
 
 type clientImpl struct {
 	loadToken  func() (string, error)
-	endpoint   string
+	resolver   EndpointResolver
 	httpClient *http.Client
 }
 
@@ -82,7 +86,23 @@ func transportWithServiceCA() http.RoundTripper {
 	}
 }
 
+func (c *clientImpl) resolveEndpoint(ctx context.Context) (string, error) {
+	if c.resolver != nil {
+		if endpoint, exists, err := c.resolver.GetEndpoint(ctx); err != nil {
+			return "", errors.Wrap(err, "resolving AI integration endpoint")
+		} else if exists && endpoint != "" {
+			return endpoint, nil
+		}
+	}
+	return "", errors.New("AI integration not configured")
+}
+
 func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error) {
+	endpoint, err := c.resolveEndpoint(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	token, err := c.loadToken()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading service account token")
@@ -93,7 +113,10 @@ func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryRespon
 		return nil, errors.Wrap(err, "marshaling request")
 	}
 
-	url := fmt.Sprintf("%s/v1/query", c.endpoint)
+	url := fmt.Sprintf("%s/v1/query", endpoint)
+	log.Debugf("OLS request URL: %s, body length: %d bytes", url, len(body))
+	log.Debugf("OLS request body: %s", string(body))
+
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, errors.Wrap(err, "building HTTP request")
@@ -109,7 +132,9 @@ func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryRespon
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("Lightspeed API returned HTTP %d", resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Errorf("OLS returned HTTP %d, response body: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("Lightspeed API returned HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	var result QueryResponse

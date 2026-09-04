@@ -1,6 +1,7 @@
 package service
 
 import (
+	aiIntegrationDS "github.com/stackrox/rox/central/aiintegration/datastore"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -18,7 +19,8 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), processIndicatorDataStore.Singleton(), processBaselineDataStore.Singleton(), processBaselineResultsStore.Singleton(), riskDataStore.Singleton(), manager.Singleton(), olsClient.NewClient())
+	resolver := olsClient.NewIntegrationResolver(aiIntegrationDS.Singleton())
+	as = New(datastore.Singleton(), processIndicatorDataStore.Singleton(), processBaselineDataStore.Singleton(), processBaselineResultsStore.Singleton(), riskDataStore.Singleton(), manager.Singleton(), olsClient.NewClient(resolver))
 }
 
 // Singleton provides the instance of the Service interface to register.

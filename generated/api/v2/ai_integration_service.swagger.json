@@ -1,0 +1,288 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/ai_integration_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AiIntegrationService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/ai-integrations": {
+      "get": {
+        "summary": "ListAiIntegrations returns all configured AI integrations.",
+        "operationId": "AiIntegrationService_ListAiIntegrations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListAiIntegrationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "AiIntegrationService"
+        ]
+      },
+      "post": {
+        "summary": "CreateAiIntegration creates a new AI integration.",
+        "operationId": "AiIntegrationService_CreateAiIntegration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2AiIntegration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2AiIntegration"
+            }
+          }
+        ],
+        "tags": [
+          "AiIntegrationService"
+        ]
+      }
+    },
+    "/v2/ai-integrations/test": {
+      "post": {
+        "summary": "TestAiIntegration tests connectivity to an AI integration endpoint.",
+        "operationId": "AiIntegrationService_TestAiIntegration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2AiIntegration"
+            }
+          }
+        ],
+        "tags": [
+          "AiIntegrationService"
+        ]
+      }
+    },
+    "/v2/ai-integrations/{id}": {
+      "get": {
+        "summary": "GetAiIntegration returns a single AI integration by ID.",
+        "operationId": "AiIntegrationService_GetAiIntegration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2AiIntegration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AiIntegrationService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteAiIntegration deletes an AI integration by ID.",
+        "operationId": "AiIntegrationService_DeleteAiIntegration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AiIntegrationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateAiIntegration updates an existing AI integration.",
+        "operationId": "AiIntegrationService_UpdateAiIntegration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AiIntegrationServiceUpdateAiIntegrationBody"
+            }
+          }
+        ],
+        "tags": [
+          "AiIntegrationService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AiIntegrationServiceUpdateAiIntegrationBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2AiIntegrationType"
+        },
+        "serviceUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AiIntegration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2AiIntegrationType"
+        },
+        "serviceUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "v2AiIntegrationType": {
+      "type": "string",
+      "enum": [
+        "AI_INTEGRATION_TYPE_UNSPECIFIED",
+        "AI_INTEGRATION_TYPE_OLS"
+      ],
+      "default": "AI_INTEGRATION_TYPE_UNSPECIFIED"
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2ListAiIntegrationsResponse": {
+      "type": "object",
+      "properties": {
+        "integrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2AiIntegration"
+          }
+        }
+      }
+    }
+  }
+}
