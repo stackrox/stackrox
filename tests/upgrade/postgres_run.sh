@@ -184,7 +184,7 @@ test_upgrade_paths() {
       wait_for_central_db
 
       roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-              central backup --output "postgres_db_${PREVIOUS_RELEASES[@]}.sql.zip"
+              central backup --output "postgres_db_${str}.sql.zip"
 
       info "SHREWS"
       ls ./postgres*
