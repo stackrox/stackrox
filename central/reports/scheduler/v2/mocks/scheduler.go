@@ -73,6 +73,20 @@ func (mr *MockSchedulerMockRecorder) CancelReportRequest(ctx, reportID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelReportRequest", reflect.TypeOf((*MockScheduler)(nil).CancelReportRequest), ctx, reportID)
 }
 
+// GetScheduledConfigIDs mocks base method.
+func (m *MockScheduler) GetScheduledConfigIDs() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledConfigIDs")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetScheduledConfigIDs indicates an expected call of GetScheduledConfigIDs.
+func (mr *MockSchedulerMockRecorder) GetScheduledConfigIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledConfigIDs", reflect.TypeOf((*MockScheduler)(nil).GetScheduledConfigIDs))
+}
+
 // RemoveReportSchedule mocks base method.
 func (m *MockScheduler) RemoveReportSchedule(reportConfigID string) {
 	m.ctrl.T.Helper()

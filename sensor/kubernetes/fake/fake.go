@@ -15,16 +15,13 @@ import (
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,48 +39,7 @@ const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
 
 	defaultNamespaceNum = 30
-
-	// Starting CID for VM population. This is used as a part of the name and its value does not matter
-	// as long as it is unique and different than 0, 1, and 2 (reserved values).
-	vmBaseVSOCKCID = uint32(1000)
-
-	// reportGeneratorSeed is the seed for deterministic package selection in VM index reports.
-	reportGeneratorSeed = int64(42)
 )
-
-// vmReadiness encapsulates the three readiness signals needed before VM workload can start
-type vmReadiness struct {
-	handlerReady concurrency.Signal
-	storeReady   concurrency.Signal
-	centralReady concurrency.Signal
-}
-
-func newVMReadiness() *vmReadiness {
-	return &vmReadiness{
-		handlerReady: concurrency.NewSignal(),
-		storeReady:   concurrency.NewSignal(),
-		centralReady: concurrency.NewSignal(),
-	}
-}
-
-func (r *vmReadiness) signalHandlerReady() { r.handlerReady.Signal() }
-func (r *vmReadiness) signalStoreReady()   { r.storeReady.Signal() }
-func (r *vmReadiness) signalCentralReady() { r.centralReady.Signal() }
-func (r *vmReadiness) resetCentralReady()  { r.centralReady.Reset() }
-
-// Wait blocks until all three signals are ready. Returns true if all ready, false if context cancelled.
-func (r *vmReadiness) Wait(ctx context.Context) bool {
-	if !concurrency.WaitInContext(&r.handlerReady, ctx) {
-		return false
-	}
-	if !concurrency.WaitInContext(&r.storeReady, ctx) {
-		return false
-	}
-	if !concurrency.WaitInContext(&r.centralReady, ctx) {
-		return false
-	}
-	return true
-}
 
 var (
 	log = logging.LoggerForModule()
@@ -157,15 +113,10 @@ type WorkloadManager struct {
 	dockerSecretNamespaces    []string
 
 	// signals services
-	servicesInitialized  concurrency.Signal
-	processes            signal.Pipeline
-	networkManager       manager.Manager
-	vmIndexReportHandler index.Handler
-	vmStore              *vmStore.VirtualMachineStore
-	pubSubDispatcher     common.PubSubDispatcher
-
-	// VM readiness coordinator
-	vmPrerequisitesReady *vmReadiness
+	servicesInitialized concurrency.Signal
+	processes           signal.Pipeline
+	networkManager      manager.Manager
+	pubSubDispatcher    common.PubSubDispatcher
 
 	// shutdown coordination
 	shutdownCtx    context.Context
@@ -281,19 +232,18 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
-		db:                   db,
-		workload:             &workload,
-		originatorCache:      NewOriginatorCache(),
-		labelsPool:           config.labelsPool,
-		endpointPool:         config.endpointPool,
-		ipPool:               config.ipPool,
-		externalIpPool:       config.externalIpPool,
-		containerPool:        config.containerPool,
-		processPool:          config.processPool,
-		servicesInitialized:  concurrency.NewSignal(),
-		vmPrerequisitesReady: newVMReadiness(),
-		shutdownCtx:          shutdownCtx,
-		shutdownCancel:       shutdownCancel,
+		db:                  db,
+		workload:            &workload,
+		originatorCache:     NewOriginatorCache(),
+		labelsPool:          config.labelsPool,
+		endpointPool:        config.endpointPool,
+		ipPool:              config.ipPool,
+		externalIpPool:      config.externalIpPool,
+		containerPool:       config.containerPool,
+		processPool:         config.processPool,
+		servicesInitialized: concurrency.NewSignal(),
+		shutdownCtx:         shutdownCtx,
+		shutdownCancel:      shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -332,35 +282,9 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
-// SetVMIndexReportHandler sets the handler that will accept VM index reports
-func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
-	w.vmIndexReportHandler = handler
-	w.vmPrerequisitesReady.signalHandlerReady()
-}
-
-// SetVMStore sets the VirtualMachineStore
-func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
-	log.Debugf("SetVMStore called: store=%p, poolSize=%d", store, w.workload.VirtualMachineWorkload.PoolSize)
-	w.vmStore = store
-	w.vmPrerequisitesReady.signalStoreReady()
-	log.Debugf("SetVMStore completed (VMs will be populated by informer events)")
-}
-
 // SetPubSubDispatcher sets the pub/sub dispatcher for publishing synthetic file activities
 func (w *WorkloadManager) SetPubSubDispatcher(dispatcher common.PubSubDispatcher) {
 	w.pubSubDispatcher = dispatcher
-}
-
-// Notify implements common.Notifiable to receive Sensor component event notifications
-func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		log.Debugf("WorkloadManager: Central is reachable, signaling VM workload can start")
-		w.vmPrerequisitesReady.signalCentralReady()
-	case common.SensorComponentEventOfflineMode:
-		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
-		w.vmPrerequisitesReady.resetCentralReady()
-	}
 }
 
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
@@ -547,27 +471,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	// Start VirtualMachine/VirtualMachineInstance workload if configured.
-	// This unified workload handles both informer events AND index reports.
-	// Index reports are only sent while VMs are "alive" in the lifecycle.
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
-		// Initialize report generator if index reports are enabled
-		var reportGen *vmindexreport.Generator
-		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
-			reportGen = vmindexreport.NewGeneratorWithSeed(
-				w.workload.VirtualMachineWorkload.NumPackages,
-				reportGeneratorSeed,
-			)
-			log.Infof("VM index reports enabled: interval=%s, packages=%d",
-				w.workload.VirtualMachineWorkload.ReportInterval,
-				w.workload.VirtualMachineWorkload.NumPackages)
-		}
-
-		// Fork management of VM/VMI resources (including index reports if enabled)
 		workload := w.workload.VirtualMachineWorkload
 		for i := range workload.PoolSize {
 			w.wg.Add(1)
-			cid := vmBaseVSOCKCID + uint32(i)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, cid, reportGen)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, i)
 		}
 	}
 }

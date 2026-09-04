@@ -31,7 +31,7 @@ func writeFile(t *testing.T, path, content string) {
 func newSensorUpdater(t *testing.T, cachePath, bundledPath string, onChange func()) *SensorUpdater {
 	t.Helper()
 	u := NewSensorUpdater(cachePath, bundledPath, onChange)
-	t.Cleanup(u.waitPersist)
+	t.Cleanup(u.WaitPersist)
 	return u
 }
 
@@ -39,7 +39,7 @@ func newSensorUpdater(t *testing.T, cachePath, bundledPath string, onChange func
 // checks cachePath, so the assertion cannot race AtomicWriteFile.
 func waitForCacheContent(t *testing.T, u *SensorUpdater, cachePath, want string) {
 	t.Helper()
-	u.waitPersist()
+	u.WaitPersist()
 	b, err := os.ReadFile(cachePath)
 	require.NoError(t, err)
 	assert.Equal(t, want, string(b), "expected %q to be persisted to %s", want, cachePath)

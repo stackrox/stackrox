@@ -2,7 +2,7 @@
 
 VM index reports flow directly from Sensor to Central; Compliance is not involved (see `compliance/ACK_MODEL.md` for the separate node-scanning ACK model, which does go through Compliance).
 
-`VMScraper` pulls reports from each running VM's roxagent over VSOCK and forwards successful reports to Central through `vmIndex.Handler`, which wraps the Scanner V4 payload as a `v1.IndexReport`.
+`VMScraper` pulls reports from each running VM's roxagent over VSOCK and forwards successful reports to Central on `ResponsesC`, wrapping the Scanner V4 payload as a `v1.IndexReport`.
 
 A successful forward already returns the VM to poll cadence. Central's ACK is counted (`IndexReportAcksReceived`) and otherwise ignored. A NACK clears cached `report_token` and applies the shared retry backoff so the next attempt pulls a full report. There is no payload cache and no ACK timeout.
 
@@ -12,19 +12,17 @@ A short tick (`ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL`, default 10s) walks t
 
 Retryable pull failures and NACKs share one exponential backoff (`ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF`, default 10s, doubled each time, capped at `min(pollInterval, 30m)`).
 
-Central's `SensorACK` is delivered to Sensor components whose `Accepts()` matches. `Handler` advertises `SensorACKSupport` so Central sends these ACKs; only `VMScraper` accepts `SensorACK_VM_INDEX_REPORT`.
+Central's `SensorACK` is delivered to Sensor components whose `Accepts()` matches. `VMScraper` advertises `SensorACKSupport` so Central sends these ACKs, and it is the only component that accepts `SensorACK_VM_INDEX_REPORT`.
 
 ```mermaid
 sequenceDiagram
     participant A as roxagent inside VM
     participant Sc as Sensor VMScraper
-    participant H as Sensor Handler
     participant X as Central VM pipeline
 
     Sc->>A: GetReport (VSOCK, when the VM is due)
     A-->>Sc: index report
-    Sc->>H: Send(report)
-    H->>X: SensorEvent(vmID, index report)
+    Sc->>X: SensorEvent(vmID, index report)
     X-->>Sc: SensorACK(vmID:vsockCID, ACK|NACK, reason)
 
     alt ACK
@@ -43,4 +41,4 @@ Using only the vsock CID is unsafe because a CID can be reused by a different VM
 
 The pair is not a per-report unique ID: multiple in-flight reports from the same VM with the same CID are still not fully distinguishable, so a stale ACK can match the latest entry instead of the one it was actually for.
 
-A NACK can also lose a race with the post-`Send` commit of `lastToken`, in which case the next poll may still see an "unchanged" delta.
+A NACK can also lose a race with the post-forward commit of `lastToken`, in which case the next poll may still see an "unchanged" delta.

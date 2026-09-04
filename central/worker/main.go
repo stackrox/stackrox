@@ -11,7 +11,14 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	_ "github.com/stackrox/rox/central/notifiers/all"
 	"github.com/stackrox/rox/central/pruning"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
+	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/pkg/dblock"
@@ -37,7 +44,8 @@ func main() {
 
 	log.Infof("Starting central-worker")
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	poolVal := workerPoolSize.IntegerSetting()
 	if poolVal < 1 || poolVal > math.MaxInt32 {
@@ -56,6 +64,23 @@ func main() {
 	pruning.Singleton().Start()
 	log.Infof("Pruning GC started")
 
+	scheduler := vulnReportV2Scheduler.Singleton()
+	scheduler.Start(globaldb.GetPostgres())
+	log.Infof("Vulnerability report scheduler started")
+
+	collectionDatastore, _ := collectionDS.Singleton()
+	rl := newReportListener(
+		globaldb.GetPostgres(),
+		scheduler,
+		reportConfigDS.Singleton(),
+		reportSnapshotDS.Singleton(),
+		collectionDatastore,
+		notifierDS.Singleton(),
+		notifierProcessor.Singleton(),
+	)
+	rl.start(ctx)
+	log.Infof("Report LISTEN/NOTIFY listener started")
+
 	log.Infof("central-worker is ready")
 
 	waitForTerminationSignal()
@@ -63,6 +88,7 @@ func main() {
 	log.Infof("central-worker shutting down")
 
 	pruning.Singleton().Stop()
+	scheduler.Stop()
 
 	globaldb.Close()
 }

@@ -75,6 +75,7 @@ scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
+sensor/common/virtualmachine/vmscraper/scraper_test.go
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/common.go
