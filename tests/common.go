@@ -836,30 +836,44 @@ func deleteNamespace(t *testing.T, name string) {
 
 // execInDeployment executes a command in a pod from the given deployment.
 // Assumes deployment pods have label app=<deploymentName> (set by privilegedDeploymentSpec).
+//
+// The pod is re-resolved and `kubectl exec` is retried within a bounded window
+// to tolerate transient exec failures (e.g. "error: EOF" from a dropped exec
+// stream) shortly after the deployment has been rolled/restarted (see
+// ROX-36497).
 func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName, namespace string, command ...string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	podList, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
-	})
-	require.NoError(t, err, "listing pods for deployment %q", deploymentName)
-	require.NotEmpty(t, podList.Items, "no pods found for deployment %q", deploymentName)
+	var lastPod string
+	mustEventually(t, ctx, func() error {
+		podList, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+		})
+		if err != nil {
+			return fmt.Errorf("listing pods for deployment %q: %w", deploymentName, err)
+		}
+		if len(podList.Items) == 0 {
+			return fmt.Errorf("no pods found for deployment %q", deploymentName)
+		}
 
-	podName := podList.Items[0].Name
+		podName := podList.Items[0].Name
+		lastPod = podName
 
-	args := make([]string, 0, 5+len(command))
-	args = append(args, "exec", "-n", namespace, podName, "--")
-	args = append(args, command...)
+		args := make([]string, 0, 5+len(command))
+		args = append(args, "exec", "-n", namespace, podName, "--")
+		args = append(args, command...)
 
-	cmd := exec.CommandContext(ctx, "kubectl", args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Logf("kubectl exec output: %s", string(output))
-	}
-	require.NoError(t, err, "executing command %v in pod %q", command, podName)
+		execCtx, execCancel := context.WithTimeout(ctx, 30*time.Second)
+		defer execCancel()
+		output, err := exec.CommandContext(execCtx, "kubectl", args...).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("executing command %v in pod %q: %w: %s", command, podName, err, string(output))
+		}
+		return nil
+	}, 3*time.Second, "kubectl exec failed, retrying")
 
-	t.Logf("Executed command %v in pod %q (deployment %q)", command, podName, deploymentName)
+	t.Logf("Executed command %v in pod %q (deployment %q)", command, lastPod, deploymentName)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
