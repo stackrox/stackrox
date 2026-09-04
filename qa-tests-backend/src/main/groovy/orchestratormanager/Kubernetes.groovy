@@ -1101,10 +1101,13 @@ class Kubernetes {
         while (t.IsValid()) {
             service = client.services().inNamespace(namespace).withName(serviceName).get()
             if (service?.status?.loadBalancer?.ingress?.size()) {
-                loadBalancerIP = service.status.loadBalancer.ingress.get(0).
-                        ip ?: service.status.loadBalancer.ingress.get(0).hostname
-                log.debug "LB IP: " + loadBalancerIP
-                break
+                def ingress = service.status.loadBalancer.ingress.get(0)
+                log.debug "LB Ingress object: ${ingress}"
+                loadBalancerIP = ingress.ip ?: ingress.hostname
+                log.debug "LB IP/Hostname extracted: ${loadBalancerIP}"
+                if (loadBalancerIP) {
+                    break
+                }
             }
         }
         if (loadBalancerIP == null) {
