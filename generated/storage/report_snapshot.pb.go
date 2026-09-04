@@ -226,7 +226,7 @@ type ReportSnapshot struct {
 	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId,proto3" json:"report_configuration_id,omitempty" search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"
 	Name                  string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"`                                                                  // @gotags: search:"Report Name"
 	Description           string                    `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,proto3,enum=storage.ReportSnapshot_ReportType" json:"type,omitempty"`
+	Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,proto3,enum=storage.ReportSnapshot_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportSnapshot_VulnReportFilters
