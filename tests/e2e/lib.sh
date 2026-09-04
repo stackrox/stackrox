@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # shellcheck disable=SC1091
 
 set -euo pipefail
@@ -445,8 +444,6 @@ export_test_environment() {
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
     ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
-    ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
-    ci_export ROX_LIGHTSPEED_RISK_SUMMARY "${ROX_LIGHTSPEED_RISK_SUMMARY:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -627,10 +624,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
     customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
-    customize_envVars+=$'\n      - name: ROX_AI_INTEGRATIONS'
-    customize_envVars+=$'\n        value: "'"${ROX_AI_INTEGRATIONS}"'"'
-    customize_envVars+=$'\n      - name: ROX_LIGHTSPEED_RISK_SUMMARY'
-    customize_envVars+=$'\n        value: "'"${ROX_LIGHTSPEED_RISK_SUMMARY}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
