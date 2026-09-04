@@ -1,5 +1,7 @@
 import { useLocation } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
+import { Tooltip } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import {
     defaultColumnClassName,
@@ -15,6 +17,14 @@ import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
+
+const clusterAdminTooltip = (
+    <Tooltip content="Full, unrestricted cluster access">
+        <span className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
+            <OutlinedQuestionCircleIcon />
+        </span>
+    </Tooltip>
+);
 
 export const defaultSubjectSort = [
     {
@@ -58,12 +68,17 @@ const buildTableColumns = (match, location) => {
             sortField: subjectSortFields.SUBJECT_KIND,
         },
         {
-            Header: `Cluster Admin Role`,
+            Header: (
+                <span className="flex items-center">
+                    Cluster Admin
+                    {clusterAdminTooltip}
+                </span>
+            ),
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
-                return clusterAdmin ? 'Enabled' : 'Disabled';
+                return clusterAdmin ? 'Yes' : 'No';
             },
             accessor: 'clusterAdmin',
             sortable: false,
