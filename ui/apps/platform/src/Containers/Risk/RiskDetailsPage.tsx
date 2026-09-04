@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import type { ReactElement } from 'react';
 import {
     Breadcrumb,
@@ -27,7 +28,9 @@ import {
 } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import useRestQuery from 'hooks/useRestQuery';
 import AiExperienceIcon from 'images/aiExperience.svg?react';
+import { testLightspeedConnection } from 'services/DeploymentsService';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
@@ -59,6 +62,16 @@ function RiskDetailsPage(): ReactElement {
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isRiskSummaryEnabled = isFeatureFlagEnabled('ROX_LIGHTSPEED_RISK_SUMMARY');
+    const connectionTest = useRestQuery(
+        useCallback(
+            () =>
+                isRiskSummaryEnabled
+                    ? testLightspeedConnection()
+                    : Promise.resolve({ success: false, message: '' }),
+            [isRiskSummaryEnabled]
+        )
+    );
+    const isAiSummaryAvailable = isRiskSummaryEnabled && connectionTest.data?.success === true;
     const aiRiskSummary = useAiRiskSummary(deploymentId);
     const hasAiRiskSummary = Boolean(aiRiskSummary.summary);
 
@@ -105,7 +118,7 @@ function RiskDetailsPage(): ReactElement {
                                     </Button>
                                 </FlexItem>
                             )}
-                            {isRiskSummaryEnabled && data && (
+                            {isAiSummaryAvailable && data && (
                                 <FlexItem>
                                     <ConditionalTooltip
                                         renderTooltip={hasAiRiskSummary}
@@ -126,7 +139,7 @@ function RiskDetailsPage(): ReactElement {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            {isRiskSummaryEnabled && aiRiskSummary.isPresent && data && (
+            {isAiSummaryAvailable && aiRiskSummary.isPresent && data && (
                 <PageSection>
                     <AiRiskSummaryCard
                         summary={aiRiskSummary.summary?.summary}

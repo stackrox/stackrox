@@ -159,6 +159,11 @@ export type DeploymentRiskSummary = {
     summary: string;
 };
 
+export type TestLightspeedConnectionResponse = {
+    success: boolean;
+    message: string;
+};
+
 /**
  * Fetches an AI-generated risk summary for a deployment by ID.
  */
@@ -168,5 +173,14 @@ export function fetchDeploymentRiskSummary(id: string): Promise<DeploymentRiskSu
     }
     return axios
         .get<DeploymentRiskSummary>(`${deploymentWithRiskUrl}/${id}/ai-summary`, { timeout: 60000 })
+        .then((response) => response.data);
+}
+
+/**
+ * Tests connectivity to the Lightspeed AI service.
+ */
+export function testLightspeedConnection(): Promise<TestLightspeedConnectionResponse> {
+    return axios
+        .post<TestLightspeedConnectionResponse>(`${deploymentWithRiskUrl}/ai-summary/test`)
         .then((response) => response.data);
 }
