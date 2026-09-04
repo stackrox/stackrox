@@ -7525,6 +7525,36 @@
         ],
         "messages": [
           {
+            "name": "ManagingResource",
+            "fields": [
+              {
+                "id": 1,
+                "name": "kind",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "api_group",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "api_version",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "uid",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "Deployment",
             "fields": [
               {
@@ -7670,6 +7700,11 @@
                 "id": 35,
                 "name": "platform_component",
                 "type": "bool"
+              },
+              {
+                "id": 36,
+                "name": "managing_resource",
+                "type": "ManagingResource"
               }
             ],
             "maps": [
