@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorscansv2"
 	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorsuitesv2"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
+	lightspeedpipeline "github.com/stackrox/rox/central/lightspeed/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
@@ -100,6 +101,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		nodeindex.GetPipeline(),
 		virtualmachineindex.GetPipeline(),
 		virtualmachines.GetPipeline(),
+		lightspeedpipeline.GetPipeline(),
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

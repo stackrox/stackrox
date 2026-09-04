@@ -187,6 +187,15 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) CloneVT() isMsgFromSenso
 	return r
 }
 
+func (m *MsgFromSensor_LightspeedInfo) CloneVT() isMsgFromSensor_Msg {
+	if m == nil {
+		return (*MsgFromSensor_LightspeedInfo)(nil)
+	}
+	r := new(MsgFromSensor_LightspeedInfo)
+	r.LightspeedInfo = m.LightspeedInfo.CloneVT()
+	return r
+}
+
 func (m *ReprocessDeployments) CloneVT() *ReprocessDeployments {
 	if m == nil {
 		return (*ReprocessDeployments)(nil)
@@ -1128,6 +1137,31 @@ func (this *MsgFromSensor_IssueSecuredClusterCertsRequest) EqualVT(thatIface isM
 		}
 		if q == nil {
 			q = &IssueSecuredClusterCertsRequest{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgFromSensor_LightspeedInfo) EqualVT(thatIface isMsgFromSensor_Msg) bool {
+	that, ok := thatIface.(*MsgFromSensor_LightspeedInfo)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.LightspeedInfo, that.LightspeedInfo; p != q {
+		if p == nil {
+			p = &LightspeedInfo{}
+		}
+		if q == nil {
+			q = &LightspeedInfo{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -2642,6 +2676,33 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) MarshalToSizedBufferVT(d
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x9a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *MsgFromSensor_LightspeedInfo) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgFromSensor_LightspeedInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.LightspeedInfo != nil {
+		size, err := m.LightspeedInfo.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
 	}
 	return len(dAtA) - i, nil
 }
@@ -4211,6 +4272,20 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgFromSensor_LightspeedInfo) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.LightspeedInfo != nil {
+		l = m.LightspeedInfo.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
 func (m *ReprocessDeployments) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -5615,6 +5690,47 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LightspeedInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_LightspeedInfo); ok {
+				if err := oneof.LightspeedInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &LightspeedInfo{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_LightspeedInfo{LightspeedInfo: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -9024,6 +9140,47 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LightspeedInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_LightspeedInfo); ok {
+				if err := oneof.LightspeedInfo.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &LightspeedInfo{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_LightspeedInfo{LightspeedInfo: v}
 			}
 			iNdEx = postIndex
 		default:
