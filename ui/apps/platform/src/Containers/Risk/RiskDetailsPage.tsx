@@ -33,6 +33,7 @@ import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
 import AiRiskSummaryCard from './AiRiskSummary/AiRiskSummaryCard';
 import useAiRiskSummary from './AiRiskSummary/useAiRiskSummary';
+import ConditionalTooltip from 'Components/ConditionalTooltip';
 
 function getRiskBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
     // Note: We cannot exhaustively check for all possible values of filteredWorkflowView because
@@ -59,6 +60,7 @@ function RiskDetailsPage(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isRiskSummaryEnabled = isFeatureFlagEnabled('ROX_LIGHTSPEED_RISK_SUMMARY');
     const aiRiskSummary = useAiRiskSummary(deploymentId);
+    const hasAiRiskSummary = Boolean(aiRiskSummary.summary);
 
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
@@ -103,15 +105,21 @@ function RiskDetailsPage(): ReactElement {
                                     </Button>
                                 </FlexItem>
                             )}
-                            {isRiskSummaryEnabled && data && !aiRiskSummary.isPresent && (
+                            {isRiskSummaryEnabled && data && (
                                 <FlexItem>
-                                    <Button
-                                        variant="primary"
-                                        icon={<AiExperienceIcon />}
-                                        onClick={aiRiskSummary.investigate}
+                                    <ConditionalTooltip
+                                        renderTooltip={hasAiRiskSummary}
+                                        content="A Risk Summary has already been generated for this deployment."
                                     >
-                                        Investigate with AI
-                                    </Button>
+                                        <Button
+                                            variant="primary"
+                                            icon={<AiExperienceIcon />}
+                                            onClick={aiRiskSummary.investigate}
+                                            isAriaDisabled={hasAiRiskSummary}
+                                        >
+                                            Investigate with AI
+                                        </Button>
+                                    </ConditionalTooltip>
                                 </FlexItem>
                             )}
                         </Flex>
