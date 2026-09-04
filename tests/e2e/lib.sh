@@ -66,8 +66,6 @@ deploy_stackrox() {
 
     info "About to deploy StackRox (Central + Sensor)."
 
-    setup_podsecuritypolicies_config
-
     deploy_stackrox_operator
 
     deploy_central "${central_namespace}"
@@ -1024,19 +1022,6 @@ setup_generated_certs_for_test() {
     done
 }
 
-setup_podsecuritypolicies_config() {
-    info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-
-    SUPPORTS_PSP=$(retrying_kubectl </dev/null api-resources | grep "podsecuritypolicies" -c || true)
-    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
-        ci_export "POD_SECURITY_POLICIES" "false"
-        info "POD_SECURITY_POLICIES set to false"
-    else
-        ci_export "POD_SECURITY_POLICIES" "true"
-        info "POD_SECURITY_POLICIES set to true"
-    fi
-}
-
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
 # to load kernel objects and create network connections.
 # shellcheck disable=SC2120
@@ -1459,7 +1444,6 @@ collect_and_check_stackrox_logs() {
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
-    local psps_supported=false
     local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
     local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
     local centrals_supported=false
@@ -1480,10 +1464,6 @@ remove_existing_stackrox_resources() {
     if echo "${k8s_api_resources}" | grep -q "^consoleplugins\.console\.openshift\.io$"; then
         global_resource_types="${global_resource_types},consoleplugins.console.openshift.io"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
-        psps_supported=true
-        global_resource_types="${global_resource_types},psp"
-    fi
     if echo "${k8s_api_resources}" | grep -q "^centrals\.platform\.stackrox\.io$"; then
         centrals_supported=true
     fi
@@ -1492,72 +1472,76 @@ remove_existing_stackrox_resources() {
     fi
 
     (
-        # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
-        if [[ "${securedclusters_supported}" == "true" ]]; then
-            # Remove stackrox.io/pause-reconcile annotation since it prevents
-            # deletion of secured cluster in static clusters
-            retrying_kubectl </dev/null annotate -n stackrox \
-            securedclusters.platform.stackrox.io \
-            stackrox-secured-cluster-services \
-            stackrox.io/pause-reconcile-
-
-            retrying_kubectl </dev/null get securedclusters -o name | while read -r securedcluster; do
-                retrying_kubectl </dev/null -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
-                # Wait until resources are actually deleted.
-                retrying_kubectl </dev/null wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
-            done
-        fi
-        if [[ "${centrals_supported}" == "true" ]]; then
-            # Remove stackrox.io/pause-reconcile annotation since it prevents
-            # deletion of central in static clusters
-               retrying_kubectl </dev/null annotate -n stackrox \
-                centrals.platform.stackrox.io \
-                stackrox-central-services \
+        for namespace in "${namespaces[@]}"; do
+            # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
+            if [[ "${securedclusters_supported}" == "true" ]]; then
+                # Remove stackrox.io/pause-reconcile annotation since it prevents
+                # deletion of secured cluster in static clusters
+                retrying_kubectl </dev/null annotate -n "${namespace}" \
+                securedclusters.platform.stackrox.io \
+                stackrox-secured-cluster-services \
                 stackrox.io/pause-reconcile-
 
-            retrying_kubectl </dev/null get centrals -o name | while read -r central; do
-                retrying_kubectl </dev/null -n "${namespace}" delete --ignore-not-found --wait "${central}"
-                retrying_kubectl </dev/null wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
-            done
-        fi
-        if [[ "$psps_supported" = "true" ]]; then
-            retrying_kubectl </dev/null delete -R -f scripts/ci/psp --wait
-        fi
+                retrying_kubectl </dev/null get -n "${namespace}" securedclusters -o name | while read -r securedcluster; do
+                    retrying_kubectl </dev/null -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
+                    # Wait until resources are actually deleted.
+                    retrying_kubectl </dev/null wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
+                done
+            fi
+            if [[ "${centrals_supported}" == "true" ]]; then
+                # Remove stackrox.io/pause-reconcile annotation since it prevents
+                # deletion of central in static clusters
+                retrying_kubectl </dev/null annotate -n "${namespace}" \
+                    centrals.platform.stackrox.io \
+                    stackrox-central-services \
+                    stackrox.io/pause-reconcile-
 
-        for namespace in "${namespaces[@]}"; do
+                retrying_kubectl </dev/null get -n "${namespace}" centrals -o name | while read -r central; do
+                    retrying_kubectl </dev/null -n "${namespace}" delete --ignore-not-found --wait "${central}"
+                    retrying_kubectl </dev/null wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
+                done
+            fi
+
             if retrying_kubectl </dev/null get ns "$namespace" >/dev/null 2>&1; then
                 retrying_kubectl </dev/null -n "$namespace" delete "$resource_types" -l "app.kubernetes.io/name=stackrox" --wait
             fi
             retrying_kubectl </dev/null delete --ignore-not-found ns "$namespace" --wait
         done
 
-        retrying_kubectl </dev/null delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
-        retrying_kubectl </dev/null delete crd securitypolicies.config.stackrox.io --wait
+        if [[ "${SKIP_GLOBAL_RESOURCES:-}" != "true" ]]; then
+            info "Deleting global resources ${global_resource_types}"
+            retrying_kubectl </dev/null delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
+            helm list -o json | jq -r '.[] | .name' | while read -r name; do
+                case "$name" in
+                    monitoring | central | scanner | sensor)
+                        helm uninstall "$name"
+                        ;;
+                esac
+            done
 
-        helm list -o json | jq -r '.[] | .name' | while read -r name; do
-            case "$name" in
-                monitoring | central | scanner | sensor)
-                    helm uninstall "$name"
-                    ;;
-            esac
-        done
-
-        retrying_kubectl </dev/null get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
-            retrying_kubectl </dev/null delete --wait "$namespace"
-        done
-
-        if retrying_kubectl </dev/null get ns rhacs-operator-system >/dev/null 2>&1; then
-            # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
-            # See https://issues.redhat.com/browse/ROX-30450
-            retrying_kubectl </dev/null -n rhacs-operator-system delete --ignore-not-found --wait subscription.operators.coreos.com --all
-            # Then delete remaining OLM resources.
-            # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
-            # We only care about apiVersion, kind and metadata, which do not contain any templating.
-            awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
-              retrying_kubectl -n rhacs-operator-system delete --ignore-not-found --wait -f -
+            retrying_kubectl </dev/null get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
+                retrying_kubectl </dev/null delete --wait "$namespace"
+            done
+        else
+            info "Skip deletion of global resources"
         fi
-        retrying_kubectl </dev/null delete --ignore-not-found ns rhacs-operator-system --wait
-        retrying_kubectl </dev/null delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
+
+        if [[ "${SKIP_OPERATOR_TEARDOWN:-}" != "true" ]]; then
+            if retrying_kubectl </dev/null get ns rhacs-operator-system >/dev/null 2>&1; then
+                # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
+                # See https://issues.redhat.com/browse/ROX-30450
+                retrying_kubectl </dev/null -n rhacs-operator-system delete --ignore-not-found --wait subscription.operators.coreos.com --all
+                # Then delete remaining OLM resources.
+                # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
+                # We only care about apiVersion, kind and metadata, which do not contain any templating.
+                awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
+                  retrying_kubectl -n rhacs-operator-system delete --ignore-not-found --wait -f -
+            fi
+            retrying_kubectl </dev/null delete --ignore-not-found ns rhacs-operator-system --wait
+            if [[ "${SKIP_GLOBAL_RESOURCES:-}" != "true" ]]; then
+                retrying_kubectl </dev/null delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
+            fi
+        fi
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
 }
@@ -2047,7 +2031,7 @@ wait_for_object_to_appear() {
     local namespace="$1"
     local object="$2"
     local delay="${3:-300}"
-    local waitInterval=20
+    local waitInterval=5
     local tries=$(( delay / waitInterval ))
     local count=0
     until retrying_kubectl </dev/null -n "$namespace" get "$object" > /dev/null 2>&1; do
