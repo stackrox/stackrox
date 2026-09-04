@@ -58,3 +58,11 @@ func (c *Client) GetReport(ctx context.Context, _ io.ReadWriteCloser, lastKnownT
 		},
 	}, nil
 }
+
+// SyncRepoCPEMapping is a no-op: fake reports do not advertise a Sensor-managed mapping.
+func (c *Client) SyncRepoCPEMapping(ctx context.Context, _ io.ReadWriteCloser, _ []byte) (bool, *pb.ResponseMeta, error) {
+	if err := ctx.Err(); err != nil {
+		return false, nil, fmt.Errorf("fake vm sync mapping: %w", err)
+	}
+	return false, nil, nil
+}
