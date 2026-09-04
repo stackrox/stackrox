@@ -423,7 +423,7 @@ func (i *localIndexer) GetRepositoryToCPEMapping(ctx context.Context, ifModified
 // URL. This method performs a partial content request on each layer to generate
 // the layer's URI and headers.
 func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, imageURL string, opts ...Option) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashID)
+	manifestDigest, err := CreateManifestDigest(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -560,7 +560,7 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 
 // GetIndexReport retrieves an IndexReport for the given hash ID if it exists and is up to date.
 func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string, includeExternal bool) (*claircore.IndexReport, bool, error) {
-	manifestDigest, err := createManifestDigest(hashID)
+	manifestDigest, err := CreateManifestDigest(hashID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -634,8 +634,8 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string, includ
 	return nil, false, nil
 }
 
-// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
-func createManifestDigest(hashID string) (claircore.Digest, error) {
+// CreateManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
+func CreateManifestDigest(hashID string) (claircore.Digest, error) {
 	hashIDSum := sha512.Sum512([]byte(hashID))
 	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
 	if err != nil {
@@ -647,7 +647,7 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) (string, error) {
 
 	var err error
-	report.Hash, err = createManifestDigest(hashID)
+	report.Hash, err = CreateManifestDigest(hashID)
 	if err != nil {
 		return "", fmt.Errorf("creating claircore manifest digest: %w", err)
 	}
