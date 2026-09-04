@@ -575,3 +575,110 @@ func GenericGlobalClusterSACWriteTestCases(baseContext context.Context, _ *testi
 		},
 	}
 }
+
+// GenericGlobalSACWriteTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing write operations (upsert, remove, etc.)
+// on globally-scoped resources where access is controlled by resource-level permissions only.
+// The test cases verify that write access requires READ_WRITE_ACCESS to the controlling resource
+// and that access to other resources does not grant permission.
+func GenericGlobalSACWriteTestCases(verb string) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"no access to the controlling resource cannot " + verb: {
+			ScopeKey:      NoAccessCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-only access to the controlling resource cannot " + verb: {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write access to the controlling resource can " + verb: {
+			ScopeKey:    UnrestrictedReadWriteCtx,
+			ExpectError: false,
+		},
+		"read access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+	}
+}
+
+// GenericGlobalSACReadTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing read operations (get, iterate, etc.)
+// on globally-scoped resources where access is controlled by resource-level permissions only.
+// The test cases verify that read access requires at least READ_ACCESS to the controlling resource.
+// When access is denied, an error is returned (ExpectError: true, ExpectedError: sac.ErrResourceAccessDenied).
+func GenericGlobalSACReadTestCases(verb string) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"no access to the controlling resource cannot " + verb: {
+			ScopeKey:      NoAccessCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: false,
+		},
+		"read-only access to the controlling resource can " + verb: {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectError:   false,
+			ExpectedFound: true,
+		},
+		"read-write access to the controlling resource can " + verb: {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectError:   false,
+			ExpectedFound: true,
+		},
+		"read access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: false,
+		},
+		"read-write access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: false,
+		},
+	}
+}
+
+// GenericGlobalSACReadTestCasesNoAccessNoError returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing read operations (get, iterate, etc.)
+// on globally-scoped resources where access is controlled by resource-level permissions only.
+// The test cases verify that read access requires at least READ_ACCESS to the controlling resource.
+// When access is denied, no error is returned - the object is simply not found (ExpectedFound: false).
+func GenericGlobalSACReadTestCasesNoAccessNoError(verb string) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"no access to the controlling resource cannot " + verb: {
+			ScopeKey:      NoAccessCtx,
+			ExpectedFound: false,
+			ExpectError:   false,
+		},
+		"read-only access to the controlling resource can " + verb: {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectedFound: true,
+			ExpectError:   false,
+		},
+		"read-write access to the controlling resource can " + verb: {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectedFound: true,
+			ExpectError:   false,
+		},
+		"read access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadCtx,
+			ExpectedFound: false,
+			ExpectError:   false,
+		},
+		"read-write access to another resource cannot " + verb: {
+			ScopeKey:      OtherResourceReadWriteCtx,
+			ExpectedFound: false,
+			ExpectError:   false,
+		},
+	}
+}
