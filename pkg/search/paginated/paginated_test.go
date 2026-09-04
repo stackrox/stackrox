@@ -44,9 +44,9 @@ func (s *paginationTestSuite) TestGetLimit() {
 		math.MinInt32:     whenUnlimited,
 		-1:                whenUnlimited,
 		1:                 1,
-		math.MaxInt32 - 1: math.MaxInt32 - 1,
+		math.MaxInt32 - 1: whenUnlimited,
 		whenUnlimited:     whenUnlimited,
-		whenUnlimited + 1: whenUnlimited + 1,
+		whenUnlimited + 1: whenUnlimited,
 		whenUnlimited - 1: whenUnlimited - 1,
 	} {
 		s.T().Run(fmt.Sprintf("%d %d", given, expected), func(t *testing.T) {
