@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -60,6 +61,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -957,13 +959,18 @@ func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage
 		if cluster.GetStatus() == nil {
 			continue
 		}
-		sensorXY, err := productstreams.ParseXYFromVersionString(cluster.GetStatus().GetSensorVersion())
+		sensorVersion := cluster.GetStatus().GetSensorVersion()
+		sensorXY, err := productstreams.ParseXYFromVersionString(sensorVersion)
 		if err != nil {
+			logging.LogOncePerKeyf(cluster.GetId(), log, zapcore.WarnLevel,
+				"Failed to parse sensor version %s for cluster %s: %v", sensorVersion, cluster.GetId(), err)
 			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 			continue
 		}
 		compat, err := versioncompatibility.ClassifyVersion(sensorXY)
 		if err != nil {
+			logging.LogOncePerKeyf(cluster.GetId(), log, zapcore.WarnLevel,
+				"Failed to determine compatibility status for cluster %s, version %s: %v", cluster.GetId(), sensorVersion, err)
 			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 			continue
 		}
