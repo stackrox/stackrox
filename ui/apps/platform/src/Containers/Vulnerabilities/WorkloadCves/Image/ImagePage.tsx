@@ -39,9 +39,8 @@ import { runImageViewBasedReport } from 'services/ReportsService';
 import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
-import GenerateSbomModal, {
-    getSbomGenerationStatusMessage,
-} from '../../components/GenerateSbomModal';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
+import { getSbomGenerationStatusMessage } from '../../utils/getSbomGenerationStatusMessage';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
@@ -184,8 +183,17 @@ function ImagePage({
         imageData && imageName
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
-    const scanMessage = getImageScanMessage(imageData?.notes ?? [], imageData?.scanNotes ?? []);
+    const imageNotes = imageData?.notes ?? [];
+    const scanNotes = imageData?.scanNotes ?? [];
+    const scanMessage = getImageScanMessage(imageNotes, scanNotes);
     const hasScanMessage = !isEmpty(scanMessage);
+    // SBOM generation is only blocked when the image has no scan data at all;
+    // CVE-accuracy caveats (e.g. no base OS) must not disable it (ROX-36762).
+    const sbomGenerationStatusMessage = getSbomGenerationStatusMessage({
+        isScannerV4Enabled,
+        imageNotes,
+        scanNotes,
+    });
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
@@ -235,10 +243,7 @@ function ImagePage({
                                 {hasWriteAccessForImage && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                                         <OptionalSbomButtonTooltip
-                                            message={getSbomGenerationStatusMessage({
-                                                isScannerV4Enabled,
-                                                hasScanMessage,
-                                            })}
+                                            message={sbomGenerationStatusMessage}
                                         >
                                             <Button
                                                 variant="secondary"
@@ -249,8 +254,7 @@ function ImagePage({
                                                     });
                                                 }}
                                                 isAriaDisabled={
-                                                    !isScannerV4Enabled ||
-                                                    hasScanMessage ||
+                                                    sbomGenerationStatusMessage !== undefined ||
                                                     !imageData.name?.fullName
                                                 }
                                             >

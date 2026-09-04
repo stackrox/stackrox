@@ -20,9 +20,8 @@ import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
-import GenerateSbomModal, {
-    getSbomGenerationStatusMessage,
-} from '../../components/GenerateSbomModal';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
+import { getSbomGenerationStatusMessage } from '../../utils/getSbomGenerationStatusMessage';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import type {
@@ -330,12 +329,12 @@ function ImageOverviewTable({
                         }
 
                         if (hasWriteAccessForImage) {
-                            const isAriaDisabled =
-                                !isScannerV4Enabled || hasScanMessage || !name?.fullName;
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,
-                                hasScanMessage,
+                                imageNotes: notes,
+                                scanNotes,
                             });
+                            const isAriaDisabled = description !== undefined || !name?.fullName;
 
                             rowActions.push({
                                 title: 'Generate SBOM',
