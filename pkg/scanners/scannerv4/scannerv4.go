@@ -41,6 +41,7 @@ var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 	_ types.NodeScanner              = (*scannerv4)(nil)
+	_ types.VirtualMachineScanner    = (*scannerv4)(nil)
 	_ types.SBOMer                   = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
@@ -413,6 +414,15 @@ func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (s
 	}
 }
 
+// VirtualMachineScannerCreator provides the type scanners.VirtualMachineScannerCreator to add to the scanners registry.
+// VM scanning reuses Scanner V4, but it is instantiated from image integration
+// config so the first-class VM-scanner category can manage it explicitly.
+func VirtualMachineScannerCreator() (string, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
+	return scannerTypes.ScannerV4, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+		return newVirtualMachineScanner(integration, getMatcherOnlyScanner)
+	}
+}
+
 func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	conf := integration.GetScannerv4()
 	if conf == nil {
@@ -454,29 +464,54 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	return scanner, nil
 }
 
-// NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
-func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
-	return newVirtualMachineScanner(getMatcherOnlyScanner)
-}
+// newVirtualMachineScanner creates a Scanner V4 instance tailored for VM
+// enrichment.
+// Only the matcher endpoint is required here because VM enrichment consumes
+// precomputed index reports and only needs vulnerability matching.
+func newVirtualMachineScanner(
+	integration *storage.ImageIntegration,
+	clientCreator func(string) (client.Scanner, error),
+) (scannerTypes.VirtualMachineScanner, error) {
+	conf := integration.GetScannerV4()
+	if conf == nil {
+		return nil, errors.New("scanner v4 configuration required")
+	}
 
-func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
 	matcherEndpoint := DefaultMatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
+	}
 
+	numConcurrentScans := defaultMaxConcurrentScans
+	if conf.GetNumConcurrentScans() > 0 {
+		numConcurrentScans = int64(conf.GetNumConcurrentScans())
+	}
+
+	log.Debugf(
+		"Creating Scanner V4 VM scanner with name [%s] matcher address [%s], num concurrent scans [%d]",
+		integration.GetName(),
+		matcherEndpoint,
+		numConcurrentScans,
+	)
 	scannerClient, err := clientCreator(matcherEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	numConcurrentScans := defaultMaxConcurrentScans
-
-	return &scannerv4{
-		name:              "Virtual machine scanner",
-		scannerClient:     scannerClient,
+	scanner := &scannerv4{
+		name:              integration.GetName(),
+		activeRegistries:  nil,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
 		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
-	}, nil
+		scannerClient:     scannerClient,
+	}
+
+	return scanner, nil
 }
 
+// getMatcherOnlyScanner creates a Scanner V4 client that talks only to the
+// matcher service. VM enrichment does not need indexer access because the index
+// report is already available when enrichment runs.
 func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
 	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
 }
