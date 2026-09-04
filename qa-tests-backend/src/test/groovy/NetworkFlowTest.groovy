@@ -571,6 +571,11 @@ class NetworkFlowTest extends BaseSpecification {
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
             String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
+            if (Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true" || deploymentIP == null) {
+                deploymentIP = "${deployments[NGINXCONNECTIONTARGET]?.name}" +
+                               ".${deployments[NGINXCONNECTIONTARGET]?.namespace}.svc.cluster.local"
+            }
+            log.info "Using connection target: ${deploymentIP}"
             assert deploymentIP != null
             targetUrl = "http://${deploymentIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
@@ -664,6 +669,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("NetworkFlowVisualization")
     def "Verify intra-cluster connection via internal IP"() {
         // Skip on IPv6 primary as the LoadBalancer IP might not be reachable
+        System.out.println("Load Balancer IP: " + loadBalancerIP)
         Assume.assumeFalse(Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true")
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
