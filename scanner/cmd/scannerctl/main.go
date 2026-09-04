@@ -19,6 +19,9 @@ import (
 // factory is the global scanner client factory.
 var factory scannerFactory
 
+// certsCleanup removes temporary certificate files created by --certs-secret.
+var certsCleanup func()
+
 // scannerFactory holds the data to create scanner clients.
 type scannerFactory []client.Option
 
@@ -61,31 +64,59 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		"certs",
 		"",
 		"Path to directory containing scanner certificates.")
-	cmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
-		if *certsPath != "" {
-			// Certs flag configures the identity environment.
+	certsSecret := flags.String(
+		"certs-secret",
+		"",
+		fmt.Sprintf("Load certificates from a Kubernetes secret ([namespace/]name). "+
+			"Namespace defaults to %q. Uses the current kubeconfig context. "+
+			"Default: %s/%s.", defaultCertsNamespace, defaultCertsNamespace, defaultCertsSecret))
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		certsDir := *certsPath
+
+		if *certsPath != "" && cmd.Flags().Changed("certs-secret") {
+			return fmt.Errorf("--certs and --certs-secret are mutually exclusive")
+		}
+
+		if certsDir == "" {
+			ref := defaultCertsSecret
+			if cmd.Flags().Changed("certs-secret") {
+				ref = *certsSecret
+			}
+			dir, cleanup, err := loadCertsFromSecret(cmd.Context(), ref)
+			if err != nil {
+				if cmd.Flags().Changed("certs-secret") {
+					return fmt.Errorf("loading certs from secret: %w", err)
+				}
+				log.Printf("could not load default secret %s (use --certs or --certs-secret to configure): %v", ref, err)
+			} else {
+				certsDir = dir
+				certsCleanup = cleanup
+			}
+		}
+
+		if certsDir != "" {
 			utils.CrashOnError(
 				os.Setenv(mtls.CAFileEnvName,
-					filepath.Join(*certsPath, mtls.CACertFileName)))
+					filepath.Join(certsDir, mtls.CACertFileName)))
 			utils.CrashOnError(
 				os.Setenv(mtls.CAKeyFileEnvName,
-					filepath.Join(*certsPath, mtls.CAKeyFileName)))
+					filepath.Join(certsDir, mtls.CAKeyFileName)))
 			utils.CrashOnError(
 				os.Setenv(mtls.CertFilePathEnvName,
-					filepath.Join(*certsPath, mtls.ServiceCertFileName)))
+					filepath.Join(certsDir, mtls.ServiceCertFileName)))
 			utils.CrashOnError(
 				os.Setenv(mtls.KeyFileEnvName,
-					filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
+					filepath.Join(certsDir, mtls.ServiceKeyFileName)))
 		}
 
 		indexerAddr, err := cmd.Flags().GetString("indexer-address")
 		if err != nil {
-			log.Fatalf("getting indexer-address: %v", err)
+			return fmt.Errorf("getting indexer-address: %w", err)
 		}
 
 		matcherAddr, err := cmd.Flags().GetString("matcher-address")
 		if err != nil {
-			log.Fatalf("getting matcher-address: %v", err)
+			return fmt.Errorf("getting matcher-address: %w", err)
 		}
 
 		// Set options for the gRPC connection.
@@ -105,6 +136,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		}
 		// Create the client factory.
 		factory = opts
+		return nil
 	}
 	cmd.AddCommand(scanCmd(ctx))
 	cmd.AddCommand(scaleCmd(ctx))
@@ -113,26 +145,35 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	return &cmd
 }
 
-func main() {
-	// Create a context that is cancellable on the usual command line signals. Double
-	// signal forcefully exits.
+func run() int {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer ctx.Done()
+	defer cancel()
+	defer func() {
+		if certsCleanup != nil {
+			certsCleanup()
+		}
+	}()
 	go func() {
 		sigC := make(chan os.Signal, 1)
 		signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 		sig := <-sigC
 		log.Printf("%s caught, shutting down...", sig)
-		// Cancel the main context.
 		cancel()
 		go func() {
-			// A second signal will forcefully quit.
 			<-sigC
+			if certsCleanup != nil {
+				certsCleanup()
+			}
 			os.Exit(1)
 		}()
 	}()
-	// Execute command.
 	if err := rootCmd(ctx).Execute(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return 1
 	}
+	return 0
+}
+
+func main() {
+	os.Exit(run())
 }
