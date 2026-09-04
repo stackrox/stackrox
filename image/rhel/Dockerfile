@@ -78,12 +78,12 @@ RUN \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
 
-COPY --from=stackrox_data /stackrox-data /stackrox/static-data
-COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY --link --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY --link ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+COPY --link ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+COPY --link THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
-COPY ui /ui
+COPY --link ui /ui
 
 COPY bin/central            /stackrox/central
 COPY bin/migrator           /stackrox/bin/migrator
@@ -95,6 +95,8 @@ COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
+# dlv (Delve debugger) — present only in DEBUG_BUILD=yes images
+COPY bin/dlv-placeholder bin/dlv* /stackrox/bin/
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 

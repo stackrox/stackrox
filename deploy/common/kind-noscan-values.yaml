@@ -1,0 +1,14 @@
+# Disables all scanners for minimal-memory local development.
+# Layers on top of local-dev-values.yaml.
+# Total: Central (2Gi) + Central-DB (2Gi) = 4Gi limits.
+#
+# Usage:
+#   ROX_CENTRAL_EXTRA_HELM_VALUES_FILE=deploy/common/kind-noscan-values.yaml ./deploy/k8s/deploy-local.sh
+# Or:
+#   ./dev-tools/kind-dev.sh --no-scanner
+
+scanner:
+  disable: true
+
+scannerV4:
+  disable: true
