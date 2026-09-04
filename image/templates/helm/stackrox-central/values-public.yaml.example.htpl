@@ -44,7 +44,7 @@
 # image:
 #   # The registry relative to which all image references are resolved, unless
 #   # a specific registry is provided for particular workloads which takes precedence
-#   # (see `central.image`, `db.image`, `scanner.image`, and `scanner.dbImage` below).
+#   # (see `central.image` and `db.image` below).
 #   # This can be just a registry hostname such as `quay.io`, or a registry hostname with
 #   # a "remote" component such as `us.gcr.io/my-stackrox-mirror`.
 #   registry: us.gcr.io/my-stackrox-mirror
@@ -334,127 +334,12 @@
 #               # been created.
 #               pdName: gke-pv
 #
-# # Public configuration options for the StackRox Scanner.
-# scanner:
-#   # disable=true will cause the StackRox Kubernetes Security Platform to be
-#   # deployed without the StackRox Scanner, meaning that certain functionalities
-#   # may not be available. If this setting is changed prior to a `helm upgrade`
-#   # invocation, the existing StackRox scanner deployment will be removed.
-#   disable: false
-#
-#   # The number of replicas for the Scanner deployment. If autoscaling is enabled (see below),
-#   # this determines the initial number of replicas.
-#   replicas: 3
-#
-#   # The log level for the scanner deployment. This typically does not need to be changed.
-#   logLevel: INFO
-#
-#   # If you want to enforce StackRox Scanner to only run on certain nodes, you can specify
-#   # a node selector here to make sure Scanner can only be scheduled on Nodes with the
-#   # given label.
-#   nodeSelector:
-#     # This can contain arbitrary `label-key: label-value` pairs.
-#     role: stackrox-scanner
-#
-#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
-#   tolerations:
-#     - effect: NoSchedule
-#       key: infra
-#       value: reserved
-#     - effect: NoExecute
-#       key: infra
-#       value: reserved
-#
-#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
-#   affinity:
-#     podAntiAffinity:
-#       preferredDuringSchedulingIgnoredDuringExecution:
-#       - weight: 100
-#         podAffinityTerm:
-#           labelSelector:
-#             matchLabels:
-#               app: scanner
-#           topologyKey: kubernetes.io/hostname
-#     nodeAffinity:
-#       preferredDuringSchedulingIgnoredDuringExecution:
-#       - weight: 50
-#         preference:
-#           matchExpressions:
-#             - key: node-role.kubernetes.io/infra
-#               operator: Exists
-#       - weight: 25
-#         preference:
-#           matchExpressions:
-#             - key: node-role.kubernetes.io/compute
-#               operator: Exists
-#       - weight: 100
-#         preference:
-#           matchExpressions:
-#             - key: node-role.kubernetes.io/control-plane
-#               operator: DoesNotExist
-#
-#   # If you want to enforce StackRox Scanner DB to only run on certain nodes, you can specify
-#   # a node selector here to make sure Scanner DB can only be scheduled on Nodes with the
-#   # given label.
-#   dbNodeSelector:
-#     # This can contain arbitrary `label-key: label-value` pairs.
-#     role: stackrox-scanner-db
-#
-#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
-#   dbTolerations:
-#     - effect: NoSchedule
-#       key: infra
-#       value: reserved
-#     - effect: NoExecute
-#       key: infra
-#       value: reserved
-#
-#   # Configuration for autoscaling the Scanner deployment.
-#   autoscaling:
-#     # disable=true causes autoscaling to be disabled. All other settings in this section
-#     # will have no effect.
-#     disable: false
-#     # The minimum number of replicas for autoscaling. The following value is the default.
-#     minReplicas: 2
-#     # The maximum number of replicas for autoscaling. The following value is the default.
-#     maxReplicas: 5
-#
-#   # Custom resource overrides for the Scanner deployment.
-#   resources:
-#     requests:
-#       memory: "1500Mi"
-#       cpu: "1000m"
-#     limits:
-#       memory: "4Gi"
-#       cpu: "2000m"
-#
-#   # Custom resource overrides for the Scanner DB deployment.
-#   dbResources:
-#     limits:
-#       cpu: "2000m"
-#       memory: "4Gi"
-#     requests:
-#       cpu: "200m"
-#       memory: "200Mi"
-#
-#   # Custom configuration of the image to be used for the Scanner deployment.
-#   # See `central.image` for a full example.
-#   image:
-#     registry: us.gcr.io/stackrox-scanner-repo
-#     name: scanner  # "scanner" is the default
-#
-#   dbImage:
-#     registry: us.gcr.io/stackrox-scanner-db-repo
-#     name: scanner-db  # "scanner-db" is the default
-#
 # # Public configuration options for Scanner V4.
 # scannerV4:
 #
-#  # If this is set to false, Scanner V4 will be enabled and deployed.
-#  # Note that currently Scanner V4 cannot be used as the only scanner component.
-#  # Instead it must be currently deployed side-by-side with StackRox Scanner (scanner.disable=false).
+#  # If this is set to true, Scanner V4 will not be deployed.
 #  # If it is set to true, no other setting in this section will have any effect.
-#  disable: true
+#  disable: false
 #
 #  # Scanner V4 consists of three components: indexer, matcher and db.
 #
@@ -700,22 +585,6 @@
 #       podLabels: {}
 #       podAnnotations: {}
 #       envVars: {}
-#
-#   # Extra metadata for the scanner deployment only.
-#   scanner:
-#     labels: {}
-#     annotations: {}
-#     podLabels: {}
-#     podAnnotations: {}
-#     envVars: {}
-#
-#   # Extra metadata for the scanner-db deployment only.
-#   scanner-db:
-#     labels: {}
-#     annotations: {}
-#     podLabels: {}
-#     podAnnotations: {}
-#     envVars: {}
 #
 #   # Extra metadata for all other objects. The keys in the following map can be
 #   # an object name of the form "service/central-loadbalancer", or a reference to all
