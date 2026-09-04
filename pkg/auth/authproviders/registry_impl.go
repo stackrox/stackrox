@@ -2,6 +2,7 @@ package authproviders
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,9 +12,18 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
+	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/oauth2"
+	"k8s.io/client-go/rest"
+)
+
+const (
+	OpenShiftTypeNameWithACMAccessControlDelegation = "openshift-with-acm-roles"
 )
 
 var (
@@ -24,7 +34,14 @@ var (
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
 // where every incoming HTTP request URL is expected to refer to a path under `urlPathPrefix`. The redirect URL for
 // clients upon successful/failed authentication is `clientRedirectURL`.
-func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) Registry {
+func NewStoreBackedRegistry(
+	urlPathPrefix string,
+	redirectURL string,
+	store Store,
+	tokenIssuerFactory tokens.IssuerFactory,
+	roleMapperFactory permissions.RoleMapperFactory,
+	clusterResolver tokens.ClusterResolver,
+) Registry {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	registry := &registryImpl{
 		ServeMux:      http.NewServeMux(),
@@ -37,6 +54,8 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 		providers:        make(map[string]Provider),
 
 		roleMapperFactory: roleMapperFactory,
+
+		clusterResolver: clusterResolver,
 	}
 
 	return registry
@@ -56,6 +75,8 @@ type registryImpl struct {
 	mutex            sync.RWMutex
 
 	roleMapperFactory permissions.RoleMapperFactory
+
+	clusterResolver tokens.ClusterResolver
 }
 
 func (r *registryImpl) Init() error {
@@ -351,6 +372,45 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 		tokenOpts = append(tokenOpts, tokens.WithExpiry(authResp.Expiration))
 	}
 	tokenOpts = append(tokenOpts, authResp.ExtraOpts...)
+	if features.ACMAccessControlDelegation.Enabled() {
+		roxClaims := tokens.RoxClaims{}
+		switch provider.Type() {
+		case OpenShiftTypeNameWithACMAccessControlDelegation:
+			roles, err := getRolesForOpenshiftResponse(ctx, authResp, r.clusterResolver)
+			if err != nil {
+				return nil, nil, err
+			}
+			roxClaims.InternalRoles = roles
+		default:
+			roxClaims.ExternalUser = authResp.Claims
+		}
+		token, err := provider.Issuer().Issue(ctx, roxClaims, tokenOpts...)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var refreshCookie *http.Cookie
+		if authResp.RefreshToken != "" {
+			cookieData := refreshTokenCookieData{
+				ProviderType:     provider.Type(),
+				ProviderID:       provider.ID(),
+				RefreshTokenData: authResp.RefreshTokenData,
+			}
+			if encodedData, err := cookieData.Encode(); err != nil {
+				log.Errorf("failed to encode refresh token cookie data: %v", err)
+			} else {
+				refreshCookie = &http.Cookie{
+					Name:     RefreshTokenCookieName,
+					Value:    encodedData,
+					Path:     r.sessionURLPrefix(),
+					HttpOnly: true,
+					Secure:   true,
+					SameSite: http.SameSiteStrictMode,
+				}
+			}
+		}
+		return token, refreshCookie, nil
+	}
 	token, err := provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: authResp.Claims}, tokenOpts...)
 	if err != nil {
 		return nil, nil, err
@@ -377,4 +437,48 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 		}
 	}
 	return token, refreshCookie, nil
+}
+
+func getRolesForOpenshiftResponse(
+	ctx context.Context,
+	authResp *AuthResponse,
+	clusterIDResolver tokens.ClusterResolver,
+) ([]*tokens.InternalRole, error) {
+	if authResp == nil {
+		return nil, errox.InvalidArgs.CausedBy("auth response should not be nil")
+	}
+	// Extract OpenShift Auth token
+	var tokenData oauth2.Token
+	err := json.Unmarshal([]byte(authResp.RefreshTokenData.RefreshToken), &tokenData)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve OpenShift cluster config
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	// Enrich the config with the OpenShift Auth Token
+	cfg.BearerToken = tokenData.AccessToken
+	// Clear BearerTokenFile so that BearerToken takes precedence.
+	// InClusterConfig() sets BearerTokenFile to the service account token,
+	// which would override the user's OAuth token we just set.
+	cfg.BearerTokenFile = ""
+	acmClientObj, err := acmclient.NewACMClientForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
+func isACMRoleDelegationProvider(provider Provider) bool {
+	switch provider.Type() {
+	case OpenShiftTypeNameWithACMAccessControlDelegation:
+		return true
+	}
+	return false
 }
