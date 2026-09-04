@@ -48,7 +48,7 @@ jobs:
       cancel-in-progress: false
     steps:
     - name: Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         fetch-depth: 0
         persist-credentials: false
@@ -107,7 +107,7 @@ jobs:
       STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
     steps:
     - name: Checkout repository (master for local actions)
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         fetch-depth: 0
         persist-credentials: false
@@ -118,7 +118,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout updater ref
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         fetch-depth: 0
         ref: ${{ inputs.ref }}
@@ -178,7 +178,7 @@ jobs:
         echo "Uploaded $src -> $GCS_OBJECT (digest=$digest)"
 
     - name: Checkout repository (cleanup)
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       if: always()
       with:
         fetch-depth: 0
