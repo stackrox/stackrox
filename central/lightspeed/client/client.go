@@ -42,7 +42,6 @@ type QueryResponse struct {
 // Client calls the OpenShift Lightspeed API.
 type Client interface {
 	Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error)
-	TestConnectivity(ctx context.Context) error
 }
 
 // NewClient creates a Client that authenticates with the OLS API using the
@@ -80,27 +79,6 @@ func transportWithServiceCA() http.RoundTripper {
 		},
 		Proxy: proxy.FromConfig(),
 	}
-}
-
-func (c *clientImpl) TestConnectivity(ctx context.Context) error {
-	token, err := c.loadToken()
-	if err != nil {
-		return errors.Wrap(err, "loading service account token")
-	}
-
-	url := fmt.Sprintf("%s/v1/query", c.endpoint)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		return errors.Wrap(err, "building connectivity check request")
-	}
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return errors.Wrap(err, "connecting to Lightspeed")
-	}
-	defer utils.IgnoreError(resp.Body.Close)
-	return nil
 }
 
 func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error) {
