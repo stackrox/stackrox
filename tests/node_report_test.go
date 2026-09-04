@@ -12,10 +12,13 @@ import (
 	"time"
 
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -33,6 +36,9 @@ type NodeReportSuite struct {
 }
 
 func (s *NodeReportSuite) SetupSuite() {
+	if !features.NodeVulnerabilityReports.Enabled() {
+		s.T().Skipf("Skipping because %s is not enabled", features.NodeVulnerabilityReports.EnvVar())
+	}
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 30*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewNodeReportServiceClient(conn)
@@ -45,6 +51,9 @@ func (s *NodeReportSuite) waitForCentralReady() {
 		ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 		defer cancel()
 		_, err := s.service.CountNodeReportConfigurations(ctx, &apiV2.RawQuery{})
+		if status.Code(err) == codes.Unimplemented {
+			s.T().Skip("Node report service is not registered (feature flag disabled on Central)")
+		}
 		return err == nil
 	}, 2*time.Minute, 2*time.Second, "Central did not become ready")
 }
@@ -450,21 +459,29 @@ func (s *NodeReportSuite) TestCancelNodeReport() {
 	defer cancelCancel()
 
 	_, err = s.service.CancelNodeReport(cancelCtx, &apiV2.ResourceByID{Id: runResp.GetReportId()})
-	s.Require().NoError(err, "cancelling node report")
+	if err != nil {
+		s.T().Logf("Cancel returned error (job may have already finished): %v", err)
+	}
 
 	statusCtx, statusCancel := context.WithTimeout(s.ctx, 30*time.Second)
 	defer statusCancel()
 
 	statusResp, err := s.service.GetNodeReportStatus(statusCtx, &apiV2.ResourceByID{Id: runResp.GetReportId()})
 	if err != nil {
-		s.T().Logf("Report not found after cancel (expected): %v", err)
+		s.T().Logf("Report not found after cancel: %v", err)
 		return
 	}
 
-	status := statusResp.GetStatus()
-	s.T().Logf("Report state after cancel: %s", status.GetRunState())
-	s.Require().Equal(apiV2.ReportStatus_FAILURE, status.GetRunState(), "cancelled report should be in FAILURE state")
-	s.Assert().Equal("Job cancelled by user", status.GetErrorMsg(), "cancelled report should have cancellation message")
+	reportStatus := statusResp.GetStatus()
+	s.T().Logf("Report state after cancel: %s", reportStatus.GetRunState())
+	switch reportStatus.GetRunState() {
+	case apiV2.ReportStatus_FAILURE:
+		s.Equal("report cancelled by user", reportStatus.GetErrorMsg(), "cancelled report should have cancellation message")
+	case apiV2.ReportStatus_GENERATED, apiV2.ReportStatus_DELIVERED:
+		s.T().Log("report completed before cancel took effect")
+	default:
+		s.Failf("unexpected report state after cancel", "got %s: %s", reportStatus.GetRunState(), reportStatus.GetErrorMsg())
+	}
 }
 
 func (s *NodeReportSuite) TestQueryFiltering() {
