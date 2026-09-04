@@ -1,7 +1,6 @@
 package node
 
 import (
-	"context"
 	"testing"
 
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
@@ -31,12 +30,10 @@ type ConversionTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 	service  *serviceImpl
-	ctx      context.Context
 }
 
 func (s *ConversionTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.ctx = context.Background()
 	reportConfigDataStore := reportConfigDSMocks.NewMockDataStore(s.mockCtrl)
 	reportSnapshotDataStore := reportSnapshotDSMocks.NewMockDataStore(s.mockCtrl)
 	collectionDataStore := collectionDSMocks.NewMockDataStore(s.mockCtrl)
@@ -136,7 +133,7 @@ func (s *ConversionTestSuite) TestNotifierConversions() {
 		},
 	}
 
-	protoNotifier := s.service.convertV2NotifierConfigToProto(v2Notifier)
+	protoNotifier := v2.ConvertV2NotifierConfigToProto(v2Notifier)
 	assert.NotNil(s.T(), protoNotifier)
 	assert.Equal(s.T(), "notifier-123", protoNotifier.GetId())
 	assert.Equal(s.T(), "Custom Subject", protoNotifier.GetEmailConfig().GetCustomSubject())
@@ -148,7 +145,7 @@ func (s *ConversionTestSuite) TestNotifierConversions() {
 		Name: "Test Notifier",
 	}, true, nil).Times(1)
 
-	v2NotifierBack, err := s.service.convertProtoNotifierConfigToV2(protoNotifier)
+	v2NotifierBack, err := v2.ConvertProtoNotifierConfigToV2(s.service.notifierDatastore, protoNotifier)
 	assert.NoError(s.T(), err)
 	assert.NotNil(s.T(), v2NotifierBack)
 	assert.Equal(s.T(), "Test Notifier", v2NotifierBack.GetNotifierName())
@@ -158,6 +155,7 @@ func (s *ConversionTestSuite) TestNotifierConversions() {
 
 func (s *ConversionTestSuite) TestNotifierSnapshotConversion() {
 	protoSnapshot := &storage.NotifierSnapshot{
+		NotifierName: "Email Notifier",
 		NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
 			EmailConfig: &storage.EmailNotifierConfiguration{
 				NotifierId:    "notifier-456",
@@ -168,8 +166,9 @@ func (s *ConversionTestSuite) TestNotifierSnapshotConversion() {
 		},
 	}
 
-	v2Config := s.service.convertProtoNotifierSnapshotToV2(protoSnapshot)
+	v2Config := v2.ConvertProtoNotifierSnapshotToV2(protoSnapshot)
 	assert.NotNil(s.T(), v2Config)
+	assert.Equal(s.T(), "Email Notifier", v2Config.GetNotifierName())
 	assert.Equal(s.T(), "notifier-456", v2Config.GetEmailConfig().GetNotifierId())
 	assert.Equal(s.T(), "Snapshot Subject", v2Config.GetEmailConfig().GetCustomSubject())
 	assert.Equal(s.T(), []string{"alerts@example.com"}, v2Config.GetEmailConfig().GetMailingLists())
@@ -220,18 +219,41 @@ func (s *ConversionTestSuite) TestEntityScopeConversions() {
 }
 
 func (s *ConversionTestSuite) TestReportStatusConversion() {
-	protoStatus := &storage.ReportStatus{
-		RunState:                 storage.ReportStatus_GENERATED,
-		ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
-		ErrorMsg:                 "test error",
-		CompletedAt:              nil,
+	testCases := map[string]struct {
+		requestType storage.ReportStatus_RunMethod
+		want        apiV2.ReportStatus_ReportMethod
+	}{
+		"on-demand": {
+			requestType: storage.ReportStatus_ON_DEMAND,
+			want:        apiV2.ReportStatus_ON_DEMAND,
+		},
+		"scheduled": {
+			requestType: storage.ReportStatus_SCHEDULED,
+			want:        apiV2.ReportStatus_SCHEDULED,
+		},
+		"view-based": {
+			requestType: storage.ReportStatus_VIEW_BASED,
+			want:        apiV2.ReportStatus_ReportMethod(storage.ReportStatus_VIEW_BASED),
+		},
 	}
 
-	v2Status := convertPrototoV2Reportstatus(protoStatus)
-	assert.NotNil(s.T(), v2Status)
-	assert.Equal(s.T(), apiV2.ReportStatus_GENERATED, v2Status.GetRunState())
-	assert.Equal(s.T(), apiV2.NotificationMethod_DOWNLOAD, v2Status.GetReportNotificationMethod())
-	assert.Equal(s.T(), "test error", v2Status.GetErrorMsg())
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			protoStatus := &storage.ReportStatus{
+				RunState:                 storage.ReportStatus_GENERATED,
+				ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+				ReportRequestType:        tc.requestType,
+				ErrorMsg:                 "test error",
+			}
+
+			v2Status := convertPrototoV2Reportstatus(protoStatus)
+			assert.NotNil(s.T(), v2Status)
+			assert.Equal(s.T(), apiV2.ReportStatus_GENERATED, v2Status.GetRunState())
+			assert.Equal(s.T(), apiV2.NotificationMethod_DOWNLOAD, v2Status.GetReportNotificationMethod())
+			assert.Equal(s.T(), "test error", v2Status.GetErrorMsg())
+			assert.Equal(s.T(), tc.want, v2Status.GetReportRequestType())
+		})
+	}
 }
 
 func (s *ConversionTestSuite) TestNodeFiltersConversion() {
@@ -248,13 +270,13 @@ func (s *ConversionTestSuite) TestNodeFiltersConversion() {
 		},
 	}
 
-	protoFilters := s.service.convertV2NodeReportFiltersToProto(v2Filters, accessScopeRules)
+	protoFilters := convertV2NodeReportFiltersToProto(v2Filters, accessScopeRules)
 	assert.NotNil(s.T(), protoFilters)
 	assert.Equal(s.T(), "Cluster:prod", protoFilters.GetQuery())
 	assert.True(s.T(), protoFilters.GetAllVuln())
 	protoassert.SlicesEqual(s.T(), accessScopeRules, protoFilters.GetAccessScopeRules())
 
-	v2FiltersBack := s.service.convertProtoNodeReportFiltersToV2(protoFilters)
+	v2FiltersBack := convertProtoNodeReportFiltersToV2(protoFilters)
 	assert.NotNil(s.T(), v2FiltersBack)
 	assert.Equal(s.T(), v2Filters.GetQuery(), v2FiltersBack.GetQuery())
 	assert.True(s.T(), v2FiltersBack.GetAllVuln())
@@ -353,16 +375,16 @@ func (s *ConversionTestSuite) TestReportConfigurationRoundTrip() {
 func (s *ConversionTestSuite) TestNilConversions() {
 	assert.Nil(s.T(), v2.ConvertV2ScheduleToProto(nil))
 	assert.Nil(s.T(), v2.ConvertProtoScheduleToV2(nil))
-	assert.Nil(s.T(), s.service.convertV2NotifierConfigToProto(nil))
+	assert.Nil(s.T(), v2.ConvertV2NotifierConfigToProto(nil))
 
-	result, err := s.service.convertProtoNotifierConfigToV2(nil)
+	result, err := v2.ConvertProtoNotifierConfigToV2(s.service.notifierDatastore, nil)
 	assert.NoError(s.T(), err)
 	assert.Nil(s.T(), result)
 
-	assert.Nil(s.T(), s.service.convertProtoNotifierSnapshotToV2(nil))
+	assert.Nil(s.T(), v2.ConvertProtoNotifierSnapshotToV2(nil))
 	assert.Nil(s.T(), convertPrototoV2Reportstatus(nil))
-	assert.Nil(s.T(), s.service.convertV2NodeReportFiltersToProto(nil, nil))
-	assert.Nil(s.T(), s.service.convertProtoNodeReportFiltersToV2(nil))
+	assert.Nil(s.T(), convertV2NodeReportFiltersToProto(nil, nil))
+	assert.Nil(s.T(), convertProtoNodeReportFiltersToV2(nil))
 }
 
 func (s *ConversionTestSuite) TestEntityTypeEdgeCases() {
@@ -376,7 +398,7 @@ func (s *ConversionTestSuite) TestEntityTypeEdgeCases() {
 	assert.Equal(s.T(), apiV2.MatchType_EXACT, storageMatchTypeToV2(storage.MatchType_EXACT))
 }
 
-func (s *ConversionTestSuite) TestReportSnapshotWithDownloadAvailable() {
+func (s *ConversionTestSuite) TestConvertProtoReportSnapshotToV2() {
 	configID := "test-config"
 	reportID := "test-report"
 
@@ -384,6 +406,8 @@ func (s *ConversionTestSuite) TestReportSnapshotWithDownloadAvailable() {
 		ReportConfigurationId: configID,
 		ReportId:              reportID,
 		Name:                  "Test Report",
+		Description:           "Test description",
+		AreaOfConcern:         "User Workloads",
 		Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
 		Requester: &storage.SlimUser{
 			Id:   "user-1",
@@ -414,18 +438,78 @@ func (s *ConversionTestSuite) TestReportSnapshotWithDownloadAvailable() {
 	assert.Equal(s.T(), reportID, result.GetReportJobId())
 	assert.Equal(s.T(), configID, result.GetReportConfigId())
 	assert.Equal(s.T(), "Test Report", result.GetName())
+	assert.Equal(s.T(), "Test description", result.GetDescription())
+	assert.Equal(s.T(), "User Workloads", result.GetAreaOfConcern())
+	assert.False(s.T(), result.GetIsDownloadAvailable())
 }
 
-func (s *ConversionTestSuite) TestIntervalTypeConversions() {
-	assert.Equal(s.T(), storage.Schedule_UNSET, v2IntervalTypeToStorage[apiV2.ReportSchedule_UNSET])
-	assert.Equal(s.T(), storage.Schedule_DAILY, v2IntervalTypeToStorage[apiV2.ReportSchedule_DAILY])
-	assert.Equal(s.T(), storage.Schedule_WEEKLY, v2IntervalTypeToStorage[apiV2.ReportSchedule_WEEKLY])
-	assert.Equal(s.T(), storage.Schedule_MONTHLY, v2IntervalTypeToStorage[apiV2.ReportSchedule_MONTHLY])
+func (s *ConversionTestSuite) TestReportSnapshotDownloadAvailable() {
+	configID := "test-config"
+	reportID := "test-report"
 
-	assert.Equal(s.T(), apiV2.ReportSchedule_UNSET, storageIntervalTypeToV2[storage.Schedule_UNSET])
-	assert.Equal(s.T(), apiV2.ReportSchedule_DAILY, storageIntervalTypeToV2[storage.Schedule_DAILY])
-	assert.Equal(s.T(), apiV2.ReportSchedule_WEEKLY, storageIntervalTypeToV2[storage.Schedule_WEEKLY])
-	assert.Equal(s.T(), apiV2.ReportSchedule_MONTHLY, storageIntervalTypeToV2[storage.Schedule_MONTHLY])
+	testCases := map[string]struct {
+		snapshot  *storage.ReportSnapshot
+		blobNames set.FrozenStringSet
+		available bool
+	}{
+		"config-based with matching blob": {
+			snapshot: &storage.ReportSnapshot{
+				ReportConfigurationId: configID,
+				ReportId:              reportID,
+				ReportStatus: &storage.ReportStatus{
+					RunState:                 storage.ReportStatus_GENERATED,
+					ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+				},
+			},
+			blobNames: set.NewFrozenStringSet(common.GetReportBlobPath(configID, reportID)),
+			available: true,
+		},
+		"view-based with matching blob": {
+			snapshot: &storage.ReportSnapshot{
+				ReportId: reportID,
+				ReportStatus: &storage.ReportStatus{
+					RunState:                 storage.ReportStatus_GENERATED,
+					ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+					ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+				},
+			},
+			blobNames: set.NewFrozenStringSet(common.GetReportBlobPath("view-based-report", reportID)),
+			available: true,
+		},
+		"view-based without blob": {
+			snapshot: &storage.ReportSnapshot{
+				ReportId: reportID,
+				ReportStatus: &storage.ReportStatus{
+					RunState:                 storage.ReportStatus_GENERATED,
+					ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+					ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+				},
+			},
+			blobNames: set.NewFrozenStringSet(),
+			available: false,
+		},
+		"view-based does not match config-id blob path": {
+			snapshot: &storage.ReportSnapshot{
+				ReportConfigurationId: configID,
+				ReportId:              reportID,
+				ReportStatus: &storage.ReportStatus{
+					RunState:                 storage.ReportStatus_GENERATED,
+					ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+					ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+				},
+			},
+			blobNames: set.NewFrozenStringSet(common.GetReportBlobPath(configID, reportID)),
+			available: false,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			result, err := s.service.convertProtoReportSnapshotToV2(tc.snapshot, tc.blobNames)
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), tc.available, result.GetIsDownloadAvailable())
+		})
+	}
 }
 
 func (s *ConversionTestSuite) TestRunStateConversions() {
@@ -460,8 +544,7 @@ func (s *ConversionTestSuite) TestResourceScopeConversions() {
 	assert.NoError(s.T(), err)
 	assert.NotNil(s.T(), protoScope)
 
-	v2ScopeBack, err := s.service.convertProtoResourceScopeToV2(protoScope)
-	assert.NoError(s.T(), err)
+	v2ScopeBack := convertProtoResourceScopeToV2(protoScope)
 	assert.NotNil(s.T(), v2ScopeBack)
 	assert.NotNil(s.T(), v2ScopeBack.GetEntityScope())
 	assert.Len(s.T(), v2ScopeBack.GetEntityScope().GetRules(), 1)
@@ -472,8 +555,7 @@ func (s *ConversionTestSuite) TestEmptyResourceScope() {
 	assert.NoError(s.T(), err)
 	assert.Nil(s.T(), result)
 
-	v2Result, err := s.service.convertProtoResourceScopeToV2(nil)
-	assert.NoError(s.T(), err)
+	v2Result := convertProtoResourceScopeToV2(nil)
 	assert.Nil(s.T(), v2Result)
 }
 
@@ -587,6 +669,24 @@ func (s *ConversionTestSuite) TestProtoReportConfigurationToV2() {
 	assert.Equal(s.T(), "Notifier 1", v2Config.GetNotifiers()[0].GetNotifierName())
 }
 
+func (s *ConversionTestSuite) TestProtoReportConfigurationToV2_SkipsNotifierWithoutEmail() {
+	protoConfig := &storage.ReportConfiguration{
+		Id:   "config-proto",
+		Name: "Proto Config",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				Ref: &storage.NotifierConfiguration_Id{Id: "notifier-1"},
+			},
+		},
+	}
+
+	v2Config, err := s.service.convertProtoReportConfigurationToV2(protoConfig)
+	assert.NoError(s.T(), err)
+	assert.NotNil(s.T(), v2Config)
+	assert.Empty(s.T(), v2Config.GetNotifiers())
+}
+
 func (s *ConversionTestSuite) TestGetExistingBlobNames_NotDownloadMethod() {
 	snapshot := &storage.ReportSnapshot{
 		ReportConfigurationId: "config-1",
@@ -597,7 +697,7 @@ func (s *ConversionTestSuite) TestGetExistingBlobNames_NotDownloadMethod() {
 		},
 	}
 
-	result, err := s.service.getExistingBlobNames(s.ctx, []*storage.ReportSnapshot{snapshot})
+	result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, result.Cardinality())
 }
@@ -623,7 +723,7 @@ func (s *ConversionTestSuite) TestGetExistingBlobNames_WrongRunState() {
 				},
 			}
 
-			result, err := s.service.getExistingBlobNames(s.ctx, []*storage.ReportSnapshot{snapshot})
+			result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), 0, result.Cardinality())
 		})
@@ -643,7 +743,7 @@ func (s *ConversionTestSuite) TestGetExistingBlobNames_BlobSearchError() {
 	blobStore := s.service.blobStore.(*blobDSMocks.MockDatastore)
 	blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, assert.AnError).Times(1)
 
-	result, err := s.service.getExistingBlobNames(s.ctx, []*storage.ReportSnapshot{snapshot})
+	result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
 	assert.Error(s.T(), err)
 	assert.Equal(s.T(), 0, result.Cardinality())
 }
@@ -661,7 +761,7 @@ func (s *ConversionTestSuite) TestGetExistingBlobNames_NoBlobFound() {
 	blobStore := s.service.blobStore.(*blobDSMocks.MockDatastore)
 	blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).Times(1)
 
-	result, err := s.service.getExistingBlobNames(s.ctx, []*storage.ReportSnapshot{snapshot})
+	result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, result.Cardinality())
 }
@@ -687,13 +787,74 @@ func (s *ConversionTestSuite) TestGetExistingBlobNames_BlobFound() {
 			}
 
 			blobStore := s.service.blobStore.(*blobDSMocks.MockDatastore)
-			blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
+			blobStore.EXPECT().Search(allAccessCtx, gomock.Any()).Return([]search.Result{
 				{ID: common.GetReportBlobPath("config-1", "report-1")},
 			}, nil).Times(1)
 
-			result, err := s.service.getExistingBlobNames(s.ctx, []*storage.ReportSnapshot{snapshot})
+			result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
 			assert.NoError(s.T(), err)
 			assert.True(s.T(), result.Contains(common.GetReportBlobPath("config-1", "report-1")))
+		})
+	}
+}
+
+func (s *ConversionTestSuite) TestGetExistingBlobNames_ViewBased() {
+	snapshot := &storage.ReportSnapshot{
+		ReportId: "report-1",
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_GENERATED,
+			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+		},
+	}
+
+	blobStore := s.service.blobStore.(*blobDSMocks.MockDatastore)
+	blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
+		{ID: common.GetReportBlobPath("view-based-report", "report-1")},
+	}, nil).Times(1)
+
+	result, err := s.service.getExistingBlobNames([]*storage.ReportSnapshot{snapshot})
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), result.Contains(common.GetReportBlobPath("view-based-report", "report-1")))
+}
+
+func (s *ConversionTestSuite) TestReportBlobParentDir() {
+	testCases := map[string]struct {
+		snapshot *storage.ReportSnapshot
+		want     string
+	}{
+		"config-based on-demand": {
+			snapshot: &storage.ReportSnapshot{
+				ReportConfigurationId: "config-1",
+				ReportStatus: &storage.ReportStatus{
+					ReportRequestType: storage.ReportStatus_ON_DEMAND,
+				},
+			},
+			want: "config-1",
+		},
+		"config-based scheduled": {
+			snapshot: &storage.ReportSnapshot{
+				ReportConfigurationId: "config-1",
+				ReportStatus: &storage.ReportStatus{
+					ReportRequestType: storage.ReportStatus_SCHEDULED,
+				},
+			},
+			want: "config-1",
+		},
+		"view-based uses shared blob directory": {
+			snapshot: &storage.ReportSnapshot{
+				ReportConfigurationId: "config-1",
+				ReportStatus: &storage.ReportStatus{
+					ReportRequestType: storage.ReportStatus_VIEW_BASED,
+				},
+			},
+			want: "view-based-report",
+		},
+	}
+
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			assert.Equal(s.T(), tc.want, reportBlobParentDir(tc.snapshot))
 		})
 	}
 }

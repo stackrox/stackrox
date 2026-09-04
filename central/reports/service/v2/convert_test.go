@@ -729,18 +729,8 @@ func TestEnumConversions(t *testing.T) {
 }
 
 func TestConvertProtoNotifierSnapshotToV2(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	collectionDS := collectionDSMocks.NewMockDataStore(ctrl)
-	notifierDS := notifierDSMocks.NewMockDataStore(ctrl)
-	service := &serviceImpl{
-		collectionDatastore: collectionDS,
-		notifierDatastore:   notifierDS,
-	}
-
 	t.Run("nil snapshot", func(t *testing.T) {
-		result := service.convertProtoNotifierSnapshotToV2(nil)
+		result := ConvertProtoNotifierSnapshotToV2(nil)
 		assert.Nil(t, result)
 	})
 
@@ -748,7 +738,7 @@ func TestConvertProtoNotifierSnapshotToV2(t *testing.T) {
 		snapshot := &storage.NotifierSnapshot{
 			NotifierName: "test-notifier",
 		}
-		result := service.convertProtoNotifierSnapshotToV2(snapshot)
+		result := ConvertProtoNotifierSnapshotToV2(snapshot)
 		assert.NotNil(t, result)
 		assert.Equal(t, "test-notifier", result.GetNotifierName())
 	})
@@ -765,7 +755,7 @@ func TestConvertProtoNotifierSnapshotToV2(t *testing.T) {
 				},
 			},
 		}
-		result := service.convertProtoNotifierSnapshotToV2(snapshot)
+		result := ConvertProtoNotifierSnapshotToV2(snapshot)
 		assert.NotNil(t, result)
 		assert.Equal(t, "test-notifier", result.GetNotifierName())
 		assert.Equal(t, "notifier-1", result.GetEmailConfig().GetNotifierId())

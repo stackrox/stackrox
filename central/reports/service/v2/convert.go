@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -69,7 +70,7 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		ret.Notifiers = append(ret.Notifiers, s.convertV2NotifierConfigToProto(notifier))
+		ret.Notifiers = append(ret.Notifiers, ConvertV2NotifierConfigToProto(notifier))
 	}
 
 	return ret
@@ -199,7 +200,8 @@ func v2MatchTypeToStorage(m apiV2.MatchType) storage.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
+// ConvertV2NotifierConfigToProto converts apiV2.NotifierConfiguration to storage.NotifierConfiguration.
+func ConvertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
 	if notifier == nil {
 		return nil
 	}
@@ -222,8 +224,7 @@ func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierCon
 	return ret
 }
 
-// convertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule. Does not validate v2.ReportSchedule
-// ConvertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule
+// ConvertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule. Does not validate v2.ReportSchedule.
 func ConvertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *storage.Schedule {
 	if schedule == nil {
 		return nil
@@ -286,11 +287,13 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		converted, err := s.convertProtoNotifierConfigToV2(notifier)
+		converted, err := ConvertProtoNotifierConfigToV2(s.notifierDatastore, notifier)
 		if err != nil {
 			return nil, err
 		}
-		ret.Notifiers = append(ret.Notifiers, converted)
+		if converted != nil {
+			ret.Notifiers = append(ret.Notifiers, converted)
+		}
 	}
 
 	return ret, nil
@@ -431,8 +434,8 @@ func storageMatchTypeToV2(m storage.MatchType) apiV2.MatchType {
 	}
 }
 
-// convertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
-func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
+// ConvertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration.
+func ConvertProtoNotifierConfigToV2(ds notifierDS.DataStore, notifierConfig *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
 	if notifierConfig == nil {
 		return nil, nil
 	}
@@ -441,7 +444,7 @@ func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.Not
 		return nil, nil
 	}
 
-	notifier, found, err := s.notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetId())
+	notifier, found, err := ds.GetNotifier(allAccessCtx, notifierConfig.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -511,8 +514,8 @@ func (s *serviceImpl) convertProtoReportCollectiontoV2(collection *storage.Colle
 	}
 }
 
-// convertProtoNotifierSnapshotToV2 converts notifiersnapshot proto to v2
-func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot) *apiV2.NotifierConfiguration {
+// ConvertProtoNotifierSnapshotToV2 converts storage.NotifierSnapshot to apiV2.NotifierConfiguration.
+func ConvertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot) *apiV2.NotifierConfiguration {
 	if notifierSnapshot == nil {
 		return nil
 	}
@@ -608,24 +611,12 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			Schedule:            ConvertProtoScheduleToV2(snapshot.GetSchedule()),
 			ResourceScope:       resourceScope,
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(parentDir, snapshot.GetReportId())),
-		}
-
-		switch snapshot.GetType() {
-		case storage.ReportSnapshot_VULNERABILITY:
-			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
+			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
-			}
-		case storage.ReportSnapshot_NODE_VULNERABILITY:
-			snapshotv2.Filter = &apiV2.ReportSnapshot_NodeVulnReportFilters{
-				NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
-			}
-		default:
-			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
-			}
+			},
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
-			converted := s.convertProtoNotifierSnapshotToV2(notifier)
+			converted := ConvertProtoNotifierSnapshotToV2(notifier)
 			if converted != nil {
 				snapshotv2.Notifiers = append(snapshotv2.Notifiers, converted)
 			}
@@ -659,24 +650,4 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 	}
 
 	return search.ResultsToIDSet(results), nil
-}
-
-// convertProtoNodeReportFiltersToV2 converts storage.NodeVulnerabilityReportFilters to apiV2.NodeVulnerabilityReportFilters
-func convertProtoNodeReportFiltersToV2(filters *storage.NodeVulnerabilityReportFilters) *apiV2.NodeVulnerabilityReportFilters {
-	if filters == nil {
-		return nil
-	}
-
-	ret := &apiV2.NodeVulnerabilityReportFilters{
-		Query: filters.GetQuery(),
-	}
-
-	switch filters.GetCvesSince().(type) {
-	case *storage.NodeVulnerabilityReportFilters_AllVuln:
-		ret.CvesSince = &apiV2.NodeVulnerabilityReportFilters_AllVuln{
-			AllVuln: filters.GetAllVuln(),
-		}
-	}
-
-	return ret
 }

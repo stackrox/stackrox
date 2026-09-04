@@ -14,20 +14,6 @@ import (
 )
 
 var (
-	v2IntervalTypeToStorage = map[apiV2.ReportSchedule_IntervalType]storage.Schedule_IntervalType{
-		apiV2.ReportSchedule_UNSET:   storage.Schedule_UNSET,
-		apiV2.ReportSchedule_WEEKLY:  storage.Schedule_WEEKLY,
-		apiV2.ReportSchedule_MONTHLY: storage.Schedule_MONTHLY,
-		apiV2.ReportSchedule_DAILY:   storage.Schedule_DAILY,
-	}
-
-	storageIntervalTypeToV2 = map[storage.Schedule_IntervalType]apiV2.ReportSchedule_IntervalType{
-		storage.Schedule_UNSET:   apiV2.ReportSchedule_UNSET,
-		storage.Schedule_DAILY:   apiV2.ReportSchedule_DAILY,
-		storage.Schedule_WEEKLY:  apiV2.ReportSchedule_WEEKLY,
-		storage.Schedule_MONTHLY: apiV2.ReportSchedule_MONTHLY,
-	}
-
 	storageRunStateToV2 = map[storage.ReportStatus_RunState]apiV2.ReportStatus_RunState{
 		storage.ReportStatus_WAITING:   apiV2.ReportStatus_WAITING,
 		storage.ReportStatus_PREPARING: apiV2.ReportStatus_PREPARING,
@@ -36,7 +22,7 @@ var (
 		storage.ReportStatus_FAILURE:   apiV2.ReportStatus_FAILURE,
 	}
 
-	// Use this context only to populate notifier, collection names and IsDownloadAvailable fields in converted responses
+	// Use this context only to populate notifier names and IsDownloadAvailable fields in converted responses
 	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
@@ -65,18 +51,18 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 
 	if config.GetNodeVulnReportFilters() != nil {
 		ret.Filter = &storage.ReportConfiguration_NodeVulnReportFilters{
-			NodeVulnReportFilters: s.convertV2NodeReportFiltersToProto(config.GetNodeVulnReportFilters(), accessScopeRules),
+			NodeVulnReportFilters: convertV2NodeReportFiltersToProto(config.GetNodeVulnReportFilters(), accessScopeRules),
 		}
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		ret.Notifiers = append(ret.Notifiers, s.convertV2NotifierConfigToProto(notifier))
+		ret.Notifiers = append(ret.Notifiers, v2.ConvertV2NotifierConfigToProto(notifier))
 	}
 
 	return ret, nil
 }
 
-func (s *serviceImpl) convertV2NodeReportFiltersToProto(filters *apiV2.NodeVulnerabilityReportFilters,
+func convertV2NodeReportFiltersToProto(filters *apiV2.NodeVulnerabilityReportFilters,
 	accessScopeRules []*storage.SimpleAccessScope_Rules) *storage.NodeVulnerabilityReportFilters {
 	if filters == nil {
 		return nil
@@ -168,29 +154,6 @@ func v2MatchTypeToStorage(m apiV2.MatchType) storage.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
-	if notifier == nil {
-		return nil
-	}
-
-	ret := &storage.NotifierConfiguration{
-		Ref: &storage.NotifierConfiguration_Id{
-			Id: notifier.GetEmailConfig().GetNotifierId(),
-		},
-	}
-
-	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
-		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				MailingLists:  emailConfig.GetMailingLists(),
-				CustomSubject: emailConfig.GetCustomSubject(),
-				CustomBody:    emailConfig.GetCustomBody(),
-			},
-		}
-	}
-	return ret
-}
-
 // Proto to V2 conversions
 
 func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
@@ -198,10 +161,7 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		return nil, nil
 	}
 
-	resourceScope, err := s.convertProtoResourceScopeToV2(config.GetResourceScope())
-	if err != nil {
-		return nil, err
-	}
+	resourceScope := convertProtoResourceScopeToV2(config.GetResourceScope())
 
 	ret := &apiV2.ReportConfiguration{
 		Id:            config.GetId(),
@@ -214,22 +174,24 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 
 	if config.GetNodeVulnReportFilters() != nil {
 		ret.Filter = &apiV2.ReportConfiguration_NodeVulnReportFilters{
-			NodeVulnReportFilters: s.convertProtoNodeReportFiltersToV2(config.GetNodeVulnReportFilters()),
+			NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(config.GetNodeVulnReportFilters()),
 		}
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		converted, err := s.convertProtoNotifierConfigToV2(notifier)
+		converted, err := v2.ConvertProtoNotifierConfigToV2(s.notifierDatastore, notifier)
 		if err != nil {
 			return nil, err
 		}
-		ret.Notifiers = append(ret.Notifiers, converted)
+		if converted != nil {
+			ret.Notifiers = append(ret.Notifiers, converted)
+		}
 	}
 
 	return ret, nil
 }
 
-func (s *serviceImpl) convertProtoNodeReportFiltersToV2(filters *storage.NodeVulnerabilityReportFilters) *apiV2.NodeVulnerabilityReportFilters {
+func convertProtoNodeReportFiltersToV2(filters *storage.NodeVulnerabilityReportFilters) *apiV2.NodeVulnerabilityReportFilters {
 	if filters == nil {
 		return nil
 	}
@@ -248,16 +210,16 @@ func (s *serviceImpl) convertProtoNodeReportFiltersToV2(filters *storage.NodeVul
 	return ret
 }
 
-func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope) (*apiV2.ResourceScope, error) {
+func convertProtoResourceScopeToV2(scope *storage.ResourceScope) *apiV2.ResourceScope {
 	if scope == nil {
-		return nil, nil
+		return nil
 	}
 
 	ret := &apiV2.ResourceScope{}
 	if ref, ok := scope.GetScopeReference().(*storage.ResourceScope_EntityScope); ok {
 		ret.ScopeReference = &apiV2.ResourceScope_EntityScope{EntityScope: convertStorageEntityScopeToV2(ref.EntityScope)}
 	}
-	return ret, nil
+	return ret
 }
 
 func convertStorageEntityScopeToV2(es *storage.EntityScope) *apiV2.EntityScope {
@@ -312,38 +274,17 @@ func storageMatchTypeToV2(m storage.MatchType) apiV2.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
-	if notifierConfig == nil {
-		return nil, nil
+// reportBlobParentDir returns the blob directory for a snapshot. View-based
+// report blobs are stored under "view-based-report", not under a report config ID.
+func reportBlobParentDir(snapshot *storage.ReportSnapshot) string {
+	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
+		return "view-based-report"
 	}
-
-	if notifierConfig.GetEmailConfig() == nil {
-		return nil, nil
-	}
-
-	notifier, found, err := s.notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetId())
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
-	}
-
-	return &apiV2.NotifierConfiguration{
-		NotifierName: notifier.GetName(),
-		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    notifierConfig.GetId(),
-				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
-				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
-				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
-			},
-		},
-	}, nil
+	return snapshot.GetReportConfigurationId()
 }
 
-func isDownloadAvailable(blobNames set.FrozenStringSet, configID, reportID string) bool {
-	return blobNames.Contains(common.GetReportBlobPath(configID, reportID))
+func isDownloadAvailable(blobNames set.FrozenStringSet, snapshot *storage.ReportSnapshot) bool {
+	return blobNames.Contains(common.GetReportBlobPath(reportBlobParentDir(snapshot), snapshot.GetReportId()))
 }
 
 func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSnapshot, blobNames set.FrozenStringSet) (*apiV2.ReportSnapshot, error) {
@@ -351,10 +292,7 @@ func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSna
 		return nil, nil
 	}
 
-	resourceScope, err := s.convertProtoResourceScopeToV2(snapshot.GetResourceScope())
-	if err != nil {
-		return nil, err
-	}
+	resourceScope := convertProtoResourceScopeToV2(snapshot.GetResourceScope())
 
 	ret := &apiV2.ReportSnapshot{
 		ReportStatus:   convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
@@ -362,6 +300,7 @@ func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSna
 		ReportJobId:    snapshot.GetReportId(),
 		Name:           snapshot.GetName(),
 		Description:    snapshot.GetDescription(),
+		AreaOfConcern:  snapshot.GetAreaOfConcern(),
 		Type:           apiV2.ReportSnapshot_NODE_VULNERABILITY,
 		User: &apiV2.SlimUser{
 			Id:   snapshot.GetRequester().GetId(),
@@ -369,46 +308,23 @@ func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSna
 		},
 		Schedule:            v2.ConvertProtoScheduleToV2(snapshot.GetSchedule()),
 		ResourceScope:       resourceScope,
-		IsDownloadAvailable: isDownloadAvailable(blobNames, snapshot.GetReportConfigurationId(), snapshot.GetReportId()),
+		IsDownloadAvailable: isDownloadAvailable(blobNames, snapshot),
 	}
 
 	if snapshot.GetNodeVulnReportFilters() != nil {
 		ret.Filter = &apiV2.ReportSnapshot_NodeVulnReportFilters{
-			NodeVulnReportFilters: s.convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
+			NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
 		}
 	}
 
 	for _, notifier := range snapshot.GetNotifiers() {
-		converted := s.convertProtoNotifierSnapshotToV2(notifier)
+		converted := v2.ConvertProtoNotifierSnapshotToV2(notifier)
 		if converted != nil {
 			ret.Notifiers = append(ret.Notifiers, converted)
 		}
 	}
 
 	return ret, nil
-}
-
-func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot) *apiV2.NotifierConfiguration {
-	if notifierSnapshot == nil {
-		return nil
-	}
-	if notifierSnapshot.GetEmailConfig() == nil {
-		return &apiV2.NotifierConfiguration{
-			NotifierName: notifierSnapshot.GetNotifierName(),
-		}
-	}
-
-	return &apiV2.NotifierConfiguration{
-		NotifierName: notifierSnapshot.GetNotifierName(),
-		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    notifierSnapshot.GetEmailConfig().GetNotifierId(),
-				MailingLists:  notifierSnapshot.GetEmailConfig().GetMailingLists(),
-				CustomSubject: notifierSnapshot.GetEmailConfig().GetCustomSubject(),
-				CustomBody:    notifierSnapshot.GetEmailConfig().GetCustomBody(),
-			},
-		},
-	}
 }
 
 func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportStatus {
@@ -418,6 +334,7 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 
 	ret := &apiV2.ReportStatus{
 		ReportNotificationMethod: apiV2.NotificationMethod(status.GetReportNotificationMethod()),
+		ReportRequestType:        apiV2.ReportStatus_ReportMethod(status.GetReportRequestType()),
 		RunState:                 storageRunStateToV2[status.GetRunState()],
 		ErrorMsg:                 status.GetErrorMsg(),
 		CompletedAt:              status.GetCompletedAt(),
@@ -426,7 +343,7 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 	return ret
 }
 
-func (s *serviceImpl) getExistingBlobNames(ctx context.Context, snapshots []*storage.ReportSnapshot) (set.FrozenStringSet, error) {
+func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) (set.FrozenStringSet, error) {
 	if len(snapshots) == 0 {
 		return set.NewFrozenStringSet(), nil
 	}
@@ -437,11 +354,7 @@ func (s *serviceImpl) getExistingBlobNames(ctx context.Context, snapshots []*sto
 		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
-				parentDir := snapshot.GetReportConfigurationId()
-				if snapshot.GetViewBasedVulnReportFilters() != nil {
-					parentDir = "view-based-report"
-				}
-				blobNames = append(blobNames, common.GetReportBlobPath(parentDir, snapshot.GetReportId()))
+				blobNames = append(blobNames, common.GetReportBlobPath(reportBlobParentDir(snapshot), snapshot.GetReportId()))
 			}
 		}
 	}
@@ -451,7 +364,7 @@ func (s *serviceImpl) getExistingBlobNames(ctx context.Context, snapshots []*sto
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobNames...).ProtoQuery()
-	results, err := s.blobStore.Search(ctx, query)
+	results, err := s.blobStore.Search(allAccessCtx, query)
 	if err != nil {
 		return set.NewFrozenStringSet(), errors.Wrap(err, "failed to search for report blobs")
 	}
