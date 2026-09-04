@@ -120,8 +120,7 @@ jobs:
         run: |
           source ./workflow/env.sh
 
-          # ROX-29641: workload generation on GKE is unreliable with Scanner V4 enabled.
-          # On ACS 5.0 this opts out of Scanner V4 only; Scanner V2 is not installed.
+          # ROX-29641: We are facing issues with workload generation on GKE when Scanner v4 is enabled.
           export ROX_SCANNER_V4=false
           ./scale/dev/launch_central.sh
 

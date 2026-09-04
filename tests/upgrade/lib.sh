@@ -130,8 +130,9 @@ deploy_earlier_postgres_central() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-# upgrade_central_helm_to_head applies the HEAD central-services chart after a
-# kubectl-only image walk so Scanner V4 is installed for smoke tests.
+# upgrade_central_helm_to_head applies the HEAD chart to the existing
+# stackrox-central-services release so Scanner V4 is installed. kubectl set
+# image does not create V4, and HEAD Central does not use leftover Scanner V2.
 upgrade_central_helm_to_head() {
     local namespace="${1:-stackrox}"
     local image_tag="${2:-$CURRENT_TAG}"
@@ -139,28 +140,44 @@ upgrade_central_helm_to_head() {
 
     info "Upgrading central Helm release to HEAD chart with Scanner V4"
 
+    if ! helm -n "$namespace" status stackrox-central-services >/dev/null 2>&1; then
+        die "Helm release stackrox-central-services not found in namespace ${namespace}"
+    fi
+
     local chart_dir
     chart_dir="$(mktemp -d)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services \
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" helm output central-services \
         --image-defaults opensource \
         --output-dir "${chart_dir}" --remove
 
+    # V4 TLS certs are signed with the install-time CA stored in this secret.
     local helm_generated_values_file
     helm_generated_values_file="$(mktemp)"
-    kubectl -n "$namespace" get secrets -o json \
-        | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
-        > "$helm_generated_values_file"
+    local generated_secrets_json
+    generated_secrets_json="$(kubectl -n "$namespace" get secrets -o json | jq '[.items[]
+        | select(.metadata.name | startswith("stackrox-generated-"))
+        | select(.data["generated-values.yaml"] != null)]')"
+    local generated_secret_count
+    generated_secret_count="$(jq 'length' <<<"$generated_secrets_json")"
+    if [[ "$generated_secret_count" -ne 1 ]]; then
+        die "Expected one Helm generated-values secret in ${namespace}, found ${generated_secret_count}: $(jq -r '.[].metadata.name' <<<"$generated_secrets_json")"
+    fi
+    jq -r '.[0].data["generated-values.yaml"] | @base64d' <<<"$generated_secrets_json" > "$helm_generated_values_file"
     if [[ ! -s "$helm_generated_values_file" ]]; then
-        die "No stackrox-generated Helm values secret found in namespace ${namespace}"
+        die "Helm generated-values secret $(jq -r '.[0].metadata.name' <<<"$generated_secrets_json") was empty"
     fi
 
     local helm_extra_args=()
-    if [[ "${SCANNER_V4_DB_STORAGE_CLASS:-}" == "faster" ]]; then
-        kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
-        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=faster")
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
+            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        fi
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
     fi
 
-    helm -n "$namespace" upgrade --install --reuse-values \
+    # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
+    # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
+    helm -n "$namespace" upgrade --reuse-values \
         -f "$helm_generated_values_file" \
         -f - \
         "${helm_extra_args[@]}" \
@@ -180,10 +197,14 @@ scannerV4:
   db:
     image:
       tag: "${image_tag}"
+customize:
+  envVars:
+    SCANNER_V4_MATCHER_READINESS: vulnerability
 EOT
 
+    export SCANNER_V4_VULN_READINESS=true
     wait_for_api "$namespace"
-    wait_for_central_db
+    wait_for_central_db "$namespace"
     wait_for_scanner_V4 "$namespace"
 }
 
