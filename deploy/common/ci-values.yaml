@@ -23,6 +23,8 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    # Use ci-minimal bundle (18KB, 109 CVEs) from GitHub for fast CI testing
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/604dc32bb0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
     # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     resources:
       requests:
