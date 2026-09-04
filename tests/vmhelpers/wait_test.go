@@ -41,6 +41,38 @@ func TestPollUntil_TimesOutWithDetail(t *testing.T) {
 	require.Contains(t, err.Error(), "still waiting")
 }
 
+func TestPollUntil_RetriesTransientThenSucceeds(t *testing.T) {
+	ctx := t.Context()
+	var polls int
+	err := pollUntil(ctx, WaitOptions{
+		Timeout:      400 * time.Millisecond,
+		PollInterval: 5 * time.Millisecond,
+	}, "transient-test", func(context.Context) (bool, string, error) {
+		polls++
+		if polls == 1 {
+			return false, "", status.Error(codes.Unavailable, "central busy")
+		}
+		return true, "ok", nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, polls)
+}
+
+func TestPollUntil_UnimplementedIsTerminal(t *testing.T) {
+	ctx := t.Context()
+	var polls int
+	err := pollUntil(ctx, WaitOptions{
+		Timeout:      400 * time.Millisecond,
+		PollInterval: 5 * time.Millisecond,
+	}, "unimplemented-test", func(context.Context) (bool, string, error) {
+		polls++
+		return false, "", status.Error(codes.Unimplemented, "not registered")
+	})
+	require.Error(t, err)
+	require.Equal(t, 1, polls)
+	require.Contains(t, err.Error(), "Unimplemented")
+}
+
 func TestPollUntil_RejectsInvalidOptions(t *testing.T) {
 	ctx := context.Background()
 
