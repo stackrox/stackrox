@@ -171,9 +171,9 @@ _download_and_install_virtctl() {
 }
 
 # True when $1 is a kubevirt/kubevirt GitHub release tag (v1.6.0 or 1.6.0).
-# Image digests (sha256:...) are not release tags.
+# Image digests (sha256:...) and two-part versions (v1.6) are not release tags.
 _is_kubevirt_github_release_tag() {
-    [[ "$1" =~ ^v?[0-9]+\.[0-9]+([.][0-9]+)?(-[0-9A-Za-z.-]+)?$ ]]
+    [[ "$1" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
 }
 
 _normalize_kubevirt_github_tag() {
