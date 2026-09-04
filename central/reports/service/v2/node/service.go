@@ -9,7 +9,6 @@ import (
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
-	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -25,17 +24,15 @@ type Service interface {
 
 // New returns a new instance of the node report service.
 func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore, validator *validation.Validator,
-	db postgres.DB) Service {
+	notifierDatastore notifierDS.DataStore, scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore,
+	validator *validation.Validator, db postgres.DB) Service {
 	return &serviceImpl{
-		reportConfigStore:   reportConfigStore,
-		snapshotDatastore:   snapshotDatastore,
-		collectionDatastore: collectionDatastore,
-		notifierDatastore:   notifierDatastore,
-		scheduler:           scheduler,
-		blobStore:           blobStore,
-		validator:           validator,
-		db:                  db,
+		reportConfigStore: reportConfigStore,
+		snapshotDatastore: snapshotDatastore,
+		notifierDatastore: notifierDatastore,
+		scheduler:         scheduler,
+		blobStore:         blobStore,
+		validator:         validator,
+		db:                db,
 	}
 }

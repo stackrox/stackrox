@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
@@ -64,7 +65,7 @@ func (s *NodeReportServiceTestSuite) SetupTest() {
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
 	s.db = postgresMocks.NewMockDB(s.mockCtrl)
 	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, s.db)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, s.db)
 }
 
 func (s *NodeReportServiceTestSuite) TearDownSuite() {
@@ -822,6 +823,12 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_WrongType()
 	s.Error(err)
 }
 
+func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_RequiresIdentity() {
+	_, err := s.service.PostNodeReportConfiguration(s.ctx, s.getValidNodeReportConfig())
+	s.Error(err)
+	s.ErrorIs(err, errox.NoCredentials)
+}
+
 func (s *NodeReportServiceTestSuite) TestCancelNodeReport_NotFound() {
 	creator := &storage.SlimUser{
 		Id:   "uid",
@@ -1126,6 +1133,11 @@ func (s *NodeReportServiceTestSuite) TestAuthzPermissions() {
 		allowedPerms map[string]storage.Access
 		deniedPerms  map[string]storage.Access
 	}{
+		"GetNodeReportStatus allowed with View Node+Cluster, denied without Cluster": {
+			method:       apiV2.NodeReportService_GetNodeReportStatus_FullMethodName,
+			allowedPerms: viewNodeCluster,
+			deniedPerms:  nodeOnly,
+		},
 		"CancelNodeReport allowed with View Node+Cluster, denied without Cluster": {
 			method:       apiV2.NodeReportService_CancelNodeReport_FullMethodName,
 			allowedPerms: viewNodeCluster,

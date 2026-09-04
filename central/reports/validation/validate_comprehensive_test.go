@@ -595,6 +595,21 @@ func TestValidateCancelReportRequest(t *testing.T) {
 			expectError: true,
 			errContains: "not found",
 		},
+		"node vulnerability snapshot is rejected": {
+			reportID: "node-job",
+			setupMocks: func() {
+				snapshotDS.EXPECT().Get(gomock.Any(), "node-job").Return(&storage.ReportSnapshot{
+					ReportId: "node-job",
+					Type:     storage.ReportSnapshot_NODE_VULNERABILITY,
+					ReportStatus: &storage.ReportStatus{
+						RunState: storage.ReportStatus_WAITING,
+					},
+					Requester: &storage.SlimUser{Id: "user-1"},
+				}, true, nil)
+			},
+			expectError: true,
+			errContains: "node report service",
+		},
 	}
 
 	for name, tc := range tests {

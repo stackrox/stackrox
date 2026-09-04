@@ -10,12 +10,9 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportsv2 "github.com/stackrox/rox/central/reports/service/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
-	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -31,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
@@ -48,6 +44,8 @@ var (
 			apiV2.NodeReportService_ListNodeReportConfigurations_FullMethodName,
 			apiV2.NodeReportService_GetNodeReportConfiguration_FullMethodName,
 			apiV2.NodeReportService_CountNodeReportConfigurations_FullMethodName,
+			apiV2.NodeReportService_GetNodeReportHistory_FullMethodName,
+			apiV2.NodeReportService_GetMyNodeReportHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_PostNodeReportConfiguration_FullMethodName,
@@ -55,16 +53,14 @@ var (
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_DeleteNodeReportConfiguration_FullMethodName,
-		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
 			apiV2.NodeReportService_RunNodeReport_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Node), permissions.View(resources.Cluster)): {
-			apiV2.NodeReportService_GetNodeReportStatus_FullMethodName,
-			apiV2.NodeReportService_GetNodeReportHistory_FullMethodName,
-			apiV2.NodeReportService_GetMyNodeReportHistory_FullMethodName,
-		},
+		// Cancel/Delete job match the image service: View is enough for the requester's own job.
+		// Modify(WorkflowAdministration) is checked in-handler when cancelling another user's job.
+		// Design table listed Modify(WorkflowAdministration) on those RPCs; image-parity won in review.
+		// GetNodeReportStatus uses the same View(Node)+View(Cluster) set so view-based users can poll jobs.
 		user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)): {
+			apiV2.NodeReportService_GetNodeReportStatus_FullMethodName,
 			apiV2.NodeReportService_GetViewBasedNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_GetViewBasedMyNodeReportHistory_FullMethodName,
 			apiV2.NodeReportService_PostViewBasedNodeReport_FullMethodName,
@@ -76,14 +72,13 @@ var (
 
 type serviceImpl struct {
 	apiV2.UnimplementedNodeReportServiceServer
-	reportConfigStore   reportConfigDS.DataStore
-	snapshotDatastore   snapshotDS.DataStore
-	collectionDatastore collectionDS.DataStore
-	notifierDatastore   notifierDS.DataStore
-	scheduler           schedulerV2.Scheduler
-	blobStore           blobDS.Datastore
-	validator           *validation.Validator
-	db                  postgres.DB
+	reportConfigStore reportConfigDS.DataStore
+	snapshotDatastore snapshotDS.DataStore
+	notifierDatastore notifierDS.DataStore
+	scheduler         schedulerV2.Scheduler
+	blobStore         blobDS.Datastore
+	validator         *validation.Validator
+	db                postgres.DB
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -99,9 +94,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PostNodeReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
-	creatorID := authn.IdentityFromContextOrNil(ctx)
-	if creatorID == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	creatorID, err := identityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	if request.GetType() != apiV2.ReportConfiguration_NODE_VULNERABILITY {
@@ -175,9 +170,9 @@ func (s *serviceImpl) UpdateNodeReportConfiguration(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	for _, reportSnapshot := range reportSnapshots {
 		if slimUser.GetId() == reportSnapshot.GetRequester().GetId() {
@@ -334,9 +329,9 @@ func (s *serviceImpl) RunNodeReport(ctx context.Context, req *apiV2.RunReportReq
 		return nil, errox.InvalidArgs.CausedByf("report configuration '%s' is not a node vulnerability report", req.GetReportConfigId())
 	}
 
-	requesterID := authn.IdentityFromContextOrNil(ctx)
-	if requesterID == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	requesterID, err := identityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	reportRequest, err := s.validator.ValidateAndGenerateReportRequest(
@@ -350,7 +345,7 @@ func (s *serviceImpl) RunNodeReport(ctx context.Context, req *apiV2.RunReportReq
 	}
 
 	if env.CentralWorkerEnabled.BooleanSetting() {
-		reportID, err := s.persistSnapshotAndNotify(ctx, reportRequest, pgNotify.ReportRequestSubmitted)
+		reportID, err := reportsv2.PersistSnapshotAndNotify(ctx, s.validator, s.db, reportRequest, pgNotify.ReportRequestSubmitted)
 		if err != nil {
 			return nil, err
 		}
@@ -374,7 +369,7 @@ func (s *serviceImpl) getReportHistory(ctx context.Context, queryBuilder *search
 
 	baseQuery := queryBuilder.ProtoQuery()
 	if userID != "" {
-		if err := verifyNoUserSearchLabels(parsedQuery); err != nil {
+		if err := reportsv2.VerifyNoUserSearchLabels(parsedQuery); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err.Error())
 		}
 		userIDQuery := search.NewQueryBuilder().AddExactMatches(search.UserID, userID).ProtoQuery()
@@ -422,9 +417,9 @@ func (s *serviceImpl) GetMyNodeReportHistory(ctx context.Context, req *apiV2.Get
 		return nil, errox.InvalidArgs.CausedBy("empty request or id")
 	}
 
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	queryBuilder := search.NewQueryBuilder().
@@ -467,9 +462,9 @@ func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceB
 		return nil, errox.InvalidArgs.CausedByf("report snapshot '%s' is not a node vulnerability report", req.GetId())
 	}
 
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	if slimUser.GetId() != snapshot.GetRequester().GetId() {
 		if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
@@ -514,9 +509,9 @@ func (s *serviceImpl) DeleteNodeReport(ctx context.Context, req *apiV2.DeleteRep
 		return nil, errox.InvalidArgs.CausedByf("report snapshot '%s' is not a node vulnerability report", req.GetId())
 	}
 
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	if slimUser.GetId() != snapshot.GetRequester().GetId() {
 		return nil, errox.NotAuthorized.CausedBy("report cannot be deleted by a user who did not request the report")
@@ -552,9 +547,9 @@ func (s *serviceImpl) PostViewBasedNodeReport(ctx context.Context, req *apiV2.Re
 		return nil, errox.InvalidArgs.CausedBy("report type must be NODE_VULNERABILITY")
 	}
 
-	requesterID := authn.IdentityFromContextOrNil(ctx)
-	if requesterID == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	requesterID, err := identityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	reportRequest, err := s.validator.ValidateAndGenerateViewBasedReportRequest(req, requesterID)
@@ -563,7 +558,7 @@ func (s *serviceImpl) PostViewBasedNodeReport(ctx context.Context, req *apiV2.Re
 	}
 
 	if env.CentralWorkerEnabled.BooleanSetting() {
-		reportID, err := s.persistSnapshotAndNotify(ctx, reportRequest, pgNotify.ReportRequestSubmitted)
+		reportID, err := reportsv2.PersistSnapshotAndNotify(ctx, s.validator, s.db, reportRequest, pgNotify.ReportRequestSubmitted)
 		if err != nil {
 			return nil, err
 		}
@@ -582,50 +577,35 @@ func (s *serviceImpl) GetViewBasedNodeReportHistory(ctx context.Context, req *ap
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
-	return s.getReportHistory(snapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), "")
+	return s.getReportHistory(reportsv2.SnapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), "")
 }
 
 func (s *serviceImpl) GetViewBasedMyNodeReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("could not determine user identity from provided context")
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	queryBuilder := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportSnapshot_NODE_VULNERABILITY.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String())
-	return s.getReportHistory(snapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), slimUser.GetId())
+	return s.getReportHistory(reportsv2.SnapshotReadContext(ctx), queryBuilder, req.GetReportParamQuery().GetPagination(), req.GetReportParamQuery().GetQuery(), slimUser.GetId())
 }
 
-func snapshotReadContext(ctx context.Context) context.Context {
-	return sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration),
-		),
-	)
-}
-
-func verifyNoUserSearchLabels(q *v1.Query) error {
-	unexpectedLabels := set.NewStringSet(search.UserID.String(), search.UserName.String())
-	var err error
-	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && unexpectedLabels.Contains(mfQ.MatchFieldQuery.GetField()) {
-			err = errors.New("query contains user search labels")
-			return
-		}
-	})
-	return err
-}
-
-func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *reportGen.ReportRequest, channel string) (string, error) {
-	reportID, err := s.validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
-	if err != nil {
-		return "", err
+func identityFromContext(ctx context.Context) (authn.Identity, error) {
+	id := authn.IdentityFromContextOrNil(ctx)
+	if id == nil {
+		return nil, errox.NoCredentials.New("could not determine user identity from provided context")
 	}
-	reportsv2.NotifyWithRetry(ctx, s.db, channel, reportID)
-	return reportID, nil
+	return id, nil
+}
+
+func userFromContext(ctx context.Context) (*storage.SlimUser, error) {
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errox.NoCredentials.New("could not determine user identity from provided context")
+	}
+	return slimUser, nil
 }
 
 var _ Service = (*serviceImpl)(nil)
