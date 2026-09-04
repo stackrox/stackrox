@@ -190,8 +190,12 @@ test_upgrade_paths() {
       ls ./postgres*
       info "END SHREWS"
 
-#      gsutil cp ./postgres_db_4_6.sql.zip gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
+      gsutil cp ./"postgres_db_${str}.sql.zip" gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
     done
+
+    info "SHREWS"
+    gsutil ls gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
+    info "END SHREWS"
 
     ########################################################################################
     # Upgrade to current in order to run any Postgres -> Postgres migrations               #
