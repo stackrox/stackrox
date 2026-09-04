@@ -179,8 +179,14 @@ export function fetchDeploymentRiskSummary(id: string): Promise<DeploymentRiskSu
 /**
  * Tests connectivity to the Lightspeed AI service.
  */
-export function testLightspeedConnection(): Promise<TestLightspeedConnectionResponse> {
-    return axios
-        .post<TestLightspeedConnectionResponse>(`${deploymentWithRiskUrl}/ai-summary/test`)
-        .then((response) => response.data);
+export function testLightspeedConnection(): CancellableRequest<TestLightspeedConnectionResponse> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .post<TestLightspeedConnectionResponse>(
+                `${deploymentWithRiskUrl}/ai-summary/test`,
+                undefined,
+                { signal }
+            )
+            .then((response) => response.data)
+    );
 }
