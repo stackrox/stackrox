@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,9 +9,9 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -23,11 +22,7 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
-)
-
-const (
-	lastStartedTimestampColumnName = "laststartedtime"
-	scanRefIDColumnName            = "scanrefid"
+	log           = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -392,23 +387,45 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
-func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
-	if scanRefID == "" || lastStartedTimestamp == nil {
+func (d *datastoreImpl) DeleteOldResults(_ context.Context, _ *timestamppb.Timestamp, _ string, _ bool) error {
+	// PoC ROX-35223: Disabled to allow historical compliance results to accumulate across scan runs.
+	log.Debug("DeleteOldResults is disabled to retain historical compliance data for trending")
+	return nil
+}
+
+func (d *datastoreImpl) ComplianceTrendResults(ctx context.Context, query *v1.Query) ([]*ComplianceTrendDataPoint, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceTrendResults")
+
+	cloned := query.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorCheckLastStartedTime).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorCheckLastStartedTime.String(),
+		},
+	}
+
+	if cloned.GetPagination() == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+	}
+	if cloned.GetPagination().GetSortOptions() == nil {
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorCheckLastStartedTime.String(),
+			},
+		}
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorCheckLastStartedTime)
+	var results []*ComplianceTrendDataPoint
+	err := pgSearch.RunSelectRequestForSchemaFn[ComplianceTrendDataPoint](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ComplianceTrendDataPoint) error {
+		results = append(results, r)
 		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	if err := lastStartedTimestamp.CheckValid(); err != nil {
-		return err
-	}
-	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
-	if includeCurrent {
-		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"
-	}
-	deleteStmt := fmt.Sprintf(deleteFmt,
-		schema.ComplianceOperatorCheckResultV2TableName,
-		scanRefIDColumnName,
-		lastStartedTimestampColumnName,
-		lastStartedTimestampColumnName,
-	)
-	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
-	return err
+
+	return results, nil
 }
