@@ -1,0 +1,36 @@
+name: gha-env-test
+
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gha-env-test:
+    runs-on: ubuntu-slim
+    steps:
+    - name: Persist
+      run: |
+        echo "FOO1=bar baz" >> "$GITHUB_ENV"
+        echo "FOO2=\"bar baz\"" >> "$GITHUB_ENV"
+
+    - name: Retrieve
+      run: |
+        echo "FOO1=${FOO1}"
+        echo "FOO2=${FOO2}"
