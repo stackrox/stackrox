@@ -14,9 +14,11 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
-# On GKE only ubi9 (RHEL) images are scanned with vuln assertions (delegated_scanning_test.go).
-# Matches ocp_vm_scanning_e2e_tests.py allowlist — drops alpine, debian, osv, ubuntu.
-os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
+# Include bundles for test images: RHEL (ubi9), Debian (nginx), Alpine (httpd/memcached)
+# Delegated scanning tests use nginx/httpd/memcached from quay.io/rhacs-eng/qa
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = (
+    "alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu"
+)
 
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
