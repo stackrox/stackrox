@@ -1,0 +1,55 @@
+{
+    "data": {
+        "results": [
+            {
+                "createdAt": "2024-07-15T12:21:46Z",
+                "cve": "CVE-2024-36886",
+                "cvss": 9.8,
+                "envImpact": 0.5,
+                "fixedByVersion": "4.18.0-305.el8",
+                "id": "cve-2024-36886-rhcos:4.14",
+                "impactScore": 6.0,
+                "isFixable": true,
+                "lastModified": "2024-07-15T12:21:46Z",
+                "lastScanned": "2024-07-15T12:21:46Z",
+                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-36886",
+                "publishedOn": "2024-06-01T00:00:00Z",
+                "scoreVersion": "V3",
+                "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+                "summary": "TIPC message reassembly use-after-free remote code execution vulnerability",
+                "suppressActivation": null,
+                "suppressExpiry": null,
+                "suppressed": false,
+                "componentCount": 1,
+                "nodeCount": 3,
+                "operatingSystem": "rhcos:4.14",
+                "__typename": "NodeVulnerability"
+            },
+            {
+                "createdAt": "2024-07-10T08:00:00Z",
+                "cve": "CVE-2024-32487",
+                "cvss": 8.6,
+                "envImpact": 0.35,
+                "fixedByVersion": "5.0.0-1.el8",
+                "id": "cve-2024-32487-rhcos:4.14",
+                "impactScore": 5.2,
+                "isFixable": true,
+                "lastModified": "2024-07-10T08:00:00Z",
+                "lastScanned": "2024-07-10T08:00:00Z",
+                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-32487",
+                "publishedOn": "2024-05-15T00:00:00Z",
+                "scoreVersion": "V3",
+                "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                "summary": "OS command injection via less utility",
+                "suppressActivation": null,
+                "suppressExpiry": null,
+                "suppressed": false,
+                "componentCount": 1,
+                "nodeCount": 3,
+                "operatingSystem": "rhcos:4.14",
+                "__typename": "NodeVulnerability"
+            }
+        ],
+        "count": 2
+    }
+}
