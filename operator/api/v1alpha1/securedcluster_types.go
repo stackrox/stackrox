@@ -69,12 +69,13 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process Baselines Settings"
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images stored in a cluster-local image repository.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner Component Settings"
+	// Obsolete field. This field will be removed in a future release.
+	// Scanner V2 has been removed. This field is ignored.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
+	// TODO(ROX-XXXXX): renumber order annotations after Scanner V2 field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
@@ -427,10 +428,7 @@ const (
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	// The default is: AutoSense.
+	// Obsolete: Scanner v2 has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -450,9 +448,7 @@ type LocalScannerV4ComponentSpec struct {
 	// unless there is a Central resource in the same namespace.
 	// In that case typically a central Scanner V4 will be deployed as a component of Central.
 	// A value of "Disabled" means that Scanner V4 should not be installed.
-	// If this field is not specified or set to "Default", the following defaulting takes place:
-	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
-	// * for new installations starting with ACS 4.8, the default is: AutoSense.
+	// The default is: AutoSense.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 

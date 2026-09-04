@@ -1,11 +1,9 @@
 [< if eq .RenderMode "scannerOnly" >]
 !templates/_*.tpl
-!templates/02-scanner-[0-9]*.yaml
 !templates/02-scanner-v4-*.yaml
 templates/*
 [< else if eq .RenderMode "scannerTLSOnly" >]
 !templates/_*.tpl
-!templates/02-scanner-03-tls-secret.yaml
 templates/*
 [< else if eq .RenderMode "scannerV4TLSOnly" >]
 !templates/_*.tpl

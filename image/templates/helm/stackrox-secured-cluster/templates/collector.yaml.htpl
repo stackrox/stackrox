@@ -233,43 +233,6 @@ spec:
         - mountPath: /tmp
           name: index-volume
       {{- end }}
-      {{- if eq ._rox.env.openshift 4 }}
-      - name: node-inventory
-        image: {{ quote ._rox.image.scanner.fullRef }}
-        imagePullPolicy: IfNotPresent
-        command: ["/scanner", "--nodeinventory", "--config=", ""]
-        ports:
-          - containerPort: 8444
-            name: grpc
-        resources:
-          {{- ._rox.collector._nodeScanningResources | nindent 10 }}
-        securityContext:
-          privileged: true
-        env:
-        - name: ROX_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
-        volumeMounts:
-         - mountPath: /host
-           name: host-root-ro
-           readOnly: true
-           mountPropagation: HostToContainer
-         - mountPath: /tmp/
-           name: tmp-volume
-         - mountPath: /cache
-           name: cache-volume
-      {{- end }}
       volumes:
       - hostPath:
           path: /proc
@@ -319,14 +282,8 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      - name: tmp-volume
-        emptyDir: {}
       - name: collector-profiles
         emptyDir: {}
-      - name: cache-volume
-        emptyDir:
-          sizeLimit: 200Mi
-
       - name: collector-config
         configMap:
           name: collector-config
