@@ -611,7 +611,8 @@ shell-unit-tests:
 	$(SILENT)mkdir -p shell-test-output
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
 		scripts \
-		tests/e2e/bats
+		tests/e2e/bats \
+		.github/workflows/scripts
 
 .PHONY: ui-build
 ui-build:
