@@ -463,6 +463,12 @@ function launch_central {
         fi
       fi
 
+      if [[ "${ROX_CENTRAL_WORKER_ENABLED:-}" == "true" ]]; then
+        helm_args+=(
+          --set centralWorker.enabled=true
+        )
+      fi
+
       if [[ -n "$EXTERNAL_DB" ]]; then
           helm_args+=(
             --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
