@@ -45,7 +45,6 @@ jobs:
       SCANNER_V4_DB_STORAGE_CLASS: faster
       STORAGE: pvc
       STORAGE_CLASS: faster
-      ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
     steps:
