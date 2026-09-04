@@ -159,12 +159,33 @@ upgrade_central_helm_to_head() {
         | select(.data["generated-values.yaml"] != null)]')"
     local generated_secret_count
     generated_secret_count="$(jq 'length' <<<"$generated_secrets_json")"
-    if [[ "$generated_secret_count" -ne 1 ]]; then
-        die "Expected one Helm generated-values secret in ${namespace}, found ${generated_secret_count}: $(jq -r '.[].metadata.name' <<<"$generated_secrets_json")"
+    if [[ "$generated_secret_count" -lt 1 ]]; then
+        die "Expected a Helm generated-values secret in ${namespace}, found 0"
     fi
-    jq -r '.[0].data["generated-values.yaml"] | @base64d' <<<"$generated_secrets_json" > "$helm_generated_values_file"
+    # Helm pre-upgrade hooks use resource-policy=keep, so extra generated-values
+    # secrets can exist. V4 certs must use the install-time CA in the oldest.
+    local helm_generated_secret_name
+    helm_generated_secret_name="$(jq -r 'sort_by(.metadata.creationTimestamp)[0].metadata.name' <<<"$generated_secrets_json")"
+    if [[ "$generated_secret_count" -gt 1 ]]; then
+        info "Found ${generated_secret_count} generated-values secrets; using install-time ${helm_generated_secret_name}"
+    fi
+    jq -r --arg name "$helm_generated_secret_name" \
+        '.[] | select(.metadata.name == $name) | .data["generated-values.yaml"] | @base64d' \
+        <<<"$generated_secrets_json" > "$helm_generated_values_file"
     if [[ ! -s "$helm_generated_values_file" ]]; then
-        die "Helm generated-values secret $(jq -r '.[0].metadata.name' <<<"$generated_secrets_json") was empty"
+        die "Helm generated-values secret ${helm_generated_secret_name} was empty"
+    fi
+
+    # 4.6 installs this CRD outside Helm ownership; HEAD templates it. Helm
+    # refuses the upgrade until the existing CRD is adopted.
+    if kubectl get crd securitypolicies.config.stackrox.io >/dev/null 2>&1; then
+        kubectl annotate crd/securitypolicies.config.stackrox.io \
+            meta.helm.sh/release-name=stackrox-central-services \
+            meta.helm.sh/release-namespace="${namespace}" \
+            --overwrite
+        kubectl label crd/securitypolicies.config.stackrox.io \
+            app.kubernetes.io/managed-by=Helm \
+            --overwrite
     fi
 
     local helm_extra_args=()
@@ -174,7 +195,14 @@ upgrade_central_helm_to_head() {
         fi
         helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
     fi
+    # The image walk uses kubectl patch/set, so Helm 4 SSA will not overwrite
+    # those fields (central-config, CPU/memory) without --force-conflicts.
+    if helm upgrade --help 2>&1 | grep -q -- '--force-conflicts'; then
+        helm_extra_args+=(--force-conflicts)
+    fi
 
+    # The chart emits the Scanner V4 DB PVC only when createClaim is true;
+    # this is an upgrade so .Release.IsInstall is false.
     # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
     # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
     helm -n "$namespace" upgrade --reuse-values \
@@ -197,6 +225,9 @@ scannerV4:
   db:
     image:
       tag: "${image_tag}"
+    persistence:
+      persistentVolumeClaim:
+        createClaim: true
 customize:
   envVars:
     SCANNER_V4_MATCHER_READINESS: vulnerability
