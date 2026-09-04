@@ -53,12 +53,12 @@ export function visitSystemConfigurationWithCentralCredentialExpiryBanner(
     );
 }
 
-export function visitSystemConfigurationWithScannerCredentialExpiryBanner(
+export function visitSystemConfigurationWithScannerV4CredentialExpiryBanner(
     expiry,
     staticResponseForPermissions
 ) {
     visitSystemConfigurationWithCredentialExpiryBanner(
-        'SCANNER',
+        'SCANNER_V4',
         expiry,
         staticResponseForPermissions
     );
@@ -83,6 +83,6 @@ export function interactAndWaitForCentralCertificateDownload(interactionCallback
     interactAndWaitForCertificateDownload('central', interactionCallback);
 }
 
-export function interactAndWaitForScannerCertificateDownload(interactionCallback) {
-    interactAndWaitForCertificateDownload('scanner', interactionCallback);
+export function interactAndWaitForScannerV4CertificateDownload(interactionCallback) {
+    interactAndWaitForCertificateDownload('scanner?v=4', interactionCallback);
 }
