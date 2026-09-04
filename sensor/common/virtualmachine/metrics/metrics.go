@@ -105,10 +105,10 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
-// Pull-mode outcome labels are split across three counters so transport,
-// GetReport protocol, and scrape-pipeline results stay distinct as more
-// VSOCK RPC methods are added later. Each per-VM pull attempt increments
-// exactly one of these counters (mutually exclusive partition).
+// Pull-mode GetReport outcomes are split across three counters so transport,
+// GetReport protocol, and scrape-pipeline results stay distinct. Each
+// GetReport attempt increments exactly one of those. PullSyncTotal counts
+// the optional second VSOCK RPC that pushes a repo-to-CPE mapping.
 
 // Transport-layer status values for PullTransportTotal.
 const (
@@ -137,6 +137,20 @@ const (
 	PullScrapeSuccess       = "success"
 	PullScrapeInvalidReport = "invalid_report"
 	PullScrapeSendError     = "send_error"
+)
+
+// Sync-RPC status values for PullSyncTotal.
+const (
+	// PullSyncSuccess counts an accepted push; Updated true/false both count.
+	PullSyncSuccess = "success"
+	// PullSyncError is a sync dial failure or a rejection other than not-Sensor-managed.
+	PullSyncError = "error"
+	// PullSyncNotManaged is a rejection Sensor's own gate should have prevented.
+	PullSyncNotManaged = "not_managed"
+	// PullSyncURLHashMismatch is a URL-managed agent whose hash differs from Sensor's cache; Sensor never dials.
+	PullSyncURLHashMismatch = "url_hash_mismatch"
+	// PullSyncTimeout is a skipped sync because GetReport already consumed the per-VM deadline.
+	PullSyncTimeout = "timeout"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
@@ -249,6 +263,19 @@ var PullScrapeTotal = prometheus.NewCounterVec(
 	[]string{"status"},
 )
 
+// PullSyncTotal counts the optional second VSOCK RPC that pushes a
+// repo-to-CPE mapping after GetReport. It is not part of the GetReport
+// transport/protocol/scrape partition.
+var PullSyncTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_sync_total",
+		Help:      "Per-VM repo-to-CPE mapping sync outcomes (second VSOCK RPC after GetReport)",
+	},
+	[]string{"status"},
+)
+
 // PullTicksTotal counts scraper ticks executed.
 var PullTicksTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
@@ -341,6 +368,7 @@ func init() {
 		PullTransportTotal,
 		PullGetReportTotal,
 		PullScrapeTotal,
+		PullSyncTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
 		PullDueVMs,
