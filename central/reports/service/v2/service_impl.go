@@ -701,13 +701,6 @@ func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *r
 	return PersistSnapshotAndNotify(ctx, s.validator, s.db, reportReq, channel)
 }
 
-func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
-	if config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
-		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
-	}
-	return nil
-}
-
 func rejectNodeReportSnapshot(snapshot *storage.ReportSnapshot) error {
 	if snapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
 		return errox.InvalidArgs.Newf("report job '%s' is a node vulnerability report; use the node report service", snapshot.GetReportId())

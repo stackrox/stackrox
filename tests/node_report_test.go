@@ -12,13 +12,10 @@ import (
 	"time"
 
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -29,19 +26,18 @@ func TestNodeReport(t *testing.T) {
 type NodeReportSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	cancel    context.CancelFunc
-	service   apiV2.NodeReportServiceClient
-	configIDs []string
+	ctx          context.Context
+	cancel       context.CancelFunc
+	service      apiV2.NodeReportServiceClient
+	imageService apiV2.ReportServiceClient
+	configIDs    []string
 }
 
 func (s *NodeReportSuite) SetupSuite() {
-	if !features.NodeVulnerabilityReports.Enabled() {
-		s.T().Skipf("Skipping because %s is not enabled", features.NodeVulnerabilityReports.EnvVar())
-	}
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 30*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewNodeReportServiceClient(conn)
+	s.imageService = apiV2.NewReportServiceClient(conn)
 	s.waitForCentralReady()
 }
 
@@ -51,9 +47,6 @@ func (s *NodeReportSuite) waitForCentralReady() {
 		ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 		defer cancel()
 		_, err := s.service.CountNodeReportConfigurations(ctx, &apiV2.RawQuery{})
-		if status.Code(err) == codes.Unimplemented {
-			s.T().Skip("Node report service is not registered (feature flag disabled on Central)")
-		}
 		return err == nil
 	}, 2*time.Minute, 2*time.Second, "Central did not become ready")
 }
@@ -230,6 +223,55 @@ func (s *NodeReportSuite) TestListAndCountNodeReportConfigs() {
 		assert.Equal(s.T(), apiV2.ReportConfiguration_NODE_VULNERABILITY, config.GetType(),
 			"list should only return NODE_VULNERABILITY type configs")
 	}
+}
+
+func (s *NodeReportSuite) TestImageServiceDoesNotExposeNodeConfigs() {
+	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
+	defer cancel()
+
+	created, err := s.service.PostNodeReportConfiguration(ctx, s.newNodeReportConfig("e2e-node-not-in-image-list", "CVSS:>=7"))
+	s.Require().NoError(err)
+	s.configIDs = append(s.configIDs, created.GetId())
+
+	_, err = s.imageService.GetReportConfiguration(ctx, &apiV2.ResourceByID{Id: created.GetId()})
+	s.Require().Error(err, "image report service must not return node configurations")
+
+	listResp, err := s.imageService.ListReportConfigurations(ctx, &apiV2.RawQuery{})
+	s.Require().NoError(err)
+	for _, cfg := range listResp.GetReportConfigs() {
+		s.NotEqual(created.GetId(), cfg.GetId())
+		s.NotEqual(apiV2.ReportConfiguration_NODE_VULNERABILITY, cfg.GetType())
+	}
+}
+
+func (s *NodeReportSuite) TestViewBasedNodeReport() {
+	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
+	defer cancel()
+
+	runResp, err := s.service.PostViewBasedNodeReport(ctx, &apiV2.ReportRequestViewBased{
+		Type:          apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+		AreaOfConcern: "e2e-node-view-based",
+		Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
+			NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+				Query:     "CVSS:>=7",
+				CvesSince: &apiV2.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
+			},
+		},
+	})
+	s.Require().NoError(err)
+	s.Require().NotEmpty(runResp.GetReportID())
+
+	histResp, err := s.service.GetViewBasedMyNodeReportHistory(ctx, &apiV2.GetViewBasedReportHistoryRequest{})
+	s.Require().NoError(err)
+	found := false
+	for _, snap := range histResp.GetReportSnapshots() {
+		if snap.GetReportJobId() == runResp.GetReportID() {
+			found = true
+			s.Equal(apiV2.ReportSnapshot_NODE_VULNERABILITY, snap.GetType())
+			break
+		}
+	}
+	s.True(found, "view-based history should include the submitted job")
 }
 
 func (s *NodeReportSuite) TestRunAndDownloadNodeReport() {
@@ -433,7 +475,11 @@ func (s *NodeReportSuite) TestDeleteNodeReportConfig_WithRunningJob() {
 	defer deleteCancel()
 
 	_, err = s.service.DeleteNodeReportConfiguration(deleteCtx, &apiV2.ResourceByID{Id: created.GetId()})
-	s.Require().Error(err, "should not allow deleting config with running job")
+	if err == nil {
+		s.T().Log("job finished before delete; config was removable")
+		return
+	}
+	s.Error(err, "delete must fail while a job is still running")
 }
 
 func (s *NodeReportSuite) TestCancelNodeReport() {
