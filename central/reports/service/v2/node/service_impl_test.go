@@ -197,6 +197,22 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 	s.Equal(apiV2.ReportConfiguration_NODE_VULNERABILITY, result.GetType())
 }
 
+func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_GetAfterCreateMissing() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	requestConfig := s.getValidNodeReportConfig()
+	ctx := s.getContextForUser(creator)
+
+	s.notifierDataStore.EXPECT().Exists(gomock.Any(), "email-notifier-id").Return(true, nil).Times(1)
+	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
+		Return(requestConfig.GetId(), nil).Times(1)
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), requestConfig.GetId()).
+		Return(nil, false, nil).Times(1)
+
+	result, err := s.service.PostNodeReportConfiguration(ctx, requestConfig)
+	s.Error(err)
+	s.Nil(result)
+}
+
 func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_ValidationError() {
 	creator := &storage.SlimUser{
 		Id:   "uid",
@@ -301,8 +317,9 @@ func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfiguration_HasRunnin
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return([]*storage.ReportSnapshot{runningSnapshot}, nil).Times(1)
 
-	_, err := s.service.DeleteNodeReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "test-id"})
+	resp, err := s.service.DeleteNodeReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "test-id"})
 	s.Error(err)
+	s.Nil(resp)
 }
 
 func (s *NodeReportServiceTestSuite) TestRunNodeReport() {

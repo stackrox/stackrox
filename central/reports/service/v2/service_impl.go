@@ -178,8 +178,11 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		}
 	}
 
-	updatedConfig := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
-		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
+	var accessScopeRules []*storage.SimpleAccessScope_Rules
+	if filters := currentConfig.GetVulnReportFilters(); filters != nil {
+		accessScopeRules = filters.GetAccessScopeRules()
+	}
+	updatedConfig := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(), accessScopeRules)
 
 	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
 	if err != nil {
