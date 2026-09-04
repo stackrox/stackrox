@@ -16,6 +16,9 @@ func OpenShiftTLSConfigured() bool {
 		return false
 	}
 	exists, err := fileutils.Exists(env.OpenShiftTLSCertDir.Setting())
+	if err != nil {
+		log.Warnf("Cannot check OpenShift TLS certificate directory %s: %v", env.OpenShiftTLSCertDir.Setting(), err)
+	}
 	return exists && err == nil
 }
 

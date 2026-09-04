@@ -54,6 +54,31 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "Custom metrics"
+  set:
+    env.openshift: 4
+  tests:
+    - name: "openshift metrics disabled"
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics disabled"
+      set:
+        monitoring.openshift.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics enabled"
+      set:
+        monitoring.openshift.enabled: true
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "https"),
+            assertThat(.spec.endpoints[].path == "/metrics")
+          ]
+
 - name: "When enabled with Scanner V4"
   set:
     monitoring.openshift.enabled: true
@@ -146,6 +171,7 @@ tests:
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
         .services["central-ocp"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
