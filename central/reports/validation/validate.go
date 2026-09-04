@@ -440,7 +440,9 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 // the database. Returns the report ID.
 func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error) {
 	reportType := snapshot.GetType()
-	if snapshot.GetVulnReportFilters() != nil && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+	requestType := snapshot.GetReportStatus().GetReportRequestType()
+
+	if requestType == storage.ReportStatus_ON_DEMAND {
 		hasPending, err := v.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId(), reportType)
 		if err != nil {
 			return "", err
@@ -451,7 +453,7 @@ func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage
 		}
 	}
 
-	if snapshot.GetViewBasedVulnReportFilters() != nil {
+	if requestType == storage.ReportStatus_VIEW_BASED {
 		hasPending, err := v.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId(), reportType)
 		if err != nil {
 			return "", err
@@ -459,6 +461,9 @@ func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage
 		if hasPending {
 			return "", errors.New("User already has a view based report queued")
 		}
+		// View-based reports are authorized at the gRPC layer with only view permissions.
+		// The snapshot datastore requires WorkflowAdministration write.
+		ctx = sac.WithAllAccess(ctx)
 	}
 
 	snapshot.ReportStatus.RunState = storage.ReportStatus_WAITING

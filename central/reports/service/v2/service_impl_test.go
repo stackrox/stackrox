@@ -139,6 +139,109 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	s.Error(err)
 }
 
+func (s *ReportServiceTestSuite) TestPostReportConfiguration_RejectsNodeType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	_, err := s.service.PostReportConfiguration(ctx, &apiV2.ReportConfiguration{
+		Name: "node report",
+		Type: apiV2.ReportConfiguration_NODE_VULNERABILITY,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestUpdateReportConfiguration_RejectsNodeType() {
+	protoReportConfig := &storage.ReportConfiguration{
+		Id:   "node-config",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+	}
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(protoReportConfig, true, nil).Times(1)
+	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
+	s.notifierDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
+
+	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+	requestConfig.Id = "node-config"
+	_, err := s.service.UpdateReportConfiguration(s.ctx, requestConfig)
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestGetReportConfiguration_RejectsNodeType() {
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(&storage.ReportConfiguration{
+			Id:   "node-config",
+			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		}, true, nil).Times(1)
+
+	_, err := s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "node-config"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestDeleteReportConfiguration_RejectsNodeType() {
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(&storage.ReportConfiguration{
+			Id:   "node-config",
+			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		}, true, nil).Times(1)
+
+	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "node-config"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestRunReport_RejectsNodeType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	nodeConfig := &storage.ReportConfiguration{
+		Id:   "node-config",
+		Name: "node report",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{
+				EntityScope: &storage.EntityScope{
+					Rules: []*storage.EntityScopeRule{
+						{
+							Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+							Field:  storage.EntityField_FIELD_ID,
+							Values: []*storage.RuleValue{{Value: "cluster-1", MatchType: storage.MatchType_EXACT}},
+						},
+					},
+				},
+			},
+		},
+	}
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(nodeConfig, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetManyNotifiers(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+	_, err := s.service.RunReport(ctx, &apiV2.RunReportRequest{
+		ReportConfigId:           "node-config",
+		ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestPostViewBasedReport_RejectsNodeType() {
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	_, err := s.service.PostViewBasedReport(ctx, &apiV2.ReportRequestViewBased{
+		Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func imageReportTypeQuery(base *v1.Query) *v1.Query {
+	return search.ConjunctionQuery(
+		base,
+		search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery(),
+	)
+}
+
 func (s *ReportServiceTestSuite) TestCreateReportConfigurationWithCentralWorker() {
 	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
 
@@ -300,7 +403,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
-				query := search.EmptyQuery()
+				query := imageReportTypeQuery(search.EmptyQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -309,7 +412,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: func() *v1.Query {
-				query := search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()
+				query := imageReportTypeQuery(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -321,7 +424,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 				Pagination: &apiV2.Pagination{Limit: 25},
 			},
 			expectedQ: func() *v1.Query {
-				query := search.EmptyQuery()
+				query := imageReportTypeQuery(search.EmptyQuery())
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
@@ -415,12 +518,12 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 		{
 			desc:      "Empty query",
 			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+			expectedQ: imageReportTypeQuery(search.NewQueryBuilder().ProtoQuery()),
 		},
 		{
 			desc:      "Query with search field",
 			query:     &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+			expectedQ: imageReportTypeQuery(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()),
 		},
 	}
 
