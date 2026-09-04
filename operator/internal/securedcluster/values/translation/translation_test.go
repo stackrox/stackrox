@@ -41,8 +41,6 @@ func TestTranslation(t *testing.T) {
 }
 
 func (s *TranslationTestSuite) TestImageOverrides() {
-	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
-	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
 	s.T().Setenv(images.ScannerV4.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
@@ -60,14 +58,6 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
-
-	scannerImage, err := vals.PathValue("image.scanner.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner:1.0.0", scannerImage)
-
-	scannerDbImage, err := vals.PathValue("image.scannerDb.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner-db:1.0.0", scannerDbImage)
 
 	scannerV4DbImage, err := vals.PathValue("image.scannerV4DB.fullRef")
 	s.Require().NoError(err)
