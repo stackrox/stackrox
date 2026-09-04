@@ -724,64 +724,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				"scanner": map[string]interface{}{
-					"disable":  false,
-					"replicas": int32(7),
-					"autoscaling": map[string]interface{}{
-						"disable":     false,
-						"minReplicas": int32(6),
-						"maxReplicas": int32(8),
-					},
-					"nodeSelector": map[string]string{
-						"scanner-node-selector-label1": "scanner-node-selector-value1",
-						"scanner-node-selector-label2": "scanner-node-selector-value2",
-					},
-					"tolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"dbNodeSelector": map[string]string{
-						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
-						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
-					},
-					"dbTolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "50",
-							"memory": "60",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "70",
-							"memory": "80",
-						},
-					},
-					"dbResources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "90",
-							"memory": "100",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "110",
-							"memory": "120",
-						},
-					},
-					"exposeMonitoring": true,
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
 					"indexer": map[string]interface{}{
@@ -1315,9 +1257,6 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
-				},
-				"scanner": map[string]interface{}{
-					"exposeMonitoring": false,
 				},
 			},
 		},
