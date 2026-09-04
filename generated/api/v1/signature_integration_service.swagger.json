@@ -173,6 +173,10 @@
         },
         "publicKeyPemEnc": {
           "type": "string"
+        },
+        "trustRoot": {
+          "$ref": "#/definitions/storageTrustRoot",
+          "description": "Optional trust root for this public key verifier.\nWhen set, supersedes the integration-level transparency log configuration."
         }
       }
     },
@@ -266,6 +270,10 @@
         "certificateTransparencyLog": {
           "$ref": "#/definitions/storageCertificateTransparencyLogVerification",
           "description": "Validate that the signature certificate contains a signed\ncertificate timestamp as proof of inclusion into the certificate\ntransparency log."
+        },
+        "trustRoot": {
+          "$ref": "#/definitions/storageTrustRoot",
+          "description": "Optional trust root for this certificate verifier.\nWhen set, supersedes the certificate chain, transparency log,\nand certificate transparency log configuration."
         }
       },
       "description": "Holds all verification data for verifying certificates attached to cosign signatures.\nIf only the certificate is given, the Fulcio trusted root chain will be assumed and verified against.\nIf only the chain is given, this will be used over the Fulcio trusted root chain for verification.\nIf no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against."
@@ -379,6 +387,20 @@
         }
       },
       "description": "Validate the inclusion of signature signing events into a transparency log."
+    },
+    "storageTrustRoot": {
+      "type": "object",
+      "properties": {
+        "tufRepositoryUrl": {
+          "type": "string",
+          "description": "Base URL of a TUF repository serving sigstore TrustedRoot metadata.\nEquivalent to the --mirror flag in `cosign initialize`.\nThe repository must follow the standard TUF layout (root.json, targets/, etc.).\nExample: \"https://tuf-repo-cdn.sigstore.dev\" (public Sigstore)."
+        },
+        "tufRootUrl": {
+          "type": "string",
+          "description": "URL to the TUF bootstrap root.json for the repository.\nEquivalent to the --root flag in `cosign initialize`.\nDefaults to `<tuf_mirror_url>/root.json` when left empty.\nExample: \"https://tuf-repo-cdn.sigstore.dev/root.json\"."
+        }
+      },
+      "description": "Trust root configuration for signature verification.\nSpecifies a TUF repository from which the sigstore TrustedRoot is fetched.\nWhen set on a verifier, it supersedes other trust configuration such as the\ncertificate chain, Rekor URL, and certificate transparency log settings."
     },
     "v1Empty": {
       "type": "object"
