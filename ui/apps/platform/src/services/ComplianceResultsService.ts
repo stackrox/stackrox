@@ -6,6 +6,7 @@ import { complianceV2Url } from './ComplianceCommon';
 import type {
     ComplianceCheckStatus,
     ComplianceControl,
+    ComplianceDataState,
     ComplianceScanCluster,
     ListComplianceProfileResults,
 } from './ComplianceCommon';
@@ -18,6 +19,7 @@ export type ClusterCheckStatus = {
     createdTime: string; // ISO 8601 date string
     checkUid: string;
     lastScanTime: string; // ISO 8601 date string
+    dataState?: ComplianceDataState;
 };
 
 export type ComplianceCheckResult = {
@@ -34,6 +36,7 @@ export type ComplianceCheckResult = {
     ruleName: string;
     labels: { [key: string]: string };
     annotations: { [key: string]: string };
+    dataState?: ComplianceDataState;
 };
 
 export type ComplianceClusterCheckStatus = {
@@ -56,6 +59,7 @@ export type ListComplianceCheckClusterResponse = {
     checkName: string;
     totalCount: number;
     controls: ComplianceControl[];
+    outdatedClusterCount?: number;
 };
 
 export type ListComplianceCheckResultResponse = {
@@ -64,6 +68,7 @@ export type ListComplianceCheckResultResponse = {
     clusterId: string;
     totalCount: number;
     lastScanTime: string; // ISO 8601 date string
+    outdatedClusterCount?: number;
 };
 
 /**

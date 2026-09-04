@@ -33,6 +33,7 @@ import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getStatusCounts } from './compliance.coverage.utils';
 import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ControlLabels from './components/ControlLabels';
+import DataStateLabel from './components/DataStateLabel';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -114,6 +115,7 @@ function ProfileChecksTable({
                                 Check
                             </Th>
                             <Th modifier="fitContent">Controls</Th>
+                            <Th modifier="fitContent">Data status</Th>
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -132,7 +134,7 @@ function ProfileChecksTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={8}
                         errorProps={{
                             title: 'There was an error loading profile checks',
                         }}
@@ -144,7 +146,13 @@ function ProfileChecksTable({
                         renderer={({ data }) => (
                             <>
                                 {data.map((check, rowIndex) => {
-                                    const { checkName, rationale, checkStats, controls } = check;
+                                    const {
+                                        checkName,
+                                        rationale,
+                                        checkStats,
+                                        controls,
+                                        dataState,
+                                    } = check;
                                     const {
                                         passCount,
                                         failCount,
@@ -208,6 +216,9 @@ function ProfileChecksTable({
                                                         '-'
                                                     )}
                                                 </Td>
+                                                <Td dataLabel="Data status" modifier="fitContent">
+                                                    <DataStateLabel dataState={dataState} />
+                                                </Td>
                                                 <Td dataLabel="Pass status" modifier="fitContent">
                                                     <StatusCountIcon
                                                         text="cluster"
@@ -258,7 +269,7 @@ function ProfileChecksTable({
                                             </Tr>
                                             {isRowExpanded && (
                                                 <Tr isExpanded={isRowExpanded}>
-                                                    <Td colSpan={7}>
+                                                    <Td colSpan={8}>
                                                         <ExpandableRowContent>
                                                             <ControlLabels controls={controls} />
                                                         </ExpandableRowContent>

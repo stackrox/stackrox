@@ -30,6 +30,7 @@ func (m *ComplianceScanStatsShim) CloneVT() *ComplianceScanStatsShim {
 	r.ScanName = m.ScanName
 	r.LastScan = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastScan).CloneVT())
 	r.ScanConfigId = m.ScanConfigId
+	r.DataState = m.DataState
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -221,6 +222,9 @@ func (this *ComplianceScanStatsShim) EqualVT(that *ComplianceScanStatsShim) bool
 		return false
 	}
 	if this.ScanConfigId != that.ScanConfigId {
+		return false
+	}
+	if this.DataState != that.DataState {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -479,6 +483,11 @@ func (m *ComplianceScanStatsShim) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.DataState != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DataState))
+		i--
+		dAtA[i] = 0x28
 	}
 	if len(m.ScanConfigId) > 0 {
 		i -= len(m.ScanConfigId)
@@ -888,6 +897,9 @@ func (m *ComplianceScanStatsShim) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.DataState != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DataState))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1190,6 +1202,25 @@ func (m *ComplianceScanStatsShim) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ScanConfigId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2216,6 +2247,25 @@ func (m *ComplianceScanStatsShim) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ScanConfigId = stringValue
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataState", wireType)
+			}
+			m.DataState = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataState |= ComplianceDataState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
