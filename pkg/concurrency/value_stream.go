@@ -1,6 +1,7 @@
 package concurrency
 
 import (
+	"sync"
 	"sync/atomic"
 )
 
@@ -47,6 +48,7 @@ import (
 //	}
 type ValueStream[T any] struct {
 	curr atomic.Pointer[valueStreamStrictIter[T]] // always holds a *valueStreamStrictIter[T]
+	mu   sync.Mutex
 }
 
 // NewValueStream initializes a value stream with an initial value.
@@ -164,6 +166,9 @@ func (i *valueStreamSkipIter[T]) Next(ctx ErrorWaitable) (ValueStreamIter[T], er
 // Push pushes a value onto the stream. It returns both the current value, as well as the iterator pointing to the just
 // inserted value.
 func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	newIter := &valueStreamStrictIter[T]{
 		valueStreamIterBase: valueStreamIterBase[T]{
 			currVal: val,
