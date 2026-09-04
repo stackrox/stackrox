@@ -43,13 +43,12 @@ func (s *ConversionTestSuite) SetupTest() {
 	validator := validation.New(reportConfigDataStore, reportSnapshotDataStore, collectionDataStore, notifierDataStore)
 
 	s.service = &serviceImpl{
-		reportConfigStore:   reportConfigDataStore,
-		snapshotDatastore:   reportSnapshotDataStore,
-		collectionDatastore: collectionDataStore,
-		notifierDatastore:   notifierDataStore,
-		scheduler:           scheduler,
-		blobStore:           blobStore,
-		validator:           validator,
+		reportConfigStore: reportConfigDataStore,
+		snapshotDatastore: reportSnapshotDataStore,
+		notifierDatastore: notifierDataStore,
+		scheduler:         scheduler,
+		blobStore:         blobStore,
+		validator:         validator,
 	}
 }
 

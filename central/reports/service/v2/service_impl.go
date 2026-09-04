@@ -309,6 +309,9 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
+	if err := rejectNodeReportSnapshot(rep); err != nil {
+		return nil, err
+	}
 	status := s.convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
 }
@@ -323,7 +326,10 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
+		search.NewQueryBuilder().
+			AddExactMatches(search.ReportConfigID, req.GetId()).
+			AddExactMatches(search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()).
+			ProtoQuery(),
 		parsedQuery,
 	)
 	// Fill in pagination.
@@ -365,7 +371,9 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddExactMatches(search.ReportConfigID, req.GetId()).
-			AddExactMatches(search.UserID, slimUser.GetId()).ProtoQuery(),
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			AddExactMatches(search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()).
+			ProtoQuery(),
 		parsedQuery,
 	)
 
@@ -485,6 +493,9 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%q'.", req.GetId())
 	}
+	if err := rejectNodeReportSnapshot(rep); err != nil {
+		return nil, err
+	}
 
 	if slimUser.GetId() != rep.GetRequester().GetId() {
 		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be deleted by a user who did not request the report.")
@@ -580,13 +591,7 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	// View-based history endpoints are authorized with only Image+Deployment view.
 	// The snapshot datastore requires WorkflowAdministration read, so elevate the
 	// context to that single read scope instead of granting unrestricted access.
-	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration),
-		),
-	)
-	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(SnapshotReadContext(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -637,13 +642,7 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	// The snapshot datastore requires WorkflowAdministration read, so elevate the
 	// context to that single read scope. Results are already scoped to the requesting
 	// user via the UserID query filter above.
-	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration),
-		),
-	)
-	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(SnapshotReadContext(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -658,6 +657,11 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {
+	return VerifyNoUserSearchLabels(q)
+}
+
+// VerifyNoUserSearchLabels rejects queries that filter on user identity fields.
+func VerifyNoUserSearchLabels(q *v1.Query) error {
 	unexpectedLabels := set.NewStringSet(search.UserID.String(), search.UserName.String())
 	var err error
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
@@ -691,12 +695,7 @@ func NotifyWithRetry(ctx context.Context, db postgres.DB, channel, payload strin
 }
 
 func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *reportGen.ReportRequest, channel string) (string, error) {
-	reportID, err := s.validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
-	if err != nil {
-		return "", err
-	}
-	notifyWithRetry(ctx, s.db, channel, reportID)
-	return reportID, nil
+	return PersistSnapshotAndNotify(ctx, s.validator, s.db, reportReq, channel)
 }
 
 func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
@@ -704,4 +703,32 @@ func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
 		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
 	}
 	return nil
+}
+
+func rejectNodeReportSnapshot(snapshot *storage.ReportSnapshot) error {
+	if snapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
+		return errox.InvalidArgs.Newf("report job '%s' is a node vulnerability report; use the node report service", snapshot.GetReportId())
+	}
+	return nil
+}
+
+// SnapshotReadContext elevates the request context with WorkflowAdministration
+// read so view-based history RPCs can query the snapshot datastore.
+func SnapshotReadContext(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+}
+
+// PersistSnapshotAndNotify persists a WAITING snapshot and notifies the worker.
+func PersistSnapshotAndNotify(ctx context.Context, validator *validation.Validator, db postgres.DB, reportReq *reportGen.ReportRequest, channel string) (string, error) {
+	reportID, err := validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
+	if err != nil {
+		return "", err
+	}
+	NotifyWithRetry(ctx, db, channel, reportID)
+	return reportID, nil
 }

@@ -912,6 +912,53 @@ func (s *ReportServiceTestSuite) TestGetReportStatus() {
 	assert.Equal(s.T(), repStatusResponse.GetStatus().GetErrorMsg(), status.GetErrorMsg())
 }
 
+func (s *ReportServiceTestSuite) TestGetReportStatus_RejectsNodeType() {
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), "node-job").Return(&storage.ReportSnapshot{
+		ReportId:     "node-job",
+		Type:         storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{},
+	}, true, nil)
+
+	_, err := s.service.GetReportStatus(s.ctx, &apiV2.ResourceByID{Id: "node-job"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestGetReportHistory_FiltersImageReportType() {
+	var captured *v1.Query
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
+			captured = q
+			return nil, nil
+		})
+
+	_, err := s.service.GetReportHistory(s.ctx, &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: &apiV2.RawQuery{Query: ""},
+	})
+	s.NoError(err)
+	s.True(queryHasFieldValue(captured, search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()),
+		"history query must constrain ReportType to VULNERABILITY, got %s", captured)
+}
+
+func (s *ReportServiceTestSuite) TestGetMyReportHistory_FiltersImageReportType() {
+	user := &storage.SlimUser{Id: "user-a", Name: "user-a"}
+	var captured *v1.Query
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
+			captured = q
+			return nil, nil
+		})
+
+	_, err := s.service.GetMyReportHistory(s.getContextForUser(user), &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: &apiV2.RawQuery{Query: ""},
+	})
+	s.NoError(err)
+	s.True(queryHasFieldValue(captured, search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()),
+		"my-history query must constrain ReportType to VULNERABILITY, got %s", captured)
+}
+
 func (s *ReportServiceTestSuite) TestGetReportHistory() {
 	reportSnapshot := &storage.ReportSnapshot{
 		ReportId:              "test_report",
@@ -1614,6 +1661,20 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			isError: false,
 		},
+		{
+			desc: "Node vulnerability snapshot is rejected",
+			req: &apiV2.DeleteReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.CloneVT()
+				snap.Type = storage.ReportSnapshot_NODE_VULNERABILITY
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
 	}
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
@@ -1983,4 +2044,18 @@ func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) conte
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
+}
+
+func queryHasFieldValue(q *v1.Query, field search.FieldLabel, want string) bool {
+	found := false
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if mfQ.MatchFieldQuery.GetField() == field.String() && strings.Contains(mfQ.MatchFieldQuery.GetValue(), want) {
+			found = true
+		}
+	})
+	return found
 }

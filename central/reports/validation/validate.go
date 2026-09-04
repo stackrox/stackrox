@@ -422,6 +422,9 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	if !found {
 		return errors.Wrapf(errox.NotFound, "Report snapshot with job ID '%s' does not exist", reportID)
 	}
+	if snapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
+		return errox.InvalidArgs.Newf("report job '%s' is a node vulnerability report; use the node report service", reportID)
+	}
 
 	switch snapshot.GetReportStatus().GetRunState() {
 	case storage.ReportStatus_WAITING, storage.ReportStatus_PREPARING:

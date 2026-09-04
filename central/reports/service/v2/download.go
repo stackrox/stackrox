@@ -34,17 +34,27 @@ func parseJobID(r *http.Request) (id string, err error) {
 	return
 }
 
-// NewDownloadHandler is an HTTP handler for downloading reports
+// NewDownloadHandler is an HTTP handler for downloading image vulnerability reports.
 func NewDownloadHandler() http.HandlerFunc {
+	return newTypedDownloadHandler(storage.ReportSnapshot_VULNERABILITY)
+}
+
+// NewNodeDownloadHandler is an HTTP handler for downloading node vulnerability reports.
+func NewNodeDownloadHandler() http.HandlerFunc {
+	return newTypedDownloadHandler(storage.ReportSnapshot_NODE_VULNERABILITY)
+}
+
+func newTypedDownloadHandler(expectedType storage.ReportSnapshot_ReportType) http.HandlerFunc {
 	snapshotStore := snapshotDataStore.Singleton()
 	blobStore := blobDS.Singleton()
-	handler := &downloadHandler{snapshotStore: snapshotStore, blobStore: blobStore}
+	handler := &downloadHandler{snapshotStore: snapshotStore, blobStore: blobStore, expectedType: expectedType}
 	return handler.handle
 }
 
 type downloadHandler struct {
 	snapshotStore snapshotDataStore.DataStore
 	blobStore     blobDS.Datastore
+	expectedType  storage.ReportSnapshot_ReportType
 }
 
 func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +84,12 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 
 	if !found {
 		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("Error finding report snapshot with job ID '%q'.", id))
+		return
+	}
+
+	if rep.GetType() != h.expectedType {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument,
+			errors.Errorf("report job %q is not a %s report; use the matching download endpoint", id, h.expectedType))
 		return
 	}
 
