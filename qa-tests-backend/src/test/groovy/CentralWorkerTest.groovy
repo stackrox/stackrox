@@ -1,6 +1,5 @@
 import static util.Helpers.withRetry
 
-import orchestratormanager.OrchestratorTypes
 import io.stackrox.proto.api.v2.ReportServiceOuterClass
 
 import services.CollectionsService
