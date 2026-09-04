@@ -76,6 +76,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 		wantEtag         string
 		wantLastModified string
 		wantHashChange   bool
+		wantFetchResult  string
 	}{
 		"first fetch succeeds and populates an empty cache": {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +84,12 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 				w.Header().Set(etagHeader, `"v1"`)
 				_, _ = w.Write([]byte(mappingV1))
 			},
-			wantOK:         true,
-			wantMapping:    mappingV1,
-			wantHash:       hashV1,
-			wantEtag:       `"v1"`,
-			wantHashChange: true,
+			wantOK:          true,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantEtag:        `"v1"`,
+			wantHashChange:  true,
+			wantFetchResult: repoCPEMappingFetchSuccess,
 		},
 		"304 with matching validators keeps the cached mapping": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastModified: "old", lastSuccess: seededSuccess},
@@ -100,69 +102,77 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantHash:         hashV1,
 			wantEtag:         `"v1"`,
 			wantLastModified: "old",
+			wantFetchResult:  repoCPEMappingFetchUnchanged,
 		},
 		"200 without validators replaces previously cached validators": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastModified: "old", lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV2))
 			},
-			wantOK:         true,
-			wantMapping:    mappingV2,
-			wantHash:       hashV2,
-			wantHashChange: true,
+			wantOK:          true,
+			wantMapping:     mappingV2,
+			wantHash:        hashV2,
+			wantHashChange:  true,
+			wantFetchResult: repoCPEMappingFetchSuccess,
 		},
 		"200 with a same-hash body is treated as unchanged": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV1))
 			},
-			wantOK:      true,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			wantOK:          true,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantFetchResult: repoCPEMappingFetchUnchanged,
 		},
 		"200 with a different hash replaces the cached mapping": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV2))
 			},
-			wantOK:         true,
-			wantMapping:    mappingV2,
-			wantHash:       hashV2,
-			wantHashChange: true,
+			wantOK:          true,
+			wantMapping:     mappingV2,
+			wantHash:        hashV2,
+			wantHashChange:  true,
+			wantFetchResult: repoCPEMappingFetchSuccess,
 		},
 		"an unexpected status leaves the cache untouched": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 			},
-			wantOK:      false,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			wantOK:          false,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantFetchResult: repoCPEMappingFetchError,
 		},
 		"a network error leaves the cache untouched": {
-			seedCache:   repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
-			networkErr:  true,
-			wantOK:      false,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			seedCache:       repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
+			networkErr:      true,
+			wantOK:          false,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantFetchResult: repoCPEMappingFetchError,
 		},
 		"an oversized response leaves the cache untouched": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
 				_, _ = w.Write(bytes.Repeat([]byte("a"), cpemapping.MaxMappingBytes+1))
 			},
-			wantOK:      false,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			wantOK:          false,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantFetchResult: repoCPEMappingFetchError,
 		},
 		"an invalid mapping body leaves the cache untouched": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
 			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
 				_, _ = w.Write([]byte(`{"not":"a mapping"}`))
 			},
-			wantOK:      false,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
+			wantOK:          false,
+			wantMapping:     mappingV1,
+			wantHash:        hashV1,
+			wantFetchResult: repoCPEMappingFetchError,
 		},
 	}
 
@@ -179,23 +189,38 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 				r.centralClient = newTestCentralClient(t, tt.serverHandler)
 			}
 
-			before := testutil.ToFloat64(repoCPEMappingHashChanges)
+			beforeHashChanges := testutil.ToFloat64(repoCPEMappingHashChanges)
+			beforeFetch := map[string]float64{
+				repoCPEMappingFetchSuccess:   testutil.ToFloat64(repoCPEMappingFetch.WithLabelValues(repoCPEMappingFetchSuccess)),
+				repoCPEMappingFetchUnchanged: testutil.ToFloat64(repoCPEMappingFetch.WithLabelValues(repoCPEMappingFetchUnchanged)),
+				repoCPEMappingFetchError:     testutil.ToFloat64(repoCPEMappingFetch.WithLabelValues(repoCPEMappingFetchError)),
+			}
+			beforeLastSuccess := testutil.ToFloat64(repoCPEMappingLastSuccess)
 			ok := r.attemptRepo2CPERefresh(t.Context())
 
 			assert.Equal(t, tt.wantOK, ok)
-			wantCount := before
+			wantCount := beforeHashChanges
 			if tt.wantHashChange {
 				wantCount++
 			}
 			assert.Equal(t, wantCount, testutil.ToFloat64(repoCPEMappingHashChanges))
+			for result, before := range beforeFetch {
+				want := before
+				if result == tt.wantFetchResult {
+					want++
+				}
+				assert.Equal(t, want, testutil.ToFloat64(repoCPEMappingFetch.WithLabelValues(result)), result)
+			}
 			assert.Equal(t, tt.wantMapping, string(r.cache.mapping))
 			assert.Equal(t, tt.wantHash, r.cache.hash)
 			assert.Equal(t, tt.wantEtag, r.cache.etag)
 			assert.Equal(t, tt.wantLastModified, r.cache.lastModified)
 			if tt.wantOK {
 				assert.False(t, r.cache.lastSuccess.IsZero())
+				assert.Equal(t, float64(r.cache.lastSuccess.Unix()), testutil.ToFloat64(repoCPEMappingLastSuccess))
 			} else {
 				assert.Equal(t, tt.seedCache.lastSuccess, r.cache.lastSuccess)
+				assert.Equal(t, beforeLastSuccess, testutil.ToFloat64(repoCPEMappingLastSuccess))
 			}
 		})
 	}
