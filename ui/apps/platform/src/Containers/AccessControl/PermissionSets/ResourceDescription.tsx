@@ -9,7 +9,6 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Administration:
         'Read: View platform configuration (e.g., network graph, sensor, debugging configs). Write: Modify platform configuration, delete comments from other users.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
-    CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance:
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
