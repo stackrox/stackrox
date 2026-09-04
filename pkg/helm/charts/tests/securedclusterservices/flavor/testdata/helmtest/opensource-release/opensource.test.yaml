@@ -13,5 +13,9 @@ tests:
   set:
     scanner.disable: false
   expect: |
-    assertScannerIs("quay.io/stackrox-io/scanner-slim:3.0.99.0")
-    assertScannerDBIs("quay.io/stackrox-io/scanner-db-slim:3.0.99.0")
+    # StackRox Scanner (Scanner V2, slim) is retired: it is never rendered even when
+    # scanner.disable is explicitly set to false.
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
+    assertScannerV4IndexerIs("quay.io/stackrox-io/scanner-v4:3.0.99.0")
+    assertScannerV4DBIs("quay.io/stackrox-io/scanner-v4-db:3.0.99.0")

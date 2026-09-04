@@ -678,9 +678,9 @@ spec:
             displayName: Verbatim
             path: overlays[0].patches[0].verbatim
           - description: |-
-              If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-              (not recommended). By default, the scanner is enabled.
-              If you do so, all the settings in this section will have no effect.
+              The legacy StackRox Scanner is retired and is no longer installed. This setting has
+              no effect; Scanner V4 is used for image scanning instead. By default, the StackRox
+              Scanner is disabled, and setting it to Enabled is ignored.
             displayName: Scanner Component
             path: scanner.scannerComponent
           - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
@@ -1825,10 +1825,6 @@ spec:
                       - --leader-elect
                     env:
                       - name: RELATED_IMAGE_MAIN
-                      - name: RELATED_IMAGE_SCANNER
-                      - name: RELATED_IMAGE_SCANNER_SLIM
-                      - name: RELATED_IMAGE_SCANNER_DB
-                      - name: RELATED_IMAGE_SCANNER_DB_SLIM
                       - name: RELATED_IMAGE_COLLECTOR
                       - name: RELATED_IMAGE_FACT
                       - name: RELATED_IMAGE_ROXCTL

@@ -504,7 +504,10 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
 
-	sv.SetBoolValue("disable", !config.DeployScannerResources)
+	// StackRox Scanner (Scanner V2, slim) is retired and is never deployed, regardless of the
+	// auto-sensed result. Scanner V4's local indexer (getLocalScannerV4ComponentValues) provides
+	// local image scanning instead.
+	sv.SetBoolValue("disable", true)
 	translation.SetScannerAnalyzerValues(&sv, s.Analyzer, defaults)
 	translation.SetScannerDBValues(&sv, s.DB, defaults)
 

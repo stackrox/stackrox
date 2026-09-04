@@ -60,10 +60,6 @@ spec:
         - --leader-elect
         env:
         - name: RELATED_IMAGE_MAIN ## tags: uses-main-tag,image-name=main
-        - name: RELATED_IMAGE_SCANNER
-        - name: RELATED_IMAGE_SCANNER_SLIM
-        - name: RELATED_IMAGE_SCANNER_DB
-        - name: RELATED_IMAGE_SCANNER_DB_SLIM
         - name: RELATED_IMAGE_COLLECTOR
         - name: RELATED_IMAGE_FACT
         - name: RELATED_IMAGE_ROXCTL

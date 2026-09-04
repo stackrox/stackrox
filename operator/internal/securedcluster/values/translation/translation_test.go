@@ -41,8 +41,6 @@ func TestTranslation(t *testing.T) {
 }
 
 func (s *TranslationTestSuite) TestImageOverrides() {
-	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
-	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
 	s.T().Setenv(images.ScannerV4.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
@@ -60,14 +58,6 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
-
-	scannerImage, err := vals.PathValue("image.scanner.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner:1.0.0", scannerImage)
-
-	scannerDbImage, err := vals.PathValue("image.scannerDb.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner-db:1.0.0", scannerDbImage)
 
 	scannerV4DbImage, err := vals.PathValue("image.scannerV4DB.fullRef")
 	s.Require().NoError(err)
@@ -150,7 +140,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
@@ -196,7 +186,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
@@ -243,7 +233,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
@@ -275,7 +265,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -343,7 +333,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
@@ -380,7 +370,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -735,7 +725,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"disableCollection": false,
 				},
 				"scanner": map[string]interface{}{
-					"disable":  false,
+					"disable":  true,
 					"replicas": int32(7),
 					"autoscaling": map[string]interface{}{
 						"disable":     false,
@@ -956,7 +946,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"collectionMethod":      "CORE_BPF",
 				},
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -988,7 +978,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1023,7 +1013,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1058,7 +1048,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1091,7 +1081,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1129,7 +1119,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1172,7 +1162,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{

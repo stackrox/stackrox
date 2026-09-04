@@ -4,4 +4,11 @@
   paths = [
     # Ignore all testdata cert keys.
     '''\/testdata.*\.key$''',
+
+    # Ignore placeholder private keys in Helm chart documentation/example files. These are
+    # illustrative snippets (e.g. "-----BEGIN EC PRIVATE KEY-----\nMHc...") in README and
+    # values-*.example files, not real secrets.
+    '''image/templates/helm/stackrox-central/README\.md\.htpl$''',
+    '''image/templates/helm/stackrox-central/values-private\.yaml\.example$''',
+    '''image/templates/helm/stackrox-secured-cluster/values-private-scanner-v4\.yaml\.example$''',
   ]

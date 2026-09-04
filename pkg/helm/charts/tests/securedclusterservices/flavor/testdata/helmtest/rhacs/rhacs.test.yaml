@@ -13,5 +13,10 @@ tests:
   set:
     scanner.disable: false
   expect: |
-    assertScannerIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9:3.0.99.0")
-    assertScannerDBIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9:3.0.99.0")
+    # The legacy StackRox Scanner (slim) is retired: it is never rendered even when
+    # scanner.disable is explicitly set to false. Local image scanning is provided by the
+    # Scanner V4 indexer instead.
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
+    assertScannerV4IndexerIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9:3.0.99.0")
+    assertScannerV4DBIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9:3.0.99.0")

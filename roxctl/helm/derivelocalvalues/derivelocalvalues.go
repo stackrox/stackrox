@@ -236,29 +236,11 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 	// we simply retrieve the metadata from the central deployment and assume that any custom metadata
 	// on that resource is to be used globally for all StackRox resources.
 
-	var scannerConfig map[string]interface{}
-	if k8s.Exists(ctx, "deployment", "scanner") {
-		scannerConfig = map[string]interface{}{
-			"replicas": k8s.evaluateToInt64(ctx, "deployment", "scanner", `{.spec.replicas}`, 3),
-			"autoscaling": k8s.evaluateToSubObject(ctx, "hpa", "scanner", `{.spec}`, []string{"minReplicas", "maxReplicas"},
-				map[string]interface{}{"disable": true}),
-			"resources": k8s.evaluateToObject(ctx, "deployment", "scanner",
-				`{.spec.template.spec.containers[?(@.name == "scanner")].resources}`, nil),
-			"image": map[string]interface{}{
-				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "scanner",
-					`{.spec.template.spec.containers[?(@.name == "scanner")].image}`, ""), "scanner"),
-			},
-			"dbImage": map[string]interface{}{
-				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "scanner-db",
-					`{.spec.template.spec.containers[?(@.name == "db")].image}`, ""), "scanner-db"),
-			},
-			"dbResources": k8s.evaluateToObject(ctx, "deployment", "scanner-db",
-				`{.spec.template.spec.containers[?(@.name == "db")].resources}`, nil),
-		}
-	} else {
-		scannerConfig = map[string]interface{}{
-			"disable": true,
-		}
+	// StackRox Scanner (Scanner V2) is retired and is no longer deployed, so we never derive
+	// V2 scanner values from the live cluster; always emit it as disabled. Scanner V4 is used
+	// for image scanning instead.
+	scannerConfig := map[string]interface{}{
+		"disable": true,
 	}
 
 	declarativeConfigMounts := retrieveDeclarativeConfigMounts(ctx, k8s)

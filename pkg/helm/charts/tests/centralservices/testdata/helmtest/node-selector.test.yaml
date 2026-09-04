@@ -36,16 +36,13 @@ tests:
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(length == 0)
     .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(length == 0)
-    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(length == 0)
-    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(length == 0)
 
+# Scanner V2 (scanner/scanner-db) is retired and never rendered, so it is omitted here.
 - name: "with populated settings"
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(.role == "central")
     .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(.role == "config-controller")
-    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(.role == "scanner")
-    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-db")
-    [.deployments.central, .deployments["config-controller"], .deployments.scanner, .deployments["scanner-db"]][] |
+    [.deployments.central, .deployments["config-controller"]][] |
       .spec.template.spec.nodeSelector | assertThat(.foo == "bar")
 
   tests:
@@ -83,3 +80,22 @@ tests:
         dbNodeSelector: |
           foo: bar
           role: "scanner-db"
+
+# Scanner V4 (the current scanner) node-selector propagation to its components.
+- name: "with scannerV4 component node selectors"
+  values:
+    scannerV4:
+      disable: false
+      indexer:
+        nodeSelector:
+          role: scanner-v4-indexer
+      matcher:
+        nodeSelector:
+          role: scanner-v4-matcher
+      db:
+        nodeSelector:
+          role: scanner-v4-db
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-v4-indexer")
+    .deployments["scanner-v4-matcher"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-v4-matcher")
+    .deployments["scanner-v4-db"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-v4-db")

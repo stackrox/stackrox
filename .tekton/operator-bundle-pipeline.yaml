@@ -120,42 +120,6 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9"
 
-  - name: scanner-image-build-repo
-    description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
-    type: string
-    default: "quay.io/rhacs-eng/release-scanner"
-  - name: scanner-image-catalog-repo
-    description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
-    type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9"
-
-  - name: scanner-db-image-build-repo
-    description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
-    type: string
-    default: "quay.io/rhacs-eng/release-scanner-db"
-  - name: scanner-db-image-catalog-repo
-    description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
-    type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9"
-
-  - name: scanner-slim-image-build-repo
-    description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
-    type: string
-    default: "quay.io/rhacs-eng/release-scanner-slim"
-  - name: scanner-slim-image-catalog-repo
-    description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
-    type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9"
-
-  - name: scanner-db-slim-image-build-repo
-    description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
-    type: string
-    default: "quay.io/rhacs-eng/release-scanner-db-slim"
-  - name: scanner-db-slim-image-catalog-repo
-    description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
-    type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9"
-
   - name: scanner-v4-image-build-repo
     description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
     type: string
@@ -380,38 +344,6 @@ spec:
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
 
-  - name: wait-for-scanner-image
-    params:
-    - name: IMAGE
-      value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
-    # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
-    timeout: 40m
-
-  - name: wait-for-scanner-db-image
-    params:
-    - name: IMAGE
-      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
-    # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
-    timeout: 40m
-
-  - name: wait-for-scanner-slim-image
-    params:
-    - name: IMAGE
-      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
-    # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
-    timeout: 40m
-
-  - name: wait-for-scanner-db-slim-image
-    params:
-    - name: IMAGE
-      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
-    # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
-    timeout: 40m
-
   - name: wait-for-scanner-v4-image
     params:
     - name: IMAGE
@@ -482,10 +414,6 @@ spec:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
       - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-catalog-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-catalog-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-catalog-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_COLLECTOR=$(params.collector-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)

@@ -77,6 +77,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		{
 			name: "when node is not full host scanned then enrich and upsert with risk",
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				a.msg = createMsg("Something that is not RHCOS")
 				a.clusterID = "test cluster id"
 				gomock.InOrder(

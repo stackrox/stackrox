@@ -725,7 +725,7 @@ func TestTranslate(t *testing.T) {
 					},
 				},
 				"scanner": map[string]interface{}{
-					"disable":  false,
+					"disable":  true,
 					"replicas": int32(7),
 					"autoscaling": map[string]interface{}{
 						"disable":     false,

@@ -35,6 +35,23 @@ var (
 	allValuesExplicit string
 	//go:embed "testdata/autogenerate-all.yaml"
 	autogenerateAll string
+
+	// StackRox Scanner (Scanner V2) is retired: its 02-scanner-* templates are no longer
+	// rendered (the component is coerced off during init), so they always render empty.
+	// The template files themselves are kept for now and will be removed as deferred
+	// cleanup; until then they are excluded from the "all templates render non-empty" checks.
+	retiredScannerV2Templates = set.NewFrozenStringSet(
+		"02-scanner-00-serviceaccount.yaml",
+		"02-scanner-01-psps.yaml",
+		"02-scanner-01-security.yaml",
+		"02-scanner-02-db-password-secret.yaml",
+		"02-scanner-03-tls-secret.yaml",
+		"02-scanner-04-scanner-config.yaml",
+		"02-scanner-05-network-policy.yaml",
+		"02-scanner-06-deployment.yaml",
+		"02-scanner-07-service.yaml",
+		"02-scanner-08-hpa.yaml",
+	)
 )
 
 type baseSuite struct {
@@ -103,7 +120,7 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableGenerated() {
 	_, rendered := s.LoadAndRender(autogenerateAll)
 	s.Require().NotEmpty(rendered)
-	excludes := set.NewFrozenStringSet("00-storage-class.yaml")
+	excludes := set.NewFrozenStringSet("00-storage-class.yaml").Union(retiredScannerV2Templates)
 
 	for k, v := range rendered {
 		if excludes.Contains(path.Base(k)) {
@@ -123,7 +140,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 
 	// We are in the process to remove these files. The support is limited to
 	// upgrade process only. Exclude them for now.
-	excludes := set.NewFrozenStringSet("00-storage-class.yaml", "99-generated-values-secret.yaml")
+	excludes := set.NewFrozenStringSet("00-storage-class.yaml", "99-generated-values-secret.yaml").Union(retiredScannerV2Templates)
 
 	for k, v := range rendered {
 		if excludes.Contains(path.Base(k)) {

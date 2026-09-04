@@ -1,4 +1,7 @@
 scanner:
+  # The legacy StackRox Scanner (slim) is retired and is never installed; this default is
+  # disabled and any explicit enablement is coerced off during init.
+  disable: true
   replicas: 3
   logLevel: INFO
   mode: slim

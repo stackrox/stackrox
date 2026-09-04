@@ -56,20 +56,11 @@ func Test_derivePublicLocalValuesForCentralServices(t *testing.T) {
 	values, err := derivePublicLocalValuesForCentralServices(context.Background(), "", newK8sObjectDescription(mock))
 	require.NoError(t, err)
 
-	scanner := values["scanner"].(sm)
 	t.Run("scanner", func(t *testing.T) {
-		assert.Equal(t, int64(42), scanner["replicas"])
-		registry := scanner["image"].(sm)["registry"]
-		require.NotNil(t, registry)
-		assert.Equal(t, "stackrox", *(registry.(*string)))
-		assert.Equal(t, sm{"maxReplicas": 43, "minReplicas": 41}, scanner["autoscaling"])
-		assert.Equal(t, sm{"cpu": 1, "memory": 2}, scanner["resources"])
-	})
-	t.Run("scanner-db", func(t *testing.T) {
-		registry := scanner["dbImage"].(sm)["registry"]
-		require.NotNil(t, registry)
-		assert.Equal(t, "stackrox", *(registry.(*string)))
-		assert.Equal(t, sm{"cpu": 3, "memory": 4}, scanner["dbResources"])
+		// StackRox Scanner (Scanner V2) is retired: no V2 values are derived from the live
+		// cluster; it is always emitted as disabled, regardless of any existing V2 deployment.
+		scanner := values["scanner"].(sm)
+		assert.Equal(t, sm{"disable": true}, scanner)
 	})
 
 	t.Run("monitoring", func(t *testing.T) {

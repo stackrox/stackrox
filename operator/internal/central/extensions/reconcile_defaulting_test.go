@@ -44,12 +44,14 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
-		"upgrade: disabled by default": {
+		"upgrade: enabled by default (Scanner V2 retired)": {
+			// Scanner V2 is retired: defaulted upgrades now migrate to Scanner V4 enabled
+			// (the previous pre-4.8 upgrade exception has been removed).
 			Spec:            platform.CentralSpec{},
 			Status:          postInstallStatus,
-			ExpectedDefault: &platform.ScannerV4Disabled,
+			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
 		"install: enabled explicitly": {
@@ -80,33 +82,35 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
-		"upgrade: pick up previously persisted default (Disabled)": {
+		"upgrade: recorded Disabled default is migrated to Enabled": {
+			// A stale recorded Disabled was never an explicit user choice; Scanner V2 retirement
+			// migrates it to Enabled and overwrites the pin so the recorded value stays truthful.
 			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
+			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
-		"upgrade: ignoring bogus persisted default": {
+		"upgrade: bogus persisted default resolves to Enabled": {
 			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
+			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
-		"previously persisted default is picked up even if status is empty": {
+		"recorded Disabled default is migrated to Enabled even if status is empty": {
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
+			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
 		},
 	}

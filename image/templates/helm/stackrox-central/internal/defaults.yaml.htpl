@@ -158,7 +158,9 @@ defaults:
         memory: "128Mi"
         cpu: "500m"
   scanner:
-    disable: false
+    # The legacy StackRox Scanner is retired and is never installed; this default is
+    # disabled and any explicit enablement is coerced off during init.
+    disable: true
     replicas: 3
     logLevel: INFO
     mode: full

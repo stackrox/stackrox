@@ -166,17 +166,20 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	return &globalMonitoring
 }
 
-// SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values
+// SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values.
+//
+// StackRox Scanner (Scanner V2) is retired and is never installed. Regardless of the
+// requested ScannerComponentPolicy (even an explicit Enabled), this always emits
+// disable=true so the Helm chart never renders a V2 workload. An explicit Enabled is
+// treated as a no-op; the Helm chart surfaces a warning at render time.
 func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
 	if scannerComponent == nil {
 		return
 	}
 
 	switch *scannerComponent {
-	case platform.ScannerComponentDisabled:
+	case platform.ScannerComponentDisabled, platform.ScannerComponentEnabled:
 		sv.SetBoolValue("disable", true)
-	case platform.ScannerComponentEnabled:
-		sv.SetBoolValue("disable", false)
 	default:
 		sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *scannerComponent))
 	}

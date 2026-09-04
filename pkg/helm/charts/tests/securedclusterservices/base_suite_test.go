@@ -105,12 +105,18 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	s.Require().NotEmpty(rendered)
 
 	for k, v := range rendered {
-		if path.Base(k) == "additional-ca-sensor.yaml" {
+		base := path.Base(k)
+		if base == "additional-ca-sensor.yaml" {
 			s.Empty(v, "expected additional CAs to be empty")
-		} else if path.Base(k) == "cluster-registration-secret.yaml" {
+		} else if base == "cluster-registration-secret.yaml" {
 			s.Empty(v, "expected cluster-registration-secrets to be empty")
-		} else if path.Base(k) == "console-plugin.yaml" {
+		} else if base == "console-plugin.yaml" {
 			s.Empty(v, "expected console-plugin to be empty (operator-only)")
+		} else if strings.HasPrefix(base, "02-scanner-") && !strings.HasPrefix(base, "02-scanner-v4-") {
+			// StackRox Scanner (Scanner V2, slim) is retired: its 02-scanner-* templates are
+			// coerced off and always render empty. The template files are kept for now
+			// (deferred cleanup), so they are expected to be empty here.
+			s.Empty(v, "expected retired Scanner V2 template %s to be empty", k)
 		} else {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 		}

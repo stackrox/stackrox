@@ -41,58 +41,51 @@ tests:
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V4 should not be installed by default for upgrades from < 4.8"
+# Scanner V2 is retired, so Scanner V4 now defaults to enabled on ALL upgrades, including
+# upgrades from pre-4.8 (the previous pre-4.8 exception was removed).
+- name: "scanner V4 should be installed by default for upgrades from < 4.8"
   release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
   expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V2 should be installed by default for new installations"
-  release: { "isInstall": true, "isUpgrade": false }
-  set:
-    imagePullSecrets.allowNone: true
-  expect: |
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
-
-- name: "scanner V2 should be not installed by default for upgrades from < 4.8"
-  release: { "isInstall": false, "isUpgrade": true}
+# Scanner V2 (slim) is retired and is never installed, in any install/upgrade scenario.
+- name: "scanner V2 is never installed"
   set:
     imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
-
-- name: "scanner V2 should be installed by default for upgrades from >= 4.8"
-  release: { "isInstall": false, "isUpgrade": true}
-  set:
-    imagePullSecrets.allowNone: true
-  expect: |
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
   tests:
-  - name: "from 4.8"
-    server:
-      objects:
-      - apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: stackrox-secured-cluster-helm
-          namespace: stackrox
-        data:
-          installXYVersion: "4.8"
-  - name: "from 4.9"
-    server:
-      objects:
-      - apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: stackrox-secured-cluster-helm
-          namespace: stackrox
-        data:
-          installXYVersion: "4.9"
+  - name: "on new installation"
+    release: { "isInstall": true, "isUpgrade": false }
+  - name: "on upgrade from < 4.8"
+    release: { "isInstall": false, "isUpgrade": true }
+  - name: "on upgrade from >= 4.8"
+    release: { "isInstall": false, "isUpgrade": true }
+    tests:
+    - name: "from 4.8"
+      server:
+        objects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: stackrox-secured-cluster-helm
+            namespace: stackrox
+          data:
+            installXYVersion: "4.8"
+    - name: "from 4.9"
+      server:
+        objects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: stackrox-secured-cluster-helm
+            namespace: stackrox
+          data:
+            installXYVersion: "4.9"
 
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
@@ -240,11 +233,8 @@ tests:
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
     tests:
-    - name: "if only StackRox Scanner is enabled"
-      set:
-        scanner.disable: false
-        scannerV4.disable: true
-    - name: "if both scanners are enabled"
+    # Scanner V2 is retired and can no longer be the sole scanner enabling local scanning.
+    - name: "if Scanner V4 is enabled (StackRox Scanner request is ignored)"
       set:
         scanner.disable: false
         scannerV4.disable: false

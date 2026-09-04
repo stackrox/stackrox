@@ -552,9 +552,9 @@ type TelemetryStorage struct {
 
 // ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended). By default, the scanner is enabled.
-	// If you do so, all the settings in this section will have no effect.
+	// The legacy StackRox Scanner is retired and is no longer installed. This setting has
+	// no effect; Scanner V4 is used for image scanning instead. By default, the StackRox
+	// Scanner is disabled, and setting it to Enabled is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -618,9 +618,13 @@ func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
 }
 
 // IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+//
+// StackRox Scanner (Scanner V2) is retired: it defaults to disabled when unset. An explicit
+// Enabled is reported here for completeness, but the translation layer coerces it off so no
+// V2 workload is ever deployed (see SetScannerComponentDisableValue).
 func (s *ScannerComponentSpec) IsEnabled() bool {
 	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
+		return false // disabled by default; Scanner V2 is retired
 	}
 	return *s.ScannerComponent == ScannerComponentEnabled
 }

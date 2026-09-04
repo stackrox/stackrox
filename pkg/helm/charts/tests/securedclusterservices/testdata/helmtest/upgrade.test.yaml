@@ -20,5 +20,10 @@ tests:
     namespace: default
   set:
     meta.namespaceOverride: my-stackrox
+    # Scanner V4 now defaults to enabled on upgrades (Scanner V2 is retired). The Scanner V4
+    # templates render in the release namespace and do not honor meta.namespaceOverride, which
+    # is a pre-existing limitation unrelated to Scanner V2 removal; disable Scanner V4 here so
+    # this test keeps focusing on namespace-override handling for the core components.
+    scannerV4.disable: true
   expect: |
     verifyNamespace("my-stackrox")

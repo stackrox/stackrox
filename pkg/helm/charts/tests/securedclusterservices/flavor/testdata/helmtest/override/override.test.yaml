@@ -13,6 +13,10 @@ tests:
   set:
     scanner.disable: false
   expect: |
-    .deployments["scanner-db"] | toyaml | print
-    assertScannerIs("test.registry/scanner-slim:custom-scanner")
-    assertScannerDBIs("test.registry/scanner-db-slim:custom-scanner")
+    # The legacy StackRox Scanner (slim) is retired: it is never rendered even when
+    # scanner.disable is explicitly set to false. Local image scanning is provided by the
+    # Scanner V4 indexer instead.
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
+    assertScannerV4IndexerIs("test.registry/scanner-v4:custom-scanner-v4")
+    assertScannerV4DBIs("test.registry/scanner-v4-db:custom-scanner-v4")

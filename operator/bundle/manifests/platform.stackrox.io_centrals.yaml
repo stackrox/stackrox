@@ -2593,9 +2593,9 @@ spec:
                     type: object
                   scannerComponent:
                     description: |-
-                      If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-                      (not recommended). By default, the scanner is enabled.
-                      If you do so, all the settings in this section will have no effect.
+                      The legacy StackRox Scanner is retired and is no longer installed. This setting has
+                      no effect; Scanner V4 is used for image scanning instead. By default, the StackRox
+                      Scanner is disabled, and setting it to Enabled is ignored.
                     enum:
                     - Enabled
                     - Disabled
