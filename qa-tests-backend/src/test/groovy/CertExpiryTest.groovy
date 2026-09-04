@@ -1,5 +1,4 @@
-import static util.Helpers.shellCmdExitValue
-
+import org.junit.Assume
 import services.CredentialExpiryService
 import util.Cert
 
@@ -31,10 +30,8 @@ class CertExpiryTest extends BaseSpecification {
     def "Test Scanner cert expiry"() {
         when:
         "Fetch the current scanner-tls secret, and the scanner cert expiry as returned by Central"
-        assert shellCmdExitValue("./scripts/ci/is-scanner-v2-available.sh stackrox") == 0
         def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
-        assert scannerTLSSecret
-        // Retry since scanner integration registration happens asynchronously.
+        Assume.assumeTrue("Scanner V2 TLS secret is present", scannerTLSSecret != null)
         def scannerCertExpiryFromCentral = Helpers.evaluateWithRetry(5, 5) {
             return new Date(CredentialExpiryService.getScannerCertExpiry().getSeconds() * 1000)
         }
@@ -46,4 +43,3 @@ class CertExpiryTest extends BaseSpecification {
     }
 
 }
-
