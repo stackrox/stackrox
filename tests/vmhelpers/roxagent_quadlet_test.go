@@ -31,9 +31,32 @@ func TestOverlayQuadletContainer(t *testing.T) {
 	require.NotContains(t, out, "Image=quay.io/stackrox-io/main:latest")
 	require.NotContains(t, out, "AuthFile=")
 	require.NotContains(t, out, "REGISTRY_AUTH_FILE")
-	require.Contains(t, out, "Exec=serve --host-path /host --rescan-interval "+E2ERescanInterval.String()+" --repo-cpe-url "+url)
+	require.Contains(t, out, overlayExecLine(url))
 	require.Contains(t, out, "Notify=true")
 	require.Contains(t, out, "TimeoutStartSec=600")
+}
+
+func TestOverlayQuadletContainer_OmitsRepoCPEURLWhenEmpty(t *testing.T) {
+	t.Parallel()
+
+	src, err := os.ReadFile(filepath.Join(repoRoot(), "compliance", "virtualmachines", "roxagent", "quadlet", "roxagent.container"))
+	require.NoError(t, err)
+
+	const image = "quay.io/rhacs-eng/main:e2e-test"
+	for name, url := range map[string]string{
+		"empty":      "",
+		"whitespace": "  \t",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, err := overlayQuadletContainer(src, image, url, "")
+			require.NoError(t, err)
+			out := string(got)
+			require.Contains(t, out, overlayExecLine(""))
+			require.NotContains(t, out, "--repo-cpe-url")
+			require.NotContains(t, out, "--repo-cpe-url ")
+		})
+	}
 }
 
 func TestOverlayQuadletContainer_RegistryAuthFile(t *testing.T) {
@@ -66,11 +89,6 @@ func TestOverlayQuadletContainer_Errors(t *testing.T) {
 			src:          src,
 			repo2cpeURL:  "https://example.test/mapping.json",
 			errSubstring: "image is empty",
-		},
-		"should reject empty repo2cpe URL": {
-			src:          src,
-			image:        "example:latest",
-			errSubstring: "repo2cpeURL is empty",
 		},
 		"should reject missing Image=": {
 			src:          []byte("[Container]\nExec=serve\n"),
