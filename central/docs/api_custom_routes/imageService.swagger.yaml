@@ -30,6 +30,31 @@ paths:
             $ref: '#/definitions/imageSBOMRequest'
       tags:
         - ImageService
+  /api/v1/sboms/scan:
+    post:
+      summary: "(Technology Preview) Scan an SBOM and return vulnerability scan results."
+      description: "Technology Preview feature. The request body is an SPDX 2.3 JSON document. Supported content types are application/spdx+json and text/spdx+json. Caller needs write permission on the Image resource."
+      operationId: ScanSBOM
+      consumes:
+        - application/spdx+json
+        - text/spdx+json
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/v1SBOMScanResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/googlerpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SBOM-SPDX23-Document'
+      tags:
+        - ImageService
 definitions:
   imageSBOMRequest:
     type: object
@@ -82,6 +107,9 @@ definitions:
             items:
               type: string
               example: ["Tool: Claircore-<version>", "Tool: scanner-v4-matcher-<version>"]
+        required:
+        - creators
+        - created
       packages:
         type: array
         items:
@@ -121,6 +149,125 @@ definitions:
             relationshipType:
               type: string
               example: "CONTAINED_BY"
+    required:
+    - spdxVersion
+    - dataLicense
+    - SPDXID
+    - name
+    - documentNamespace
+    - creationInfo
+  v1SBOMScanResponse:
+    description: "SBOMScanResponse wraps metadata and scan results for an SBOM. Components must be JSON marshal/unmarshal compatible with storage.Image so that output formatting via roxctl is consistent."
+    type: object
+    properties:
+      id:
+        type: string
+        description: "The SBOM document ID."
+      scan:
+        type: object
+        properties:
+          scannerVersion:
+            type: string
+          scanTime:
+            type: string
+            format: date-time
+          components:
+            type: array
+            description: "Components with matched vulnerabilities. JSON-compatible with storage.EmbeddedImageScanComponent."
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                version:
+                  type: string
+                license:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    url:
+                      type: string
+                vulns:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      cve:
+                        type: string
+                      cvss:
+                        type: number
+                        format: float
+                      summary:
+                        type: string
+                      link:
+                        type: string
+                      fixedBy:
+                        type: string
+                      severity:
+                        type: string
+                        enum:
+                          - UNKNOWN_VULNERABILITY_SEVERITY
+                          - LOW_VULNERABILITY_SEVERITY
+                          - MODERATE_VULNERABILITY_SEVERITY
+                          - IMPORTANT_VULNERABILITY_SEVERITY
+                          - CRITICAL_VULNERABILITY_SEVERITY
+                      publishedOn:
+                        type: string
+                        format: date-time
+                      lastModified:
+                        type: string
+                        format: date-time
+                layerIndex:
+                  type: integer
+                  format: int32
+                priority:
+                  type: string
+                  format: int64
+                source:
+                  type: string
+                  enum:
+                    - OS
+                    - PYTHON
+                    - JAVA
+                    - RUBY
+                    - NODEJS
+                    - GO
+                    - DOTNETCORERUNTIME
+                    - INFRASTRUCTURE
+                location:
+                  type: string
+                topCvss:
+                  type: number
+                  format: float
+                riskScore:
+                  type: number
+                  format: float
+                fixedBy:
+                  type: string
+                executables:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                      dependencies:
+                        type: array
+                        items:
+                          type: string
+                architecture:
+                  type: string
+          dataSource:
+            type: object
+            description: "Scanner integration that produced the scan."
+            properties:
+              id:
+                type: string
+              name:
+                type: string
   googlerpcStatus:
     type: object
     properties:
