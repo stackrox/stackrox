@@ -84,6 +84,39 @@
         ]
       }
     },
+    "/v1/processbaselines/bulk/get": {
+      "post": {
+        "summary": "`GetProcessBaselineBulk` returns process baselines matching the provided query.",
+        "operationId": "ProcessBaselineService_GetProcessBaselineBulk",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetProcessBaselinesBulkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetProcessBaselinesBulkRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProcessBaselineService"
+        ]
+      }
+    },
     "/v1/processbaselines/bulk/lock": {
       "put": {
         "summary": "`BulkLockProcessBaselines` locks process baselines given a cluster and\nan optional set of namespaces. It returns success or an error.",
@@ -343,6 +376,27 @@
         }
       }
     },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
     "v1BulkProcessBaselinesRequest": {
       "type": "object",
       "properties": {
@@ -377,6 +431,33 @@
         }
       }
     },
+    "v1GetProcessBaselinesBulkRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "$ref": "#/definitions/v1ProcessBaselineQuery"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1Pagination"
+        }
+      }
+    },
+    "v1GetProcessBaselinesBulkResponse": {
+      "type": "object",
+      "properties": {
+        "baselines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageProcessBaseline"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1LockProcessBaselinesRequest": {
       "type": "object",
       "properties": {
@@ -392,6 +473,71 @@
         }
       }
     },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1ProcessBaselineQuery": {
+      "type": "object",
+      "properties": {
+        "clusterIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deploymentIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deploymentNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "containerNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1ProcessBaselineUpdateError": {
       "type": "object",
       "properties": {
@@ -400,6 +546,21 @@
         },
         "key": {
           "$ref": "#/definitions/storageProcessBaselineKey"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },
