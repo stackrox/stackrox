@@ -24,6 +24,9 @@ function SystemHealthPage() {
     const isDeclarativeConfigHealthAvailable = isCentralCapabilityAvailable(
         'centralCanDisplayDeclarativeConfigHealth'
     );
+    const isCloudBackupIntegrationsAvailable = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -99,9 +102,11 @@ function SystemHealthPage() {
                                     pollingCount={pollingCountFaster}
                                 />
                             </GridItem>
-                            <GridItem span={12}>
-                                <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                            </GridItem>
+                            {(isCloudBackupIntegrationsAvailable && (
+                                <GridItem span={12}>
+                                    <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
+                                </GridItem>
+                            ))}
                         </>
                     )}
                     {hasReadAccessForIntegration && isDeclarativeConfigHealthAvailable && (
