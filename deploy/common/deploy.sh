@@ -150,6 +150,8 @@ function get_cluster_zip {
     elif [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
       echo "WARNING: ebpf has been removed; switch to core_bpf"
       COLLECTION_METHOD_ENUM="CORE_BPF"
+    elif [[ "$COLLECTION_METHOD" == "procfs_only" ]]; then
+      COLLECTION_METHOD_ENUM="PROCFS_ONLY"
     elif [[ "$COLLECTION_METHOD" == "none" ]]; then
       COLLECTION_METHOD_ENUM="NO_COLLECTION"
     else
