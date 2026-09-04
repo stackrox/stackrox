@@ -1008,11 +1008,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/node/jobs/download",
 			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
-<<<<<<< HEAD
-			ServerHandler: v2Service.NewNodeDownloadHandler(),
-=======
-			ServerHandler: nodeReportServiceV2.NewDownloadHandler(),
->>>>>>> c27dbd294d (ROX-36250: wire node report service into application)
+			ServerHandler: reportServiceV2.NewNodeDownloadHandler(),
 			Compression:   true,
 		})
 	}
