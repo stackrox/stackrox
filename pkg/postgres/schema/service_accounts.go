@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ServiceAccountsSchema() })
+}
 
 var (
 	// CreateTableServiceAccountsStmt holds the create statement for table `service_accounts`.
@@ -25,7 +30,7 @@ var (
 	}
 
 	// ServiceAccountsSchema is the go schema for table `service_accounts`.
-	ServiceAccountsSchema = func() *walker.Schema {
+	ServiceAccountsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("service_accounts")
 		if schema != nil {
 			return schema
@@ -36,7 +41,7 @@ var (
 		RegisterTable(schema, CreateTableServiceAccountsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

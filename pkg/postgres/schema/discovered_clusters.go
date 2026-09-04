@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { DiscoveredClustersSchema() })
+}
 
 var (
 	// CreateTableDiscoveredClustersStmt holds the create statement for table `discovered_clusters`.
@@ -24,14 +29,14 @@ var (
 	}
 
 	// DiscoveredClustersSchema is the go schema for table `discovered_clusters`.
-	DiscoveredClustersSchema = func() *walker.Schema {
+	DiscoveredClustersSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("discovered_clusters")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.DiscoveredCluster)(nil)), "discovered_clusters")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.CloudSource": CloudSourcesSchema,
+			"storage.CloudSource": CloudSourcesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTableDiscoveredClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DISCOVERED_CLUSTERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

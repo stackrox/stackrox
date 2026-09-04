@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ClusterHealthStatusesSchema() })
+}
 
 var (
 	// CreateTableClusterHealthStatusesStmt holds the create statement for table `cluster_health_statuses`.
@@ -24,14 +29,14 @@ var (
 	}
 
 	// ClusterHealthStatusesSchema is the go schema for table `cluster_health_statuses`.
-	ClusterHealthStatusesSchema = func() *walker.Schema {
+	ClusterHealthStatusesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_health_statuses")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterHealthStatus)(nil)), "cluster_health_statuses")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
+			"storage.Cluster": ClustersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_HEALTH, schema)
 		return schema
-	}()
+	})
 )
 
 const (

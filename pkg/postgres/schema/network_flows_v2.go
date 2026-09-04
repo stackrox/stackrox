@@ -6,7 +6,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkFlowsSchema() })
+}
 
 var (
 	// CreateTableNetworkFlowsStmt holds the create statement for table `network_flows_v2`.
@@ -41,7 +46,7 @@ var (
 	}
 
 	// NetworkFlowsSchema is the go schema for table `nodes`.
-	NetworkFlowsSchema = func() *walker.Schema {
+	NetworkFlowsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_flows_v2")
 		if schema != nil {
 			return schema
@@ -49,7 +54,7 @@ var (
 		schema = walker.Walk(reflect.TypeFor[*storage.NetworkFlow](), "network_flows_v2")
 		RegisterTable(schema, CreateTableNetworkFlowsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

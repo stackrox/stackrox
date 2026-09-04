@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorCheckResultsSchema
+	schema         = pkgSchema.ComplianceOperatorCheckResultsSchema()
 	targetResource = resources.ComplianceOperator
 )
 

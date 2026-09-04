@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { VirtualMachinesSchema() })
+}
 
 var (
 	// CreateTableVirtualMachinesStmt holds the create statement for table `virtual_machines`.
@@ -25,7 +30,7 @@ var (
 	}
 
 	// VirtualMachinesSchema is the go schema for table `virtual_machines`.
-	VirtualMachinesSchema = func() *walker.Schema {
+	VirtualMachinesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("virtual_machines")
 		if schema != nil {
 			return schema
@@ -36,7 +41,7 @@ var (
 		RegisterTable(schema, CreateTableVirtualMachinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

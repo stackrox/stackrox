@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NodeComponentsSchema() })
+}
 
 var (
 	// CreateTableNodeComponentsStmt holds the create statement for table `node_components`.
@@ -22,7 +27,7 @@ var (
 	}
 
 	// NodeComponentsSchema is the go schema for table `node_components`.
-	NodeComponentsSchema = func() *walker.Schema {
+	NodeComponentsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_components")
 		if schema != nil {
 			return schema
@@ -41,7 +46,7 @@ var (
 		RegisterTable(schema, CreateTableNodeComponentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

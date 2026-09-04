@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkEntitiesSchema
+	schema         = pkgSchema.NetworkEntitiesSchema()
 	targetResource = resources.NetworkEntity
 )
 

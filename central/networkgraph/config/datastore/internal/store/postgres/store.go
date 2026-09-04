@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkGraphConfigsSchema
+	schema         = pkgSchema.NetworkGraphConfigsSchema()
 	targetResource = resources.Administration
 )
 

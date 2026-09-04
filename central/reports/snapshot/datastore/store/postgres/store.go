@@ -28,7 +28,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ReportSnapshotsSchema
+	schema         = pkgSchema.ReportSnapshotsSchema()
 	targetResource = resources.WorkflowAdministration
 )
 

@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { ExternalBackupsSchema() })
+}
 
 var (
 	// CreateTableExternalBackupsStmt holds the create statement for table `external_backups`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// ExternalBackupsSchema is the go schema for table `external_backups`.
-	ExternalBackupsSchema = func() *walker.Schema {
+	ExternalBackupsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("external_backups")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableExternalBackupsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

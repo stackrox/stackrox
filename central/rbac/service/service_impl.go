@@ -125,7 +125,7 @@ func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (
 	// Keep only binding specific fields in the query.
 	bindingQuery := &v1.RawQuery{
 		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isBindingField := schema.RoleBindingsSchema.OptionsMap.Get(field)
+			_, isBindingField := schema.RoleBindingsSchema().OptionsMap.Get(field)
 			return isBindingField
 		}),
 	}

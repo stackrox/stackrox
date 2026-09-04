@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PermissionSetsSchema
+	schema         = pkgSchema.PermissionSetsSchema()
 	targetResource = resources.Access
 )
 

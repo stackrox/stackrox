@@ -54,12 +54,12 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 			resolver,
 			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 			[]*csvCommon.SearchWrapper{
-				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema().OptionsMap,
 					resolver.ImageComponentV2DataStore),
 				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES_V2, csvCommon.ImageV2OnlyOptionsMap, resolver.ImageV2DataStore),
 				csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 				csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
-				csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema().OptionsMap, resolver.ClusterDataStore),
 			},
 		)
 	}
@@ -67,12 +67,12 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema().OptionsMap,
 				resolver.ImageComponentV2DataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema().OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }

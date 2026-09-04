@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ProcessBaselineResultsSchema() })
+}
 
 var (
 	// CreateTableProcessBaselineResultsStmt holds the create statement for table `process_baseline_results`.
@@ -25,7 +30,7 @@ var (
 	}
 
 	// ProcessBaselineResultsSchema is the go schema for table `process_baseline_results`.
-	ProcessBaselineResultsSchema = func() *walker.Schema {
+	ProcessBaselineResultsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("process_baseline_results")
 		if schema != nil {
 			return schema
@@ -36,7 +41,7 @@ var (
 		RegisterTable(schema, CreateTableProcessBaselineResultsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINE_RESULTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

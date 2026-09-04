@@ -51,7 +51,7 @@ var (
 	// that must be evaluated in memory against the already-populated field.
 	skewOptionsMap = search.NewOptionsMap(v1.SearchCategory_CLUSTERS).Add(
 		search.SensorVersionCompatibility,
-		schema.ClustersSchema.OptionsMap.MustGet(search.SensorVersionCompatibility.String()),
+		schema.ClustersSchema().OptionsMap.MustGet(search.SensorVersionCompatibility.String()),
 	)
 
 	clusterPredicateFactory = predicate.NewFactory("cluster", (*storage.Cluster)(nil))

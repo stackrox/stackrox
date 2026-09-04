@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ReportConfigurationsSchema
+	schema         = pkgSchema.ReportConfigurationsSchema()
 	targetResource = resources.WorkflowAdministration
 )
 

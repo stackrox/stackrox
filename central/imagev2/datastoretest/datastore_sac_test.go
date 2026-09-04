@@ -67,7 +67,7 @@ func (s *imageV2DatastoreSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.Require().NoError(err)
-	s.optionsMap = schema.ImagesV2Schema.OptionsMap
+	s.optionsMap = schema.ImagesV2Schema().OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Image)

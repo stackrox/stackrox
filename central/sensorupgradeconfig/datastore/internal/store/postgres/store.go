@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SensorUpgradeConfigsSchema
+	schema         = pkgSchema.SensorUpgradeConfigsSchema()
 	targetResource = resources.Administration
 )
 
