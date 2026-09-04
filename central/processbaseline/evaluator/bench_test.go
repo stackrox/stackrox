@@ -180,33 +180,29 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 			err := processIndicatorDatastore.AddProcessIndicators(testCtx, processes...)
 			require.NoError(b, err)
 
-			// Create baselines - first container has locked baseline with only SOME processes
-			// This ensures we get violations from processes NOT in the baseline
-			// NOTE: These must match the ExecFilePath from processTemplates
-			baselineProcesses := []string{"/usr/bin/apt-get", "/usr/bin/curl"} // Only 2 out of 10 process types
-
-			// Create locked baseline for first container
-			key := &storage.ProcessBaselineKey{
-				DeploymentId:  deploymentID,
-				ContainerName: containerNames[0],
-				ClusterId:     deployment.GetClusterId(), // Use deployment's cluster ID
-				Namespace:     deployment.GetNamespace(), // Use deployment's namespace
-			}
-			elements := make([]*storage.BaselineItem, len(baselineProcesses))
-			for i, processPath := range baselineProcesses {
-				elements[i] = &storage.BaselineItem{
-					Item: &storage.BaselineItem_ProcessName{
-						ProcessName: processPath,
-					},
+			baselineProcesses := []string{"/usr/bin/apt-get", "/usr/bin/curl"}
+			for _, cn := range containerNames[:scenario.numContainers] {
+				key := &storage.ProcessBaselineKey{
+					DeploymentId:  deploymentID,
+					ContainerName: cn,
+					ClusterId:     deployment.GetClusterId(),
+					Namespace:     deployment.GetNamespace(),
 				}
-			}
-			_, err = processBaselineDatastore.UpsertProcessBaseline(testCtx, key, elements, false, true)
-			require.NoError(b, err)
+				elements := make([]*storage.BaselineItem, len(baselineProcesses))
+				for i, processPath := range baselineProcesses {
+					elements[i] = &storage.BaselineItem{
+						Item: &storage.BaselineItem_ProcessName{
+							ProcessName: processPath,
+						},
+					}
+				}
+				_, err = processBaselineDatastore.UpsertProcessBaseline(testCtx, key, elements, false, true)
+				require.NoError(b, err)
 
-			// We need to actually lock the baseline
-			baseline, err := processBaselineDatastore.UserLockProcessBaseline(testCtx, key, true)
-			require.NoError(b, err)
-			require.NotNil(b, baseline)
+				baseline, err := processBaselineDatastore.UserLockProcessBaseline(testCtx, key, true)
+				require.NoError(b, err)
+				require.NotNil(b, baseline)
+			}
 
 			var maxHeap uint64
 			var maxHeapObj uint64
@@ -272,27 +268,28 @@ func BenchmarkEvaluateBaselinesSmallScale(b *testing.B) {
 
 	// Create locked baseline for first container
 	baselineProcesses := []string{"/usr/bin/apt-get", "/usr/bin/curl"}
-	key := &storage.ProcessBaselineKey{
-		DeploymentId:  deploymentID,
-		ContainerName: containerNames[0],
-		ClusterId:     deployment.GetClusterId(),
-		Namespace:     deployment.GetNamespace(),
-	}
-	elements := make([]*storage.BaselineItem, len(baselineProcesses))
-	for i, processPath := range baselineProcesses {
-		elements[i] = &storage.BaselineItem{
-			Item: &storage.BaselineItem_ProcessName{
-				ProcessName: processPath,
-			},
+	for _, cn := range containerNames {
+		key := &storage.ProcessBaselineKey{
+			DeploymentId:  deploymentID,
+			ContainerName: cn,
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
 		}
-	}
-	_, err = processBaselineDatastore.UpsertProcessBaseline(testCtx, key, elements, false, true)
-	require.NoError(b, err)
+		elements := make([]*storage.BaselineItem, len(baselineProcesses))
+		for i, processPath := range baselineProcesses {
+			elements[i] = &storage.BaselineItem{
+				Item: &storage.BaselineItem_ProcessName{
+					ProcessName: processPath,
+				},
+			}
+		}
+		_, err = processBaselineDatastore.UpsertProcessBaseline(testCtx, key, elements, false, true)
+		require.NoError(b, err)
 
-	// We need to actually lock the baseline
-	baseline, err := processBaselineDatastore.UserLockProcessBaseline(testCtx, key, true)
-	require.NoError(b, err)
-	require.NotNil(b, baseline)
+		baseline, err := processBaselineDatastore.UserLockProcessBaseline(testCtx, key, true)
+		require.NoError(b, err)
+		require.NotNil(b, baseline)
+	}
 
 	b.Run("2500_processes_5_containers", func(b *testing.B) {
 		evaluator := New(processBaselineResultsDatastore, processBaselineDatastore, processIndicatorDatastore)

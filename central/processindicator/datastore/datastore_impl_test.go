@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	"github.com/stackrox/rox/central/processindicator/views"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -412,6 +414,74 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: fixtureconsts.ProcessIndicatorID1})
 	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestIterateOverProcessIndicatorsRiskView() {
+	suite.setupDataStoreNoPruning()
+
+	containerStart := time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)
+	signalTime := time.Date(2025, 1, 1, 10, 5, 0, 0, time.UTC)
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodUid:        fixtureconsts.PodUID1,
+			ContainerName: "web",
+			Signal: &storage.ProcessSignal{
+				Name:         "nginx",
+				Args:         "-g daemon off",
+				ExecFilePath: "/usr/sbin/nginx",
+				Time:         protoconv.ConvertTimeToTimestamp(signalTime),
+			},
+			ContainerStartTime: protoconv.ConvertTimeToTimestamp(containerStart),
+		},
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodUid:        fixtureconsts.PodUID1,
+			ContainerName: "sidecar",
+			Signal: &storage.ProcessSignal{
+				Name:         "envoy",
+				Args:         "--config /etc/envoy.yaml",
+				ExecFilePath: "/usr/bin/envoy",
+				Time:         protoconv.ConvertTimeToTimestamp(signalTime.Add(time.Minute)),
+			},
+			ContainerStartTime: protoconv.ConvertTimeToTimestamp(containerStart.Add(time.Second)),
+		},
+	}
+
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).
+		ProtoQuery()
+
+	var results []*views.ProcessIndicatorRiskView
+	err := suite.datastore.IterateOverProcessIndicatorsRiskView(suite.hasReadCtx, q, func(v *views.ProcessIndicatorRiskView) error {
+		results = append(results, v)
+		return nil
+	})
+	suite.NoError(err)
+	suite.Len(results, 2)
+
+	byID := make(map[string]*views.ProcessIndicatorRiskView, len(results))
+	for _, r := range results {
+		byID[r.ID] = r
+	}
+
+	for _, ind := range indicators {
+		r, ok := byID[ind.GetId()]
+		suite.Require().True(ok, "missing result for indicator %s", ind.GetId())
+		suite.Equal(ind.GetContainerName(), r.ContainerName)
+		suite.Equal(ind.GetSignal().GetExecFilePath(), r.ExecFilePath)
+		suite.Equal(ind.GetSignal().GetName(), r.SignalName)
+		suite.Equal(ind.GetSignal().GetArgs(), r.SignalArgs)
+		suite.Require().NotNil(r.ContainerStartTime)
+		suite.Require().NotNil(r.SignalTime)
+		suite.True(r.ContainerStartTime.Equal(ind.GetContainerStartTime().AsTime()))
+		suite.True(r.SignalTime.Equal(ind.GetSignal().GetTime().AsTime()))
+	}
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
