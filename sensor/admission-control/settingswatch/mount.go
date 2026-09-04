@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
@@ -61,7 +62,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterConfig storage.DynamicClusterConfig
-	if err := clusterConfig.UnmarshalVTUnsafe(configData); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&clusterConfig, configData); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 

@@ -74,7 +74,7 @@ func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) 
 	}
 
 	var msg storage.SystemInfo
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&msg, data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
