@@ -87,44 +87,131 @@ _fetch_cluster_ingress_ca() {
     printf '%s\n' "$ca_bundle"
 }
 
+# Directory to install a downloaded virtctl binary into.
+# PATH is not updated here: callers invoke this via command substitution, which
+# would discard an export. Call _virtctl_add_install_dir_to_path after assigning dest.
+_virtctl_install_dir() {
+    local dest="/usr/local/bin"
+    if [[ ! -w "$dest" ]]; then
+        dest="$(mktemp -d)"
+    fi
+    printf '%s\n' "$dest"
+}
+
+_virtctl_add_install_dir_to_path() {
+    local dest="$1"
+    [[ "$dest" == "/usr/local/bin" ]] || export PATH="${dest}:${PATH}"
+}
+
+# Set to 1 when ConsoleCLIDownload returned a body that was not a gzip tarball.
+# TLS retry (-k) cannot help in that case; callers should skip it.
+_VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP=0
+
 # Downloads and installs virtctl using the provided curl TLS arguments.
+# Returns 1 on failure (does not die) so callers can fall back.
 # Usage: _download_and_install_virtctl [curl_tls_args...]
 # Example: _download_and_install_virtctl --cacert /path/to/ca.pem
 #          _download_and_install_virtctl -k
 _download_and_install_virtctl() {
     # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
-    local download_url
-    download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
-        -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
+    local dest
+    dest="$(_virtctl_install_dir)"
+    _virtctl_add_install_dir_to_path "$dest"
+    _VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP=0
+
+    # ConsoleCLIDownload can exist while the ingress backend still serves HTML.
+    # Wait for the href, then retry until the body is a gzip tarball.
+    local download_url=""
+    local attempt=0
+    while (( attempt < 30 )); do
+        attempt=$((attempt + 1))
+        download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
+            -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
+        if [[ -n "$download_url" ]]; then
+            break
+        fi
+        info "Waiting for ConsoleCLIDownload virtctl href (${attempt}/30)"
+        sleep 10
+    done
     if [[ -z "$download_url" ]]; then
-        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
+        warn "virtctl not found on PATH and ConsoleCLIDownload resource not available"
+        return 1
     fi
 
-    local dest="/usr/local/bin"
-    if [[ ! -w "$dest" ]]; then
-        dest="$(mktemp -d)"
-        export PATH="${dest}:${PATH}"
+    local cli_deploy="hyperconverged-cluster-cli-download"
+    if oc get deploy -n openshift-cnv "$cli_deploy" >/dev/null 2>&1; then
+        info "Waiting for ${cli_deploy} rollout..."
+        oc rollout status "deploy/${cli_deploy}" -n openshift-cnv --timeout=300s || true
     fi
 
+    local archive saw_nongzip=0
+    archive="$(mktemp)"
     info "Downloading virtctl from ${download_url}"
-    if ! curl -sSL "$@" "$download_url" | tar xz -C "$dest" virtctl; then
-        die "Failed to download virtctl from ${download_url}"
+    attempt=0
+    while (( attempt < 30 )); do
+        attempt=$((attempt + 1))
+        if curl -sSL --connect-timeout 30 --max-time 120 "$@" -o "$archive" "$download_url"; then
+            if gzip -t "$archive" 2>/dev/null \
+                && tar xz -C "$dest" virtctl -f "$archive" \
+                && [[ -f "${dest}/virtctl" ]]; then
+                rm -f "$archive"
+                chmod +x "${dest}/virtctl"
+                info "virtctl installed at ${dest}/virtctl"
+                return 0
+            fi
+            saw_nongzip=1
+        fi
+        info "virtctl tarball not ready yet (attempt ${attempt}/30), retrying in 10s"
+        sleep 10
+    done
+    rm -f "$archive"
+    _VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP=$saw_nongzip
+    warn "Failed to download virtctl from ${download_url}"
+    return 1
+}
+
+# Installs virtctl from the KubeVirt GitHub release matching the cluster's observed version.
+# ConsoleCLIDownload can stay on HTML while CNV's CSV is Installing or Failed.
+_install_virtctl_from_kubevirt_release() {
+    local version dest url bin
+    version="$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.observedKubeVirtVersion}' 2>/dev/null || true)"
+    if [[ -z "$version" ]]; then
+        version="$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.targetKubeVirtVersion}' 2>/dev/null || true)"
     fi
-    if [[ ! -f "${dest}/virtctl" ]]; then
-        die "Downloaded archive from ${download_url} does not contain virtctl"
+    if [[ -z "$version" ]]; then
+        warn "No observedKubeVirtVersion on kubevirt CRs; cannot download virtctl from GitHub"
+        return 1
     fi
-    chmod +x "${dest}/virtctl"
-    info "virtctl installed at ${dest}/virtctl"
+
+    dest="$(_virtctl_install_dir)"
+    _virtctl_add_install_dir_to_path "$dest"
+    url="https://github.com/kubevirt/kubevirt/releases/download/${version}/virtctl-${version}-linux-amd64"
+    bin="${dest}/virtctl"
+    info "Downloading virtctl ${version} from ${url}"
+    if ! curl -fsSL --connect-timeout 30 --max-time 120 --retry 5 --retry-delay 5 -o "$bin" "$url"; then
+        warn "GitHub virtctl download failed from ${url}"
+        rm -f "$bin"
+        return 1
+    fi
+    if [[ "$(head -c 4 "$bin")" != $'\x7fELF' ]]; then
+        warn "GitHub virtctl download was not an ELF binary"
+        rm -f "$bin"
+        return 1
+    fi
+    chmod +x "$bin"
+    info "virtctl installed at ${bin}"
+    return 0
 }
 
 # Downloads virtctl from ConsoleCLIDownload using verified TLS only.
 ensure_virtctl_binary() {
     _use_existing_virtctl_binary_if_available && return
 
-    local ca_bundle
+    local ca_bundle rc=0
     ca_bundle="$(_fetch_cluster_ingress_ca)"
-    _download_and_install_virtctl --cacert "$ca_bundle"
+    _download_and_install_virtctl --cacert "$ca_bundle" || rc=$?
     rm -f "$ca_bundle"
+    return "$rc"
 }
 
 # Downloads virtctl from ConsoleCLIDownload with curl -k.

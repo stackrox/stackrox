@@ -66,6 +66,7 @@ func TestIsAuthenticationExpired(t *testing.T) {
 		"wrapped ErrAuthenticationExpired": {err: fmt.Errorf("op: %w", ErrAuthenticationExpired), want: true},
 		"unrelated error":                  {err: errors.New("connection refused"), want: false},
 		"gRPC unavailable (not auth)":      {err: status.Error(codes.Unavailable, "service down"), want: false},
+		"gRPC Unimplemented":               {err: status.Error(codes.Unimplemented, "not registered"), want: false},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

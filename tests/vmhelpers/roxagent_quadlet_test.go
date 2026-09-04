@@ -3,10 +3,12 @@
 package vmhelpers
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -131,6 +133,102 @@ func TestIsVsockUnavailableOutput(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			require.Equal(t, tc.want, isVsockUnavailableOutput(tc.output))
+		})
+	}
+}
+
+const scpBannerTimeoutStderr = "Connection timed out during banner exchange\nConnection to UNKNOWN port 65535 timed out\nscp: Connection closed\nexit status 255"
+
+func TestWrapSCPError(t *testing.T) {
+	t.Parallel()
+	copyErr := errors.New("exit status 1")
+	tests := map[string]struct {
+		stderr        string
+		wantTransport bool
+		wantStalled   bool
+		wantAuth      bool
+	}{
+		"banner timeout is SSH transport": {
+			stderr:        scpBannerTimeoutStderr,
+			wantTransport: true,
+			wantStalled:   true,
+		},
+		"auth failure is terminal not transport": {
+			stderr:   "Permission denied (publickey).\r\n",
+			wantAuth: true,
+		},
+		"remote command failure is not SSH transport": {
+			stderr: "install.sh: no such file\nexit status 1",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			err := wrapSCPError("/tmp/install.sh", "/guest/install.sh", tc.stderr, copyErr)
+			require.Error(t, err)
+			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
+			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
+		})
+	}
+}
+
+func TestRetryCopyToGuest(t *testing.T) {
+	t.Parallel()
+	copyErr := errors.New("exit status 1")
+	tests := map[string]struct {
+		stderr           string
+		succeedOnAttempt int
+		wantAttempts     int
+		wantErr          bool
+		wantTransport    bool
+		wantStalled      bool
+		wantAuth         bool
+	}{
+		"retries banner timeout then succeeds": {
+			stderr:           scpBannerTimeoutStderr,
+			succeedOnAttempt: 3,
+			wantAttempts:     3,
+		},
+		"gives up on persistent banner timeout": {
+			stderr:        scpBannerTimeoutStderr,
+			wantAttempts:  3,
+			wantErr:       true,
+			wantTransport: true,
+			wantStalled:   true,
+		},
+		"does not retry terminal SSH auth": {
+			stderr:       "Permission denied (publickey).\r\n",
+			wantAttempts: 1,
+			wantErr:      true,
+			wantAuth:     true,
+		},
+		"does not retry remote command failure": {
+			stderr:       "install.sh: permission denied",
+			wantAttempts: 1,
+			wantErr:      true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			attempts := 0
+			err := retryCopyToGuest(t.Context(), nil, "/tmp/install.sh", "/guest/install.sh", 3, time.Millisecond, func() (string, error) {
+				attempts++
+				if tc.succeedOnAttempt > 0 && attempts >= tc.succeedOnAttempt {
+					return "", nil
+				}
+				return tc.stderr, copyErr
+			})
+			require.Equal(t, tc.wantAttempts, attempts)
+			if !tc.wantErr {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
+			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
 		})
 	}
 }
