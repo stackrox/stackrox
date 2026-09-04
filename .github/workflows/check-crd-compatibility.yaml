@@ -25,7 +25,7 @@ jobs:
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.14-1-g9bed4c4911
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:

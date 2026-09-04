@@ -155,7 +155,7 @@ deploy_stackrox_with_roxie() {
         --envrc "$roxie_envrc" \
         --config "$config_file"
 
-    # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
+    # Load the (extended) roxie environment into the current shell.
     extend_roxie_envrc "$roxie_envrc"
     # shellcheck source=/dev/null
     source "$roxie_envrc"
