@@ -153,6 +153,14 @@ const (
 	PullSyncTimeout = "timeout"
 )
 
+// Mapping-path label values for PullTrackedVMsByMappingPath. Bounded to
+// the three RepoCPEMappingUpdatePath cases so cardinality stays fixed.
+const (
+	MappingPathSensor      = "sensor"
+	MappingPathURL         = "url"
+	MappingPathUnspecified = "unspecified"
+)
+
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
 var PullDialDurationSeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
@@ -297,6 +305,19 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullTrackedVMsByMappingPath is currently tracked VMs partitioned by
+// repo-to-CPE mapping update path. It is fleet mix, not scrape events;
+// the three series sum to vsock_pull_tracked_vms.
+var PullTrackedVMsByMappingPath = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_tracked_vms_by_mapping_path",
+		Help:      "Number of VMs currently tracked for pull-mode scraping, partitioned by repo-to-CPE mapping update path (sensor, url, unspecified). This is fleet mix, not scrape events.",
+	},
+	[]string{"path"},
+)
+
 // PullDueVMs is how many VMs were eligible to scrape at the start of the last
 // tick (nextAttemptAt had arrived and they were not already in flight).
 var PullDueVMs = prometheus.NewGauge(
@@ -371,9 +392,13 @@ func init() {
 		PullSyncTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullTrackedVMsByMappingPath,
 		PullDueVMs,
 		PullStartsPerTick,
 		PullForwardInterarrivalSeconds,
 		PullScheduleOffsetSeconds,
 	)
+	for _, path := range []string{MappingPathSensor, MappingPathURL, MappingPathUnspecified} {
+		PullTrackedVMsByMappingPath.WithLabelValues(path).Set(0)
+	}
 }
