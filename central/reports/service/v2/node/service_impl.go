@@ -122,9 +122,12 @@ func (s *serviceImpl) PostNodeReportConfiguration(ctx context.Context, request *
 		return nil, err
 	}
 
-	createdReportConfig, _, err := s.reportConfigStore.GetReportConfiguration(ctx, id)
+	createdReportConfig, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.CausedByf("report configuration with id '%s' was created but could not be read back", id)
 	}
 
 	if env.CentralWorkerEnabled.BooleanSetting() {
@@ -180,8 +183,11 @@ func (s *serviceImpl) UpdateNodeReportConfiguration(ctx context.Context, request
 		}
 	}
 
-	updatedConfig, err := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
-		currentConfig.GetNodeVulnReportFilters().GetAccessScopeRules())
+	var accessScopeRules []*storage.SimpleAccessScope_Rules
+	if filters := currentConfig.GetNodeVulnReportFilters(); filters != nil {
+		accessScopeRules = filters.GetAccessScopeRules()
+	}
+	updatedConfig, err := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(), accessScopeRules)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting report configuration")
 	}
@@ -297,7 +303,7 @@ func (s *serviceImpl) DeleteNodeReportConfiguration(ctx context.Context, id *api
 		return nil, errors.Wrap(err, "failed to search for active report snapshots")
 	}
 	if len(reportSnapshots) > 0 {
-		return &apiV2.Empty{}, errox.InvalidArgs.CausedByf("report config ID '%s' has job in preparing or waiting state", id.GetId())
+		return nil, errox.InvalidArgs.CausedByf("report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}
 
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
