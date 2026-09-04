@@ -128,6 +128,9 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     if (type === 'KUBE_SERVICE_ACCOUNT') {
                         return 'Kubernetes service account';
                     }
+                    if (type === 'SPIFFE') {
+                        return 'SPIFFE / SPIRE';
+                    }
                     return 'Unknown';
                 },
                 Header: 'Configuration',

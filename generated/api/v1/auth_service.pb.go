@@ -25,14 +25,18 @@ const (
 )
 
 // The type of the auth machine to machine config.
-// Currently supports GitHub actions or any other generic OIDC provider to use for verifying and
-// exchanging the token.
+// Currently supports GitHub actions, SPIFFE/SPIRE, or any other generic OIDC provider to use
+// for verifying and exchanging the token.
 type AuthMachineToMachineConfig_Type int32
 
 const (
 	AuthMachineToMachineConfig_GENERIC              AuthMachineToMachineConfig_Type = 0
 	AuthMachineToMachineConfig_GITHUB_ACTIONS       AuthMachineToMachineConfig_Type = 1
 	AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT AuthMachineToMachineConfig_Type = 2
+	// SPIFFE JWT-SVID authentication via a SPIRE OIDC Discovery Provider.
+	// The issuer must be the HTTPS URL of the SPIRE OIDC Discovery Provider,
+	// not the SPIFFE trust domain URI.
+	AuthMachineToMachineConfig_SPIFFE AuthMachineToMachineConfig_Type = 3
 )
 
 // Enum value maps for AuthMachineToMachineConfig_Type.
@@ -41,11 +45,13 @@ var (
 		0: "GENERIC",
 		1: "GITHUB_ACTIONS",
 		2: "KUBE_SERVICE_ACCOUNT",
+		3: "SPIFFE",
 	}
 	AuthMachineToMachineConfig_Type_value = map[string]int32{
 		"GENERIC":              0,
 		"GITHUB_ACTIONS":       1,
 		"KUBE_SERVICE_ACCOUNT": 2,
+		"SPIFFE":               3,
 	}
 )
 
@@ -280,11 +286,12 @@ type AuthMachineToMachineConfig struct {
 	Mappings []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer of the related OIDC provider issuing the ID tokens to exchange.
 	//
-	// Must be non-empty string containing URL when type is GENERIC.
+	// Must be non-empty string containing URL when type is GENERIC or SPIFFE.
 	// In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
+	// For SPIFFE, this must be the HTTPS URL of the SPIRE OIDC Discovery Provider.
 	//
 	// Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
-	// GENERIC config must have a distinct issuer.
+	// GENERIC/SPIFFE config must have a distinct issuer.
 	Issuer string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	Traits *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
 	// The expected audience (aud claim) of the ID token.
@@ -772,7 +779,7 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\tuser_info\x18\x06 \x01(\v2\x11.storage.UserInfoR\buserInfo\x12:\n" +
 	"\x0fuser_attributes\x18\a \x03(\v2\x11.v1.UserAttributeR\x0euserAttributes\x12\x1b\n" +
 	"\tidp_token\x18\b \x01(\tR\bidpTokenB\x04\n" +
-	"\x02id\"\xdc\x03\n" +
+	"\x02id\"\xe8\x03\n" +
 	"\x1aAuthMachineToMachineConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.v1.AuthMachineToMachineConfig.TypeR\x04type\x12:\n" +
@@ -785,11 +792,13 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\aMapping\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x10value_expression\x18\x02 \x01(\tR\x0fvalueExpression\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\"A\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\"M\n" +
 	"\x04Type\x12\v\n" +
 	"\aGENERIC\x10\x00\x12\x12\n" +
 	"\x0eGITHUB_ACTIONS\x10\x01\x12\x18\n" +
-	"\x14KUBE_SERVICE_ACCOUNT\x10\x02\"b\n" +
+	"\x14KUBE_SERVICE_ACCOUNT\x10\x02\x12\n" +
+	"\n" +
+	"\x06SPIFFE\x10\x03\"b\n" +
 	"&ListAuthMachineToMachineConfigResponse\x128\n" +
 	"\aconfigs\x18\x01 \x03(\v2\x1e.v1.AuthMachineToMachineConfigR\aconfigs\"_\n" +
 	"%GetAuthMachineToMachineConfigResponse\x126\n" +
