@@ -179,6 +179,11 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
 			defer emptyDB(t, suite.datastore, c.baselines)
 			requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
 			suite.deployments.EXPECT().GetDeployment(hasReadCtx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+			if c.expectedResult == nil {
+				suite.indicatorMockStore.EXPECT().
+					SearchRawProcessIndicators(hasReadCtx, gomock.Any()).
+					Return(nil, nil)
+			}
 			baseline, err := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
 			if c.shouldFail {
 				assert.Error(t, err)
