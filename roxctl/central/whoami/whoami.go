@@ -2,7 +2,9 @@ package whoami
 
 import (
 	"context"
+	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,10 +12,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"google.golang.org/grpc"
 )
 
 type centralWhoAmICommand struct {
@@ -92,7 +98,72 @@ User name:
 		cmd.env.Logger().PrintfLn("\t%s %s", accessString(access), resource)
 	}
 
+	cmd.checkVersionCompatibility(ctx, conn)
+
 	return nil
+}
+
+func (cmd *centralWhoAmICommand) checkVersionCompatibility(ctx context.Context, conn *grpc.ClientConn) {
+	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
+	if err != nil {
+		cmd.env.Logger().WarnfLn("getting metadata: %v", err)
+		return
+	}
+
+	roxctlVersion := version.GetMainVersion()
+
+	centralVersion := metadata.GetVersion()
+	if centralVersion == "" {
+		cmd.env.Logger().WarnfLn("Central did not report its version; skipping compatibility check")
+		return
+	}
+
+	centralXY, err := productstreams.ParseXYFromVersionString(centralVersion)
+	if err != nil {
+		cmd.env.Logger().WarnfLn("parsing Central version %q: %v", centralVersion, err)
+		return
+	}
+
+	compat, err := versioncompatibility.ClassifyVersion(centralXY)
+	if err != nil {
+		cmd.env.Logger().WarnfLn("classifying Central version %q: %v", centralVersion, err)
+		return
+	}
+	if compat != versioncompatibility.IncompatibleAhead && compat != versioncompatibility.IncompatibleBehind {
+		return
+	}
+	versionRange, err := versioncompatibility.CompatibleVersions()
+	if err != nil {
+		cmd.env.Logger().WarnfLn("generating compatible versions %q: %v", roxctlVersion, err)
+		return
+	}
+	compatRange := formatVersionRange(versionRange)
+	w := cmd.env.InputOutput().ErrOut()
+
+	switch compat {
+	case versioncompatibility.IncompatibleAhead:
+		fmt.Fprintf(w, "Warning: Your roxctl %s is too old for this Central %s. "+
+			"Correct functioning is not guaranteed. "+
+			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
+			roxctlVersion, centralVersion)
+		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+			roxctlVersion, centralVersion, compatRange)
+	case versioncompatibility.IncompatibleBehind:
+		fmt.Fprintf(w, "Warning: Your roxctl %s is too new for this Central %s. "+
+			"Correct functioning is not guaranteed. "+
+			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
+			roxctlVersion, centralVersion)
+		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+			roxctlVersion, centralVersion, compatRange)
+	}
+}
+
+func formatVersionRange(versions []productstreams.XYVersion) string {
+	strs := make([]string, len(versions))
+	for i, v := range versions {
+		strs[i] = v.String()
+	}
+	return strings.Join(strs, ", ")
 }
 
 func accessString(access storage.Access) string {
