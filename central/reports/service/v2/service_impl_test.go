@@ -139,6 +139,109 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	s.Error(err)
 }
 
+func (s *ReportServiceTestSuite) TestPostReportConfiguration_RejectsNodeType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	_, err := s.service.PostReportConfiguration(ctx, &apiV2.ReportConfiguration{
+		Name: "node report",
+		Type: apiV2.ReportConfiguration_NODE_VULNERABILITY,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestUpdateReportConfiguration_RejectsNodeType() {
+	protoReportConfig := &storage.ReportConfiguration{
+		Id:   "node-config",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+	}
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(protoReportConfig, true, nil).Times(1)
+	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
+	s.notifierDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
+
+	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+	requestConfig.Id = "node-config"
+	_, err := s.service.UpdateReportConfiguration(s.ctx, requestConfig)
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestGetReportConfiguration_RejectsNodeType() {
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(&storage.ReportConfiguration{
+			Id:   "node-config",
+			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		}, true, nil).Times(1)
+
+	_, err := s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "node-config"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestDeleteReportConfiguration_RejectsNodeType() {
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(&storage.ReportConfiguration{
+			Id:   "node-config",
+			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		}, true, nil).Times(1)
+
+	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "node-config"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestRunReport_RejectsNodeType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	nodeConfig := &storage.ReportConfiguration{
+		Id:   "node-config",
+		Name: "node report",
+		Type: storage.ReportConfiguration_NODE_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{
+				EntityScope: &storage.EntityScope{
+					Rules: []*storage.EntityScopeRule{
+						{
+							Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+							Field:  storage.EntityField_FIELD_ID,
+							Values: []*storage.RuleValue{{Value: "cluster-1", MatchType: storage.MatchType_EXACT}},
+						},
+					},
+				},
+			},
+		},
+	}
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
+		Return(nodeConfig, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetManyNotifiers(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+	_, err := s.service.RunReport(ctx, &apiV2.RunReportRequest{
+		ReportConfigId:           "node-config",
+		ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestPostViewBasedReport_RejectsNodeType() {
+	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	_, err := s.service.PostViewBasedReport(ctx, &apiV2.ReportRequestViewBased{
+		Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func imageReportTypeQuery(base *v1.Query) *v1.Query {
+	return search.ConjunctionQuery(
+		base,
+		search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery(),
+	)
+}
+
 func (s *ReportServiceTestSuite) TestCreateReportConfigurationWithCentralWorker() {
 	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
 
@@ -300,7 +403,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
-				query := search.EmptyQuery()
+				query := imageReportTypeQuery(search.EmptyQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -309,7 +412,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: func() *v1.Query {
-				query := search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()
+				query := imageReportTypeQuery(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -321,7 +424,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 				Pagination: &apiV2.Pagination{Limit: 25},
 			},
 			expectedQ: func() *v1.Query {
-				query := search.EmptyQuery()
+				query := imageReportTypeQuery(search.EmptyQuery())
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
@@ -415,12 +518,12 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 		{
 			desc:      "Empty query",
 			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+			expectedQ: imageReportTypeQuery(search.NewQueryBuilder().ProtoQuery()),
 		},
 		{
 			desc:      "Query with search field",
 			query:     &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+			expectedQ: imageReportTypeQuery(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()),
 		},
 	}
 
@@ -807,6 +910,53 @@ func (s *ReportServiceTestSuite) TestGetReportStatus() {
 	repStatusResponse, err := s.service.GetReportStatus(s.ctx, &id)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), repStatusResponse.GetStatus().GetErrorMsg(), status.GetErrorMsg())
+}
+
+func (s *ReportServiceTestSuite) TestGetReportStatus_RejectsNodeType() {
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), "node-job").Return(&storage.ReportSnapshot{
+		ReportId:     "node-job",
+		Type:         storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{},
+	}, true, nil)
+
+	_, err := s.service.GetReportStatus(s.ctx, &apiV2.ResourceByID{Id: "node-job"})
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
+func (s *ReportServiceTestSuite) TestGetReportHistory_FiltersImageReportType() {
+	var captured *v1.Query
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
+			captured = q
+			return nil, nil
+		})
+
+	_, err := s.service.GetReportHistory(s.ctx, &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: &apiV2.RawQuery{Query: ""},
+	})
+	s.NoError(err)
+	s.True(queryHasFieldValue(captured, search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()),
+		"history query must constrain ReportType to VULNERABILITY, got %s", captured)
+}
+
+func (s *ReportServiceTestSuite) TestGetMyReportHistory_FiltersImageReportType() {
+	user := &storage.SlimUser{Id: "user-a", Name: "user-a"}
+	var captured *v1.Query
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
+			captured = q
+			return nil, nil
+		})
+
+	_, err := s.service.GetMyReportHistory(s.getContextForUser(user), &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: &apiV2.RawQuery{Query: ""},
+	})
+	s.NoError(err)
+	s.True(queryHasFieldValue(captured, search.ReportType, storage.ReportSnapshot_VULNERABILITY.String()),
+		"my-history query must constrain ReportType to VULNERABILITY, got %s", captured)
 }
 
 func (s *ReportServiceTestSuite) TestGetReportHistory() {
@@ -1511,6 +1661,20 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			isError: false,
 		},
+		{
+			desc: "Node vulnerability snapshot is rejected",
+			req: &apiV2.DeleteReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.CloneVT()
+				snap.Type = storage.ReportSnapshot_NODE_VULNERABILITY
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
 	}
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
@@ -1880,4 +2044,18 @@ func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) conte
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
+}
+
+func queryHasFieldValue(q *v1.Query, field search.FieldLabel, want string) bool {
+	found := false
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if mfQ.MatchFieldQuery.GetField() == field.String() && strings.Contains(mfQ.MatchFieldQuery.GetValue(), want) {
+			found = true
+		}
+	})
+	return found
 }
