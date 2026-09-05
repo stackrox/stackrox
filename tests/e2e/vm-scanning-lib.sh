@@ -170,18 +170,61 @@ _download_and_install_virtctl() {
     return 1
 }
 
-# Installs virtctl from the KubeVirt GitHub release matching the cluster's observed version.
+# True when $1 is a kubevirt/kubevirt GitHub release tag (v1.6.0 or 1.6.0).
+# Image digests (sha256:...) and two-part versions (v1.6) are not release tags.
+_is_kubevirt_github_release_tag() {
+    [[ "$1" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+}
+
+_normalize_kubevirt_github_tag() {
+    local v="$1"
+    if [[ "$v" == v* ]]; then
+        printf '%s\n' "$v"
+    else
+        printf 'v%s\n' "$v"
+    fi
+}
+
+# Prints a kubevirt/kubevirt GitHub release tag to stdout (logs go to stderr).
+# CNV digest-pins operand images, so observedKubeVirtVersion is often sha256:...;
+# those values are skipped. If the CR has no tag, use GitHub's latest release.
+_kubevirt_github_release_tag() {
+    local v
+    while IFS= read -r v; do
+        [[ -n "$v" ]] || continue
+        if _is_kubevirt_github_release_tag "$v"; then
+            _normalize_kubevirt_github_tag "$v"
+            return 0
+        fi
+        warn "Ignoring KubeVirt version ${v}: not a GitHub release tag" >&2
+    done <<EOF
+$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.observedKubeVirtVersion}' 2>/dev/null || true)
+$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.targetKubeVirtVersion}' 2>/dev/null || true)
+$(oc get deploy virt-operator -n openshift-cnv -o jsonpath='{range .spec.template.spec.containers[*].env[?(@.name=="KUBEVIRT_VERSION")]}{.value}{"\n"}{end}' 2>/dev/null || true)
+EOF
+
+    local latest_url tag
+    latest_url="$(curl -fsSL --connect-timeout 30 --max-time 60 -o /dev/null -w '%{url_effective}' \
+        https://github.com/kubevirt/kubevirt/releases/latest)" || return 1
+    tag="${latest_url##*/}"
+    if ! _is_kubevirt_github_release_tag "$tag"; then
+        warn "GitHub latest release URL did not end in a tag: ${latest_url}" >&2
+        return 1
+    fi
+    tag="$(_normalize_kubevirt_github_tag "$tag")"
+    info "No cluster KubeVirt GitHub tag; using latest release ${tag}" >&2
+    printf '%s\n' "$tag"
+    return 0
+}
+
+# Installs virtctl from a kubevirt/kubevirt GitHub release.
 # ConsoleCLIDownload can stay on HTML while CNV's CSV is Installing or Failed.
 _install_virtctl_from_kubevirt_release() {
     local version dest url bin
-    version="$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.observedKubeVirtVersion}' 2>/dev/null || true)"
-    if [[ -z "$version" ]]; then
-        version="$(oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].status.targetKubeVirtVersion}' 2>/dev/null || true)"
-    fi
-    if [[ -z "$version" ]]; then
-        warn "No observedKubeVirtVersion on kubevirt CRs; cannot download virtctl from GitHub"
+    version="$(_kubevirt_github_release_tag)" || {
+        warn "Could not resolve a kubevirt/kubevirt GitHub release tag for virtctl"
         return 1
-    fi
+    }
 
     dest="$(_virtctl_install_dir)"
     _virtctl_add_install_dir_to_path "$dest"

@@ -286,9 +286,9 @@ func WaitForV2ScanMissingComponent(
 			if err != nil {
 				return false, "", err
 			}
-			if filtered.GetTotalCount() > 0 {
+			if n := max(int(filtered.GetTotalCount()), len(filtered.GetComponents())); n > 0 {
 				return false, fmt.Sprintf("scan_time advances=%d but package %q still present (matches=%d)",
-					advances, packageName, filtered.GetTotalCount()), nil
+					advances, packageName, n), nil
 			}
 
 			comps, total, err := ListAllVMComponents(ctx, client, id)
