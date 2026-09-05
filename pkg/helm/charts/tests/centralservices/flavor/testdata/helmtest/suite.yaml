@@ -6,10 +6,10 @@ defs: |
     container(.deployments.central; "central") | assertThat(.image == name);
 
   def assertScanner(name):
-    container(.deployments.scanner; "scanner") | assertThat(.image == name);
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == name);
 
   def assertScannerDB(name):
-    container(.deployments["scanner-db"]; "db") | assertThat(.image == name);
+    container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == name);
 
 server:
   visibleSchemas:
@@ -40,13 +40,6 @@ values:
       serviceTLS:
         cert: "Central DB cert"
         key: "Central DB key"
-  scanner:
-    serviceTLS:
-      cert: "Scanner cert"
-      key: "Scanner key"
-    dbServiceTLS:
-      cert: "ScannerDB cert"
-      key: "ScannerDB key"
   scannerV4:
     # Setting certificate and key to dummy values, otherwise an attempt is made to generate the certificates, which would fail.
     indexer:

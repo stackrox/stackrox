@@ -18,14 +18,11 @@ type AutoSenseResult struct {
 	EnableLocalImageScanning bool
 }
 
-// AutoSenseLocalScannerConfig detects whether the local scanner should be deployed and/or used by sensor.
-// Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
-// Modifies the provided SecuredCluster object to set a default Spec.Scanner if missing.
-func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
-	SetScannerDefaults(&s.Spec)
-	scannerComponent := *s.Spec.Scanner.ScannerComponent
-
-	return autoSenseScanner(ctx, client, scannerComponent, s.Namespace)
+// AutoSenseLocalScannerConfig returns a disabled scanner v2 result.
+// Scanner v2 has been removed; this function is kept for callers that
+// gate scanner-db-password secret cleanup on the auto-sense result.
+func AutoSenseLocalScannerConfig(_ context.Context, _ ctrlClient.Client, _ platform.SecuredCluster) (AutoSenseResult, error) {
+	return AutoSenseResult{}, nil
 }
 
 // AutoSenseLocalScannerV4Config detects whether the local Scanner V4 should be deployed and/or used by sensor.
@@ -42,17 +39,6 @@ func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client
 
 	return autoSenseScannerV4(ctx, client, scannerV4ComponentPolicy, s.GetNamespace())
 
-}
-
-func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComponent platform.LocalScannerComponentPolicy, namespace string) (AutoSenseResult, error) {
-	switch scannerComponent {
-	case platform.LocalScannerComponentAutoSense:
-		return autoSense(ctx, client, namespace)
-	case platform.LocalScannerComponentDisabled:
-		return AutoSenseResult{}, nil
-	}
-
-	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
 }
 
 func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymentPolicy platform.LocalScannerV4ComponentPolicy, namespace string) (AutoSenseResult, error) {

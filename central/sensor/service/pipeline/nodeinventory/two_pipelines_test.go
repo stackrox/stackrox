@@ -21,11 +21,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -105,6 +107,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocks: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil)
 			},
 			wantNodeExists:        false,
@@ -122,6 +125,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocks: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				gomock.InOrder(
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
@@ -154,6 +158,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocks: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				gomock.InOrder(
 					// node inventory arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nil, false, nil),
