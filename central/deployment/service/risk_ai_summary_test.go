@@ -125,9 +125,10 @@ func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "SUMMARY\nThis deployment runs as cluster-admin with a privileged container.", resp.GetSummary())
 
-	// Verify prompt was passed correctly.
-	assert.Equal(t, aiSummaryPrompt, olsMock.captured.Query)
-	assert.NotEmpty(t, olsMock.captured.Context)
+	// Verify prompt and context were combined into the query.
+	assert.Contains(t, olsMock.captured.Query, aiSummaryPrompt)
+	assert.Contains(t, olsMock.captured.Query, "DEPLOYMENT AND RISK DATA:")
+	assert.Contains(t, olsMock.captured.Query, "nginx-frontend")
 }
 
 func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
@@ -191,7 +192,6 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-2").Return(deployment, true, nil)
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
 
-	var capturedContext string
 	olsMock := &mockOLSClient{
 		response: &olsClient.QueryResponse{Response: "Low risk deployment."},
 	}
@@ -205,36 +205,35 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 	_, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-2"})
 	require.NoError(t, err)
 
-	capturedContext = olsMock.captured.Context
+	capturedQuery := olsMock.captured.Query
 
-	// Sensitive env vars must NOT appear in context sent to LLM.
-	assert.NotContains(t, capturedContext, "SERVICENOW_URL")
-	assert.NotContains(t, capturedContext, "https://company.service-now.com")
-	assert.NotContains(t, capturedContext, "SN_USER")
-	assert.NotContains(t, capturedContext, "admin")
-	assert.NotContains(t, capturedContext, "SN_SECRET_REF")
-	assert.NotContains(t, capturedContext, "vault:secret/data/sn-key")
+	// Sensitive env vars must NOT appear in query sent to LLM.
+	assert.NotContains(t, capturedQuery, "SERVICENOW_URL")
+	assert.NotContains(t, capturedQuery, "https://company.service-now.com")
+	assert.NotContains(t, capturedQuery, "SN_USER")
+	assert.NotContains(t, capturedQuery, "SN_SECRET_REF")
+	assert.NotContains(t, capturedQuery, "vault:secret/data/sn-key")
 
 	// Secret mount paths must NOT appear.
-	assert.NotContains(t, capturedContext, "/var/run/secrets/servicenow")
-	assert.NotContains(t, capturedContext, "sn-credentials")
+	assert.NotContains(t, capturedQuery, "/var/run/secrets/servicenow")
+	assert.NotContains(t, capturedQuery, "sn-credentials")
 
 	// Internal IDs must NOT appear.
-	assert.NotContains(t, capturedContext, "sha256:abc123")
-	assert.NotContains(t, capturedContext, "img-v2-id")
-	assert.NotContains(t, capturedContext, "dep-2")  // deployment ID
-	assert.NotContains(t, capturedContext, "risk-2") // risk ID
+	assert.NotContains(t, capturedQuery, "sha256:abc123")
+	assert.NotContains(t, capturedQuery, "img-v2-id")
+	assert.NotContains(t, capturedQuery, "dep-2")  // deployment ID
+	assert.NotContains(t, capturedQuery, "risk-2") // risk ID
 
 	// Command, args, and directory must NOT appear.
-	assert.NotContains(t, capturedContext, "/bin/app")
-	assert.NotContains(t, capturedContext, "--port=8080")
+	assert.NotContains(t, capturedQuery, "/bin/app")
+	assert.NotContains(t, capturedQuery, "--port=8080")
 
 	// Relevant fields MUST appear.
-	assert.Contains(t, capturedContext, "mid-server")
-	assert.Contains(t, capturedContext, "operations")
-	assert.Contains(t, capturedContext, "cluster-west")
-	assert.Contains(t, capturedContext, "registry.example.com/app:v2")
-	assert.Contains(t, capturedContext, "Image is 180 days old")
+	assert.Contains(t, capturedQuery, "mid-server")
+	assert.Contains(t, capturedQuery, "operations")
+	assert.Contains(t, capturedQuery, "cluster-west")
+	assert.Contains(t, capturedQuery, "registry.example.com/app:v2")
+	assert.Contains(t, capturedQuery, "Image is 180 days old")
 }
 
 func TestGetDeploymentRiskAISummary_DeploymentNotFound(t *testing.T) {
