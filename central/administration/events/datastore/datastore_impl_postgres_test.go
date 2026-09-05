@@ -167,6 +167,73 @@ func (s *datastorePostgresTestSuite) TestGetEvent() {
 	s.assertEventsEqual(administrationEvent, event)
 }
 
+func (s *datastorePostgresTestSuite) TestDeleteEventsForResource() {
+	s.NoError(s.datastore.DeleteEventsForResource(s.writeCtx, ""))
+
+	keep := fixtures.GetAdministrationEvent()
+	keep.ResourceID = "keep-id"
+	remove := fixtures.GetAdministrationEvent()
+	remove.ResourceID = "remove-id"
+	remove.Message = "other message"
+
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, keep))
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, remove))
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+
+	s.Require().NoError(s.datastore.DeleteEventsForResource(s.writeCtx, "remove-id"))
+
+	_, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(remove))
+	s.ErrorIs(err, errox.NotFound)
+
+	got, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(keep))
+	s.NoError(err)
+	s.assertEventsEqual(keep, got)
+}
+
+func (s *datastorePostgresTestSuite) TestDeleteEventsForResource_DropsBufferedEvents() {
+	keep := fixtures.GetAdministrationEvent()
+	keep.ResourceID = "keep-id"
+	remove := fixtures.GetAdministrationEvent()
+	remove.ResourceID = "remove-id"
+	remove.Message = "other message"
+
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, keep))
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, remove))
+
+	s.Require().NoError(s.datastore.DeleteEventsForResource(s.writeCtx, "remove-id"))
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+
+	_, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(remove))
+	s.ErrorIs(err, errox.NotFound)
+
+	got, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(keep))
+	s.NoError(err)
+	s.assertEventsEqual(keep, got)
+}
+
+func (s *datastorePostgresTestSuite) TestDeleteEventsForResource_DropsPersistedAndBufferedEvents() {
+	remove := fixtures.GetAdministrationEvent()
+	remove.ResourceID = "remove-id"
+	keep := fixtures.GetAdministrationEvent()
+	keep.ResourceID = "keep-id"
+
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, remove))
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, remove))
+	s.Require().NoError(s.datastore.AddEvent(s.writeCtx, keep))
+
+	s.Require().NoError(s.datastore.DeleteEventsForResource(s.writeCtx, "remove-id"))
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+
+	_, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(remove))
+	s.ErrorIs(err, errox.NotFound)
+
+	got, err := s.datastore.GetEvent(s.readCtx, events.GenerateEventID(keep))
+	s.NoError(err)
+	s.assertEventsEqual(keep, got)
+}
+
 func (s *datastorePostgresTestSuite) TestCountEvents() {
 	count, err := s.datastore.CountEvents(s.readCtx, &v1.Query{})
 	s.NoError(err)
