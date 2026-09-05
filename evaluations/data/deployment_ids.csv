@@ -1,0 +1,5 @@
+id
+# One deployment ID per row (under the "id" header). Export these from your ACS
+# instance, e.g. via the API or `roxctl`. Lines starting with # are ignored.
+# Example:
+# 8a2b1c3d-1111-2222-3333-444455556666
