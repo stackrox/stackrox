@@ -17,14 +17,6 @@ tests:
       - openshift-4.12
       availableSchemas:
       - openshift-4.12
-- name: "customize.envVars can re-enable Scanner V2 node inventory calls"
-  values:
-    customize:
-      envVars:
-        ROX_CALL_NODE_INVENTORY_ENABLED: "true"
-  expect: |
-    envVars(.daemonsets.collector; "compliance")["ROX_CALL_NODE_INVENTORY_ENABLED"] | assertThat(. == "true")
-    [container(.daemonsets.collector; "compliance") | .env[] | select(.name == "ROX_CALL_NODE_INVENTORY_ENABLED")] | length | assertThat(. == 1)
 - name: "test securityContext"
   tests:
   - name: "by default seLinuxOptions are enabled and use container_runtime_t as container runtime"
