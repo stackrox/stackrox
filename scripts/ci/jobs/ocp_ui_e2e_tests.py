@@ -11,7 +11,8 @@ from ci_tests import UIE2eTest
 from post_tests import PostClusterTest, FinalPost
 
 # set required test parameters
-os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
+# Deployment is handled by roxie, which always uses the operator, so
+# DEPLOY_STACKROX_VIA_OPERATOR no longer needs to be set explicitly.
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"

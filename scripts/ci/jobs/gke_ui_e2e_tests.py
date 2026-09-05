@@ -16,7 +16,7 @@ os.environ["KUBERNETES_PROVIDER"] = "gke"
 
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
-os.environ["OUTPUT_FORMAT"] = "helm"
+# Deployment is handled by roxie (operator-based), so OUTPUT_FORMAT=helm is no longer set.
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
