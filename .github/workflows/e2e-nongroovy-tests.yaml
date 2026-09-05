@@ -97,6 +97,15 @@ jobs:
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
+    - name: Retrieving roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
       run: |
@@ -153,13 +162,11 @@ jobs:
       timeout-minutes: 90
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
-    - name: Persist env vars for post-test
+    - name: Ensure central stability before post-test
       if: always()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
       if: always()
