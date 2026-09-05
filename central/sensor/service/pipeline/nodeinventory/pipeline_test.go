@@ -83,6 +83,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		{
 			name: "when event action is CREATE_RESOURCE then do not ignore event",
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				node := storage.Node{
 					Id: "test node id",
 				}
@@ -103,6 +104,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				{Action: central.NodeInventoryACK_ACK},
 			},
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				node := storage.Node{
 					Id: "test node id",
 				}
@@ -118,6 +120,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		{
 			name: "when injector is nil then handle normally and don't panic",
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				node := storage.Node{
 					Id: "test node id",
 				}
@@ -134,6 +137,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			name:                "when event has inventory for unknown node then no ACK should be sent",
 			wantInjectorContain: []*central.NodeInventoryACK{},
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				a.msg = createMsg("node1")
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
@@ -146,6 +150,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			wantInjectorContain: []*central.NodeInventoryACK{},
 			wantErr:             "fetching error from DB",
 			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				a.msg = createMsg("node1")
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
@@ -188,6 +193,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 }
 
 func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
@@ -254,6 +260,7 @@ func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
 }
 
 func Test_pipelineImpl_Run_SkipsSensorACKWhenCapabilityMissing(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
