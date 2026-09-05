@@ -1506,6 +1506,105 @@ func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
 		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
 }
 
+func TestScannerTypeDescription(t *testing.T) {
+	cases := map[string]struct {
+		scannerType string
+		expected    string
+	}{
+		"legacy StackRox Scanner": {
+			scannerType: scannertypes.Clairify,
+			expected:    "the legacy StackRox Scanner",
+		},
+		"Scanner V4": {
+			scannerType: scannertypes.ScannerV4,
+			expected:    "Scanner V4",
+		},
+		"unknown scanner type": {
+			scannerType: "some-future-scanner",
+			expected:    `a scanner of type "some-future-scanner"`,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := scannerTypeDescription(c.scannerType)
+			assert.Equal(t, c.expected, got)
+			// Internal-only names must never leak into user-facing text.
+			assert.NotContains(t, got, "V2")
+		})
+	}
+}
+
+func TestNoMatchingScannerErr(t *testing.T) {
+	cases := map[string]struct {
+		requiredType string
+		// mustContain lists substrings the error message must include.
+		mustContain []string
+	}{
+		"legacy scan but no matching scanner integrated": {
+			requiredType: scannertypes.Clairify,
+			mustContain: []string{
+				"the legacy StackRox Scanner",
+				"integrated",
+			},
+		},
+		"Scanner V4 scan but no matching scanner integrated": {
+			requiredType: scannertypes.ScannerV4,
+			mustContain: []string{
+				"Scanner V4",
+				"integrated",
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := noMatchingScannerErr(c.requiredType)
+			require.Error(t, err)
+
+			for _, substr := range c.mustContain {
+				assert.Contains(t, err.Error(), substr)
+			}
+			// Internal-only names must never leak into user-facing text.
+			assert.NotContains(t, err.Error(), "V2")
+		})
+	}
+}
+
+// TestEnrichWithVulnerabilitiesNoMatchingScannerV2 verifies the reachable case
+// where scanners are integrated (so scanners.IsEmpty() is false) but none matches
+// the scanner type that produced the scan (fakeScanner has type "type", not the
+// clairify type the scan components indicate).
+func TestEnrichWithVulnerabilitiesNoMatchingScannerV2(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	fsr := newFakeRegistryScanner(opts{})
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	enricher := newEnricherV2(set, mockReporter)
+
+	img := &storage.ImageV2{
+		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		Digest: "sha",
+		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+	}
+	// Empty indexer version => the components indicate the legacy (clairify) scanner.
+	components := scannertypes.NewScanComponents("", nil, nil)
+
+	result, err := enricher.EnrichWithVulnerabilities(img, components, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the legacy StackRox Scanner")
+	assert.Contains(t, err.Error(), "integrated")
+	assert.Equal(t, ScanNotDone, result.ScanResult)
+	assert.False(t, result.ImageUpdated)
+}
+
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, nil, set, pkgMetrics.CentralSubsystem,
 		newCache(),
