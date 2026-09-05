@@ -932,6 +932,25 @@ class Kubernetes {
         Service Methods
     */
 
+    // Annotations to attach to LoadBalancer Services, parsed from the
+    // LOAD_BALANCER_SERVICE_ANNOTATIONS env var (comma-separated key=value pairs).
+    // Empty on clusters that don't set it, so behavior is unchanged there. Used to
+    // make LoadBalancer Services provision on EKS IPv6-only (dualstack NLB).
+    private static Map<String, String> loadBalancerServiceAnnotations() {
+        Map<String, String> annotations = [:]
+        String raw = Env.get("LOAD_BALANCER_SERVICE_ANNOTATIONS", "")
+        if (raw == null || raw.trim().isEmpty()) {
+            return annotations
+        }
+        for (String pair : raw.split(",")) {
+            int idx = pair.indexOf("=")
+            if (idx > 0) {
+                annotations.put(pair.substring(0, idx).trim(), pair.substring(idx + 1).trim())
+            }
+        }
+        return annotations
+    }
+
     @CompileDynamic
     @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(Deployment deployment) {
@@ -940,7 +959,14 @@ class Kubernetes {
                     metadata: new ObjectMeta(
                             name: deployment.serviceName ? deployment.serviceName : deployment.name,
                             namespace: deployment.namespace,
-                            labels: deployment.labels
+                            labels: deployment.labels,
+                            // EKS IPv6-only: a plain LoadBalancer Service never provisions
+                            // (Classic LB has no IPv6 support). Apply the dualstack NLB
+                            // annotations at creation so the AWS Load Balancer Controller
+                            // owns it and provisions a dualstack NLB. Driven by env so it is
+                            // a no-op on other clusters. See LOAD_BALANCER_SERVICE_ANNOTATIONS.
+                            annotations: deployment.createLoadBalancer ?
+                                    loadBalancerServiceAnnotations() : [:]
                     ),
                     spec: new ServiceSpec(
                             ports: deployment.getPorts().collect {
@@ -1075,10 +1101,13 @@ class Kubernetes {
         while (t.IsValid()) {
             service = client.services().inNamespace(namespace).withName(serviceName).get()
             if (service?.status?.loadBalancer?.ingress?.size()) {
-                loadBalancerIP = service.status.loadBalancer.ingress.get(0).
-                        ip ?: service.status.loadBalancer.ingress.get(0).hostname
-                log.debug "LB IP: " + loadBalancerIP
-                break
+                def ingress = service.status.loadBalancer.ingress.get(0)
+                log.debug "LB Ingress object: ${ingress}"
+                loadBalancerIP = ingress.ip ?: ingress.hostname
+                log.debug "LB IP/Hostname extracted: ${loadBalancerIP}"
+                if (loadBalancerIP) {
+                    break
+                }
             }
         }
         if (loadBalancerIP == null) {

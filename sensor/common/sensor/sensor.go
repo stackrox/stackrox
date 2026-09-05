@@ -44,8 +44,8 @@ import (
 )
 
 const (
-	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
-	pprofServer = "127.0.0.1:6060"
+	// localhost ensures we do not expose it externally and must be port-forwarded to
+	pprofServer = "localhost:6060"
 
 	publicAPIEndpoint = ":8443"
 

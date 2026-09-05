@@ -133,6 +133,56 @@ class NetworkGraphUtil {
         return null
     }
 
+    /**
+     * Waits for an edge from any external source (e.g. the "Internet" pseudo-source or a cloud
+     * entity like "__Amazon/us-west-2") to the given deployment.
+     * Unlike deployments, external source nodes have no deploymentId, so checkForEdge cannot
+     * find their edges. This is needed on IPv6-only clusters, where traffic arriving through
+     * the LoadBalancer is attributed to an external source instead of the internal entities
+     * pseudo-source, because the LoadBalancer address is public.
+     */
+    static List<Edge> checkForEdgeFromExternalSource(String targetId, int timeoutSeconds = 90) {
+        int intervalSeconds = 1
+        def startTime = System.currentTimeMillis()
+        for (int waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            if (waitTime > 0) {
+                sleep intervalSeconds * 1000
+            }
+
+            def graph = NetworkGraphService.getNetworkGraph()
+            def targetNodeIndex = graph.nodesList.findIndexOf { it.deploymentId == targetId }
+            if (targetNodeIndex == -1) {
+                continue
+            }
+
+            def sourceNodes = graph.nodesList.findAll {
+                it.entity.type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            }
+            log.debug "Looking at edges for ${sourceNodes.size()} external source node(s)"
+            def edges = sourceNodes.collectMany { sourceNode ->
+                sourceNode.getOutEdgesMap().collectMany {
+                    if (it.key != targetNodeIndex) {
+                        return []
+                    }
+                    def props = it.value.propertiesList
+                    if (props == null || props.empty) {
+                        props = [null]
+                    }
+                    props.collect {
+                        new Edge(sourceID: sourceNode.entity.id, targetID: targetId, edgeProperties: it)
+                    }
+                }
+            }
+            if (edges) {
+                log.debug "Found an external source -> target ${targetId} edge in graph after " +
+                        "${(System.currentTimeMillis() - startTime) / 1000}s"
+                return edges.asList()
+            }
+        }
+        log.warn "SR did not detect an external source edge in Network Flow graph"
+        return null
+    }
+
     static NetworkGraphNodes getDeploymentsAsGraphNodes() {
         def deployments = DeploymentService.listDeploymentsSearch(
                 SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Orchestrator Component:true").build()

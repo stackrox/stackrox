@@ -305,6 +305,10 @@ handle_load_balancer_setting() {
     route)
         patch_yaml "$config_file" ".central.spec.central.exposure.route.enabled = true"
         ;;
+    none)
+        # No built-in Central exposure. EKS IPv6 uses this and the test layer
+        # creates a dedicated dualstack central-nlb (CENTRAL_NLB, see wait_for_api).
+        ;;
     *)
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
         ;;
