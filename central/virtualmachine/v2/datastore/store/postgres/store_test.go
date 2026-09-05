@@ -177,6 +177,38 @@ func (s *VMStoreTestSuite) TestUpsertVM_Changed() {
 	s.NotEqual(firstGet.GetHash(), secondGet.GetHash(), "hash should change when data changes")
 }
 
+func (s *VMStoreTestSuite) TestUpsertScan_StampsLastAgentContactAndInformerDoesNotRefresh() {
+	vm := s.newVM()
+	s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+	beforeScan, _, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.Nil(beforeScan.GetLastAgentContact())
+
+	parts := s.newScanParts(vm.GetId())
+	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts))
+
+	afterScan, _, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.NotNil(afterScan.GetLastAgentContact())
+	contact := afterScan.GetLastAgentContact().AsTime()
+
+	time.Sleep(10 * time.Millisecond)
+
+	informerUpdate := vm.CloneVT()
+	informerUpdate.LastUpdated = nil
+	informerUpdate.Hash = 0
+	informerUpdate.LastAgentContact = nil
+	informerUpdate.State = storage.VirtualMachineV2_STOPPED
+	s.NoError(s.store.UpsertVM(s.ctx, informerUpdate))
+
+	afterInformer, _, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.Equal(storage.VirtualMachineV2_STOPPED, afterInformer.GetState())
+	s.Equal(contact, afterInformer.GetLastAgentContact().AsTime())
+	s.True(afterInformer.GetLastUpdated().AsTime().After(afterScan.GetLastUpdated().AsTime()))
+}
+
 // endregion UpsertVM tests
 
 // region UpsertScan tests

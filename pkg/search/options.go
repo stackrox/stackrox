@@ -499,14 +499,15 @@ var (
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
 	// Virtual Machine fields.
-	VirtualMachineID       = newFieldLabel("Virtual Machine ID")
-	VirtualMachineName     = newFieldLabel("Virtual Machine Name")
-	GuestOS                = newFieldLabel("Guest OS")
-	VirtualMachineState    = newFieldLabel("Virtual Machine State")
-	VirtualMachineScanID   = newFieldLabel("Virtual Machine Scan ID")
-	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
-	VirtualMachineScanOS   = newFieldLabel("Virtual Machine Scan OS")
-	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")
+	VirtualMachineID               = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName             = newFieldLabel("Virtual Machine Name")
+	GuestOS                        = newFieldLabel("Guest OS")
+	VirtualMachineState            = newFieldLabel("Virtual Machine State")
+	VirtualMachineScanID           = newFieldLabel("Virtual Machine Scan ID")
+	VirtualMachineScanTime         = newFieldLabel("Virtual Machine Scan Time")
+	VirtualMachineScanOS           = newFieldLabel("Virtual Machine Scan OS")
+	VirtualMachineTopCVSS          = newFieldLabel("Virtual Machine Top CVSS")
+	VirtualMachineLastAgentContact = newFieldLabel("Last Agent Contact")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

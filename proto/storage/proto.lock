@@ -20501,6 +20501,11 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
+                "id": 13,
+                "name": "last_agent_contact",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
                 "id": 10,
                 "name": "notes",
                 "type": "Note",

@@ -179,12 +179,14 @@ func (VMNote) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{2}
 }
 
-// Agent status enriched from a separate data source (not on VirtualMachineV2 storage).
+// AgentStatus is roxagent liveness from scrape freshness, computed on GetVM
+// (not a stored enum). UNKNOWN means never scraped; INACTIVE means scraped, then quiet.
 type AgentStatus int32
 
 const (
-	AgentStatus_AGENT_STATUS_UNKNOWN AgentStatus = 0
-	AgentStatus_AGENT_STATUS_ACTIVE  AgentStatus = 1
+	AgentStatus_AGENT_STATUS_UNKNOWN  AgentStatus = 0
+	AgentStatus_AGENT_STATUS_ACTIVE   AgentStatus = 1
+	AgentStatus_AGENT_STATUS_INACTIVE AgentStatus = 2
 )
 
 // Enum value maps for AgentStatus.
@@ -192,10 +194,12 @@ var (
 	AgentStatus_name = map[int32]string{
 		0: "AGENT_STATUS_UNKNOWN",
 		1: "AGENT_STATUS_ACTIVE",
+		2: "AGENT_STATUS_INACTIVE",
 	}
 	AgentStatus_value = map[string]int32{
-		"AGENT_STATUS_UNKNOWN": 0,
-		"AGENT_STATUS_ACTIVE":  1,
+		"AGENT_STATUS_UNKNOWN":  0,
+		"AGENT_STATUS_ACTIVE":   1,
+		"AGENT_STATUS_INACTIVE": 2,
 	}
 )
 
@@ -2537,10 +2541,11 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x19VM_NOTE_MISSING_SIGNATURE\x10\x02\x12/\n" +
 	"+VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\x12\x1b\n" +
 	"\x17VM_NOTE_MISSING_SCANNER\x10\x04\x12\x17\n" +
-	"\x13VM_NOTE_SCAN_FAILED\x10\x05*@\n" +
+	"\x13VM_NOTE_SCAN_FAILED\x10\x05*[\n" +
 	"\vAgentStatus\x12\x18\n" +
 	"\x14AGENT_STATUS_UNKNOWN\x10\x00\x12\x17\n" +
-	"\x13AGENT_STATUS_ACTIVE\x10\x01*_\n" +
+	"\x13AGENT_STATUS_ACTIVE\x10\x01\x12\x19\n" +
+	"\x15AGENT_STATUS_INACTIVE\x10\x02*_\n" +
 	"\n" +
 	"ScanStatus\x12\x0f\n" +
 	"\vNOT_SCANNED\x10\x00\x12\x10\n" +
