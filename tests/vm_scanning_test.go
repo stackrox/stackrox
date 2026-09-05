@@ -3,10 +3,15 @@
 package tests
 
 import (
+	"context"
+	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
 )
@@ -32,8 +37,8 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			roxagentOK := false
 
 			t.Run("EnsureRoxagentServing", func(t *testing.T) {
-				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s repo-cpe-url=%s)",
-					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval, s.cfg.Repo2CPEURL)
+				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s)",
+					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval)
 				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true
@@ -42,6 +47,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				t.Log("skipping remaining subtests: roxagent serve failed to become ready")
 				return
 			}
+
+			t.Run("WaitForSensorPushedMapping", func(t *testing.T) {
+				s.waitForSensorPushedMapping(vm)
+			})
 
 			t.Run("WaitForScan", func(t *testing.T) {
 				var err error
@@ -227,6 +236,19 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			})
 		})
 	}
+}
+
+// waitForSensorPushedMapping waits until Sensor logs a successful repo-to-CPE
+// mapping push for vm. Setup installs without --repo-cpe-url, so a scan cannot
+// complete until this push happens.
+func (s *VMScanningSuite) waitForSensorPushedMapping(vm *VMHandle) {
+	waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)
+	defer cancel()
+	re := regexp.MustCompile(regexp.QuoteMeta(
+		fmt.Sprintf(`VMScraper: synced repo-to-CPE mapping to "%s/%s"`, vm.Namespace, vm.Name)))
+	s.waitUntilLog(waitCtx, namespaces.StackRox, sensorPodLabels, sensorContainer,
+		"contain Sensor-pushed repo-to-CPE mapping sync",
+		logmatchers.ContainsLineMatching(re))
 }
 
 func (s *VMScanningSuite) requireProbePackagePresent(t *testing.T, snapshot *centralScanSnapshot, pkg string) int {
