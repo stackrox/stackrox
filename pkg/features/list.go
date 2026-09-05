@@ -150,7 +150,7 @@ var (
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
-	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", unchangeableInProd)
 
 	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
 	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
