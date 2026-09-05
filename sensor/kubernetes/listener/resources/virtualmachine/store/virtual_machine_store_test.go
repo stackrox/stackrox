@@ -3,6 +3,7 @@ package store
 import (
 	"testing"
 
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -714,6 +715,33 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 	} else {
 		assert.Equal(s.T(), *update.VSOCKCID, *actual.VSOCKCID)
 	}
+}
+
+func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
+	agentFacts := map[string]string{
+		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+	}
+
+	s.Run("AddOrUpdate preserves when nil", func() {
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, AgentFacts: agentFacts,
+		})
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, Description: "updated",
+		})
+		assert.Equal(s.T(), agentFacts, s.store.Get(vmID).AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate preserves when nil", func() {
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, AgentFacts: agentFacts,
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, Running: true, VSOCKCID: new(uint32(1)),
+		})
+		assert.Equal(s.T(), agentFacts, s.store.Get(vmID).AgentFacts)
+	})
 }
 
 func (s *storeSuite) Test_RemoveVirtualMachine() {

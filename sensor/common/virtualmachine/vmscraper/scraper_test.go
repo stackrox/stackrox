@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -33,7 +34,10 @@ import (
 
 // --- Mocks ---
 
+// mockStore is used by concurrent scrape workers (persistAgentFacts calls
+// AddOrUpdate), so mu guards vms and listRunningCalls.
 type mockStore struct {
+	mu               sync.Mutex
 	vms              []*virtualmachine.Info
 	listRunningCalls int
 }
@@ -42,23 +46,47 @@ type mockStore struct {
 // with Running set, so tests exercise reconcile pruning rather than the
 // scrapeKey nil-VM guard when a VM stops running.
 func (m *mockStore) ListRunning() []*virtualmachine.Info {
-	m.listRunningCalls++
-	var out []*virtualmachine.Info
-	for _, vm := range m.vms {
-		if vm.Running {
-			out = append(out, vm)
+	return concurrency.WithLock1(&m.mu, func() []*virtualmachine.Info {
+		m.listRunningCalls++
+		var out []*virtualmachine.Info
+		for _, vm := range m.vms {
+			if vm.Running {
+				out = append(out, vm)
+			}
 		}
-	}
-	return out
+		return out
+	})
 }
 
 func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
-	for _, vm := range m.vms {
-		if vm.ID == id {
+	return concurrency.WithLock1(&m.mu, func() *virtualmachine.Info {
+		for _, vm := range m.vms {
+			if vm.ID == id {
+				return vm.Copy()
+			}
+		}
+		return nil
+	})
+}
+
+func (m *mockStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
+	if vm == nil {
+		return nil
+	}
+	return concurrency.WithLock1(&m.mu, func() *virtualmachine.Info {
+		for i, existing := range m.vms {
+			if existing.ID != vm.ID {
+				continue
+			}
+			if vm.AgentFacts == nil {
+				vm.AgentFacts = existing.AgentFacts
+			}
+			m.vms[i] = vm
 			return vm
 		}
-	}
-	return nil
+		m.vms = append(m.vms, vm)
+		return vm
+	})
 }
 
 type mockDialer struct {
@@ -250,7 +278,8 @@ func makeReport(token string) *vsockclient.GetReportResult {
 			State: "IndexFinished",
 		},
 		Meta: &pb.ResponseMeta{
-			ReportToken: token,
+			ReportToken:  token,
+			AgentVersion: "roxagent-test",
 			Facts: map[string]string{
 				"detected_os":         "RHEL",
 				"activation_status":   "ACTIVE",
@@ -274,6 +303,16 @@ func metaWithMapping(hash string, path pb.RepoCPEMappingUpdatePath) *pb.Response
 	}
 }
 
+func unchangedResultWithFacts(facts map[string]string) *vsockclient.GetReportResult {
+	return &vsockclient.GetReportResult{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken: "1",
+			Facts:       facts,
+		},
+	}
+}
+
 // --- Tests ---
 
 func TestVMScraper_PollsRunningVMs(t *testing.T) {
@@ -294,6 +333,38 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	assert.Equal(t, 2, forwardedCount(s))
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+	expectedFacts := virtualmachine.AgentFactsFromResponse(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}, "roxagent-test")
+	assert.Equal(t, expectedFacts, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+	assert.Equal(t, expectedFacts, store.Get(virtualmachine.VMID("ns2/vm-b")).AgentFacts)
+}
+
+func TestPersistAgentFactsDoesNotAliasStorePointer(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	store := &mockStore{vms: []*virtualmachine.Info{vm.Copy()}}
+	s := &VMScraper{store: store}
+
+	s.persistAgentFacts(vm, &pb.ResponseMeta{
+		AgentVersion: "roxagent-test",
+		Facts: map[string]string{
+			"detected_os":         "RHEL",
+			"activation_status":   "ACTIVE",
+			"dnf_metadata_status": "AVAILABLE",
+		},
+	})
+	vm.GuestOS = "mutated-after-persist"
+
+	stored := store.Get(vm.ID)
+	require.NotNil(t, stored)
+	assert.NotEqual(t, "mutated-after-persist", stored.GuestOS)
+	assert.Equal(t, virtualmachine.AgentFactsFromResponse(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}, "roxagent-test"), stored.AgentFacts)
 }
 
 // TestVMScraper_SkipsWhenCentralLacksCapability covers a store already
@@ -367,6 +438,128 @@ func TestVMScraper_SkipsUnchangedToken(t *testing.T) {
 	clock.Advance(s.interval)
 	s.pollOnce(context.Background())
 	assert.Zero(t, forwardedCount(s), "should not forward unchanged report")
+}
+
+func TestVMScraper_ForwardsChangedAgentFactsOnUnchangedReport(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, forwardedCount(s))
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	expected := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	})
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1, "unchanged report should not be forwarded")
+	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
+	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+	assert.Empty(t, drainToCentral(s), "should not emit a VM update when agent facts are unchanged")
+}
+
+func TestVMScraper_ForwardsAgentVersionChangeOnUnchangedReport(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, forwardedCount(s))
+
+	sameFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken:  "1",
+			AgentVersion: "roxagent-upgraded",
+			Facts:        sameFacts,
+		},
+	}}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	expected := virtualmachine.AgentFactsFromResponse(sameFacts, "roxagent-upgraded")
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1)
+	assert.Equal(t, expected[pkgVM.AgentVersionKey], updates[0].GetFacts()[pkgVM.AgentVersionKey])
+	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+}
+
+func TestVMScraper_RetriesAgentFactsAfterIndexEnqueueFillsBuffer(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.toCentral = make(chan *message.ExpiringMessage, 1)
+
+	s.pollOnce(context.Background())
+	msgs := drainToCentral(s)
+	require.Len(t, msgs, 1)
+	assert.NotNil(t, msgs[0].GetEvent().GetVirtualMachineIndexReport())
+	assert.Nil(t, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+
+	sameFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken:  "1",
+			AgentVersion: "roxagent-test",
+			Facts:        sameFacts,
+		},
+	}}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	expected := virtualmachine.AgentFactsFromResponse(sameFacts, "roxagent-test")
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1)
+	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
+	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
 }
 
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
@@ -553,8 +746,11 @@ func TestVMScraper_NACK(t *testing.T) {
 			require.Equal(t, 1, forwardedCount(s))
 
 			// Flip Running only after the first poll, so the VM is scraped normally
-			// once before the ACK/NACK under test is delivered.
-			vmA.Running = tc.vmRunning
+			// once before the ACK/NACK under test is delivered. The scraper
+			// stores a copy, so mutate the store's current object rather than vmA.
+			concurrency.WithLock(&store.mu, func() {
+				store.vms[0].Running = tc.vmRunning
+			})
 
 			acksBefore := testutil.ToFloat64(metrics.IndexReportAcksReceived.WithLabelValues(tc.ackAction.String()))
 			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
@@ -1085,17 +1281,41 @@ func TestIsAbnormalClose(t *testing.T) {
 	}
 }
 
-func forwardedCount(s *VMScraper) int {
-	n := 0
+func drainToCentral(s *VMScraper) []*message.ExpiringMessage {
+	var out []*message.ExpiringMessage
 	for {
 		select {
-		case <-s.toCentral:
-			n++
+		case msg := <-s.toCentral:
+			out = append(out, msg)
 		default:
-			return n
+			return out
 		}
 	}
 }
+
+func forwardedCount(s *VMScraper) int {
+	n := 0
+	for _, msg := range drainToCentral(s) {
+		if msg.GetEvent().GetVirtualMachineIndexReport() != nil {
+			n++
+		}
+	}
+	return n
+}
+
+func drainVMUpdates(s *VMScraper) []*pb.VirtualMachine {
+	var out []*pb.VirtualMachine
+	for _, msg := range drainToCentral(s) {
+		if vm := msg.GetEvent().GetVirtualMachine(); vm != nil {
+			out = append(out, vm)
+		}
+	}
+	return out
+}
+
+type staticClusterID string
+
+func (c staticClusterID) GetNoWait() string { return string(c) }
 
 func newTestScraper(t *testing.T, store RunningVMStore, dialer VMDialer, client ProtocolClient) (*VMScraper, *testClock) {
 	t.Helper()
@@ -1108,6 +1328,7 @@ func newTestScraper(t *testing.T, store RunningVMStore, dialer VMDialer, client 
 		store:                 store,
 		dialer:                dialer,
 		client:                client,
+		clusterID:             staticClusterID("test-cluster"),
 		toCentral:             make(chan *message.ExpiringMessage, 256),
 		centralReady:          concurrency.NewSignal(),
 		interval:              interval,

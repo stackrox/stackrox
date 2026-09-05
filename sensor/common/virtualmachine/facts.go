@@ -8,6 +8,16 @@ import (
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 )
 
+const rhelGuestOS = "Red Hat Enterprise Linux"
+
+// ResponseMeta.facts keys written by roxagent (proto enum String() values).
+const (
+	responseDetectedOSKey        = "detected_os"
+	responseOSVersionKey         = "os_version"
+	responseActivationStatusKey  = "activation_status"
+	responseDNFMetadataStatusKey = "dnf_metadata_status"
+)
+
 // Facts builds the VM facts map sent to Central.
 func Facts(vm *Info) map[string]string {
 	if vm == nil {
@@ -38,7 +48,63 @@ func Facts(vm *Info) map[string]string {
 	if len(vm.CDRomDisks) > 0 {
 		facts[pkgVM.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
+	// GuestOSKey is informer-owned; roxagent reports DetectedGuestOSKey instead.
+	for k, v := range vm.AgentFacts {
+		if k == pkgVM.GuestOSKey {
+			continue
+		}
+		facts[k] = v
+	}
 	return facts
+}
+
+// AgentFactsFromResponseFacts maps roxagent ResponseMeta.facts to user-facing
+// fact keys. Unrecognized or unspecified enum strings are omitted so Sensor
+// does not surface raw proto names in the UI.
+func AgentFactsFromResponseFacts(facts map[string]string) map[string]string {
+	if len(facts) == 0 {
+		return nil
+	}
+
+	out := map[string]string{}
+	switch facts[responseDetectedOSKey] {
+	case v1.DetectedOS_RHEL.String():
+		guestOS := rhelGuestOS
+		if osVersion := facts[responseOSVersionKey]; osVersion != "" {
+			guestOS += " " + osVersion
+		}
+		out[pkgVM.DetectedGuestOSKey] = guestOS
+	}
+	switch facts[responseActivationStatusKey] {
+	case v1.ActivationStatus_ACTIVE.String():
+		out[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusActive
+	case v1.ActivationStatus_INACTIVE.String():
+		out[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusInactive
+	}
+	switch facts[responseDNFMetadataStatusKey] {
+	case v1.DnfMetadataStatus_AVAILABLE.String():
+		out[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusAvailable
+	case v1.DnfMetadataStatus_UNAVAILABLE.String():
+		out[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusUnavailable
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// AgentFactsFromResponse merges ResponseMeta.facts with AgentVersion. Version
+// is a sibling proto field, not a fact key, so it is attached here.
+func AgentFactsFromResponse(facts map[string]string, agentVersion string) map[string]string {
+	out := AgentFactsFromResponseFacts(facts)
+	if agentVersion == "" {
+		return out
+	}
+	if out == nil {
+		out = make(map[string]string, 1)
+	}
+	out[pkgVM.AgentVersionKey] = agentVersion
+	return out
 }
 
 // State is RUNNING when the VM instance is up, otherwise STOPPED.
