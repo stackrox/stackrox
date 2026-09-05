@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	adminEventsDS "github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +22,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage     store.Store
+	adminEvents adminEventsDS.DataStore
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -109,7 +111,20 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.Delete(ctx, id)
+	if err := ds.storage.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+	if err := ds.adminEvents.DeleteEventsForResource(adminCtx, id); err != nil {
+		log.Errorf("Failed to delete administration events for image integration %s: %v", id, err)
+	}
+	return nil
 }
 
 // SearchImageIntegrations
