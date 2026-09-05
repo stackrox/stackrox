@@ -1808,7 +1808,11 @@ restore_4_6_postgres_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    setup_gcp
+    # CI activates the stackrox SA via setup_gcp. Local runs keep the caller's
+    # gcloud credentials; this bucket is readable with typical ACS engineer ADC.
+    if is_CI; then
+        setup_gcp
+    fi
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \

@@ -115,7 +115,7 @@ wait_for_background_migrations() {
 }
 
 get_target_bg_migration_seqnum() {
-    grep -oP 'CurrentBgMigrationSeqNum\s*=\s*\K[0-9]+' \
+    sed -n 's/^const CurrentBgMigrationSeqNum = \([0-9][0-9]*\)$/\1/p' \
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
@@ -128,7 +128,10 @@ deploy_earlier_postgres_central() {
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
     # Let's try helm
-    ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
+    # produces a value shared with Helm --set and later restore/auth.
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \

@@ -11,6 +11,16 @@
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Block/allow lists use PCRE. BSD grep has no -P; Homebrew GNU grep is `ggrep`.
+if grep -P 'a' <<<'a' >/dev/null 2>&1; then
+    GREP_CMD="grep"
+elif command -v ggrep >/dev/null 2>&1; then
+    GREP_CMD="ggrep"
+else
+    echo "logcheck requires GNU grep (-P). On macOS: brew install grep" >&2
+    exit 2
+fi
+
 LINES_OF_CONTEXT=5
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 allow_file="${ALLOWLIST_FILE:-${DIR}/allowlist-patterns}"
@@ -25,8 +35,8 @@ IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${a
 
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 
-if check_out="$(grep -vHP "$allowlist_pattern" "$@" | grep -"${LINES_OF_CONTEXT}" -Pi "$blocklist_pattern")"; then
-    first_occurence="$(grep -vhP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" | head -1)"
+if check_out="$("${GREP_CMD}" -vHP "$allowlist_pattern" "$@" | "${GREP_CMD}" -"${LINES_OF_CONTEXT}" -Pi "$blocklist_pattern")"; then
+    first_occurence="$("${GREP_CMD}" -vhP "$allowlist_pattern" "$@" | "${GREP_CMD}" -Pi "$blocklist_pattern" | head -1)"
     echo "${first_occurence}"
     echo "${check_out}"
     exit 1
