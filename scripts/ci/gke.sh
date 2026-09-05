@@ -134,7 +134,7 @@ create_cluster() {
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
-    REGION=us-east4
+    REGION=us-south1
     NUM_NODES="${NUM_NODES:-3}"
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
@@ -193,10 +193,11 @@ create_cluster() {
             break
         elif [[ "${status}" == 124 ]]; then
             info "gcloud command timed out. Checking to see if cluster is still creating"
-            if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
+            if ! gcloud container clusters describe "${CLUSTER_NAME}"; then
                 info "Create cluster did not create the cluster in Google. Trying a different zone..."
             else
                 for i in {1..60}; do
+                    gcloud container clusters describe "${CLUSTER_NAME}" || true
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
                         success=1
                         break
