@@ -44,6 +44,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
+- ROX-36432: Fixed node scan results (`scan.scanTime`) silently freezing on some nodes for installs that first enabled Scanner V4 before node scanning existed. The stored default Scanner V4 integration was missing the `NODE_SCANNER` category and was never reconciled on upgrade, so Scanner V4 was dropped from the node enricher. Central now reconciles the default Scanner V4 integration's categories on startup.
 
 ## [4.11.0]
 
