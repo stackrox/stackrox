@@ -32,13 +32,18 @@ message ClusterScanStatus {
   SuiteStatus suite_status = 4;
 }
 
-// Next available tag: 5
+// Next available tag: 7
 message BaseComplianceScanConfigurationSettings {
   bool one_time_scan = 1;
   repeated string profiles = 2;
   Schedule scan_schedule = 3;
   string description = 4;
   repeated NotifierConfiguration notifiers = 5;
+  // node_roles specifies which node roles the compliance scan should target.
+  // Each value maps to a Kubernetes node label "node-role.kubernetes.io/<role>".
+  // The special value "@all" targets all nodes and cannot be mixed with other roles.
+  // Defaults to ["master", "worker"] when empty.
+  repeated string node_roles = 6;
 }
 
 // Next available tag: 5
