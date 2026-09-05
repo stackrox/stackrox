@@ -6,10 +6,14 @@ import (
 	"context"
 	"testing"
 
+	adminEventsDS "github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	postgresStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	adminEvents "github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -35,8 +39,10 @@ type ImageIntegrationDataStoreTestSuite struct {
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
+	adminCtx    context.Context
 
-	datastore DataStore
+	datastore   DataStore
+	adminEvents adminEventsDS.DataStore
 
 	testDB *pgtest.TestPostgres
 	store  store.Store
@@ -52,14 +58,19 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
+	suite.adminCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	suite.testDB = pgtest.ForT(suite.T())
 	suite.NotNil(suite.testDB)
 
 	suite.store = postgresStore.New(suite.testDB.DB)
 
+	suite.adminEvents = adminEventsDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	// test formattedSearcher
-	suite.datastore = NewForTestOnly(suite.store)
+	suite.datastore = NewForTestOnly(suite.store, suite.adminEvents)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {
@@ -279,6 +290,53 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
+func (suite *ImageIntegrationDataStoreTestSuite) TestRemoveImageIntegrationClearsEvents() {
+	integration := suite.storeIntegration("events cleanup")
+
+	keepEvent := &storage.AdministrationEvent{
+		Id: uuid.NewV4().String(),
+		Resource: &storage.AdministrationEvent_Resource{
+			Id: uuid.NewV4().String(),
+		},
+	}
+	event := &storage.AdministrationEvent{
+		Id: uuid.NewV4().String(),
+		Resource: &storage.AdministrationEvent_Resource{
+			Id: integration.GetId(),
+		},
+	}
+	err := adminEventsDS.UpsertTestEvents(suite.adminCtx, suite.T(), suite.adminEvents, keepEvent, event)
+	suite.NoError(err)
+
+	err = suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())
+	suite.NoError(err)
+
+	_, exists, err := suite.datastore.GetImageIntegration(suite.hasWriteCtx, integration.GetId())
+	suite.NoError(err)
+	suite.False(exists)
+
+	_, err = suite.adminEvents.GetEvent(suite.adminCtx, event.GetId())
+	suite.ErrorIs(err, errox.NotFound)
+
+	gotKeep, err := suite.adminEvents.GetEvent(suite.adminCtx, keepEvent.GetId())
+	suite.NoError(err)
+	suite.Equal(keepEvent.GetId(), gotKeep.GetId())
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestRemoveImageIntegrationClearsBufferedEvents() {
+	integration := suite.storeIntegration("buffered events cleanup")
+
+	event := fixtures.GetAdministrationEvent()
+	event.ResourceID = integration.GetId()
+	suite.Require().NoError(suite.adminEvents.AddEvent(suite.adminCtx, event))
+
+	suite.Require().NoError(suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId()))
+	suite.Require().NoError(suite.adminEvents.Flush(suite.adminCtx))
+
+	_, err := suite.adminEvents.GetEvent(suite.adminCtx, adminEvents.GenerateEventID(event))
+	suite.ErrorIs(err, errox.NotFound)
+}
+
 func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	_, err := suite.datastore.Search(ctx, nil)
@@ -308,7 +366,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestDataStoreSearch() {
 	}
 
 	// Create a new datastore since the one in suite uses mocks
-	ds := New(suite.store)
+	ds := New(suite.store, suite.adminEvents)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	_, err := ds.AddImageIntegration(ctx, ii)
