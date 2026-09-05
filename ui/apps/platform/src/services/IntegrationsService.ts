@@ -12,7 +12,6 @@ export const serviceIntegrationSources = [
     'notifiers',
     'signatureIntegrations',
     'cloudSources',
-    'aiIntegrations',
 ] as const;
 
 export type IntegrationSource = (typeof serviceIntegrationSources)[number];
@@ -35,8 +34,6 @@ function getPath(source: IntegrationSource): string {
             return '/v1/auth/m2m';
         case 'cloudSources':
             return '/v1/cloud-sources';
-        case 'aiIntegrations':
-            return '/v2/ai-integrations';
         default:
             return '';
     }

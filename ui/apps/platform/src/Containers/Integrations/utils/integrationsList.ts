@@ -13,7 +13,6 @@ import GoogleArtifactSvg from 'images/google-artifact.svg?react';
 import GoogleRegistrySvg from 'images/google-container.svg?react';
 import IbmSvg from 'images/ibm-ccr.svg?react';
 import JiraSvg from 'images/jira.svg?react';
-import LightspeedSvg from 'images/rh-lightspeed.svg?react';
 import LogoSvg from 'images/StackRox-integration-logo.svg?react';
 import MicrosoftSentinelSvg from 'images/microsoft_sentinel.svg?react';
 import NexusSvg from 'images/nexus.svg?react';
@@ -44,7 +43,6 @@ import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import { integrationSources } from 'types/integration';
 import type {
-    AiIntegrationType,
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
@@ -86,10 +84,6 @@ export type SignatureIntegrationDescriptor = {
 
 export type CloudSourceDescriptor = {
     type: CloudSourceIntegrationType;
-} & BaseIntegrationDescriptor;
-
-export type AiIntegrationDescriptor = {
-    type: AiIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type BaseIntegrationDescriptor = {
@@ -329,17 +323,6 @@ export const ocmDescriptor: CloudSourceDescriptor = {
 
 const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 
-export const aiIntegrationsSource = 'aiIntegrations';
-
-export const lightspeedDescriptor: AiIntegrationDescriptor = {
-    Logo: LightspeedSvg,
-    label: 'OpenShift Lightspeed',
-    type: 'lightspeed',
-    featureFlagDependency: ['ROX_AI_INTEGRATIONS'],
-};
-
-const aiIntegrationsDescriptors = [lightspeedDescriptor];
-
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -354,8 +337,6 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return authenticationTokensDescriptors;
         case 'cloudSources':
             return cloudSourceDescriptors;
-        case 'aiIntegrations':
-            return aiIntegrationsDescriptors;
         default:
             return [];
     }
@@ -379,7 +360,6 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRo
     notifiers: {},
     backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
     cloudSources: {},
-    aiIntegrations: {},
     authProviders: {},
     apiClients: {},
 };
@@ -428,7 +408,6 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     notifiers: 'Notifier',
     backups: 'Backup',
     cloudSources: 'Cloud source',
-    aiIntegrations: 'AI',
     authProviders: 'Authentication',
     apiClients: 'API clients',
 };
