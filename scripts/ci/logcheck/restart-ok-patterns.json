@@ -88,5 +88,17 @@
         "job": "upgrade",
         "logfile": "scanner-previous",
         "logline": "Failed to initialize updater"
+    },
+    {
+        "comment": "Scanner V4 indexer restart due to slow postgres db start on IPv6 clusters",
+        "job": "eks-ipv6-qa-e2e-tests",
+        "logfile": "scanner-v4-indexer.*-previous",
+        "logline": "failed to create backends.*connection refused"
+    },
+    {
+        "comment": "Scanner V4 matcher restart due to slow postgres db start on IPv6 clusters",
+        "job": "eks-ipv6-qa-e2e-tests",
+        "logfile": "scanner-v4-matcher.*-previous",
+        "logline": "failed to create backends.*connection refused"
     }
 ]
