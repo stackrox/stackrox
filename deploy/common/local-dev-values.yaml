@@ -56,23 +56,3 @@ scannerV4:
       limits:
         cpu: "1000m"
         memory: "2500Mi"
-
-scanner:
-  replicas: 1
-  autoscaling:
-    disable: true
-
-  resources:
-    requests:
-      memory: "500Mi"
-      cpu: "500m"
-    limits:
-      memory: "2500Mi"
-      cpu: "2000m"
-  dbResources:
-    requests:
-      cpu: "400m"
-      memory: "512Mi"
-    limits:
-      cpu: "2000m"
-      memory: "4Gi"

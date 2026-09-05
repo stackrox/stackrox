@@ -521,8 +521,6 @@ central:
         - offline
         - output-dir
         - output-format
-        - scanner-db-image
-        - scanner-image
         - scanner-v4-db-image
         - scanner-v4-image
       INHERITED_FLAGS:
@@ -583,8 +581,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -622,8 +618,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -665,8 +659,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -688,8 +680,6 @@ central:
         - openshift-version
         - output-dir
         - output-format
-        - scanner-db-image
-        - scanner-image
         - scanner-v4-db-image
         - scanner-v4-image
       INHERITED_FLAGS:
@@ -752,8 +742,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -793,8 +781,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -838,8 +824,6 @@ central:
           - password
           - plaintext
           - plaintext-endpoints
-          - scanner-db-image
-          - scanner-image
           - scanner-v4-db-image
           - scanner-v4-image
           - server-name
@@ -2029,7 +2013,6 @@ scanner:
     LOCAL_FLAGS:
       - istio-support
       - output-dir
-      - scanner-image
       - scanner-v4-db-image
       - scanner-v4-image
     PERSISTENT_FLAGS:

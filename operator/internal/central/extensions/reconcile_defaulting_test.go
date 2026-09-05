@@ -40,17 +40,11 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Spec:            platform.CentralSpec{},
 			Status:          platform.CentralStatus{},
 			ExpectedDefault: &platform.ScannerV4Enabled,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
-			},
 		},
-		"upgrade: disabled by default": {
+		"upgrade: enabled by default": {
 			Spec:            platform.CentralSpec{},
 			Status:          postInstallStatus,
-			ExpectedDefault: &platform.ScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
+			ExpectedDefault: &platform.ScannerV4Enabled,
 		},
 		"install: enabled explicitly": {
 			Spec: platform.CentralSpec{
@@ -70,43 +64,24 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          platform.CentralStatus{},
 			ExpectedDefault: nil,
 		},
-		"upgrade: pick up previously persisted default (Enabled)": {
+		"upgrade: previously persisted annotation is ignored": {
 			Status: postInstallStatus,
 			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
-			},
-		},
-		"upgrade: pick up previously persisted default (Disabled)": {
-			Status: postInstallStatus,
-			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
-		"upgrade: ignoring bogus persisted default": {
+		"upgrade: bogus persisted annotation is ignored": {
 			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
+			ExpectedDefault: &platform.ScannerV4Enabled,
 			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-		},
-		"previously persisted default is picked up even if status is empty": {
-			Annotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
-			},
-			ExpectedDefault: &platform.ScannerV4Disabled,
-			ExpectedAnnotations: map[string]string{
-				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
 		},
 	}

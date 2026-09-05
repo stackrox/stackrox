@@ -22,7 +22,7 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 			values.ClusterName = "test"
 			values.ImageTag = "custom-main"
 			values.CollectorImageTag = "custom-collector"
-			values.ScannerImageTag = "custom-scanner"
+			values.ScannerV4ImageTag = "custom-scanner"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
 	})
