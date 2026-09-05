@@ -746,6 +746,9 @@
         },
         "user": {
           "$ref": "#/definitions/v1AuthStatus"
+        },
+        "authorizeRoxctl": {
+          "type": "boolean"
         }
       }
     },
