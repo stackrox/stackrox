@@ -105,13 +105,6 @@ tests:
     expect: |
       .notes | assertThat(match("Scanner V4: +enabled"))
       .notes | assertThat(match("Scanner V4 is enabled and the following Scanner V4 components will be deployed: indexer and matcher"))
-# This test can be deleted once the scanner V2 is removed.
-- name: "enabling scanner V4 keeps scanner V2 enabled"
-  set:
-    scannerV4.disable: false
-  expect:
-    .deployments["scanner"] | assertThat(. != null)
-
 - name: "scanner with default settings"
   set:
     scannerV4.disable: false
@@ -256,17 +249,9 @@ tests:
       .deployments["scanner-v4-matcher"] | assertThat(. != null)
       .deployments["scanner-v4-db"] | assertThat(. != null)
     tests:
-    - name: "on new installation with scanner V2 defaults"
+    - name: "on new installation"
       release: { "isInstall": true, "isUpgrade": false }
-    - name: "on new installation with scanner V2 enabled explicitly"
-      release: { "isInstall": true, "isUpgrade": false }
-      set:
-        scannerV2.disable: false
-    - name: "on new installation with scanner V2 disabled explicitly"
-      release: { "isInstall": true, "isUpgrade": false }
-      set:
-        scanner.disable: true
-    - name: "on upgrade from >= 4.8"
+    - name: "on upgrade"
       release: { "isInstall": false, "isUpgrade": true }
       server:
         objects:
@@ -298,45 +283,14 @@ tests:
             ca.pem: ""
             cert.pem: ""
             key.pem: ""
-      tests:
-      - name: "from 4.8"
-        server:
-          objects:
-          - apiVersion: v1
-            kind: ConfigMap
-            metadata:
-              name: stackrox-central-helm
-              namespace: stackrox
-            data:
-              installXYVersion: "4.8"
-      - name: "from 4.9"
-        server:
-          objects:
-          - apiVersion: v1
-            kind: ConfigMap
-            metadata:
-              name: stackrox-central-helm
-              namespace: stackrox
-            data:
-              installXYVersion: "4.9"
-  - name: "not installed"
-    expect: |
-      .deployments["scanner-v4-indexer"] | assertThat(. == null)
-      .deployments["scanner-v4-matcher"] | assertThat(. == null)
-      .deployments["scanner-v4-db"] | assertThat(. == null)
-    tests:
-    - name: "on upgrade from pre-4.8"
-      release: { "isInstall": false, "isUpgrade": true }
 
-- name: "Scanner V4 can be disabled without impacting Scanner V2"
+- name: "Scanner V4 can be disabled"
   set:
     scannerV4.disable: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. == null)
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
 
 - name: "indexer should allow ingress from central, sensor, and matcher when deployed as a central-service"
   set:
