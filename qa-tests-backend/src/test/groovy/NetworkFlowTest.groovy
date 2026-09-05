@@ -570,11 +570,10 @@ class NetworkFlowTest extends BaseSpecification {
         assert deploymentUid != null
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
+            // The test JVM runs outside of the cluster, so the target has to be the
+            // LoadBalancer address (an IP on IPv4, a hostname on IPv6-only clusters).
+            // Cluster-local DNS names are not resolvable from the CI runner.
             String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-            if (Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true" || deploymentIP == null) {
-                deploymentIP = "${deployments[NGINXCONNECTIONTARGET]?.name}" +
-                               ".${deployments[NGINXCONNECTIONTARGET]?.namespace}.svc.cluster.local"
-            }
             log.info "Using connection target: ${deploymentIP}"
             assert deploymentIP != null
             targetUrl = "http://${deploymentIP}"
@@ -622,10 +621,18 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
             }
-            log.info("Searching for edge coming from INTERNAL_ENTITIES_SOURCE_ID " +
-                "(${Constants.INTERNAL_ENTITIES_SOURCE_ID}) to ${deploymentUid}")
-            List<Edge> edges =
-                    NetworkGraphUtil.checkForEdge(Constants.INTERNAL_ENTITIES_SOURCE_ID, deploymentUid, null, 180)
+            List<Edge> edges
+            if (Env.get("NETWORK_STACK", "") == "ipv6") {
+                // On IPv6-only clusters the LoadBalancer address is public, so the CI runner's
+                // traffic is attributed to an external source (e.g. "__Amazon/us-west-2")
+                // instead of the internal entities pseudo-source.
+                log.info("Searching for edge coming from an external source to ${deploymentUid}")
+                edges = NetworkGraphUtil.checkForEdgeFromExternalSource(deploymentUid, 180)
+            } else {
+                log.info("Searching for edge coming from INTERNAL_ENTITIES_SOURCE_ID " +
+                    "(${Constants.INTERNAL_ENTITIES_SOURCE_ID}) to ${deploymentUid}")
+                edges = NetworkGraphUtil.checkForEdge(Constants.INTERNAL_ENTITIES_SOURCE_ID, deploymentUid, null, 180)
+            }
             if (edges == null || edges.size() == 0) {
                 // Debug dump of all INTERNAL_ENTITIES_SOURCE_ID edges
                 def currentGraph = NetworkGraphService.getNetworkGraph()
@@ -668,9 +675,9 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("NetworkFlowVisualization")
     def "Verify intra-cluster connection via internal IP"() {
-        // Skip on IPv6 primary as the LoadBalancer IP might not be reachable
-        System.out.println("Load Balancer IP: " + loadBalancerIP)
-        Assume.assumeFalse(Env.get("CLUSTER_IPV6_PRIMARY", "false") == "true")
+        // Skip on IPv6-only clusters: the LoadBalancer address is a public IPv6 there, so
+        // flows through it are attributed to an external source, not an internal entity.
+        Assume.assumeFalse(Env.get("NETWORK_STACK", "") == "ipv6")
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
         // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
