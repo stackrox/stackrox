@@ -479,7 +479,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
-			converted := s.service.convertProtoScheduleToV2(c.schedule)
+			converted := ConvertProtoScheduleToV2(c.schedule)
 			protoassert.Equal(t, c.result, converted)
 		})
 	}
@@ -515,7 +515,7 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 				Hour:         c.hour,
 				Minute:       c.minute,
 			}
-			converted := s.service.convertV2ScheduleToProto(v2Schedule)
+			converted := ConvertV2ScheduleToProto(v2Schedule)
 			assert.Equal(t, c.hour, converted.GetHour())
 			assert.Equal(t, c.minute, converted.GetMinute())
 			assert.Equal(t, storage.Schedule_DAILY, converted.GetIntervalType())
@@ -527,7 +527,7 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 				Hour:         c.hour,
 				Minute:       c.minute,
 			}
-			converted := s.service.convertProtoScheduleToV2(storageSchedule)
+			converted := ConvertProtoScheduleToV2(storageSchedule)
 			assert.Equal(t, c.hour, converted.GetHour())
 			assert.Equal(t, c.minute, converted.GetMinute())
 			assert.Equal(t, apiV2.ReportSchedule_DAILY, converted.GetIntervalType())
@@ -542,8 +542,8 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 					DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: []int32{1}},
 				},
 			}
-			storage := s.service.convertV2ScheduleToProto(v2Schedule)
-			roundTripped := s.service.convertProtoScheduleToV2(storage)
+			storage := ConvertV2ScheduleToProto(v2Schedule)
+			roundTripped := ConvertProtoScheduleToV2(storage)
 			assert.Equal(t, c.hour, roundTripped.GetHour())
 			assert.Equal(t, c.minute, roundTripped.GetMinute())
 		})
@@ -580,7 +580,7 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
-			converted := s.service.convertV2ScheduleToProto(c.schedule)
+			converted := ConvertV2ScheduleToProto(c.schedule)
 			protoassert.Equal(t, c.result, converted)
 		})
 	}
@@ -646,4 +646,121 @@ func newScheduleV2(minute int32, hour int32, weekdays []int32, daysOfMonth []int
 		}
 	}
 	return &sched
+}
+
+func TestEnumConversions(t *testing.T) {
+	t.Run("v2EntityTypeToStorage", func(t *testing.T) {
+		tests := map[string]struct {
+			input    apiV2.ScopeEntity
+			expected storage.EntityType
+		}{
+			"deployment": {apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, storage.EntityType_ENTITY_TYPE_DEPLOYMENT},
+			"namespace":  {apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, storage.EntityType_ENTITY_TYPE_NAMESPACE},
+			"cluster":    {apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, storage.EntityType_ENTITY_TYPE_CLUSTER},
+			"unset":      {apiV2.ScopeEntity_SCOPE_ENTITY_UNSET, storage.EntityType_ENTITY_TYPE_UNSET},
+			"unknown":    {apiV2.ScopeEntity(999), storage.EntityType_ENTITY_TYPE_UNSET},
+		}
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				result := v2EntityTypeToStorage(tc.input)
+				assert.Equal(t, tc.expected, result)
+			})
+		}
+	})
+
+	t.Run("v2EntityFieldToStorage", func(t *testing.T) {
+		tests := map[string]struct {
+			input    apiV2.ScopeField
+			expected storage.EntityField
+		}{
+			"id":         {apiV2.ScopeField_FIELD_ID, storage.EntityField_FIELD_ID},
+			"name":       {apiV2.ScopeField_FIELD_NAME, storage.EntityField_FIELD_NAME},
+			"label":      {apiV2.ScopeField_FIELD_LABEL, storage.EntityField_FIELD_LABEL},
+			"annotation": {apiV2.ScopeField_FIELD_ANNOTATION, storage.EntityField_FIELD_ANNOTATION},
+			"unset":      {apiV2.ScopeField_FIELD_UNSET, storage.EntityField_FIELD_UNSET},
+			"unknown":    {apiV2.ScopeField(999), storage.EntityField_FIELD_UNSET},
+		}
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				result := v2EntityFieldToStorage(tc.input)
+				assert.Equal(t, tc.expected, result)
+			})
+		}
+	})
+
+	t.Run("storageEntityTypeToV2", func(t *testing.T) {
+		tests := map[string]struct {
+			input    storage.EntityType
+			expected apiV2.ScopeEntity
+		}{
+			"deployment": {storage.EntityType_ENTITY_TYPE_DEPLOYMENT, apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT},
+			"namespace":  {storage.EntityType_ENTITY_TYPE_NAMESPACE, apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE},
+			"cluster":    {storage.EntityType_ENTITY_TYPE_CLUSTER, apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER},
+			"unset":      {storage.EntityType_ENTITY_TYPE_UNSET, apiV2.ScopeEntity_SCOPE_ENTITY_UNSET},
+			"unknown":    {storage.EntityType(999), apiV2.ScopeEntity_SCOPE_ENTITY_UNSET},
+		}
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				result := storageEntityTypeToV2(tc.input)
+				assert.Equal(t, tc.expected, result)
+			})
+		}
+	})
+
+	t.Run("storageEntityFieldToV2", func(t *testing.T) {
+		tests := map[string]struct {
+			input    storage.EntityField
+			expected apiV2.ScopeField
+		}{
+			"id":         {storage.EntityField_FIELD_ID, apiV2.ScopeField_FIELD_ID},
+			"name":       {storage.EntityField_FIELD_NAME, apiV2.ScopeField_FIELD_NAME},
+			"label":      {storage.EntityField_FIELD_LABEL, apiV2.ScopeField_FIELD_LABEL},
+			"annotation": {storage.EntityField_FIELD_ANNOTATION, apiV2.ScopeField_FIELD_ANNOTATION},
+			"unset":      {storage.EntityField_FIELD_UNSET, apiV2.ScopeField_FIELD_UNSET},
+			"unknown":    {storage.EntityField(999), apiV2.ScopeField_FIELD_UNSET},
+		}
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				result := storageEntityFieldToV2(tc.input)
+				assert.Equal(t, tc.expected, result)
+			})
+		}
+	})
+}
+
+func TestConvertProtoNotifierSnapshotToV2(t *testing.T) {
+	t.Run("nil snapshot", func(t *testing.T) {
+		result := ConvertProtoNotifierSnapshotToV2(nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("snapshot without email config", func(t *testing.T) {
+		snapshot := &storage.NotifierSnapshot{
+			NotifierName: "test-notifier",
+		}
+		result := ConvertProtoNotifierSnapshotToV2(snapshot)
+		assert.NotNil(t, result)
+		assert.Equal(t, "test-notifier", result.GetNotifierName())
+	})
+
+	t.Run("snapshot with email config", func(t *testing.T) {
+		snapshot := &storage.NotifierSnapshot{
+			NotifierName: "test-notifier",
+			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
+				EmailConfig: &storage.EmailNotifierConfiguration{
+					NotifierId:    "notifier-1",
+					MailingLists:  []string{"user@example.com"},
+					CustomSubject: "Test Subject",
+					CustomBody:    "Test Body",
+				},
+			},
+		}
+		result := ConvertProtoNotifierSnapshotToV2(snapshot)
+		assert.NotNil(t, result)
+		assert.Equal(t, "test-notifier", result.GetNotifierName())
+		assert.Equal(t, "notifier-1", result.GetEmailConfig().GetNotifierId())
+		assert.Equal(t, []string{"user@example.com"}, result.GetEmailConfig().GetMailingLists())
+		assert.Equal(t, "Test Subject", result.GetEmailConfig().GetCustomSubject())
+		assert.Equal(t, "Test Body", result.GetEmailConfig().GetCustomBody())
+	})
 }
