@@ -95,7 +95,7 @@ func TestVMScraper_Stats(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{}, &mockDialer{}, &mockProtocolClient{})
 			tc.setup(s)
 			stats := s.Stats()
 

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 )
 
 const (
@@ -162,14 +161,6 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 		repositories: repositories,
 		packages:     packages,
 		environments: environments,
-	}
-}
-
-// GenerateV1IndexReport creates a fake v1.IndexReport (used by Sensor for sending to Central).
-func (g *Generator) GenerateV1IndexReport(vsockCID uint32) *v1.IndexReport {
-	return &v1.IndexReport{
-		VsockCid: fmt.Sprintf("%d", vsockCID),
-		IndexV4:  g.GenerateV4IndexReport(),
 	}
 }
 

@@ -81,10 +81,6 @@ describe('Vulnerability Management Clusters', () => {
         verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'nodeVulnerabilityCounter');
     });
 
-    it('should display either links for cluster CVEs or text for No CVEs', () => {
-        verifyConditionalCVEs(entitiesKey, 'cluster-cves', 5, 'clusterVulnerabilityCounter');
-    });
-
     it('should display links for namespaces', () => {
         verifySecondaryEntities(entitiesKey, 'namespaces', 7);
     });

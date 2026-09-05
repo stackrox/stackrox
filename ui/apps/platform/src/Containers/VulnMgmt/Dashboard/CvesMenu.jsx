@@ -5,6 +5,7 @@ import Loader from 'Components/Loader';
 import Menu from 'Components/Menu';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import queryService from 'utils/queryService';
 
 function getURL(workflowState, entityType) {
@@ -26,6 +27,7 @@ const cveCountsQuery = gql`
 
 const CvesMenu = () => {
     const workflowState = useContext(workflowStateContext);
+    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
 
     const { loading, data = {} } = useQuery(cveCountsQuery, {
         variables: {
@@ -45,17 +47,20 @@ const CvesMenu = () => {
                   label: `${data.nodeVulnerabilityCount} Node CVEs`,
                   link: getURL(workflowState, entityTypes.NODE_CVE),
               },
-              {
-                  label: `${data.clusterVulnerabilityCount} Platform CVEs`,
-                  link: getURL(workflowState, entityTypes.CLUSTER_CVE),
-              },
+              ...(isLegacyScannerEnabled
+                  ? [
+                        {
+                            label: `${data.clusterVulnerabilityCount} Platform CVEs`,
+                            link: getURL(workflowState, entityTypes.CLUSTER_CVE),
+                        },
+                    ]
+                  : []),
           ]
         : [];
 
+    const clusterVulnCount = isLegacyScannerEnabled ? data.clusterVulnerabilityCount : 0;
     const totalCveCount =
-        data.imageVulnerabilityCount +
-            data.nodeVulnerabilityCount +
-            data.clusterVulnerabilityCount || 0;
+        data.imageVulnerabilityCount + data.nodeVulnerabilityCount + clusterVulnCount || 0;
     const menuTitle = `${totalCveCount} CVEs`;
 
     return (
