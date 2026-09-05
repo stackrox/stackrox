@@ -298,6 +298,29 @@
         ]
       }
     },
+    "/v1/deploymentswithrisk/ai-summary/test": {
+      "post": {
+        "summary": "TestLightspeedConnection tests connectivity to the Lightspeed AI service.",
+        "operationId": "DeploymentService_TestLightspeedConnection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TestLightspeedConnectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "DeploymentService"
+        ]
+      }
+    },
     "/v1/deploymentswithrisk/{id}": {
       "get": {
         "summary": "GetDeploymentWithRisk returns a deployment and its risk given its ID.",
@@ -1368,6 +1391,17 @@
         "aggregateBy": {
           "$ref": "#/definitions/v1AggregateBy",
           "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1TestLightspeedConnectionResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
         }
       }
     }

@@ -3,23 +3,20 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/satoken"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 	defaultRequestTimeout = 30 * time.Second
 )
 
@@ -43,16 +40,20 @@ type QueryResponse struct {
 // Client calls the OpenShift Lightspeed API.
 type Client interface {
 	Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error)
+	TestConnectivity() error
 }
 
 // NewClient creates a Client that authenticates with the OLS API using the
 // pod's Kubernetes service account token and trusts the service CA.
 func NewClient() Client {
+	transport := tlsutils.TransportWithServiceCA()
+	transport.Proxy = proxy.FromConfig()
+
 	return &clientImpl{
 		loadToken: satoken.LoadTokenFromFile,
 		endpoint:  LightspeedEndpoint.Setting(),
 		httpClient: &http.Client{
-			Transport: transportWithServiceCA(),
+			Transport: transport,
 			Timeout:   defaultRequestTimeout,
 		},
 	}
@@ -62,24 +63,6 @@ type clientImpl struct {
 	loadToken  func() (string, error)
 	endpoint   string
 	httpClient *http.Client
-}
-
-func transportWithServiceCA() http.RoundTripper {
-	rootCAs, err := x509.SystemCertPool()
-	if err != nil {
-		rootCAs = x509.NewCertPool()
-	}
-
-	if serviceCA, err := os.ReadFile(serviceOperatorCAPath); err == nil {
-		rootCAs.AppendCertsFromPEM(serviceCA)
-	}
-
-	return &http.Transport{
-		TLSClientConfig: &tls.Config{
-			RootCAs: rootCAs,
-		},
-		Proxy: proxy.FromConfig(),
-	}
 }
 
 func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error) {
@@ -118,4 +101,20 @@ func (c *clientImpl) Query(ctx context.Context, req *QueryRequest) (*QueryRespon
 	}
 
 	return &result, nil
+}
+
+// TestConnectivity checks if the Lightspeed service is reachable.
+func (c *clientImpl) TestConnectivity() error {
+	healthURL := fmt.Sprintf("%s/readiness", c.endpoint)
+	resp, err := c.httpClient.Get(healthURL)
+	if err != nil {
+		return errors.Wrap(err, "failed to connect to AI service")
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("AI service returned status %d", resp.StatusCode)
+	}
+
+	return nil
 }
