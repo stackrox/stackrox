@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/tlsutils"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
@@ -171,15 +172,14 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	if !strings.HasPrefix(endpoint, "https://") {
 		return "", errors.Errorf("endpoint %s is not an HTTPS endpoint", endpoint)
 	}
-	u, err := url.Parse(endpoint)
-	if err != nil || u.Hostname() == "" {
-		return "", errors.Errorf("failed to parse endpoint %s", endpoint)
+	server := urlfmt.GetServerFromURL(endpoint)
+	if server == "" {
+		return "", errors.Errorf("failed to retrieve server from endpoint %s", endpoint)
 	}
-	port := u.Port()
-	if port == "" {
-		port = "443"
+	if strings.Contains(server, ":") {
+		return server, nil
 	}
-	return net.JoinHostPort(u.Hostname(), port), nil
+	return fmt.Sprintf("%s:443", server), nil
 }
 
 func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
