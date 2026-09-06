@@ -2,10 +2,14 @@ package booleanpolicy
 
 import (
 	"fmt"
-	"net"
 	"regexp"
 
 	"github.com/stackrox/rox/pkg/signatures"
+)
+
+const (
+	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
+	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
 )
 
 var (
@@ -29,6 +33,7 @@ var (
 	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|PATCH|UPDATE)`)
 	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS|CLUSTER_ROLES|CLUSTER_ROLE_BINDINGS|NETWORK_POLICIES|SECURITY_CONTEXT_CONSTRAINTS|EGRESS_FIREWALLS)`)
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
+	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	signatureIntegrationIDValueRegex         = createRegex(regexp.QuoteMeta(signatures.SignatureIntegrationIDPrefix) + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 	fileOperationRegex                       = createRegex(`(?i:OPEN|CREATE|RENAME|UNLINK|OWNERSHIP_CHANGE|PERMISSION_CHANGE|XATTR_CHANGE)`)
 )
@@ -36,11 +41,4 @@ var (
 func createRegex(s string) *regexp.Regexp {
 	// set multiline anchor for beginning and end of regex
 	return regexp.MustCompile("((?m)^" + s + "$)")
-}
-
-func ipAddressValidator(_ *validateConfiguration, value string) (bool, error) {
-	if net.ParseIP(value) != nil {
-		return true, nil
-	}
-	return false, fmt.Errorf("must be a valid IPv4 or IPv6 address, got %q", value)
 }
