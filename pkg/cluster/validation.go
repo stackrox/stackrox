@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"fmt"
-	"net"
+	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
@@ -53,8 +53,8 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		errorList.AddString("Central API Endpoint is required")
-	} else if _, _, err := net.SplitHostPort(cluster.GetCentralApiEndpoint()); err != nil {
-		errorList.AddString("Central API Endpoint must have port specified (host:port)")
+	} else if !strings.Contains(cluster.GetCentralApiEndpoint(), ":") {
+		errorList.AddString("Central API Endpoint must have port specified")
 	}
 
 	if stringutils.ContainsWhitespace(cluster.GetCentralApiEndpoint()) {
