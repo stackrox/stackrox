@@ -122,7 +122,6 @@ central:
       {{- end }}
 
 scannerV4:
-  disable: true
   {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
   image:
   {{- if .K8sConfig.ImageOverrides.ScannerV4.Registry }}
