@@ -462,8 +462,6 @@ EOT
     )
 
     _begin "verify-scanners-are-deployed"
-    # TODO(ROX-XXX): Remove when 5.1 is cut.
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
@@ -486,8 +484,6 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     _begin "verify-scanners-are-deployed"
-    # TODO(ROX-XXX): Remove when 5.1 is cut.
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -859,8 +855,6 @@ EOT
 
     _begin "verify"
 
-    # TODO(ROX-XXX): Remove when 5.1 is cut.
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     # Scanner V2 in sensor is disabled via operator deployment path.
@@ -1079,16 +1073,6 @@ verify_no_scannerV4_matcher_deployed() {
     echo "Verifying that scanner V4 matcher is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
-}
-
-# TODO: For now, Scanner v2 is expected to run in parallel.
-# This must be removed when Scanner v2 will be phased out.
-verify_scannerV2_deployed() {
-    local namespace=${1:-stackrox}
-    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
-    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
-    wait_for_object_to_appear "$namespace" deploy/scanner 300
-    info "** Scanner V2 is deployed in namespace ${namespace}"
 }
 
 verify_no_scannerV2_deployed() {
