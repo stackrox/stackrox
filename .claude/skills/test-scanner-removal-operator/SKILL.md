@@ -63,22 +63,22 @@ roxie deploy --tag <version> \
 ### Full deployment (Central + Secured Cluster)
 
 ```bash
-roxie deploy --tag 4.11.3 --envrc /tmp/roxie-envrc -c <config-file>
+roxie deploy --tag 4.11.3 --envrc /tmp/roxie-envrc --early-readiness -c <config-file>
 ```
 
 `--envrc` avoids spawning a sub-shell (required for automation).
-`--early-readiness` makes roxie only wait for central/sensor, not all workloads.
+`--early-readiness` only waits for central/sensor, not all workloads.
 
 ### Central only
 
 ```bash
-roxie deploy central --tag 4.11.3 --envrc /tmp/roxie-envrc -c <config-file>
+roxie deploy central --tag 4.11.3 --envrc /tmp/roxie-envrc --early-readiness -c <config-file>
 ```
 
 ### Secured Cluster only
 
 ```bash
-roxie deploy secured-cluster --tag 4.11.3 --envrc /tmp/roxie-envrc -c <config-file>
+roxie deploy secured-cluster --tag 4.11.3 --envrc /tmp/roxie-envrc --early-readiness -c <config-file>
 ```
 
 roxie handles CRS/init-bundle generation automatically — no manual step needed.
@@ -134,19 +134,14 @@ Scanner deployment names: `scanner`, `scanner-db` (V2), `scanner-v4-indexer`,
 
 ### Check CR status (operator-specific)
 
+Both CRs should show `Deployed: True`, `Available: True`, and `Irreconcilable: False`:
+
 ```bash
 kubectl get central stackrox-central-services -n <central-ns> \
-  -o jsonpath='{range .status.conditions[*]}{.type}: {.status} — {.message}{"\n"}{end}'
+  -o jsonpath='{range .status.conditions[*]}{.type}: {.status}{"\n"}{end}'
 
 kubectl get securedcluster stackrox-secured-cluster-services -n <sc-ns> \
-  -o jsonpath='{range .status.conditions[*]}{.type}: {.status} — {.message}{"\n"}{end}'
-```
-
-Verify neither CR is in `Irreconcilable` state:
-```bash
-kubectl get central stackrox-central-services -n <central-ns> \
-  -o jsonpath='{.status.conditions[?(@.type=="Irreconcilable")].status}'
-# Should be empty or "False"
+  -o jsonpath='{range .status.conditions[*]}{.type}: {.status}{"\n"}{end}'
 ```
 
 ### Check Central env vars
