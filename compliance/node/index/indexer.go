@@ -49,11 +49,14 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	// rhcosPackageDBs are the RPM database paths Claircore reports on RHCOS.
-	// RHEL 9+ stores the DB at usr/lib/sysimage/rpm; older nodes use usr/share/rpm.
+	// rhcosPackageDBs are Claircore PackageDB names for RHCOS RPM databases.
+	// RHEL 8 uses Berkeley DB; RHEL 9+ uses SQLite. ostree reports the same RPMs
+	// under usr/share/rpm and usr/lib/sysimage/rpm-ostree-base-db.
 	rhcosPackageDBs = []string{
 		"sqlite:usr/share/rpm",
 		"sqlite:usr/lib/sysimage/rpm",
+		"bdb:usr/share/rpm",
+		"bdb:usr/lib/sysimage/rpm-ostree-base-db",
 	}
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
@@ -284,30 +287,39 @@ func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *cla
 		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
-	byDB := make(map[string]int, 4)
-	for _, pkg := range pkgs {
-		byDB[pkg.PackageDB]++
-	}
-
-	// Filter out packages in which we are not interested.
-	filtered := pkgs
-	if len(packageDBFilter) > 0 {
-		filtered = pkgs[:0]
-		for _, pkg := range pkgs {
-			if slices.Contains(packageDBFilter, pkg.PackageDB) {
-				filtered = append(filtered, pkg)
-			}
-		}
-	}
-	log.Debugf("Claircore found %d packages by PackageDB %v; filter %v kept %d",
-		len(pkgs), byDB, packageDBFilter, len(filtered))
-	log.Infof("TMP INFO Claircore found %d packages by PackageDB %v; filter %v kept %d",
-		len(pkgs), byDB, packageDBFilter, len(filtered))
+	filtered := filterPackages(pkgs, packageDBFilter)
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
 	}
 
 	return filtered, nil
+}
+
+// filterPackages keeps packages whose PackageDB is in packageDBFilter.
+// ostree nodes expose the same RPMs in two PackageDBs, so duplicates
+// collapse to one per name/version/arch/kind.
+func filterPackages(pkgs []*claircore.Package, packageDBFilter []string) []*claircore.Package {
+	if len(packageDBFilter) == 0 {
+		return pkgs
+	}
+	type ident struct {
+		name, version, arch string
+		kind                types.PackageKind
+	}
+	out := pkgs[:0]
+	seen := make(map[ident]struct{}, len(pkgs))
+	for _, pkg := range pkgs {
+		if !slices.Contains(packageDBFilter, pkg.PackageDB) {
+			continue
+		}
+		id := ident{pkg.Name, pkg.Version, pkg.Arch, pkg.Kind}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, pkg)
+	}
+	return out
 }
 
 func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*claircore.Repository, pkgs []*claircore.Package) (*claircore.IndexReport, error) {

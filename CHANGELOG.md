@@ -35,7 +35,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
 
 ### Technical Changes
-- ROX-36784: Scanner V4 node indexing on OpenShift 4 now reads the RHEL 9 RPM database at `/usr/lib/sysimage/rpm` as well as `/usr/share/rpm`.
+- ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
 - ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
 - ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.

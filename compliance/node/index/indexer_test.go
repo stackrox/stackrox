@@ -193,13 +193,68 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 
 func (s *nodeIndexerSuite) TestRHCOSPackageDBs() {
 	tests := map[string]bool{
-		"sqlite:usr/share/rpm":        true,
-		"sqlite:usr/lib/sysimage/rpm": true,
-		"sqlite:var/lib/rpm":          false,
+		"sqlite:usr/share/rpm":                    true,
+		"sqlite:usr/lib/sysimage/rpm":             true,
+		"bdb:usr/share/rpm":                       true,
+		"bdb:usr/lib/sysimage/rpm-ostree-base-db": true,
+		"sqlite:var/lib/rpm":                      false,
 	}
 	for db, want := range tests {
 		s.Run(db, func() {
 			s.Equal(want, slices.Contains(rhcosPackageDBs, db))
+		})
+	}
+}
+
+func (s *nodeIndexerSuite) TestFilterPackages() {
+	pkg := func(db, name, version string) *claircore.Package {
+		return &claircore.Package{
+			PackageDB: db,
+			Name:      name,
+			Version:   version,
+			Arch:      "x86_64",
+			Kind:      types.BinaryPackage,
+		}
+	}
+	share := "bdb:usr/share/rpm"
+	ostree := "bdb:usr/lib/sysimage/rpm-ostree-base-db"
+	filter := []string{share, ostree}
+
+	tests := map[string]struct {
+		pkgs   []*claircore.Package
+		filter []string
+		want   int
+	}{
+		"empty filter keeps all": {
+			pkgs:   []*claircore.Package{pkg(share, "bash", "1"), pkg("other", "zsh", "1")},
+			filter: nil,
+			want:   2,
+		},
+		"unmatched PackageDB dropped": {
+			pkgs:   []*claircore.Package{pkg("sqlite:var/lib/rpm", "bash", "1")},
+			filter: filter,
+			want:   0,
+		},
+		"ostree duplicate PackageDBs collapse": {
+			pkgs: []*claircore.Package{
+				pkg(share, "bash", "5.0"),
+				pkg(ostree, "bash", "5.0"),
+			},
+			filter: filter,
+			want:   1,
+		},
+		"distinct NEVRAs kept": {
+			pkgs: []*claircore.Package{
+				pkg(share, "bash", "5.0"),
+				pkg(share, "coreutils", "8.0"),
+			},
+			filter: filter,
+			want:   2,
+		},
+	}
+	for name, tc := range tests {
+		s.Run(name, func() {
+			s.Len(filterPackages(tc.pkgs, tc.filter), tc.want)
 		})
 	}
 }
