@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +40,6 @@ import (
 const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
-	rhcosPackageDB = "sqlite:usr/share/rpm"
-
 	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
 	// Direct import is prohibited by import rules
 	scannerDefinitionsRouteInSensor = "/scanner/definitions"
@@ -49,6 +48,13 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// rhcosPackageDBs are the RPM database paths Claircore reports on RHCOS.
+	// RHEL 9+ stores the DB at usr/lib/sysimage/rpm; older nodes use usr/share/rpm.
+	rhcosPackageDBs = []string{
+		"sqlite:usr/share/rpm",
+		"sqlite:usr/lib/sysimage/rpm",
+	}
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
 	// Claircore indexing requires layers to have a digest, which is not stored,
@@ -118,11 +124,9 @@ type NodeIndexerConfig struct {
 	Repo2CPEMappingFile string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
-	// PackageDBFilter removes irrelevant packages. For node scanning, we are
-	// currently only interested in the RHCOS RPM database.
-	// Filters out all packages whose packageDB does not match the filter.
-	// Empty string corresponds to no filtering.
-	PackageDBFilter string
+	// PackageDBFilter keeps RHCOS RPM databases and drops other package DBs
+	// Claircore finds under the host index mount. Empty means no filtering.
+	PackageDBFilter []string
 }
 
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
@@ -134,7 +138,7 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 		Client:             nil,
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
-		PackageDBFilter:    rhcosPackageDB,
+		PackageDBFilter:    rhcosPackageDBs,
 	}
 }
 
@@ -273,7 +277,7 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	return repos, nil
 }
 
-func runPackageScanner(ctx context.Context, packageDBFilter string, layer *claircore.Layer) ([]*claircore.Package, error) {
+func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *claircore.Layer) ([]*claircore.Package, error) {
 	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
@@ -282,10 +286,10 @@ func runPackageScanner(ctx context.Context, packageDBFilter string, layer *clair
 
 	// Filter out packages in which we are not interested.
 	filtered := pkgs
-	if packageDBFilter != "" {
+	if len(packageDBFilter) > 0 {
 		filtered = pkgs[:0]
 		for _, pkg := range pkgs {
-			if pkg.PackageDB == packageDBFilter {
+			if slices.Contains(packageDBFilter, pkg.PackageDB) {
 				filtered = append(filtered, pkg)
 			}
 		}
