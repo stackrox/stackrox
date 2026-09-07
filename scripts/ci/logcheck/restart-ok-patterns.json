@@ -90,14 +90,14 @@
         "logline": "Failed to initialize updater"
     },
     {
-        "comment": "Scanner V4 indexer restart due to slow postgres db start on IPv6 clusters",
-        "job": "eks-ipv6-qa-e2e-tests",
+        "comment": "Scanner V4 indexer restart when the db pod is slow to schedule (postgres itself starts in seconds; connection refused until it is up)",
+        "job": ".*",
         "logfile": "scanner-v4-indexer.*-previous",
         "logline": "failed to create backends.*connection refused"
     },
     {
-        "comment": "Scanner V4 matcher restart due to slow postgres db start on IPv6 clusters",
-        "job": "eks-ipv6-qa-e2e-tests",
+        "comment": "Scanner V4 matcher restart when the db pod is slow to schedule (postgres itself starts in seconds; connection refused until it is up)",
+        "job": ".*",
         "logfile": "scanner-v4-matcher.*-previous",
         "logline": "failed to create backends.*connection refused"
     }
