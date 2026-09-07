@@ -178,10 +178,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		}
 	}
 
-	var accessScopeRules []*storage.SimpleAccessScope_Rules
-	if filters := currentConfig.GetVulnReportFilters(); filters != nil {
-		accessScopeRules = filters.GetAccessScopeRules()
-	}
+	accessScopeRules := currentConfig.GetVulnReportFilters().GetAccessScopeRules()
 	updatedConfig := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(), accessScopeRules)
 
 	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
@@ -701,13 +698,6 @@ func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *r
 	return PersistSnapshotAndNotify(ctx, s.validator, s.db, reportReq, channel)
 }
 
-func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
-	if config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
-		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
-	}
-	return nil
-}
-
 func rejectNodeReportSnapshot(snapshot *storage.ReportSnapshot) error {
 	if snapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
 		return errox.InvalidArgs.Newf("report job '%s' is a node vulnerability report; use the node report service", snapshot.GetReportId())
@@ -734,4 +724,11 @@ func PersistSnapshotAndNotify(ctx context.Context, validator *validation.Validat
 	}
 	NotifyWithRetry(ctx, db, channel, reportID)
 	return reportID, nil
+}
+
+func rejectNodeReportConfiguration(config *storage.ReportConfiguration) error {
+	if config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
+		return errox.InvalidArgs.Newf("report configuration '%s' is a node vulnerability report; use the node report service", config.GetId())
+	}
+	return nil
 }
