@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -52,48 +52,35 @@ type TokenExpirationNotifier interface {
 type expirationNotifierImpl struct {
 	store datastore.DataStore
 
-	stopper concurrency.Stopper
-
-	notificationTicker *time.Ticker
-
 	notifier TokenExpirationNotifier
+
+	worker *backgroundworker.PeriodicWorker
 }
 
 func newExpirationNotifier(store datastore.DataStore) *expirationNotifierImpl {
-	return &expirationNotifierImpl{
+	impl := &expirationNotifierImpl{
 		store:    store,
-		stopper:  concurrency.NewStopper(),
 		notifier: &logExpirationNotifier{},
 	}
+	impl.worker = &backgroundworker.PeriodicWorker{
+		Name:       "api-token-expiration",
+		Interval:   env.APITokenExpirationNotificationInterval.DurationSetting(),
+		RunOnStart: true,
+		Run: func(_ context.Context) error {
+			impl.checkAndNotifyExpirations()
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(impl.worker)
+	return impl
 }
 
 func (n *expirationNotifierImpl) Start() {
-	n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
-	go n.runExpirationNotifier()
+	n.worker.Start(context.Background())
 }
 
 func (n *expirationNotifierImpl) Stop() {
-	n.stopper.Client().Stop()
-	err := n.stopper.Client().Stopped().Wait()
-	if err != nil {
-		log.Error("Error stopping API Token expiration loop: ", err)
-	}
-}
-
-func (n *expirationNotifierImpl) runExpirationNotifier() {
-	defer n.stopper.Flow().ReportStopped()
-
-	n.checkAndNotifyExpirations()
-
-	defer n.notificationTicker.Stop()
-	for {
-		select {
-		case <-n.notificationTicker.C:
-			n.checkAndNotifyExpirations()
-		case <-n.stopper.Flow().StopRequested():
-			return
-		}
-	}
+	n.worker.Stop()
 }
 
 func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
