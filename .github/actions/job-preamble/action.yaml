@@ -21,6 +21,10 @@ runs:
             return 0
           fi
           local cleaned="${value//[[:space:]]/}"
+          if [[ -z "$cleaned" ]]; then
+            echo "::error title=Invalid ${name}::${name} is empty or whitespace-only after sanitization."
+            exit 1
+          fi
           if [[ "$cleaned" != "$value" ]]; then
             echo "::notice title=Sanitized ${name}::Stripped whitespace from ${name} (length ${#value} -> ${#cleaned})."
             echo "${name}=${cleaned}" >> "$GITHUB_ENV"
