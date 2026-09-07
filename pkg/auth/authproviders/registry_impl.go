@@ -462,7 +462,7 @@ func getRolesForOpenshiftResponse(
 	}
 	acmClientObj, err := getACMClientForToken(tokenData.AccessToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to instantiate ACM client")
+		return nil, errors.Wrap(err, "failed to get ACM client")
 	}
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
 	if err != nil {
@@ -481,11 +481,11 @@ func getRolesForOIDCResponse(
 	}
 	acmClientObj, err := getACMClientForToken(authResp.IdpToken)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get ACM client")
 	}
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch role information")
 	}
 	return roles, nil
 
@@ -495,7 +495,7 @@ func getACMClientForToken(token string) (*acm.Client, error) {
 	// Retrieve OpenShift cluster config
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 	// Enrich the config with the OpenShift Auth Token
 	cfg.BearerToken = token
@@ -505,7 +505,7 @@ func getACMClientForToken(token string) (*acm.Client, error) {
 	cfg.BearerTokenFile = ""
 	acmClientObj, err := acm.NewClientForConfig(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to instantiate ACM client")
 	}
 	return acmClientObj, nil
 }
