@@ -193,6 +193,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
@@ -1038,6 +1039,14 @@ func debugRoutes() []routes.CustomRoute {
 			Compression:   true,
 		})
 	}
+
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/debug/workers",
+		Authorizer:    user.WithRole(accesscontrol.Admin),
+		ServerHandler: backgroundworker.Global.DebugHandler(),
+		Compression:   true,
+	})
+
 	return customRoutes
 }
 
