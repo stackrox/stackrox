@@ -6,6 +6,8 @@ import static util.Helpers.withRetry
 
 import common.Constants
 
+import java.net.InetAddress
+import java.net.UnknownHostException
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -131,6 +133,8 @@ class Kubernetes {
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
+    // Separate, smaller budget for waiting until a hostname-typed LB ingress resolves in DNS.
+    final int lbHostnameDnsWaitTimeSeconds = 120
     final int intervalTime = 1
     final List<String> trackedDeploymentLikeResources = [
             "Deployment",
@@ -1106,6 +1110,12 @@ class Kubernetes {
                 loadBalancerIP = ingress.ip ?: ingress.hostname
                 log.debug "LB IP/Hostname extracted: ${loadBalancerIP}"
                 if (loadBalancerIP) {
+                    if (!ingress.ip) {
+                        // On IPv6-only clusters the ingress is an ELB hostname whose AWS DNS
+                        // record is published asynchronously after LB provisioning. Tests run
+                        // outside the cluster and would hit UnknownHostException until then.
+                        waitUntilResolvable(loadBalancerIP)
+                    }
                     break
                 }
             }
@@ -1114,6 +1124,25 @@ class Kubernetes {
             log.debug "Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations"
         }
         return loadBalancerIP
+    }
+
+    // Waits until the given hostname resolves, bounded by lbHostnameDnsWaitTimeSeconds.
+    // AWS publishes NLB DNS records asynchronously; on IPv6-only clusters the LB ingress
+    // is a hostname and tests run outside the cluster, so resolving here removes the
+    // UnknownHostException window the suite would otherwise hit per test.
+    private void waitUntilResolvable(String hostname) {
+        int iterations = (lbHostnameDnsWaitTimeSeconds / intervalTime).intValue()
+        Timer t = new Timer(iterations, intervalTime)
+        while (t.IsValid()) {
+            try {
+                InetAddress.getByName(hostname)
+                log.debug "LB hostname ${hostname} resolved after ${t.SecondsSince()}s"
+                return
+            } catch (UnknownHostException e) {
+                log.info "LB hostname ${hostname} does not resolve yet (waited ${t.SecondsSince()}s)"
+            }
+        }
+        log.error "LB hostname ${hostname} did not resolve within ${lbHostnameDnsWaitTimeSeconds}s; continuing, downstream calls may fail"
     }
 
     /*
