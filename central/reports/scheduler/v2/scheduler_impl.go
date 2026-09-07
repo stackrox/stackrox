@@ -5,9 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
@@ -68,7 +66,6 @@ type scheduler struct {
 	// request is enqueued or when a report completes. Reset when no runnable report
 	// is found across any queue.
 	readyForReports concurrency.Signal
-	Schema          *graphql.Schema
 
 	/* Concurrency and synchronization related fields */
 	// isStarted will make sure only one scheduling routine runs for an instance of scheduler
@@ -98,19 +95,14 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 
 	cronScheduler := cron.New()
 	cronScheduler.Start()
-	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
-	if err != nil {
-		panic(err)
-	}
 	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
-		imageReportGenerator, nodeReportGenerator, validator, cronScheduler, ourSchema)
+		imageReportGenerator, nodeReportGenerator, validator, cronScheduler)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	imageReportGenerator reportGen.ReportGenerator, nodeReportGenerator reportGen.ReportGenerator,
-	validator *validation.Validator, cronScheduler *cron.Cron,
-	schema *graphql.Schema) *scheduler {
+	validator *validation.Validator, cronScheduler *cron.Cron) *scheduler {
 
 	imageQueue := reportqueue.New()
 	queues := []queueGeneratorBinding{
@@ -137,7 +129,6 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		nextQueueIdx:           0,
 		queueByType:            queueByType,
 		readyForReports:        concurrency.NewSignal(),
-		Schema:                 schema,
 		stopper:                concurrency.NewStopper(),
 		cron:                   cronScheduler,
 		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
@@ -281,6 +272,17 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 		s.cron.Remove(oldEntryID)
 		delete(s.reportConfigToEntryIDs, reportConfigID)
 	}
+}
+
+func (s *scheduler) GetScheduledConfigIDs() []string {
+	s.cronJobsLock.Lock()
+	defer s.cronJobsLock.Unlock()
+
+	ids := make([]string, 0, len(s.reportConfigToEntryIDs))
+	for id := range s.reportConfigToEntryIDs {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 /* Functions to add/remove report jobs from queue */

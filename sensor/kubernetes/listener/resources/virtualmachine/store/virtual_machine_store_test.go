@@ -285,13 +285,6 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			nsIOs, ok := s.store.namespaceToID[tCase.new.Namespace]
 			s.Assert().True(ok)
 			s.Assert().Len(nsIOs, 1)
-			if tCase.new.VSOCKCID == nil {
-				s.Assert().Len(s.store.cidToID, 0)
-				s.Assert().Len(s.store.idToCID, 0)
-			} else {
-				s.Assert().Len(s.store.cidToID, 1)
-				s.Assert().Len(s.store.idToCID, 1)
-			}
 		})
 	}
 }
@@ -451,9 +444,6 @@ func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 
 	vsock = 456
 	s.Equal(uint32(123), *storePtr, "store-managed pointer should remain unchanged even if informer pointer is mutated")
-
-	s.Equal(uint32(123), s.store.idToCID[vmID], "idToCID map should track the original value")
-	s.Equal(virtualmachine.VMID(vmID), s.store.cidToID[123], "cidToID map should continue to refer back to the VM")
 }
 
 func (s *storeSuite) Test_UpdateStateOrCreate() {
@@ -1118,73 +1108,11 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 	})
 }
 
-func (s *storeSuite) Test_GetVirtualMachineFromCID() {
-	cases := map[string]struct {
-		vm         *virtualmachine.Info
-		cid        uint32
-		expectedVM *virtualmachine.Info
-	}{
-		"should find a valid CID": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  new(uint32(1)),
-				Running:   true,
-			},
-			cid: 1,
-			expectedVM: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  new(uint32(1)),
-				Running:   true,
-			},
-		},
-		"should return nil an invalid CID": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  new(uint32(1)),
-				Running:   true,
-			},
-			cid:        2, // Invalid CID
-			expectedVM: nil,
-		},
-		"should return nil if the VM does not have a Vsock CID yet": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  nil,
-				Running:   true,
-			},
-			cid:        1, // VM does not have a cid
-			expectedVM: nil,
-		},
-	}
-	for tName, tCase := range cases {
-		s.Run(tName, func() {
-			s.store.AddOrUpdate(tCase.vm)
-			s.assertVM(tCase.vm)
-			actual := s.store.GetFromCID(tCase.cid)
-			if tCase.expectedVM == nil {
-				s.Assert().Nil(actual)
-			} else {
-				assertVMs(s.T(), tCase.expectedVM, actual)
-			}
-		})
-	}
-}
-
 func (s *storeSuite) assertEmpty() {
 	s.store.lock.Lock()
 	defer s.store.lock.Unlock()
 	s.Assert().Len(s.store.virtualMachines, 0)
 	s.Assert().Len(s.store.namespaceToID, 0)
-	s.Assert().Len(s.store.cidToID, 0)
-	s.Assert().Len(s.store.idToCID, 0)
 }
 
 func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
@@ -1201,15 +1129,6 @@ func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
 	nsIDs, ok := s.store.namespaceToID[expected.Namespace]
 	s.Assert().True(ok)
 	s.Assert().Contains(nsIDs, expected.ID)
-	if expected.VSOCKCID == nil {
-		return
-	}
-	cid, ok := s.store.idToCID[expected.ID]
-	s.Assert().True(ok)
-	s.Assert().Equal(*expected.VSOCKCID, cid)
-	id, ok := s.store.cidToID[*expected.VSOCKCID]
-	s.Assert().True(ok)
-	s.Assert().Equal(expected.ID, id)
 }
 
 func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachine.Info) {

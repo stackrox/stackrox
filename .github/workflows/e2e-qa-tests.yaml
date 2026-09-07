@@ -325,12 +325,18 @@ jobs:
           from post_tests import FinalPost
           FinalPost(store_qa_tests_data=True).run()
 
-      - name: Publish test summary
+      - name: Publish summary for failed tests
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
         if: always()
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-          show: all
+          show: "fail"
+      - name: Publish summary for passed and skipped tests
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: "pass, skip"
 
       - name: Report junit failures in jira
         if: (!cancelled())

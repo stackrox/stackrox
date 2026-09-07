@@ -6,13 +6,11 @@ import type {
     CompoundSearchFilterEntity,
     OnSearchCallback,
 } from '../types';
+import CompoundSearchFilterSelectInputField from './CompoundSearchFilterSelectInputField';
 import SearchFilterConditionDate from './SearchFilterConditionDate';
 import SearchFilterConditionNumber from './SearchFilterConditionNumber';
 import SearchFilterConditionText from './SearchFilterConditionText';
 import SearchFilterAutocompleteSelect from './SearchFilterAutocompleteSelect';
-import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
-import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
-import SearchFilterSelectInclusive from './SearchFilterSelectInclusive';
 import SearchFilterText from './SearchFilterText';
 
 export type CompoundSearchFilterInputFieldProps = {
@@ -78,26 +76,10 @@ function CompoundSearchFilterInputField({
                 />
             );
         case 'select-exclusive-double':
-            return (
-                <SearchFilterSelectExclusiveDouble
-                    attribute={attribute}
-                    isDisabled={isDisabled}
-                    onSearch={onSearch}
-                    searchFilter={searchFilter}
-                />
-            );
         case 'select-exclusive-single':
-            return (
-                <SearchFilterSelectExclusiveSingle
-                    attribute={attribute}
-                    isDisabled={isDisabled}
-                    onSearch={onSearch}
-                    searchFilter={searchFilter}
-                />
-            );
         case 'select':
             return (
-                <SearchFilterSelectInclusive
+                <CompoundSearchFilterSelectInputField
                     attribute={attribute}
                     isDisabled={isDisabled}
                     onSearch={onSearch}

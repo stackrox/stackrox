@@ -56,6 +56,10 @@ export type SelectExclusiveSingleSearchFilterAttribute = {
     inputProps: SelectSearchFilterOptions;
 } & BaseSearchFilterAttribute;
 
+export type SelectSingleSearchFilterAttribute =
+    | SelectSearchFilterAttribute
+    | SelectExclusiveSingleSearchFilterAttribute;
+
 export type SelectExclusiveDoubleSearchFilterAttribute = {
     inputType: 'select-exclusive-double';
     inputProps: SelectExclusiveDoubleSearchFilterInputProps;
@@ -73,6 +77,9 @@ export type SelectExclusiveDoubleSearchFilterOption = {
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
     | GenericSearchFilterAttribute
+    | GenericSelectSearchFilterAttribute;
+
+export type GenericSelectSearchFilterAttribute =
     | SelectSearchFilterAttribute
     | SelectExclusiveDoubleSearchFilterAttribute
     | SelectExclusiveSingleSearchFilterAttribute;

@@ -8,6 +8,7 @@ import type { ReportStatus } from 'types/reportJob';
 import MyLastJobStatus from './MyLastJobStatus';
 
 const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
+    type: 'VULNERABILITY',
     reportConfigId: 'report-config-id-1',
     reportJobId: 'report-job-id-1',
     name: 'test-name-1',

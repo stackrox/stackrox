@@ -126,6 +126,14 @@ func convertCVEBaseInfo(info *storage.VirtualMachineCVEInfo) *storage.CVEInfo {
 		})
 	}
 
+	var epss *storage.EPSS
+	if e := info.GetEpss(); e != nil {
+		epss = &storage.EPSS{
+			EpssProbability: e.GetEpssProbability(),
+			EpssPercentile:  e.GetEpssPercentile(),
+		}
+	}
+
 	return &storage.CVEInfo{
 		Cve:          info.GetCve(),
 		Summary:      info.GetSummary(),
@@ -135,6 +143,7 @@ func convertCVEBaseInfo(info *storage.VirtualMachineCVEInfo) *storage.CVEInfo {
 		LastModified: info.GetLastModified(),
 		CvssMetrics:  info.GetCvssMetrics(),
 		References:   refs,
+		Epss:         epss,
 	}
 }
 

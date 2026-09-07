@@ -24,7 +24,10 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
+import {
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
+} from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -53,7 +56,6 @@ import DeleteReportsModal from '../../Reports/components/DeleteReportsModal';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
-import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -63,7 +65,7 @@ function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfig
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityConfigurationsReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityImageConfigurationsReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -382,7 +384,7 @@ function ConfigReportsTab() {
                         )}
                         {reportConfigurations.map((report, rowIndex) => {
                             const vulnReportURL = generatePath(
-                                vulnerabilityConfigurationReportDetailsPath,
+                                vulnerabilityImageConfigurationsReportsDetailsPath,
                                 {
                                     reportId: report.id,
                                 }

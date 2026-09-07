@@ -5,30 +5,8 @@ import CheckboxSelect from 'Components/CheckboxSelect';
 import { reportJobStatusLabels, reportJobStatuses } from './types';
 import type { ReportJobStatus } from './types';
 
-function isReportJobStatus(value: string): value is ReportJobStatus {
+export function isReportJobStatus(value: string): value is ReportJobStatus {
     return value in reportJobStatuses;
-}
-
-/**
- * Ensures that the given search filter value is converted to an array of valid report job status values.
- *
- * Example:
- * ensureReportJobStatuses(["WAITING", "PREPARING"]);  // returns ["WAITING", "PREPARING"]
- * ensureReportJobStatuses("WAITING");                 // returns [] (since input is not an array)
- * ensureReportJobStatuses(undefined);                 // returns []
- *
- * @param searchFilterValue - The input value, which can be a string, an array of strings, or undefined.
- * @returns {ReportJobStatus[]} - If the input is an array of strings, it filters the values that match valid "ReportJobStatus"s
- *                         and returns them as an array.
- *                         If the input is not an array or undefined, it returns an empty array.
- */
-export function ensureReportJobStatuses(
-    searchFilterValue: string | string[] | undefined
-): ReportJobStatus[] {
-    if (Array.isArray(searchFilterValue)) {
-        return searchFilterValue.filter((value) => isReportJobStatus(value));
-    }
-    return [];
 }
 
 export type ReportJobStatusFilterProps = {

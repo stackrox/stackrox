@@ -25,7 +25,6 @@ function getItemTextSelectorForWidget(widgetHeading, itemTextSelector) {
 
 const itemTextSelectorForNumberedList = '[data-testid="numbered-list-item-name"]';
 const itemTextSelectorForLabelText = '.rv-xy-plot__series--label text';
-const itemTextSelectorForClusters = 'li > div > div > a';
 
 function getHeaderTextFromItemTextWithColonSeparators(itemText) {
     const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^:]+):.*$/.exec(itemText);
@@ -134,19 +133,6 @@ describe('Vulnerability Management Dashboard', () => {
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForLabelText),
             getHeaderTextFromItemTextWithSlashSeparators
-        );
-    });
-
-    it('has item link to cluster single page from Clusters with most orchestrator and Istio vulnerabilities', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'clusters';
-        const widgetHeading = 'Clusters with most orchestrator and Istio vulnerabilities';
-
-        verifyItemLinkToEntityPage(
-            entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForClusters),
-            (itemText) => itemText
         );
     });
 });

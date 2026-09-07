@@ -38,6 +38,9 @@ var (
 	ErrUnknownAgentError = errors.New("unrecognized agent error code")
 	// ErrMappingRequired indicates the agent has no repository-to-CPE mapping yet.
 	ErrMappingRequired = errors.New("agent has no repository-to-CPE mapping yet")
+	// ErrMappingNotSensorManaged indicates the agent rejected a
+	// SyncRepoCPEMapping because it is URL-managed, not Sensor-managed.
+	ErrMappingNotSensorManaged = errors.New("agent does not accept a sensor-pushed mapping")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -129,9 +132,59 @@ func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, lastK
 			Meta:        resp.GetMeta(),
 		}, nil
 	case *pb.VMServiceResponse_Error:
-		return nil, errorFromResponse(r.Error)
+		// Meta is still returned alongside the error: a VM with no mapping
+		// at all has nothing to report except MAPPING_REQUIRED, and that
+		// error's Meta is the only way the caller learns it needs to push one.
+		return &GetReportResult{Meta: resp.GetMeta()}, errorFromResponse(r.Error)
 	default:
 		return nil, fmt.Errorf("unexpected response type: %T", resp.GetResult())
+	}
+}
+
+// SyncRepoCPEMapping pushes mapping to the agent over stream and reports
+// whether the agent applied it. Mirrors GetReport's request/response framing
+// and error classification for the sync_repo_cpe_mapping method.
+func (c *Client) SyncRepoCPEMapping(ctx context.Context, stream io.ReadWriteCloser, mapping []byte) (updated bool, meta *pb.ResponseMeta, err error) {
+	stop := context.AfterFunc(ctx, func() {
+		_ = stream.Close()
+	})
+	defer stop()
+
+	req := &pb.VMServiceRequest{
+		Meta: &pb.RequestMeta{
+			RequestId:    uuid.NewV4().String(),
+			Capabilities: c.capabilities,
+		},
+		Method: &pb.VMServiceRequest_SyncRepoCpeMapping{
+			SyncRepoCpeMapping: &pb.SyncRepoCPEMappingRequest{Mapping: mapping},
+		},
+	}
+
+	reqData, err := proto.Marshal(req)
+	if err != nil {
+		return false, nil, fmt.Errorf("marshaling request: %w", err)
+	}
+	if err := vsockframing.WriteFrame(stream, reqData); err != nil {
+		return false, nil, wrapStreamErr(ctx, "sending request", err)
+	}
+
+	respData, err := vsockframing.ReadFrame(stream, uint32(c.maxResponseSize))
+	if err != nil {
+		return false, nil, wrapStreamErr(ctx, "reading response", err)
+	}
+
+	var resp pb.VMServiceResponse
+	if err := proto.Unmarshal(respData, &resp); err != nil {
+		return false, nil, fmt.Errorf("unmarshaling response: %w", err)
+	}
+
+	switch r := resp.GetResult().(type) {
+	case *pb.VMServiceResponse_SyncRepoCpeMapping:
+		return r.SyncRepoCpeMapping.GetUpdated(), resp.GetMeta(), nil
+	case *pb.VMServiceResponse_Error:
+		return false, resp.GetMeta(), errorFromResponse(r.Error)
+	default:
+		return false, nil, fmt.Errorf("unexpected response type: %T", resp.GetResult())
 	}
 }
 
@@ -158,6 +211,8 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED:
 		return fmt.Errorf("%w: %s", ErrMappingRequired, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED:
+		return fmt.Errorf("%w: %s", ErrMappingNotSensorManaged, e.GetMessage())
 	default:
 		return fmt.Errorf("%w: agent error (%s): %s", ErrUnknownAgentError, e.GetCode(), e.GetMessage())
 	}

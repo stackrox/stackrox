@@ -46,7 +46,7 @@ func sequencedRand(seq []float64) func() float64 {
 
 func TestVMScraper_CadenceRescheduleUsesSteadyBand(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns", "vm-a", 1)}}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+	s, clock := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	})
 	s.spreadFraction = 2.0 / 3
@@ -69,7 +69,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(10+i)))
 	}
 	store := &mockStore{vms: vms}
-	s, clock := newTestScraper(t, store, &safeSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
+	s, clock := newTestScraper(t, store, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
@@ -116,7 +116,7 @@ func TestVMScraper_MassFirstInsertSpansNewVMIndexReportWindow(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
 	}
 	store := &mockStore{vms: vms}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
+	s, clock := newTestScraper(t, store, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	units := make([]float64, numVMs)
@@ -150,7 +150,7 @@ func TestVMScraper_MassFirstInsertSpansNewVMIndexReportWindow(t *testing.T) {
 
 func TestVMScraper_SingleInsertUsesNewVMIndexReportSpread(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns", "only", 1)}}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
+	s, clock := newTestScraper(t, store, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = 20
 	s.randFloat64 = func() float64 { return 0.5 }
 
@@ -166,7 +166,7 @@ func TestVMScraper_MultiInsertUsesNewVMIndexReportSpread(t *testing.T) {
 		makeVM("ns", "a", 1),
 		makeVM("ns", "b", 2),
 	}}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
+	s, clock := newTestScraper(t, store, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = 20
 	s.randFloat64 = sequencedRand([]float64{0.25, 0.75})
 
@@ -180,7 +180,7 @@ func TestVMScraper_MultiInsertUsesNewVMIndexReportSpread(t *testing.T) {
 func TestVMScraper_RetryPathDoesNotUseSteadyBand(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
 	client := &mockProtocolClient{errQueue: []error{vsockclient.ErrNotReady}}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, client)
+	s, clock := newTestScraper(t, store, &mockDialer{}, client)
 	// Insert due now; a later unit of 1 would be full steadyWidth if cadence used RNG.
 	s.randFloat64 = sequencedRand([]float64{0, 1})
 
@@ -194,7 +194,7 @@ func TestVMScraper_RetryPathDoesNotUseSteadyBand(t *testing.T) {
 func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	store := &mockStore{vms: []*virtualmachine.Info{vm}}
-	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+	s, clock := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	})
 	s.randFloat64 = sequencedRand([]float64{0, 1})
@@ -213,7 +213,7 @@ func TestVMScraper_DuePileIsPacedByStartBudget(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
 	}
 	dialer := &recordingDialer{}
-	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, dialer, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.tickInterval = defaultTickInterval
@@ -254,7 +254,7 @@ func TestVMScraper_AllDueClumpDrainsWithinIndexWindow(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
 	}
 	dialer := &recordingDialer{}
-	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, dialer, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.tickInterval = defaultTickInterval
 	s.reconcileEvery = reconcilePeriod(s.interval)
@@ -298,7 +298,7 @@ func TestVMScraper_SpreadDuePileStartsAtFleetRate(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
 	}
 	dialer := &recordingDialer{}
-	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, dialer, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.tickInterval = defaultTickInterval
 	s.reconcileEvery = reconcilePeriod(s.interval)
@@ -336,7 +336,7 @@ func TestVMScraper_StartsPerTickObservesLaunchCount(t *testing.T) {
 	for i := range numVMs {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(10+i)))
 	}
-	s, clock := newTestScraper(t, &mockStore{vms: vms}, &safeSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
+	s, clock := newTestScraper(t, &mockStore{vms: vms}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.reconcileEvery = reconcilePeriod(s.interval)
 
@@ -359,7 +359,7 @@ func TestVMScraper_StartsPerTickObservesLaunchCount(t *testing.T) {
 }
 
 func TestVMScraper_StartsPerTickSkipsIdleTicks(t *testing.T) {
-	s, clock := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	s, clock := newTestScraper(t, &mockStore{}, &mockDialer{}, &mockProtocolClient{})
 	now := clock.Now()
 	concurrency.WithLock(&s.mu, func() {
 		s.lastReconcile = now
@@ -409,7 +409,7 @@ func TestVMScraper_WarnIfSpreadSaturated(t *testing.T) {
 			log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
 			t.Cleanup(func() { log = orig })
 
-			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{}, &mockDialer{}, &mockProtocolClient{})
 			s.tickInterval = tc.tickInterval
 			s.spreadFraction = tc.spreadFraction
 			s.warnIfSpreadSaturated(tc.numVMs)
@@ -420,7 +420,7 @@ func TestVMScraper_WarnIfSpreadSaturated(t *testing.T) {
 }
 
 func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
-	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	s, _ := newTestScraper(t, &mockStore{}, &mockDialer{}, &mockProtocolClient{})
 	before := histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds)
 	s.observeForwardInterarrival()
 	assert.Equal(t, before, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds),

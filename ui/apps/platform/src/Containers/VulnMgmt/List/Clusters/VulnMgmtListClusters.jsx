@@ -15,6 +15,7 @@ import { CLUSTER_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.frag
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
+import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import removeEntityContextColumns from '../tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
@@ -29,6 +30,7 @@ export const defaultClusterSort = [
 ];
 
 const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const query = gql`
         query getClusters(
             $query: String
@@ -135,39 +137,41 @@ const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalRe
                 accessor: 'vulnCounter.all.total',
                 sortField: clusterSortFields.CVE_COUNT,
             },
-            {
-                Header: `Platform CVEs`,
-                entityType: entityTypes.CLUSTER_CVE,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { clusterVulnerabilityCounter, id } = original;
-                    if (
-                        !clusterVulnerabilityCounter ||
-                        clusterVulnerabilityCounter.all.total === 0
-                    ) {
-                        return 'No CVEs';
-                    }
+            isLegacyScannerEnabled
+                ? {
+                      Header: `Platform CVEs`,
+                      entityType: entityTypes.CLUSTER_CVE,
+                      headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                      className: `w-1/8 ${defaultColumnClassName}`,
+                      Cell: ({ original, pdf }) => {
+                          const { clusterVulnerabilityCounter, id } = original;
+                          if (
+                              !clusterVulnerabilityCounter ||
+                              clusterVulnerabilityCounter.all.total === 0
+                          ) {
+                              return 'No CVEs';
+                          }
 
-                    const newState = workflowState
-                        .pushListItem(id)
-                        .pushList(entityTypes.CLUSTER_CVE);
-                    const url = newState.toUrl();
-                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+                          const newState = workflowState
+                              .pushListItem(id)
+                              .pushList(entityTypes.CLUSTER_CVE);
+                          const url = newState.toUrl();
+                          const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
-                    return (
-                        <CVEStackedPill
-                            vulnCounter={clusterVulnerabilityCounter}
-                            url={url}
-                            fixableUrl={fixableUrl}
-                            hideLink={pdf}
-                        />
-                    );
-                },
-                id: clusterSortFields.CVE_COUNT,
-                accessor: 'vulnCounter.all.total',
-                sortField: clusterSortFields.CVE_COUNT,
-            },
+                          return (
+                              <CVEStackedPill
+                                  vulnCounter={clusterVulnerabilityCounter}
+                                  url={url}
+                                  fixableUrl={fixableUrl}
+                                  hideLink={pdf}
+                              />
+                          );
+                      },
+                      id: clusterSortFields.CVE_COUNT,
+                      accessor: 'vulnCounter.all.total',
+                      sortField: clusterSortFields.CVE_COUNT,
+                  }
+                : null,
             {
                 Header: `K8S Version`,
                 headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
@@ -220,7 +224,7 @@ const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalRe
             },
         ];
 
-        return removeEntityContextColumns(tableColumns, workflowState);
+        return removeEntityContextColumns(tableColumns.filter(Boolean), workflowState);
     }
 
     return (

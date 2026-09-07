@@ -19,7 +19,11 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
+import {
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
+    vulnerabilityReportsPath,
+} from 'routePaths';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
@@ -46,7 +50,6 @@ import useFetchReport from '../api/useFetchReport';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
-import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -82,7 +85,7 @@ function ViewVulnReportPage() {
     } = useDeleteModal({
         deleteFunction: deleteReportConfiguration,
         onCompleted: () => {
-            navigate(vulnerabilityConfigurationsReportsPath);
+            navigate(vulnerabilityImageConfigurationsReportsPath);
         },
     });
 
@@ -115,12 +118,12 @@ function ViewVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={fetchError || 'No data available'}
                 actionText="Go to reports"
-                url={vulnerabilityConfigurationsReportsPath}
+                url={vulnerabilityImageConfigurationsReportsPath}
             />
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityImageConfigurationsReportsDetailsPath, {
         reportId: reportConfiguration.id,
     });
 
@@ -155,7 +158,10 @@ function ViewVulnReportPage() {
             <PageTitle title="View vulnerability report" />
             <PageSection type="breadcrumb">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityConfigurationsReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                        Vulnerability reports
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={vulnerabilityImageConfigurationsReportsPath}>
                         Image vulnerability reports
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>

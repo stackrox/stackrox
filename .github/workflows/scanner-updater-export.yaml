@@ -191,14 +191,16 @@ jobs:
       always() &&
       (needs.recheck.result == 'failure' || needs.update.result == 'failure')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     steps:
-    - name: Notify on failure
-      env:
-        SOURCE: ${{ inputs.source }}
-        OBJECT: ${{ inputs.object }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability updater *${SOURCE}* failed (object: ${OBJECT}): <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        context: "Source: ${{ inputs.source }} (object: ${{ inputs.object }})"
+        # Scopes annotation/status collection to this matrix leg's own jobs.
+        job-name-filter: "update (${{ inputs.source }}, ${{ inputs.ref }},"

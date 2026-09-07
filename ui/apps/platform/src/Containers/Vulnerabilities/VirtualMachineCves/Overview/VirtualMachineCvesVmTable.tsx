@@ -19,12 +19,16 @@ import { getTableUIState } from 'utils/getTableUIState';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
-import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
+import {
+    CLUSTER_SORT_FIELD,
+    NAMESPACE_SORT_FIELD,
+    VIRTUAL_MACHINE_SORT_FIELD,
+} from '../../utils/sortFields';
 import VirtualMachineCvesFilterToolbar from './VirtualMachineCvesFilterToolbar';
 import VirtualMachineCvesToggleGroup from './VirtualMachineCvesToggleGroup';
 import VirtualMachinesCvesTableLegacy from './VirtualMachinesCvesTableLegacy';
 
-const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
+const sortFields = [VIRTUAL_MACHINE_SORT_FIELD, CLUSTER_SORT_FIELD, NAMESPACE_SORT_FIELD];
 
 const defaultSortOption = { field: VIRTUAL_MACHINE_SORT_FIELD, direction: 'asc' } as const;
 
@@ -134,8 +138,18 @@ function VirtualMachineCvesVmTableEnhanced({
                             <Th className={getVisibilityClass('cvesBySeverity')}>
                                 CVEs by severity
                             </Th>
-                            <Th className={getVisibilityClass('cluster')}>Cluster</Th>
-                            <Th className={getVisibilityClass('namespace')}>Namespace</Th>
+                            <Th
+                                className={getVisibilityClass('cluster')}
+                                sort={getSortParams(CLUSTER_SORT_FIELD)}
+                            >
+                                Cluster
+                            </Th>
+                            <Th
+                                className={getVisibilityClass('namespace')}
+                                sort={getSortParams(NAMESPACE_SORT_FIELD)}
+                            >
+                                Namespace
+                            </Th>
                             <Th className={getVisibilityClass('scannedComponents')}>
                                 Scanned components
                             </Th>

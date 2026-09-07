@@ -6,8 +6,10 @@ export const CVE_SEVERITY_SORT_FIELD = 'Severity';
 export const CVE_STATUS_SORT_FIELD = 'Fixable';
 export const CVE_TYPE_SORT_FIELD = 'CVE Type';
 export const CVE_COUNT_SORT_FIELD = 'CVE Count';
+export const CVE_PUBLISHED_ON_SORT_FIELD = 'CVE Published On';
 export const OPERATING_SYSTEM_SORT_FIELD = 'Operating System';
 export const COMPONENT_SORT_FIELD = 'Component';
+export const NAMESPACE_SORT_FIELD = 'Namespace';
 
 // Cluster sort fields
 export const CLUSTER_SORT_FIELD = 'Cluster';

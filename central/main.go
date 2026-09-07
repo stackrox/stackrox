@@ -581,6 +581,9 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		if features.ACMAccessControlDelegation.Enabled() {
+			authProviderBackendFactories[openshift.TypeNameWithACMAccessControlDelegation] = openshift.NewFactoryWithACMAccessControlDelegation
+		}
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
@@ -1001,7 +1004,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/node/jobs/download",
 			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
-			ServerHandler: v2Service.NewDownloadHandler(),
+			ServerHandler: v2Service.NewNodeDownloadHandler(),
 			Compression:   true,
 		})
 	}

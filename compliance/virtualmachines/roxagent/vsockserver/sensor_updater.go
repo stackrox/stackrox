@@ -203,10 +203,10 @@ func (u *SensorUpdater) persistAndNotify() {
 	}
 }
 
-// waitPersist blocks until every persistAndNotify goroutine has finished
+// WaitPersist blocks until every persistAndNotify goroutine has finished
 // writing cachePath. Tests register it with t.Cleanup so TempDir removal
 // cannot race AtomicWriteFile's sibling .tmp files.
-func (u *SensorUpdater) waitPersist() {
+func (u *SensorUpdater) WaitPersist() {
 	u.persistWG.Wait()
 }
 

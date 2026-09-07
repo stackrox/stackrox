@@ -2,6 +2,7 @@ package nodeindex
 
 import (
 	"testing"
+	"time"
 
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -12,12 +13,113 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
+
+const (
+	scanRejectedWarnSnippet   = "rejected this scan as not newer than the stored one"
+	scanRegressionWarnSnippet = "possible scan regression"
+)
+
+func swapObservedLogger(t *testing.T) *observer.ObservedLogs {
+	core, logs := observer.New(zap.WarnLevel)
+	orig := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = orig })
+	return logs
+}
+
+// TestPipelineWarnsWhenPersistedScanTimeRegresses validates the post-upsert diagnostic: after the upsert,
+// the pipeline compares the scan_time it processed against what the store actually kept (the store rewrites
+// node.Scan in place when it rejects a scan as not-newer) and warns on a mismatch.
+func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	processed := time.Now()
+
+	cases := map[string]struct {
+		// persistedScanTime is what the store leaves on node.Scan after the upsert returns.
+		persistedScanTime time.Time
+		// expectSnippet is the warning we expect to see; empty means no warning at all.
+		expectSnippet string
+	}{
+		// A genuine isUpdated() rejection keeps a scan strictly newer than the one we just processed.
+		"warns (rejection) when the store kept a newer scan": {
+			persistedScanTime: processed.Add(time.Hour),
+			expectSnippet:     scanRejectedWarnSnippet,
+		},
+		// The store kept an older scan than the fresh one - a scan the freshness guard should have accepted.
+		"warns (regression) when the store kept an older scan": {
+			persistedScanTime: processed.Add(-time.Hour),
+			expectSnippet:     scanRegressionWarnSnippet,
+		},
+		"silent when the fresh scan was accepted": {
+			persistedScanTime: processed,
+			expectSnippet:     "",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			logs := swapObservedLogger(t)
+			node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
+
+			ctrl := gomock.NewController(t)
+			nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+			riskManager := riskManagerMocks.NewMockManager(ctrl)
+			enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+			gomock.InOrder(
+				nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(node, true, nil),
+				// Enrichment stamps a fresh scan_time, as the real enricher does with TimestampNow().
+				enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).
+					DoAndReturn(func(n *storage.Node, _ *storage.NodeInventory, _ *v4.IndexReport) error {
+						n.Scan = &storage.NodeScan{ScanTime: protocompat.ConvertTimeToTimestampOrNil(&processed)}
+						return nil
+					}),
+				// Upsert rewrites node.Scan in place to whatever was persisted (mimics isUpdated()).
+				riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).
+					DoAndReturn(func(n *storage.Node) error {
+						n.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&tc.persistedScanTime)
+						return nil
+					}),
+			)
+
+			p := &pipelineImpl{
+				nodeDatastore: nodeDatastore,
+				riskManager:   riskManager,
+				enricher:      enricher,
+			}
+
+			err := p.Run(t.Context(), node.GetClusterId(), createMsg(mockIndexReport), nil)
+			require.NoError(t, err)
+
+			rejections := logs.FilterMessageSnippet(scanRejectedWarnSnippet).All()
+			regressions := logs.FilterMessageSnippet(scanRegressionWarnSnippet).All()
+			switch tc.expectSnippet {
+			case scanRejectedWarnSnippet:
+				assert.Len(t, rejections, 1)
+				assert.Empty(t, regressions)
+			case scanRegressionWarnSnippet:
+				assert.Len(t, regressions, 1)
+				assert.Empty(t, rejections)
+			default:
+				assert.Empty(t, rejections)
+				assert.Empty(t, regressions)
+			}
+		})
+	}
+}
 
 func TestPipelineWithEmptyIndex(t *testing.T) {
 	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")

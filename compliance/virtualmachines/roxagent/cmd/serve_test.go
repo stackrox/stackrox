@@ -48,6 +48,16 @@ func withMappingCachePath(t *testing.T) string {
 	return path
 }
 
+// registerSensorPersistDrain waits for SensorUpdater's fire-and-forget cache
+// writes before t.TempDir() cleanup, so AtomicWriteFile's sibling .tmp files
+// cannot race directory removal.
+func registerSensorPersistDrain(t *testing.T, updater vsockserver.MappingUpdater) {
+	t.Helper()
+	u, ok := updater.(*vsockserver.SensorUpdater)
+	require.True(t, ok, "registerSensorPersistDrain requires a *SensorUpdater")
+	t.Cleanup(u.WaitPersist)
+}
+
 func TestNewRescannerAndProvider_URLSelection(t *testing.T) {
 	withMappingCachePath(t)
 
@@ -130,6 +140,7 @@ func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
 	vmRescanner, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{rescanInterval: time.Hour})
 	require.False(t, provider.Ready())
 	require.NotNil(t, updater, "Sensor path must produce a non-nil updater")
+	registerSensorPersistDrain(t, updater)
 
 	var mu sync.Mutex
 	var calls int
@@ -312,6 +323,7 @@ func TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies(t *testin
 	_, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
 	require.True(t, provider.Ready(), "a pre-seeded Sensor cache must bootstrap the provider Ready")
 	require.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), provider.Hash())
+	registerSensorPersistDrain(t, updater)
 
 	gate, ok := updater.(vsockserver.ScanBusyGate)
 	require.True(t, ok, "the Sensor updater must implement ScanBusyGate")
@@ -344,6 +356,7 @@ func TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies(t *testin
 func TestNewRescannerAndProvider_SensorUpdate_InvalidContentKeepsLastGood(t *testing.T) {
 	cachePath := withMappingCachePath(t)
 	_, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
+	registerSensorPersistDrain(t, updater)
 
 	updated, err := updater.Update([]byte(validMappingJSON))
 	require.NoError(t, err)

@@ -91,7 +91,7 @@ func (s *ViewBasedReportingTestSuite) SetupTest() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
 		s.watchedImageDatastore, nil, nil, s.blobStore, s.clusterDatastore,
-		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore, nil)
+		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore)
 }
 
 func (s *ViewBasedReportingTestSuite) TearDownTest() {

@@ -148,6 +148,11 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			message: "repository-to-CPE mapping not yet available",
 			wantErr: ErrMappingRequired,
 		},
+		"should wrap ErrMappingNotSensorManaged for MAPPING_NOT_SENSOR_MANAGED": {
+			code:    pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED,
+			message: "url-managed",
+			wantErr: ErrMappingNotSensorManaged,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -168,6 +173,87 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			if tc.wantInMsg != "" {
 				assert.Contains(t, err.Error(), tc.wantInMsg)
 			}
+		})
+	}
+}
+
+// TestSendGetReport_ErrorCarriesMeta verifies that an error response's Meta
+// is still returned alongside the error, not dropped: MAPPING_REQUIRED is
+// the only way a VM with no mapping at all can tell Sensor it needs one.
+func TestSendGetReport_ErrorCarriesMeta(t *testing.T) {
+	client := NewClient(nil, 10<<20)
+	clientConn, agentConn := net.Pipe()
+	defer utils.IgnoreError(clientConn.Close)
+
+	go serveOnce(t, agentConn, &pb.VMServiceResponse{
+		Meta: &pb.ResponseMeta{
+			AgentVersion:             "test-agent",
+			RepoCpeMappingHash:       new(""),
+			RepoCpeMappingUpdatePath: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR.Enum(),
+		},
+		Result: &pb.VMServiceResponse_Error{
+			Error: &pb.ErrorResponse{Code: pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED, Message: "no mapping yet"},
+		},
+	}, nil)
+
+	result, err := client.GetReport(context.Background(), clientConn, "")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrMappingRequired)
+	require.NotNil(t, result, "error result must still carry Meta")
+	require.NotNil(t, result.Meta)
+	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR, result.Meta.GetRepoCpeMappingUpdatePath())
+	assert.Empty(t, result.Meta.GetRepoCpeMappingHash())
+}
+
+func TestSendSyncRepoCPEMapping(t *testing.T) {
+	cases := map[string]struct {
+		resp        *pb.VMServiceResponse
+		wantUpdated bool
+		wantErr     error
+	}{
+		"should report updated true on success": {
+			resp: &pb.VMServiceResponse{
+				Meta:   &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: true}},
+			},
+			wantUpdated: true,
+		},
+		"should report updated false when the mapping already matched": {
+			resp: &pb.VMServiceResponse{
+				Meta:   &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: false}},
+			},
+			wantUpdated: false,
+		},
+		"should wrap ErrMappingNotSensorManaged when the agent is URL-managed": {
+			resp: &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{Code: pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED, Message: "url-managed"},
+				},
+			},
+			wantErr: ErrMappingNotSensorManaged,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			client := NewClient(nil, 10<<20)
+			clientConn, agentConn := net.Pipe()
+			defer utils.IgnoreError(clientConn.Close)
+
+			go serveOnce(t, agentConn, tc.resp, func(req *pb.VMServiceRequest) {
+				assert.Equal(t, []byte("mapping-bytes"), req.GetSyncRepoCpeMapping().GetMapping())
+			})
+
+			updated, meta, err := client.SyncRepoCPEMapping(context.Background(), clientConn, []byte("mapping-bytes"))
+			if tc.wantErr != nil {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantUpdated, updated)
+			assert.Equal(t, "test-agent", meta.GetAgentVersion())
 		})
 	}
 }

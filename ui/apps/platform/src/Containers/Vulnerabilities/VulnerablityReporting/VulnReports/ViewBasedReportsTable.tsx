@@ -96,7 +96,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
             <Table aria-label="View-based jobs table">
                 <Thead>
                     <Tr>
-                        <Th width={20}>Job ID</Th>
+                        <Th width={20}>Job name</Th>
                         <Th>Requester</Th>
                         <Th>Job status</Th>
                         <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
@@ -119,7 +119,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                             return (
                                 <Tbody key={reportJobId}>
                                     <Tr>
-                                        <Td dataLabel="Job ID">
+                                        <Td dataLabel="Job name">
                                             <Button
                                                 variant="link"
                                                 isInline

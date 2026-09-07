@@ -956,7 +956,9 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "actual policies should exist in generated response depending on delete mode"
         def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, 'Namespace:r/^qa2?$')
-        assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
+        Helpers.withRetry(3, 2) {
+            assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
+        }
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         log.info "${appliedNetworkPolicies}"
 
@@ -1009,10 +1011,12 @@ class NetworkFlowTest extends BaseSpecification {
         def undoRecord = NetworkPolicyService.undoGeneratedNetworkPolicy()
         assert undoRecord.originalModification == modification
 
-        assert !(
-                NetworkPolicyService.applyGeneratedNetworkPolicy(undoRecord.undoModification)
-                        instanceof StatusRuntimeException
-        )
+        Helpers.withRetry(3, 2) {
+            assert !(
+                    NetworkPolicyService.applyGeneratedNetworkPolicy(undoRecord.undoModification)
+                            instanceof StatusRuntimeException
+            )
+        }
         def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         log.info "${undoNetworkPolicies}"
         assert undoNetworkPolicies == preExistingNetworkPolicies

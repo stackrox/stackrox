@@ -14,6 +14,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import type { VMCVEAffectedVMRow } from 'services/VirtualMachineService';
 
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+import AffectedComponentsTable from '../components/AffectedComponentsTable';
 import {
     CVE_SEVERITY_SORT_FIELD,
     CVSS_SORT_FIELD,
@@ -31,12 +32,14 @@ export const sortFields = [
 export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 export type AffectedVirtualMachinesTableProps = {
+    cveId: string;
     tableState: TableUIState<VMCVEAffectedVMRow>;
     getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
 };
 
 function AffectedVirtualMachinesTable({
+    cveId,
     tableState,
     getSortParams,
     onClearFilters,
@@ -50,9 +53,9 @@ function AffectedVirtualMachinesTable({
                 <Tr>
                     <Th screenReaderText="Row expansion" />
                     <Th sort={getSortParams(VIRTUAL_MACHINE_SORT_FIELD)}>Virtual machine</Th>
-                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
+                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top CVE severity</Th>
                     <Th>CVE status</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
                     <Th sort={getSortParams(GUEST_OS_SORT_FIELD)}>Guest OS</Th>
                     <Th>Affected components</Th>
                 </Tr>
@@ -92,7 +95,7 @@ function AffectedVirtualMachinesTable({
                                             />
                                         </Link>
                                     </Td>
-                                    <Td dataLabel="CVE severity" modifier="nowrap">
+                                    <Td dataLabel="Top CVE severity" modifier="nowrap">
                                         <VulnerabilitySeverityIconText
                                             severity={virtualMachine.severity}
                                         />
@@ -102,7 +105,7 @@ function AffectedVirtualMachinesTable({
                                             isFixable={virtualMachine.isFixable}
                                         />
                                     </Td>
-                                    <Td dataLabel="CVSS" modifier="nowrap">
+                                    <Td dataLabel="Top CVSS" modifier="nowrap">
                                         <CvssFormatted cvss={virtualMachine.cvss} />
                                     </Td>
                                     <Td dataLabel="Guest OS">
@@ -119,7 +122,12 @@ function AffectedVirtualMachinesTable({
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            Affected component details coming soon
+                                            {isExpanded && (
+                                                <AffectedComponentsTable
+                                                    virtualMachineId={virtualMachine.vmId}
+                                                    cveId={cveId}
+                                                />
+                                            )}
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>

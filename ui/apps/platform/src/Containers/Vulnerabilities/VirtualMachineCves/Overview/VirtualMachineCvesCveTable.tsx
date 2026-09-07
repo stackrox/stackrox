@@ -7,6 +7,7 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLSort from 'hooks/useURLSort';
 import { listVMCVEs } from 'services/VirtualMachineService';
 import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -14,9 +15,18 @@ import { getTableUIState } from 'utils/getTableUIState';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+import {
+    CVE_PUBLISHED_ON_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
 import VirtualMachineCvesFilterToolbar from './VirtualMachineCvesFilterToolbar';
 import VirtualMachineCvesToggleGroup from './VirtualMachineCvesToggleGroup';
+
+const sortFields = [CVE_SORT_FIELD, CVSS_SORT_FIELD, CVE_PUBLISHED_ON_SORT_FIELD];
+
+const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } as const;
 
 type VirtualMachineCvesCveTableProps = {
     searchFilter: SearchFilter;
@@ -32,10 +42,15 @@ function VirtualMachineCvesCveTable({
     onClearFilters,
 }: VirtualMachineCvesCveTableProps) {
     const { page, perPage } = pagination;
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => pagination.setPage(1, 'replace'),
+    });
 
     const fetchVirtualMachineCVEs = useCallback(
-        () => listVMCVEs({ searchFilter, page, perPage }),
-        [searchFilter, page, perPage]
+        () => listVMCVEs({ searchFilter, page, perPage, sortOption }),
+        [searchFilter, page, perPage, sortOption]
     );
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachineCVEs);
 
@@ -65,12 +80,12 @@ function VirtualMachineCvesCveTable({
             >
                 <Thead noWrap>
                     <Tr>
-                        <Th>CVE</Th>
+                        <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                         <Th>Virtual machines by severity</Th>
-                        <Th>Top CVSS</Th>
+                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
                         <Th>Affected virtual machines</Th>
                         <Th>EPSS probability</Th>
-                        <Th>First discovered</Th>
+                        <Th sort={getSortParams(CVE_PUBLISHED_ON_SORT_FIELD)}>Published</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
@@ -123,7 +138,7 @@ function VirtualMachineCvesCveTable({
                                                 virtualMachineCve.epssProbability
                                             )}
                                         </Td>
-                                        <Td dataLabel="First discovered">
+                                        <Td dataLabel="Published">
                                             <DateDistance date={virtualMachineCve.publishedOn} />
                                         </Td>
                                     </Tr>

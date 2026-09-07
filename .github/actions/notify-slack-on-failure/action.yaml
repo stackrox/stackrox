@@ -1,0 +1,61 @@
+name: Notify Slack on failure
+description: >
+  Posts a Slack failure notification for the current workflow run. By
+  default, collects ::error:: annotations and per-job status via the GitHub
+  API and builds a message from that data; pass `message` to post a fixed, pre-built
+  message instead (no GitHub API calls). Requires `permissions: {checks:
+  read, actions: read}` on the calling job unless `message` is set.
+inputs:
+  slack-webhook:
+    description: "Slack incoming webhook URL to post to."
+    required: true
+  github-token:
+    description: "Token used to query the Actions/Checks API. Not needed when `message` is set."
+    required: false
+    default: ${{ github.token }}
+  mention:
+    description: "Optional Slack mention/subteam tag prepended to the message (e.g. '<!subteam^SXXXX|team-name>')."
+    required: false
+    default: ""
+  context:
+    description: "Optional extra line of context inserted near the top of the message (e.g. 'Source: alpine'). Ignored when `message` is set."
+    required: false
+    default: ""
+  job-name-filter:
+    description: >
+      Optional substring used to narrow annotation/job-status collection to
+      jobs whose name contains it. Use this when the calling job is one of
+      several matrix legs sharing the same workflow run, so the message only
+      covers this leg. Ignored when `message` is set.
+    required: false
+    default: ""
+  include-successful-jobs:
+    description: >
+      If "true", also inspect jobs that did not fail: any job with real
+      ::error:: annotations is included even if it concluded successfully.
+      Jobs with no annotations are omitted either way. Use this when the
+      caller wants to alert on a job that intentionally does not fail
+      despite reporting real errors. Ignored when `message` is set.
+    required: false
+    default: ""
+  message:
+    description: "If set, this literal text is posted instead of collecting annotations/job status."
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+  - shell: bash
+    run: "${{ github.action_path }}/notify-slack-on-failure.sh"
+    env:
+      SLACK_WEBHOOK: ${{ inputs.slack-webhook }}
+      GH_TOKEN: ${{ inputs.github-token }}
+      MENTION: ${{ inputs.mention }}
+      CONTEXT: ${{ inputs.context }}
+      JOB_NAME_FILTER: ${{ inputs.job-name-filter }}
+      INCLUDE_SUCCESSFUL_JOBS: ${{ inputs.include-successful-jobs }}
+      MESSAGE: ${{ inputs.message }}
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.run_id }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      WORKFLOW: ${{ github.workflow }}

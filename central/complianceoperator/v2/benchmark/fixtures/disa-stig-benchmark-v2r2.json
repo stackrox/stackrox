@@ -5,6 +5,9 @@
   "profiles": [
     { "profileName": "ocp4-stig-v2r2" },
     { "profileName": "ocp4-stig-node-v2r2" },
-    { "profileName": "rhcos4-stig-v2r2" }
+    { "profileName": "rhcos4-stig-v2r2" },
+    { "profileName": "ocp5-stig-v2r2" },
+    { "profileName": "ocp5-stig-node-v2r2" },
+    { "profileName": "rhcos5-stig-v2r2" }
   ]
 }

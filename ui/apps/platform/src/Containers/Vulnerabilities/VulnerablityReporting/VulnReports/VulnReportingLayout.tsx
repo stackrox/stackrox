@@ -1,9 +1,22 @@
-import { PageSection, Tab, TabContent, Tabs, Title } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    PageSection,
+    Tab,
+    TabContent,
+    Tabs,
+    Title,
+} from '@patternfly/react-core';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityConfigurationsReportsPath, vulnerabilityViewBasedJobsPath } from 'routePaths';
+import {
+    vulnerabilityImageConfigurationsReportsPath,
+    vulnerabilityImageViewBasedJobsPath,
+    vulnerabilityReportsPath,
+} from 'routePaths';
 
 import ConfigReportsTab from './ConfigReportsTab';
 import ViewBasedReportsTab from './ViewBasedReportsTab';
@@ -21,7 +34,7 @@ function VulnReportingLayout() {
                   {
                       id: 'report-configuration',
                       title: 'Report configurations',
-                      path: vulnerabilityConfigurationsReportsPath,
+                      path: vulnerabilityImageConfigurationsReportsPath,
                       content: <ConfigReportsTab />,
                   },
               ]
@@ -29,7 +42,7 @@ function VulnReportingLayout() {
         {
             id: 'view-based-jobs',
             title: 'View-based jobs',
-            path: vulnerabilityViewBasedJobsPath,
+            path: vulnerabilityImageViewBasedJobsPath,
             content: <ViewBasedReportsTab />,
         },
     ];
@@ -44,6 +57,14 @@ function VulnReportingLayout() {
     return (
         <>
             <PageTitle title="Image vulnerability reports" />
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                        Vulnerability reports
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>Image vulnerability reports</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
             <PageSection>
                 <Title headingLevel="h1">Image vulnerability reports</Title>
             </PageSection>

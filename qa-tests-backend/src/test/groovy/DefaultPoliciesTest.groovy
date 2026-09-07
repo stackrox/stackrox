@@ -114,7 +114,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/acs-san-stackroxci/qa-multi-arch:nginx-1.12")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
         new Deployment()
