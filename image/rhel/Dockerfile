@@ -97,6 +97,7 @@ COPY bin/roxagent           /stackrox/bin/roxagent
 # Raw binaries are accessed via bind mount so they never enter a final image layer.
 # Tarballs are created directly in the downloads directory; the entrypoint binary
 # is copied to /stackrox/roxctl.
+RUN mkdir -p /assets/downloads/cli
 RUN --mount=type=bind,source=bin,target=/tmp/bins \
     find /tmp/bins -maxdepth 1 -type f -name 'roxctl-*' | while read f; do \
         name=$(basename "$f"); \
