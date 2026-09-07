@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
@@ -35,7 +36,7 @@ import (
 // --- Mocks ---
 
 // mockStore is used by concurrent scrape workers (persistAgentFacts calls
-// AddOrUpdate), so mu guards vms and listRunningCalls.
+// SetAgentFacts), so mu guards vms and listRunningCalls.
 type mockStore struct {
 	mu               sync.Mutex
 	vms              []*virtualmachine.Info
@@ -86,6 +87,18 @@ func (m *mockStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
 		}
 		m.vms = append(m.vms, vm)
 		return vm
+	})
+}
+
+func (m *mockStore) SetAgentFacts(id virtualmachine.VMID, facts map[string]string) {
+	concurrency.WithLock(&m.mu, func() {
+		for _, vm := range m.vms {
+			if vm.ID != id {
+				continue
+			}
+			vm.AgentFacts = maps.Clone(facts)
+			return
+		}
 	})
 }
 
@@ -367,6 +380,36 @@ func TestPersistAgentFactsDoesNotAliasStorePointer(t *testing.T) {
 	}, "roxagent-test"), stored.AgentFacts)
 }
 
+func TestPersistAgentFactsDoesNotClobberInstanceFields(t *testing.T) {
+	stored := makeVM("ns1", "vm-a", 100)
+	stored.GuestOS = "from-informer"
+	stored.Description = "from-informer"
+	store := &mockStore{vms: []*virtualmachine.Info{stored}}
+	s := &VMScraper{store: store}
+
+	stale := stored.Copy()
+	stale.GuestOS = "stale-scrape-copy"
+	stale.Description = "stale-scrape-copy"
+	s.persistAgentFacts(stale, &pb.ResponseMeta{
+		AgentVersion: "roxagent-test",
+		Facts: map[string]string{
+			"detected_os":         "RHEL",
+			"activation_status":   "ACTIVE",
+			"dnf_metadata_status": "AVAILABLE",
+		},
+	})
+
+	got := store.Get(stored.ID)
+	require.NotNil(t, got)
+	assert.Equal(t, "from-informer", got.GuestOS)
+	assert.Equal(t, "from-informer", got.Description)
+	assert.Equal(t, virtualmachine.AgentFactsFromResponse(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	}, "roxagent-test"), got.AgentFacts)
+}
+
 // TestVMScraper_SkipsWhenCentralLacksCapability covers a store already
 // populated (for example after reconnecting to an older Central) so the
 // scraper must not dial or forward.
@@ -560,6 +603,31 @@ func TestVMScraper_RetriesAgentFactsAfterIndexEnqueueFillsBuffer(t *testing.T) {
 	require.Len(t, updates, 1)
 	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
 	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+}
+
+func TestVMScraper_SkipsFactsUpdateWhenUnchangedOnNewIndex(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, forwardedCount(s))
+	require.NotNil(t, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{makeReport("2")}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	msgs := drainToCentral(s)
+	require.Len(t, msgs, 1)
+	assert.NotNil(t, msgs[0].GetEvent().GetVirtualMachineIndexReport())
+	assert.Nil(t, msgs[0].GetEvent().GetVirtualMachine())
 }
 
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {

@@ -66,6 +66,7 @@ type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
 	Get(id virtualmachine.VMID) *virtualmachine.Info
 	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
+	SetAgentFacts(id virtualmachine.VMID, facts map[string]string)
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -965,6 +966,9 @@ func (s *VMScraper) tryEnqueueVMUpdate(vm *virtualmachine.Info) bool {
 	if vm == nil || vm.AgentFacts == nil {
 		return false
 	}
+	if s.storedAgentFactsEqual(vm.ID, vm.AgentFacts) {
+		return false
+	}
 	msg := s.vmUpdateMessage(vm)
 	if msg == nil {
 		return false
@@ -984,13 +988,20 @@ func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, meta *pb.Response
 		return
 	}
 	vm.AgentFacts = mapped
-	// AddOrUpdate stores the pointer it is given. Copy so the scraper's vm
-	// is not the store's live object when a later forward copies it unlocked.
-	s.store.AddOrUpdate(vm.Copy())
+	s.store.SetAgentFacts(vm.ID, mapped)
 }
 
-// snapshotAgentFacts maps ResponseMeta onto AgentFacts. ok is false when
-// nothing maps, so stored values stay as they are.
+func (s *VMScraper) storedAgentFactsEqual(id virtualmachine.VMID, mapped map[string]string) bool {
+	var prev map[string]string
+	if stored := s.store.Get(id); stored != nil {
+		prev = stored.AgentFacts
+	}
+	return maps.Equal(prev, mapped)
+}
+
+// snapshotAgentFacts maps ResponseMeta onto AgentFacts. A non-empty result
+// replaces the last scrape as a whole; unspecified keys are omitted. ok is
+// false when nothing maps, so last-known values stay.
 func snapshotAgentFacts(meta *pb.ResponseMeta) (mapped map[string]string, ok bool) {
 	if meta == nil {
 		return nil, false
@@ -1008,11 +1019,7 @@ func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualm
 		return
 	}
 	logAndRecordDiscoveredFacts(vm.Key(), meta.GetFacts())
-	var prevFacts map[string]string
-	if prev := s.store.Get(vm.ID); prev != nil {
-		prevFacts = prev.AgentFacts
-	}
-	if maps.Equal(prevFacts, mapped) {
+	if s.storedAgentFactsEqual(vm.ID, mapped) {
 		return
 	}
 	toSend := vm.Copy()
@@ -1025,5 +1032,5 @@ func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualm
 		log.Debugf("VMScraper: agent facts for %q not forwarded; will retry: %v", vm.Key(), err)
 		return
 	}
-	s.store.AddOrUpdate(toSend)
+	s.store.SetAgentFacts(vm.ID, mapped)
 }

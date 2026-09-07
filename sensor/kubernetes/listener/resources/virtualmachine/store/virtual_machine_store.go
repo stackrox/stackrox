@@ -55,6 +55,18 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 	return vm
 }
 
+// SetAgentFacts replaces scrape-owned facts on an existing VM. A missing ID
+// is ignored so persist cannot recreate a VM the informer already removed.
+func (s *VirtualMachineStore) SetAgentFacts(id virtualmachine.VMID, facts map[string]string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	vm, ok := s.virtualMachines[id]
+	if !ok {
+		return
+	}
+	vm.AgentFacts = maps.Clone(facts)
+}
+
 // UpdateStateOrCreate updates the VirtualMachine state
 // If the VirtualMachine is not present we create a new VirtualMachine
 func (s *VirtualMachineStore) UpdateStateOrCreate(vm *virtualmachine.Info) {

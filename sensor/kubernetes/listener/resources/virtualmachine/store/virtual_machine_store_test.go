@@ -744,6 +744,29 @@ func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
 	})
 }
 
+func (s *storeSuite) Test_SetAgentFacts() {
+	s.Run("replaces facts on an existing VM", func() {
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:          vmID,
+			Name:        vmName,
+			Namespace:   vmNamespace,
+			GuestOS:     "from-informer",
+			Description: "kept",
+		})
+		facts := map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive}
+		s.store.SetAgentFacts(vmID, facts)
+		got := s.store.Get(vmID)
+		assert.Equal(s.T(), facts, got.AgentFacts)
+		assert.Equal(s.T(), "from-informer", got.GuestOS)
+		assert.Equal(s.T(), "kept", got.Description)
+	})
+
+	s.Run("ignores a missing VM", func() {
+		s.store.SetAgentFacts(vmID, map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive})
+		assert.Nil(s.T(), s.store.Get(vmID))
+	})
+}
+
 func (s *storeSuite) Test_RemoveVirtualMachine() {
 	vsockCID1 := new(uint32(1))
 	cases := map[string]struct {
