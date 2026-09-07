@@ -11,6 +11,24 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Sanitize image tag env vars
+      shell: bash
+      run: |
+        sanitize_image_tag() {
+          local name="$1"
+          local value="${!name:-}"
+          if [[ -z "$value" ]]; then
+            return 0
+          fi
+          local cleaned="${value//[[:space:]]/}"
+          if [[ "$cleaned" != "$value" ]]; then
+            echo "::notice title=Sanitized ${name}::Stripped whitespace from ${name} (length ${#value} -> ${#cleaned})."
+            echo "${name}=${cleaned}" >> "$GITHUB_ENV"
+          fi
+        }
+        sanitize_image_tag MAIN_IMAGE_TAG
+        sanitize_image_tag BUILD_TAG
+
     # auth prepares the gcp environment to authenticate.
     - name: Auth gcloud
       # Skip for external contributions.
