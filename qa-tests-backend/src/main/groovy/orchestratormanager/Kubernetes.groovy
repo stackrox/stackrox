@@ -133,8 +133,9 @@ class Kubernetes {
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
-    // Separate, smaller budget for waiting until a hostname-typed LB ingress resolves in DNS.
-    final int lbHostnameDnsWaitTimeSeconds = 120
+    // Budget for waiting until a hostname-typed LB ingress resolves in DNS. Exits early once
+    // resolved; NLB DNS publication has been observed to lag several minutes on IPv6-only clusters.
+    final int lbHostnameDnsWaitTimeSeconds = 600
     final int intervalTime = 1
     final List<String> trackedDeploymentLikeResources = [
             "Deployment",
