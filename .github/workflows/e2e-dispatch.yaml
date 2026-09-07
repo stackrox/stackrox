@@ -161,15 +161,6 @@ jobs:
       id: image-references
       run: &image-references |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
-        cleaned_tag="${IMAGE_TAG//[[:space:]]/}"
-        if [[ "$cleaned_tag" != "$IMAGE_TAG" ]]; then
-          echo "::notice title=Sanitized image tag::Stripped whitespace from IMAGE_TAG (length ${#IMAGE_TAG} -> ${#cleaned_tag})."
-        fi
-        IMAGE_TAG="$cleaned_tag"
-        if [[ -z "$IMAGE_TAG" ]]; then
-          echo "::error::IMAGE_TAG is empty or whitespace-only after sanitization."
-          exit 1
-        fi
         echo "IMAGE_TAG=$IMAGE_TAG" | tee -a "$GITHUB_ENV"
         echo "tag=$IMAGE_TAG" | tee -a "$GITHUB_OUTPUT"
 
