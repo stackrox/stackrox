@@ -15,6 +15,7 @@ os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
+os.environ["MODULE_LOGLEVELS"] = "node/index=debug"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),

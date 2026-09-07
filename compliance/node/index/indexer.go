@@ -284,6 +284,11 @@ func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *cla
 		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
+	byDB := make(map[string]int, 4)
+	for _, pkg := range pkgs {
+		byDB[pkg.PackageDB]++
+	}
+
 	// Filter out packages in which we are not interested.
 	filtered := pkgs
 	if len(packageDBFilter) > 0 {
@@ -294,6 +299,8 @@ func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *cla
 			}
 		}
 	}
+	log.Debugf("Claircore found %d packages by PackageDB %v; filter %v kept %d",
+		len(pkgs), byDB, packageDBFilter, len(filtered))
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
 	}

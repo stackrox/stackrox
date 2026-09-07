@@ -764,6 +764,10 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
+    if [[ -n "${MODULE_LOGLEVELS:-}" ]]; then
+        customize_envVars+=$'\n    - name: MODULE_LOGLEVELS'
+        customize_envVars+=$'\n      value: "'"${MODULE_LOGLEVELS}"'"'
+    fi
     # Feature flags set via ci_export (line ~200) reach Sensor in non-operator
     # deployments (GKE) through the shell environment. Operator-deployed Sensor
     # (OCP) only gets env vars injected via the SecuredCluster CR's
