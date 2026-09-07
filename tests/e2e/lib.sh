@@ -95,6 +95,38 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# Ensure the roxie CLI is installed and on PATH. run.sh runs under both GitHub Actions and
+# OpenShift CI (Prow); on Prow the GHA roxie/install-cli action is unavailable and the test
+# image may ship an older roxie, so we rely on the self-installing scripts/roxie.sh wrapper,
+# which downloads the version pinned in ROXIE_VERSION into bin/<os>_<arch>/roxie and put it
+# ahead of any pre-installed roxie on PATH.
+ensure_roxie_on_path() {
+    local os arch
+    case "$(uname -s)" in
+        Linux*) os="linux" ;;
+        Darwin*) os="darwin" ;;
+        *) die "Unsupported operating system: $(uname -s)" ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        arm64|aarch64) arch="arm64" ;;
+        *) die "Unsupported architecture: $(uname -m)" ;;
+    esac
+
+    # Triggers the download/install of the pinned roxie version if it is not present yet.
+    "$ROOT/scripts/roxie.sh" version
+
+    # Put ONLY roxie at the front of PATH, via a dedicated directory. We must not prepend
+    # "$ROOT/bin/${os}_${arch}" directly: it also contains roxctl, which the bats tests move out
+    # of that directory mid-run, after which bare `roxctl` would resolve to the now-missing path
+    # (instead of the stable /usr/local/bin/roxctl copy) and later phases (e.g. proxy tests) fail.
+    local roxie_bindir; roxie_bindir="$(mktemp -d)"
+    ln -sf "$ROOT/bin/${os}_${arch}/roxie" "${roxie_bindir}/roxie"
+    export PATH="${roxie_bindir}:$PATH"
+
+    check_for_roxie
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
