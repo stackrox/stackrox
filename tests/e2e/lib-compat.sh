@@ -94,6 +94,11 @@ roxie_config_from_environment_compat() {
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
 
+    if [[ -n "${EXTERNAL_DB:-}" ]]; then
+        info "Configuring external database..."
+        handle_external_database_settings "$config_file" "$namespace"
+    fi
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -188,6 +193,22 @@ roxie_config_from_environment_compat() {
 
     info "Configuring virtual machines..."
     handle_virtual_machines_configuration "$config_file"
+}
+
+handle_external_database_settings() {
+    local config_file="$1"
+    local namespace="$2"
+
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      db:
+        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+        passwordSecret:
+          name: "central-external-db-password"
+EOF
+    retrying_kubectl -n "${namespace}" create secret generic central-external-db-password --from-literal="password=${EXTERNAL_DB_PASSWORD}"
 }
 
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
