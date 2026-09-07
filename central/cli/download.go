@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-const downloadPath = "/assets/downloads/cli"
+var downloadPath = "/assets/downloads/cli"
 
 // Handler for serving roxctl binaries from Central UI.
 // Binaries are stored as .tar.gz and extracted on the fly on each request.
@@ -24,7 +24,11 @@ func Handler() http.HandlerFunc {
 }
 
 func serveFromTarball(w http.ResponseWriter, filename string) error {
-	tarPath := filepath.Join(downloadPath, filename+".tar.gz")
+	return serveFromDir(w, downloadPath, filename)
+}
+
+func serveFromDir(w http.ResponseWriter, dir, filename string) error {
+	tarPath := filepath.Join(dir, filename+".tar.gz")
 	f, err := os.Open(tarPath)
 	if err != nil {
 		return err
