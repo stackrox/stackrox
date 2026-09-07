@@ -46,7 +46,6 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 		numObjsExpected int
 	}{
 		{"central tls", RenderCentralTLSSecretOnly, 1},
-		{"scanner tls", RenderScannerTLSSecretOnly, 2},
 		{"scanner v4 tls", RenderScannerV4TLSSecretOnly, 3},
 	}
 
@@ -60,46 +59,6 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 
 			assert.Len(t, objs, tc.numObjsExpected)
 		})
-	}
-}
-
-func TestRenderScannerOnly(t *testing.T) {
-	flavor := testutils.MakeImageFlavorForTest(t)
-	config := Config{
-		SecretsByteMap: map[string][]byte{
-			"ca.pem":                      []byte("CA"),
-			"ca-key.pem":                  []byte("CAKey"),
-			"cert.pem":                    []byte("CentralCert"),
-			"key.pem":                     []byte("CentralKey"),
-			"scanner-cert.pem":            []byte("ScannerCert"),
-			"scanner-key.pem":             []byte("ScannerKey"),
-			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
-			"scanner-db-key.pem":          []byte("ScannerDBKey"),
-			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
-			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
-			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
-			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
-			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
-			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
-			"jwt-key.pem":                 []byte("JWTKey"),
-		},
-		K8sConfig: &K8sConfig{
-			CommonConfig: CommonConfig{
-				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
-				ScannerV4Image:   flavor.ScannerV4Image(),
-				ScannerV4DBImage: flavor.ScannerV4DBImage(),
-			},
-			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
-		},
-	}
-
-	files, err := render(config, scannerOnly, flavor)
-	assert.NoError(t, err)
-
-	for _, f := range files {
-		assert.Falsef(t, strings.HasPrefix(f.Name, "central/"), "unexpected file %s in scanner only bundle", f.Name)
 	}
 }
 
