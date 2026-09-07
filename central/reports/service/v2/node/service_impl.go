@@ -613,3 +613,5 @@ func userFromContext(ctx context.Context) (*storage.SlimUser, error) {
 	}
 	return slimUser, nil
 }
+
+var _ Service = (*serviceImpl)(nil)
