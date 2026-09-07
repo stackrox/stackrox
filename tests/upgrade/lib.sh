@@ -5,18 +5,24 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+central_deployment_count() {
+    curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
+        -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
+        "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r
+}
+
 wait_for_central_reconciliation() {
     info "Waiting for central reconciliation"
 
-    # Cluster delete flushes deployments in a background goroutine that a
-    # Central restart aborts. Sensor reconnect flushes via reconciliation.
-    # Smoke flakes if either leftover count is still high.
+    # Sensor reconnect flushes deployments that no longer exist on the
+    # cluster. Smoke flakes if that leftover count is still high.
     local success=0
+    local i
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST -d "{\"operationName\":\"summary_counts\",\"variables\":{},\"query\":\"query summary_counts {\n  clusterCount\n  nodeCount\n  violationCount\n  deploymentCount\n  imageCount\n  secretCount\n}\"}" "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r)"
+        numDeployments="$(central_deployment_count)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
-        [[ -n "$numDeployments" ]]
+        [[ -n "$numDeployments" && "$numDeployments" != "null" ]]
         if [[ "$numDeployments" -lt 100 ]]; then
             success=1
             break

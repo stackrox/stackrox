@@ -229,12 +229,6 @@ test_upgrade_paths() {
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
 
-    # Cluster delete returns before its background deployment purge
-    # finishes. Helm upgrade restarts Central and would abort that purge.
-    wait_for_central_reconciliation
-
-    upgrade_central_helm_to_head
-
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     rm -rf sensor-remote
@@ -253,6 +247,12 @@ test_upgrade_paths() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     wait_for_central_reconciliation
+
+    # Helm upgrade restarts Central and aborts cluster-delete's in-process
+    # deployment purge. Sensor reconnect must bring deploymentCount under
+    # 100 before that restart.
+    upgrade_central_helm_to_head
+    sensor_wait
 
     rm -f FAIL
     remove_qa_test_results
