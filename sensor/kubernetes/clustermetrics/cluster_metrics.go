@@ -41,6 +41,11 @@ const (
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
 type ClusterMetrics interface {
 	common.SensorComponent
+	// SendInitialMetrics triggers the first metrics collection and send
+	// asynchronously. It is intended to be called by ClusterStatusUpdate
+	// after persisting the sensor version, so that the first telemetry
+	// identity event at Central reports the correct version compatibility.
+	SendInitialMetrics()
 }
 
 // New returns a cluster metrics component using defaultInterval.
@@ -115,6 +120,10 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
+func (cm *clusterMetricsImpl) SendInitialMetrics() {
+	go cm.runPipeline()
+}
+
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
@@ -128,7 +137,6 @@ func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}
 func (cm *clusterMetricsImpl) Poll(tickerC <-chan time.Time) {
 	defer cm.stopper.Flow().ReportStopped()
 
-	cm.runPipeline()
 	go func() {
 		for {
 			select {

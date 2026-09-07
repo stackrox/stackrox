@@ -78,14 +78,6 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	metrics := s.createNewClusterMetrics(50 * time.Millisecond)
 	s.Require().NoError(metrics.Start())
 	defer metrics.Stop()
-	// Read the first message. This is needed because we call runPipeline before entering the ticker loop.
-	// This first call will block the goroutine until the message is read.
-	select {
-	case <-metrics.ResponsesC():
-		break
-	case <-time.After(metricsTimeout):
-		s.Fail("timeout waiting for the first message")
-	}
 	for _, state := range states {
 		metrics.Notify(state)
 		s.assertOfflineMode(state, metrics)

@@ -54,6 +54,7 @@ type updaterImpl struct {
 	// This function is needed to be able to mock in test
 	getProviders                     func(context.Context) *storage.ProviderMetadata
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
+	onStatusSent                     func()
 }
 
 func (u *updaterImpl) Name() string {
@@ -144,6 +145,9 @@ func (u *updaterImpl) run() {
 
 	if !u.sendMessage(updateMessage) {
 		return
+	}
+	if u.onStatusSent != nil {
+		u.onStatusSent()
 	}
 
 	deploymentEnvFromMD := deploymentenvs.GetDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
@@ -320,8 +324,9 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 	return nil
 }
 
-// NewUpdater returns a new ready-to-use updater.
-func NewUpdater(client client.Interface) common.SensorComponent {
+// NewUpdater returns a new ready-to-use updater. The optional onStatusSent
+// callback is invoked once after the first status message is sent to Central.
+func NewUpdater(client client.Interface, onStatusSent func()) common.SensorComponent {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &updaterImpl{
@@ -332,5 +337,6 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 		offlineMode:                      offlineMode,
 		getProviders:                     providers.GetMetadata,
 		getProviderMetadataFromOpenShift: getProviderMetadataFromOpenShiftConfig,
+		onStatusSent:                     onStatusSent,
 	}
 }
