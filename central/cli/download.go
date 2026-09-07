@@ -1,17 +1,54 @@
 package cli
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
 const downloadPath = "/assets/downloads/cli"
 
-// Handler returns a handler for serving files from Central's downloads folder
+// Handler for serving roxctl binaries from Central UI.
+// Binaries are stored as .tar.gz and extracted on the fly on each request.
 func Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Need to remove the rest of the URL path so that it just contains the file wanted
-		r.URL.Path = filepath.Base(r.URL.Path)
-		http.FileServer(http.Dir(downloadPath)).ServeHTTP(w, r)
+		filename := filepath.Base(r.URL.Path)
+		if err := serveFromTarball(w, filename); err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+		}
+	}
+}
+
+func serveFromTarball(w http.ResponseWriter, filename string) error {
+	tarPath := filepath.Join(downloadPath, filename+".tar.gz")
+	f, err := os.Open(tarPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = gz.Close() }()
+
+	tr := tar.NewReader(gz)
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			return fmt.Errorf("entry %q not found in tarball", filename)
+		}
+		if hdr.Name == filename {
+			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", hdr.Size))
+			_, err = io.Copy(w, tr)
+			return err
+		}
 	}
 }

@@ -94,9 +94,15 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-COPY bin/roxctl*            /assets/downloads/cli/
-
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+# Raw binaries are accessed via bind mount so they never enter a final image layer.
+# Tarballs are created directly in the downloads directory; the entrypoint binary
+# is copied to /stackrox/roxctl.
+RUN --mount=type=bind,source=bin,target=/tmp/bins \
+    find /tmp/bins -maxdepth 1 -type f -name 'roxctl-*' | while read f; do \
+        name=$(basename "$f"); \
+        tar czf /assets/downloads/cli/$name.tar.gz -C /tmp/bins "$name"; \
+    done && \
+    cp /tmp/bins/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 
