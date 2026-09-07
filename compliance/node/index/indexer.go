@@ -301,6 +301,8 @@ func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *cla
 	}
 	log.Debugf("Claircore found %d packages by PackageDB %v; filter %v kept %d",
 		len(pkgs), byDB, packageDBFilter, len(filtered))
+	log.Infof("TMP INFO Claircore found %d packages by PackageDB %v; filter %v kept %d",
+		len(pkgs), byDB, packageDBFilter, len(filtered))
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
 	}
