@@ -537,13 +537,11 @@ EOT
 
     ######################
     _begin "verifying-central-scanners-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
     _begin "verifying-sensor-scanners-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -564,14 +562,12 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_no_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
     _begin "verifying-sensor-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -629,7 +625,6 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are deployed"
-    verify_no_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
     info "Verifying that scanner V4 is enabled for sensor"
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
@@ -656,7 +651,6 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_no_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
 
@@ -707,7 +701,6 @@ EOT
     export SENSOR_SCANNER_V4_SUPPORT=true
     _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
 
-    verify_no_scannerV2_deployed "$central_namespace"
     verify_scannerV4_deployed "$central_namespace"
     verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
@@ -742,7 +735,6 @@ EOT
 
     _begin "verify"
 
-    verify_no_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
@@ -785,7 +777,6 @@ EOT
 
     _begin "verify"
 
-    verify_no_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
@@ -820,11 +811,9 @@ EOT
 
     _begin "verify"
 
-    verify_no_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
-    verify_no_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -933,7 +922,6 @@ EOT
 
     _begin "verify"
 
-    verify_no_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
