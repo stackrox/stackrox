@@ -1769,6 +1769,23 @@ EOF
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=6
 
+    # A freshly created load balancer can take minutes before its hostname resolves
+    # in DNS (observed ~3 min lag for central-nlb on IPv6 EKS). Wait for resolution
+    # up front so the DNS lag does not eat into the outer time budget of this
+    # command. IP endpoints and hosts without getent (macOS) skip the wait.
+    if [[ "${API_HOSTNAME}" == *[[:alpha:]]* ]] && command -v getent >/dev/null 2>&1; then
+        dns_wait_start="$(date '+%s')"
+        dns_wait_deadline=$((dns_wait_start + 300))
+        until getent ahosts "${API_HOSTNAME}" >/dev/null 2>&1; do
+            if [[ "$(date '+%s')" -gt "${dns_wait_deadline}" ]]; then
+                info "DNS name ${API_HOSTNAME} did not resolve within 300s; continuing with ping attempts."
+                break
+            fi
+            info "Waiting for ${API_HOSTNAME} to resolve in DNS..."
+            sleep 5
+        done
+    fi
+
     info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
 
     set +e
