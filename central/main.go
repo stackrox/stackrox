@@ -591,7 +591,7 @@ func startGRPCServer() {
 	}
 
 	if features.ACMAccessControlDelegation.Enabled() {
-		authProviderBackendFactories[oidc.TypeNameWithACMAccessControlDelegation] = openshift.NewFactory
+		authProviderBackendFactories[oidc.TypeNameWithACMAccessControlDelegation] = oidc.NewFactory
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
