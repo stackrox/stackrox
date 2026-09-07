@@ -56,33 +56,6 @@ central:
       {{- index .SecretsBase64Map "default-tls.key" | b64dec | nindent 6 }}
   {{- end }}
 
-scanner:
-  {{- if ne (index .SecretsBase64Map "scanner-db-password") "" }}
-  # Password for securing the communication between Scanner and its DB.
-  # This password is not relevant to the user (unless for debugging purposes);
-  # it merely acts as a pre-shared, random secret for securing the connection.
-  dbPassword:
-    value: {{ index .SecretsBase64Map "scanner-db-password" | b64dec }}
-  {{- end }}
-
-  {{- if ne (index .SecretsBase64Map "scanner-cert.pem") "" }}
-  # Internal "scanner.stackrox.svc" service TLS certificate.
-  serviceTLS:
-    cert: |
-      {{- index .SecretsBase64Map "scanner-cert.pem" | b64dec | nindent 6 }}
-    key: |
-      {{- index .SecretsBase64Map "scanner-key.pem" | b64dec | nindent 6 }}
-  {{- end }}
-
-  {{- if ne (index .SecretsBase64Map "scanner-db-cert.pem") "" }}
-  # Internal "scanner-db.stackrox" service TLS certificate.
-  dbServiceTLS:
-    cert: |
-      {{- index .SecretsBase64Map "scanner-db-cert.pem" | b64dec | nindent 6 }}
-    key: |
-      {{- index .SecretsBase64Map "scanner-db-key.pem" | b64dec | nindent 6 }}
-  {{- end }}
-
 scannerV4:
   # Password for securing the communication between Scanner and its DB.
   # This password is not relevant to the user (unless for debugging purposes);
