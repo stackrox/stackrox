@@ -51,6 +51,11 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/lib.sh validate_image_tag "$TAG"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -202,6 +207,11 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/lib.sh validate_image_tag "$TAG"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -351,6 +361,11 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
+
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
       with:
