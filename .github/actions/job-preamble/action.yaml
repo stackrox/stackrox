@@ -11,23 +11,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Validate image tag env vars
-      shell: bash
-      run: |
-        validate_image_tag() {
-          local name="$1"
-          local value="${!name:-}"
-          if [[ -z "$value" ]]; then
-            return 0
-          fi
-          if [[ "$value" =~ [[:space:]] ]]; then
-            echo "::error title=Invalid ${name}::${name} contains whitespace; image tags must not include spaces, tabs, or newlines."
-            exit 1
-          fi
-        }
-        validate_image_tag MAIN_IMAGE_TAG
-        validate_image_tag BUILD_TAG
-
     # auth prepares the gcp environment to authenticate.
     - name: Auth gcloud
       # Skip for external contributions.
