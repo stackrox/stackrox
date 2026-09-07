@@ -229,6 +229,10 @@ test_upgrade_paths() {
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
 
+    # Cluster delete returns before its background deployment purge
+    # finishes. Helm upgrade restarts Central and would abort that purge.
+    wait_for_central_reconciliation
+
     upgrade_central_helm_to_head
 
     info "Fetching a sensor bundle for cluster 'remote'"

@@ -8,10 +8,9 @@ set -euo pipefail
 wait_for_central_reconciliation() {
     info "Waiting for central reconciliation"
 
-    # Reconciliation is rather slow in this case, since the central has a DB with a bunch of deployments,
-    # none of which exist. So when sensor connects, the reconciliation deletion takes a while to flush.
-    # This causes flakiness with the smoke tests.
-    # To mitigate this, wait for the deployments to get deleted before running the tests.
+    # Cluster delete flushes deployments in a background goroutine that a
+    # Central restart aborts. Sensor reconnect flushes via reconciliation.
+    # Smoke flakes if either leftover count is still high.
     local success=0
     for i in $(seq 1 90); do
         local numDeployments
