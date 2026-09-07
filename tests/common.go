@@ -871,7 +871,7 @@ func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName,
 			return fmt.Errorf("executing command %v in pod %q: %w: %s", command, podName, err, string(output))
 		}
 		return nil
-	}, 3*time.Second, "kubectl exec failed, retrying")
+	}, 10*time.Second, "kubectl exec failed, retrying")
 
 	t.Logf("Executed command %v in pod %q (deployment %q)", command, lastPod, deploymentName)
 }
