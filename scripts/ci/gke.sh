@@ -221,6 +221,8 @@ create_cluster() {
                 info "An error occurred deleting the cluster: $?"
                 true
             }
+        else
+            gcloud container clusters describe "${CLUSTER_NAME}" || true
         fi
     done
 
