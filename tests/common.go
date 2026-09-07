@@ -1110,7 +1110,12 @@ func mustEventually(t *testing.T, ctx context.Context, f func() error, pauseInte
 		retry.Tries(math.MaxInt),
 		retry.WithContext(ctx),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(pauseInterval)
+			timer := time.NewTimer(pauseInterval)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+			}
 		}),
 		retry.OnFailedAttempts(func(err error) { logf(t, failureMsgPrefix+": %s", err) })))
 }
