@@ -508,6 +508,51 @@ func TestCVESuppressionV2(t *testing.T) {
 	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.GetScan().GetComponents()[0].GetVulns()[0].GetState())
 }
 
+// TestEnrichImageV2_ScanStatsRecomputedOnNewScan reproduces the exact object flow used
+// by the image reprocessor (central/reprocessor/reprocessor.go): an ImageV2 fetched
+// from the datastore (so ScanStats is already populated from its previous scan) is
+// passed into EnrichImage, which finds a genuinely new scan. ScanStats must be
+// recomputed to match the new scan (ROX-36389).
+func TestEnrichImageV2_ScanStatsRecomputedOnNewScan(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	ctrl := gomock.NewController(t)
+
+	fsr := newFakeRegistryScanner(opts{})
+	registrySet := registryMocks.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	enricherImpl := newEnricherV2(set, mockReporter)
+
+	img := &storage.ImageV2{
+		Id:        utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		Digest:    "sha",
+		Name:      &storage.ImageName{Registry: "reg", FullName: "reg"},
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 99},
+	}
+
+	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
+	require.NoError(t, err)
+	assert.True(t, results.ImageUpdated)
+
+	// The fake scanner always returns a scan with exactly 1 CVE.
+	require.Len(t, img.GetScan().GetComponents(), 1)
+	require.Len(t, img.GetScan().GetComponents()[0].GetVulns(), 1)
+
+	assert.Equal(t, int32(1), img.GetScanStats().GetCveCount())
+}
+
 func TestZeroIntegrationsV2(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	ctrl := gomock.NewController(t)

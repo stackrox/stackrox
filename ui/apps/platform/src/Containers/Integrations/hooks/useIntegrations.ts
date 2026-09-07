@@ -5,6 +5,7 @@ import { fetchIntegration, isServiceIntegrationSource } from 'services/Integrati
 import { fetchAPITokens } from 'services/APITokensService';
 import { fetchMachineAccessConfigs } from 'services/MachineAccessService';
 import { fetchCloudSources } from 'services/CloudSourceService';
+import { fetchAiIntegrations } from 'services/AiIntegrationsService';
 
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -65,6 +66,16 @@ function extractIntegrations(
             }
             return cloudSources;
         }
+        case 'aiIntegrations': {
+            const aiIntegrations = data.integrations ?? [];
+            if (type === 'lightspeed') {
+                return aiIntegrations.filter(
+                    (integration) =>
+                        (integration as { type: string }).type === 'AI_INTEGRATION_TYPE_OLS'
+                );
+            }
+            return aiIntegrations;
+        }
         case 'apiClients':
             return [];
         default:
@@ -85,6 +96,9 @@ const useIntegrations = ({ source, type }: UseIntegrationsParams): UseIntegratio
         }
         if (source === 'cloudSources') {
             return fetchCloudSources();
+        }
+        if (source === 'aiIntegrations') {
+            return fetchAiIntegrations();
         }
         if (source === 'apiClients') {
             return Promise.resolve<Record<string, unknown>>({});

@@ -1,8 +1,15 @@
+import qs from 'qs';
+
 import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
-import type { SearchQueryOptions } from 'types/search';
-import { applyRegexSearchModifiers, buildNestedRawQueryParams } from 'utils/searchUtils';
+import type { Advisory } from 'types/vulnerability.proto';
+import type { SearchFilter, SearchQueryOptions } from 'types/search';
+import {
+    applyRegexSearchModifiers,
+    buildNestedRawQueryParams,
+    getRequestQueryStringForSearchFilter,
+} from 'utils/searchUtils';
 
 // Legacy API (v2/virtualmachines)
 
@@ -136,6 +143,18 @@ export type ListVMCVEAffectedVMsResponse = {
     totalCount: number;
 };
 
+export type VMCVEComponentRow = {
+    componentName: string;
+    componentVersion: string;
+    source: SourceType;
+    fixedBy: string;
+    advisory: Advisory | null;
+};
+
+export type GetVMCVEComponentsResponse = {
+    components: VMCVEComponentRow[];
+};
+
 export type VMCVEByVMRow = {
     cve: string;
     severity: VulnerabilitySeverity;
@@ -147,12 +166,18 @@ export type VMCVEByVMRow = {
     publishedOn?: string;
     summary: string;
     link: string;
-    advisory?: { name: string; link: string };
+    advisory: Advisory | null;
 };
 
 export type ListVMCVEsByVMResponse = {
     cves: VMCVEByVMRow[];
     totalCount: number;
+};
+
+export type VMVulnSummary = {
+    severityCounts: VulnCountBySeverity;
+    fixableCount: number;
+    notFixableCount: number;
 };
 
 export type VMComponentScanStatus =
@@ -226,32 +251,92 @@ export function listVMs({
     perPage,
     searchFilter,
 }: SearchQueryOptions): Promise<ListVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        sortOption,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
 
-export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage });
+export function listVMCVEs({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+}: SearchQueryOptions): Promise<ListVMCVEsResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
         .then((response) => response.data);
 }
 
-export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+export function getVMCVEDetail(cveId: string, searchFilter: SearchFilter): Promise<VMCVEDetail> {
+    // Might consider updating buildNestedRawQueryParams to handle this case (no pagination).
+    const params = qs.stringify(
+        {
+            query: {
+                query: getRequestQueryStringForSearchFilter(
+                    applyRegexSearchModifiers(searchFilter)
+                ),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
     return axios
-        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}?${params}`)
         .then((response) => response.data);
 }
 
 export function listVMCVEAffectedVMs(
     cveId: string,
-    { sortOption, page, perPage }: SearchQueryOptions
+    { searchFilter, sortOption, page, perPage }: SearchQueryOptions
 ): Promise<ListVMCVEAffectedVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        sortOption,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
+        .then((response) => response.data);
+}
+
+export function getVMCVEComponents(
+    vmId: string,
+    cveId: string
+): Promise<GetVMCVEComponentsResponse> {
+    return axios
+        .get<GetVMCVEComponentsResponse>(`/v2/virtualmachines/${vmId}/cves/${cveId}/components`)
+        .then((response) => response.data);
+}
+
+// Might consider updating buildNestedRawQueryParams to handle this case (no pagination).
+export function getVMVulnSummary(
+    virtualMachineId: string,
+    searchFilter: SearchFilter
+): Promise<VMVulnSummary> {
+    const params = qs.stringify(
+        {
+            query: {
+                query: getRequestQueryStringForSearchFilter(
+                    applyRegexSearchModifiers(searchFilter)
+                ),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<VMVulnSummary>(`/v2/virtualmachines/${virtualMachineId}/vuln-summary?${params}`)
         .then((response) => response.data);
 }
 
@@ -286,5 +371,5 @@ export function listVMComponents(
 }
 
 export function getVM(vmId: string): Promise<VMDetail> {
-    return axios.get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`).then((response) => response.data);
+    return axios.get<VMDetail>(`/v2/virtualmachines/${vmId}`).then((response) => response.data);
 }

@@ -3,6 +3,7 @@ package walker
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/postgres"
@@ -82,7 +83,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 		}
 	} else {
 		// Child table: add parent FK fields and idx column.
-		var additionalFields []Field
+		additionalFields := make([]Field, 0, len(parentPrimaryKeys)+1)
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
 			var columnNameInChildForCodeVariables string
@@ -114,7 +115,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			})
 		}
 		additionalFields = append(additionalFields, getIdxField(s))
-		s.Fields = append(additionalFields, s.Fields...)
+		s.Fields = slices.Concat(additionalFields, s.Fields)
 	}
 
 	if len(s.Children) > 0 {

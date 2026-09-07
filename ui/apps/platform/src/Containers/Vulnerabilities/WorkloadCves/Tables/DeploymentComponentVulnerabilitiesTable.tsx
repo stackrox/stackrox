@@ -10,6 +10,7 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
+import { getOriginDisplayName } from '../../utils/vulnerabilityUtils';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
@@ -37,6 +38,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             cvss
             scoreVersion
             fixedByVersion
+            origin
             advisory {
                 name
                 link
@@ -68,8 +70,10 @@ function DeploymentComponentVulnerabilitiesTable({
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
-    const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
+    const colSpanForDockerfileLayer =
+        8 + (isAdvisoryColumnEnabled ? 1 : 0) + (isOriginColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
@@ -89,6 +93,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
+                    {isOriginColumnEnabled && <Th>CVE origin</Th>}
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -101,6 +106,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     cvss,
                     scoreVersion,
                     fixedByVersion,
+                    origin,
                     advisory,
                     location,
                     source,
@@ -161,6 +167,9 @@ function DeploymentComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
+                            {isOriginColumnEnabled && (
+                                <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
+                            )}
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>

@@ -24,14 +24,16 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
+import {
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
+} from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 
-import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
@@ -39,23 +41,21 @@ import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useTableSelection from 'hooks/useTableSelection';
-import pluralize from 'pluralize';
 import HelpIconTh from 'Components/HelpIconTh';
 import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { reportDownloadURL } from 'services/ReportsService';
-import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
+import { deleteReportConfiguration, reportDownloadURL } from 'services/ReportsService';
+import type {
+    ImageVulnerabilityReportConfiguration,
+    ImageVulnerabilityReportResourceScope,
+} from 'services/ReportsService.types';
 
-import type { ImageVulnerabilityResourceScope } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.types';
+import useDeleteModal from '../hooks/useDeleteModal';
+import DeleteReportsModal from '../../Reports/components/DeleteReportsModal';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
-import useDeleteModal, {
-    isErrorDeleteResult,
-    isSuccessDeleteResult,
-} from '../hooks/useDeleteModal';
-import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -65,7 +65,7 @@ function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfig
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityConfigurationsReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityImageConfigurationsReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -151,6 +151,7 @@ function ConfigReportsTab() {
         deleteResults,
         reportIdsToDelete,
     } = useDeleteModal({
+        deleteFunction: deleteReportConfiguration,
         onCompleted: () => {
             onClearAllSelected();
             fetchReports();
@@ -159,7 +160,7 @@ function ConfigReportsTab() {
 
     // Because callback function exists independent of conditional rendering,
     // TypeScript does not know for sure that it is has a collectionScope property.
-    function onClickCollectionLink(resourceScope: ImageVulnerabilityResourceScope) {
+    function onClickCollectionLink(resourceScope: ImageVulnerabilityReportResourceScope) {
         if ('collectionScope' in resourceScope) {
             setCollectionModalId(resourceScope.collectionScope.collectionId);
         }
@@ -169,8 +170,6 @@ function ConfigReportsTab() {
         const selectedIds = getSelectedIds();
         openDeleteModal(selectedIds);
     }
-
-    const numSuccessfulDeletions = deleteResults?.filter(isSuccessDeleteResult).length || 0;
 
     return (
         <>
@@ -385,7 +384,7 @@ function ConfigReportsTab() {
                         )}
                         {reportConfigurations.map((report, rowIndex) => {
                             const vulnReportURL = generatePath(
-                                vulnerabilityConfigurationReportDetailsPath,
+                                vulnerabilityImageConfigurationsReportsDetailsPath,
                                 {
                                     reportId: report.id,
                                 }
@@ -525,54 +524,15 @@ function ConfigReportsTab() {
                     </Table>
                 )}
             </PageSection>
-            <DeleteModal
-                title={`Permanently delete (${reportIdsToDelete.length}) ${pluralize(
-                    'report',
-                    reportIdsToDelete.length
-                )}?`}
+            <DeleteReportsModal
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
-            >
-                <AlertGroup>
-                    {numSuccessfulDeletions > 0 && (
-                        <Alert
-                            isInline
-                            variant="success"
-                            title={`Successfully deleted ${numSuccessfulDeletions} ${pluralize(
-                                'report',
-                                numSuccessfulDeletions
-                            )}`}
-                            component="p"
-                            className="pf-v6-u-mb-sm"
-                        />
-                    )}
-                    {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
-                        const report = reportConfigurations?.find(
-                            (reportConfig) => reportConfig.id === deleteResult.id
-                        );
-                        if (!report) {
-                            return null;
-                        }
-                        return (
-                            <Alert
-                                isInline
-                                variant="danger"
-                                title={`Failed to delete "${report.name}"`}
-                                component="p"
-                                className="pf-v6-u-mb-sm"
-                            >
-                                {deleteResult.error}
-                            </Alert>
-                        );
-                    })}
-                </AlertGroup>
-                <p>
-                    The selected report(s) and any attached downloadable reports will be permanently
-                    deleted. The action cannot be undone.
-                </p>
-            </DeleteModal>
+                reportIdsToDelete={reportIdsToDelete}
+                deleteResults={deleteResults}
+                reportConfigurations={reportConfigurations}
+            />
             {collectionModalId && (
                 <CollectionsFormModal
                     hasWriteAccessForCollections={false}

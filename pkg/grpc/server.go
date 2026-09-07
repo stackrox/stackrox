@@ -365,7 +365,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
 	}
 
-	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
+	contextUpdaters := make([]contextutil.ContextUpdater, 0, 1+len(a.config.PreAuthContextEnrichers))
+	contextUpdaters = append(contextUpdaters, authn.ContextUpdater(a.config.IdentityExtractors...))
 	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
 	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, contextutil.HTTPInterceptor(contextUpdaters...))
 

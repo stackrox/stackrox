@@ -27,7 +27,7 @@ func initialize() {
 	}
 	collectionDatastore, _ := collectionDS.Singleton()
 	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton(), scheduler,
-		blobDS.Singleton(), validation.Singleton())
+		blobDS.Singleton(), validation.Singleton(), globaldb.GetPostgres())
 }
 
 // Singleton provides the instance of the service to register.

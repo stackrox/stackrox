@@ -59,6 +59,7 @@ func init() {
 				"images(query: String, pagination: Pagination): [Image!]!",
 				"operatingSystem: String!",
 				"vulnerabilityState: String!",
+				"origin: String!",
 				"nvdCvss: Float!",
 				"nvdScoreVersion: String!",
 			)),
@@ -86,6 +87,7 @@ type ImageVulnerabilityResolver interface {
 	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	OperatingSystem(ctx context.Context) string
 	VulnerabilityState(ctx context.Context) string
+	Origin(ctx context.Context) string
 	Nvdcvss(ctx context.Context) float64
 	NvdScoreVersion(ctx context.Context) string
 }

@@ -40,7 +40,7 @@ func TestSendGetReport_Success(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-1"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{
 				IndexReport: &v4.IndexReport{HashId: "test-hash"},
@@ -49,14 +49,14 @@ func TestSendGetReport_Success(t *testing.T) {
 	}, func(req *pb.VMServiceRequest) {
 		assert.NotEmpty(t, req.GetMeta().GetRequestId())
 		assert.Equal(t, []string{CapabilityReportV1}, req.GetMeta().GetCapabilities())
-		assert.Equal(t, uint32(0), req.GetGetReport().GetLastKnownGeneration())
+		assert.Empty(t, req.GetGetReport().GetLastKnownToken())
 	})
 
-	result, err := client.GetReport(context.Background(), clientConn, 0, 0)
+	result, err := client.GetReport(context.Background(), clientConn, "")
 	require.NoError(t, err)
 	assert.Equal(t, "test-hash", result.IndexReport.GetHashId())
 	assert.False(t, result.Unchanged)
-	assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
+	assert.Equal(t, "tok-1", result.Meta.GetReportToken())
 }
 
 func TestSendGetReport_Unchanged(t *testing.T) {
@@ -65,20 +65,19 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 5},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-5"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{Unchanged: true},
 		},
 	}, func(req *pb.VMServiceRequest) {
-		assert.Equal(t, uint32(5), req.GetGetReport().GetLastKnownGeneration())
-		assert.Equal(t, uint32(42), req.GetGetReport().GetKnownEpoch())
+		assert.Equal(t, "tok-5", req.GetGetReport().GetLastKnownToken())
 	})
 
-	result, err := client.GetReport(context.Background(), clientConn, 5, 42)
+	result, err := client.GetReport(context.Background(), clientConn, "tok-5")
 	require.NoError(t, err)
 	assert.Nil(t, result.IndexReport)
 	assert.True(t, result.Unchanged)
-	assert.Equal(t, uint32(5), result.Meta.GetReportGeneration())
+	assert.Equal(t, "tok-5", result.Meta.GetReportToken())
 }
 
 func TestSendGetReport_NilReportRejected(t *testing.T) {
@@ -87,13 +86,13 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 	defer utils.IgnoreError(clientConn.Close)
 
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
-		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportToken: "tok-1"},
 		Result: &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{},
 		},
 	}, nil)
 
-	_, err := client.GetReport(context.Background(), clientConn, 0, 0)
+	_, err := client.GetReport(context.Background(), clientConn, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "IndexReport is nil")
 }
@@ -121,10 +120,38 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			wantErr:   ErrInternal,
 			wantInMsg: "scan crashed",
 		},
+		"should wrap ErrMalformedRequest for MALFORMED_REQUEST": {
+			code:      pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST,
+			message:   "empty request_id",
+			wantErr:   ErrMalformedRequest,
+			wantInMsg: "empty request_id",
+		},
+		"should wrap ErrRequestTooLarge for REQUEST_TOO_LARGE": {
+			code:      pb.ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE,
+			message:   "payload exceeds 10MB limit",
+			wantErr:   ErrRequestTooLarge,
+			wantInMsg: "10MB",
+		},
 		"should wrap ErrBusy for BUSY": {
-			code:    pb.ErrorCode_ERROR_CODE_BUSY,
-			message: "agent is already serving another request",
-			wantErr: ErrBusy,
+			code:      pb.ErrorCode_ERROR_CODE_BUSY,
+			message:   "agent is already serving another request",
+			wantErr:   ErrBusy,
+			wantInMsg: "another request",
+		},
+		"should wrap ErrUnknownAgentError for UNSPECIFIED": {
+			code:    pb.ErrorCode_ERROR_CODE_UNSPECIFIED,
+			message: "",
+			wantErr: ErrUnknownAgentError,
+		},
+		"should wrap ErrMappingRequired for MAPPING_REQUIRED": {
+			code:    pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED,
+			message: "repository-to-CPE mapping not yet available",
+			wantErr: ErrMappingRequired,
+		},
+		"should wrap ErrMappingNotSensorManaged for MAPPING_NOT_SENSOR_MANAGED": {
+			code:    pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED,
+			message: "url-managed",
+			wantErr: ErrMappingNotSensorManaged,
 		},
 	}
 	for name, tc := range cases {
@@ -140,12 +167,93 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 				},
 			}, nil)
 
-			_, err := client.GetReport(context.Background(), clientConn, 0, 0)
+			_, err := client.GetReport(context.Background(), clientConn, "")
 			require.Error(t, err)
 			assert.ErrorIs(t, err, tc.wantErr)
 			if tc.wantInMsg != "" {
 				assert.Contains(t, err.Error(), tc.wantInMsg)
 			}
+		})
+	}
+}
+
+// TestSendGetReport_ErrorCarriesMeta verifies that an error response's Meta
+// is still returned alongside the error, not dropped: MAPPING_REQUIRED is
+// the only way a VM with no mapping at all can tell Sensor it needs one.
+func TestSendGetReport_ErrorCarriesMeta(t *testing.T) {
+	client := NewClient(nil, 10<<20)
+	clientConn, agentConn := net.Pipe()
+	defer utils.IgnoreError(clientConn.Close)
+
+	go serveOnce(t, agentConn, &pb.VMServiceResponse{
+		Meta: &pb.ResponseMeta{
+			AgentVersion:             "test-agent",
+			RepoCpeMappingHash:       new(""),
+			RepoCpeMappingUpdatePath: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR.Enum(),
+		},
+		Result: &pb.VMServiceResponse_Error{
+			Error: &pb.ErrorResponse{Code: pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED, Message: "no mapping yet"},
+		},
+	}, nil)
+
+	result, err := client.GetReport(context.Background(), clientConn, "")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrMappingRequired)
+	require.NotNil(t, result, "error result must still carry Meta")
+	require.NotNil(t, result.Meta)
+	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR, result.Meta.GetRepoCpeMappingUpdatePath())
+	assert.Empty(t, result.Meta.GetRepoCpeMappingHash())
+}
+
+func TestSendSyncRepoCPEMapping(t *testing.T) {
+	cases := map[string]struct {
+		resp        *pb.VMServiceResponse
+		wantUpdated bool
+		wantErr     error
+	}{
+		"should report updated true on success": {
+			resp: &pb.VMServiceResponse{
+				Meta:   &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: true}},
+			},
+			wantUpdated: true,
+		},
+		"should report updated false when the mapping already matched": {
+			resp: &pb.VMServiceResponse{
+				Meta:   &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: false}},
+			},
+			wantUpdated: false,
+		},
+		"should wrap ErrMappingNotSensorManaged when the agent is URL-managed": {
+			resp: &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{Code: pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED, Message: "url-managed"},
+				},
+			},
+			wantErr: ErrMappingNotSensorManaged,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			client := NewClient(nil, 10<<20)
+			clientConn, agentConn := net.Pipe()
+			defer utils.IgnoreError(clientConn.Close)
+
+			go serveOnce(t, agentConn, tc.resp, func(req *pb.VMServiceRequest) {
+				assert.Equal(t, []byte("mapping-bytes"), req.GetSyncRepoCpeMapping().GetMapping())
+			})
+
+			updated, meta, err := client.SyncRepoCPEMapping(context.Background(), clientConn, []byte("mapping-bytes"))
+			if tc.wantErr != nil {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantUpdated, updated)
+			assert.Equal(t, "test-agent", meta.GetAgentVersion())
 		})
 	}
 }
@@ -171,7 +279,7 @@ func TestSendGetReport_ContextCancelUnblocks(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		_, err := client.GetReport(ctx, clientConn, 0, 0)
+		_, err := client.GetReport(ctx, clientConn, "")
 		errCh <- err
 	}()
 

@@ -30,8 +30,15 @@ test_vm_scanning_e2e() {
 
     if ! ensure_virtctl_binary; then
         if is_CI; then
-            warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
-            ensure_virtctl_binary_insecure
+            if [[ "${_VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP:-0}" != 1 ]]; then
+                warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
+                ensure_virtctl_binary_insecure || true
+            fi
+            if ! command -v virtctl >/dev/null; then
+                warn "Cluster ConsoleCLIDownload did not serve virtctl. Falling back to the matching KubeVirt GitHub release."
+                _install_virtctl_from_kubevirt_release \
+                    || die "Failed to install virtctl from cluster ConsoleCLIDownload and KubeVirt GitHub release"
+            fi
         else
             die "Secure virtctl download failed. Refusing insecure curl -k fallback outside CI. Set VIRTCTL_PATH or fix cluster ingress trust material."
         fi

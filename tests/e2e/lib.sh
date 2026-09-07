@@ -443,7 +443,10 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
+    ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
+    ci_export ROX_LIGHTSPEED_RISK_SUMMARY "${ROX_LIGHTSPEED_RISK_SUMMARY:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -620,8 +623,14 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
+    customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
     customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
+    customize_envVars+=$'\n      - name: ROX_AI_INTEGRATIONS'
+    customize_envVars+=$'\n        value: "'"${ROX_AI_INTEGRATIONS}"'"'
+    customize_envVars+=$'\n      - name: ROX_LIGHTSPEED_RISK_SUMMARY'
+    customize_envVars+=$'\n        value: "'"${ROX_LIGHTSPEED_RISK_SUMMARY}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
@@ -1859,28 +1868,16 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}"
         check_deployment=true
-    else
-        local build_results="build results are unknown"
-        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
-            build_results="$(cat "${STATE_BUILD_RESULTS}")"
-        fi
-        read -r -d '' build_details <<- _EO_DETAILS_ || true
-Check the build workflow runs on GitHub:
-${build_results}
-_EO_DETAILS_
-        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
+    *gke-upgrade-tests*)
         record_upgrade_test_progess
         ;;
     *operator-e2e-tests|*-version-compatibility-tests|*-nongroovy-compatibility-tests)
@@ -1913,13 +1910,16 @@ record_upgrade_test_progess() {
     # tracking files that the upgrade test leaves in its wake as it progresses.
 
     # tests/upgrade/postgres_sensor_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
-        "postgres_sensor_run" "roxctl sensor bundle test"
-    record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
-        "postgres_sensor_run" "bin/upgrader tests"
+    if [[ "$CI_JOB_NAME" == "gke-upgrade-tests-sensor" ]]; then
+        record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
+            "postgres_sensor_run" "roxctl sensor bundle test"
+        record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
+            "postgres_sensor_run" "bin/upgrader tests"
+        return
+    fi
 
-    # tests/upgrade/postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
+    # tests/upgrade/postgres_run.sh and tests/upgrade/postgres_upgrade_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${STATE_DEPLOYED}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
         "postgres_run" "Deployed earlier postgres central"
@@ -1927,6 +1927,9 @@ record_upgrade_test_progess() {
         "postgres_run" "Bounced central"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" \
         "postgres_run" "Bounced central-db"
+
+    # tests/upgrade/postgres_run.sh only
+    [[ "$CI_JOB_NAME" == "gke-upgrade-tests-central" ]] || return
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" \
         "postgres_run" "Test migrations with an upgrade to current"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" \

@@ -128,11 +128,14 @@ var (
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING", enabled)
 
+	// VulnerabilityReportStreamingDownload enables streaming downloadable vulnerability reports directly to blob storage.
+	VulnerabilityReportStreamingDownload = registerFeature("Enables streaming downloadable vulnerability reports to blob storage", "ROX_VULNERABILITY_REPORT_STREAMING_DOWNLOAD", enabled)
+
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
 	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
-	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
@@ -146,11 +149,17 @@ var (
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
-	// SensorCompatibilityStatus enables sensor compatibility status UI in place of sensor upgrade status
-	SensorCompatibilityStatus = registerFeature("Display sensor compatibility status instead of sensor upgrade status", "ROX_SENSOR_COMPATIBILITY_STATUS")
-
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
 	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+
+	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
+	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
+
+	// AIIntegrations enables AI integrations management
+	AIIntegrations = registerFeature("Enable AI integrations management", "ROX_AI_INTEGRATIONS")
+
+	// LightspeedRiskSummary enables Lightspeed AI risk summary
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
 )
 
 // The following feature flags are related to Scanner V4.
@@ -197,7 +206,7 @@ var (
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
-	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING", enabled)
 
 	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)

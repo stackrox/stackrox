@@ -14,7 +14,7 @@ function ClusterStatus({ healthStatus }: ClusterStatusProps): ReactElement {
     const { overallHealthStatus = 'UNAVAILABLE' } = healthStatus ?? {};
 
     const { Icon, fgColor } = healthStatusStyles[overallHealthStatus];
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon />;
 
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>

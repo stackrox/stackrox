@@ -1,9 +1,9 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:3ca2c34c83e6563fa574b7c7ecda92a5fdae2ec7a5f37a408e5e383947fb1957 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:e74b03198cccc24c24a27071ad4d6c2edcfe0bb10c6de99c609ce6e3c06d6d04 AS go-builder
 
-RUN dnf -y install --allowerasing jq
+RUN dnf -y install --allowerasing jq pigz
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -36,8 +36,15 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 
 RUN make copy-go-binaries-to-image-dir
 
+RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
+    shopt -s nullglob && \
+    for f in roxctl-*; do \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
+    done
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:4c44b8f1cfbfc36b900216809eeb6ae49f4f7b90fe1d47d66ab6be1cb5ee58d4 as ui-builder
+
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:a38a749f3a37a1c033932b4c13f3052f4958aa0eb7dbb0761cb3b5536ffe6878 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,9 +66,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:7e7f79ab747bf2b452e3043dd89f388e92be4c7fdcc8b815b58adf6c99c39c95 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:f332c99eb8f798a8486821c91937f10ad64ee83d7e739303be2df051040918f6 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:b8c53f907b7ea8934d6bb23b319ca7b5ab567e61a0806ffc80170631cabc7563 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:25a147defd01e19674714f55d17538c8dbe55d8c305fa157ecc3f9c8977b05b6 AS package_installer
 
 ARG PG_VERSION
 

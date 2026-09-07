@@ -479,13 +479,15 @@
           "format": "int32"
         },
         "scanInline": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "always true since 4.9"
         },
         "disableBypass": {
           "type": "boolean"
         },
         "enforceOnUpdates": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "same as enabled since 4.9"
         }
       }
     },

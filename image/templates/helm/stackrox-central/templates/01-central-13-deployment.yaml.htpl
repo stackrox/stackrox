@@ -155,6 +155,10 @@ spec:
           value: "false"
         {{- end }}
         [<- end >]
+        {{- if ._rox.centralWorker.enabled }}
+        - name: ROX_CENTRAL_WORKER_ENABLED
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog

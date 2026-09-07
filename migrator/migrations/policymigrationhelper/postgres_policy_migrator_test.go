@@ -357,7 +357,7 @@ func (s *postgresPolicyMigratorTestSuite) getAllCategories(ctx context.Context) 
 	}
 	categoryMap := make(map[string]string, len(categories))
 	for _, c := range categories {
-		categoryMap[c.Name] = c.Id
+		categoryMap[c.GetName()] = c.GetId()
 	}
 	return categoryMap, nil
 }

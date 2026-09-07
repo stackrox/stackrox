@@ -30,6 +30,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
+	UpsertWithWriter(ctx context.Context, tx *pgPkg.Tx, obj *storage.Blob, writeFn func(io.Writer) error) error
 	Delete(ctx context.Context, name string) error
 }
 
@@ -137,6 +138,81 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 		return wrapRollback(ctx, tx, errors.Wrapf(err, "error upserting blob %q", obj.GetName()))
 	}
 	return tx.Commit(ctx)
+}
+
+// UpsertWithWriter writes a blob using the caller's transaction and a callback
+// that writes directly to the large object. The caller is responsible for
+// committing or rolling back the transaction. ctx must already carry the
+// transaction (via postgres.ContextWithTx) so that internal store operations
+// reuse the same connection. writeFn receives a writer backed by the PostgreSQL
+// large object; all writes happen on the calling goroutine, so the caller can
+// safely interleave other operations on the same transaction (e.g. cursor reads).
+func (s *storeImpl) UpsertWithWriter(ctx context.Context, tx *pgPkg.Tx, obj *storage.Blob, writeFn func(io.Writer) error) error {
+	if err := sac.VerifyAuthzOK(scopeChecker.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	existingBlob, exists, err := s.store.Get(ctx, obj.GetName())
+	if err != nil {
+		return err
+	}
+
+	los := tx.LargeObjects()
+	var lo *pgx.LargeObject
+	if exists {
+		lo, err = los.Open(ctx, existingBlob.GetOid(), pgx.LargeObjectModeWrite)
+		if err != nil {
+			return errors.Wrapf(err, "opening blob with oid %d", existingBlob.GetOid())
+		}
+		if err := lo.Truncate(0); err != nil {
+			return errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid())
+		}
+		obj.Oid = existingBlob.GetOid()
+	} else {
+		oid, err := los.Create(ctx, 0)
+		if err != nil {
+			return errors.Wrap(err, "error creating new blob")
+		}
+		lo, err = los.Open(ctx, oid, pgx.LargeObjectModeWrite)
+		if err != nil {
+			return errors.Wrapf(err, "opening blob with oid %d", oid)
+		}
+		obj.Oid = oid
+	}
+
+	cw := &countingWriter{w: lo}
+	if err := writeFn(cw); err != nil {
+		return err
+	}
+
+	if err := lo.Close(); err != nil {
+		return errors.Wrap(err, "closing large object for blob")
+	}
+	if obj.GetLength() < 0 {
+		obj.Length = cw.n
+	} else if cw.n != obj.GetLength() {
+		return errors.Errorf("Blob metadata mismatch. Blob metadata shows %d in length, but data has length of %d", obj.GetLength(), cw.n)
+	}
+
+	if err := s.store.Upsert(ctx, obj); err != nil {
+		return errors.Wrapf(err, "error upserting blob %q", obj.GetName())
+	}
+	return nil
+}
+
+type countingWriter struct {
+	w io.Writer
+	n int64
+}
+
+func (cw *countingWriter) Write(p []byte) (int, error) {
+	n, err := cw.w.Write(p)
+	cw.n += int64(n)
+	return n, err
 }
 
 // Get returns a blob from the database

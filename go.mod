@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.26.5
+go 1.26.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.26.0
@@ -20,7 +20,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring/v2 v2.24.0
+	github.com/RoaringBitmap/roaring/v2 v2.26.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.20.3
@@ -111,7 +111,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.70.1
-	github.com/quay/claircore v1.5.54
+	github.com/quay/claircore v1.5.55-0.20260720230557-3f07716d8b96
 	github.com/quay/claircore/toolkit v1.6.1
 	github.com/quay/zlog/v2 v2.1.1
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -144,16 +144,16 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
 	go.yaml.in/yaml/v3 v3.0.5
-	golang.org/x/crypto v0.54.0
-	golang.org/x/mod v0.39.0
-	golang.org/x/net v0.57.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/mod v0.40.0
+	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.22.0
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.41.0
 	golang.org/x/time v0.15.0
-	golang.org/x/tools v0.48.0
+	golang.org/x/tools v0.49.0
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.292.0
 	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94
@@ -168,16 +168,17 @@ require (
 	gorm.io/driver/postgres v1.6.2
 	gorm.io/gorm v1.31.2
 	helm.sh/helm/v3 v3.21.3
-	k8s.io/api v0.36.3
-	k8s.io/apiextensions-apiserver v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/apiserver v0.36.3
-	k8s.io/cli-runtime v0.36.3
-	k8s.io/client-go v0.36.3
-	k8s.io/kubectl v0.36.3
+	k8s.io/api v0.36.4
+	k8s.io/apiextensions-apiserver v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/apiserver v0.36.4
+	k8s.io/cli-runtime v0.36.4
+	k8s.io/client-go v0.36.4
+	k8s.io/kubectl v0.36.4
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	kubevirt.io/api v1.9.0
+	kubevirt.io/client-go v1.9.0-beta.0.0.20260825101120-f38626e05426
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/controller-tools v0.21.0
 	sigs.k8s.io/e2e-framework v0.7.0
@@ -280,6 +281,8 @@ require (
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
 	github.com/go-git/go-git/v5 v5.19.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
+	github.com/go-kit/log v0.2.1 // indirect
+	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.25.2 // indirect
 	github.com/go-openapi/errors v0.22.8 // indirect
@@ -463,13 +466,13 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/code-generator v0.36.3 // indirect
-	k8s.io/component-base v0.36.3 // indirect
-	k8s.io/component-helpers v0.36.3 // indirect
+	k8s.io/code-generator v0.36.4 // indirect
+	k8s.io/component-base v0.36.4 // indirect
+	k8s.io/component-helpers v0.36.4 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199 // indirect
-	k8s.io/streaming v0.36.3 // indirect
+	k8s.io/kube-openapi v0.31.0 // indirect
+	k8s.io/streaming v0.36.4 // indirect
 	kubevirt.io/containerized-data-importer-api v1.64.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	modernc.org/libc v1.73.4 // indirect
@@ -537,6 +540,13 @@ replace (
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
+
+// No tagged kubevirt.io/client-go includes kubevirt#18315, required for
+// kubevirt client-go against k8s.io/client-go v0.36. Pinned to
+// kubevirt/client-go@f38626e.
+
+// kubevirt.io/client-go requires the nonexistent k8s.io/kube-openapi@v0.31.0 tag.
+replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199
 
 // @stackrox/scanner
 replace (

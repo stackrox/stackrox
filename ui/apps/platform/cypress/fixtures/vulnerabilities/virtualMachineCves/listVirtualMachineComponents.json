@@ -1,0 +1,44 @@
+{
+    "components": [
+        {
+            "id": "openssl-3.0.7-20.el9",
+            "name": "openssl",
+            "version": "3.0.7-20.el9",
+            "source": "OS",
+            "scanStatus": "SCANNED",
+            "lastScanned": "2025-04-15T10:30:00.000Z",
+            "cveCount": 2,
+            "architecture": "x86_64",
+            "topCvss": 9.8,
+            "riskScore": 9.8,
+            "notes": []
+        },
+        {
+            "id": "curl-7.76.1-26.el9",
+            "name": "curl",
+            "version": "7.76.1-26.el9",
+            "source": "OS",
+            "scanStatus": "SCANNED",
+            "lastScanned": "2025-04-15T10:30:00.000Z",
+            "cveCount": 1,
+            "architecture": "x86_64",
+            "topCvss": 7.5,
+            "riskScore": 7.5,
+            "notes": []
+        },
+        {
+            "id": "systemd-252-18.el9",
+            "name": "systemd",
+            "version": "252-18.el9",
+            "source": "OS",
+            "scanStatus": "NOT_SCANNED",
+            "lastScanned": "2025-04-15T10:30:00.000Z",
+            "cveCount": 0,
+            "architecture": "x86_64",
+            "topCvss": 0,
+            "riskScore": 0,
+            "notes": ["UNSCANNED"]
+        }
+    ],
+    "totalCount": 3
+}

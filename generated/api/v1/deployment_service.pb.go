@@ -355,6 +355,50 @@ func (x *ExportDeploymentResponse) GetDeployment() *storage.Deployment {
 	return nil
 }
 
+type DeploymentRiskAISummaryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeploymentRiskAISummaryResponse) Reset() {
+	*x = DeploymentRiskAISummaryResponse{}
+	mi := &file_api_v1_deployment_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeploymentRiskAISummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeploymentRiskAISummaryResponse) ProtoMessage() {}
+
+func (x *DeploymentRiskAISummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_deployment_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeploymentRiskAISummaryResponse.ProtoReflect.Descriptor instead.
+func (*DeploymentRiskAISummaryResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_deployment_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeploymentRiskAISummaryResponse) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
 type DeploymentLabelsResponse_LabelValues struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
@@ -364,7 +408,7 @@ type DeploymentLabelsResponse_LabelValues struct {
 
 func (x *DeploymentLabelsResponse_LabelValues) Reset() {
 	*x = DeploymentLabelsResponse_LabelValues{}
-	mi := &file_api_v1_deployment_service_proto_msgTypes[7]
+	mi := &file_api_v1_deployment_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -376,7 +420,7 @@ func (x *DeploymentLabelsResponse_LabelValues) String() string {
 func (*DeploymentLabelsResponse_LabelValues) ProtoMessage() {}
 
 func (x *DeploymentLabelsResponse_LabelValues) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_deployment_service_proto_msgTypes[7]
+	mi := &file_api_v1_deployment_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +453,7 @@ type ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo struct {
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Reset() {
 	*x = ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{}
-	mi := &file_api_v1_deployment_service_proto_msgTypes[9]
+	mi := &file_api_v1_deployment_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -421,7 +465,7 @@ func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Strin
 func (*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) ProtoMessage() {}
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_deployment_service_proto_msgTypes[9]
+	mi := &file_api_v1_deployment_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -486,10 +530,13 @@ const file_api_v1_deployment_service_proto_rawDesc = "" +
 	"\x18ExportDeploymentResponse\x123\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
-	"deployment2\xe8\x05\n" +
+	"deployment\";\n" +
+	"\x1fDeploymentRiskAISummaryResponse\x12\x18\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary2\xef\x06\n" +
 	"\x11DeploymentService\x12T\n" +
 	"\rGetDeployment\x12\x10.v1.ResourceByID\x1a\x13.storage.Deployment\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/deployments/{id}\x12r\n" +
-	"\x15GetDeploymentWithRisk\x12\x10.v1.ResourceByID\x1a!.v1.GetDeploymentWithRiskResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/deploymentswithrisk/{id}\x12\\\n" +
+	"\x15GetDeploymentWithRisk\x12\x10.v1.ResourceByID\x1a!.v1.GetDeploymentWithRiskResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/deploymentswithrisk/{id}\x12\x84\x01\n" +
+	"\x1aGetDeploymentRiskAISummary\x12\x10.v1.ResourceByID\x1a#.v1.DeploymentRiskAISummaryResponse\"/\x82\xd3\xe4\x93\x02)\x12'/v1/deploymentswithrisk/{id}/ai-summary\x12\\\n" +
 	"\x10CountDeployments\x12\f.v1.RawQuery\x1a\x1c.v1.CountDeploymentsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/deploymentscount\x12U\n" +
 	"\x0fListDeployments\x12\f.v1.RawQuery\x1a\x1b.v1.ListDeploymentsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/deployments\x12\x82\x01\n" +
 	"\x1eListDeploymentsWithProcessInfo\x12\f.v1.RawQuery\x1a*.v1.ListDeploymentsWithProcessInfoResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/deploymentswithprocessinfo\x12]\n" +
@@ -509,7 +556,7 @@ func file_api_v1_deployment_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_deployment_service_proto_rawDescData
 }
 
-var file_api_v1_deployment_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_api_v1_deployment_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_api_v1_deployment_service_proto_goTypes = []any{
 	(*DeploymentLabelsResponse)(nil),               // 0: v1.DeploymentLabelsResponse
 	(*ListDeploymentsResponse)(nil),                // 1: v1.ListDeploymentsResponse
@@ -518,43 +565,46 @@ var file_api_v1_deployment_service_proto_goTypes = []any{
 	(*GetDeploymentWithRiskResponse)(nil),          // 4: v1.GetDeploymentWithRiskResponse
 	(*ExportDeploymentRequest)(nil),                // 5: v1.ExportDeploymentRequest
 	(*ExportDeploymentResponse)(nil),               // 6: v1.ExportDeploymentResponse
-	(*DeploymentLabelsResponse_LabelValues)(nil),   // 7: v1.DeploymentLabelsResponse.LabelValues
-	nil, // 8: v1.DeploymentLabelsResponse.LabelsEntry
-	(*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo)(nil), // 9: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
-	(*storage.ListDeployment)(nil),                                           // 10: storage.ListDeployment
-	(*storage.Deployment)(nil),                                               // 11: storage.Deployment
-	(*storage.Risk)(nil),                                                     // 12: storage.Risk
-	(*storage.ContainerNameAndBaselineStatus)(nil),                           // 13: storage.ContainerNameAndBaselineStatus
-	(*ResourceByID)(nil),                                                     // 14: v1.ResourceByID
-	(*RawQuery)(nil),                                                         // 15: v1.RawQuery
-	(*Empty)(nil),                                                            // 16: v1.Empty
+	(*DeploymentRiskAISummaryResponse)(nil),        // 7: v1.DeploymentRiskAISummaryResponse
+	(*DeploymentLabelsResponse_LabelValues)(nil),   // 8: v1.DeploymentLabelsResponse.LabelValues
+	nil, // 9: v1.DeploymentLabelsResponse.LabelsEntry
+	(*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo)(nil), // 10: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
+	(*storage.ListDeployment)(nil),                                           // 11: storage.ListDeployment
+	(*storage.Deployment)(nil),                                               // 12: storage.Deployment
+	(*storage.Risk)(nil),                                                     // 13: storage.Risk
+	(*storage.ContainerNameAndBaselineStatus)(nil),                           // 14: storage.ContainerNameAndBaselineStatus
+	(*ResourceByID)(nil),                                                     // 15: v1.ResourceByID
+	(*RawQuery)(nil),                                                         // 16: v1.RawQuery
+	(*Empty)(nil),                                                            // 17: v1.Empty
 }
 var file_api_v1_deployment_service_proto_depIdxs = []int32{
-	8,  // 0: v1.DeploymentLabelsResponse.labels:type_name -> v1.DeploymentLabelsResponse.LabelsEntry
-	10, // 1: v1.ListDeploymentsResponse.deployments:type_name -> storage.ListDeployment
-	9,  // 2: v1.ListDeploymentsWithProcessInfoResponse.deployments:type_name -> v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
-	11, // 3: v1.GetDeploymentWithRiskResponse.deployment:type_name -> storage.Deployment
-	12, // 4: v1.GetDeploymentWithRiskResponse.risk:type_name -> storage.Risk
-	11, // 5: v1.ExportDeploymentResponse.deployment:type_name -> storage.Deployment
-	7,  // 6: v1.DeploymentLabelsResponse.LabelsEntry.value:type_name -> v1.DeploymentLabelsResponse.LabelValues
-	10, // 7: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.deployment:type_name -> storage.ListDeployment
-	13, // 8: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.baseline_statuses:type_name -> storage.ContainerNameAndBaselineStatus
-	14, // 9: v1.DeploymentService.GetDeployment:input_type -> v1.ResourceByID
-	14, // 10: v1.DeploymentService.GetDeploymentWithRisk:input_type -> v1.ResourceByID
-	15, // 11: v1.DeploymentService.CountDeployments:input_type -> v1.RawQuery
-	15, // 12: v1.DeploymentService.ListDeployments:input_type -> v1.RawQuery
-	15, // 13: v1.DeploymentService.ListDeploymentsWithProcessInfo:input_type -> v1.RawQuery
-	16, // 14: v1.DeploymentService.GetLabels:input_type -> v1.Empty
-	5,  // 15: v1.DeploymentService.ExportDeployments:input_type -> v1.ExportDeploymentRequest
-	11, // 16: v1.DeploymentService.GetDeployment:output_type -> storage.Deployment
-	4,  // 17: v1.DeploymentService.GetDeploymentWithRisk:output_type -> v1.GetDeploymentWithRiskResponse
-	2,  // 18: v1.DeploymentService.CountDeployments:output_type -> v1.CountDeploymentsResponse
-	1,  // 19: v1.DeploymentService.ListDeployments:output_type -> v1.ListDeploymentsResponse
-	3,  // 20: v1.DeploymentService.ListDeploymentsWithProcessInfo:output_type -> v1.ListDeploymentsWithProcessInfoResponse
-	0,  // 21: v1.DeploymentService.GetLabels:output_type -> v1.DeploymentLabelsResponse
-	6,  // 22: v1.DeploymentService.ExportDeployments:output_type -> v1.ExportDeploymentResponse
-	16, // [16:23] is the sub-list for method output_type
-	9,  // [9:16] is the sub-list for method input_type
+	9,  // 0: v1.DeploymentLabelsResponse.labels:type_name -> v1.DeploymentLabelsResponse.LabelsEntry
+	11, // 1: v1.ListDeploymentsResponse.deployments:type_name -> storage.ListDeployment
+	10, // 2: v1.ListDeploymentsWithProcessInfoResponse.deployments:type_name -> v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
+	12, // 3: v1.GetDeploymentWithRiskResponse.deployment:type_name -> storage.Deployment
+	13, // 4: v1.GetDeploymentWithRiskResponse.risk:type_name -> storage.Risk
+	12, // 5: v1.ExportDeploymentResponse.deployment:type_name -> storage.Deployment
+	8,  // 6: v1.DeploymentLabelsResponse.LabelsEntry.value:type_name -> v1.DeploymentLabelsResponse.LabelValues
+	11, // 7: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.deployment:type_name -> storage.ListDeployment
+	14, // 8: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.baseline_statuses:type_name -> storage.ContainerNameAndBaselineStatus
+	15, // 9: v1.DeploymentService.GetDeployment:input_type -> v1.ResourceByID
+	15, // 10: v1.DeploymentService.GetDeploymentWithRisk:input_type -> v1.ResourceByID
+	15, // 11: v1.DeploymentService.GetDeploymentRiskAISummary:input_type -> v1.ResourceByID
+	16, // 12: v1.DeploymentService.CountDeployments:input_type -> v1.RawQuery
+	16, // 13: v1.DeploymentService.ListDeployments:input_type -> v1.RawQuery
+	16, // 14: v1.DeploymentService.ListDeploymentsWithProcessInfo:input_type -> v1.RawQuery
+	17, // 15: v1.DeploymentService.GetLabels:input_type -> v1.Empty
+	5,  // 16: v1.DeploymentService.ExportDeployments:input_type -> v1.ExportDeploymentRequest
+	12, // 17: v1.DeploymentService.GetDeployment:output_type -> storage.Deployment
+	4,  // 18: v1.DeploymentService.GetDeploymentWithRisk:output_type -> v1.GetDeploymentWithRiskResponse
+	7,  // 19: v1.DeploymentService.GetDeploymentRiskAISummary:output_type -> v1.DeploymentRiskAISummaryResponse
+	2,  // 20: v1.DeploymentService.CountDeployments:output_type -> v1.CountDeploymentsResponse
+	1,  // 21: v1.DeploymentService.ListDeployments:output_type -> v1.ListDeploymentsResponse
+	3,  // 22: v1.DeploymentService.ListDeploymentsWithProcessInfo:output_type -> v1.ListDeploymentsWithProcessInfoResponse
+	0,  // 23: v1.DeploymentService.GetLabels:output_type -> v1.DeploymentLabelsResponse
+	6,  // 24: v1.DeploymentService.ExportDeployments:output_type -> v1.ExportDeploymentResponse
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -574,7 +624,7 @@ func file_api_v1_deployment_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_deployment_service_proto_rawDesc), len(file_api_v1_deployment_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

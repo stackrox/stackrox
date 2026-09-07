@@ -333,6 +333,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimesta
 		"advisory_name",
 		"advisory_link",
 		"fixavailabletimestamp",
+		"origin",
 		"serialized",
 	}
 
@@ -375,6 +376,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimesta
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
 			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
+			obj.GetOrigin(),
 			serialized,
 		})
 
@@ -418,10 +420,17 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.ImageV2) (bool, bool, err
 
 type hashWrapper struct {
 	Components []*storage.EmbeddedImageScanComponent `hash:"set"`
+	Count      int
+	VulnCount  int
 }
 
 func populateImageScanHash(scan *storage.ImageScan) error {
-	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, &hashstructure.HashOptions{ZeroNil: true})
+	components := scan.GetComponents()
+	vulnCount := 0
+	for _, c := range components {
+		vulnCount += len(c.GetVulns())
+	}
+	hash, err := hashstructure.Hash(hashWrapper{Components: components, Count: len(components), VulnCount: vulnCount}, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}
@@ -1070,11 +1079,13 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetFixedBy(),
 		obj.GetComponentId(),
 		obj.GetAdvisory().GetName(),
+		obj.GetAdvisory().GetLink(),
 		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
+		obj.GetOrigin(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, advisory_link, FixAvailableTimestamp, Origin, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, advisory_link = EXCLUDED.advisory_link, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, Origin = EXCLUDED.Origin, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

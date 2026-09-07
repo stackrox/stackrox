@@ -35,7 +35,7 @@ export type EPSS = {
 export type Exploit = {
     // This must always be set to true.
     // This field solely exists for search purposes.
-    // exists: boolean; // search:"Known Exploit,store"
+    // exists: boolean; // search:"CISA KEV,store"
     knownRansomwareCampaignUse: boolean; // search:"Known Ransomware Campaign,store"
 };
 

@@ -44,10 +44,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
-	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -57,6 +57,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
+	"github.com/stackrox/rox/sensor/kubernetes/fake/vmagent"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
@@ -178,6 +179,43 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, internalMessageDispatcher, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
+
+	var vmScraper *vmscraper.VMScraper
+	var vmStats clustermetrics.VMStatsSource
+	var repo2CPE *scannerdefinitions.Repo2CPE
+	if features.VirtualMachines.Enabled() {
+		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+		var dialer vmscraper.VMDialer
+		var vmProtoClient vmscraper.ProtocolClient
+		if cfg.workloadManager != nil && cfg.workloadManager.HasFakeVMWorkload() {
+			numPackages := cfg.workloadManager.FakeVMNumPackages()
+			reportsEnabled := cfg.workloadManager.HasFakeVMIndexReports()
+			dialer = vmagent.NewDialer()
+			vmProtoClient = vmagent.NewClient(numPackages, reportsEnabled)
+			log.Infof("VMScraper using in-process fake agent (reports=%t packages=%d)", reportsEnabled, numPackages)
+		} else {
+			d, err := vsockdialer.NewMultiDialer()
+			if err != nil {
+				log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
+			} else {
+				dialer = d
+			}
+			vmProtoClient = vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+		}
+		repo2CPE, err = scannerdefinitions.NewRepo2CPE(env.CentralEndpoint.Setting(), cfg.certLoader())
+		if err != nil {
+			log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
+		}
+		// A typed-nil *Repo2CPE is a non-nil Repo2CPEFetcher, so
+		// maybeSyncRepoCPEMapping would call FetchRepo2CPE on a nil receiver.
+		var repo2CPEFetcher vmscraper.Repo2CPEFetcher
+		if repo2CPE != nil {
+			repo2CPEFetcher = repo2CPE
+		}
+		vmScraper = vmscraper.New(storeProvider.VirtualMachines(), dialer, vmProtoClient, repo2CPEFetcher)
+		vmStats = vmScraper
+	}
+
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -185,7 +223,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
+		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
@@ -198,21 +236,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		enhancer,
 		complianceService,
 	}
-
-	var virtualMachineHandler vmIndex.Handler
-	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
-		components = append(components, virtualMachineHandler)
-
-		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
-			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
-			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
-			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
-			components = append(components, scraper)
-		} else {
-			log.Warn("VSOCK pull mode disabled (no REST config available)")
-		}
+	if repo2CPE != nil {
+		components = append(components, repo2CPE)
+	}
+	if vmScraper != nil {
+		components = append(components, vmScraper)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -282,12 +310,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetPubSubDispatcher(internalMessageDispatcher)
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
-		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
-			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
-			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
-			// Register WorkloadManager as a Notifiable so it receives SensorComponentEvent notifications
-			s.AddNotifiable(cfg.workloadManager)
-		}
 	}
 
 	var networkFlowService service.Service

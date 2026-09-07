@@ -28,7 +28,7 @@ function CollectorStatusTotals({ collectorHealthInfo }: CollectorStatusTotalsPro
                     <th className={thClassName} scope="row">
                         Collector version:
                     </th>
-                    <td className={`${tdClassName} break-all`} data-testid="version">
+                    <td className={`${tdClassName} pf-v6-u-text-break-word`} data-testid="version">
                         {version || notAvailable}
                     </td>
                 </tr>
@@ -63,7 +63,7 @@ function CollectorStatusTotals({ collectorHealthInfo }: CollectorStatusTotalsPro
                                 {statusErrors.map((err) => (
                                     <li key={err}>
                                         <span
-                                            className={`${healthStatusStylesLegacy.UNHEALTHY.fgColor} break-all`}
+                                            className={`${healthStatusStylesLegacy.UNHEALTHY.fgColor} pf-v6-u-text-break-word`}
                                         >
                                             {err}
                                         </span>

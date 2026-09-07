@@ -329,6 +329,37 @@
         ]
       }
     },
+    "/v1/deploymentswithrisk/{id}/ai-summary": {
+      "get": {
+        "summary": "GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.",
+        "operationId": "DeploymentService_GetDeploymentRiskAISummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeploymentRiskAISummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DeploymentService"
+        ]
+      }
+    },
     "/v1/export/deployments": {
       "get": {
         "operationId": "DeploymentService_ExportDeployments",
@@ -1247,6 +1278,14 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1DeploymentRiskAISummaryResponse": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
         }
       }
     },

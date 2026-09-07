@@ -18,7 +18,7 @@ export const DiscoveredTime: CompoundSearchFilterAttribute = {
 
 export const CVSS: CompoundSearchFilterAttribute = {
     displayName: 'CVSS',
-    filterChipLabel: 'CVE CVSS',
+    filterChipLabel: 'CVSS',
     searchTerm: 'CVSS',
     inputType: 'condition-number',
 };

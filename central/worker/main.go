@@ -10,20 +10,26 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/stackrox/rox/central/globaldb"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	_ "github.com/stackrox/rox/central/notifiers/all"
+	"github.com/stackrox/rox/central/pruning"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
+	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
 const (
-	dbOpenRetries             = 10
-	dbTimeBetweenRetries      = 10 * time.Second
 	healthAddr                = ":8082"
 	defaultWorkerPoolMaxConns = 20
 )
@@ -41,56 +47,81 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := initDB(ctx)
-	defer db.Close()
+	poolVal := workerPoolSize.IntegerSetting()
+	if poolVal < 1 || poolVal > math.MaxInt32 {
+		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
+	}
+	globaldb.InitializePostgresWithPoolSize(ctx, int32(poolVal))
+	log.Infof("DB pool initialized with max_conns=%d", poolVal)
 
-	ensureDBCurrent(db)
+	waitForMigrations(ctx)
+	ensureDBCurrent()
 
 	startHealthServer()
 
 	go startMetricsServer()
+
+	pruning.Singleton().Start()
+	log.Infof("Pruning GC started")
+
+	scheduler := vulnReportV2Scheduler.Singleton()
+	scheduler.Start(globaldb.GetPostgres())
+	log.Infof("Vulnerability report scheduler started")
+
+	collectionDatastore, _ := collectionDS.Singleton()
+	rl := newReportListener(
+		globaldb.GetPostgres(),
+		scheduler,
+		reportConfigDS.Singleton(),
+		reportSnapshotDS.Singleton(),
+		collectionDatastore,
+		notifierDS.Singleton(),
+		notifierProcessor.Singleton(),
+	)
+	rl.start(ctx)
+	log.Infof("Report LISTEN/NOTIFY listener started")
 
 	log.Infof("central-worker is ready")
 
 	waitForTerminationSignal()
 
 	log.Infof("central-worker shutting down")
+
+	pruning.Singleton().Stop()
+	scheduler.Stop()
+
+	globaldb.Close()
 }
 
-func initDB(ctx context.Context) postgres.DB {
-	_, dbConfig, err := pgconfig.GetPostgresConfig()
+func waitForMigrations(ctx context.Context) {
+	err := retry.WithRetry(func() error {
+		acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, globaldb.GetPostgres(), dblock.MigrationLockID)
+		if err != nil {
+			return retry.MakeRetryable(err)
+		}
+		if !acquired {
+			return retry.MakeRetryable(errMigratorRunning)
+		}
+		release()
+		return nil
+	}, retry.Tries(30), retry.BetweenAttempts(func(attempt int) {
+		log.Infof("Migrator lock held, waiting for migrations to complete (attempt %d)...", attempt+1)
+		time.Sleep(10 * time.Second)
+	}))
 	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
+		log.Fatalf("Timed out waiting for migrations to complete: %v", err)
 	}
-
-	if !pgconfig.IsExternalDatabase() {
-		activeDB := pgconfig.GetActiveDB()
-		dbConfig.ConnConfig.Database = activeDB
-	}
-
-	poolVal := workerPoolSize.IntegerSetting()
-	if poolVal < 1 || poolVal > math.MaxInt32 {
-		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
-	}
-	dbConfig.MaxConns = int32(poolVal)
-
-	var db postgres.DB
-	if err := retry.WithRetry(func() error {
-		db, err = postgres.New(ctx, dbConfig)
-		return err
-	}, retry.Tries(dbOpenRetries), retry.BetweenAttempts(func(attempt int) {
-		time.Sleep(dbTimeBetweenRetries)
-	}), retry.OnFailedAttempts(func(err error) {
-		log.Errorf("open database: %v", err)
-	})); err != nil {
-		log.Fatalf("Timed out trying to open database: %v", err)
-	}
-
-	return db
+	log.Infof("Migrations complete, proceeding with startup")
 }
 
-func ensureDBCurrent(db postgres.DB) {
-	versionStore := vStore.NewPostgres(db)
+var errMigratorRunning = retryableError("migrator is still running")
+
+type retryableError string
+
+func (e retryableError) Error() string { return string(e) }
+
+func ensureDBCurrent() {
+	versionStore := vStore.NewPostgres(globaldb.GetPostgres())
 	if err := version.Ensure(versionStore); err != nil {
 		log.Fatalf("DB version check failed. Migrations may not be complete: %v", err)
 	}

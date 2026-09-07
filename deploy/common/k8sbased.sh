@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# shellcheck source=./feature-flag-env.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -343,6 +346,16 @@ function launch_central {
     ${KUBE_COMMAND:-kubectl} get namespace "${central_namespace}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
+    # Release roxctl generate omits feature-flag env from the bundle. Copy
+    # whatever is set in this process onto Central so CI/dev overrides apply.
+    local feature_flag_list_file
+    feature_flag_list_file="$(realpath "${common_dir}/../../pkg/features/list.go")"
+    local feature_flag_env=()
+    local _ff_assignment
+    while IFS= read -r _ff_assignment; do
+        feature_flag_env+=("${_ff_assignment}")
+    done < <(feature_flag_env_assignments "${feature_flag_list_file}")
+
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       echo "Deploying central using Helm..."
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
@@ -383,6 +396,25 @@ function launch_central {
 
       # Shorten signing key watcher poll for e2e tests (production default is 4h).
       helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+
+      # Skip ROX_SCANNER_V4 / ROX_LEGACY_SCANNER: the chart already sets them
+      # from scanner config; customize.envVars would add a duplicate env name.
+      # See is_helm_owned_feature_flag in feature-flag-env.sh.
+      local helm_feature_flag_env=()
+      if (( ${#feature_flag_env[@]} > 0 )); then
+        while IFS= read -r _ff_assignment; do
+          helm_feature_flag_env+=("${_ff_assignment}")
+        done < <(printf '%s\n' "${feature_flag_env[@]}" | omit_helm_owned_feature_flags)
+      fi
+      if (( ${#helm_feature_flag_env[@]} > 0 )); then
+        echo "Injecting feature flag env into Central: ${helm_feature_flag_env[*]}"
+        local _ff_var _ff_val
+        for _ff_assignment in "${helm_feature_flag_env[@]}"; do
+          _ff_var="${_ff_assignment%%=*}"
+          _ff_val="${_ff_assignment#*=}"
+          helm_args+=(--set-string "customize.central.envVars.${_ff_var}=${_ff_val}")
+        done
+      fi
 
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
@@ -509,8 +541,13 @@ function launch_central {
       # requiring a second rollout via a post-launch `set env`.
       central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
       if [[ -f "${central_deployment}" ]]; then
+        local central_env=(ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+        if (( ${#feature_flag_env[@]} > 0 )); then
+          echo "Injecting feature flag env into Central: ${feature_flag_env[*]}"
+          central_env+=("${feature_flag_env[@]}")
+        fi
         ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
-          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
+          "${central_env[@]}" > "${central_deployment}.tmp"
         mv "${central_deployment}.tmp" "${central_deployment}"
       else
         echo >&2 "WARNING: ${central_deployment} not found; Central will deploy with the default signing key watch interval and rely on the test's set env fallback."

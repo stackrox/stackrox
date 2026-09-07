@@ -79,7 +79,7 @@ func (p *pipelineImpl) Run(
 	ctx context.Context,
 	clusterID string,
 	msg *central.MsgFromSensor,
-	_ common.MessageInjector,
+	injector common.MessageInjector,
 ) error {
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
@@ -93,11 +93,17 @@ func (p *pipelineImpl) Run(
 		logging.GetRateLimitedLogger().Warn(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
-	go clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
+	go clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics, hasVMTelemetryCap(injector))
 	return nil
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
 	p.metricsStore.Set(clusterID, &central.ClusterMetrics{})
 	p.telemetryMetrics.DeleteClusterMetrics(clusterID)
+}
+
+// hasVMTelemetryCap is true when the Sensor advertised VirtualMachineTelemetryCap.
+// A nil injector is treated as no capability.
+func hasVMTelemetryCap(injector common.MessageInjector) bool {
+	return injector != nil && injector.HasCapability(centralsensor.VirtualMachineTelemetryCap)
 }

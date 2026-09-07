@@ -7,12 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
@@ -25,12 +23,6 @@ func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ..
 const (
 	defaultVMLifecycleDuration = 30 * time.Minute
 	defaultVMUpdateInterval    = 3 * time.Minute
-	// initialReportMaxDeviation is the maximum relative deviation applied to the initial report delay.
-	// With 0.2 (20%), a 30s delay will vary uniformly between 24s-36s.
-	initialReportMaxDeviation = 0.2
-	// reportIntervalMaxDeviation is the maximum relative deviation applied to report intervals.
-	// With 0.05 (5%), a 60s interval will vary uniformly between 57s-63s.
-	reportIntervalMaxDeviation = 0.05
 	// lifecycleMaxDeviation is the maximum relative deviation applied to VM lifecycle duration.
 	// With 0.5 (50%), a 60s lifecycle will vary uniformly between 30s-90s.
 	lifecycleMaxDeviation = 0.5
@@ -91,33 +83,15 @@ func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload
 		return workload, fmt.Errorf("%s. %s may cause some VMs to never receive an update. %s",
 			lifecycleText, causeText("updateInterval", workload.UpdateInterval), actionText("updateInterval"))
 	}
-	if workload.ReportInterval > 0 {
-		if workload.ReportInterval > upperBoundVMLifetime {
-			return workload, fmt.Errorf("%s. %s causes the workload to never send any index reports. %s",
-				lifecycleText, causeText("reportInterval", workload.ReportInterval), actionText("reportInterval"))
-		}
-		if workload.ReportInterval > lowerBoundVMLifetime {
-			return workload, fmt.Errorf("%s. %s may cause some VMs to never send any index reports. %s",
-				lifecycleText, causeText("reportInterval", workload.ReportInterval), actionText("reportInterval"))
-		}
-		if workload.InitialReportDelay > upperBoundVMLifetime {
-			return workload, fmt.Errorf("%s. %s causes the workload to never send any index reports. %s",
-				lifecycleText, causeText("initialReportDelay", workload.InitialReportDelay), actionText("initialReportDelay"))
-		}
-		if workload.InitialReportDelay > lowerBoundVMLifetime {
-			return workload, fmt.Errorf("%s. %s may cause some VMs to never send any index reports. %s",
-				lifecycleText, causeText("initialReportDelay", workload.InitialReportDelay), actionText("initialReportDelay"))
-		}
-	}
 	return workload, nil
 }
 
-func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
-	// Use deterministic UUID based on template index to match index report generation.
-	// This ensures the VM UID in informer events matches the VM ID used in index reports.
-	vmUID := types.UID(fakeVMUUID(int(vsockCID)))
-	vmName := fmt.Sprintf("%s-%d", "vm", vsockCID)
-	os := guestOSes[int(vsockCID)%len(guestOSes)]
+func getRandomVMPair(slot int, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
+	// A new UID per lifecycle: Central REMOVE/CREATE and the scraper's
+	// UID-change path both treat a recycled slot as a new VM.
+	vmUID := newUUID()
+	vmName := fmt.Sprintf("vm-%d", slot)
+	os := guestOSes[slot%len(guestOSes)]
 
 	vm := &kubeVirtV1.VirtualMachine{
 		TypeMeta: metav1.TypeMeta{
@@ -139,10 +113,8 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 		},
 	}
 
-	// VMI gets a unique UUID based on template index and iteration
-	// Format: 00000000-0000-4000-9000-{12-digit-vsockCID}
-	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", vsockCID))
-	vmiName := fmt.Sprintf("vm-%d-vmi", vsockCID)
+	vmiUID := newUUID()
+	vmiName := fmt.Sprintf("vm-%d-vmi", slot)
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "VirtualMachineInstance",
@@ -167,8 +139,7 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 			},
 		},
 		Status: kubeVirtV1.VirtualMachineInstanceStatus{
-			Phase:    kubeVirtV1.Running,
-			VSOCKCID: &vsockCID,
+			Phase: kubeVirtV1.Running,
 			GuestOSInfo: kubeVirtV1.VirtualMachineInstanceGuestOSInfo{
 				Name: os,
 			},
@@ -227,8 +198,7 @@ func jsonSafeUint64(value uint64) int64 {
 func (w *WorkloadManager) manageVirtualMachine(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	vsockCID uint32,
-	reportGen *vmindexreport.Generator,
+	slot int,
 ) {
 	defer w.wg.Done()
 
@@ -237,20 +207,17 @@ func (w *WorkloadManager) manageVirtualMachine(
 		if ctx.Err() != nil {
 			return
 		}
-		vm, vmi := getRandomVMPair(vsockCID, defaultGuestOSPool)
-		w.runVMLifecycle(ctx, workload, vsockCID, vm, vmi, reportGen)
+		vm, vmi := getRandomVMPair(slot, defaultGuestOSPool)
+		w.runVMLifecycle(ctx, workload, vm, vmi)
 	}
 }
 
 // runVMLifecycle runs a single VM/VMI lifecycle.
 // It blocks until the lifecycle ends (timer fires) or context is cancelled.
-// If index reports are enabled (reportGen != nil), it sends index reports while the VM is alive.
 func (w *WorkloadManager) runVMLifecycle(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	vsockCID uint32,
 	vm, vmi *unstructured.Unstructured,
-	reportGen *vmindexreport.Generator,
 ) {
 	lifecycleTimer := newTimerWithJitter(randomizedInterval(workload.LifecycleDuration, lifecycleMaxDeviation))
 	defer lifecycleTimer.Stop()
@@ -272,27 +239,6 @@ func (w *WorkloadManager) runVMLifecycle(
 		log.Errorf("error creating VirtualMachineInstance: %v", err)
 		// Continue even if VMI creation fails
 	}
-
-	// Start index report generation if enabled (runs while VM is alive)
-	var reportCancel context.CancelFunc
-	if reportGen != nil && workload.ReportInterval > 0 {
-		var reportCtx context.Context
-		reportCtx, reportCancel = context.WithCancel(ctx)
-		go w.sendIndexReportsWhileAlive(
-			reportCtx,
-			reportGen,
-			vsockCID,
-			workload.ReportInterval,
-			workload.InitialReportDelay,
-		)
-	}
-
-	// Ensure report generation stops when this function exits
-	defer func() {
-		if reportCancel != nil {
-			reportCancel()
-		}
-	}()
 
 	for {
 		select {
@@ -329,74 +275,20 @@ func (w *WorkloadManager) runVMLifecycle(
 	}
 }
 
-// sendIndexReportsWhileAlive sends index reports for a VM at the configured interval.
-// It waits for prerequisites (handler, store, central) before starting, then runs
-// until the context is cancelled (when the VM lifecycle ends).
-func (w *WorkloadManager) sendIndexReportsWhileAlive(
-	ctx context.Context,
-	reportGen *vmindexreport.Generator,
-	vsockCID uint32,
-	interval time.Duration,
-	initialDelay time.Duration,
-) {
-	// Wait for all prerequisites before sending reports
-	if !w.vmPrerequisitesReady.Wait(ctx) {
-		log.Debugf("Prerequisites not ready to start sending fake index reports")
-		return
-	}
-
-	log.Debugf("Starting index report generation for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
-
-	reportTicker := time.NewTicker(randomizedInterval(interval, reportIntervalMaxDeviation))
-	if initialDelay > 0 {
-		firstPeriod := randomizedInterval(initialDelay, initialReportMaxDeviation)
-		reportTicker.Reset(firstPeriod)
-	} else {
-		w.sendOneIndexReport(ctx, reportGen, vsockCID)
-	}
-	defer reportTicker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Debugf("Stopping index report generation for VM with vsockCID %d (lifecycle ended)", vsockCID)
-			return
-		case <-reportTicker.C:
-			reportTicker.Reset(randomizedInterval(interval, reportIntervalMaxDeviation))
-			w.sendOneIndexReport(ctx, reportGen, vsockCID)
-		}
-	}
+// HasFakeVMWorkload reports whether this manager is simulating KubeVirt VMs.
+func (w *WorkloadManager) HasFakeVMWorkload() bool {
+	return w != nil && w.workload != nil && w.workload.VirtualMachineWorkload.PoolSize > 0
 }
 
-// sendOneIndexReport generates and sends a single index report for a VM.
-func (w *WorkloadManager) sendOneIndexReport(
-	ctx context.Context,
-	reportGen *vmindexreport.Generator,
-	vsockCID uint32,
-) {
-	if ctx.Err() != nil {
-		return
-	}
+// HasFakeVMIndexReports reports whether the fake agent should serve index reports.
+func (w *WorkloadManager) HasFakeVMIndexReports() bool {
+	return w.HasFakeVMWorkload() && w.workload.VirtualMachineWorkload.ReportInterval > 0
+}
 
-	if w.vmIndexReportHandler == nil {
-		log.Debugf("VM index report handler not set, skipping report for VM %d", vsockCID)
-		return
+// FakeVMNumPackages is the package count used in generated fake index reports.
+func (w *WorkloadManager) FakeVMNumPackages() int {
+	if w == nil || w.workload == nil {
+		return 0
 	}
-	if w.vmStore == nil {
-		log.Debugf("VM store not set, skipping report for VM %d", vsockCID)
-		return
-	}
-
-	vm := w.vmStore.GetFromCID(vsockCID)
-	if vm == nil {
-		log.Debugf("VM with vsockCID %d not found in store, skipping index report", vsockCID)
-		return
-	}
-
-	if err := w.vmIndexReportHandler.Send(ctx, vm, reportGen.GenerateV4IndexReport()); err != nil {
-		// Don't log errors during shutdown
-		if ctx.Err() == nil {
-			log.Debugf("Failed to send index report for VM %d: %v", vsockCID, err)
-		}
-	}
+	return w.workload.VirtualMachineWorkload.NumPackages
 }

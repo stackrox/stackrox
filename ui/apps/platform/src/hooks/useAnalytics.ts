@@ -64,6 +64,8 @@ export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
 
 export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
     'Image Vulnerability Reports Wizard Save Clicked';
+export const NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
+    'Node Vulnerability Reports Wizard Save Clicked';
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
@@ -379,6 +381,16 @@ export type AnalyticsEvent =
               action: ReportPageAction;
               cvesSince: 'allVuln' | 'sinceLastSentScheduledReport' | 'sinceStartDate';
               imageTypes: ImageType[];
+              intervalType: 'DAILY' | 'MONTHLY' | 'WEEKLY' | 'UNSET';
+              notifiers: number;
+              resourceScope: string;
+          };
+      }
+    | {
+          event: typeof NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED;
+          properties: {
+              action: ReportPageAction;
+              cvesSince: 'allVuln'; // | 'sinceLastSentScheduledReport' | 'sinceStartDate'
               intervalType: 'DAILY' | 'MONTHLY' | 'WEEKLY' | 'UNSET';
               notifiers: number;
               resourceScope: string;

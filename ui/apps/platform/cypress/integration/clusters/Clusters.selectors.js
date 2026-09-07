@@ -26,7 +26,6 @@ export const selectors = {
             totalRegisteredNodes: '[data-testid="totalRegisteredNodes"]',
         }),
         collectorInfoComplete: '[data-testid="collectorInfoComplete"]',
-        sensorUpgrade: '[data-testid="sensorUpgrade"]',
         sensorVersion: '[data-testid="sensorVersion"]',
         centralVersion: '[data-testid="centralVersion"]',
         credentialExpiration: '[data-testid="credentialExpiration"]',

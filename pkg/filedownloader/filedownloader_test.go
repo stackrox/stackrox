@@ -268,7 +268,7 @@ func TestAtomicWriteFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "output.json")
 
-	require.NoError(t, atomicWriteFile(path, []byte("hello")))
+	require.NoError(t, AtomicWriteFile(path, []byte("hello")))
 
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -283,7 +283,7 @@ func TestAtomicWriteFile_CreatesParentDirectory(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "nested", "output.json")
 
-	require.NoError(t, atomicWriteFile(path, []byte("hello")))
+	require.NoError(t, AtomicWriteFile(path, []byte("hello")))
 
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)

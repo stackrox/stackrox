@@ -166,11 +166,9 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 		grpc_retry.WithRetriable(shouldRetryForTests),
 	}
 
-	grpcDialOpts := []grpc.DialOption{}
-
 	// Add logging interceptors if the test object supports logging (e.g., *testing.T)
 	// Logging interceptor first, then retry - this ensures we log each retry attempt
-	grpcDialOpts = append(grpcDialOpts,
+	grpcDialOpts := []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(
 			loggingUnaryInterceptor(t),
 			grpc_retry.UnaryClientInterceptor(retryOpts...),
@@ -179,7 +177,7 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 			loggingStreamInterceptor(t),
 			grpc_retry.StreamClientInterceptor(retryOpts...),
 		),
-	)
+	}
 
 	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
 	require.NoError(t, err)

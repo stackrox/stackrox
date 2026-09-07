@@ -6,6 +6,10 @@
     { "profileName": "ocp4-pci-dss" },
     { "profileName": "ocp4-pci-dss-node" },
     { "profileName": "ocp4-pci-dss-3-2" },
-    { "profileName": "ocp4-pci-dss-node-3-2" }
+    { "profileName": "ocp4-pci-dss-node-3-2" },
+    { "profileName": "ocp5-pci-dss" },
+    { "profileName": "ocp5-pci-dss-node" },
+    { "profileName": "ocp5-pci-dss-3-2" },
+    { "profileName": "ocp5-pci-dss-node-3-2" }
   ]
 }

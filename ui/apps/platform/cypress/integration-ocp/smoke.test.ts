@@ -1,4 +1,4 @@
-import { visitFromConsoleLeftNavExpandable } from '../helpers/nav';
+import { visitConsoleDynamicPluginsStatusPage } from '../helpers/main';
 import { withOcpAuth } from '../helpers/ocpAuth';
 
 describe('Basic tests of the OCP plugin', () => {
@@ -30,7 +30,7 @@ describe('Basic tests of the OCP plugin', () => {
         });
 
         it('should display plugin information in cluster settings', () => {
-            visitFromConsoleLeftNavExpandable('Administration', 'Dynamic Plugins');
+            visitConsoleDynamicPluginsStatusPage();
 
             cy.get('td[data-label="name"]:contains("advanced-cluster-security")')
                 .parent()

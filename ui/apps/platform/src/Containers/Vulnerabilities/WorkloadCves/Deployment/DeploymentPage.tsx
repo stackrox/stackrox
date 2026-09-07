@@ -20,8 +20,10 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import { runImageViewBasedReport } from 'services/ReportsService';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { wrapInQuotes } from 'utils/searchUtils';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
 import type { DeploymentMetadata } from './DeploymentPageHeader';
@@ -34,7 +36,7 @@ import DeploymentPageDetails from './DeploymentPageDetails';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -194,6 +196,8 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
                     query={getRegexScopedQueryString(deploymentScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
+                    runViewBasedReport={runImageViewBasedReport}
+                    vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                 />
             )}
         </>

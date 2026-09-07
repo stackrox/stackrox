@@ -108,3 +108,7 @@ func (resolver *imageCVEV2Resolver) State(ctx context.Context) string {
 	value := resolver.data.GetState()
 	return value.String()
 }
+
+func (resolver *imageCVEV2Resolver) Origin(_ context.Context) string {
+	return resolver.data.GetOrigin().String()
+}

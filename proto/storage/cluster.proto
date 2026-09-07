@@ -88,10 +88,10 @@ enum CollectionMethod {
 message AdmissionControllerConfig {
   bool enabled = 1;
   int32 timeout_seconds = 2;
-  bool scan_inline = 3;
+  bool scan_inline = 3 [deprecated = true]; // always true since 4.9
   bool disable_bypass = 4;
 
-  bool enforce_on_updates = 5;
+  bool enforce_on_updates = 5 [deprecated = true]; // same as enabled since 4.9
 }
 
 message TolerationsConfig {

@@ -1,0 +1,30 @@
+{
+    "id": "vm-001",
+    "name": "cypress-vm-1",
+    "namespace": "default",
+    "clusterId": "cluster-001",
+    "clusterName": "production-cluster",
+    "guestOs": "Red Hat Enterprise Linux 9.2",
+    "state": "VM_STATE_RUNNING",
+    "lastUpdated": "2025-04-15T10:30:00.000Z",
+    "facts": {
+        "guestOS": "Red Hat Enterprise Linux 9.2",
+        "ipAddresses": "10.0.1.50",
+        "nodeName": "worker-node-1",
+        "activePodCount": "3",
+        "activePods": "3",
+        "bootOrder": "disk,network"
+    },
+    "annotations": {},
+    "labels": {},
+    "vsockCid": 3,
+    "notes": [],
+    "latestScan": {
+        "scanId": "scan-001",
+        "scanOs": "rhel:9",
+        "scanTime": "2025-04-15T10:30:00.000Z",
+        "topCvss": 9.8,
+        "scanNotes": []
+    },
+    "agentStatus": "AGENT_STATUS_ACTIVE"
+}

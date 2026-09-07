@@ -9,6 +9,7 @@ import {
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import CompoundSearchFilterDescriptionListGroups from 'Components/CompoundSearchFilter/components/CompoundSearchFilterDescriptionListGroups';
+import { Origin } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
@@ -33,6 +34,10 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
     const attributes = [
         ...attributesSeparateFromConfigForImageVulnerabilityReport,
         ...attributesFromConfig,
+        // Origin is not part of the shared workload/view-based config (that config also drives
+        // the overview page filter input, which is out of scope). Append it here so a view-based
+        // report created from the image/deployment single pages displays the CVE origin filter.
+        Origin,
     ];
 
     return (

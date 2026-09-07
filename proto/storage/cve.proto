@@ -225,7 +225,7 @@ message ImageCVEV2 {
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   string datasource = 17;
   // origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV).
-  VulnOrigin origin = 18;
+  VulnOrigin origin = 18; // @gotags: search:"CVE Origin,hidden"
 }
 
 message NodeCVE {

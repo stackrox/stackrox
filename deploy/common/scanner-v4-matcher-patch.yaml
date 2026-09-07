@@ -6,3 +6,6 @@ spec:
         resources:
           requests:
             cpu: "400m"
+            memory: "4Gi"
+          limits:
+            memory: "4Gi"

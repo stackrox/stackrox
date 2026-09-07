@@ -173,6 +173,31 @@ func (q *Queue[T]) Push(item T) {
 	}
 }
 
+// PullWithPred removes and returns the first element for which pred returns
+// true, scanning front-to-back. Returns the removed item and true, or the nil
+// value of T and false if no element matched.
+func (q *Queue[T]) PullWithPred(pred func(T) bool) (T, bool) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	for e := q.queue.Front(); e != nil; e = e.Next() {
+		item := e.Value.(T)
+		if pred(item) {
+			q.queue.Remove(e)
+			if q.queue.Len() == 0 {
+				q.notEmptySignal.Reset()
+			}
+			if q.counterMetric != nil {
+				q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
+			}
+			return item, true
+		}
+	}
+
+	var nilT T
+	return nilT, false
+}
+
 // Len returns the number of elements in the queue.
 func (q *Queue[T]) Len() int {
 	q.mutex.Lock()

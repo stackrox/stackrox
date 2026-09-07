@@ -2,6 +2,10 @@ package datastore
 
 import (
 	"context"
+	"encoding/json"
+	"maps"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -79,9 +83,58 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	return props, nil
 }
 
+type versionEntry struct {
+	Version string `json:"version"`
+	Count   int32  `json:"count"`
+}
+
+// buildVMTraits returns Segment trait key/value pairs for VM telemetry.
+// Returns nil when the Sensor lacks VirtualMachineTelemetryCap (old Sensor,
+// leave existing traits untouched).
+func buildVMTraits(hasCapability bool, vmm *central.VirtualMachineMetrics) map[string]any {
+	if !hasCapability {
+		return nil
+	}
+	if vmm == nil {
+		return map[string]any{
+			"VM Scanning Enabled":     false,
+			"VM Tracked Count":        int32(0),
+			"VM Scanned Count":        int32(0),
+			"VM Unscanned Count":      int32(0),
+			"Roxagent Version Counts": "[]",
+		}
+	}
+
+	traits := map[string]any{
+		"VM Scanning Enabled":     true,
+		"VM Tracked Count":        vmm.GetTrackedVms(),
+		"VM Scanned Count":        vmm.GetVmsScanned(),
+		"VM Unscanned Count":      max(int32(0), vmm.GetTrackedVms()-vmm.GetVmsScanned()),
+		"Roxagent Version Counts": "[]",
+	}
+
+	if vc := vmm.GetRoxagentVersionCounts(); len(vc) > 0 {
+		entries := make([]versionEntry, 0, len(vc))
+		for v, c := range vc {
+			entries = append(entries, versionEntry{Version: v, Count: c})
+		}
+		slices.SortFunc(entries, func(a, b versionEntry) int {
+			return strings.Compare(a.Version, b.Version)
+		})
+		raw, err := json.Marshal(entries)
+		if err != nil {
+			log.Warnf("Failed to marshal roxagent version counts: %v", err)
+			return traits
+		}
+		traits["Roxagent Version Counts"] = string(raw)
+	}
+
+	return traits
+}
+
 // UpdateSecuredClusterIdentity is called by the clustermetrics pipeline on
 // the reception of the cluster metrics from a sensor.
-func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics *central.ClusterMetrics) {
+func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics *central.ClusterMetrics, hasVMTelemetryCap bool) {
 	c := centralclient.Singleton()
 	// This is a shortcut to avoid calling the cluster datastore in case
 	// telemetry is for sure not enabled.
@@ -126,6 +179,10 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props["Openshift"] = omd.GetIsOpenshift()
 	}
 	props["Orchestrator Version"] = omd.GetVersion()
+
+	if vmTraits := buildVMTraits(hasVMTelemetryCap, metrics.GetVirtualMachineMetrics()); vmTraits != nil {
+		maps.Copy(props, vmTraits)
+	}
 
 	c.Track("Updated Secured Cluster Identity", nil, append(
 		c.WithGroups(),

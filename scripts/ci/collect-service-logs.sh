@@ -83,7 +83,15 @@ main() {
         local item_count=0
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
-            kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>&1
+            if ! kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>/dev/null; then
+                # The object may have been deleted/replaced between listing it above and
+                # fetching it here. Don't let the stderr text (e.g. "Error from server
+                # (NotFound)") get merged into what is meant to be a JSON file, and don't
+                # leave a partial/empty file behind for downstream jq consumers to choke on.
+                info "Cannot get ${object}/${item} in ${namespace} (likely deleted mid-collection): skipping"
+                rm -f "${log_dir}/${object}/${item}_object.json"
+                continue
+            fi
             {
               kubectl describe "${object}" "${item}" -n "${namespace}" 2>&1
               echo

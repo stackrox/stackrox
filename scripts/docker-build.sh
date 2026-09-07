@@ -2,9 +2,14 @@
 
 set -e
 
+CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
+
 echo "Building with platform linux/${GOARCH}"
-if docker info | grep buildx; then
+
+buildx_enabled=$(${CONTAINER_ENGINE} info 2>/dev/null | grep -q buildx && echo true || echo false)
+
+if [[ "${CONTAINER_ENGINE}" == "docker" ]] && [[ "${buildx_enabled}" == "true" ]]; then
     docker buildx build --platform "linux/${GOARCH}" --load "$@"
 else
-    docker build --platform "linux/${GOARCH}" "$@"
+    ${CONTAINER_ENGINE} build --platform "linux/${GOARCH}" "$@"
 fi

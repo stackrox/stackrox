@@ -25,8 +25,14 @@ function HealthStatus({
 }: HealthStatusProps): ReactElement {
     return (
         // flex-row assumes a child element wraps multiple grandchildren
-        <div className={`leading-normal ${isList ? 'inline' : 'flex flex-row items-start'}`}>
-            <span className={`align-middle flex-shrink-0 mr-2 ${iconColor}`}>{icon}</span>
+        <div
+            className={
+                isList
+                    ? 'pf-v6-u-display-inline'
+                    : 'pf-v6-u-display-flex pf-v6-u-align-items-flex-start'
+            }
+        >
+            <span className={`pf-v6-u-flex-shrink-0 pf-v6-u-mr-sm ${iconColor}`}>{icon}</span>
             {children}
         </div>
     );

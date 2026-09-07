@@ -41,6 +41,39 @@ func TestQueue(t *testing.T) {
 	assert.Nil(t, q.PullBlocking(context.Background()))
 }
 
+func TestPullWithPred(t *testing.T) {
+	q := NewQueue[int]()
+	q.Push(1)
+	q.Push(2)
+	q.Push(3)
+	q.Push(4)
+
+	item, ok := q.PullWithPred(func(v int) bool { return v%2 == 0 })
+	assert.True(t, ok)
+	assert.Equal(t, 2, item)
+	assert.Equal(t, 3, q.Len())
+
+	item, ok = q.PullWithPred(func(v int) bool { return v > 3 })
+	assert.True(t, ok)
+	assert.Equal(t, 4, item)
+	assert.Equal(t, 2, q.Len())
+
+	_, ok = q.PullWithPred(func(v int) bool { return v > 100 })
+	assert.False(t, ok)
+	assert.Equal(t, 2, q.Len())
+
+	// Remaining items are 1, 3
+	assert.Equal(t, 1, q.Pull())
+	assert.Equal(t, 3, q.Pull())
+	assert.Equal(t, 0, q.Len())
+}
+
+func TestPullWithPredEmptyQueue(t *testing.T) {
+	q := NewQueue[int]()
+	_, ok := q.PullWithPred(func(v int) bool { return true })
+	assert.False(t, ok)
+}
+
 func TestQueueSeq(t *testing.T) {
 	t.Run("Basic Iteration", func(t *testing.T) {
 		q := NewQueue[int]()

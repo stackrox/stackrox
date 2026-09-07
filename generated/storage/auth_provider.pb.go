@@ -46,7 +46,11 @@ type AuthProvider struct {
 	//   - "extra_scopes": a space-delimited string of additional scopes to request in addition to "openid profile email"
 	//     according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
 	//
-	// OpenShift Auth: supports no extra configuration options.
+	// OpenShift Auth:
+	// These settings only apply for OpenShift Auth used with access control delegation to ACM.
+	// Otherwise, no extra configuration options are supported.
+	// - "client_name": the name of the OAuthClient object used to request an OpenShift auth token.
+	// - "client_secret": the OAuthClient secret.
 	//
 	// User PKI:
 	// - "keys": the trusted certificates PEM encoded.

@@ -23,7 +23,7 @@ message ReportSnapshot {
   string report_configuration_id = 2; // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"
   string name = 3; // @gotags: search:"Report Name"
   string description = 4;
-  ReportType type = 5;
+  ReportType type = 5; // @gotags: search:"Report Type"
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 6;
     ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;

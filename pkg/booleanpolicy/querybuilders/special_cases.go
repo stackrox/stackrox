@@ -196,6 +196,17 @@ func mapFixedByValue(s string) string {
 	return valueToStringRegex(s)
 }
 
+// ForCisaKev returns a query builder for whether a CVE is in the CISA KEV catalog.
+func ForCisaKev() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.CisaKev, func(s string) string {
+				return s
+			}),
+		}
+	})
+}
+
 // ForImageSignatureVerificationStatus returns a query builder for Image
 // Signature Verification Status.
 func ForImageSignatureVerificationStatus() QueryBuilder {

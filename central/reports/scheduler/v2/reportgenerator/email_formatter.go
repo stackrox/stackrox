@@ -39,7 +39,9 @@ var (
 	}
 )
 
-func formatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot) (string, error) {
+// FormatEmailSubject formats an email subject line from the given Go template
+// and report snapshot.
+func FormatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot) (string, error) {
 	configName := snapshot.GetName()
 	if len(configName) > maxConfigNameLenInSubject {
 		configName = fmt.Sprintf("%s...", configName[0:maxConfigNameLenInSubject])
@@ -65,7 +67,8 @@ func formatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func formatEmailBody(emailTemplate string) (string, error) {
+// FormatEmailBody formats an email body from the given Go template.
+func FormatEmailBody(emailTemplate string) (string, error) {
 	data := &reportEmailBodyFormat{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
 	}
@@ -77,7 +80,8 @@ func formatEmailBody(emailTemplate string) (string, error) {
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func addReportConfigDetails(emailBody, configDetailsHTML string) string {
+// AddReportConfigDetails appends report configuration details HTML to the email body.
+func AddReportConfigDetails(emailBody, configDetailsHTML string) string {
 	var writer strings.Builder
 	writer.WriteString(emailBody)
 	writer.WriteString("<br><br>")
@@ -141,6 +145,35 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 
 	writer.WriteString("</div>")
 
+	return writer.String(), nil
+}
+
+// FormatNodeReportConfigDetails formats node report configuration details as HTML
+// for inclusion in the notification email.
+func FormatNodeReportConfigDetails(snapshot *storage.ReportSnapshot, numNodeCVEs int) (string, error) {
+	filters := snapshot.GetNodeVulnReportFilters()
+	if filters == nil {
+		return "", errors.New("report snapshot is missing node vulnerability report filters")
+	}
+
+	var writer strings.Builder
+	writer.WriteString("<div>")
+
+	formatSingleDetail(&writer, "Config name", snapshot.GetName())
+	formatSingleDetail(&writer, "Number of CVEs found", fmt.Sprintf("%d", numNodeCVEs))
+
+	if query := filters.GetQuery(); query != "" {
+		formatSingleDetail(&writer, "Filter", query)
+	}
+
+	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
+		scopeParts := formatEntityScope(entityScope)
+		if len(scopeParts) > 0 {
+			formatSingleDetail(&writer, "Report scope", scopeParts...)
+		}
+	}
+
+	writer.WriteString("</div>")
 	return writer.String(), nil
 }
 
