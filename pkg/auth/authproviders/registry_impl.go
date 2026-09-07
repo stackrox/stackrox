@@ -13,13 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
-	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
+	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acm"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -451,12 +451,12 @@ func getRolesForOpenshiftResponse(
 	var tokenData oauth2.Token
 	err := json.Unmarshal([]byte(authResp.RefreshTokenData.RefreshToken), &tokenData)
 	if err != nil {
-		return nil, err
+		return nil, errox.InvalidArgs.CausedByf("failed to parse token: %v", err)
 	}
 	// Retrieve OpenShift cluster config
-	cfg, err := rest.InClusterConfig()
+	cfg, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 	// Enrich the config with the OpenShift Auth Token
 	cfg.BearerToken = tokenData.AccessToken
@@ -464,13 +464,13 @@ func getRolesForOpenshiftResponse(
 	// InClusterConfig() sets BearerTokenFile to the service account token,
 	// which would override the user's OAuth token we just set.
 	cfg.BearerTokenFile = ""
-	acmClientObj, err := acmclient.NewACMClientForConfig(cfg)
+	acmClientObj, err := acm.NewClientForConfig(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to instantiate ACM client")
 	}
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch role information")
 	}
 	return roles, nil
 }
