@@ -8,16 +8,16 @@ import (
 )
 
 const (
-	// ServiceOperatorCAPath points to the service account secret which within
+	// serviceOperatorCAPath points to the service account secret which within
 	// an OpenShift environment also contains the service-ca.crt. This CA is
 	// used to verify certificates issued by the service-ca operator.
-	ServiceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
 // TransportWithServiceCA returns an http.Transport whose TLS config trusts the
 // system cert pool plus the OpenShift service-serving CA (if available).
 func TransportWithServiceCA() *http.Transport {
-	return TransportWithAdditionalCA(ServiceOperatorCAPath)
+	return TransportWithAdditionalCA(serviceOperatorCAPath)
 }
 
 // TransportWithAdditionalCA returns an http.Transport whose TLS config trusts
