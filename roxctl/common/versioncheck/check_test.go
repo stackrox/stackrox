@@ -1,6 +1,7 @@
 package versioncheck
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -27,26 +28,24 @@ func TestCheckAndWarn(t *testing.T) {
 		"compatible behind within range": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.6.0",
-			expectWarning:  true,
-			warnContains:   "differ",
+			expectWarning:  false,
 		},
 		"compatible ahead within range": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.10.0",
-			expectWarning:  true,
-			warnContains:   "differ",
+			expectWarning:  false,
 		},
 		"incompatible behind": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.3.0",
 			expectWarning:  true,
-			warnContains:   "incompatible",
+			warnContains:   "too new",
 		},
 		"incompatible ahead": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.15.0",
 			expectWarning:  true,
-			warnContains:   "incompatible",
+			warnContains:   "too old",
 		},
 		"invalid central version": {
 			localVersion:   "4.8.0",
@@ -59,19 +58,15 @@ func TestCheckAndWarn(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, tc.localVersion)
 
-			var warned bool
-			var warnMsg string
-			warn := func(format string, a ...interface{}) {
-				warned = true
-				warnMsg = format
-			}
+			var buf bytes.Buffer
+			result := checkAndWarn(tc.centralVersion, &buf)
 
-			result := checkAndWarn(tc.centralVersion, warn)
-
-			assert.Equal(t, tc.expectWarning, warned, "warning expectation mismatch")
-			assert.Equal(t, tc.expectWarning, result, "return value should match warning emission")
+			assert.Equal(t, tc.expectWarning, result, "return value mismatch")
 			if tc.warnContains != "" {
-				assert.Contains(t, warnMsg, tc.warnContains)
+				assert.Contains(t, buf.String(), tc.warnContains)
+				assert.Contains(t, buf.String(), "Compatible Centrals:")
+			} else {
+				assert.Empty(t, buf.String())
 			}
 		})
 	}

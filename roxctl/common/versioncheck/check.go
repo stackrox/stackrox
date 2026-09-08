@@ -3,7 +3,8 @@ package versioncheck
 import (
 	"context"
 	"fmt"
-
+	"io"
+	"strings"
 	"sync/atomic"
 
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -14,14 +15,14 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// WarnFunc is called when a version compatibility issue is detected.
-type WarnFunc func(format string, a ...interface{})
+// WriteFunc writes the version warning to the given writer.
+type WriteFunc func(w io.Writer)
 
 // UnaryClientInterceptor returns a gRPC unary client interceptor that reads
 // the Central version from response metadata and emits a warning if the
 // versions are incompatible. The warning is emitted at most once per
 // interceptor instance.
-func UnaryClientInterceptor(warn WarnFunc) grpc.UnaryClientInterceptor {
+func UnaryClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	var warned atomic.Bool
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		var md metadata.MD
@@ -29,7 +30,7 @@ func UnaryClientInterceptor(warn WarnFunc) grpc.UnaryClientInterceptor {
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if !warned.Load() {
 			if vals := md.Get(clientconn.CentralVersionHeader); len(vals) > 0 {
-				if checkAndWarn(vals[0], warn) {
+				if checkAndWarn(vals[0], w) {
 					warned.Store(true)
 				}
 			}
@@ -38,13 +39,13 @@ func UnaryClientInterceptor(warn WarnFunc) grpc.UnaryClientInterceptor {
 	}
 }
 
-func checkAndWarn(centralVersion string, warn WarnFunc) bool {
+func checkAndWarn(centralVersion string, w io.Writer) bool {
 	remoteXY, err := productstreams.ParseXYFromVersionString(centralVersion)
 	if err != nil {
 		return false
 	}
-	localVersion := version.GetMainVersion()
-	localXY, err := productstreams.ParseXYFromVersionString(localVersion)
+	roxctlVersion := version.GetMainVersion()
+	localXY, err := productstreams.ParseXYFromVersionString(roxctlVersion)
 	if err != nil {
 		return false
 	}
@@ -57,25 +58,37 @@ func checkAndWarn(centralVersion string, warn WarnFunc) bool {
 		return false
 	}
 
+	versionRange, err := versioncompatibility.CompatibleVersions()
+	if err != nil {
+		return false
+	}
+	compatRange := formatVersionRange(versionRange)
+
 	switch compat {
-	case versioncompatibility.CompatibleBehind, versioncompatibility.CompatibleAhead:
-		warn("roxctl version %s and Central version %s differ; some features may not work as expected",
-			localVersion, centralVersion)
+	case versioncompatibility.IncompatibleAhead:
+		fmt.Fprintf(w, "Warning: Your roxctl %s is too old for this Central %s. "+
+			"Correct functioning is not guaranteed. "+
+			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
+			roxctlVersion, centralVersion)
+		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+			roxctlVersion, centralVersion, compatRange)
 		return true
-	case versioncompatibility.IncompatibleBehind, versioncompatibility.IncompatibleAhead:
-		warn(incompatibleMessage(localVersion, centralVersion))
+	case versioncompatibility.IncompatibleBehind:
+		fmt.Fprintf(w, "Warning: Your roxctl %s is too new for this Central %s. "+
+			"Correct functioning is not guaranteed. "+
+			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
+			roxctlVersion, centralVersion)
+		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+			roxctlVersion, centralVersion, compatRange)
 		return true
 	}
 	return false
 }
 
-func incompatibleMessage(localVersion, centralVersion string) string {
-	versions, err := versioncompatibility.CompatibleVersions()
-	if err != nil || len(versions) == 0 {
-		return fmt.Sprintf("roxctl version %s is incompatible with Central version %s", localVersion, centralVersion)
+func formatVersionRange(versions []productstreams.XYVersion) string {
+	strs := make([]string, len(versions))
+	for i, v := range versions {
+		strs[i] = v.String()
 	}
-	return fmt.Sprintf(
-		"roxctl version %s is incompatible with Central version %s; supported Central range for this roxctl is %s to %s",
-		localVersion, centralVersion, versions[0], versions[len(versions)-1],
-	)
+	return strings.Join(strs, ", ")
 }

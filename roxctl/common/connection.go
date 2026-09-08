@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -35,11 +36,11 @@ func WithRetryTimeout(timeout time.Duration) GRPCOption {
 }
 
 // WithVersionCheck enables version compatibility checking on gRPC responses.
-// The provided warn function is called at most once when a version mismatch
-// is detected from the Central version response header.
-func WithVersionCheck(warn versioncheck.WarnFunc) GRPCOption {
+// Warnings are written to w at most once when a version incompatibility is
+// detected from the Central version response header.
+func WithVersionCheck(w io.Writer) GRPCOption {
 	return func(config *grpcConfig) {
-		config.versionCheckWarn = warn
+		config.versionCheckWriter = w
 	}
 }
 
@@ -77,15 +78,15 @@ func GetGRPCConnection(am auth.Method, connectionOpts ...GRPCOption) (*grpc.Clie
 }
 
 type grpcConfig struct {
-	usePlaintext     bool
-	insecure         bool
-	opts             clientconn.Options
-	serverName       string
-	useDirectGRPC    bool
-	forceHTTP1       bool
-	endpoint         string
-	retryTimeout     time.Duration
-	versionCheckWarn versioncheck.WarnFunc
+	usePlaintext       bool
+	insecure           bool
+	opts               clientconn.Options
+	serverName         string
+	useDirectGRPC      bool
+	forceHTTP1         bool
+	endpoint           string
+	retryTimeout       time.Duration
+	versionCheckWriter io.Writer
 }
 
 func makeCtxWithCommandHeader(ctx context.Context) context.Context {
@@ -137,8 +138,8 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		addCommandHeaderUnaryInterceptor,
 		grpc_retry.UnaryClientInterceptor(retryOpts...),
 	}
-	if c.versionCheckWarn != nil {
-		unaryInterceptors = append(unaryInterceptors, versioncheck.UnaryClientInterceptor(c.versionCheckWarn))
+	if c.versionCheckWriter != nil {
+		unaryInterceptors = append(unaryInterceptors, versioncheck.UnaryClientInterceptor(c.versionCheckWriter))
 	}
 
 	grpcDialOpts := []grpc.DialOption{
