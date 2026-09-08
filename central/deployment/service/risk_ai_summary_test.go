@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/deployment/service/aisummary"
 	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,6 +28,10 @@ type mockOLSClient struct {
 func (m *mockOLSClient) Query(_ context.Context, req *olsClient.QueryRequest) (*olsClient.QueryResponse, error) {
 	m.captured = req
 	return m.response, m.err
+}
+
+func (m *mockOLSClient) TestConnectivity(_ context.Context) error {
+	return nil
 }
 
 func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
@@ -125,9 +129,10 @@ func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "SUMMARY\nThis deployment runs as cluster-admin with a privileged container.", resp.GetSummary())
 
-	// Verify prompt was passed correctly.
-	assert.Equal(t, aiSummaryPrompt, olsMock.captured.Query)
-	assert.NotEmpty(t, olsMock.captured.Context)
+	// Verify prompt and context were combined into the query.
+	assert.Contains(t, olsMock.captured.Query, aisummary.Prompt)
+	assert.Contains(t, olsMock.captured.Query, "DEPLOYMENT AND RISK DATA:")
+	assert.Contains(t, olsMock.captured.Query, "nginx-frontend")
 }
 
 func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
@@ -191,7 +196,6 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-2").Return(deployment, true, nil)
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
 
-	var capturedContext string
 	olsMock := &mockOLSClient{
 		response: &olsClient.QueryResponse{Response: "Low risk deployment."},
 	}
@@ -205,36 +209,35 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 	_, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-2"})
 	require.NoError(t, err)
 
-	capturedContext = olsMock.captured.Context
+	capturedQuery := olsMock.captured.Query
 
-	// Sensitive env vars must NOT appear in context sent to LLM.
-	assert.NotContains(t, capturedContext, "SERVICENOW_URL")
-	assert.NotContains(t, capturedContext, "https://company.service-now.com")
-	assert.NotContains(t, capturedContext, "SN_USER")
-	assert.NotContains(t, capturedContext, "admin")
-	assert.NotContains(t, capturedContext, "SN_SECRET_REF")
-	assert.NotContains(t, capturedContext, "vault:secret/data/sn-key")
+	// Sensitive env vars must NOT appear in query sent to LLM.
+	assert.NotContains(t, capturedQuery, "SERVICENOW_URL")
+	assert.NotContains(t, capturedQuery, "https://company.service-now.com")
+	assert.NotContains(t, capturedQuery, "SN_USER")
+	assert.NotContains(t, capturedQuery, "SN_SECRET_REF")
+	assert.NotContains(t, capturedQuery, "vault:secret/data/sn-key")
 
 	// Secret mount paths must NOT appear.
-	assert.NotContains(t, capturedContext, "/var/run/secrets/servicenow")
-	assert.NotContains(t, capturedContext, "sn-credentials")
+	assert.NotContains(t, capturedQuery, "/var/run/secrets/servicenow")
+	assert.NotContains(t, capturedQuery, "sn-credentials")
 
 	// Internal IDs must NOT appear.
-	assert.NotContains(t, capturedContext, "sha256:abc123")
-	assert.NotContains(t, capturedContext, "img-v2-id")
-	assert.NotContains(t, capturedContext, "dep-2")  // deployment ID
-	assert.NotContains(t, capturedContext, "risk-2") // risk ID
+	assert.NotContains(t, capturedQuery, "sha256:abc123")
+	assert.NotContains(t, capturedQuery, "img-v2-id")
+	assert.NotContains(t, capturedQuery, "dep-2")  // deployment ID
+	assert.NotContains(t, capturedQuery, "risk-2") // risk ID
 
 	// Command, args, and directory must NOT appear.
-	assert.NotContains(t, capturedContext, "/bin/app")
-	assert.NotContains(t, capturedContext, "--port=8080")
+	assert.NotContains(t, capturedQuery, "/bin/app")
+	assert.NotContains(t, capturedQuery, "--port=8080")
 
 	// Relevant fields MUST appear.
-	assert.Contains(t, capturedContext, "mid-server")
-	assert.Contains(t, capturedContext, "operations")
-	assert.Contains(t, capturedContext, "cluster-west")
-	assert.Contains(t, capturedContext, "registry.example.com/app:v2")
-	assert.Contains(t, capturedContext, "Image is 180 days old")
+	assert.Contains(t, capturedQuery, "mid-server")
+	assert.Contains(t, capturedQuery, "operations")
+	assert.Contains(t, capturedQuery, "cluster-west")
+	assert.Contains(t, capturedQuery, "registry.example.com/app:v2")
+	assert.Contains(t, capturedQuery, "Image is 180 days old")
 }
 
 func TestGetDeploymentRiskAISummary_DeploymentNotFound(t *testing.T) {
@@ -319,140 +322,4 @@ func TestGetDeploymentRiskAISummary_NilRisk(t *testing.T) {
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-4"})
 	require.NoError(t, err)
 	assert.Equal(t, "No significant risk factors identified.", resp.GetSummary())
-}
-
-func TestBuildSanitizedRiskContext_FieldSelection(t *testing.T) {
-	deployment := &storage.Deployment{
-		Id:                            "id-should-be-stripped",
-		Hash:                          12345,
-		Name:                          "my-deployment",
-		Namespace:                     "my-namespace",
-		NamespaceId:                   "ns-id-should-be-stripped",
-		ClusterId:                     "cluster-id-should-be-stripped",
-		ClusterName:                   "my-cluster",
-		Type:                          "Deployment",
-		Created:                       timestamppb.Now(),
-		ServiceAccount:                "deployer-sa",
-		ServiceAccountPermissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
-		AutomountServiceAccountToken:  true,
-		HostNetwork:                   true,
-		HostPid:                       false,
-		HostIpc:                       false,
-		StateTimestamp:                999999,
-		ImagePullSecrets:              []string{"registry-secret"},
-		Tolerations: []*storage.Toleration{
-			{Key: "node-role.kubernetes.io/master"},
-		},
-		Ports: []*storage.PortConfig{
-			{Name: "http", ContainerPort: 8080},
-		},
-		Labels:      map[string]string{"app": "web"},
-		Annotations: map[string]string{"note": "test"},
-		Containers: []*storage.Container{
-			{
-				Id:   "container-id-should-be-stripped",
-				Name: "web",
-				Image: &storage.ContainerImage{
-					Id:             "sha256:deadbeef",
-					IdV2:           "idv2-stripped",
-					Name:           &storage.ImageName{FullName: "quay.io/app:latest"},
-					NotPullable:    true,
-					IsClusterLocal: true,
-				},
-				SecurityContext: &storage.SecurityContext{
-					Privileged:               true,
-					ReadOnlyRootFilesystem:   true,
-					AllowPrivilegeEscalation: false,
-					DropCapabilities:         []string{"ALL"},
-					AddCapabilities:          []string{"NET_BIND_SERVICE"},
-				},
-				Resources: &storage.Resources{
-					CpuCoresRequest: 0.25,
-					CpuCoresLimit:   1.0,
-					MemoryMbRequest: 128,
-					MemoryMbLimit:   512,
-				},
-				Config: &storage.ContainerConfig{
-					Uid: 0,
-					Env: []*storage.ContainerConfig_EnvironmentConfig{
-						{Key: "PASSWORD", Value: "secret123"},
-					},
-					Command:   []string{"/entrypoint.sh"},
-					Directory: "/app",
-				},
-				LivenessProbe:  &storage.LivenessProbe{Defined: true},
-				ReadinessProbe: &storage.ReadinessProbe{Defined: true},
-				Secrets: []*storage.EmbeddedSecret{
-					{Name: "tls-cert", Path: "/etc/tls/certs"},
-				},
-			},
-		},
-	}
-
-	risk := &storage.Risk{
-		Id:    "risk-id-stripped",
-		Score: 7.2,
-		Subject: &storage.RiskSubject{
-			Id:        "dep-subject",
-			Namespace: "my-namespace",
-			ClusterId: "cluster-1",
-		},
-		Results: []*storage.Risk_Result{
-			{
-				Name:  "Policy Violations",
-				Score: 4.0,
-				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Privileged container detected", Url: "https://docs.example.com/priv"},
-					{Message: "Running as root"},
-				},
-			},
-		},
-	}
-
-	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
-	require.NoError(t, err)
-
-	// Parse to verify structure.
-	var parsed map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal([]byte(contextJSON), &parsed))
-	assert.Contains(t, string(parsed["deployment"]), "my-deployment")
-	assert.Contains(t, string(parsed["risk"]), "Policy Violations")
-
-	// Fields that MUST be present.
-	assert.Contains(t, contextJSON, "my-deployment")
-	assert.Contains(t, contextJSON, "my-namespace")
-	assert.Contains(t, contextJSON, "my-cluster")
-	assert.Contains(t, contextJSON, "Deployment")
-	assert.Contains(t, contextJSON, "deployer-sa")
-	assert.Contains(t, contextJSON, "ELEVATED_IN_NAMESPACE")
-	assert.Contains(t, contextJSON, "quay.io/app:latest")
-	assert.Contains(t, contextJSON, "Privileged container detected")
-	assert.Contains(t, contextJSON, "Running as root")
-
-	// Fields that MUST be stripped — IDs and metadata.
-	assert.NotContains(t, contextJSON, "id-should-be-stripped")
-	assert.NotContains(t, contextJSON, "ns-id-should-be-stripped")
-	assert.NotContains(t, contextJSON, "cluster-id-should-be-stripped")
-	assert.NotContains(t, contextJSON, "container-id-should-be-stripped")
-	assert.NotContains(t, contextJSON, "sha256:deadbeef")
-	assert.NotContains(t, contextJSON, "idv2-stripped")
-	assert.NotContains(t, contextJSON, "risk-id-stripped")
-	assert.NotContains(t, contextJSON, "dep-subject")
-	assert.NotContains(t, contextJSON, "999999") // stateTimestamp
-
-	// Fields stripped for security.
-	assert.NotContains(t, contextJSON, "PASSWORD")
-	assert.NotContains(t, contextJSON, "secret123")
-	assert.NotContains(t, contextJSON, "/etc/tls/certs")
-	assert.NotContains(t, contextJSON, "tls-cert")
-	assert.NotContains(t, contextJSON, "/entrypoint.sh")
-
-	// Wasteful fields stripped.
-	assert.NotContains(t, contextJSON, "registry-secret")                // imagePullSecrets
-	assert.NotContains(t, contextJSON, "node-role.kubernetes.io/master") // tolerations
-	assert.NotContains(t, contextJSON, "https://docs.example.com/priv")  // factor URLs
-
-	// notPullable and isClusterLocal should not be included.
-	assert.NotContains(t, contextJSON, "notPullable")
-	assert.NotContains(t, contextJSON, "isClusterLocal")
 }

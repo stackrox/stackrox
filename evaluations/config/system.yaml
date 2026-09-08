@@ -1,0 +1,131 @@
+# lightspeed-evaluation system config for the deployment risk AI-summary harness.
+#
+# The harness runs in STATIC mode (agents.enabled: false): we generate the
+# candidate responses ourselves (harness/generate.py, direct LiteLLM calls) and
+# this framework only JUDGES them. Nothing here calls OpenShift Lightspeed.
+#
+# To change the judge model/provider, edit llm_pool.models + judge_panel below.
+# API keys are read from the environment (OPENAI_API_KEY, ANTHROPIC_API_KEY, ...).
+
+core:
+  max_threads: 1
+  cache_enabled: false
+
+llm_pool:
+  defaults:
+    timeout: 120
+    num_retries: 2
+    parameters:
+      temperature: 0.0
+      max_completion_tokens: 1024
+  models:
+    # The judge. Swap provider/model here to judge with a different LLM.
+    judge:
+#      provider: openai
+#      model: gpt-5.4-mini
+      provider: vertex_ai
+      model: claude-sonnet-4-5@20250929
+
+judge_panel:
+  judges:
+    - judge
+
+# We supply responses ourselves; the framework must not call any endpoint.
+agents:
+  enabled: false
+
+# Multi-dimension LLM-as-judge (GEval). Each metric sees the query (which is the
+# FULL production prompt, including the DEPLOYMENT AND RISK DATA JSON) and the
+# candidate response, so no ground-truth expected_response is required.
+metrics_metadata:
+  turn_level:
+    "geval:format_adherence":
+      threshold: 0.7
+      default: true
+      description: "Response follows the required sections, labels and plain-text rules."
+      evaluation_params: [query, response]
+      criteria: |
+        Score how well the response obeys the OUTPUT FORMAT demanded by the
+        instructions in the query. Full credit requires ALL of:
+        - Uses the exact section labels SUMMARY, RISK BREAKDOWN, IMMEDIATE ACTIONS
+          (omit RISK BREAKDOWN / IMMEDIATE ACTIONS only when it correctly states the
+          deployment has no significant risk, i.e. normalized score below 5).
+        - Plain text only: no markdown (no **, no backticks, no #).
+        - RISK BREAKDOWN uses at most 4 bullets, one sentence each.
+        - IMMEDIATE ACTIONS uses at most 4 numbered items, each with the oc command
+          on its own line.
+        - Does NOT echo the instructions or section descriptions back.
+        Penalize any markdown, wrong/missing labels, or exceeded item limits.
+
+    "geval:action_quality":
+      threshold: 0.7
+      default: true
+      description: "oc commands are valid, single-line, correctly scoped and safe."
+      evaluation_params: [query, response]
+      criteria: |
+        Score the quality of the IMMEDIATE ACTIONS. Full credit requires:
+        - Uses oc (not kubectl); each command is a single line, runnable as-is.
+        - Commands are scoped to the correct namespace and deployment name taken
+          from the DEPLOYMENT AND RISK DATA in the query.
+        - Only real oc subcommands are used: patch, set resources, set image,
+          create, delete, annotate, label.
+        - When a required value is not in the data (e.g. a new image tag), NO command
+          is given; the action is stated in plain text noting what to determine first.
+        - Actions that could break the workload are prefixed with the
+          "May affect application behavior:" warning.
+        Penalize kubectl, multi-line/broken commands, wrong namespace/name,
+        invented subcommands, or commands relying on unavailable values.
+
+    "geval:factual_grounding":
+      threshold: 0.8
+      default: true
+      description: "Every claim traces back to the supplied data; no hallucination."
+      evaluation_params: [query, response]
+      criteria: |
+        Score factual grounding. Every concrete claim in the response — image names,
+        CVE counts, permission levels, security-context flags, risk factors — MUST be
+        supported by the DEPLOYMENT AND RISK DATA JSON embedded in the query. Full
+        credit requires no fabricated images, numbers, findings, or fields, and that
+        a CLUSTER_ADMIN service account (if present in the data) is surfaced as a
+        top-priority finding. Penalize any unsupported or invented claim.
+
+    "geval:conciseness":
+      threshold: 0.7
+      default: true
+      description: "Concise, prioritized, leads with the most dangerous finding."
+      evaluation_params: [query, response]
+      criteria: |
+        Score concision and prioritization. Full credit requires: brief, declarative
+        sentences with no filler; SUMMARY is 2-3 sentences and opens with the single
+        most dangerous finding (the insight), not deployment metadata; it does not
+        restate the name/namespace/cluster/score already shown in the UI; length
+        limits are respected. Penalize padding, hedging, restating obvious metadata,
+        or burying the top risk.
+
+storage:
+  - type: file
+    output_dir: evaluations/output/framework
+    base_filename: evaluation
+    enabled_outputs:
+      - csv
+      - json
+      - txt
+    csv_columns:
+      - conversation_group_id
+      - turn_id
+      - metric_identifier
+      - score
+      - threshold
+      - result
+      - reason
+      - query
+      - response
+
+environment:
+  LITELLM_LOG: ERROR
+
+logging:
+  source_level: INFO
+  package_level: WARNING
+  log_format: '%(asctime)s - %(levelname)s - %(message)s'
+  show_timestamps: true

@@ -1,4 +1,4 @@
-package service
+package aisummary
 
 import (
 	"encoding/json"
@@ -6,11 +6,26 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// buildSanitizedRiskContext produces a minimal JSON representation of the
+// dataHeader separates the static prompt from the sanitized deployment/risk JSON
+// in the final LLM query.
+const dataHeader = "\n\nDEPLOYMENT AND RISK DATA:\n"
+
+// BuildQuery produces the full LLM query string for a deployment's risk summary:
+// the static Prompt followed by the sanitized deployment and risk data. This is
+// exactly what the production service sends to the LLM.
+func BuildQuery(deployment *storage.Deployment, risk *storage.Risk) (string, error) {
+	contextJSON, err := BuildSanitizedRiskContext(deployment, risk)
+	if err != nil {
+		return "", err
+	}
+	return Prompt + dataHeader + contextJSON, nil
+}
+
+// BuildSanitizedRiskContext produces a minimal JSON representation of the
 // deployment and risk data suitable for sending to an external LLM. It keeps
 // only fields relevant to risk analysis and strips sensitive data (env vars,
 // secret paths) and wasteful metadata (IDs, hashes, empty fields).
-func buildSanitizedRiskContext(deployment *storage.Deployment, risk *storage.Risk) (string, error) {
+func BuildSanitizedRiskContext(deployment *storage.Deployment, risk *storage.Risk) (string, error) {
 	ctx := sanitizedContext{
 		Deployment: sanitizeDeployment(deployment),
 		Risk:       sanitizeRisk(risk),

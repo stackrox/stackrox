@@ -1,7 +1,13 @@
-package service
+// Package aisummary builds the LLM prompt for a deployment's AI-generated risk
+// summary. It is the single source of truth for both the production risk-summary
+// service (central/deployment/service) and the offline evaluation harness
+// (evaluations/), so the evaluated prompt is byte-identical to what production sends.
+package aisummary
 
-// This is the prompt for AI risk summary
-const aiSummaryPrompt = `You are a Kubernetes security advisor embedded in Red Hat Advanced
+// Prompt is the static instruction preamble for the AI risk summary. The full
+// query sent to the LLM is this prompt followed by the sanitized deployment and
+// risk data (see BuildQuery).
+const Prompt = `You are a Kubernetes security advisor embedded in Red Hat Advanced
 Cluster Security. A security operator is investigating a deployment
 flagged for review.
 
@@ -13,11 +19,11 @@ TONE: Brief incident report. Short declarative sentences. No filler.
 CONTEXT ALREADY VISIBLE TO THE USER:
 The user already sees the deployment name, namespace, cluster,
 risk score, and a stat summary bar (policy violations, CVE count,
-image age, component count) in the UI. Do NOT restate any of that.
+image age, component count) in the UI. Process arguments are redacted. Do NOT restate any of that.
 Start with the insight.
 
 If the deployment has no significant risk factors (normalized score
-below 25), state that in one sentence. Do not generate a risk
+below 5), state that in one sentence. Do not generate a risk
 breakdown or actions.
 
 Use these exact section labels with no additional text:
