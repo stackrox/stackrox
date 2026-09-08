@@ -180,7 +180,7 @@ class NetworkGraphUtil {
             }
         }
         log.warn "SR did not detect an external source edge in Network Flow graph"
-        return null
+        return []
     }
 
     static NetworkGraphNodes getDeploymentsAsGraphNodes() {

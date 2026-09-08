@@ -6,8 +6,6 @@ import static util.Helpers.withRetry
 
 import common.Constants
 
-import java.net.InetAddress
-import java.net.UnknownHostException
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -1143,7 +1141,8 @@ class Kubernetes {
                 log.info "LB hostname ${hostname} does not resolve yet (waited ${t.SecondsSince()}s)"
             }
         }
-        log.error "LB hostname ${hostname} did not resolve within ${lbHostnameDnsWaitTimeSeconds}s; continuing, downstream calls may fail"
+        log.error "LB hostname ${hostname} did not resolve within " +
+                "${lbHostnameDnsWaitTimeSeconds}s; continuing, downstream calls may fail"
     }
 
     /*
