@@ -34,6 +34,28 @@ func readOnlyRootFSPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
+	// SPIKE: containerAgeTemplate displays the container instance start time from oldest_container_started.
+	// oldest_container_started is populated transiently at detection time — it is not persisted to the
+	// deployments table. The enrichment step (sensor-side or central-side, TBD) must set this before
+	// DetectDeployment is called, otherwise the field is zero and the criterion never fires.
+	containerAgeTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} has been running since {{.ContainerStartTime}} (UTC)`
+)
+
+func containerAgePrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName      string
+		ContainerStartTime string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.ContainerStartTime, err = getSingleValueFromFieldMap(search.ContainerStartTime.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(containerAgeTemplate, r)
+}
+
+const (
 	imageAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image{{else}}Image was{{end}} created at {{.ImageCreationTime}} (UTC)`
 )
 
