@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/views/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -21,7 +22,7 @@ func VirtualMachineV2ToListItem(vm *storage.VirtualMachineV2) *v2.VMListItem {
 		Namespace:   vm.GetNamespace(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
-		GuestOs:     vm.GetGuestOs(),
+		GuestOs:     pkgVM.DisplayGuestOS(vm.GetFacts(), vm.GetGuestOs()),
 		State:       convertVirtualMachineV2State(vm.GetState()),
 		LastUpdated: vm.GetLastUpdated(),
 	}
@@ -42,7 +43,7 @@ func VirtualMachineV2ToDetail(vm *storage.VirtualMachineV2) *v2.VMDetail {
 		Namespace:   vm.GetNamespace(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
-		GuestOs:     vm.GetGuestOs(),
+		GuestOs:     pkgVM.DisplayGuestOS(vm.GetFacts(), vm.GetGuestOs()),
 		State:       convertVirtualMachineV2State(vm.GetState()),
 		LastUpdated: vm.GetLastUpdated(),
 		Facts:       vm.GetFacts(),

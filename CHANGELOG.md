@@ -24,6 +24,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
+- ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
 
 ### Removed Features
 
