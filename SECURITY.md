@@ -71,10 +71,9 @@ We follow established industry best practices for secure development incl. but n
 
 # EU Cyber Resilience Act — Open Source Steward Statement
 
-This project is stewarded by **Red Hat, Inc.**, an open source software steward
-as defined in Article 3(14) of the
-[EU Cyber Resilience Act (Regulation 2024/2847)](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng).
-Contact: cra-steward@redhat.com
+This project is stewarded by **Red Hat, Inc.**, an open source software steward as defined in Article 3(14) of the [EU Cyber Resilience Act (Regulation 2024/2847)](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng).
+Contact: [cra-steward@redhat.com](mailto:cra-steward@redhat.com)
 
-Refer to [Red Hat's security practices and vulnerability management policy](https://access.redhat.com/security/)
-for detailed information.
+For guidance on reporting actively exploited vulnerabilities and severe incidents under the CRA, see [Reporting Actively Exploited Vulnerabilities and Severe Incidents](https://github.com/RedHatProductSecurity/CRA/blob/main/Guidelines/eu-cra-incident-and-vulnerability-reporting-guidelines.md).
+
+Refer to [Red Hat's security practices and vulnerability management policy](https://access.redhat.com/security/) for detailed information.
