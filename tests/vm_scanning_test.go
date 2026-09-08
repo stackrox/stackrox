@@ -119,6 +119,8 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NotEmpty(t, listed.GetClusterId())
 				require.NotEmpty(t, listed.GetClusterName())
 				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, listed.GetState())
+				require.NotNil(t, listed.GetScanTime(),
+					"ListVMs.scan_time should be populated from the latest scan")
 
 				cves, total, err := vmhelpers.ListAllVMCVEsByVM(s.ctx, s.vmV2Client, snapshot.ID)
 				require.NoError(t, err)

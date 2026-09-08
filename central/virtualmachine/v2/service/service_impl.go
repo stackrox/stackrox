@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -106,6 +107,11 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		vmIDs = append(vmIDs, vm.GetId())
 	}
 
+	scanTimeByVM, err := s.latestScanTimeByVM(ctx, vmIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Fetch per-VM CVE severity counts via SQL GROUP BY.
 	vmFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
 	severityRows, err := s.cveView.CountBySeverityPerVM(ctx, vmFilter)
@@ -134,6 +140,7 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 			item.CveSeverityCounts = &v2.VulnCountBySeverity{}
 		}
 		item.ComponentScanCount = componentCountsByVM[vm.GetId()]
+		item.ScanTime = scanTimeByVM[vm.GetId()]
 		items = append(items, item)
 	}
 
@@ -210,6 +217,32 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 		VmCount:  int32(vmCount),
 		CveCount: int32(cveCount),
 	}, nil
+}
+
+// latestScanTimeByVM returns the latest scan timestamp per VM. Scan IDs are
+// UUIDv7, so the greatest ID is the latest scan (same rule as GetVM).
+func (s *serviceImpl) latestScanTimeByVM(ctx context.Context, vmIDs []string) (map[string]*timestamppb.Timestamp, error) {
+	result := make(map[string]*timestamppb.Timestamp, len(vmIDs))
+	if len(vmIDs) == 0 {
+		return result, nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
+	scans, err := s.scanDS.SearchRawVMScans(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	latestID := make(map[string]string, len(scans))
+	for _, scan := range scans {
+		vmID := scan.GetVmV2Id()
+		if prevID, ok := latestID[vmID]; ok && scan.GetId() <= prevID {
+			continue
+		}
+		latestID[vmID] = scan.GetId()
+		result[vmID] = scan.GetScanTime()
+	}
+	return result, nil
 }
 
 // batchComponentScanCounts fetches all components for the given VM IDs in one query
