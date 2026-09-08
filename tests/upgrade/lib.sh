@@ -22,7 +22,11 @@ wait_for_central_reconciliation() {
         local numDeployments
         numDeployments="$(central_deployment_count)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
-        [[ -n "$numDeployments" && "$numDeployments" != "null" ]]
+        # GraphQL returns null while Central is still coming up; retry.
+        if [[ -z "$numDeployments" || "$numDeployments" == "null" ]]; then
+            sleep 10
+            continue
+        fi
         if [[ "$numDeployments" -lt 100 ]]; then
             success=1
             break
@@ -155,7 +159,8 @@ upgrade_central_helm_to_head() {
         --image-defaults opensource \
         --output-dir "${chart_dir}" --remove
 
-    # V4 TLS certs are signed with the install-time CA stored in this secret.
+    # Retrieve the generated-values secret from installation time.
+    # The helm chart needs the CA stored there to sign the V4 TLS certs.
     local helm_generated_values_file
     helm_generated_values_file="$(mktemp)"
     local generated_secrets_json
