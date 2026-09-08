@@ -755,7 +755,8 @@ function ConfigurationFormFields({
                                 <HelperText>
                                     <HelperTextItem>
                                         <span className="pf-v6-u-font-size-sm">
-                                            The name of the client registered in ACM for role resolution
+                                            The name of the client registered in ACM for role
+                                            resolution
                                         </span>
                                     </HelperTextItem>
                                 </HelperText>
