@@ -66,9 +66,10 @@ func TestCheckAndWarn(t *testing.T) {
 				warnMsg = format
 			}
 
-			checkAndWarn(tc.centralVersion, warn)
+			result := checkAndWarn(tc.centralVersion, warn)
 
 			assert.Equal(t, tc.expectWarning, warned, "warning expectation mismatch")
+			assert.Equal(t, tc.expectWarning, result, "return value should match warning emission")
 			if tc.warnContains != "" {
 				assert.Contains(t, warnMsg, tc.warnContains)
 			}

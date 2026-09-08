@@ -53,7 +53,7 @@ func TestUnaryServerInterceptor_Anonymous(t *testing.T) {
 }
 
 func TestVersionHeaderKey(t *testing.T) {
-	assert.Equal(t, "rh-central-version", clientconn.CentralVersionHeader)
+	assert.Equal(t, "Rh-Central-Version", clientconn.CentralVersionHeader)
 }
 
 func TestSetVersionHeader_UsesCurrentVersion(t *testing.T) {
