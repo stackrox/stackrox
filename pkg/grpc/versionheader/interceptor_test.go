@@ -2,61 +2,105 @@ package versionheader
 
 import (
 	"context"
+	"net"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/test/bufconn"
 )
+
+func TestUnaryServerInterceptor(t *testing.T) {
+	cases := map[string]struct {
+		authenticated bool
+		expectHeader  bool
+	}{
+		"authenticated request sets version header": {
+			authenticated: true,
+			expectHeader:  true,
+		},
+		"anonymous request does not set version header": {
+			authenticated: false,
+			expectHeader:  false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.SetMainVersion(t, "4.8.0")
+
+			var interceptors []grpc.UnaryServerInterceptor
+			if tc.authenticated {
+				interceptors = append(interceptors, injectIdentityInterceptor(t))
+			}
+			interceptors = append(interceptors, UnaryServerInterceptor())
+
+			conn := setupServer(t, interceptors...)
+
+			var md metadata.MD
+			client := v1.NewMetadataServiceClient(conn)
+			_, err := client.GetMetadata(context.Background(), &v1.Empty{}, grpc.Header(&md))
+			require.NoError(t, err)
+
+			vals := md.Get(clientconn.CentralVersionHeader)
+			if tc.expectHeader {
+				require.Len(t, vals, 1)
+				assert.Equal(t, "4.8.0", vals[0])
+			} else {
+				assert.Empty(t, vals)
+			}
+		})
+	}
+}
+
+// --- helpers and mocks ---
 
 type fakeIdentity struct {
 	authn.Identity
 }
 
-func TestUnaryServerInterceptor_Authenticated(t *testing.T) {
-	testutils.SetMainVersion(t, "4.8.0")
-	ctx := authn.ContextWithIdentity(context.Background(), fakeIdentity{}, t)
+type fakeMetadataServer struct {
+	v1.UnimplementedMetadataServiceServer
+}
 
-	interceptor := UnaryServerInterceptor()
+func (f *fakeMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Metadata, error) {
+	return &v1.Metadata{Version: "test"}, nil
+}
 
-	var handlerCalled bool
-	handler := func(ctx context.Context, req any) (any, error) {
-		handlerCalled = true
-		return "response", nil
+func injectIdentityInterceptor(t testing.TB) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		ctx = authn.ContextWithIdentity(ctx, fakeIdentity{}, t)
+		return handler(ctx, req)
 	}
-
-	resp, err := interceptor(ctx, nil, &grpc.UnaryServerInfo{}, handler)
-	assert.NoError(t, err)
-	assert.Equal(t, "response", resp)
-	assert.True(t, handlerCalled)
 }
 
-func TestUnaryServerInterceptor_Anonymous(t *testing.T) {
-	testutils.SetMainVersion(t, "4.8.0")
-	ctx := context.Background()
+func setupServer(t *testing.T, interceptors ...grpc.UnaryServerInterceptor) *grpc.ClientConn {
+	listener := bufconn.Listen(1024 * 1024)
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(interceptors...))
+	v1.RegisterMetadataServiceServer(server, &fakeMetadataServer{})
 
-	interceptor := UnaryServerInterceptor()
+	go func() {
+		assert.NoError(t, server.Serve(listener))
+	}()
 
-	var handlerCalled bool
-	handler := func(ctx context.Context, req any) (any, error) {
-		handlerCalled = true
-		return "response", nil
-	}
+	conn, err := grpc.DialContext(context.Background(), "",
+		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
+			return listener.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
 
-	resp, err := interceptor(ctx, nil, &grpc.UnaryServerInfo{}, handler)
-	assert.NoError(t, err)
-	assert.Equal(t, "response", resp)
-	assert.True(t, handlerCalled)
-}
-
-func TestVersionHeaderKey(t *testing.T) {
-	assert.Equal(t, "Rh-Central-Version", clientconn.CentralVersionHeader)
-}
-
-func TestSetVersionHeader_UsesCurrentVersion(t *testing.T) {
-	testutils.SetMainVersion(t, "5.1.0")
-	assert.Equal(t, "5.1.0", version.GetMainVersion())
+	t.Cleanup(func() {
+		_ = listener.Close()
+		server.Stop()
+	})
+	return conn
 }
