@@ -54,6 +54,7 @@ describe('Virtual Machine CVEs - Overview Page', () => {
         );
 
         cy.get('h1').contains('Virtual machine vulnerabilities');
+        cy.contains('Technology preview').should('not.exist');
         cy.get('body').contains('Prioritize and remediate observed CVEs across virtual machines');
     });
 
