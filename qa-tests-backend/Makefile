@@ -37,7 +37,7 @@ proto-generated-srcs: build/generated
 
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
-	../scripts/lib.sh retry 5 true "$(GRADLE) --refresh-dependencies generateProto generateTestProto"
+	../scripts/lib.sh retry 5 true $(GRADLE) --refresh-dependencies generateProto generateTestProto
 	$(GRADLE) generateProto generateTestProto
 
 src/main/proto/scanner: ../go.mod
