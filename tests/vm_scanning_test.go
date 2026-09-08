@@ -120,6 +120,14 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NotEmpty(t, listed.GetClusterName())
 				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, listed.GetState())
 
+				detail := s.mustGetVMV2(snapshot.ID)
+				require.NotNil(t, detail.GetLatestScan(),
+					"GetVM.latest_scan should be set for a scanned VM")
+				require.NotNil(t, listed.GetScanTime(),
+					"ListVMs.scan_time should be populated from the latest scan")
+				require.Equal(t, detail.GetLatestScan().GetScanTime().AsTime(), listed.GetScanTime().AsTime(),
+					"ListVMs.scan_time should match GetVM.latest_scan.scan_time")
+
 				cves, total, err := vmhelpers.ListAllVMCVEsByVM(s.ctx, s.vmV2Client, snapshot.ID)
 				require.NoError(t, err)
 				require.Greater(t, total, int32(0), "scanned RHEL guest should report CVEs via ListVMCVEsByVM")

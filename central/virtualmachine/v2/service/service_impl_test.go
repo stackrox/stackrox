@@ -907,8 +907,9 @@ func TestListVMs(t *testing.T) {
 		Notes: []storage.VirtualMachineComponentV2_Note{storage.VirtualMachineComponentV2_UNSCANNED},
 	}
 
+	scanTime := timestamppb.New(time.Date(2025, time.April, 15, 10, 30, 0, 0, time.UTC))
 	scan1 := &storage.VirtualMachineScanV2{
-		Id: "scan-1", VmV2Id: "vm-1",
+		Id: "scan-1", VmV2Id: "vm-1", ScanTime: scanTime,
 	}
 
 	tests := map[string]struct {
@@ -928,6 +929,7 @@ func TestListVMs(t *testing.T) {
 				}).AnyTimes()
 				mockView.EXPECT().CountBySeverityPerVM(ctx, gomock.Any()).Return([]vmcve.VMSeverityCounts{sevCounts}, nil)
 				mockComp.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return([]*storage.VirtualMachineComponentV2{comp1, compUnscanned}, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
 				mockScan.EXPECT().GetBatch(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
 			},
 			expectedCount: 1,
@@ -938,6 +940,8 @@ func TestListVMs(t *testing.T) {
 				assert.Equal(t, int32(1), item.GetCveSeverityCounts().GetCritical().GetFixable())
 				assert.Equal(t, int32(2), item.GetComponentScanCount().GetTotal())
 				assert.Equal(t, int32(1), item.GetComponentScanCount().GetScanned())
+				require.NotNil(t, item.GetScanTime())
+				assert.Equal(t, scanTime.AsTime(), item.GetScanTime().AsTime())
 			},
 		},
 		"empty list": {
