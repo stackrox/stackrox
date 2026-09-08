@@ -110,6 +110,8 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		return nil
 	}
 
+	attachStoredAgentFacts(d.store, vm)
+
 	// Send an Update event for the VirtualMachine that handles this instance
 	return component.NewEvent(createEvent(central.ResourceAction_UPDATE_RESOURCE, d.clusterID, vm))
 }
