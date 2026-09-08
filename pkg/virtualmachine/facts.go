@@ -1,5 +1,7 @@
 package virtualmachine
 
+import "cmp"
+
 // Facts keys used in VirtualMachine.Facts maps.
 // Keep the keys camelCase to match the style used elsewhere in the UI.
 const (
@@ -29,3 +31,9 @@ const (
 	DNFMetadataStatusAvailable   = "available"
 	DNFMetadataStatusUnavailable = "unavailable"
 )
+
+// DisplayGuestOS prefers the agent-detected OS so callers can show a versioned
+// string while storage.GuestOs remains the informer value used for scan stamping.
+func DisplayGuestOS(facts map[string]string, fallback string) string {
+	return cmp.Or(facts[DetectedGuestOSKey], fallback)
+}
