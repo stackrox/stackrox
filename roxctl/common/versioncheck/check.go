@@ -53,6 +53,9 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	if err != nil {
 		return false
 	}
+	if compat != versioncompatibility.IncompatibleAhead && compat != versioncompatibility.IncompatibleBehind {
+		return false
+	}
 
 	versionRange, err := versioncompatibility.CompatibleVersions()
 	if err != nil {
@@ -60,25 +63,19 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	}
 	compatRange := formatVersionRange(versionRange)
 
-	switch compat {
-	case versioncompatibility.IncompatibleAhead:
-		fmt.Fprintf(w, "Warning: Your roxctl %s is too old for this Central %s. "+
-			"Correct functioning is not guaranteed. "+
-			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
-			roxctlVersion, centralVersion)
-		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
-			roxctlVersion, centralVersion, compatRange)
-		return true
-	case versioncompatibility.IncompatibleBehind:
-		fmt.Fprintf(w, "Warning: Your roxctl %s is too new for this Central %s. "+
-			"Correct functioning is not guaranteed. "+
-			"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
-			roxctlVersion, centralVersion)
-		fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
-			roxctlVersion, centralVersion, compatRange)
-		return true
+	var direction string
+	if compat == versioncompatibility.IncompatibleAhead {
+		direction = "too old"
+	} else {
+		direction = "too new"
 	}
-	return false
+	fmt.Fprintf(w, "Warning: Your roxctl %s is %s for this Central %s. "+
+		"Correct functioning is not guaranteed. "+
+		"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
+		roxctlVersion, direction, centralVersion)
+	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+		roxctlVersion, centralVersion, compatRange)
+	return true
 }
 
 // headerSource returns a function that, when called after the RPC completes,
