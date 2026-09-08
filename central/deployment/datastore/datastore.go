@@ -48,6 +48,8 @@ type DataStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
+
+	GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error)
 }
 
 func newDataStore(

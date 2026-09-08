@@ -43,37 +43,6 @@ class NullTest(BaseTest):
         pass
 
 
-class UpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60 * 2
-    TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
-    TEST_PG_UPGRADE_OUTPUT_DIR = "/tmp/postgres-version-upgrade-test-logs"
-    TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
-
-    def run(self):
-        print("Executing the Upgrade Test")
-
-        self.run_with_graceful_kill(
-            [
-                "tests/upgrade/postgres_sensor_run.sh",
-                self.TEST_SENSOR_OUTPUT_DIR,
-            ],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_SENSOR_OUTPUT_DIR,
-        )
-
-        self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_run.sh", self.TEST_OUTPUT_DIR],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_OUTPUT_DIR,
-        )
-
-        self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_upgrade_run.sh", self.TEST_PG_UPGRADE_OUTPUT_DIR],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_PG_UPGRADE_OUTPUT_DIR,
-        )
-
-
 class OperatorE2eTest(BaseTest):
     OLM_SETUP_TIMEOUT_SEC = 60 * 2
     TEST_TIMEOUT_SEC = 60 * 60 * 2

@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -1069,6 +1070,51 @@ func TestEnrichWithSignatureVerificationDataV2_Failure(t *testing.T) {
 		EnrichmentContext{FetchOpt: ForceRefetch}, img)
 	require.Error(t, err)
 	assert.False(t, updated)
+}
+
+// TestEnrichWithSignatureVerificationDataV2_Timeout verifies that the signature verification
+// context is bounded by ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT for the V2 (flattened image
+// data) path. This guards against regressing to a timeout too short for keyless (remote-RPC)
+// verification, which caused valid keyless Sigstore signatures to be marked unverified
+// (ROX-36605).
+func TestEnrichWithSignatureVerificationDataV2_Timeout(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	// Use an arbitrary, non-default value so the assertion proves the deadline is driven by the
+	// env var rather than by the 30s default (or the old hardcoded 1s).
+	const timeout = 17 * time.Second
+	t.Setenv(env.ImageSignatureVerificationTimeout.EnvVar(), timeout.String())
+
+	var deadline time.Time
+	haveDeadline := false
+	e := enricherV2Impl{
+		signatureIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
+		signatureVerifier: func(ctx context.Context, _ []*storage.SignatureIntegration,
+			_ *storage.Image) []*storage.ImageSignatureVerificationResult {
+			deadline, haveDeadline = ctx.Deadline()
+			return []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+			}
+		},
+	}
+	img := &storage.ImageV2{
+		Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+		Digest:    "sha",
+		Name:      &storage.ImageName{FullName: "test:1.0"},
+		Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}}
+
+	// The verifier is a stub that returns immediately, so this call does not wait for the timeout;
+	// it only checks the deadline the enricher put on the verification context.
+	start := time.Now()
+	updated, err := e.enrichWithSignatureVerificationData(emptyCtx,
+		EnrichmentContext{FetchOpt: ForceRefetch}, img)
+	require.NoError(t, err)
+	assert.True(t, updated)
+	require.True(t, haveDeadline, "verification context should carry a deadline")
+	// The deadline must be start+timeout. A 1s tolerance absorbs the negligible work between
+	// capturing start and creating the context; it is unrelated to the old hardcoded 1s timeout.
+	assert.WithinDuration(t, start.Add(timeout), deadline, time.Second,
+		"verification deadline should reflect ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT")
 }
 
 func TestDelegateEnrichImageV2(t *testing.T) {
