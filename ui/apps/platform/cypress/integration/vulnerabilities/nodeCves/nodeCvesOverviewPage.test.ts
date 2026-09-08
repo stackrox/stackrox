@@ -12,7 +12,7 @@ import {
     routeMatcherMapForEntityCounts,
     routeMatcherMapForNodeCves,
     routeMatcherMapForNodes,
-    visitFirstNodeLinkFromTable,
+    staticResponseMapForNodes,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
 import {
@@ -111,12 +111,20 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should link a Node table row to the correct Node detail page', () => {
-        visitNodeCveOverviewPage();
-        visitEntityTab('Node');
-
-        visitFirstNodeLinkFromTable().then((name) => {
-            cy.get('h1').contains(name);
+        // This table lists nodes that have unsnoozed CVEs. A scan with none leaves
+        // it empty, so CI cannot rely on live rows. Mock the list and assert hrefs.
+        visitNodeCveOverviewPage(routeMatcherMapForNodes, staticResponseMapForNodes, {
+            entityTab: 'Node',
         });
+
+        cy.get('tbody tr td[data-label="Node"] a')
+            .first()
+            .then(($link) => {
+                const linkHref = $link.attr('href');
+                const linkName = $link.text();
+                expect(linkHref).to.match(/\/node-cves\/nodes\/1$/);
+                expect(linkName).to.eq('cypress-node-1');
+            });
     });
 
     it('should sort CVE table columns', () => {
@@ -187,6 +195,8 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should sort Node table columns', () => {
+        // Sorting asserts request payloads. The table may have zero rows when
+        // no unsnoozed Node CVEs exist; headers still trigger those requests.
         interceptAndWatchRequests(routeMatcherMapForNodes).then(
             ({
                 waitForRequests,
@@ -314,6 +324,7 @@ describe('Node CVEs - Overview Page', () => {
         // expectRequestedQueryToIncludeSubstrings asserts items to be independent
         // of order in concatenated query string
         // of CVE Snoozed that is outside scope of test
+        // Row-content checks no-op when the table is empty (no unsnoozed Node CVEs).
         interceptAndWatchRequests(routeMatcherMapForNodes).then(
             ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
                 // Visit Node tab and wait for initial load
