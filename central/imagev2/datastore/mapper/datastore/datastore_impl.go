@@ -186,6 +186,10 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(i
 	})
 }
 
+func (ds *datastoreImpl) WalkMetadataByQuery(_ context.Context, _ *v1.Query, _ func(image *storage.Image) error) error {
+	return errors.New("WalkMetadataByQuery is not implemented for mapper datastore")
+}
+
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
 	if !ds.flattenImageData {
 		return ds.imageDataStore.UpsertImage(ctx, image)

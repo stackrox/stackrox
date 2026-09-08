@@ -125,10 +125,12 @@ enum VMNote {
   VM_NOTE_SCAN_FAILED = 5;
 }
 
-// Agent status enriched from a separate data source (not on VirtualMachineV2 storage).
+// AgentStatus is roxagent liveness from scrape freshness, computed on GetVM
+// (not a stored enum). UNKNOWN means never scraped; INACTIVE means scraped, then quiet.
 enum AgentStatus {
   AGENT_STATUS_UNKNOWN = 0;
   AGENT_STATUS_ACTIVE = 1;
+  AGENT_STATUS_INACTIVE = 2;
 }
 
 message VMDetail {
