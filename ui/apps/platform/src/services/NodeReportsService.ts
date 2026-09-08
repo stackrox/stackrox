@@ -1,24 +1,33 @@
 import queryString from 'qs';
 
+import type { ReportNotificationMethod } from 'types/reportJob';
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
 import {
     buildNestedRawQueryParams,
     getListQueryParams,
+    getPaginationParams,
     getRequestQueryStringForSearchFilter,
 } from 'utils/searchUtils';
 
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
+import type { FetchReportHistoryServiceParams } from './ReportsService';
+import { isConfiguredReportSnapshot } from './ReportsService.types';
 import type {
+    ConfiguredReportSnapshot,
     NodeViewBasedReportSnapshot,
     NodeVulnerabilityReportConfiguration,
+    ReportHistoryResponse,
     ReportRequestViewBased,
+    RunReportResponse,
     RunReportResponseViewBased,
 } from './ReportsService.types';
 import type { Empty } from './types';
 
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/node_report_service.proto
+
+export const nodeReportDownloadURL = '/api/reports/node/jobs/download';
 
 // Configuration of scheduled reports
 
@@ -95,10 +104,69 @@ export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> 
 // Configuration-based jobs
 
 // RunNodeReport
+export function runNodeReport(
+    reportConfigId: string,
+    reportNotificationMethod: ReportNotificationMethod
+): Promise<RunReportResponse> {
+    return axios
+        .post<RunReportResponse>('/v2/reports/node/run', {
+            reportConfigId,
+            reportNotificationMethod,
+        })
+        .then((response) => response.data);
+}
+
+type FetchNodeReportHistoryServiceParams = Omit<FetchReportHistoryServiceParams, 'showMyHistory'>;
 
 // GetNodeReportHistory
+export function fetchNodeReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+}: FetchNodeReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<ReportHistoryResponse>(`/v2/reports/node/configurations/${id}/history?${params}`)
+        .then((response) => {
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
+        });
+}
 
 // GetMyNodeReportHistory
+export function fetchMyNodeReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+}: FetchNodeReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<ReportHistoryResponse>(`/v2/reports/node/configurations/${id}/my-history?${params}`)
+        .then((response) => {
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
+        });
+}
 
 // Job management
 
