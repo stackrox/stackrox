@@ -155,9 +155,6 @@ var (
 	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
 	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
 
-	// AIIntegrations enables AI integrations management
-	AIIntegrations = registerFeature("Enable AI integrations management", "ROX_AI_INTEGRATIONS")
-
 	// LightspeedRiskSummary enables Lightspeed AI risk summary
 	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
 )

@@ -6,6 +6,8 @@ import (
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -86,6 +88,41 @@ func TestAgentStatusFromLastContact(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.Equal(t, tc.expected, AgentStatusFromLastContact(tc.ts, now, staleAfter))
+		})
+	}
+}
+
+func TestVirtualMachineV2GuestOsDisplay(t *testing.T) {
+	tests := map[string]struct {
+		facts    map[string]string
+		storedOS string
+		want     string
+	}{
+		"prefers detected guest OS": {
+			facts: map[string]string{
+				pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
+				pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
+			},
+			storedOS: "Red Hat Enterprise Linux",
+			want:     "Red Hat Enterprise Linux 9.2",
+		},
+		"falls back to stored guest OS": {
+			facts:    map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux"},
+			storedOS: "Red Hat Enterprise Linux",
+			want:     "Red Hat Enterprise Linux",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vm := &storage.VirtualMachineV2{
+				Id:      "vm-1",
+				Facts:   tt.facts,
+				GuestOs: tt.storedOS,
+			}
+			assert.Equal(t, tt.want, VirtualMachineV2ToDetail(vm).GetGuestOs())
+			assert.Equal(t, tt.want, VirtualMachineV2ToListItem(vm).GetGuestOs())
+			assert.Equal(t, tt.storedOS, vm.GetGuestOs())
 		})
 	}
 }
