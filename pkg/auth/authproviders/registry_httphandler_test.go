@@ -628,11 +628,7 @@ func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*s
 }
 
 func (*tstAuthProviderStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
-	for _, p := range []*storage.AuthProvider{
-		mockAuthProvider,
-		mockAuthProviderWithAttributes,
-		mockOpenShiftAuthProviderWithACMDelegationAndAttributes,
-	} {
+	for _, p := range []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes} {
 		err := fn(p)
 		if err != nil {
 			return err
