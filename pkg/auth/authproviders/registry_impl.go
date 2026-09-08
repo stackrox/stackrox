@@ -13,13 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acm"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -454,7 +454,7 @@ func getRolesForOpenshiftResponse(
 		return nil, errox.InvalidArgs.CausedByf("failed to parse token: %v", err)
 	}
 	// Retrieve OpenShift cluster config
-	cfg, err := k8sutil.GetK8sInClusterConfig()
+	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
