@@ -44,7 +44,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
-- The Virtual Machine CVEs overview table now shows the latest scan time for each VM instead of "Not available".
 
 ## [4.11.0]
 
