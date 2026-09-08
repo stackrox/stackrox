@@ -16,4 +16,4 @@ const ExecutionEnvironment = "Rh-Execution-Environment"
 // CentralVersionHeader is the gRPC response metadata key carrying the
 // Central version. Set by Central for authenticated requests so that
 // clients (e.g. roxctl) can detect version skew without an extra RPC.
-const CentralVersionHeader = "rh-central-version"
+const CentralVersionHeader = "Rh-Central-Version"

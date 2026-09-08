@@ -667,7 +667,6 @@ func startGRPCServer() {
 	)
 
 	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.UnaryServerInterceptor())
-	config.StreamInterceptors = append(config.StreamInterceptors, versionheader.StreamServerInterceptor())
 
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
