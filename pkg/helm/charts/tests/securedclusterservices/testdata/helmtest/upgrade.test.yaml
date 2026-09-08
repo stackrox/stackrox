@@ -1,4 +1,6 @@
 values:
+  scannerV4:
+    disable: false
   imagePullSecrets:
     allowNone: true
 release:
