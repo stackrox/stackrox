@@ -177,6 +177,60 @@ func (s *VMStoreTestSuite) TestUpsertVM_Changed() {
 	s.NotEqual(firstGet.GetHash(), secondGet.GetHash(), "hash should change when data changes")
 }
 
+func (s *VMStoreTestSuite) TestUpsertScan_StampsLastAgentContact() {
+	vm := s.newVM()
+	s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+	beforeScan, _, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.Nil(beforeScan.GetLastAgentContact())
+
+	parts := s.newScanParts(vm.GetId())
+	before := time.Now()
+	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts))
+	after := time.Now()
+
+	afterScan, _, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.Require().NotNil(afterScan.GetLastAgentContact())
+	contact := afterScan.GetLastAgentContact().AsTime()
+	s.False(contact.Before(before), "LastAgentContact %v is before UpsertScan started at %v", contact, before)
+	s.False(contact.After(after), "LastAgentContact %v is after UpsertScan finished at %v", contact, after)
+}
+
+func (s *VMStoreTestSuite) TestUpsertVM_PreservesLastAgentContactWhenInformerOmitsIt() {
+	for name, mutate := range map[string]func(*storage.VirtualMachineV2){
+		"unchanged upsert": func(*storage.VirtualMachineV2) {},
+		"changed upsert": func(informerUpdate *storage.VirtualMachineV2) {
+			informerUpdate.State = storage.VirtualMachineV2_STOPPED
+		},
+	} {
+		s.Run(name, func() {
+			vm := s.newVM()
+			s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+			parts := s.newScanParts(vm.GetId())
+			s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts))
+
+			afterScan, _, err := s.store.Get(s.ctx, vm.GetId())
+			s.NoError(err)
+			s.Require().NotNil(afterScan.GetLastAgentContact())
+			contact := afterScan.GetLastAgentContact().AsTime()
+
+			informerUpdate := vm.CloneVT()
+			informerUpdate.LastUpdated = nil
+			informerUpdate.Hash = 0
+			informerUpdate.LastAgentContact = nil
+			mutate(informerUpdate)
+			s.NoError(s.store.UpsertVM(s.ctx, informerUpdate))
+
+			got, _, err := s.store.Get(s.ctx, vm.GetId())
+			s.NoError(err)
+			s.Equal(contact, got.GetLastAgentContact().AsTime())
+		})
+	}
+}
+
 // endregion UpsertVM tests
 
 // region UpsertScan tests

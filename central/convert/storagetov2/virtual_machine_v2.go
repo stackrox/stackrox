@@ -2,10 +2,13 @@ package storagetov2
 
 import (
 	"slices"
+	"time"
 
 	"github.com/stackrox/rox/central/views/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // VirtualMachineV2ToListItem converts a storage VM V2 to an API list item.
@@ -19,7 +22,7 @@ func VirtualMachineV2ToListItem(vm *storage.VirtualMachineV2) *v2.VMListItem {
 		Namespace:   vm.GetNamespace(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
-		GuestOs:     vm.GetGuestOs(),
+		GuestOs:     pkgVM.DisplayGuestOS(vm.GetFacts(), vm.GetGuestOs()),
 		State:       convertVirtualMachineV2State(vm.GetState()),
 		LastUpdated: vm.GetLastUpdated(),
 	}
@@ -40,13 +43,25 @@ func VirtualMachineV2ToDetail(vm *storage.VirtualMachineV2) *v2.VMDetail {
 		Namespace:   vm.GetNamespace(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
-		GuestOs:     vm.GetGuestOs(),
+		GuestOs:     pkgVM.DisplayGuestOS(vm.GetFacts(), vm.GetGuestOs()),
 		State:       convertVirtualMachineV2State(vm.GetState()),
 		LastUpdated: vm.GetLastUpdated(),
 		Facts:       vm.GetFacts(),
 		VsockCid:    vm.GetVsockCid(),
 		Notes:       notes,
 	}
+}
+
+// AgentStatusFromLastContact maps scrape freshness onto the GetVM enum.
+// A nil/invalid timestamp is UNKNOWN; age >= staleAfter is INACTIVE.
+func AgentStatusFromLastContact(ts *timestamppb.Timestamp, now time.Time, staleAfter time.Duration) v2.AgentStatus {
+	if ts == nil || !ts.IsValid() {
+		return v2.AgentStatus_AGENT_STATUS_UNKNOWN
+	}
+	if now.Sub(ts.AsTime()) < staleAfter {
+		return v2.AgentStatus_AGENT_STATUS_ACTIVE
+	}
+	return v2.AgentStatus_AGENT_STATUS_INACTIVE
 }
 
 func convertVMNote(note storage.VirtualMachineV2_Note) v2.VMNote {

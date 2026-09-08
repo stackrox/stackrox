@@ -2,10 +2,14 @@ package storagetov2
 
 import (
 	"testing"
+	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestVirtualMachineV2ToDetail_Notes(t *testing.T) {
@@ -47,6 +51,78 @@ func TestVirtualMachineV2ToDetail_Notes(t *testing.T) {
 				Notes: []storage.VirtualMachineV2_Note{tc.note},
 			})
 			require.Equal(t, []v2.VMNote{tc.expected}, detail.GetNotes())
+		})
+	}
+}
+
+func TestAgentStatusFromLastContact(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	staleAfter := 12 * time.Hour
+
+	tests := map[string]struct {
+		ts       *timestamppb.Timestamp
+		expected v2.AgentStatus
+	}{
+		"should return unknown when never scraped": {
+			ts:       nil,
+			expected: v2.AgentStatus_AGENT_STATUS_UNKNOWN,
+		},
+		"should return unknown when timestamp is invalid": {
+			ts:       &timestamppb.Timestamp{Nanos: 2_000_000_000},
+			expected: v2.AgentStatus_AGENT_STATUS_UNKNOWN,
+		},
+		"should return active when last scrape is still inside the window": {
+			ts:       timestamppb.New(now.Add(-time.Hour)),
+			expected: v2.AgentStatus_AGENT_STATUS_ACTIVE,
+		},
+		"should return inactive when last scrape is exactly the window": {
+			ts:       timestamppb.New(now.Add(-staleAfter)),
+			expected: v2.AgentStatus_AGENT_STATUS_INACTIVE,
+		},
+		"should return inactive when last scrape is older than the window": {
+			ts:       timestamppb.New(now.Add(-13 * time.Hour)),
+			expected: v2.AgentStatus_AGENT_STATUS_INACTIVE,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.expected, AgentStatusFromLastContact(tc.ts, now, staleAfter))
+		})
+	}
+}
+
+func TestVirtualMachineV2GuestOsDisplay(t *testing.T) {
+	tests := map[string]struct {
+		facts    map[string]string
+		storedOS string
+		want     string
+	}{
+		"prefers detected guest OS": {
+			facts: map[string]string{
+				pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
+				pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
+			},
+			storedOS: "Red Hat Enterprise Linux",
+			want:     "Red Hat Enterprise Linux 9.2",
+		},
+		"falls back to stored guest OS": {
+			facts:    map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux"},
+			storedOS: "Red Hat Enterprise Linux",
+			want:     "Red Hat Enterprise Linux",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vm := &storage.VirtualMachineV2{
+				Id:      "vm-1",
+				Facts:   tt.facts,
+				GuestOs: tt.storedOS,
+			}
+			assert.Equal(t, tt.want, VirtualMachineV2ToDetail(vm).GetGuestOs())
+			assert.Equal(t, tt.want, VirtualMachineV2ToListItem(vm).GetGuestOs())
+			assert.Equal(t, tt.storedOS, vm.GetGuestOs())
 		})
 	}
 }

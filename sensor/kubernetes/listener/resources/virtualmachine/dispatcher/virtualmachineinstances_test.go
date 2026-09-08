@@ -104,6 +104,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   false,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -136,6 +137,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   false,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -160,6 +162,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 				gomock.InOrder(
 					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -173,6 +176,45 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
 						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
+					},
+				},
+			}),
+		},
+		"remove event keeps stored agent facts": {
+			action: central.ResourceAction_REMOVE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
+			expectFn: func() {
+				gomock.InOrder(
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(&vmInfo.Info{
+						ID: ownerUID,
+						AgentFacts: map[string]string{
+							pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.8",
+							pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusActive,
+							pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+							pkgVM.AgentVersionKey:      "development",
+						},
+					}),
+				)
+			},
+			expectedMsg: component.NewEvent(&central.SensorEvent{
+				Id:     ownerUID,
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:        ownerUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts: map[string]string{
+							pkgVM.GuestOSKey:           pkgVM.UnknownGuestOS,
+							pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.8",
+							pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusActive,
+							pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+							pkgVM.AgentVersionKey:      "development",
+						},
 					},
 				},
 			}),
@@ -352,6 +394,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   true,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
