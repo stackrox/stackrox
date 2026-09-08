@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"testing"
 
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
@@ -10,6 +11,8 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -592,6 +595,21 @@ func TestValidateCancelReportRequest(t *testing.T) {
 			expectError: true,
 			errContains: "not found",
 		},
+		"node vulnerability snapshot is rejected": {
+			reportID: "node-job",
+			setupMocks: func() {
+				snapshotDS.EXPECT().Get(gomock.Any(), "node-job").Return(&storage.ReportSnapshot{
+					ReportId: "node-job",
+					Type:     storage.ReportSnapshot_NODE_VULNERABILITY,
+					ReportStatus: &storage.ReportStatus{
+						RunState: storage.ReportStatus_WAITING,
+					},
+					Requester: &storage.SlimUser{Id: "user-1"},
+				}, true, nil)
+			},
+			expectError: true,
+			errContains: "node report service",
+		},
 	}
 
 	for name, tc := range tests {
@@ -609,5 +627,84 @@ func TestValidateCancelReportRequest(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func TestPersistReportSnapshot_NodeOnDemandPending(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	snapshotDS := snapshotDSMocks.NewMockDataStore(ctrl)
+	validator := New(reportConfigDSMocks.NewMockDataStore(ctrl), snapshotDS, collectionDSMocks.NewMockDataStore(ctrl), notifierDSMocks.NewMockDataStore(ctrl))
+
+	pending := &storage.ReportSnapshot{
+		ReportConfigurationId: "cfg",
+		Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+		Requester:             &storage.SlimUser{Id: "u1"},
+	}
+	snapshotDS.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{pending}, nil)
+
+	_, err := validator.PersistReportSnapshot(t.Context(), nodeOnDemandSnapshot("cfg", "u1"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already has a report running")
+}
+
+func TestPersistReportSnapshot_NodeViewBasedPending(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	snapshotDS := snapshotDSMocks.NewMockDataStore(ctrl)
+	validator := New(reportConfigDSMocks.NewMockDataStore(ctrl), snapshotDS, collectionDSMocks.NewMockDataStore(ctrl), notifierDSMocks.NewMockDataStore(ctrl))
+
+	snapshotDS.EXPECT().Count(gomock.Any(), gomock.Any()).Return(1, nil)
+
+	_, err := validator.PersistReportSnapshot(t.Context(), nodeViewBasedSnapshot("u1"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "view based report queued")
+}
+
+func TestPersistReportSnapshot_NodeViewBasedElevatesSAC(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	snapshotDS := snapshotDSMocks.NewMockDataStore(ctrl)
+	validator := New(reportConfigDSMocks.NewMockDataStore(ctrl), snapshotDS, collectionDSMocks.NewMockDataStore(ctrl), notifierDSMocks.NewMockDataStore(ctrl))
+
+	snapshotDS.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil)
+	snapshotDS.EXPECT().AddReportSnapshot(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, _ *storage.ReportSnapshot) (string, error) {
+			ok, err := sac.ForResource(resources.WorkflowAdministration).WriteAllowed(ctx)
+			require.NoError(t, err)
+			assert.True(t, ok)
+			return "report-id", nil
+		})
+
+	id, err := validator.PersistReportSnapshot(sac.WithNoAccess(t.Context()), nodeViewBasedSnapshot("u1"))
+	require.NoError(t, err)
+	assert.Equal(t, "report-id", id)
+}
+
+func nodeOnDemandSnapshot(configID, userID string) *storage.ReportSnapshot {
+	return &storage.ReportSnapshot{
+		ReportConfigurationId: configID,
+		Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+		Requester:             &storage.SlimUser{Id: userID},
+		Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
+				Query: "Cluster:c1",
+			},
+		},
+		ReportStatus: &storage.ReportStatus{
+			ReportRequestType: storage.ReportStatus_ON_DEMAND,
+		},
+	}
+}
+
+func nodeViewBasedSnapshot(userID string) *storage.ReportSnapshot {
+	return &storage.ReportSnapshot{
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		Requester: &storage.SlimUser{Id: userID},
+		Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
+				Query: "Cluster:c1",
+			},
+		},
+		ReportStatus: &storage.ReportStatus{
+			ReportRequestType: storage.ReportStatus_VIEW_BASED,
+		},
 	}
 }
