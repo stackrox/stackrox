@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var downloadPath = "/assets/downloads/cli"
@@ -28,7 +29,7 @@ func serveFromTarball(w http.ResponseWriter, filename string) error {
 }
 
 func serveFromDir(w http.ResponseWriter, dir, filename string) error {
-	tarPath := filepath.Join(dir, filename+".tar.gz")
+	tarPath := filepath.Join(dir, strings.TrimSuffix(filename, ".exe")+".tar.gz")
 	f, err := os.Open(tarPath)
 	if err != nil {
 		return err

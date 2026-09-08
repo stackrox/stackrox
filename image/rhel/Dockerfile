@@ -101,7 +101,7 @@ RUN mkdir -p /assets/downloads/cli
 RUN --mount=type=bind,source=bin,target=/tmp/bins \
     find /tmp/bins -maxdepth 1 -type f -name 'roxctl-*' | while read f; do \
         name=$(basename "$f"); \
-        tar czf /assets/downloads/cli/$name.tar.gz -C /tmp/bins "$name"; \
+        tar czf /assets/downloads/cli/${name%.exe}.tar.gz -C /tmp/bins "$name"; \
     done && \
     cp /tmp/bins/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
