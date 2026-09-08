@@ -951,6 +951,31 @@ func TestListVMs(t *testing.T) {
 			},
 			expectedCount: 0,
 		},
+		"should use scan time from the greatest scan ID": {
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				olderTime := timestamppb.New(time.Date(2025, time.April, 14, 8, 0, 0, 0, time.UTC))
+				newerTime := timestamppb.New(time.Date(2025, time.April, 15, 10, 30, 0, 0, time.UTC))
+				// UUIDv7 IDs sort lexicographically with time; smaller ID is returned first.
+				olderScan := &storage.VirtualMachineScanV2{
+					Id: "01800000-0000-7000-8000-000000000001", VmV2Id: "vm-1", ScanTime: olderTime,
+				}
+				newerScan := &storage.VirtualMachineScanV2{
+					Id: "01900000-0000-7000-8000-000000000002", VmV2Id: "vm-1", ScanTime: newerTime,
+				}
+				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
+				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{vm1}, nil)
+				mockView.EXPECT().CountBySeverityPerVM(ctx, gomock.Any()).Return(nil, nil)
+				mockComp.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return(nil, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{olderScan, newerScan}, nil)
+				mockScan.EXPECT().GetBatch(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedCount: 1,
+			checkResult: func(t *testing.T, resp *v2.ListVMsResponse) {
+				require.Len(t, resp.GetVms(), 1)
+				require.NotNil(t, resp.GetVms()[0].GetScanTime())
+				assert.Equal(t, time.Date(2025, time.April, 15, 10, 30, 0, 0, time.UTC), resp.GetVms()[0].GetScanTime().AsTime())
+			},
+		},
 		"vm count error": {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(0, errors.New("count error"))
