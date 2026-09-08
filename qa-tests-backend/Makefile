@@ -41,15 +41,8 @@ proto-generated-srcs: build/generated
 # Budget: 5 gradle attempts, up to 2 min of DNS wait + 30s sleep between attempts.
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
-	@status=1; \
-	for attempt in 1 2 3 4 5; do \
-	  if $(GRADLE) generateProto generateTestProto; then status=0; break; fi; \
-	  [ "$$attempt" -eq 5 ] && break; \
-	  echo "WARN: generateProto failed (attempt $$attempt), possibly a CI DNS flake; waiting for DNS, then retrying"; \
-	  ../scripts/ci/wait-for-dns.sh 120 plugins.gradle.org plugins-artifacts.gradle.org services.gradle.org repo.maven.apache.org || true; \
-	  sleep 30; \
-	done; \
-	exit $$status
+	../scripts/lib.sh retry 5 true $(GRADLE) --refresh-dependencies generateProto generateTestProto
+	$(GRADLE) generateProto generateTestProto
 
 src/main/proto/scanner: ../go.mod
 	@echo "+ copy scanner protos"
