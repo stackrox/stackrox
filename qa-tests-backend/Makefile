@@ -35,10 +35,6 @@ style-fix:
 .PHONY: proto-generated-srcs
 proto-generated-srcs: build/generated
 
-# CI runner pods suffer transient DNS flakes ("Name or service not known")
-# that kill gradle's plugin/dependency resolution mid-step. Retry a couple of
-# times, waiting for DNS to recover between attempts.
-# Budget: 5 gradle attempts, up to 2 min of DNS wait + 30s sleep between attempts.
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
 	../scripts/lib.sh retry 5 true $(GRADLE) --refresh-dependencies generateProto generateTestProto
