@@ -191,10 +191,7 @@ func setupServer(t *testing.T, serverInterceptors []grpc.UnaryServerInterceptor,
 	)
 	require.NoError(t, err)
 
-	t.Cleanup(func() {
-		_ = listener.Close()
-		server.Stop()
-	})
+	t.Cleanup(server.Stop)
 	return conn
 }
 
