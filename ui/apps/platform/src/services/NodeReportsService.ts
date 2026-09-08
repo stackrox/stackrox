@@ -1,19 +1,24 @@
 import queryString from 'qs';
 
-import type { SearchFilter, SearchQueryOptions } from 'types/search';
+import type { ReportNotificationMethod } from 'types/reportJob';
+import type { ApiSortOption, SearchFilter, SearchQueryOptions } from 'types/search';
 import {
     buildNestedRawQueryParams,
     getListQueryParams,
+    getPaginationParams,
     getRequestQueryStringForSearchFilter,
 } from 'utils/searchUtils';
 
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
+import { isConfiguredReportSnapshot } from './ReportsService.types';
 import type {
+    ConfiguredReportSnapshot,
     NodeViewBasedReportSnapshot,
     NodeVulnerabilityReportConfiguration,
     ReportRequestViewBased,
+    RunReportResponse,
     RunReportResponseViewBased,
 } from './ReportsService.types';
 import type { Empty } from './types';
@@ -95,18 +100,64 @@ export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> 
 // Configuration-based jobs
 
 // RunNodeReport
+export function runNodeReportRequest(
+    reportConfigId: string,
+    reportNotificationMethod: ReportNotificationMethod
+): Promise<RunReportResponse> {
+    return axios
+        .post<RunReportResponse>('/v2/reports/node/run', {
+            reportConfigId,
+            reportNotificationMethod,
+        })
+        .then((response) => response.data);
+}
 
-// GetNodeReportHistory
-
-// GetMyNodeReportHistory
+// GetNodeReportHistory / GetMyNodeReportHistory
+export function fetchNodeReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: {
+    id: string;
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+}): Promise<ConfiguredReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    const history = showMyHistory ? 'my-history' : 'history';
+    return axios
+        .get<{
+            reportSnapshots: ConfiguredReportSnapshot[];
+        }>(`/v2/reports/node/configurations/${id}/${history}?${params}`)
+        .then((response) => {
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
+        });
+}
 
 // Job management
 
-// GetNodeReportStatus
-
-// CancelNodeReport
-
 // DeleteNodeReport
+export function deleteNodeDownloadableReport(reportId: string): Promise<Empty> {
+    return axios
+        .delete<Empty>(`/v2/reports/node/jobs/${reportId}/delete`)
+        .then((response) => response.data);
+}
+
+export const nodeReportDownloadURL = '/api/reports/node/jobs/download';
 
 // View-based jobs
 
