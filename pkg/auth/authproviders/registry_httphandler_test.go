@@ -797,12 +797,3 @@ var testAuthProviderBackendFactory = &tstAuthProviderBackendFactory{}
 func newTestAuthProviderBackendFactory(_ string) BackendFactory {
 	return testAuthProviderBackendFactory
 }
-
-func newTestAuthProviderBackendFactoryWithIDAndType(providerID, providerType string) func(string) BackendFactory {
-	return func(_ string) BackendFactory {
-		return &tstAuthProviderBackendFactory{
-			providerID:   providerID,
-			providerType: providerType,
-		}
-	}
-}
