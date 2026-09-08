@@ -272,6 +272,8 @@ main() {
     accessible_vms+=("${MANAGED_VMS[@]}" "${ADOPTED_VMS[@]}")
 
     if [[ ${#accessible_vms[@]} -eq 0 ]]; then
+        # Summary first so the ::error annotation still names the skipped VMs.
+        print_summary
         die "No accessible VMs — cannot install agent. All VMs failed SSH readiness."
     else
         export AUTOMATION_SSH_PRIVKEY

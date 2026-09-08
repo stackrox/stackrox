@@ -21,7 +21,7 @@ load "../../test_helpers.bats"
     ' _ "${BATS_TEST_DIRNAME}/add-vms.sh"
 
     assert_success
-    assert_output --partial "::error title=Add VMs incomplete"
+    assert_output --partial "::error title=Add VMs incomplete::Skipped: rhel10-3; agent failed: rhel10-3"
 
     run cat "$summary_file"
     assert_output --partial "## Add VMs to Cluster"
