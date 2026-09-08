@@ -1,6 +1,8 @@
 package store
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -45,9 +47,24 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
+		if vm.AgentFacts == nil {
+			vm.AgentFacts = oldVM.AgentFacts
+		}
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
+}
+
+// SetAgentFacts replaces scrape-owned facts on an existing VM. A missing ID
+// is ignored so persist cannot recreate a VM the informer already removed.
+func (s *VirtualMachineStore) SetAgentFacts(id virtualmachine.VMID, facts map[string]string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	vm, ok := s.virtualMachines[id]
+	if !ok {
+		return
+	}
+	vm.AgentFacts = maps.Clone(facts)
 }
 
 // UpdateStateOrCreate updates the VirtualMachine state
@@ -131,6 +148,7 @@ func (s *VirtualMachineStore) addOrUpdateNoLock(vm *virtualmachine.Info) {
 	// Upsert the VirtualMachineInfo
 	vmIDsByNamespace := s.getOrCreateNamespaceSet(vm.Namespace)
 	vmIDsByNamespace.Add(vm.ID)
+	vm.AgentFacts = maps.Clone(vm.AgentFacts)
 	s.virtualMachines[vm.ID] = vm
 }
 
@@ -160,6 +178,9 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.Description = updateInfo.Description
 	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
 	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
+	if updateInfo.AgentFacts != nil {
+		prev.AgentFacts = maps.Clone(updateInfo.AgentFacts)
+	}
 }
 
 // copyVSOCKCID returns a new pointer so later changes to the caller's value
