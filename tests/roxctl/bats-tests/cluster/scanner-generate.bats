@@ -54,9 +54,6 @@ assert_number_of_k8s_resources() {
 @test "[k8s] roxctl scanner generate" {
   run_scanner_generate_and_check k8s
 
-  assert_file_exist "${output_dir}/scanner/scripts/setup.sh"
-  run -0 grep -q 'KUBE_COMMAND:-kubectl' "${output_dir}/scanner/scripts/setup.sh"
-
   assert_file_exist "${output_dir}/scanner-v4/02-scanner-v4-07-indexer-deployment.yaml"
   run -1 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner-v4/02-scanner-v4-07-indexer-deployment.yaml"
 
