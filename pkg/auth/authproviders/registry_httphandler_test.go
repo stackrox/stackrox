@@ -752,7 +752,6 @@ func (*tstAuthProviderBackend) Validate(_ context.Context, _ *tokens.Claims) err
 var testAuthProviderBackend = &tstAuthProviderBackend{}
 
 type tstAuthProviderBackendFactory struct {
-	providerType string
 	providerID   string
 	clientState  string
 	err          error
