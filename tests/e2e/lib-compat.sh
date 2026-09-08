@@ -225,7 +225,8 @@ handle_pod_security_policies() {
 handle_scanner_v4_setting() {
     local config_file="$1"
     local path="$2"
-    local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
+    # Scanner V4 is the default scanner. Jobs that must omit it set ROX_SCANNER_V4=false.
+    local rox_scanner_v4="${ROX_SCANNER_V4:-true}"
 
     case "$rox_scanner_v4" in
         true)
