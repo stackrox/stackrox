@@ -150,6 +150,21 @@ func (mr *MockDataStoreMockRecorder) GetImagesForDeployment(ctx, deployment any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetImagesForDeployment), ctx, deployment)
 }
 
+// GetV2ImageIDsForDigests mocks base method.
+func (m *MockDataStore) GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetV2ImageIDsForDigests", ctx, digests)
+	ret0, _ := ret[0].(map[string][]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetV2ImageIDsForDigests indicates an expected call of GetV2ImageIDsForDigests.
+func (mr *MockDataStoreMockRecorder) GetV2ImageIDsForDigests(ctx, digests any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetV2ImageIDsForDigests", reflect.TypeOf((*MockDataStore)(nil).GetV2ImageIDsForDigests), ctx, digests)
+}
+
 // ListDeployment mocks base method.
 func (m *MockDataStore) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	m.ctrl.T.Helper()
