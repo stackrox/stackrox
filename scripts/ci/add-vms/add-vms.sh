@@ -7,7 +7,7 @@
 # Options:
 #   --cluster NAME       Infra cluster name (calls infractl for kubeconfig)
 #   --num-vms N          Number of VMs (default: 1)
-#   --os OS              VM OS: rhel9|rhel10 (default: rhel9)
+#   --os OS              VM OS: rhel8|rhel9|rhel10 (default: rhel9)
 #   --ssh-key PATH       Path to user SSH public key to add to target VMs
 #   --namespace NS       Target namespace (default: openshift-cnv)
 #   --vm-prefix PREFIX   VM name prefix (default: same as OS)
@@ -64,7 +64,7 @@ parse_args() {
     if ! [[ "$NUM_VMS" =~ ^[0-9]+$ ]] || (( NUM_VMS < 1 )); then
         die "--num-vms must be a positive integer"
     fi
-    [[ "$VM_OS" =~ ^rhel(9|10)$ ]] || die "--os must be rhel9 or rhel10"
+    [[ "$VM_OS" =~ ^rhel(8|9|10)$ ]] || die "--os must be rhel8, rhel9, or rhel10"
 }
 
 # Sets KUBECONFIG: either fetches it from infractl for the given cluster
@@ -218,7 +218,11 @@ write_github_summary() {
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
 
-    echo "::notice title=VM action summary::See the job summary for VM access, key download, and native service verification."
+    if [[ ${#SKIPPED_VMS[@]} -gt 0 || ${#NATIVE_AGENT_FAILED_VMS[@]} -gt 0 ]]; then
+        echo "::error title=Add VMs incomplete::Skipped: ${SKIPPED_VMS[*]}; agent failed: ${NATIVE_AGENT_FAILED_VMS[*]}. See the job summary."
+    else
+        echo "::notice title=VM action summary::See the job summary for VM access, key download, and native service verification."
+    fi
 }
 
 cleanup() {
@@ -278,6 +282,9 @@ main() {
 
     # Step 4: Summary
     print_summary
+    if [[ ${#SKIPPED_VMS[@]} -gt 0 || ${#NATIVE_AGENT_FAILED_VMS[@]} -gt 0 ]]; then
+        die "Some VMs were skipped or the native agent failed to start"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
