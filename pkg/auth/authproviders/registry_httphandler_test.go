@@ -752,9 +752,9 @@ func (*tstAuthProviderBackend) Validate(_ context.Context, _ *tokens.Claims) err
 var testAuthProviderBackend = &tstAuthProviderBackend{}
 
 type tstAuthProviderBackendFactory struct {
-	providerID   string
-	clientState  string
-	err          error
+	providerID  string
+	clientState string
+	err         error
 }
 
 func (f *tstAuthProviderBackendFactory) GetSuggestedAttributes() []string {
