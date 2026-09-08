@@ -96,6 +96,15 @@ jobs:
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
 
+    - name: Retrieve roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+
     - name: Run pre-test
       shell: python
       env:
@@ -138,6 +147,7 @@ jobs:
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
+        USE_ROXIE_DEPLOY: true
       timeout-minutes: 110
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 

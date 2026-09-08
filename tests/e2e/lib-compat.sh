@@ -94,6 +94,11 @@ roxie_config_from_environment_compat() {
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
 
+    if [[ -n "${EXTERNAL_DB:-}" ]]; then
+        info "Configuring external database..."
+        handle_external_database_settings "$config_file" "$namespace"
+    fi
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -190,6 +195,22 @@ roxie_config_from_environment_compat() {
     handle_virtual_machines_configuration "$config_file"
 }
 
+handle_external_database_settings() {
+    local config_file="$1"
+    local namespace="$2"
+
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      db:
+        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+        passwordSecret:
+          name: "central-external-db-password"
+EOF
+    retrying_kubectl -n "${namespace}" create secret generic central-external-db-password --from-literal="password=${EXTERNAL_DB_PASSWORD}"
+}
+
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
 # environment variables.
 collect_feature_flags() {
@@ -204,6 +225,10 @@ collect_feature_flags() {
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
+    env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
+    env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
+    env_with_default ROX_AI_INTEGRATIONS "true"
+    env_with_default ROX_LIGHTSPEED_RISK_SUMMARY "true"
 
     # Enabled by default in StackRox, but disabled by default for test deployments.
     env_with_default ROX_NETWORK_GRAPH_EXTERNAL_IPS "false"
@@ -227,9 +252,19 @@ handle_scanner_v4_setting() {
     local path="$2"
     local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
 
+    # The "on" value differs between the two CRDs: Central's ScannerV4ComponentPolicy enum is
+    # Default/Enabled/Disabled, while SecuredCluster's LocalScannerV4ComponentPolicy enum is
+    # Default/AutoSense/Disabled (there is no "Enabled" for the secured cluster; AutoSense is
+    # how it is turned on). This matches the legacy helm path (scannerComponent: AutoSense for
+    # the secured cluster). Disabled is valid for both.
+    local enabled_value="Enabled"
+    if [[ "$path" == *securedCluster* ]]; then
+        enabled_value="AutoSense"
+    fi
+
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$config_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"${enabled_value}\""
             ;;
         false)
             patch_yaml "$config_file" "${path} = \"Disabled\""
