@@ -38,7 +38,7 @@ var lazyLabels = tracker.LazyLabelGetters[*finding]{
 
 	"IsFixable":             func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") },
 	"FixAvailable":          func(f *finding) string { return strconv.FormatInt(f.vuln.GetFixAvailableTimestamp().GetSeconds(), 10) },
-	"CisaKev":               func(f *finding) string { return strconv.FormatBool(f.vuln.GetCisaKev()) },
+	"IsCisaKev":             func(f *finding) string { return strconv.FormatBool(f.vuln.GetCisaKev()) },
 	"Published":             func(f *finding) string { return strconv.FormatInt(f.vuln.GetPublishedOn().GetSeconds(), 10) },
 	"FirstImageOccurrence":  func(f *finding) string { return strconv.FormatInt(f.vuln.GetFirstImageOccurrence().GetSeconds(), 10) },
 	"FirstSystemOccurrence": func(f *finding) string { return strconv.FormatInt(f.vuln.GetFirstSystemOccurrence().GetSeconds(), 10) },
