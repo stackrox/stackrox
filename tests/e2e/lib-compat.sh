@@ -177,8 +177,8 @@ roxie_config_from_environment_compat() {
     )
 
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -222,15 +222,18 @@ handle_pod_security_policies() {
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
 }
 
+# handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is
+# the CRD enum when V4 is on: Central uses Enabled, SecuredCluster uses AutoSense.
 handle_scanner_v4_setting() {
     local config_file="$1"
     local path="$2"
+    local enabled_value="$3"
     # Scanner V4 is the default scanner. Jobs that must omit it set ROX_SCANNER_V4=false.
     local rox_scanner_v4="${ROX_SCANNER_V4:-true}"
 
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$config_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"${enabled_value}\""
             ;;
         false)
             patch_yaml "$config_file" "${path} = \"Disabled\""
