@@ -25,6 +25,7 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     getNodeVulnerabilitiesOpname,
+    nodePageBaseUrl,
     routeMatcherMapForNodePage,
     routeMatcherMapForNodes,
     staticResponseMapForNodePage,
@@ -33,11 +34,10 @@ import {
 
 const { assertAvailableFilters } = filterHelpers;
 
-const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
 const mockNodeName = 'cypress-node-1';
 
-const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
+const mockNodePageUrl = `${nodePageBaseUrl}/${mockNodeId}`;
 
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
@@ -103,7 +103,9 @@ describe('Node CVEs - Node Detail Page', () => {
                 waitForRequests();
 
                 const waitForVulnQuery = () =>
-                    waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]);
+                    waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then((vars) =>
+                        cy.wrap(Array.isArray(vars) ? vars[0] : vars)
+                    );
 
                 // check sorting of CVE column
                 sortByTableHeader('CVE');
@@ -145,7 +147,9 @@ describe('Node CVEs - Node Detail Page', () => {
                 waitForRequests();
 
                 const waitForVulnQuery = () =>
-                    waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]);
+                    waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then((vars) =>
+                        cy.wrap(Array.isArray(vars) ? vars[0] : vars)
+                    );
 
                 // Assert GraphQL query strings. Stubbed rows are not a live filter result.
                 filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');

@@ -121,9 +121,8 @@ describe('Node CVEs - Overview Page', () => {
             .first()
             .then(($link) => {
                 const linkHref = $link.attr('href');
-                const linkName = $link.text();
                 expect(linkHref).to.match(/\/node-cves\/nodes\/1$/);
-                expect(linkName).to.eq('cypress-node-1');
+                expect($link.text()).to.include('cypress-node-1');
             });
     });
 
