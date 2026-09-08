@@ -38,15 +38,16 @@ proto-generated-srcs: build/generated
 # CI runner pods suffer transient DNS flakes ("Name or service not known")
 # that kill gradle's plugin/dependency resolution mid-step. Retry a couple of
 # times, waiting for DNS to recover between attempts.
-# Budget: 3 gradle attempts, up to 60s of DNS wait between attempts.
+# Budget: 5 gradle attempts, up to 2 min of DNS wait + 30s sleep between attempts.
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
 	@status=1; \
-	for attempt in 1 2 3; do \
+	for attempt in 1 2 3 4 5; do \
 	  if $(GRADLE) generateProto generateTestProto; then status=0; break; fi; \
-	  [ "$$attempt" -eq 3 ] && break; \
+	  [ "$$attempt" -eq 5 ] && break; \
 	  echo "WARN: generateProto failed (attempt $$attempt), possibly a CI DNS flake; waiting for DNS, then retrying"; \
-	  ../scripts/ci/wait-for-dns.sh 60 plugins.gradle.org plugins-artifacts.gradle.org services.gradle.org repo.maven.apache.org || true; \
+	  ../scripts/ci/wait-for-dns.sh 120 plugins.gradle.org plugins-artifacts.gradle.org services.gradle.org repo.maven.apache.org || true; \
+	  sleep 30; \
 	done; \
 	exit $$status
 
