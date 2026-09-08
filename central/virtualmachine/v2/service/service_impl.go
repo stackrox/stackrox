@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -17,6 +18,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -654,6 +656,11 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 	}
 
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
+	detail.AgentStatus = storagetov2.AgentStatusFromLastContact(
+		vm.GetLastAgentContact(),
+		time.Now(),
+		env.VirtualMachinesAgentStaleAfter.DurationSetting(),
+	)
 
 	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
 	// so sorting by the primary key is equivalent to sorting by time and avoids

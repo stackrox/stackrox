@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type testCVEForVM struct {
@@ -753,6 +754,85 @@ func TestGetVM(t *testing.T) {
 				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
 			},
 			expectedResult: storagetov2.VirtualMachineV2ToDetail(vm1),
+		},
+		"never scraped stays unknown with vsock cid and agent version": {
+			request: &v2.GetVMRequest{
+				Id: testVMID,
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				neverScraped := &storage.VirtualMachineV2{
+					Id:       testVMID,
+					Name:     "test-vm-1",
+					State:    storage.VirtualMachineV2_RUNNING,
+					VsockCid: 42,
+					Facts:    map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"},
+				}
+				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(neverScraped, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedResult: func() *v2.VMDetail {
+				detail := storagetov2.VirtualMachineV2ToDetail(&storage.VirtualMachineV2{
+					Id:       testVMID,
+					Name:     "test-vm-1",
+					State:    storage.VirtualMachineV2_RUNNING,
+					VsockCid: 42,
+					Facts:    map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"},
+				})
+				detail.AgentStatus = v2.AgentStatus_AGENT_STATUS_UNKNOWN
+				return detail
+			}(),
+		},
+		"fresh scrape is active": {
+			request: &v2.GetVMRequest{
+				Id: testVMID,
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				fresh := vm1.CloneVT()
+				fresh.LastAgentContact = timestamppb.New(time.Now().Add(-time.Hour))
+				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(fresh, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedResult: func() *v2.VMDetail {
+				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
+				detail.AgentStatus = v2.AgentStatus_AGENT_STATUS_ACTIVE
+				return detail
+			}(),
+		},
+		"activation status does not affect agent status": {
+			request: &v2.GetVMRequest{
+				Id: testVMID,
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				fresh := vm1.CloneVT()
+				fresh.Facts = map[string]string{"activationStatus": "inactive"}
+				fresh.LastAgentContact = timestamppb.New(time.Now().Add(-time.Hour))
+				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(fresh, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedResult: func() *v2.VMDetail {
+				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
+				detail.Facts = map[string]string{"activationStatus": "inactive"}
+				detail.AgentStatus = v2.AgentStatus_AGENT_STATUS_ACTIVE
+				return detail
+			}(),
+		},
+		"stale scrape is inactive even when agent version is still set": {
+			request: &v2.GetVMRequest{
+				Id: testVMID,
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				stale := vm1.CloneVT()
+				stale.Facts = map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"}
+				stale.LastAgentContact = timestamppb.New(time.Now().Add(-13 * time.Hour))
+				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(stale, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedResult: func() *v2.VMDetail {
+				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
+				detail.Facts = map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"}
+				detail.AgentStatus = v2.AgentStatus_AGENT_STATUS_INACTIVE
+				return detail
+			}(),
 		},
 		"datastore error": {
 			request: &v2.GetVMRequest{
