@@ -22,3 +22,11 @@ tests:
     meta.namespaceOverride: my-stackrox
   expect: |
     verifyNamespace("my-stackrox")
+- name: "should honor the namespace override for scanner V4 indexer endpoint"
+  release:
+    namespace: default
+  set:
+    meta.namespaceOverride: my-stackrox
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4_INDEXER_ENDPOINT"]
+      | assertThat(. == "scanner-v4-indexer.my-stackrox.svc:8443")
