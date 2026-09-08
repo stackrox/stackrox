@@ -24,6 +24,7 @@ import (
 	perm "github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
@@ -51,18 +52,14 @@ func (s *registryProviderCallbackTestSuite) SetupTest() {
 	testAuthProviderStore := &tstAuthProviderStore{}
 	testRoleMapperFactory := &tstRoleMapperFactory{}
 	testTokenIssuerFactory := &tstTokenIssuerFactory{}
-	s.registry = &registryImpl{
-		ServeMux:      http.NewServeMux(),
-		urlPathPrefix: "sssotest",
-		redirectURL:   "dummyredirect",
-		store:         testAuthProviderStore,
-		issuerFactory: testTokenIssuerFactory,
-
-		backendFactories: make(map[string]BackendFactory),
-		providers:        make(map[string]Provider),
-
-		roleMapperFactory: testRoleMapperFactory,
-	}
+	s.registry = NewStoreBackedRegistry(
+		"ssotest",
+		"dummyredirect",
+		testAuthProviderStore,
+		testTokenIssuerFactory,
+		testRoleMapperFactory,
+		nil,
+	).(*registryImpl)
 	s.ctx = context.Background()
 	err := s.registry.RegisterBackendFactory(s.ctx, dummyProviderType, newTestAuthProviderBackendFactory)
 	s.Require().NoError(err, "backend registration at SetupTest should not trigger errors")
@@ -273,6 +270,33 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUserWithRoles() {
+	urlPrefix := s.registry.providersURLPrefix()
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
+	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
+	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
+	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
+	rolemapping := make(map[string][]perm.ResolvedRole)
+	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
+	testRoleMapper.registerRoleMapping(rolemapping)
+	s.registry.providersHTTPHandler(s.writer, req)
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	responseHeaders := s.writer.Header()
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user with valid roles "+
+		"should redirect to the registry redirect URL")
+	s.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
+		"callback activated for user with valid roles should issue a token")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUserWithRolesIsNotImpactedByACMDelegation() {
+	s.T().Setenv(features.ACMAccessControlDelegation.EnvVar(), "true")
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
@@ -604,7 +628,11 @@ func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*s
 }
 
 func (*tstAuthProviderStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
-	for _, p := range []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes} {
+	for _, p := range []*storage.AuthProvider{
+		mockAuthProvider,
+		mockAuthProviderWithAttributes,
+		mockOpenShiftAuthProviderWithACMDelegationAndAttributes,
+	} {
 		err := fn(p)
 		if err != nil {
 			return err
@@ -728,9 +756,10 @@ func (*tstAuthProviderBackend) Validate(_ context.Context, _ *tokens.Claims) err
 var testAuthProviderBackend = &tstAuthProviderBackend{}
 
 type tstAuthProviderBackendFactory struct {
-	providerID  string
-	clientState string
-	err         error
+	providerType string
+	providerID   string
+	clientState  string
+	err          error
 }
 
 func (f *tstAuthProviderBackendFactory) GetSuggestedAttributes() []string {
@@ -771,4 +800,13 @@ var testAuthProviderBackendFactory = &tstAuthProviderBackendFactory{}
 
 func newTestAuthProviderBackendFactory(_ string) BackendFactory {
 	return testAuthProviderBackendFactory
+}
+
+func newTestAuthProviderBackendFactoryWithIDAndType(providerID, providerType string) func(string) BackendFactory {
+	return func(_ string) BackendFactory {
+		return &tstAuthProviderBackendFactory{
+			providerID:   providerID,
+			providerType: providerType,
+		}
+	}
 }
