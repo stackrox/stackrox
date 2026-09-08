@@ -54,10 +54,10 @@ validate_image_tag() {
     fi
     local tag="$1"
     if [[ -z "$tag" ]]; then
-        die "image tag is empty"
+        die "image tag is empty (got $(printf %q "$tag"))"
     fi
     if [[ "$tag" =~ [[:space:]] ]]; then
-        die "image tag contains whitespace; image tags must not include spaces, tabs, or newlines"
+        die "image tag contains whitespace; image tags must not include spaces, tabs, or newlines (got $(printf %q "$tag"))"
     fi
 }
 export -f validate_image_tag
