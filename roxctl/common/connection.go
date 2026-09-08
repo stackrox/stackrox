@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/versioncheck"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,6 +31,15 @@ type GRPCOption func(*grpcConfig)
 func WithRetryTimeout(timeout time.Duration) GRPCOption {
 	return func(config *grpcConfig) {
 		config.retryTimeout = timeout
+	}
+}
+
+// WithVersionCheck enables version compatibility checking on gRPC responses.
+// The provided warn function is called at most once when a version mismatch
+// is detected from the Central version response header.
+func WithVersionCheck(warn versioncheck.WarnFunc) GRPCOption {
+	return func(config *grpcConfig) {
+		config.versionCheckWarn = warn
 	}
 }
 
@@ -67,14 +77,15 @@ func GetGRPCConnection(am auth.Method, connectionOpts ...GRPCOption) (*grpc.Clie
 }
 
 type grpcConfig struct {
-	usePlaintext  bool
-	insecure      bool
-	opts          clientconn.Options
-	serverName    string
-	useDirectGRPC bool
-	forceHTTP1    bool
-	endpoint      string
-	retryTimeout  time.Duration
+	usePlaintext     bool
+	insecure         bool
+	opts             clientconn.Options
+	serverName       string
+	useDirectGRPC    bool
+	forceHTTP1       bool
+	endpoint         string
+	retryTimeout     time.Duration
+	versionCheckWarn versioncheck.WarnFunc
 }
 
 func makeCtxWithCommandHeader(ctx context.Context) context.Context {
@@ -122,13 +133,19 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		grpc_retry.WithRetriable(shouldRetry),
 	}
 
+	unaryInterceptors := []grpc.UnaryClientInterceptor{
+		addCommandHeaderUnaryInterceptor,
+		grpc_retry.UnaryClientInterceptor(retryOpts...),
+	}
+	if c.versionCheckWarn != nil {
+		unaryInterceptors = append(unaryInterceptors, versioncheck.UnaryClientInterceptor(c.versionCheckWarn))
+	}
+
 	grpcDialOpts := []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(
 			addCommandHeaderStreamInterceptor,
 			grpc_retry.StreamClientInterceptor(retryOpts...)),
-		grpc.WithChainUnaryInterceptor(
-			addCommandHeaderUnaryInterceptor,
-			grpc_retry.UnaryClientInterceptor(retryOpts...)),
+		grpc.WithChainUnaryInterceptor(unaryInterceptors...),
 	}
 
 	if c.usePlaintext {
