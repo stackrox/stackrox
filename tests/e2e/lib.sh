@@ -42,8 +42,9 @@ POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-contro
 POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
+# Matcher and indexer are separate deployments: scanner-v4-matcher-*, scanner-v4-indexer-*.
+POD_CONTAINERS_MAP["pod: scanner-v4-matcher - container: matcher"]="scanner-v4-matcher-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-indexer - container: indexer"]="scanner-v4-indexer-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
 POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za-z0-9]+-sensor-previous.log"
@@ -1808,7 +1809,11 @@ restore_4_6_postgres_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    setup_gcp
+    # CI activates the stackrox SA via setup_gcp. Local runs keep the caller's
+    # gcloud credentials; this bucket is readable with typical ACS engineer ADC.
+    if is_CI; then
+        setup_gcp
+    fi
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \

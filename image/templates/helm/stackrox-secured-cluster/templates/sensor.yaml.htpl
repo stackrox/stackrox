@@ -242,7 +242,7 @@ spec:
           value: {{ quote ._rox._configFP }}
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
-          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" ._rox._namespace }}
         - name: ROX_SCANNER_V4
           value: "true"
         {{- end }}

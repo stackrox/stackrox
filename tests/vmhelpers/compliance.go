@@ -67,14 +67,17 @@ func EnsureComplianceMetricsEnv(
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		current, getErr := k8sClient.AppsV1().DaemonSets(ns).Get(ctx, dsName, metaV1.GetOptions{})
 		if getErr != nil {
-			return getErr
+			return fmt.Errorf("get daemonset %s/%s: %w", ns, dsName, getErr)
 		}
 		needsUpdate, setErr := SetContainerEnv(current, containerName, envName, envValue)
 		if setErr != nil || !needsUpdate {
 			return setErr
 		}
 		_, updateErr := k8sClient.AppsV1().DaemonSets(ns).Update(ctx, current, metaV1.UpdateOptions{})
-		return updateErr
+		if updateErr != nil {
+			return fmt.Errorf("update daemonset %s/%s: %w", ns, dsName, updateErr)
+		}
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("updating DaemonSet %s/%s: %w", ns, dsName, err)

@@ -94,7 +94,7 @@ func nodeKVMCapacityString(node coreV1.Node) string {
 func InspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (ClusterKVMPreflightResult, error) {
 	nodeList, err := k8s.CoreV1().Nodes().List(ctx, metaV1.ListOptions{})
 	if err != nil {
-		return ClusterKVMPreflightResult{}, err
+		return ClusterKVMPreflightResult{}, fmt.Errorf("list nodes: %w", err)
 	}
 
 	result := ClusterKVMPreflightResult{

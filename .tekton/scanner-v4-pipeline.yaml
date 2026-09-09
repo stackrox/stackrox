@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c93950ffd9f9cbff681a16fe4f9ba77b729730b15d32e2cc5e07cdbf286940db
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:4060c43f1ce0d2bfac74bdafeb2343247f2d7512091ea8b68dba6f9567c80e36
       - name: kind
         value: task
       resolver: bundles
@@ -211,7 +211,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c93950ffd9f9cbff681a16fe4f9ba77b729730b15d32e2cc5e07cdbf286940db
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:4060c43f1ce0d2bfac74bdafeb2343247f2d7512091ea8b68dba6f9567c80e36
       - name: kind
         value: task
       resolver: bundles
@@ -227,7 +227,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c93950ffd9f9cbff681a16fe4f9ba77b729730b15d32e2cc5e07cdbf286940db
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:4060c43f1ce0d2bfac74bdafeb2343247f2d7512091ea8b68dba6f9567c80e36
       - name: kind
         value: task
       resolver: bundles
@@ -247,7 +247,7 @@ spec:
       - name: name
         value: fetch-scanner-v4-vuln-mappings
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c93950ffd9f9cbff681a16fe4f9ba77b729730b15d32e2cc5e07cdbf286940db
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:4060c43f1ce0d2bfac74bdafeb2343247f2d7512091ea8b68dba6f9567c80e36
       - name: kind
         value: task
       resolver: bundles
@@ -453,7 +453,7 @@ spec:
       - name: name
         value: ecosystem-cert-preflight-checks
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.2@sha256:c07d2befa8abf48d4a223a5bdf5ea2335e756d4d0bbc422761087c263060aa94
+        value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.2@sha256:fa53ef450ba538addafee1211ff6ac15b55865ce652fec15ac99b554680cb642
       - name: kind
         value: task
       resolver: bundles

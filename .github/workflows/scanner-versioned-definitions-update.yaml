@@ -1,8 +1,6 @@
 name: Scanner versioned vulnerabilities update
 
 on:
-  schedule:
-  - cron: "30 */4 * * *"
   pull_request:
     types:
     - opened
