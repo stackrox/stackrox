@@ -66,7 +66,7 @@ func serveFromDir(w http.ResponseWriter, r *http.Request, dir, filename string) 
 			w.Header().Set("Content-Length", fmt.Sprintf("%d", hdr.Size))
 			w.Header().Set("Accept-Ranges", "none")
 			w.Header().Set("Cache-Control", "no-cache")
-			if r.Method != http.MethodHead {
+			if r.Method == http.MethodGet {
 				if _, err = io.Copy(w, tr); err != nil {
 					log.Errorf("failed to stream %s: %v", filename, err)
 				}
