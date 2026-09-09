@@ -757,21 +757,21 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    {(selectedAuthProvider.type !== 'openshift-with-acm-roles' &&
-                        selectedAuthProvider.type !== 'oidc-with-acm-roles') && (
-                        <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
-                            <RuleGroups
-                                authProviderId={selectedAuthProvider.id}
-                                groups={values.groups}
-                                roles={roles}
-                                onChange={onChange}
-                                setFieldValue={setFieldValue}
-                                disabled={isViewing}
-                                errors={errors?.groups as RuleGroupErrors[]}
-                                ruleAttributes={ruleAttributes}
-                            />
-                        </FormSection>
-                    )}
+                    {selectedAuthProvider.type !== 'openshift-with-acm-roles' &&
+                        selectedAuthProvider.type !== 'oidc-with-acm-roles' && (
+                            <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
+                                <RuleGroups
+                                    authProviderId={selectedAuthProvider.id}
+                                    groups={values.groups}
+                                    roles={roles}
+                                    onChange={onChange}
+                                    setFieldValue={setFieldValue}
+                                    disabled={isViewing}
+                                    errors={errors?.groups as RuleGroupErrors[]}
+                                    ruleAttributes={ruleAttributes}
+                                />
+                            </FormSection>
+                        )}
                     {(selectedAuthProvider.type === 'openshift-with-acm-roles' ||
                         selectedAuthProvider.type === 'oidc-with-acm-roles') && (
                         <div id="acm-access-control-documentation">
@@ -783,29 +783,31 @@ function AuthProviderForm({
                             >
                                 <p>
                                     This requires Red Hat Advanced Cluster Management
-                                    deployed on the cluster where the central entity of
-                                    Red Hat Advanced Cluster Security is deployed.
+                                    deployed on the cluster where the central entity of Red Hat Advanced Cluster
+                                    Security is deployed.
                                 </p>
                                 <p>
                                     Additionally, Red Hat Advanced Cluster Management
-                                    must have 'fine-grained role-based access control'
+                                    must have
+                                    &lsquot;fine-grained role-based access control&rsquot;
                                     activated.
                                 </p>
                                 <p>
                                     For further information on the role configuration,
-                                    please refer to the Red Hat Advanced Cluster Management
-                                    documentation (version &gt;= 2.16), area 'Secure clusters',
-                                    section 'Securing clusters', subsections 'Fine-grained
-                                    role-bases access control for virtual machines', 'Enabling
-                                    fine-grained role-based access control for virtualization',
-                                    and the subsections related to 'MulticlusterRoleAssignment'.
+                                    please refer
+                                    to the Red Hat Advanced Cluster Management documentation
+                                    (version &gt;= 2.16), area &lsquot;Secure clusters&rsquot;, section &lsquot;Securing
+                                    clusters&rsquot;, subsections &lsquot;Fine-grained role-based access control
+                                    for virtual machines&rsquot;, &lsquot;Enabling fine-grained role-based access
+                                    control for virtualization&rsquot;, and the subsections related to
+                                    &lsquot;MulticlusterRoleAssignment&rsquot;.
                                 </p>
                                 <p>
-                                    The OpenShift ClusterRoles created to configure the
-                                    Red Hat Advanced Cluster Security access control need
+                                    The OpenShift ClusterRoles created to configure the Red Hat
+                                    Advanced Cluster Security access control need
                                     to have the label
-                                    'clusterview.open-cluster-management.io/discoverable'
-                                    present and set to 'true'.
+                                    &lsquot;clusterview.open-cluster-management.io/discoverable&rsquot;
+                                    present and set to &lsquot;true&rsquot;.
                                 </p>
                             </Alert>
                         </div>
