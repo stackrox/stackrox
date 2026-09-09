@@ -426,12 +426,17 @@ class NetworkSimulator extends BaseSpecification {
                 allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
 
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() > 0
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() ==
-                NetworkGraphUtil.findEdges(baseline, null, webAppId).size()
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() ==
-                NetworkGraphUtil.findEdges(baseline, webAppId, null).size()
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() ==
-                NetworkGraphUtil.findEdges(baseline, clientAppId, null).size()
+        // NetworkPolicy simulation is purely policy-derived and cannot model traffic to/from
+        // EXTERNAL_SOURCE/INTERNET nodes (e.g. node/kubelet-probe traffic that Collector attributes to a
+        // cloud-provider CIDR), whereas the baseline graph reflects actually observed flows and can include
+        // such edges. Restrict the comparison to deployment-to-deployment edges to avoid flaking on this
+        // environmental, policy-independent traffic (see ROX-36838).
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId, true).size() ==
+                NetworkGraphUtil.findEdges(baseline, null, webAppId, true).size()
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null, true).size() ==
+                NetworkGraphUtil.findEdges(baseline, webAppId, null, true).size()
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null, true).size() ==
+                NetworkGraphUtil.findEdges(baseline, clientAppId, null, true).size()
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
