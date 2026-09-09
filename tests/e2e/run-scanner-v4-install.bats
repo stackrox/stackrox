@@ -844,9 +844,11 @@ EOT
 
     _begin "verify"
 
+    # Previous operator still creates Central V2. HEAD's SecuredCluster CR
+    # does not request slim V2, so the sensor namespace has none to wait for.
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    # Scanner V2 in sensor is disabled via operator deployment path.
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -1061,6 +1063,16 @@ verify_no_scannerV4_matcher_deployed() {
     echo "Verifying that scanner V4 matcher is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
+}
+
+# verify_scannerV2_deployed waits for Scanner V2 on old-chart / previous-operator /
+# earlier-roxctl installs. HEAD steps use verify_no_scannerV2_deployed.
+verify_scannerV2_deployed() {
+    local namespace=${1:-stackrox}
+    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
+    wait_for_object_to_appear "$namespace" deploy/scanner 300
+    info "** Scanner V2 is deployed in namespace ${namespace}"
 }
 
 verify_no_scannerV2_deployed() {

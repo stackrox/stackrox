@@ -576,6 +576,15 @@ function launch_central {
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
+          # scanner/ is applied only when the bundle contains it, so mixed-version
+          # kubectl installs (earlier roxctl) get V2 while HEAD bundles stay V2-free.
+          if [[ -d "${unzip_dir}/scanner" ]]; then
+            echo "Deploying Scanner..."
+            if [[ -x "${unzip_dir}/scanner/scripts/setup.sh" ]]; then
+              "${unzip_dir}/scanner/scripts/setup.sh"
+            fi
+            launch_service "${unzip_dir}" scanner
+          fi
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
               echo "Deploying ScannerV4..."
