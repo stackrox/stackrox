@@ -94,6 +94,11 @@ upgrade-test: compile
 	@echo "+ $@"
 	$(GRADLE) testUpgrade $(GRADLE_TEST_ARGS)
 
+.PHONY: central-worker-test
+central-worker-test: compile
+	@echo "+ $@"
+	$(GRADLE) testCentralWorker $(GRADLE_TEST_ARGS)
+
 .PHONY: graphql-test
 graphql-test: compile
 	@echo "+ $@"
