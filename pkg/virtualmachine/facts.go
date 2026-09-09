@@ -21,6 +21,12 @@ const (
 	ActivationStatusKey = "activationStatus"
 	// DNFMetadataStatusKey is whether DNF metadata is available on the guest.
 	DNFMetadataStatusKey = "dnfMetadataStatus"
+	// GuestIndexErrorKey is the last failed guest index from roxagent.
+	GuestIndexErrorKey = "guestIndexError"
+	// GuestIndexErrorAtKey is when that last guest index failed, RFC3339 UTC.
+	GuestIndexErrorAtKey = "guestIndexErrorAt"
+	// InventoryGeneratedAtKey is ResponseMeta.report_generated_at as RFC3339 UTC.
+	InventoryGeneratedAtKey = "inventoryGeneratedAt"
 	// UnknownGuestOS is the user-facing default value for GuestOSKey when the
 	// guest OS has not been reported by the virtual machine instance.
 	UnknownGuestOS = "unknown"

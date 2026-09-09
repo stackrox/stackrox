@@ -25,6 +25,9 @@ const (
 
 	methodGetReport          = "get_report"
 	methodSyncRepoCPEMapping = "sync_repo_cpe_mapping"
+
+	factLastIndexError   = "last_index_error"
+	factLastIndexErrorAt = "last_index_error_at"
 )
 
 // reportSnapshot is an immutable point-in-time view of the cached report state.
@@ -36,12 +39,21 @@ type reportSnapshot struct {
 	mappingHash string
 }
 
+// indexErrorHealth is the last failed guest index, stored off the snapshot
+// so overlaying it on GetReport facts does not change the content-hash token.
+type indexErrorHealth struct {
+	err string
+	at  time.Time
+}
+
 // ReportCache holds the cached scan report with its content-hash token.
-// Invariant: exactly one goroutine (the rescan loop) calls SetReport; multiple
-// HandleConn goroutines read via snap.Load(). This single-writer/multi-reader
-// pattern is safe with atomic.Pointer without CAS.
+// Invariant: exactly one goroutine (the rescan loop) calls SetReport and
+// RecordIndexError; multiple HandleConn goroutines read via snap.Load()
+// and health.Load(). This single-writer/multi-reader pattern is safe with
+// atomic.Pointer without CAS.
 type ReportCache struct {
-	snap atomic.Pointer[reportSnapshot]
+	snap   atomic.Pointer[reportSnapshot]
+	health atomic.Pointer[indexErrorHealth]
 }
 
 // Token returns the published content-hash, or empty before the first scan.
@@ -56,8 +68,9 @@ func (c *ReportCache) Token() string {
 	return snap.token
 }
 
-// SetReport atomically publishes a new report and facts. The token is an
-// XXH64 of that content, so identical rescans stay unchanged for Sensor.
+// SetReport atomically publishes a new report and facts and clears any
+// last index error. The token is an XXH64 of that content, so identical
+// rescans stay unchanged for Sensor.
 //
 // mappingHash is the repo-to-CPE mapping the scan used, so GetReport can send
 // it after a later Sync has already replaced the live mapping.
@@ -76,6 +89,16 @@ func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string, mapp
 		facts:       clonedFacts,
 		mappingHash: mappingHash,
 	})
+	c.health.Store(nil)
+}
+
+// RecordIndexError publishes a failed guest index so GetReport can overlay
+// it onto facts without changing the content-hash token.
+func (c *ReportCache) RecordIndexError(err error) {
+	if c == nil || err == nil {
+		return
+	}
+	c.health.Store(&indexErrorHealth{err: err.Error(), at: time.Now()})
 }
 
 // reportToken is XXH64 of the IndexReport and facts, as 16 lowercase hex
@@ -221,6 +244,7 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 		token = snap.token
 		mappingHash = snap.mappingHash
 	}
+	facts = h.overlayIndexErrorFacts(facts)
 	updatePath := h.provider.UpdatePath()
 	methods := []string{methodGetReport}
 	if h.updater != nil {
@@ -238,6 +262,24 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 		meta.ReportGeneratedAt = timestamppb.New(snap.generatedAt)
 	}
 	return &pb.VMServiceResponse{Meta: meta}
+}
+
+// overlayIndexErrorFacts copies last_index_error onto facts without putting
+// it on the snapshot, so the report token stays a content hash of inventory.
+func (h *Handler) overlayIndexErrorFacts(facts map[string]string) map[string]string {
+	if h == nil || h.cache == nil {
+		return facts
+	}
+	health := h.cache.health.Load()
+	if health == nil {
+		return facts
+	}
+	if facts == nil {
+		facts = make(map[string]string, 2)
+	}
+	facts[factLastIndexError] = health.err
+	facts[factLastIndexErrorAt] = health.at.UTC().Format(time.RFC3339)
+	return facts
 }
 
 // handleSyncRepoCPEMapping applies a Sensor-pushed mapping. URL-managed

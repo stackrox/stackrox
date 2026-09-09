@@ -5,6 +5,7 @@ import (
 	"net"
 	"path/filepath"
 	"testing"
+	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -172,6 +173,34 @@ func TestHandleRequest_GetReport_IdenticalRescanUnchanged(t *testing.T) {
 	assert.True(t, resp.GetGetReport().GetUnchanged())
 	assert.Nil(t, resp.GetGetReport().GetIndexReport())
 	assert.Equal(t, token, resp.GetMeta().GetReportToken())
+}
+
+// TestHandleRequest_GetReport_IndexErrorOverlay covers a failed guest index
+// after a successful cache: Sensor still gets Unchanged, plus last_index_error
+// in facts. SetReport clears the overlay.
+func TestHandleRequest_GetReport_IndexErrorOverlay(t *testing.T) {
+	cache := &ReportCache{}
+	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil, "")
+
+	handler := NewHandler(cache, "test-1.0.0", readyProvider(), nil)
+	first := sendAndReceive(t, handler, getReportRequest("req-first", ""))
+	token := first.GetMeta().GetReportToken()
+	require.NotEmpty(t, token)
+	assert.Empty(t, first.GetMeta().GetFacts()[factLastIndexError])
+
+	cache.RecordIndexError(errors.New("rpm: indexer failed"))
+	resp := sendAndReceive(t, handler, getReportRequest("req-overlay", token))
+
+	assert.True(t, resp.GetGetReport().GetUnchanged())
+	assert.Equal(t, token, resp.GetMeta().GetReportToken(), "overlay must not change the content-hash token")
+	assert.Equal(t, "rpm: indexer failed", resp.GetMeta().GetFacts()[factLastIndexError])
+	_, err := time.Parse(time.RFC3339, resp.GetMeta().GetFacts()[factLastIndexErrorAt])
+	require.NoError(t, err)
+
+	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil, "")
+	cleared := sendAndReceive(t, handler, getReportRequest("req-cleared", token))
+	assert.True(t, cleared.GetGetReport().GetUnchanged())
+	assert.Empty(t, cleared.GetMeta().GetFacts()[factLastIndexError])
 }
 
 // TestHandleRequest_GetReport_ContentChangeServesReport covers a rescan

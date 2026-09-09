@@ -12,32 +12,36 @@ import (
 const (
 	ClusterIDContextValue = "stackrox.cluster.id"
 
-	alertIDField      = "alert_id"
-	apiTokenIDField   = "api_token_id"
-	authProviderField = "auth_provider"
-	apiTokenNameField = "api_token_name"
-	backupField       = "backup"
-	cloudSourceField  = "cloud_source"
-	clusterIDField    = "cluster_id"
-	clusterNameField  = "cluster_name"
-	errCodeField      = "err_code"
-	imageField        = "image"
-	imageIDField      = "image_id"
-	nodeIDField       = "node_id"
-	notifierField     = "notifier"
+	alertIDField          = "alert_id"
+	apiTokenIDField       = "api_token_id"
+	authProviderField     = "auth_provider"
+	apiTokenNameField     = "api_token_name"
+	backupField           = "backup"
+	cloudSourceField      = "cloud_source"
+	clusterIDField        = "cluster_id"
+	clusterNameField      = "cluster_name"
+	errCodeField          = "err_code"
+	imageField            = "image"
+	imageIDField          = "image_id"
+	nodeIDField           = "node_id"
+	notifierField         = "notifier"
+	virtualMachineField   = "virtual_machine"
+	virtualMachineIDField = "virtual_machine_id"
 )
 
 var resourceTypeFields = map[string]string{
-	apiTokenIDField:   administrationResources.APIToken,
-	apiTokenNameField: administrationResources.APIToken,
-	authProviderField: administrationResources.AuthProvider,
-	backupField:       administrationResources.Backup,
-	cloudSourceField:  administrationResources.CloudSource,
-	clusterIDField:    administrationResources.Cluster,
-	imageField:        administrationResources.Image,
-	imageIDField:      administrationResources.Image,
-	nodeIDField:       administrationResources.Node,
-	notifierField:     administrationResources.Notifier,
+	apiTokenIDField:       administrationResources.APIToken,
+	apiTokenNameField:     administrationResources.APIToken,
+	authProviderField:     administrationResources.AuthProvider,
+	backupField:           administrationResources.Backup,
+	cloudSourceField:      administrationResources.CloudSource,
+	clusterIDField:        administrationResources.Cluster,
+	imageField:            administrationResources.Image,
+	imageIDField:          administrationResources.Image,
+	nodeIDField:           administrationResources.Node,
+	notifierField:         administrationResources.Notifier,
+	virtualMachineField:   administrationResources.VirtualMachine,
+	virtualMachineIDField: administrationResources.VirtualMachine,
 }
 
 type ContextField struct {
@@ -136,6 +140,16 @@ func ClusterName(name string) zap.Field {
 	return String(clusterNameField, name)
 }
 
+// VirtualMachineName provides the virtual machine name as a structured log field.
+func VirtualMachineName(name string) zap.Field {
+	return String(virtualMachineField, name)
+}
+
+// VirtualMachineID provides the virtual machine ID as a structured log field.
+func VirtualMachineID(id string) zap.Field {
+	return String(virtualMachineIDField, id)
+}
+
 // Wrapper functions for zap.Field functions.
 
 // String provides a wrapper around zap.String and adds the key-value pair as structured log field.
@@ -194,5 +208,6 @@ func isIDField(fieldName string) bool {
 		fieldName != backupField &&
 		fieldName != cloudSourceField &&
 		fieldName != imageField &&
-		fieldName != notifierField
+		fieldName != notifierField &&
+		fieldName != virtualMachineField
 }

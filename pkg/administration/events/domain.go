@@ -3,10 +3,11 @@ package events
 import "regexp"
 
 const (
-	AuthenticationDomain = "Authentication"
-	DefaultDomain        = "General"
-	ImageScanningDomain  = "Image Scanning"
-	IntegrationDomain    = "Integrations"
+	AuthenticationDomain         = "Authentication"
+	DefaultDomain                = "General"
+	ImageScanningDomain          = "Image Scanning"
+	IntegrationDomain            = "Integrations"
+	VirtualMachineScanningDomain = "Virtual Machine Scanning"
 )
 
 var moduleToDomain = map[*regexp.Regexp]string{
@@ -17,6 +18,7 @@ var moduleToDomain = map[*regexp.Regexp]string{
 	regexp.MustCompile(`(^|/)cloudsources(/|$)`):                                  IntegrationDomain,
 	regexp.MustCompile(`(^|/)notifiers(/|$)`):                                     IntegrationDomain,
 	regexp.MustCompile(`^reprocessor|image/service|detection/service|enrichment`): ImageScanningDomain,
+	regexp.MustCompile(`pipeline/virtualmachines`):                                VirtualMachineScanningDomain,
 }
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be

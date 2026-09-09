@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -292,6 +293,52 @@ func TestRescanner_Run(t *testing.T) {
 	})
 }
 
+func TestRescanner_RecordsIndexErrorOnFailedScan(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
+		r := testRescanner(provider)
+		r.interval = time.Hour
+		var failScan atomic.Bool
+		r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+			if failScan.Load() {
+				return nil, errors.New("rpm: indexer failed")
+			}
+			return &v4.IndexReport{HashId: "ok"}, nil
+		}
+
+		ctx, cancel := context.WithCancel(t.Context())
+		stopped := r.runAsync(ctx)
+		defer func() {
+			cancel()
+			<-stopped
+		}()
+		synctest.Wait()
+
+		time.Sleep(r.interval)
+		synctest.Wait()
+
+		first := getReportResponse(t, r.cache, provider)
+		token := first.GetMeta().GetReportToken()
+		require.NotEmpty(t, token)
+		assert.Empty(t, first.GetMeta().GetFacts()["last_index_error"])
+
+		failScan.Store(true)
+		time.Sleep(r.interval)
+		synctest.Wait()
+
+		failed := getReportResponse(t, r.cache, provider)
+		assert.Equal(t, token, failed.GetMeta().GetReportToken())
+		assert.Equal(t, "rpm: indexer failed", failed.GetMeta().GetFacts()["last_index_error"])
+
+		failScan.Store(false)
+		time.Sleep(rescanRetryBaseBackoff)
+		synctest.Wait()
+
+		cleared := getReportResponse(t, r.cache, provider)
+		assert.Empty(t, cleared.GetMeta().GetFacts()["last_index_error"])
+	})
+}
+
 // TestScanOnce_StoresHashFromBeforeTheScan covers a URL refresh that
 // replaces the live mapping while scanFn runs: SetReport must keep the
 // hash from before the scan.
@@ -311,6 +358,11 @@ func TestScanOnce_StoresHashFromBeforeTheScan(t *testing.T) {
 
 func mappingHashFromCache(t *testing.T, cache *vsockserver.ReportCache, provider vsockserver.MappingProvider) string {
 	t.Helper()
+	return getReportResponse(t, cache, provider).GetMeta().GetRepoCpeMappingHash()
+}
+
+func getReportResponse(t *testing.T, cache *vsockserver.ReportCache, provider vsockserver.MappingProvider) *pb.VMServiceResponse {
+	t.Helper()
 	handler := vsockserver.NewHandler(cache, "test", provider, nil)
 	clientConn, serverConn := net.Pipe()
 	go handler.HandleConn(serverConn)
@@ -328,5 +380,5 @@ func mappingHashFromCache(t *testing.T, cache *vsockserver.ReportCache, provider
 	var resp pb.VMServiceResponse
 	require.NoError(t, proto.Unmarshal(respData, &resp))
 	require.NotNil(t, resp.GetGetReport())
-	return resp.GetMeta().GetRepoCpeMappingHash()
+	return &resp
 }

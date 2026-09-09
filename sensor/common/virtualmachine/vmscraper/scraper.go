@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -1005,6 +1006,12 @@ func snapshotAgentFacts(meta *pb.ResponseMeta) (mapped map[string]string, ok boo
 		return nil, false
 	}
 	mapped = virtualmachine.AgentFactsFromResponse(meta.GetFacts(), meta.GetAgentVersion())
+	if ts := meta.GetReportGeneratedAt(); ts != nil && ts.IsValid() {
+		if mapped == nil {
+			mapped = make(map[string]string, 1)
+		}
+		mapped[pkgVM.InventoryGeneratedAtKey] = ts.AsTime().UTC().Format(time.RFC3339)
+	}
 	return mapped, len(mapped) > 0
 }
 
