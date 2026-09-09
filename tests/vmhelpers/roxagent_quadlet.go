@@ -217,11 +217,11 @@ func stageQuadletInstall(image, repo2cpeURL, podmanAuthPath string) (string, err
 	}
 	if err := os.WriteFile(filepath.Join(dir, quadletContainerFileName), overlayed, 0o644); err != nil {
 		_ = os.RemoveAll(dir)
-		return "", err
+		return "", fmt.Errorf("write %s: %w", quadletContainerFileName, err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, quadletInstallScriptName), installSrc, 0o755); err != nil {
 		_ = os.RemoveAll(dir)
-		return "", err
+		return "", fmt.Errorf("write %s: %w", quadletInstallScriptName, err)
 	}
 	return dir, nil
 }
