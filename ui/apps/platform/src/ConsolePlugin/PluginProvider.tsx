@@ -7,6 +7,7 @@ import configureApolloClient from 'init/configureApolloClient';
 import { setAnalyticsSource } from 'init/initializeAnalytics';
 import { UserPermissionProvider } from 'providers/UserPermissionProvider';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
+import { LightspeedStatusProvider } from 'providers/LightspeedStatusProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
@@ -46,7 +47,9 @@ function PluginProviderContent({ children }: { children: ReactNode }) {
                     <MetadataProvider>
                         <PublicConfigProvider>
                             <TelemetryConfigProvider>
-                                <PluginContent>{children}</PluginContent>
+                                <LightspeedStatusProvider>
+                                    <PluginContent>{children}</PluginContent>
+                                </LightspeedStatusProvider>
                             </TelemetryConfigProvider>
                         </PublicConfigProvider>
                     </MetadataProvider>
