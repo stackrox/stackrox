@@ -251,14 +251,22 @@ func (r *Repo2CPE) recordRepo2CPEUnchanged(resp *http.Response) {
 // hashes the same as what's cached, treating a same-hash 200 like a 304.
 func (r *Repo2CPE) recordRepo2CPESuccess(body []byte, resp *http.Response) {
 	hash := cpemapping.HashMapping(body)
+	var oldHash string
+	var changed bool
 	concurrency.WithLock(&r.cacheMu, func() {
 		r.cache.lastSuccess = time.Now()
+		oldHash = r.cache.hash
 		if hash != r.cache.hash {
 			r.cache.mapping = body
 			r.cache.hash = hash
+			changed = true
 		}
 		r.replaceRepo2CPEValidatorsNoLock(resp)
 	})
+	if changed {
+		repoCPEMappingHashChanges.Inc()
+		log.Infof("Repo-to-CPE mapping content hash changed: old=%q new=%q", oldHash, hash)
+	}
 	log.Debugf("Fetched repo-to-CPE mapping from central, hash=%s", hash)
 }
 

@@ -96,7 +96,7 @@ func (v Virtctl) run(ctx context.Context, args []string) (stdout string, stderr 
 		stdoutStr := outBuf.String()
 		stderrStr := errBuf.String()
 		v.Logf("remote command could not start: %s (result=%v)", summary, err)
-		return stdoutStr, stderrStr, err
+		return stdoutStr, stderrStr, fmt.Errorf("start virtctl: %w", err)
 	}
 	err = waitForCommandWithContext(ctx, cmd)
 
