@@ -9,7 +9,7 @@ import (
 
 // processArgsPattern matches ' with args "..."' in process baseline messages.
 // Process arguments may contain sensitive data (passwords, tokens) and must be
-// stripped before sending to an external LLM.
+// redacted before sending to an external LLM.
 var processArgsPattern = regexp.MustCompile(` with args "[^"]*"`)
 
 // buildSanitizedRiskContext produces a minimal JSON representation of the
@@ -134,10 +134,10 @@ func sanitizeRisk(r *storage.Risk) sanitizedRisk {
 			if msg == "" {
 				continue
 			}
-			// Strip process arguments from "Suspicious Process Executions" messages
+			// Redact process arguments from "Suspicious Process Executions" messages
 			// as they may contain sensitive information (passwords, tokens, etc.).
 			if result.GetName() == "Suspicious Process Executions" {
-				msg = processArgsPattern.ReplaceAllString(msg, "")
+				msg = processArgsPattern.ReplaceAllString(msg, "<redacted args>")
 			}
 			srr.Factors = append(srr.Factors, sanitizedRiskFactor{
 				Message: msg,

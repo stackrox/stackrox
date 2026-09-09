@@ -501,17 +501,19 @@ func TestBuildSanitizedRiskContext_ProcessArgsStripped(t *testing.T) {
 	assert.Contains(t, contextJSON, "container sidecar")
 	assert.Contains(t, contextJSON, "Suspicious Process Executions")
 
-	// Process arguments MUST be stripped from "Suspicious Process Executions" (may contain secrets).
+	// Process arguments MUST be redacted from "Suspicious Process Executions" (may contain secrets).
 	assert.NotContains(t, contextJSON, "PASSWORD=secret123")
 	assert.NotContains(t, contextJSON, "token=abc123")
 	assert.NotContains(t, contextJSON, "secret=xyz")
 	assert.NotContains(t, contextJSON, "script.sh")
 
-	// The ' with args "..."' pattern should be completely removed.
+	// The ' with args "..."' pattern should be replaced with '<redacted args>'.
+	// Note: JSON encoding escapes < and > as \u003c and \u003e.
 	assert.NotContains(t, contextJSON, `with args "-c export`)
 	assert.NotContains(t, contextJSON, `with args "https://api`)
+	assert.Contains(t, contextJSON, `\u003credacted args\u003e`)
 
-	// Message without args should remain intact.
+	// Message without args should remain intact (no <redacted args> added).
 	assert.Contains(t, contextJSON, `Detected execution of suspicious process \"/bin/sh\" in container sidecar`)
 
 	// Other risk results should NOT have their messages modified.
