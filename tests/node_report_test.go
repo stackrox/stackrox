@@ -516,8 +516,12 @@ func (s *NodeReportSuite) TestCancelNodeReport() {
 		defer cancel()
 		statusResp, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: runResp.GetReportId()})
 		if err != nil {
-			s.T().Logf("Report not found after cancel: %v", err)
-			return true // treat not-found as done
+			if status.Code(err) == codes.NotFound {
+				s.T().Logf("Report not found after cancel: %v", err)
+				return true
+			}
+			s.T().Logf("Error checking report status after cancel: %v", err)
+			return false
 		}
 		finalStatus = statusResp.GetStatus()
 		state := finalStatus.GetRunState()
