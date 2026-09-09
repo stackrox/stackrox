@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"errors"
+	"math"
 	"regexp"
 	"testing"
 	"time"
@@ -27,6 +28,9 @@ import (
 	secretDataStoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStoreMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
+	virtualMachineV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	clusterPkg "github.com/stackrox/rox/pkg/cluster"
@@ -80,6 +84,8 @@ type clusterDataStoreTestSuite struct {
 	k8sRoleBindingDS     *roleBindingDataStoreMocks.MockDataStore
 	secretDS             *secretDataStoreMocks.MockDataStore
 	serviceAccountDS     *serviceAccountDataStoreMocks.MockDataStore
+	vmDS                 *virtualMachineDSMocks.MockDataStore
+	vmV2DS               *virtualMachineV2DSMocks.MockDataStore
 
 	networkBaselineMgr *networkBaselineManagerMocks.MockManager
 
@@ -112,6 +118,8 @@ func (s *clusterDataStoreTestSuite) SetupTest() {
 	s.k8sRoleBindingDS = roleBindingDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.secretDS = secretDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.serviceAccountDS = serviceAccountDataStoreMocks.NewMockDataStore(s.mockCtrl)
+	s.vmDS = virtualMachineDSMocks.NewMockDataStore(s.mockCtrl)
+	s.vmV2DS = virtualMachineV2DSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.networkBaselineMgr = networkBaselineManagerMocks.NewMockManager(s.mockCtrl)
 
@@ -138,6 +146,8 @@ func (s *clusterDataStoreTestSuite) SetupTest() {
 		serviceAccountDataStore:   s.serviceAccountDS,
 		roleDataStore:             s.k8sRoleDS,
 		roleBindingDataStore:      s.k8sRoleBindingDS,
+		virtualMachineDataStore:   s.vmDS,
+		virtualMachineV2DataStore: s.vmV2DS,
 		cm:                        s.sensorConnectionMgr,
 		notifier:                  s.notifierProcessor,
 		clusterRanker:             ranking.NewRanker(),
@@ -177,6 +187,9 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 
 	clusterIDSearchQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
 	matchClusterIDSearchQuery := protomock.GoMockMatcherEqualMessage(clusterIDSearchQuery)
+	vmClusterIDSearchQuery := clusterIDSearchQuery.CloneVT()
+	vmClusterIDSearchQuery.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
+	matchVMClusterIDSearchQuery := protomock.GoMockMatcherEqualMessage(vmClusterIDSearchQuery)
 
 	testError := errors.New("test error")
 
@@ -299,6 +312,31 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 				DeleteAllNodesForCluster(gomock.Any(), clusterID).
 				Times(1).
 				Return(tc.status)
+
+			// Remove virtual machines (v1 and v2)
+			v1VMs := make([]*storage.VirtualMachine, 0, len(tc.results))
+			for _, result := range tc.results {
+				v1VMs = append(v1VMs, &storage.VirtualMachine{Id: result.ID})
+			}
+			s.vmDS.EXPECT().
+				SearchRawVirtualMachines(gomock.Any(), matchVMClusterIDSearchQuery).
+				Times(1).
+				Return(v1VMs, tc.status)
+			s.vmV2DS.EXPECT().
+				Search(gomock.Any(), matchVMClusterIDSearchQuery).
+				Times(1).
+				Return(searchResults, tc.status)
+			if tc.status == nil && len(resultIDs) > 0 {
+				var deleteErr error
+				for _, result := range tc.results {
+					if result.status != nil {
+						deleteErr = result.status
+						break
+					}
+				}
+				s.vmDS.EXPECT().DeleteVirtualMachines(gomock.Any(), resultIDs[0], resultIDs[1]).Times(1).Return(deleteErr)
+				s.vmV2DS.EXPECT().DeleteVirtualMachines(gomock.Any(), resultIDs[0], resultIDs[1]).Times(1).Return(deleteErr)
+			}
 
 			// 9. Delete external network entities for cluster
 			s.networkEntityDS.EXPECT().

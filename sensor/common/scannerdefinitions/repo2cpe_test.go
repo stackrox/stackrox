@@ -14,6 +14,7 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/sensor/common"
@@ -74,6 +75,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 		wantHash         string
 		wantEtag         string
 		wantLastModified string
+		wantHashChange   bool
 	}{
 		"first fetch succeeds and populates an empty cache": {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
@@ -81,10 +83,11 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 				w.Header().Set(etagHeader, `"v1"`)
 				_, _ = w.Write([]byte(mappingV1))
 			},
-			wantOK:      true,
-			wantMapping: mappingV1,
-			wantHash:    hashV1,
-			wantEtag:    `"v1"`,
+			wantOK:         true,
+			wantMapping:    mappingV1,
+			wantHash:       hashV1,
+			wantEtag:       `"v1"`,
+			wantHashChange: true,
 		},
 		"304 with matching validators keeps the cached mapping": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`, lastModified: "old", lastSuccess: seededSuccess},
@@ -103,9 +106,10 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV2))
 			},
-			wantOK:      true,
-			wantMapping: mappingV2,
-			wantHash:    hashV2,
+			wantOK:         true,
+			wantMapping:    mappingV2,
+			wantHash:       hashV2,
+			wantHashChange: true,
 		},
 		"200 with a same-hash body is treated as unchanged": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
@@ -121,9 +125,10 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(mappingV2))
 			},
-			wantOK:      true,
-			wantMapping: mappingV2,
-			wantHash:    hashV2,
+			wantOK:         true,
+			wantMapping:    mappingV2,
+			wantHash:       hashV2,
+			wantHashChange: true,
 		},
 		"an unexpected status leaves the cache untouched": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, lastSuccess: seededSuccess},
@@ -174,9 +179,15 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 				r.centralClient = newTestCentralClient(t, tt.serverHandler)
 			}
 
+			before := testutil.ToFloat64(repoCPEMappingHashChanges)
 			ok := r.attemptRepo2CPERefresh(t.Context())
 
 			assert.Equal(t, tt.wantOK, ok)
+			wantCount := before
+			if tt.wantHashChange {
+				wantCount++
+			}
+			assert.Equal(t, wantCount, testutil.ToFloat64(repoCPEMappingHashChanges))
 			assert.Equal(t, tt.wantMapping, string(r.cache.mapping))
 			assert.Equal(t, tt.wantHash, r.cache.hash)
 			assert.Equal(t, tt.wantEtag, r.cache.etag)
