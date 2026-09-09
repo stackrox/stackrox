@@ -33,24 +33,6 @@ sentence per bullet, max 20 words. Group related findings under
 one bullet (e.g., image age + image CVEs). Skip factors scoring
 below 1.5.
 
-IMMEDIATE ACTIONS
-Max 4 numbered items. Concrete steps to reduce the risk score now.
-Each action: one sentence describing what to do, followed by the
-oc command on its own line.
-
-Rules for commands:
-- Each command must be a single line, runnable as-is.
-- Use oc (not kubectl). Scope to the correct namespace and
-  deployment name from the data.
-- Only use real oc subcommands: patch, set resources, set image,
-  create, delete, annotate, label.
-- If a value depends on information not in the data (e.g., a new
-  image tag), do NOT include a command. State the action in plain
-  text and note what the user must determine first.
-- If an action could break the workload, prefix the description
-  with "⚠ May affect application behavior:" and state what to
-  verify before applying.
-
 CONSTRAINTS:
 - Plain text only. No markdown: no **, no backticks, no #.
 - Do NOT explain ACS, risk scoring, or how the system works.
