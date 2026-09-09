@@ -11,6 +11,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
@@ -706,5 +707,155 @@ func nodeViewBasedSnapshot(userID string) *storage.ReportSnapshot {
 		ReportStatus: &storage.ReportStatus{
 			ReportRequestType: storage.ReportStatus_VIEW_BASED,
 		},
+	}
+}
+
+func TestValidateAndGenerateViewBasedReportRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	notifierDS := notifierDSMocks.NewMockDataStore(ctrl)
+	collectionDS := collectionDSMocks.NewMockDataStore(ctrl)
+	reportConfigDS := reportConfigDSMocks.NewMockDataStore(ctrl)
+	snapshotDS := snapshotDSMocks.NewMockDataStore(ctrl)
+
+	validator := New(reportConfigDS, snapshotDS, collectionDS, notifierDS)
+
+	identity := authnMocks.NewMockIdentity(ctrl)
+	identity.EXPECT().UID().Return("user-1").AnyTimes()
+	identity.EXPECT().FullName().Return("John Doe").AnyTimes()
+	identity.EXPECT().FriendlyName().Return("jdoe").AnyTimes()
+	identity.EXPECT().Roles().Return(nil).AnyTimes()
+
+	tests := map[string]struct {
+		req         *apiV2.ReportRequestViewBased
+		expectError bool
+		errContains string
+		// verify runs on the generated snapshot when no error is expected.
+		verify func(t *testing.T, snapshot *storage.ReportSnapshot)
+	}{
+		"nil request fails": {
+			req:         nil,
+			expectError: true,
+			errContains: "empty request",
+		},
+		"unsupported report type fails": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_ReportType(-1),
+			},
+			expectError: true,
+			errContains: "unsupported report type",
+		},
+		"vulnerability report without filters fails": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+			},
+			expectError: true,
+			errContains: "view-based vulnerability report filters must be provided",
+		},
+		"vulnerability report with filters succeeds": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						Query: "Cluster:prod",
+					},
+				},
+				AreaOfConcern: "User Workloads",
+			},
+			verify: func(t *testing.T, snapshot *storage.ReportSnapshot) {
+				assert.Equal(t, storage.ReportSnapshot_VULNERABILITY, snapshot.GetType())
+				assert.Equal(t, "User Workloads", snapshot.GetAreaOfConcern())
+				assert.Equal(t, "Cluster:prod", snapshot.GetViewBasedVulnReportFilters().GetQuery())
+			},
+		},
+		"node report without filters fails": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+			},
+			expectError: true,
+			errContains: "node vulnerability report filters must be provided",
+		},
+		"node report without CVE time filter defaults to all vulnerabilities": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
+					NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+						Query: "Cluster:prod",
+					},
+				},
+			},
+			verify: func(t *testing.T, snapshot *storage.ReportSnapshot) {
+				filters := snapshot.GetNodeVulnReportFilters()
+				assert.Equal(t, "Cluster:prod", filters.GetQuery())
+				assert.True(t, filters.GetAllVuln())
+			},
+		},
+		"node report with explicit all vulnerabilities filter is preserved": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
+					NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+						CvesSince: &apiV2.NodeVulnerabilityReportFilters_AllVuln{
+							AllVuln: true,
+						},
+					},
+				},
+			},
+			verify: func(t *testing.T, snapshot *storage.ReportSnapshot) {
+				assert.True(t, snapshot.GetNodeVulnReportFilters().GetAllVuln())
+			},
+		},
+		"node report with all vulnerabilities set to false is not overridden": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
+					NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+						CvesSince: &apiV2.NodeVulnerabilityReportFilters_AllVuln{
+							AllVuln: false,
+						},
+					},
+				},
+			},
+			verify: func(t *testing.T, snapshot *storage.ReportSnapshot) {
+				assert.False(t, snapshot.GetNodeVulnReportFilters().GetAllVuln())
+			},
+		},
+		"node report with invalid query fails": {
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
+					NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+						Query: "invalid query syntax [",
+					},
+				},
+			},
+			expectError: true,
+			errContains: "invalid query",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := validator.ValidateAndGenerateViewBasedReportRequest(tc.req, identity)
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errContains)
+				assert.Nil(t, result)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			snapshot := result.ReportSnapshot
+			require.NotNil(t, snapshot)
+			assert.Equal(t, storage.ReportStatus_WAITING, snapshot.GetReportStatus().GetRunState())
+			assert.Equal(t, storage.ReportStatus_VIEW_BASED, snapshot.GetReportStatus().GetReportRequestType())
+			assert.Equal(t, storage.ReportStatus_DOWNLOAD, snapshot.GetReportStatus().GetReportNotificationMethod())
+			assert.Equal(t, "user-1", snapshot.GetRequester().GetId())
+			assert.Equal(t, "John Doe", snapshot.GetRequester().GetName())
+			assert.NotEmpty(t, snapshot.GetName())
+			tc.verify(t, snapshot)
+		})
 	}
 }
