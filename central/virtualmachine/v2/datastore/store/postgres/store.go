@@ -238,16 +238,22 @@ func (s *storeImpl) UpsertScan(ctx context.Context, vmID string, parts common.VM
 	})
 }
 
+// scanHashVersion is mixed into the content hash so a conversion change
+// rebuilds stored V2 rows even when the incoming v1 inventory is unchanged.
+const scanHashVersion = 1
+
 // scanHashWrapper hashes the original v1 scan components directly, relying on
 // @gotags in the proto definitions to ignore derived/store-set fields
 // (top_cvss, risk_score, created_at). This matches the image store's pattern.
 type scanHashWrapper struct {
+	Version    int
 	ScanOs     string
 	Components []*storage.EmbeddedVirtualMachineScanComponent `hash:"set"`
 }
 
 func buildScanHash(parts common.VMScanParts) (uint64, error) {
 	return hashstructure.Hash(scanHashWrapper{
+		Version:    scanHashVersion,
 		ScanOs:     parts.Scan.GetScanOs(),
 		Components: parts.SourceComponents,
 	}, &hashstructure.HashOptions{ZeroNil: true})
