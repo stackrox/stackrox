@@ -34,6 +34,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
+- The `priority` field on API responses for deployments, images, nodes, clusters, namespaces, and components is deprecated and will be removed in a future release. Use the `risk_score` field on the same objects instead. Sorting by "Risk Priority" in search queries is also deprecated; sort by "Risk Score" instead.
 
 ### Technical Changes
 - ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
