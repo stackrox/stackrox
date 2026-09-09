@@ -788,24 +788,23 @@ function AuthProviderForm({
                                 </p>
                                 <p>
                                     Additionally, Red Hat Advanced Cluster Management must have
-                                    &lsquot;fine-grained role-based access control&rsquot;
-                                    activated.
+                                    &apos;fine-grained role-based access control&apos; activated.
                                 </p>
                                 <p>
                                     For further information on the role configuration, please refer
                                     to the Red Hat Advanced Cluster Management documentation
-                                    (version &gt;= 2.16), area &lsquot;Secure clusters&rsquot;,
-                                    section &lsquot;Securing clusters&rsquot;, subsections
-                                    &lsquot;Fine-grained role-based access control for virtual
-                                    machines&rsquot;, &lsquot;Enabling fine-grained role-based
-                                    access control for virtualization&rsquot;, and the subsections
-                                    related to &lsquot;MulticlusterRoleAssignment&rsquot;.
+                                    (version &gt;= 2.16), area &apos;Secure clusters&apos;, section
+                                    &apos;Securing clusters&apos;, subsections &apos;Fine-grained
+                                    role-based access control for virtual machines&apos;,
+                                    &apos;Enabling fine-grained role-based access control for
+                                    virtualization&apos;, and the subsections related to
+                                    &apos;MulticlusterRoleAssignment&apos;.
                                 </p>
                                 <p>
                                     The OpenShift ClusterRoles created to configure the Red Hat
                                     Advanced Cluster Security access control need to have the label
-                                    &lsquot;clusterview.open-cluster-management.io/discoverable&rsquot;
-                                    present and set to &lsquot;true&rsquot;.
+                                    &apos;clusterview.open-cluster-management.io/discoverable&apos;
+                                    present and set to &apos;true&apos;.
                                 </p>
                             </Alert>
                         </div>
