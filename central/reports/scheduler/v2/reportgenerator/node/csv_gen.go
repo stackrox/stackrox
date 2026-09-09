@@ -16,6 +16,7 @@ import (
 var csvHeader = []string{
 	"Cluster",
 	"Node",
+	"Operating System",
 	"Component",
 	"Component Version",
 	"CVE",
@@ -34,6 +35,7 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 		row := csv.Value{
 			r.GetCluster(),
 			r.GetNode(),
+			r.GetOperatingSystem(),
 			r.GetComponent(),
 			r.GetComponentVersion(),
 			r.GetCVE(),

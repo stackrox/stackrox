@@ -10,6 +10,7 @@ import (
 type NodeCVEQueryResponse struct {
 	Cluster          *string                        `db:"cluster"`
 	Node             *string                        `db:"node"`
+	OperatingSystem  *string                        `db:"operating_system"`
 	Component        *string                        `db:"component"`
 	ComponentVersion *string                        `db:"component_version"`
 	CVEID            *string                        `db:"cve_id"`
@@ -35,6 +36,13 @@ func (r *NodeCVEQueryResponse) GetNode() string {
 		return ""
 	}
 	return *r.Node
+}
+
+func (r *NodeCVEQueryResponse) GetOperatingSystem() string {
+	if r.OperatingSystem == nil {
+		return ""
+	}
+	return *r.OperatingSystem
 }
 
 func (r *NodeCVEQueryResponse) GetComponent() string {

@@ -27,6 +27,7 @@ func TestGenerateCSV_EmptyResponses(t *testing.T) {
 func TestGenerateCSV_WithResponses(t *testing.T) {
 	cluster := "prod-us"
 	node := "node-1"
+	operatingSystem := "rhcos:4.14"
 	component := "openssl"
 	componentVersion := "1.1.1"
 	cve := "CVE-2021-1234"
@@ -41,6 +42,7 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 		{
 			Cluster:          &cluster,
 			Node:             &node,
+			OperatingSystem:  &operatingSystem,
 			Component:        &component,
 			ComponentVersion: &componentVersion,
 			CVE:              &cve,
@@ -73,15 +75,16 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 	assert.Equal(t, csvHeader, records[0])
 	assert.Equal(t, "prod-us", records[1][0])
 	assert.Equal(t, "node-1", records[1][1])
-	assert.Equal(t, "openssl", records[1][2])
-	assert.Equal(t, "1.1.1", records[1][3])
-	assert.Equal(t, "CVE-2021-1234", records[1][4])
-	assert.Equal(t, "true", records[1][5])
-	assert.Equal(t, "1.1.2", records[1][6])
-	assert.Equal(t, "CRITICAL", records[1][7])
-	assert.Equal(t, "9.80", records[1][8])
-	assert.Equal(t, "June 15, 2021", records[1][9])
-	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2021-1234", records[1][10])
+	assert.Equal(t, "rhcos:4.14", records[1][2])
+	assert.Equal(t, "openssl", records[1][3])
+	assert.Equal(t, "1.1.1", records[1][4])
+	assert.Equal(t, "CVE-2021-1234", records[1][5])
+	assert.Equal(t, "true", records[1][6])
+	assert.Equal(t, "1.1.2", records[1][7])
+	assert.Equal(t, "CRITICAL", records[1][8])
+	assert.Equal(t, "9.80", records[1][9])
+	assert.Equal(t, "June 15, 2021", records[1][10])
+	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2021-1234", records[1][11])
 }
 
 func TestGenerateCSV_LongConfigNameIsTruncated(t *testing.T) {
@@ -132,15 +135,16 @@ func TestGenerateCSV_NilFieldsProduceDefaults(t *testing.T) {
 	require.Len(t, records, 2)
 
 	row := records[1]
-	assert.Equal(t, "", row[0])              // Cluster
-	assert.Equal(t, "", row[1])              // Node
-	assert.Equal(t, "", row[2])              // Component
-	assert.Equal(t, "", row[3])              // ComponentVersion
-	assert.Equal(t, "", row[4])              // CVE
-	assert.Equal(t, "false", row[5])         // Fixable
-	assert.Equal(t, "", row[6])              // FixedBy
-	assert.Equal(t, "UNKNOWN", row[7])       // Severity
-	assert.Equal(t, "0.00", row[8])          // CVSS
-	assert.Equal(t, "Not Available", row[9]) // First System Occurrence
-	assert.Equal(t, "", row[10])             // Link
+	assert.Equal(t, "", row[0])               // Cluster
+	assert.Equal(t, "", row[1])               // Node
+	assert.Equal(t, "", row[2])               // Operating System
+	assert.Equal(t, "", row[3])               // Component
+	assert.Equal(t, "", row[4])               // ComponentVersion
+	assert.Equal(t, "", row[5])               // CVE
+	assert.Equal(t, "false", row[6])          // Fixable
+	assert.Equal(t, "", row[7])               // FixedBy
+	assert.Equal(t, "UNKNOWN", row[8])        // Severity
+	assert.Equal(t, "0.00", row[9])           // CVSS
+	assert.Equal(t, "Not Available", row[10]) // First System Occurrence
+	assert.Equal(t, "", row[11])              // Link
 }
