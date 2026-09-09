@@ -2,6 +2,7 @@ package registry
 
 import (
 	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/central/role/mapper"
@@ -24,7 +25,7 @@ func initialize() {
 	registry = authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton())
+		mapper.FactorySingleton(), clusterDataStore.Singleton())
 	// Set the auth provider registry function in the group datastore to break circular dependency
 	groupDataStore.SetAuthProviderRegistryFunc(func() authproviders.Registry {
 		return registry

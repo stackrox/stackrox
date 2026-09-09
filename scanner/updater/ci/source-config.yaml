@@ -12,8 +12,8 @@
 # as the pipeline evolves.
 
 storage:
-  bucket: scanner-v4-test
-  prefix: vulnerability-bundles
+  bucket: definitions.stackrox.io
+  prefix: v4/vulnerability-bundles
 
 bundles:
   dev:
