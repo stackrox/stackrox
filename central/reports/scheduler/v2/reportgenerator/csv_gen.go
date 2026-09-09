@@ -97,6 +97,7 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 
 	csvRow = append(csvRow,
 		r.GetDiscoveredAtImage(),
+		r.GetImageCreatedAt(),
 		r.Link,
 		r.GetAdvisoryName(),
 		r.GetAdvisoryLink(),
