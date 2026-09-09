@@ -143,34 +143,37 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private String KEYLESS_SIGSTORE_IDENTITY = ".*@redhat.com"
     static final private String KEYLESS_SIGSTORE_REKOR_URL = "https://rekor.sigstore.dev"
 
+    // RHTAS instance is hosted on
+    // [testing services cluster](
+    //   https://console-openshift-console.apps.rosa.c3a7d6d7i1o8i5l.427x.p3.openshiftapps.com
+    // ).
     static final private String KEYLESS_RHTAS_ISSUER = "https://accounts.google.com"
     static final private String KEYLESS_RHTAS_IDENTITY = ".*@redhat.com"
     static final private String KEYLESS_RHTAS_FULCIO_CHAIN = """\
 -----BEGIN CERTIFICATE-----
-MIICBDCCAYqgAwIBAgIUNo8BCDFZXeig9JJONBUirNKTPW0wCgYIKoZIzj0EAwMw
+MIICAzCCAYqgAwIBAgIUctVXHIIauBVird+Ti/YJjvX8hpowCgYIKoZIzj0EAwMw
 LDEQMA4GA1UEChMHUmVkIEhhdDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMB4X
-DTI1MDQwOTE1MzgzMFoXDTM1MDQwNzE1MzgzMFowLDEQMA4GA1UEChMHUmVkIEhh
+DTI2MDcyNDE0MzkwMloXDTM2MDcyMTE0MzkwMlowLDEQMA4GA1UEChMHUmVkIEhh
 dDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMHYwEAYHKoZIzj0CAQYFK4EEACID
-YgAEBUJFBeglXU9zgd34suFRG8FIWz3eNChxgd5vcAI22LJvT0dhDLxOE/W1h0f+
-jRa9jM9V0EeYRpMQ6SKhbOu5mv9dTJ1d36f0e1iHQAPKDXq09D5mDcwZmR7uiaE8
-rMPjo20wazAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
-FgQUNoDRLK7bVIxt7tLbETIvDzdJ5hAwKQYDVR0RBCIwIIEeYWNzLXRlYW0tYXV0
-b21hdGlvbkByZWRoYXQuY29tMAoGCCqGSM49BAMDA2gAMGUCMG8sro032ep9lnOx
-XaZsqx+Vjb6dGmJmFQbPZX9EZxgZxG1n50EnLi/xTMxR98z4HgIxAI4ViQ6pd+6r
-ceLzLr4eKGR5yqqoWWciLF5Che/Cfqgma3jSRxbiL2urMRS3Y7038g==
+YgAEozLgKDyvO+qnl3PZNnspzjY4xgBd1bMeyLZwKIPH19bRuCSGgJPVUizTdrkb
+mOXiGyHw7w97XLITtbEOSi7mIEhc+3CuvE2nq/mfWHQQRsgm6yOx1EDh1hhiBkuD
+asNuo20wazAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
+FgQUNqwE3qpbn7ZYcF8yWCigAzsMfRcwKQYDVR0RBCIwIIEeYWNzLXRlYW0tYXV0
+b21hdGlvbkByZWRoYXQuY29tMAoGCCqGSM49BAMDA2cAMGQCMFYVSgoPjQzhxBx+
+vpgZb5CUJwUZDHCvp9PPN/Kz48+ELC0kDF90KbTJv0Tj0GjnzAIwPl5EVmjV/Hoy
+yri0BdxRThPV8+/wTrDCqsA1bOlgOYzAzEAZqTNTvnLinNzf7yQ5
 -----END CERTIFICATE-----"""
     static final private String KEYLESS_RHTAS_CTLOG_PUBLIC_KEY = """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHOWcrgffC8A4CwsPqmfy+unEU1km
-SgPCnfCzwRToJ9263qyEp+3aaCv0T4QicC31fsokxoUIGzK0Ftrt3SoXDw==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE8ewvXPAw43N3ULmsN8YIYDh47rZu
+0EXuZ06hVeddfdxbRzHehpWIVNUO1zzl7wFpqPPYAffxxDmDDkNmy8cB6Q==
 -----END PUBLIC KEY-----"""
     static final private String KEYLESS_RHTAS_REKOR_URL =
-            "https://rekor-server-trusted-artifact-signer.apps.staging-central.services.rox.systems"
+            "https://rekor-server-trusted-artifact-signer.apps.rosa.c3a7d6d7i1o8i5l.427x.p3.openshiftapps.com"
     static final private String KEYLESS_RHTAS_REKOR_PUBLIC_KEY = """\
 -----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECsUdy4SYw0Wey6iYiJ7uArUqHhKTwpRn
-YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
-5mll4EcDCwjeQyH0cXjCdn9gXfIDFjg/
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAFH7J1JajguG/zJ6CsUWIbKau0/A
+l4RLgOfB7JK26P2QEGpNzOKYHxWIV+oBSrrG1/2q1LS6WJYqhlM2+tLK9g==
 -----END PUBLIC KEY-----"""
 
     static final private String DISTROLESS_IMAGE_DIGEST =

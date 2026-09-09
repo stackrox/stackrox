@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 )
 
 // GetEntityOptionsMap is a mapping from search categories to the options
@@ -52,6 +53,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.RoleBindingsSchema.OptionsMap,
 	)
 
+	policiesSearchOptions := search.CombineOptionsMaps(
+		policycategory.CategorySearchOptions,
+		schema.PoliciesSchema.OptionsMap,
+	)
+
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
@@ -69,7 +75,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_NODE_VULNERABILITIES:    nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODES:                   nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_PODS:                    schema.PodsSchema.OptionsMap,
-		v1.SearchCategory_POLICIES:                schema.PoliciesSchema.OptionsMap,
+		v1.SearchCategory_POLICIES:                policiesSearchOptions,
 		v1.SearchCategory_POLICY_CATEGORIES:       schema.PolicyCategoriesSchema.OptionsMap,
 		v1.SearchCategory_PROCESS_BASELINES:       schema.ProcessBaselinesSchema.OptionsMap,
 		v1.SearchCategory_PROCESS_INDICATORS:      schema.ProcessIndicatorsSchema.OptionsMap,
