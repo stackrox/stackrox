@@ -119,11 +119,11 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 
 // Cleanup resets the store which includes in-memory and disk resources.
 func (s *FileStore) Cleanup() {
-	s.ruleRWMutex.Lock()
-	s.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
-	s.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
-	s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
-	s.ruleRWMutex.Unlock()
+	concurrency.WithLock(&s.ruleRWMutex, func() {
+		s.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
+		s.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
+		s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
+	})
 
 	s.cancelUpdate.Signal()
 
