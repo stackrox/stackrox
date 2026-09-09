@@ -531,7 +531,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "description": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storageNetworkEntityScope": {
       "type": "object",
@@ -627,7 +627,7 @@
         "ANOMALOUS"
       ],
       "default": "BASELINE",
-      "title": "Status of this peer connection. As of now we only have two statuses:\n  - BASELINE: the connection is in the current deployment baseline\n  - ANOMALOUS: the connection is not recognized by the current deployment baseline"
+      "description": "Status of this peer connection. As of now we only have two statuses:\n  - BASELINE: the connection is in the current deployment baseline\n  - ANOMALOUS: the connection is not recognized by the current deployment baseline"
     },
     "v1NetworkBaselineStatusPeer": {
       "type": "object",

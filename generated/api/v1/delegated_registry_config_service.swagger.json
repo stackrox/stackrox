@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "DelegatedRegistryConfigService"
+      "name": "DelegatedRegistryConfigService",
+      "description": "DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst\ncentral and secured clusters"
     }
   ],
   "consumes": [
@@ -117,7 +118,7 @@
         "SPECIFIC"
       ],
       "default": "NONE",
-      "title": "- NONE: Scan all images via central services except for images from the OCP integrated registry\n - ALL: Scan all images via the secured clusters\n - SPECIFIC: Scan images that match `registries` or are from the OCP integrated registry via the secured clusters\notherwise scan via central services"
+      "description": "- NONE: Scan all images via central services except for images from the OCP integrated registry\n - ALL: Scan all images via the secured clusters\n - SPECIFIC: Scan images that match `registries` or are from the OCP integrated registry via the secured clusters\notherwise scan via central services"
     },
     "googleRpcStatus": {
       "type": "object",

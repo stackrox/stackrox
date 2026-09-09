@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ProcessBaselineService"
+      "name": "ProcessBaselineService",
+      "description": "`ProcessBaselineService` APIs can be used to manage process baselines."
     }
   ],
   "consumes": [

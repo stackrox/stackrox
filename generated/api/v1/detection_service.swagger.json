@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "DetectionService"
+      "name": "DetectionService",
+      "description": "DetectionService APIs can be used to check for build and deploy time policy violations."
     }
   ],
   "consumes": [
@@ -279,7 +280,7 @@
         "UNKNOWN"
       ],
       "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+      "description": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
     "ExclusionImage": {
       "type": "object",
@@ -1250,7 +1251,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "description": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePermissionLevel": {
       "type": "string",
@@ -1263,7 +1264,7 @@
         "CLUSTER_ADMIN"
       ],
       "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+      "description": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
     },
     "storagePolicy": {
       "type": "object",

@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "PolicyService"
+      "name": "PolicyService",
+      "description": "PolicyService APIs can be used to manage policies."
     }
   ],
   "consumes": [

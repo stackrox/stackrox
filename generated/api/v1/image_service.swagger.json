@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ImageService"
+      "name": "ImageService",
+      "description": "ImageService APIs manages image metadata."
     }
   ],
   "consumes": [
