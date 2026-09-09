@@ -166,7 +166,7 @@ function launch_central {
     if [[ "${USE_LOCAL_ROXCTL:-}" == "true" ]]; then
       echo "Using $(command -v roxctl) for install due to USE_LOCAL_ROXCTL==true"
       use_docker=0
-    elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+    elif [[ -x "$(command -v roxctl)" && "$(roxctl version | head -1)" == "$MAIN_IMAGE_TAG" ]]; then
       echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
       use_docker=0
     elif [[ -z "$CI" ]]; then
@@ -1026,7 +1026,7 @@ function launch_sensor {
         extra_json_dynamic_config+='"processIndicators": {"excludeNamespaceFilter": "namespace-without-persistence"}'
       fi
 
-      if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+      if [[ -x "$(command -v roxctl)" && "$(roxctl version | head -1)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
         roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
