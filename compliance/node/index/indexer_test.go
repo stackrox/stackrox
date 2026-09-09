@@ -257,6 +257,17 @@ func (s *nodeIndexerSuite) TestFilterPackages() {
 			s.Len(filterPackages(tc.pkgs, tc.filter), tc.want)
 		})
 	}
+
+	s.Run("does not alias input backing array", func() {
+		a := pkg(share, "bash", "5.0")
+		b := pkg(ostree, "bash", "5.0")
+		in := []*claircore.Package{a, b}
+		got := filterPackages(in, filter)
+		s.Len(got, 1)
+		s.Same(a, in[0])
+		s.Same(b, in[1])
+		s.Len(in, 2)
+	})
 }
 
 func (s *nodeIndexerSuite) TestBuildMappingURL() {

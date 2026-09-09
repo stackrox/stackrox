@@ -306,7 +306,7 @@ func filterPackages(pkgs []*claircore.Package, packageDBFilter []string) []*clai
 		name, version, arch string
 		kind                types.PackageKind
 	}
-	out := pkgs[:0]
+	out := make([]*claircore.Package, 0, len(pkgs))
 	seen := make(map[ident]struct{}, len(pkgs))
 	for _, pkg := range pkgs {
 		if !slices.Contains(packageDBFilter, pkg.PackageDB) {
