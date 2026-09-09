@@ -86,7 +86,8 @@ func testEmptyPullAfterSignal(t *testing.T, consumerName string, startConsumer f
 		itemReceived := make(chan int, 1)
 		consumerStarted := make(chan struct{})
 
-		// Start consumer on empty queue
+		// Start consumer on empty queue. The started channel is closed before the
+		// first pull, so synctest.Wait below establishes that it is waiting.
 		startConsumer(q, ctx, itemReceived, consumerStarted)
 
 		<-consumerStarted
@@ -421,20 +422,8 @@ func TestQueueSeq(t *testing.T) {
 			allItems := append(seqItems, pullItems...)
 			assert.Equal(t, numItems, len(allItems), "Total items received should equal items pushed")
 
-			// Verify all items were received exactly once
-			seen := make(map[int]bool)
-			for _, item := range allItems {
-				if seen[item] {
-					t.Fatalf("Item %d received more than once", item)
-				}
-				seen[item] = true
-			}
-
-			for i := 1; i <= numItems; i++ {
-				if !seen[i] {
-					t.Fatalf("Item %d was lost - neither consumer received it", i)
-				}
-			}
+			// Verify all items were received exactly once.
+			assert.ElementsMatch(t, itemsFromRange(numItems), allItems)
 		})
 	})
 
@@ -447,8 +436,8 @@ func TestQueueSeq(t *testing.T) {
 		})
 	})
 
-	t.Run("Seq Push Between Empty Pull And Reset Does Not Lose Item", func(t *testing.T) {
-		testPushBetweenEmptyPullAndResetDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
+	t.Run("Seq Push After Empty Pull Does Not Lose Item", func(t *testing.T) {
+		testPushAfterEmptyPullDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
 			for item := range q.Seq(ctx) {
 				return item
 			}
@@ -486,15 +475,15 @@ func TestQueuePullBlocking(t *testing.T) {
 		})
 	})
 
-	t.Run("PullBlocking Push Between Empty Pull And Reset Does Not Lose Item", func(t *testing.T) {
-		testPushBetweenEmptyPullAndResetDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
+	t.Run("PullBlocking Push After Empty Pull Does Not Lose Item", func(t *testing.T) {
+		testPushAfterEmptyPullDoesNotLoseItem(t, func(q *Queue[int], ctx context.Context) int {
 			return q.PullBlocking(ctx)
 		})
 	})
 }
 
 // testStaleNotEmptySignalDoesNotSpin covers an empty queue whose notEmptySignal is
-// already triggered. Waiters must Reset that latch and block; otherwise synctest.Wait hangs.
+// already triggered. Waiters must clear that latch and block; otherwise synctest.Wait hangs.
 func testStaleNotEmptySignalDoesNotSpin(t *testing.T, consume func(*Queue[int], context.Context) int) {
 	synctest.Test(t, func(t *testing.T) {
 		q := NewQueue[int]()
@@ -511,7 +500,6 @@ func testStaleNotEmptySignalDoesNotSpin(t *testing.T, consume func(*Queue[int], 
 		}()
 		<-started
 		synctest.Wait()
-		t.Logf("consumer blocked")
 		q.Push(7)
 		synctest.Wait()
 		select {
@@ -523,10 +511,10 @@ func testStaleNotEmptySignalDoesNotSpin(t *testing.T, consume func(*Queue[int], 
 	})
 }
 
-// testPushBetweenEmptyPullAndResetDoesNotLoseItem covers the pullWait window
-// between an empty pull() and Reset(). synctest cannot preempt there, so
+// testPushAfterEmptyPullDoesNotLoseItem covers the window after pullWait observes
+// an empty queue and before it enters select. synctest cannot preempt there, so
 // afterEmptyPull injects the Push.
-func testPushBetweenEmptyPullAndResetDoesNotLoseItem(t *testing.T, consume func(*Queue[int], context.Context) int) {
+func testPushAfterEmptyPullDoesNotLoseItem(t *testing.T, consume func(*Queue[int], context.Context) int) {
 	synctest.Test(t, func(t *testing.T) {
 		q := NewQueue[int]()
 		q.afterEmptyPull = func() {
@@ -550,7 +538,15 @@ func testPushBetweenEmptyPullAndResetDoesNotLoseItem(t *testing.T, consume func(
 		case item := <-got:
 			assert.Equal(t, 7, item)
 		default:
-			t.Fatal("Push between empty pull and Reset was lost; item is queued but the waiter is blocked")
+			t.Fatal("Push after empty pull was lost; item is queued but the waiter is blocked")
 		}
 	})
+}
+
+func itemsFromRange(count int) []int {
+	items := make([]int, count)
+	for i := range items {
+		items[i] = i + 1
+	}
+	return items
 }

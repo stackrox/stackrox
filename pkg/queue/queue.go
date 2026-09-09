@@ -71,7 +71,6 @@ func NewQueue[T comparable](opts ...OptionFunc[T]) *Queue[T] {
 		notEmptySignal: concurrency.NewSignal(),
 		queue:          list.New(),
 		name:           defaultQueueName,
-		afterEmptyPull: func() {}, // no-op by default, tests can override
 	}
 
 	for _, opt := range opts {
@@ -98,9 +97,9 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 // Seq returns a iterator function that yields items from the queue as they become available.
 // The iterator will continue until the provided waitable signals done.
 //
-// Note: Seq checks for cancellation before each pull. If the waitable is cancelled while items
+// Note: Seq checks for cancellation before each pull. If the waitable signals done while items
 // remain in the queue, Seq will exit immediately without consuming them. This differs from
-// PullBlocking, which will pull at least one item before checking cancellation.
+// PullBlocking, which performs an initial pull before checking whether the waitable is done.
 func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 	return func(yield func(T) bool) {
 		for {
@@ -128,13 +127,13 @@ func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 // Returns the item and true if retrieved, or zero value and false if cancelled.
 func (q *Queue[T]) pullWait(waitable concurrency.Waitable) (T, bool) {
 	item, ok := q.pull()
-	// Keep retrying until we actually get an item or context is cancelled.
+	// Keep retrying until we actually get an item or the waitable signals done.
 	// This prevents lost wakeup: if we're signaled but another consumer
 	// takes the item before we pull, we must continue waiting.
 	for !ok {
-		q.afterEmptyPull()
-		// No Reset() here - innerPull now resets the signal atomically
-		// with observing the empty queue, eliminating the race window.
+		if q.afterEmptyPull != nil {
+			q.afterEmptyPull()
+		}
 		select {
 		case <-waitable.Done():
 			var nilT T
@@ -154,7 +153,9 @@ func (q *Queue[T]) innerPull() (T, bool) {
 		// Reset signal while observing empty queue under lock.
 		// This prevents the race where a Push signals after we check
 		// but before we wait - the signal and our observation are atomic.
-		q.notEmptySignal.Reset()
+		if q.notEmptySignal.IsDone() {
+			q.notEmptySignal.Reset()
+		}
 		var nilT T
 		return nilT, false
 	}
@@ -203,7 +204,6 @@ func (q *Queue[T]) Push(item T) {
 		return
 	}
 
-	// Signal is now sent inside innerPush under the lock
 	if q.counterMetric != nil {
 		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 		q.counterMetric.WithLabelValues(metrics.Add.String()).Inc()
