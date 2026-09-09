@@ -146,7 +146,7 @@ tasks.register<Test>("testParallel") {
 
 tasks.register<Test>("testRest") {
     useJUnitPlatform {
-        excludeTags("Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
+        excludeTags("Parallel", "Upgrade", "SensorBounce", "SensorBounceNext", "CentralWorker")
     }
 }
 
@@ -210,6 +210,12 @@ tasks.register<Test>("testNetworkPolicySimulation") {
 tasks.register<Test>("testUpgrade") {
     useJUnitPlatform {
         includeTags("Upgrade")
+    }
+}
+
+tasks.register<Test>("testCentralWorker") {
+    useJUnitPlatform {
+        includeTags("CentralWorker")
     }
 }
 
