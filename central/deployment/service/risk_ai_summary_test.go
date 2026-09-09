@@ -455,3 +455,65 @@ func TestBuildSanitizedRiskContext_FieldSelection(t *testing.T) {
 	assert.NotContains(t, contextJSON, "notPullable")
 	assert.NotContains(t, contextJSON, "isClusterLocal")
 }
+
+func TestBuildSanitizedRiskContext_ProcessArgsStripped(t *testing.T) {
+	deployment := &storage.Deployment{
+		Id:          "dep-1",
+		Name:        "test-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+
+	risk := &storage.Risk{
+		Id:    "risk-1",
+		Score: 8.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  "Suspicious Process Executions",
+				Score: 2.5,
+				Factors: []*storage.Risk_Result_Factor{
+					// Process args may contain sensitive info like passwords or tokens
+					{Message: `Detected execution of suspicious process "/bin/bash" with args "-c export PASSWORD=secret123 && ./script.sh" in container app`},
+					{Message: `Detected execution of suspicious process "/usr/bin/curl" with args "https://api.example.com?token=abc123&secret=xyz" in container app`},
+					{Message: `Detected execution of suspicious process "/bin/sh" in container sidecar`}, // no args - should remain unchanged
+				},
+			},
+			{
+				// Other risk results should NOT have args stripped
+				Name:  "Policy Violations",
+				Score: 1.5,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: `Some message with args "should not be stripped"`},
+				},
+			},
+		},
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	require.NoError(t, err)
+
+	// Process names and container names SHOULD be present.
+	assert.Contains(t, contextJSON, "/bin/bash")
+	assert.Contains(t, contextJSON, "/usr/bin/curl")
+	assert.Contains(t, contextJSON, "/bin/sh")
+	assert.Contains(t, contextJSON, "container app")
+	assert.Contains(t, contextJSON, "container sidecar")
+	assert.Contains(t, contextJSON, "Suspicious Process Executions")
+
+	// Process arguments MUST be stripped from "Suspicious Process Executions" (may contain secrets).
+	assert.NotContains(t, contextJSON, "PASSWORD=secret123")
+	assert.NotContains(t, contextJSON, "token=abc123")
+	assert.NotContains(t, contextJSON, "secret=xyz")
+	assert.NotContains(t, contextJSON, "script.sh")
+
+	// The ' with args "..."' pattern should be completely removed.
+	assert.NotContains(t, contextJSON, `with args "-c export`)
+	assert.NotContains(t, contextJSON, `with args "https://api`)
+
+	// Message without args should remain intact.
+	assert.Contains(t, contextJSON, `Detected execution of suspicious process \"/bin/sh\" in container sidecar`)
+
+	// Other risk results should NOT have their messages modified.
+	assert.Contains(t, contextJSON, `with args \"should not be stripped\"`)
+}

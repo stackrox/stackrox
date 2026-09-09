@@ -2,9 +2,15 @@ package service
 
 import (
 	"encoding/json"
+	"regexp"
 
 	"github.com/stackrox/rox/generated/storage"
 )
+
+// processArgsPattern matches ' with args "..."' in process baseline messages.
+// Process arguments may contain sensitive data (passwords, tokens) and must be
+// stripped before sending to an external LLM.
+var processArgsPattern = regexp.MustCompile(` with args "[^"]*"`)
 
 // buildSanitizedRiskContext produces a minimal JSON representation of the
 // deployment and risk data suitable for sending to an external LLM. It keeps
@@ -124,11 +130,18 @@ func sanitizeRisk(r *storage.Risk) sanitizedRisk {
 			Score: result.GetScore(),
 		}
 		for _, factor := range result.GetFactors() {
-			if factor.GetMessage() != "" {
-				srr.Factors = append(srr.Factors, sanitizedRiskFactor{
-					Message: factor.GetMessage(),
-				})
+			msg := factor.GetMessage()
+			if msg == "" {
+				continue
 			}
+			// Strip process arguments from "Suspicious Process Executions" messages
+			// as they may contain sensitive information (passwords, tokens, etc.).
+			if result.GetName() == "Suspicious Process Executions" {
+				msg = processArgsPattern.ReplaceAllString(msg, "")
+			}
+			srr.Factors = append(srr.Factors, sanitizedRiskFactor{
+				Message: msg,
+			})
 		}
 		sr.Results = append(sr.Results, srr)
 	}
