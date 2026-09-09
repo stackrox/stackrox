@@ -278,10 +278,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-qa-tests-gke:
-    needs: [ wait-for-images, should-dispatch ]
+    needs: [ should-dispatch ]
     uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
+      tag: "5.0.x-189-ge4091777fc"
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke }}
     secrets: inherit
     concurrency:

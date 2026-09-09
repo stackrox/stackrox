@@ -25,8 +25,9 @@ jobs:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests
-      cluster-name-prefix: e2e-qa-tests-gke
-      cluster-provisioning-method: direct-gke
+      cluster-provisioning-method: none
+      cluster-name: mc-09-03-potatoes-week-never
+      cluster-name-prefix: ""
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
