@@ -70,6 +70,14 @@ type FileStore struct {
 	itmsRules   map[types.UID]*configV1.ImageTagMirrorSet
 	ruleRWMutex sync.RWMutex
 
+	// configIOMutex serializes updateConfigNow's disk write against Cleanup's file
+	// removal, so a write that already read the (possibly stale) rules cannot land
+	// on disk after Cleanup has removed the file. It is a separate lock from
+	// ruleRWMutex (rather than widening Cleanup's hold on that lock) to avoid
+	// nesting Lock/RLock on the same mutex, since updateConfigNow reads the rules
+	// via getAllMirrorSets while holding this lock.
+	configIOMutex sync.Mutex
+
 	systemContext *ciTypes.SystemContext
 
 	updateDelay  time.Duration
@@ -112,13 +120,20 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 // Cleanup resets the store which includes in-memory and disk resources.
 func (s *FileStore) Cleanup() {
 	s.ruleRWMutex.Lock()
-	defer s.ruleRWMutex.Unlock()
-
 	s.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
 	s.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
 	s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
+	s.ruleRWMutex.Unlock()
 
 	s.cancelUpdate.Signal()
+
+	// Take configIOMutex before removing the file so that a concurrent
+	// updateConfigNow call that already started (and therefore already read the
+	// rules cleared above) is guaranteed to either finish before this removal, or
+	// start only after it -- never race with it and recreate the file right after
+	// cleanup. See configIOMutex's doc comment.
+	s.configIOMutex.Lock()
+	defer s.configIOMutex.Unlock()
 	if err := os.Remove(s.configPath); err != nil && !os.IsNotExist(err) {
 		log.Warnf("Failed to cleanup registries config at %q: %v", s.configPath, err)
 	}
@@ -147,6 +162,9 @@ func (s *FileStore) updateConfigDelayed() error {
 }
 
 func (s *FileStore) updateConfigNow() error {
+	s.configIOMutex.Lock()
+	defer s.configIOMutex.Unlock()
+
 	icspRules, idmsRules, itmsRules := s.getAllMirrorSets()
 
 	// Populate config.
