@@ -331,8 +331,8 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	nDue := len(due)
+	// Mapping-path gauges are rewritten on reconcile, removal, and path updates.
 	nTracked := concurrency.WithLock1(&s.mu, func() int {
-		s.setTrackedVMGaugesNoLock()
 		return len(s.vmState)
 	})
 	metrics.PullDueVMs.Set(float64(nDue))
