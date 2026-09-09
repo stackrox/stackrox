@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -21,8 +22,21 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
+
+const rejectionWarnSnippet = "Rejecting incoming node scan for node"
+
+func swapObservedLogger(t interface{ Cleanup(func()) }) *observer.ObservedLogs {
+	core, logs := observer.New(zap.WarnLevel)
+	orig := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = orig })
+	return logs
+}
 
 type NodesStoreSuite struct {
 	suite.Suite
@@ -149,6 +163,73 @@ func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
 	// We expect only LastUpdated to have changed.
 	foundNode.LastUpdated = newNode.GetLastUpdated()
 	protoassert.Equal(s.T(), foundNode, newNode)
+}
+
+// TestStore_FreshScanAlwaysWinsSequential covers the sequential happy path of the isUpdated() freshness
+// guard: upsert an old scan, then upsert a strictly newer one for the same node ID, and confirm the newer
+// one is persisted (both scan_time and payload advance). This isolates single-threaded correctness of the
+// guard from the concurrency behavior exercised elsewhere.
+func (s *NodesStoreSuite) TestStore_FreshScanAlwaysWinsSequential() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+
+	oldTime := time.Now().Add(-60 * 24 * time.Hour)
+	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	s.NoError(store.Upsert(s.ctx, node))
+
+	fresh := node.CloneVT()
+	freshTime := time.Now()
+	fresh.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&freshTime)
+	fresh.Scan.Components = fresh.GetScan().GetComponents()[:1] // Change the payload shape too, not just the timestamp.
+	s.NoError(store.Upsert(s.ctx, fresh))
+
+	found, exists, err := store.Get(s.ctx, node.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(freshTime.Unix(), found.GetScan().GetScanTime().AsTime().Unix(),
+		"a strictly newer scan must always replace an older one when applied sequentially")
+	s.Len(found.GetScan().GetComponents(), 1)
+}
+
+// TestStore_RejectionWarningFiresOnlyForRealStaleScan validates the rejection warning in isUpdated():
+// a real, non-nil incoming scan that is older than the stored one is rejected AND warned about, while a
+// metadata-only upsert (Scan == nil) - which is also "not newer" - is rejected silently (the gate).
+func (s *NodesStoreSuite) TestStore_RejectionWarningFiresOnlyForRealStaleScan() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+	logs := swapObservedLogger(s.T())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+	newer := time.Now()
+	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
+	s.NoError(store.Upsert(s.ctx, node))
+
+	// A real, non-nil, older scan must be rejected and warned about.
+	stale := node.CloneVT()
+	older := newer.Add(-time.Hour)
+	stale.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&older)
+	s.NoError(store.Upsert(s.ctx, stale))
+
+	found, exists, err := store.Get(s.ctx, node.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(newer.Unix(), found.GetScan().GetScanTime().AsTime().Unix(), "stale scan must be rejected")
+	require.Len(s.T(), logs.FilterMessageSnippet(rejectionWarnSnippet).All(), 1)
+
+	// A metadata-only upsert (Scan == nil) is also "not newer" but must NOT emit the warning.
+	metaOnly := found.CloneVT()
+	metaOnly.Scan = nil
+	s.NoError(store.Upsert(s.ctx, metaOnly))
+	require.Len(s.T(), logs.FilterMessageSnippet(rejectionWarnSnippet).All(), 1,
+		"metadata-only upserts must not emit the rejection warning")
 }
 
 func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
