@@ -1166,45 +1166,45 @@ func TestVMScraper_TrackedVMsByMappingPath(t *testing.T) {
 	tests := map[string]func(t *testing.T){
 		"a new VM starts as unspecified": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
-			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
 			assertTrackedByMappingPath(t, 0, 0, 1)
 		},
 		"SENSOR meta moves the recount to sensor": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
-			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
 			assertTrackedByMappingPath(t, 1, 0, 0)
 		},
 		"URL meta moves the recount to url": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
-			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL))
 			assertTrackedByMappingPath(t, 0, 1, 0)
 		},
 		"unspecified meta stays unspecified": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
-			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED))
 			assertTrackedByMappingPath(t, 0, 0, 1)
 		},
 		"nil meta does not change a live slot": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
-			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, nil)
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, nil)
 			assertTrackedByMappingPath(t, 1, 0, 0)
 		},
 		"a VM leaving vmState drops its series": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
 			store := &mockStore{vms: []*virtualmachine.Info{vm}}
-			s, _ := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
 			require.Equal(t, 1.0, testutil.ToFloat64(metrics.PullTrackedVMsByMappingPath.WithLabelValues(metrics.MappingPathSensor)))
 			store.vms = nil
 			s.reconcile()
@@ -1213,9 +1213,9 @@ func TestVMScraper_TrackedVMsByMappingPath(t *testing.T) {
 		"a vmID recreate returns to unspecified": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
 			store := &mockStore{vms: []*virtualmachine.Info{vm}}
-			s, _ := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{})
 			s.reconcile()
-			s.maybeSyncRepoCPEMapping(context.Background(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
 			store.vms = []*virtualmachine.Info{{
 				ID:        "uid-new",
 				Namespace: "ns1",
