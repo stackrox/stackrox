@@ -12,6 +12,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.11.4]
 
+### Technical Changes
+- ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
+
 **Full Changelog**: [4.11.3...4.11.4](https://github.com/stackrox/stackrox/compare/4.11.3...4.11.4)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.
