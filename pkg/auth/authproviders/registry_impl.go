@@ -24,6 +24,7 @@ import (
 
 const (
 	OpenShiftTypeNameWithACMAccessControlDelegation = "openshift-with-acm-roles"
+	OIDCTypeNameWithACMRoles                        = "oidc-with-acm-roles"
 )
 
 var (
@@ -381,6 +382,12 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 				return nil, nil, err
 			}
 			roxClaims.InternalRoles = roles
+		case OIDCTypeNameWithACMRoles:
+			roles, err := getRolesForOIDCResponse(ctx, authResp, r.clusterResolver)
+			if err != nil {
+				return nil, nil, err
+			}
+			roxClaims.InternalRoles = roles
 		default:
 			roxClaims.ExternalUser = authResp.Claims
 		}
@@ -453,20 +460,9 @@ func getRolesForOpenshiftResponse(
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedByf("failed to parse token: %v", err)
 	}
-	// Retrieve OpenShift cluster config
-	cfg, err := rest.InClusterConfig()
+	acmClientObj, err := getACMClientForToken(tokenData.AccessToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-	// Enrich the config with the OpenShift Auth Token
-	cfg.BearerToken = tokenData.AccessToken
-	// Clear BearerTokenFile so that BearerToken takes precedence.
-	// InClusterConfig() sets BearerTokenFile to the service account token,
-	// which would override the user's OAuth token we just set.
-	cfg.BearerTokenFile = ""
-	acmClientObj, err := acm.NewClientForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to instantiate ACM client")
+		return nil, errors.Wrap(err, "failed to get ACM client")
 	}
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
 	if err != nil {
@@ -475,9 +471,50 @@ func getRolesForOpenshiftResponse(
 	return roles, nil
 }
 
+func getRolesForOIDCResponse(
+	ctx context.Context,
+	authResp *AuthResponse,
+	clusterIDResolver tokens.ClusterResolver,
+) ([]*tokens.InternalRole, error) {
+	if authResp == nil {
+		return nil, errox.InvalidArgs.CausedBy("auth response must not be nil")
+	}
+	acmClientObj, err := getACMClientForToken(authResp.IdpToken)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get ACM client")
+	}
+	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch role information")
+	}
+	return roles, nil
+
+}
+
+func getACMClientForToken(token string) (*acm.Client, error) {
+	// Retrieve OpenShift cluster config
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+	// Enrich the config with the OpenShift Auth Token
+	cfg.BearerToken = token
+	// Clear BearerTokenFile so that BearerToken takes precedence.
+	// InClusterConfig() sets BearerTokenFile to the service account token,
+	// which would override the user's OAuth token we just set.
+	cfg.BearerTokenFile = ""
+	acmClientObj, err := acm.NewClientForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to instantiate ACM client")
+	}
+	return acmClientObj, nil
+}
+
 func isACMRoleDelegationProvider(provider Provider) bool {
 	switch provider.Type() {
 	case OpenShiftTypeNameWithACMAccessControlDelegation:
+		return true
+	case OIDCTypeNameWithACMRoles:
 		return true
 	}
 	return false

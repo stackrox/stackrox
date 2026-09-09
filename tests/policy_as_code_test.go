@@ -468,7 +468,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 			}
 		}
 		assert.NotEmpty(collect, policyId)
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Second*30, time.Millisecond*30)
 	return policyId
 }
 

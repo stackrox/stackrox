@@ -22,7 +22,7 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "scanner-v4-indexer.{{ .Release.Namespace }}.svc"
+      serverName: "scanner-v4-indexer.{{ ._rox._namespace }}.svc"
     {{- end }}
     {{- if ._rox.scannerV4._matcherEnabled }}
   - interval: 30s
@@ -33,14 +33,14 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "scanner-v4-matcher.{{ .Release.Namespace }}.svc"
+      serverName: "scanner-v4-matcher.{{ ._rox._namespace }}.svc"
     {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/component: scanner-v4
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 ---
 {{/* TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to
      kube-system namespace. */ -}}
@@ -60,6 +60,6 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: scanner-v4
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
   {{- end }}
 {{- end }}
