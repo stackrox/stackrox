@@ -778,7 +778,7 @@ function AuthProviderForm({
                             <Alert
                                 isInline
                                 variant="info"
-                                title="Note: this AuthProvider only supports role configuration in Red Hat Advanced Cluster Management."
+                                title="Note: this authentication provider only supports role configuration in Red Hat Advanced Cluster Management."
                                 component="p"
                             >
                                 <p>
