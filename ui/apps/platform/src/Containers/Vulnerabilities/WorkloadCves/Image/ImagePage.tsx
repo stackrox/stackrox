@@ -192,7 +192,6 @@ function ImagePage({
     const sbomGenerationStatusMessage = getSbomGenerationStatusMessage({
         isScannerV4Enabled,
         imageNotes,
-        scanNotes,
     });
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');

@@ -332,7 +332,6 @@ function ImageOverviewTable({
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,
                                 imageNotes: notes,
-                                scanNotes,
                             });
                             const isAriaDisabled = description !== undefined || !name?.fullName;
 

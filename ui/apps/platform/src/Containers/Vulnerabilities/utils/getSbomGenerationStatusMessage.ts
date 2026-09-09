@@ -15,9 +15,6 @@ export function getSbomGenerationStatusMessage({
 }: {
     isScannerV4Enabled: boolean;
     imageNotes: string[];
-    // scanNotes intentionally does not affect the result; kept for a stable call-site
-    // contract where all of an image's notes are passed through.
-    scanNotes?: string[];
 }): string | undefined {
     if (!isScannerV4Enabled) {
         return 'SBOM generation requires Scanner V4';

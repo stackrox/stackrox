@@ -6,7 +6,6 @@ describe('getSbomGenerationStatusMessage', () => {
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: true,
                 imageNotes: [],
-                scanNotes: [],
             })
         ).toBeUndefined();
     });
@@ -16,7 +15,6 @@ describe('getSbomGenerationStatusMessage', () => {
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: false,
                 imageNotes: [],
-                scanNotes: [],
             })
         ).toBe('SBOM generation requires Scanner V4');
     });
@@ -26,7 +24,6 @@ describe('getSbomGenerationStatusMessage', () => {
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: false,
                 imageNotes: ['MISSING_SCAN_DATA'],
-                scanNotes: [],
             })
         ).toBe('SBOM generation requires Scanner V4');
     });
@@ -36,7 +33,6 @@ describe('getSbomGenerationStatusMessage', () => {
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: true,
                 imageNotes: ['MISSING_SCAN_DATA'],
-                scanNotes: [],
             })
         ).toBe('SBOM generation is unavailable due to incomplete scan data');
     });
@@ -46,35 +42,19 @@ describe('getSbomGenerationStatusMessage', () => {
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: true,
                 imageNotes: ['MISSING_METADATA'],
-                scanNotes: [],
             })
         ).toBe('SBOM generation is unavailable due to incomplete scan data');
     });
 
     // The core of ROX-36762: an image with no detectable base OS (e.g. FROM scratch)
-    // still has scan data, so SBOM generation must remain enabled even though the
-    // "CVE data may be inaccurate" banner is shown.
-    it('should NOT block generation when scan notes contain OS_UNAVAILABLE', () => {
+    // has scan data but only scan-level notes (OS_UNAVAILABLE etc.), never the
+    // image-level MISSING_* notes. Those scan-level notes must not block generation,
+    // so with empty imageNotes the function keeps SBOM generation enabled.
+    it('should NOT block generation when the image has no missing-data notes', () => {
         expect(
             getSbomGenerationStatusMessage({
                 isScannerV4Enabled: true,
                 imageNotes: [],
-                scanNotes: ['OS_UNAVAILABLE'],
-            })
-        ).toBeUndefined();
-    });
-
-    it.each([
-        ['PARTIAL_SCAN_DATA', 'OS_CVES_UNAVAILABLE'],
-        ['PARTIAL_SCAN_DATA', 'LANGUAGE_CVES_UNAVAILABLE'],
-        ['PARTIAL_SCAN_DATA', 'CERTIFIED_RHEL_SCAN_UNAVAILABLE'],
-        ['OS_CVES_STALE'],
-    ])('should NOT block generation for CVE-accuracy scan notes %j', (...scanNotes) => {
-        expect(
-            getSbomGenerationStatusMessage({
-                isScannerV4Enabled: true,
-                imageNotes: [],
-                scanNotes,
             })
         ).toBeUndefined();
     });
