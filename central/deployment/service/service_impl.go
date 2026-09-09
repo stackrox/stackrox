@@ -304,8 +304,15 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, err
 	}
 
+	// Skip LLM call for deployments without risk data.
+	if risk == nil {
+		return &v1.DeploymentRiskAISummaryResponse{
+			Summary: "No risk data available for this deployment.",
+		}, nil
+	}
+
 	// Skip LLM call for low-risk deployments.
-	if risk == nil || risk.GetScore() < lowRiskThreshold {
+	if risk.GetScore() < lowRiskThreshold {
 		return &v1.DeploymentRiskAISummaryResponse{
 			Summary: "Skipping AI summary since this is a low risk deployment with normalized risk score below 5.",
 		}, nil

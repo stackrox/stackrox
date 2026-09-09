@@ -177,7 +177,7 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 
 	risk := &storage.Risk{
 		Id:    "risk-2",
-		Score: 6.0, // Must be >= 5.0 to trigger OLS call
+		Score: 6.0,
 		Subject: &storage.RiskSubject{
 			Id:        "dep-2",
 			Namespace: "operations",
@@ -268,7 +268,7 @@ func TestGetDeploymentRiskAISummary_OLSError(t *testing.T) {
 		ClusterName: "test-cluster",
 		Type:        "Deployment",
 	}
-	risk := &storage.Risk{Score: 8.0} // Must be >= 5.0 to trigger OLS call
+	risk := &storage.Risk{Score: 8.0}
 
 	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-3").Return(deployment, true, nil)
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
@@ -317,8 +317,8 @@ func TestGetDeploymentRiskAISummary_NilRisk(t *testing.T) {
 
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-4"})
 	require.NoError(t, err)
-	// Nil risk returns the low-risk message without calling OLS
-	assert.Equal(t, "Low risk deployment since normalized risk score is below 5.", resp.GetSummary())
+	// Nil risk returns a specific message without calling OLS
+	assert.Equal(t, "No risk data available for this deployment.", resp.GetSummary())
 }
 
 func TestGetDeploymentRiskAISummary_LowRiskScore(t *testing.T) {
@@ -347,7 +347,7 @@ func TestGetDeploymentRiskAISummary_LowRiskScore(t *testing.T) {
 
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-5"})
 	require.NoError(t, err)
-	assert.Equal(t, "Low risk deployment since normalized risk score is below 5.", resp.GetSummary())
+	assert.Equal(t, "Skipping AI summary since this is a low risk deployment with normalized risk score below 5.", resp.GetSummary())
 }
 
 func TestBuildSanitizedRiskContext_FieldSelection(t *testing.T) {
