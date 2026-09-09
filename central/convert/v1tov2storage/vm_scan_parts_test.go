@@ -3,6 +3,8 @@ package v1tov2storage
 import (
 	"testing"
 
+	"github.com/stackrox/rox/central/convert/storagetov2"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,6 +116,50 @@ func TestScanPartsFromV1Scan_WithComponentsAndVulns(t *testing.T) {
 	// Source components preserved
 	require.Len(t, result.SourceComponents, 1)
 	assert.Equal(t, "openssl", result.SourceComponents[0].GetName())
+}
+
+func TestScanPartsFromV1Scan_PreservesComponentNotes(t *testing.T) {
+	tests := map[string]struct {
+		notes          []storage.EmbeddedVirtualMachineScanComponent_Note
+		wantNotes      []storage.VirtualMachineComponentV2_Note
+		wantScanStatus v2.ScanStatus
+	}{
+		"should map UNSCANNED notes to NOT_SCANNED on the V2 row": {
+			notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+			},
+			wantNotes: []storage.VirtualMachineComponentV2_Note{
+				storage.VirtualMachineComponentV2_UNSCANNED,
+			},
+			wantScanStatus: v2.ScanStatus_NOT_SCANNED,
+		},
+		"should treat a component with no notes as scanned": {
+			wantScanStatus: v2.ScanStatus_SCANNED,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := ScanPartsFromV1Scan("vm-1", &storage.VirtualMachineScan{
+				OperatingSystem: "rhel:9",
+				Components: []*storage.EmbeddedVirtualMachineScanComponent{
+					{
+						Name:    "curl",
+						Version: "7.0",
+						Source:  storage.SourceType_OS,
+						Notes:   tt.notes,
+					},
+				},
+			})
+			require.NotNil(t, result)
+			require.Len(t, result.Components, 1)
+			assert.Equal(t, tt.wantNotes, result.Components[0].GetNotes())
+
+			row := storagetov2.VirtualMachineComponentV2ToRow(result.Components[0])
+			require.NotNil(t, row)
+			assert.Equal(t, tt.wantScanStatus, row.GetScanStatus())
+		})
+	}
 }
 
 func TestCompareVersionSegments(t *testing.T) {
