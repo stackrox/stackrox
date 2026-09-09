@@ -1,11 +1,10 @@
 package maincommand
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
-
-	"encoding/json"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -135,34 +134,6 @@ func buildCmdTree(c *cobra.Command) *cmdNode {
 	return command
 }
 
-func TestVersionCommand_TextOutput_ShowsCompatibleVersions(t *testing.T) {
-	versiontestutils.SetMainVersion(t, "5.0.0")
-
-	testIO, _, out, _ := cliIO.TestIO()
-	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
-	cmd := versionCommand(env)
-	require.NoError(t, cmd.Execute())
-
-	output := out.String()
-	assert.Contains(t, output, "5.0.0")
-	assert.Contains(t, output, "Compatible Central versions:")
-}
-
-func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
-	versiontestutils.SetMainVersion(t, "5.0.0")
-
-	testIO, _, out, _ := cliIO.TestIO()
-	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
-	cmd := versionCommand(env)
-	cmd.SetArgs([]string{"--json"})
-	require.NoError(t, cmd.Execute())
-
-	var result roxctlVersions
-	require.NoError(t, json.Unmarshal(out.Bytes(), &result))
-	assert.Equal(t, "5.0.0", result.MainVersion)
-	assert.NotEmpty(t, result.CompatibleCentralVersions)
-}
-
 func Test_commandTree(t *testing.T) {
 	sb := &strings.Builder{}
 	e := yaml.NewEncoder(sb)
@@ -174,4 +145,32 @@ func Test_commandTree(t *testing.T) {
 	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
 	assert.NotEmpty(t, commandTreeFilename, result)
 	assert.Equal(t, commandTree, result)
+}
+
+func TestVersionCommand_TextOutput_NoCompatibleVersions(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	require.NoError(t, cmd.Execute())
+
+	output := out.String()
+	assert.Contains(t, output, "5.0.0")
+	assert.NotContains(t, output, "Compatible Central versions:")
+}
+
+func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	cmd.SetArgs([]string{"--json"})
+	require.NoError(t, cmd.Execute())
+
+	var result roxctlVersionInfo
+	require.NoError(t, json.Unmarshal(out.Bytes(), &result))
+	assert.Equal(t, "5.0.0", result.MainVersion)
+	assert.NotEmpty(t, result.CompatibleCentralVersions)
 }

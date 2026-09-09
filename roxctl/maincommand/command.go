@@ -3,7 +3,6 @@ package maincommand
 import (
 	"encoding/json"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
-type roxctlVersions struct {
+type roxctlVersionInfo struct {
 	version.Versions
 	CompatibleCentralVersions []string `json:"CompatibleCentralVersions,omitempty"`
 }
@@ -47,16 +46,13 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 				if buildinfo.ReleaseBuild {
 					base = version.GetAllVersionsUnified()
 				}
-				v := roxctlVersions{
+				v := roxctlVersionInfo{
 					Versions:                  base,
 					CompatibleCentralVersions: compatibleVersionStrings(),
 				}
 				return errors.Wrap(enc.Encode(v), "could not encode version")
 			}
 			cliEnvironment.Logger().PrintfLn(version.GetMainVersion())
-			if compat := compatibleVersionStrings(); len(compat) > 0 {
-				cliEnvironment.Logger().PrintfLn("  Compatible Central versions: %s", strings.Join(compat, ", "))
-			}
 			return nil
 		},
 	}
@@ -68,6 +64,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 func compatibleVersionStrings() []string {
 	versions, err := versioncompatibility.CompatibleVersions()
 	if err != nil {
+		// Ignoring error because it's handled inside the function.
 		return nil
 	}
 	result := make([]string, 0, len(versions))
