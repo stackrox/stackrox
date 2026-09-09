@@ -721,7 +721,15 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
+	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
 		// GetClusterData
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
@@ -745,7 +753,15 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
+	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
 		// Validate Results
 		m.complianceIntegrationDataStore.EXPECT().
 			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
@@ -827,6 +843,7 @@ func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Ti
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
 		ScanConfigName:  scanConfigName,
+		ScanName:        scan,
 	}
 	if done {
 		ret.Annotations = map[string]string{
