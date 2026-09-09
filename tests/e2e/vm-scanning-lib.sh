@@ -204,7 +204,7 @@ $(oc get deploy virt-operator -n openshift-cnv -o jsonpath='{range .spec.templat
 EOF
 
     local latest_url tag
-    latest_url="$(curl -fsSL --connect-timeout 30 --max-time 60 -o /dev/null -w '%{url_effective}' \
+    latest_url="$(curl -fsSL --connect-timeout 30 --max-time 60 --retry 5 --retry-delay 5 -o /dev/null -w '%{url_effective}' \
         https://github.com/kubevirt/kubevirt/releases/latest)" || return 1
     tag="${latest_url##*/}"
     if ! _is_kubevirt_github_release_tag "$tag"; then

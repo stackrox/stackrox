@@ -147,52 +147,154 @@ func TestWaitForV2VMRunningInCentral(t *testing.T) {
 }
 
 func TestListAllVMCVEsByVM_Pages(t *testing.T) {
-	ctx := t.Context()
-	client := &stubV2Client{
-		listVMCVEsByVMFn: func(_ context.Context, req *v2.ListVMCVEsByVMRequest) (*v2.ListVMCVEsByVMResponse, error) {
-			switch req.GetQuery().GetPagination().GetOffset() {
-			case 0:
+	page0 := make([]*v2.VMCVERow, v2ListPageSize)
+	for i := range page0 {
+		page0[i] = &v2.VMCVERow{Cve: "CVE-full"}
+	}
+	tests := map[string]struct {
+		resp      func(offset int32) *v2.ListVMCVEsByVMResponse
+		wantLen   int
+		wantTotal int32
+		wantCalls int
+		wantLast  string
+	}{
+		"short first page": {
+			resp: func(offset int32) *v2.ListVMCVEsByVMResponse {
+				if offset != 0 {
+					return &v2.ListVMCVEsByVMResponse{TotalCount: 2}
+				}
 				return &v2.ListVMCVEsByVMResponse{
 					TotalCount: 2,
 					Cves:       []*v2.VMCVERow{{Cve: "CVE-1"}, {Cve: "CVE-2"}},
-				}, nil
-			default:
-				return &v2.ListVMCVEsByVMResponse{TotalCount: 2}, nil
-			}
+				}
+			},
+			wantLen:   2,
+			wantTotal: 2,
+			wantCalls: 1,
+			wantLast:  "CVE-2",
+		},
+		"zero total_count still pages a full first page": {
+			resp: func(offset int32) *v2.ListVMCVEsByVMResponse {
+				switch offset {
+				case 0:
+					return &v2.ListVMCVEsByVMResponse{TotalCount: 0, Cves: page0}
+				case v2ListPageSize:
+					return &v2.ListVMCVEsByVMResponse{
+						TotalCount: 0,
+						Cves:       []*v2.VMCVERow{{Cve: "CVE-last"}},
+					}
+				default:
+					return &v2.ListVMCVEsByVMResponse{TotalCount: 0}
+				}
+			},
+			wantLen:   v2ListPageSize + 1,
+			wantTotal: int32(v2ListPageSize + 1),
+			wantCalls: 2,
+			wantLast:  "CVE-last",
 		},
 	}
-	cves, total, err := ListAllVMCVEsByVM(ctx, client, "vid")
-	require.NoError(t, err)
-	require.Equal(t, int32(2), total)
-	require.Equal(t, []string{"CVE-1", "CVE-2"}, []string{cves[0].GetCve(), cves[1].GetCve()})
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			calls := 0
+			client := &stubV2Client{
+				listVMCVEsByVMFn: func(_ context.Context, req *v2.ListVMCVEsByVMRequest) (*v2.ListVMCVEsByVMResponse, error) {
+					calls++
+					return tc.resp(req.GetQuery().GetPagination().GetOffset()), nil
+				},
+			}
+			cves, total, err := ListAllVMCVEsByVM(t.Context(), client, "vid")
+			require.NoError(t, err)
+			require.Equal(t, tc.wantTotal, total)
+			require.Len(t, cves, tc.wantLen)
+			require.Equal(t, tc.wantCalls, calls)
+			require.Equal(t, tc.wantLast, cves[len(cves)-1].GetCve())
+		})
+	}
 }
 
 func TestListAllVMComponents_Pages(t *testing.T) {
-	ctx := t.Context()
 	page0 := make([]*v2.VMComponentRow, v2ListPageSize)
 	for i := range page0 {
 		page0[i] = &v2.VMComponentRow{Name: "pkg"}
 	}
-	client := &stubV2Client{
-		listVMComponentsFn: func(_ context.Context, req *v2.ListVMComponentsRequest) (*v2.ListVMComponentsResponse, error) {
-			switch req.GetQuery().GetPagination().GetOffset() {
-			case 0:
-				return &v2.ListVMComponentsResponse{TotalCount: int32(v2ListPageSize + 1), Components: page0}, nil
-			case v2ListPageSize:
-				return &v2.ListVMComponentsResponse{
-					TotalCount: int32(v2ListPageSize + 1),
-					Components: []*v2.VMComponentRow{{Name: "last"}},
-				}, nil
-			default:
-				return &v2.ListVMComponentsResponse{TotalCount: int32(v2ListPageSize + 1)}, nil
-			}
+	tests := map[string]struct {
+		resp      func(offset int32) *v2.ListVMComponentsResponse
+		wantLen   int
+		wantTotal int32
+		wantCalls int
+		wantLast  string
+	}{
+		"accurate total across two pages": {
+			resp: func(offset int32) *v2.ListVMComponentsResponse {
+				switch offset {
+				case 0:
+					return &v2.ListVMComponentsResponse{TotalCount: int32(v2ListPageSize + 1), Components: page0}
+				case v2ListPageSize:
+					return &v2.ListVMComponentsResponse{
+						TotalCount: int32(v2ListPageSize + 1),
+						Components: []*v2.VMComponentRow{{Name: "last"}},
+					}
+				default:
+					return &v2.ListVMComponentsResponse{TotalCount: int32(v2ListPageSize + 1)}
+				}
+			},
+			wantLen:   v2ListPageSize + 1,
+			wantTotal: int32(v2ListPageSize + 1),
+			wantCalls: 2,
+			wantLast:  "last",
+		},
+		"zero total_count still pages a full first page": {
+			resp: func(offset int32) *v2.ListVMComponentsResponse {
+				switch offset {
+				case 0:
+					return &v2.ListVMComponentsResponse{TotalCount: 0, Components: page0}
+				case v2ListPageSize:
+					return &v2.ListVMComponentsResponse{
+						TotalCount: 0,
+						Components: []*v2.VMComponentRow{{Name: "last"}},
+					}
+				default:
+					return &v2.ListVMComponentsResponse{TotalCount: 0}
+				}
+			},
+			wantLen:   v2ListPageSize + 1,
+			wantTotal: int32(v2ListPageSize + 1),
+			wantCalls: 2,
+			wantLast:  "last",
+		},
+		"full page matching total does not fetch next": {
+			resp: func(offset int32) *v2.ListVMComponentsResponse {
+				if offset != 0 {
+					return &v2.ListVMComponentsResponse{
+						TotalCount: int32(v2ListPageSize),
+						Components: page0,
+					}
+				}
+				return &v2.ListVMComponentsResponse{TotalCount: int32(v2ListPageSize), Components: page0}
+			},
+			wantLen:   v2ListPageSize,
+			wantTotal: int32(v2ListPageSize),
+			wantCalls: 1,
+			wantLast:  "pkg",
 		},
 	}
-	comps, total, err := ListAllVMComponents(ctx, client, "vid")
-	require.NoError(t, err)
-	require.Equal(t, int32(v2ListPageSize+1), total)
-	require.Len(t, comps, v2ListPageSize+1)
-	require.Equal(t, "last", comps[len(comps)-1].GetName())
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			calls := 0
+			client := &stubV2Client{
+				listVMComponentsFn: func(_ context.Context, req *v2.ListVMComponentsRequest) (*v2.ListVMComponentsResponse, error) {
+					calls++
+					return tc.resp(req.GetQuery().GetPagination().GetOffset()), nil
+				},
+			}
+			comps, total, err := ListAllVMComponents(t.Context(), client, "vid")
+			require.NoError(t, err)
+			require.Equal(t, tc.wantTotal, total)
+			require.Len(t, comps, tc.wantLen)
+			require.Equal(t, tc.wantCalls, calls)
+			require.Equal(t, tc.wantLast, comps[len(comps)-1].GetName())
+		})
+	}
 }
 
 func TestVulnCountBySeverityTotal(t *testing.T) {
