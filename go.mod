@@ -551,6 +551,6 @@ replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20260427204847-8949caa
 // @stackrox/scanner
 replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.2-0.20260909080917-6e3f712eee58
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )

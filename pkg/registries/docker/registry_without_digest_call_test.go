@@ -42,6 +42,7 @@ func TestMetadataFallback(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.RegistryAuthDetection, false)
 			testutils.MustUpdateFeature(t, features.AttemptManifestDigest, tc.featureEnabled)
 
 			fr := &fakeRegistry{}

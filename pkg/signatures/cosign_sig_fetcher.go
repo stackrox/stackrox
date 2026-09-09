@@ -22,6 +22,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -295,9 +296,14 @@ func optionsFromRegistry(ctx context.Context, registry registryTypes.Registry) [
 		// our registries. The wrapped transport will ensure we are authenticated properly with all currently supported
 		// registries. Ideally, we would in general use the same libraries for both, but cosign doesn't support
 		// exchanging gcrRemote for now (we could however move to gcrRemote within the registry as well).
-		opts = append(opts, gcrRemote.WithTransport(
-			dockerRegistry.WrapTransport(tr, strings.TrimSuffix(registryCfg.URL, "/"),
-				registryCfg.Username, registryCfg.Password)))
+		url := strings.TrimSuffix(registryCfg.URL, "/")
+		var wrappedTransport dockerRegistry.Transport
+		if features.RegistryAuthDetection.Enabled() {
+			wrappedTransport = dockerRegistry.WrapTransportWithDetection(tr, url, registryCfg.Username, registryCfg.Password)
+		} else {
+			wrappedTransport = dockerRegistry.WrapTransport(tr, url, registryCfg.Username, registryCfg.Password)
+		}
+		opts = append(opts, gcrRemote.WithTransport(wrappedTransport))
 	}
 	return opts
 }
