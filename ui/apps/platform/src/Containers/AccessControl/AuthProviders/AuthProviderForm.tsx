@@ -794,7 +794,7 @@ function AuthProviderForm({
                                 <p>
                                     For further information on the role configuration,
                                     please refer to the Red Hat Advanced Cluster Management
-                                    documentation (version >= 2.16), area 'Secure clusters',
+                                    documentation (version &gt;= 2.16), area 'Secure clusters',
                                     section 'Securing clusters', subsections 'Fine-grained
                                     role-bases access control for virtual machines', 'Enabling
                                     fine-grained role-based access control for virtualization',
