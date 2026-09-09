@@ -158,7 +158,9 @@ class ImageScanningTest extends BaseSpecification {
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
-        ImageIntegrationService.addStackroxScannerIntegration()
+        if (!scannerV4Enabled) {
+            ImageIntegrationService.addStackroxScannerIntegration()
+        }
         addGCRImagePullSecret(orchestrator)
 
         for (Policy policy : policiesScopedForTest) {
@@ -480,7 +482,9 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
-        ImageIntegrationService.addStackroxScannerIntegration()
+        if (!scannerV4Enabled) {
+            ImageIntegrationService.addStackroxScannerIntegration()
+        }
 
         when:
         "Add scanner"
@@ -509,7 +513,9 @@ class ImageScanningTest extends BaseSpecification {
         vuln != null
 
         cleanup:
-        deleteStackroxScanner = true
+        if (!scannerV4Enabled) {
+            deleteStackroxScanner = true
+        }
         imageToCleanup = image
 
         where:
@@ -674,8 +680,10 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("Integration")
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
+        Assume.assumeTrue(StackroxScannerIntegration.isTestable())
+
         when:
-        "Add Stackrox scanner"
+        "Add scanner"
         String integrationId = StackroxScannerIntegration.createDefaultIntegration()
         assert integrationId
         integrationIds.add(integrationId)

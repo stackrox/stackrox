@@ -19,28 +19,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
-spec:
-  template:
-    spec:
-      hostAliases:
-      - ip: "127.0.0.1"
-        hostnames: ["scanner.com"]
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-db
-spec:
-  template:
-    spec:
-      hostAliases:
-      - ip: "127.0.0.1"
-        hostnames: ["scanner-db.com"]
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: scanner-v4-matcher
 spec:
   template:

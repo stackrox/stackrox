@@ -16,10 +16,6 @@ const (
 	FlagNameMainImage = "main-image"
 	// FlagNameCentralDBImage is a shared constant for --central-db-image command line flag.
 	FlagNameCentralDBImage = "central-db-image"
-	// FlagNameScannerImage is a shared constant for --scanner-image command line flag.
-	FlagNameScannerImage = "scanner-image"
-	// FlagNameScannerDBImage is a shared constant for --scanner-db-image command line flag.
-	FlagNameScannerDBImage = "scanner-db-image"
 	// FlagNameScannerV4Image is a shared constant for --scanner-v4-image command line flag.
 	FlagNameScannerV4Image = "scanner-v4-image"
 	// FlagNameScannerV4DBImage is a shared constant for --scanner-v4-db-image command line flag.

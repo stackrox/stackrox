@@ -113,9 +113,9 @@ class CertRotationTest extends BaseSpecification {
         when:
         "Fetch the current scanner-tls and scanner-db-tls secrets, and regenerate new certs"
         def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
-        assert scannerTLSSecret
         def scannerDBTLSSecret = orchestrator.getSecret("scanner-db-tls", "stackrox")
-        assert scannerDBTLSSecret
+        Assume.assumeTrue("Scanner V2 TLS secrets are present",
+                scannerTLSSecret != null && scannerDBTLSSecret != null)
         def start = System.currentTimeMillis()
         def regeneratedSecrets = generateCerts("api/extensions/certgen/scanner", "scanner-tls.yaml")
 

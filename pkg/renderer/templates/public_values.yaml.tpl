@@ -163,6 +163,9 @@ scannerV4:
   disable: true
   {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
   image:
+  {{- if .K8sConfig.ImageOverrides.ScannerV4.Registry }}
+    registry: {{ .K8sConfig.ImageOverrides.ScannerV4.Registry }}
+  {{- end }}
   {{- if .K8sConfig.ImageOverrides.ScannerV4.Name }}
     name: {{ .K8sConfig.ImageOverrides.ScannerV4.Name }}
   {{- end }}
@@ -173,6 +176,9 @@ scannerV4:
   db:
     {{- if .K8sConfig.ImageOverrides.ScannerV4DB }}
     image:
+      {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Registry }}
+      registry: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Registry }}
+      {{- end }}
       {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
       name: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
       {{- end }}
