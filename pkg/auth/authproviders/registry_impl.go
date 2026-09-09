@@ -477,7 +477,7 @@ func getRolesForOIDCResponse(
 	clusterIDResolver tokens.ClusterResolver,
 ) ([]*tokens.InternalRole, error) {
 	if authResp == nil {
-		return nil, errox.InvalidArgs.CausedBy("auth response should not be nil")
+		return nil, errox.InvalidArgs.CausedBy("auth response must not be nil")
 	}
 	acmClientObj, err := getACMClientForToken(authResp.IdpToken)
 	if err != nil {
