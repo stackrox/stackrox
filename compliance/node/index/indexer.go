@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -195,14 +197,27 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 
 func layer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
 	log.Debugf("Realizing mount path: %s", hostPath)
+	if hostPath == "" {
+		return nil, errors.New("host path is empty")
+	}
+
+	absoluteHostPath, err := filepath.Abs(hostPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "resolving absolute host path %q", hostPath)
+	}
+	hostURI := (&url.URL{
+		Scheme: "file",
+		Path:   filepath.ToSlash(absoluteHostPath),
+	}).String()
+
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
-		URI:       hostPath,
+		URI:       hostURI,
 		MediaType: layerMediaType,
 	}
 
 	l := &claircore.Layer{}
-	err := l.Init(ctx, desc, nil)
+	err = l.Init(ctx, desc, nil)
 	return l, errors.Wrap(err, "failed to init layer")
 }
 
