@@ -93,7 +93,9 @@ function testModeSupported(provider) {
         provider.type === 'auth0' ||
         provider.type === 'oidc' ||
         provider.type === 'saml' ||
-        provider.type === 'openshift'
+        provider.type === 'openshift' ||
+        provider.type === 'openshift-with-acm-roles' ||
+        provider.type === 'oidc-with-acm-roles'
     );
 }
 
@@ -166,7 +168,7 @@ function AuthProviderForm({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             .when('type', {
-                is: 'oidc',
+                is: (type) => type === 'oidc' || type === 'oidc-with-acm-roles',
                 then: (configSchema) =>
                     configSchema.shape({
                         client_id: yup.string().required('A client ID is required.'),
@@ -234,6 +236,14 @@ function AuthProviderForm({
                 then: (configSchema) =>
                     configSchema.shape({
                         audience: yup.string().required('An audience is required.'),
+                    }),
+            })
+            .when('type', {
+                is: 'openshift-with-acm-roles',
+                then: (configSchema) =>
+                    configSchema.shape({
+                        client_name: yup.string().required('A client name is required.'),
+                        client_secret: yup.string().required('A client secret is required.'),
                     }),
             }),
     });
@@ -523,7 +533,8 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {selectedAuthProvider.type === 'oidc' && (
+                    {(selectedAuthProvider.type === 'oidc' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
                         <FormSection
                             title="Required attributes for the authentication provider"
                             titleElement="h2"
@@ -639,7 +650,8 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    {selectedAuthProvider.type === 'oidc' && (
+                    {(selectedAuthProvider.type === 'oidc' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
                         <FormSection
                             title="Claim mappings for the authentication provider"
                             titleElement="h2"
@@ -745,18 +757,58 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
-                        <RuleGroups
-                            authProviderId={selectedAuthProvider.id}
-                            groups={values.groups}
-                            roles={roles}
-                            onChange={onChange}
-                            setFieldValue={setFieldValue}
-                            disabled={isViewing}
-                            errors={errors?.groups as RuleGroupErrors[]}
-                            ruleAttributes={ruleAttributes}
-                        />
-                    </FormSection>
+                    {selectedAuthProvider.type !== 'openshift-with-acm-roles' &&
+                        selectedAuthProvider.type !== 'oidc-with-acm-roles' && (
+                            <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
+                                <RuleGroups
+                                    authProviderId={selectedAuthProvider.id}
+                                    groups={values.groups}
+                                    roles={roles}
+                                    onChange={onChange}
+                                    setFieldValue={setFieldValue}
+                                    disabled={isViewing}
+                                    errors={errors?.groups as RuleGroupErrors[]}
+                                    ruleAttributes={ruleAttributes}
+                                />
+                            </FormSection>
+                        )}
+                    {(selectedAuthProvider.type === 'openshift-with-acm-roles' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
+                        <div id="acm-access-control-documentation">
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: this authentication provider only supports role configuration in Red Hat Advanced Cluster Management."
+                                component="p"
+                            >
+                                <p>
+                                    This requires Red Hat Advanced Cluster Management deployed on
+                                    the cluster where the central entity of Red Hat Advanced Cluster
+                                    Security is deployed.
+                                </p>
+                                <p>
+                                    Additionally, Red Hat Advanced Cluster Management must have
+                                    &apos;fine-grained role-based access control&apos; activated.
+                                </p>
+                                <p>
+                                    For further information on the role configuration, please refer
+                                    to the Red Hat Advanced Cluster Management documentation
+                                    (version &gt;= 2.16), area &apos;Secure clusters&apos;, section
+                                    &apos;Securing clusters&apos;, subsections &apos;Fine-grained
+                                    role-based access control for virtual machines&apos;,
+                                    &apos;Enabling fine-grained role-based access control for
+                                    virtualization&apos;, and the subsections related to
+                                    &apos;MulticlusterRoleAssignment&apos;.
+                                </p>
+                                <p>
+                                    The OpenShift ClusterRoles created to configure the Red Hat
+                                    Advanced Cluster Security access control need to have the label
+                                    &apos;clusterview.open-cluster-management.io/discoverable&apos;
+                                    present and set to &apos;true&apos;.
+                                </p>
+                            </Alert>
+                        </div>
+                    )}
                 </FormSection>
             </FormikProvider>
         </Form>
