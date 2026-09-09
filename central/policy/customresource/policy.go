@@ -12,8 +12,8 @@ type Scope struct {
 	Cluster        string               `yaml:",omitempty"`
 	Namespace      string               `yaml:",omitempty"`
 	Label          *storage.Scope_Label `yaml:",omitempty"`
-	ClusterLabel   *storage.Scope_Label `yaml:",omitempty"`
-	NamespaceLabel *storage.Scope_Label `yaml:",omitempty"`
+	ClusterLabel   *storage.Scope_Label `yaml:"clusterLabel,omitempty"`
+	NamespaceLabel *storage.Scope_Label `yaml:"namespaceLabel,omitempty"`
 }
 
 // convertScope Converts storage.Scope to *Scope
