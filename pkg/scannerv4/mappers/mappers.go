@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -255,7 +256,7 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 		Name:              p.Name,
 		Version:           p.Version,
 		NormalizedVersion: toNormalizedVersion(p.NormalizedVersion),
-		Kind:              p.Kind,
+		Kind:              p.Kind.String(),
 		Source:            srcPkg,
 		PackageDb:         p.PackageDB,
 		RepositoryHint:    p.RepositoryHint,
@@ -769,6 +770,12 @@ func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity stri
 	}
 }
 
+func toPackageKind(s string) types.PackageKind {
+	var k types.PackageKind
+	_ = k.UnmarshalText([]byte(s))
+	return k
+}
+
 func toCPEString(c cpe.WFN) string {
 	return c.BindFS()
 }
@@ -849,7 +856,7 @@ func ccPackage(p *v4.Package) (string, *claircore.Package, error) {
 		ID:                p.GetId(),
 		Name:              p.GetName(),
 		Version:           p.GetVersion(),
-		Kind:              p.GetKind(),
+		Kind:              toPackageKind(p.GetKind()),
 		Source:            src,
 		PackageDB:         p.GetPackageDb(),
 		RepositoryHint:    p.GetRepositoryHint(),
