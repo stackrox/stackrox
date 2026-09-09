@@ -182,8 +182,8 @@ func ListAllVMComponents(ctx context.Context, client v2.VirtualMachineV2ServiceC
 		}
 		total = resp.GetTotalCount()
 		all = append(all, resp.GetComponents()...)
-		if int32(len(all)) >= total || len(resp.GetComponents()) == 0 {
-			return all, total, nil
+		if v2ListExhausted(len(all), len(resp.GetComponents()), total) {
+			return all, max(total, int32(len(all))), nil
 		}
 	}
 	return nil, 0, fmt.Errorf("ListVMComponents: exceeded %d pages for vm %s (collected %d, total_count=%d)", v2ListMaxPages, vmID, len(all), total)
@@ -210,11 +210,17 @@ func ListAllVMCVEsByVM(ctx context.Context, client v2.VirtualMachineV2ServiceCli
 		}
 		total = resp.GetTotalCount()
 		all = append(all, resp.GetCves()...)
-		if int32(len(all)) >= total || len(resp.GetCves()) == 0 {
-			return all, total, nil
+		if v2ListExhausted(len(all), len(resp.GetCves()), total) {
+			return all, max(total, int32(len(all))), nil
 		}
 	}
 	return nil, 0, fmt.Errorf("ListVMCVEsByVM: exceeded %d pages for vm %s (collected %d, total_count=%d)", v2ListMaxPages, vmID, len(all), total)
+}
+
+// v2ListExhausted is true on a short page, or when a positive total_count has
+// already been collected. A zero total_count with a full page is not exhausted.
+func v2ListExhausted(collected, pageLen int, total int32) bool {
+	return pageLen < int(v2ListPageSize) || (total > 0 && int32(collected) >= total)
 }
 
 // VulnCountBySeverityTotal sums the per-severity total fields.
@@ -286,9 +292,9 @@ func WaitForV2ScanMissingComponent(
 			if err != nil {
 				return false, "", err
 			}
-			if filtered.GetTotalCount() > 0 {
+			if n := max(int(filtered.GetTotalCount()), len(filtered.GetComponents())); n > 0 {
 				return false, fmt.Sprintf("scan_time advances=%d but package %q still present (matches=%d)",
-					advances, packageName, filtered.GetTotalCount()), nil
+					advances, packageName, n), nil
 			}
 
 			comps, total, err := ListAllVMComponents(ctx, client, id)
