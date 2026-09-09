@@ -6682,6 +6682,11 @@
                 "id": 14,
                 "name": "cisa_kev",
                 "type": "bool"
+              },
+              {
+                "id": 15,
+                "name": "known_ransomware_campaign",
+                "type": "bool"
               }
             ],
             "messages": [
