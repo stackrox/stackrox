@@ -1705,7 +1705,7 @@ handle_nightly_binary_version_mismatch() {
     info "Correcting binary versions for nightly e2e tests"
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
-    if ! [[ "$({ roxctl version || true; } | head -1)" =~ nightly-$(date '+%Y%m%d') ]]; then
+    if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
         make cli_host-arch upgrader
         make cli-install
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
