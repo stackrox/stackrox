@@ -1,0 +1,23 @@
+name: "Test ValidatingWebhookConfiguration keeps base name stackrox"
+values:
+  imagePullSecrets:
+    allowNone: true
+
+defs: |
+  def vwcNames:
+    (.validatingwebhookconfigurations // {}) | keys;
+
+tests:
+- name: base name is used verbatim in the standard namespace
+  expect: |
+    vwcNames | assertThat(. == ["stackrox"])
+
+- name: base name is namespace-prefixed in a non-standard namespace
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+  expect: |
+    # A bare "stackrox" base name (no suffix) must not trigger the "Unknown naming
+    # convention" failure; the global prefix already carries the namespace.
+    vwcNames | assertThat(. == ["stackrox-custom-ns"])

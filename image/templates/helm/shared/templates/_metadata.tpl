@@ -229,22 +229,44 @@
 {{ end }}
 {{ end }}
 
-{{/* Add namespace specific prefixes for global resources to avoid resource name clashes for multi-namespace deployments. */}}
+{{/*
+  Add namespace specific prefixes for global resources to avoid resource name clashes for
+  multi-namespace deployments.
+
+  The separator between the "stackrox" base and the resource-specific suffix is normally
+  inferred from $name ("-" for "stackrox-foo", ":" for "stackrox:foo"). A name that is
+  exactly "stackrox" (i.e. just the base name, no suffix) is ambiguous, so in that case
+  callers must pass the separator explicitly as the optional second argument.
+   */}}
 {{- define "srox.globalResourceName" -}}
 {{- $ := index . 0 -}}
 {{- $name := index . 1 -}}
+{{- $separator := "" -}}
+{{- if gt (len .) 2 -}}
+  {{- $separator = index . 2 -}}
+{{- end -}}
 
 {{- if eq $.Release.Namespace "stackrox" -}}
   {{- /* Standard namespace, use resource name as is. */ -}}
   {{- $name -}}
 {{- else -}}
+  {{- /* Determine the separator, inferring it from $name when not given explicitly. */ -}}
+  {{- if not $separator -}}
+    {{- if hasPrefix "stackrox-" $name -}}
+      {{- $separator = "-" -}}
+    {{- else if hasPrefix "stackrox:" $name -}}
+      {{- $separator = ":" -}}
+    {{- else -}}
+      {{- include "srox.fail" (printf "Unknown naming convention for global resource %q." $name) -}}
+    {{- end -}}
+  {{- end -}}
   {{- /* Add global prefix to resource name. */ -}}
-  {{- if hasPrefix "stackrox-" $name -}}
-    {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
-  {{- else if hasPrefix "stackrox:" $name -}}
-    {{- printf "%s:%s" $._rox.globalPrefix (trimPrefix "stackrox:" $name) -}}
+  {{- $suffix := trimPrefix (printf "stackrox%s" $separator) $name -}}
+  {{- if eq $suffix $name -}}
+    {{- /* Bare "stackrox" base name: the global prefix already carries the namespace. */ -}}
+    {{- printf "%s" $._rox.globalPrefix -}}
   {{- else -}}
-    {{- include "srox.fail" (printf "Unknown naming convention for global resource %q." $name) -}}
+    {{- printf "%s%s%s" $._rox.globalPrefix $separator $suffix -}}
   {{- end -}}
 {{- end -}}
 {{- end -}}
