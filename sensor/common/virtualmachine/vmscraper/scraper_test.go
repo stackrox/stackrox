@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -846,6 +847,116 @@ func TestVMScraper_NACK(t *testing.T) {
 			assert.Equal(t, tc.wantTotalSent-1, forwardedCount(s), "additional reports forwarded after the ACK/NACK poll")
 		})
 	}
+}
+
+// TestVMScraper_ACKFeatureDisabledStopsScraping covers a 4.11 Central that
+// advertises VirtualMachinesSupported then ACKs index reports as feature-disabled.
+func TestVMScraper_ACKFeatureDisabledStopsScraping(t *testing.T) {
+	cases := map[string]struct {
+		reason      string
+		wantScrapes bool
+	}{
+		"stops scraping after a feature-disabled ACK": {
+			reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			wantScrapes: false,
+		},
+		"keeps scraping after an ACK with an empty reason": {
+			reason:      "",
+			wantScrapes: true,
+		},
+		"keeps scraping after an ACK with an unrelated reason": {
+			reason:      centralsensor.SensorACKReasonRateLimited,
+			wantScrapes: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+			}
+
+			s, clock := newTestScraper(t, store, dialer, client)
+			s.pollOnce(t.Context())
+			require.Equal(t, 1, forwardedCount(s))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported))
+			reconcilesAfterFirst := store.listRunningCalls
+			dialsAfterFirst := dialer.callIdx.Load()
+
+			require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      central.SensorACK_ACK,
+						ResourceId:  "vm-a-id:100",
+						Reason:      tc.reason,
+					},
+				},
+			}))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported),
+				"hello capabilities are left unchanged")
+			assert.Equal(t, !tc.wantScrapes, s.indexReportsDisabled.Load())
+
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+			clock.Advance(5 * time.Minute)
+			s.pollOnce(t.Context())
+
+			if tc.wantScrapes {
+				require.Len(t, client.calls, 1)
+				assert.Equal(t, reconcilesAfterFirst+1, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst+1, dialer.callIdx.Load())
+			} else {
+				assert.Empty(t, client.calls)
+				assert.Equal(t, reconcilesAfterFirst, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst, dialer.callIdx.Load())
+			}
+		})
+	}
+}
+
+// TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable covers reconnect
+// after a feature-disabled ACK: the next Central is tried without a Sensor restart.
+func TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable(t *testing.T) {
+	vmA := makeVM("ns1", "vm-a", 100)
+	vmA.ID = "vm-a-id"
+	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(t.Context())
+	require.Equal(t, 1, forwardedCount(s))
+
+	require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				Action:      central.SensorACK_ACK,
+				ResourceId:  "vm-a-id:100",
+				Reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			},
+		},
+	}))
+	require.True(t, s.indexReportsDisabled.Load())
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+	clock.Advance(5 * time.Minute)
+	s.pollOnce(t.Context())
+	assert.Empty(t, client.calls)
+
+	s.Notify(common.SensorComponentEventCentralReachable)
+	require.False(t, s.indexReportsDisabled.Load())
+
+	s.pollOnce(t.Context())
+	require.Len(t, client.calls, 1)
 }
 
 // TestVMScraper_InFlightSendDoesNotOverwriteNACKReset covers NACK while

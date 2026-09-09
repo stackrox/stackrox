@@ -121,7 +121,10 @@ type VMScraper struct {
 	// loggedSkip is set after the first skip log for a missing-capability stretch
 	// so a 10s ticker does not repeat it until the capability returns.
 	loggedSkip atomic.Bool
-	now        func() time.Time
+	// indexReportsDisabled is set from a feature-disabled ACK and cleared on
+	// CentralReachable so a later connection can scrape again.
+	indexReportsDisabled atomic.Bool
+	now                  func() time.Time
 	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
 	randFloat64          func() float64
 	lastSpreadWarnNumVMs int
@@ -198,6 +201,8 @@ func (s *VMScraper) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()
+		s.indexReportsDisabled.Store(false)
+		s.loggedSkip.Store(false)
 	case common.SensorComponentEventOfflineMode:
 		s.centralReady.Reset()
 	}
@@ -222,6 +227,10 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 
 	switch sensorAck.GetAction() {
 	case central.SensorACK_ACK:
+		if sensorAck.GetReason() == centralsensor.SensorACKReasonFeatureDisabled {
+			s.handleFeatureDisabled()
+			break
+		}
 		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
 	case central.SensorACK_NACK:
 		s.handleNACK(sensorAck.GetResourceId())
@@ -229,6 +238,18 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
 	}
 	return nil
+}
+
+// handleFeatureDisabled stops index pulls for this connection. CentralReachable
+// clears the flag so a later Central can be tried without a Sensor restart.
+func (s *VMScraper) handleFeatureDisabled() {
+	if s.indexReportsDisabled.Swap(true) {
+		return
+	}
+	log.Infof(
+		"VMScraper: Central ACKed a VM index report with reason %q; stopping index pulls for this connection to save resources",
+		centralsensor.SensorACKReasonFeatureDisabled,
+	)
 }
 
 // handleNACK clears lastToken and applies retry backoff so the next tick
@@ -306,9 +327,14 @@ func (s *VMScraper) run() {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
-	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+	disabled := s.indexReportsDisabled.Load()
+	if disabled || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		if s.loggedSkip.CompareAndSwap(false, true) {
-			log.Infof("VMScraper: skipping pulling index reports from VMs; Central does not advertise VirtualMachinesSupported")
+			if disabled {
+				log.Infof("VMScraper: skipping pulling index reports from VMs; Central ACKed feature disabled")
+			} else {
+				log.Infof("VMScraper: skipping pulling index reports from VMs; Central does not advertise VirtualMachinesSupported")
+			}
 		}
 		return
 	}
