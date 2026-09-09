@@ -86,3 +86,42 @@ func TestRedactSecret(t *testing.T) {
 	assert.Equal(t, redactedSecret.StringData, expectedStringData)
 	assert.Empty(t, redactedSecret.Data)
 }
+
+func TestRedactSecretSensitiveAnnotations(t *testing.T) {
+	secret := v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "stackrox",
+			Name:      "builder-dockercfg-abcde",
+			Annotations: map[string]string{
+				"openshift.io/token-secret.value":    "test-only-placeholder-token-not-a-real-secret",
+				"openshift.io/token-secret.name":     "builder-token-abcde",
+				"kubernetes.io/service-account.name": "builder",
+			},
+		},
+		Type: v1.SecretTypeDockercfg,
+		Data: map[string][]byte{
+			".dockercfg": []byte(`{"registry":{"auth":"c2VjcmV0"}}`),
+		},
+	}
+
+	var unstructuredSecret unstructured.Unstructured
+	require.NoError(t, scheme.Scheme.Convert(&secret, &unstructuredSecret, nil))
+
+	RedactSecret(&unstructuredSecret)
+
+	var redactedSecret v1.Secret
+	require.NoError(t, scheme.Scheme.Convert(&unstructuredSecret, &redactedSecret, nil))
+
+	// The sensitive token annotation value must be redacted...
+	assert.Equal(t, "***REDACTED***", redactedSecret.Annotations["openshift.io/token-secret.value"])
+	// ...while non-sensitive annotations are preserved verbatim.
+	assert.Equal(t, "builder-token-abcde", redactedSecret.Annotations["openshift.io/token-secret.name"])
+	assert.Equal(t, "builder", redactedSecret.Annotations["kubernetes.io/service-account.name"])
+	// The data field is still redacted as before.
+	assert.Empty(t, redactedSecret.Data)
+	assert.Equal(t, "***REDACTED***", redactedSecret.StringData[".dockercfg"])
+}

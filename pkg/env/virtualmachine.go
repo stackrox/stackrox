@@ -87,4 +87,9 @@ var (
 	// Valid range is [0.01, 1] so W is not effectively zero; out-of-range values fall back to the default.
 	VirtualMachinesScraperSteadySpreadFraction = RegisterFloatSetting("ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION", 2.0/3).
 							WithMinimum(0.01).WithMaximum(1)
+
+	// VirtualMachinesAgentStaleAfter is the GetVM Active window after the last
+	// successful scrape. Default 12h is larger than one healthy poll cycle
+	// (4h + up to 2/3 spread ≈ 6.7h), so one retryable VSOCK miss stays Active.
+	VirtualMachinesAgentStaleAfter = registerDurationSetting("ROX_VIRTUAL_MACHINES_AGENT_STALE_AFTER", 12*time.Hour)
 )

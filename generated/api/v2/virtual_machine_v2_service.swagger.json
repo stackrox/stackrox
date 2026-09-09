@@ -767,10 +767,11 @@
       "type": "string",
       "enum": [
         "AGENT_STATUS_UNKNOWN",
-        "AGENT_STATUS_ACTIVE"
+        "AGENT_STATUS_ACTIVE",
+        "AGENT_STATUS_INACTIVE"
       ],
       "default": "AGENT_STATUS_UNKNOWN",
-      "description": "Agent status enriched from a separate data source (not on VirtualMachineV2 storage)."
+      "description": "AgentStatus is roxagent liveness from scrape freshness, computed on GetVM\n(not a stored enum). UNKNOWN means never scraped; INACTIVE means scraped, then quiet."
     },
     "v2AggregateBy": {
       "type": "object",

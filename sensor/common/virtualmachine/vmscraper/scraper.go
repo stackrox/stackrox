@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -64,6 +65,8 @@ func clampPollInterval(interval time.Duration) time.Duration {
 type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
 	Get(id virtualmachine.VMID) *virtualmachine.Info
+	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
+	SetAgentFacts(id virtualmachine.VMID, facts map[string]string)
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -83,6 +86,10 @@ type Repo2CPEFetcher interface {
 	FetchRepo2CPE(ctx context.Context) (mapping []byte, hash string, ok bool)
 }
 
+type clusterIDGetter interface {
+	GetNoWait() string
+}
+
 // closeCoder is satisfied by transport errors carrying a structured close
 // code. Declared locally so VMScraper doesn't need to import a concrete
 // dialer's error type to recognize one.
@@ -97,6 +104,7 @@ type VMScraper struct {
 	dialer                VMDialer
 	client                ProtocolClient
 	repo2CPEFetcher       Repo2CPEFetcher
+	clusterID             clusterIDGetter
 	toCentral             chan *message.ExpiringMessage
 	centralReady          concurrency.Signal
 	interval              time.Duration
@@ -138,13 +146,14 @@ var _ common.SensorComponent = (*VMScraper)(nil)
 
 // New creates a VMScraper with production defaults. A nil repo2CPEFetcher leaves
 // maybeSyncRepoCPEMapping a no-op, so pull still works if the repo-to-CPE cache was not built.
-func New(store RunningVMStore, dialer VMDialer, client ProtocolClient, repo2CPEFetcher Repo2CPEFetcher) *VMScraper {
+func New(store RunningVMStore, dialer VMDialer, client ProtocolClient, repo2CPEFetcher Repo2CPEFetcher, clusterID clusterIDGetter) *VMScraper {
 	interval := clampPollInterval(env.VirtualMachinesScraperPollInterval.DurationSetting())
 	return &VMScraper{
 		store:                 store,
 		dialer:                dialer,
 		client:                client,
 		repo2CPEFetcher:       repo2CPEFetcher,
+		clusterID:             clusterID,
 		toCentral:             make(chan *message.ExpiringMessage, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting()),
 		centralReady:          concurrency.NewSignal(),
 		interval:              interval,
@@ -222,11 +231,8 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 	return nil
 }
 
-// handleNACK clears the cached token and applies the shared backoff so
-// the next tick resends a full report without tight-looping on persistent NACKs.
-//
-// Race with commitVMState after forward is accepted: a fast NACK may be
-// overwritten by a late success commit.
+// handleNACK clears lastToken and applies retry backoff so the next tick
+// resends a full report without tight-looping on persistent NACKs.
 func (s *VMScraper) handleNACK(resourceID string) {
 	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
 	if key == "" {
@@ -493,6 +499,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	if result.Unchanged {
+		s.forwardAgentFactsIfChanged(ctx, vm, result.Meta)
 		next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 		log.Debugf("VMScraper: unchanged report from roxagent on %q (token=%s)", key, snap.lastToken)
@@ -515,6 +522,9 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
+	if mapped, ok := snapshotAgentFacts(result.Meta); ok {
+		vm.AgentFacts = mapped
+	}
 
 	// Mapping sync has its own deadline, so forward uses the scrape parent.
 	if err := s.forwardReport(ctx, vm, result.IndexReport); err != nil {
@@ -537,11 +547,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 		return false
 	}
+	// Persist facts only after the UPDATE is queued so a dropped send
+	// retries on the next unchanged poll instead of looking like a no-op.
+	if s.tryEnqueueVMUpdate(vm) {
+		s.persistAgentFacts(vm, result.Meta)
+	}
 
 	newToken := result.Meta.GetReportToken()
-	s.commitVMState(key, vm.ID, newToken, result.Meta.GetAgentVersion())
+	next := s.commitVMState(key, vm.ID, snap.lastToken, snap.backoff, newToken, result.Meta.GetAgentVersion())
 	s.observeForwardInterarrival()
-	next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
 	totalElapsed := s.now().Sub(totalStart)
@@ -842,30 +856,40 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 	})
 }
 
-// commitVMState records the token from a just-sent report as key's cached scrape state.
-//
-// Race: If a NACK arrives from Central faster than this function completes, for example, due to:
-//   - a scheduling delay on the caller's goroutine between forward returning and this function
-//     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
-//   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
-//     function's lock acquisition,
-//
-// then the NACK will overwrite lastToken / backoff / nextAttemptAt, and then this code
-// will set the token (and a later scheduleAfterAttempt(scrapeOK) will reset backoff schedule).
-// This race is accepted for v1.
-func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, newToken string, agentVersion string) {
-	concurrency.WithLock(&s.mu, func() {
+// commitVMState records the just-sent report's token and agent version and
+// applies poll-cadence scheduling in the same lock, so a concurrent NACK
+// that changed lastToken or backoff is not overwritten.
+func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, expectedToken string, expectedBackoff time.Duration, newToken string, agentVersion string) time.Duration {
+	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		state, ok := s.vmState[key]
 		if !ok || state.vmID != vmID {
-			return
+			return 0
 		}
+		if state.lastToken != expectedToken || state.backoff != expectedBackoff {
+			return max(0, state.nextAttemptAt.Sub(s.now()))
+		}
+		now := s.now()
 		state.lastToken = newToken
-		state.lastForwardedAt = s.now()
+		state.lastForwardedAt = now
 		state.lastAgentVersion = agentVersion
+		state.backoff = 0
+		offset := randOffset(steadySpreadWidth(s.interval, s.spreadFraction), s.randFloat64())
+		metrics.PullScheduleOffsetSeconds.Observe(offset.Seconds())
+		delay := s.interval + offset
+		state.nextAttemptAt = now.Add(delay)
+		return delay
 	})
 }
 
 func (s *VMScraper) forwardReport(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+	if err := s.enqueueToCentral(ctx, newIndexReportMessage(vm, report)); err != nil {
+		return err
+	}
+	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
+	return nil
+}
+
+func (s *VMScraper) enqueueToCentral(ctx context.Context, msg *message.ExpiringMessage) error {
 	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
@@ -874,11 +898,9 @@ func (s *VMScraper) forwardReport(ctx context.Context, vm *virtualmachine.Info, 
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
 
-	msg := newIndexReportMessage(vm, report)
 	select {
 	case <-ctx.Done():
 	case s.toCentral <- msg:
-		metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 		return nil
 	default:
 		metrics.IndexReportEnqueueBlockedTotal.Inc()
@@ -886,9 +908,8 @@ func (s *VMScraper) forwardReport(ctx context.Context, vm *virtualmachine.Info, 
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("waiting to forward index report: %w", ctx.Err())
+		return fmt.Errorf("waiting to forward: %w", ctx.Err())
 	case s.toCentral <- msg:
-		metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 		return nil
 	}
 }
@@ -917,4 +938,97 @@ func newIndexReportMessage(vm *virtualmachine.Info, report *v4.IndexReport) *mes
 			},
 		},
 	})
+}
+
+func (s *VMScraper) clusterIDString() string {
+	if s.clusterID == nil {
+		return ""
+	}
+	return s.clusterID.GetNoWait()
+}
+
+func (s *VMScraper) vmUpdateMessage(vm *virtualmachine.Info) *message.ExpiringMessage {
+	event := virtualmachine.SensorEvent(central.ResourceAction_UPDATE_RESOURCE, s.clusterIDString(), vm)
+	if event == nil {
+		return nil
+	}
+	return message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{Event: event},
+	})
+}
+
+// tryEnqueueVMUpdate best-effort enqueues a facts UPDATE after a successful
+// index forward. It must not block: a second wait on toCentral would stall
+// the scrape if the buffer is full.
+func (s *VMScraper) tryEnqueueVMUpdate(vm *virtualmachine.Info) bool {
+	if vm == nil || vm.AgentFacts == nil {
+		return false
+	}
+	if s.storedAgentFactsEqual(vm.ID, vm.AgentFacts) {
+		return false
+	}
+	msg := s.vmUpdateMessage(vm)
+	if msg == nil {
+		return false
+	}
+	select {
+	case s.toCentral <- msg:
+		return true
+	default:
+		log.Debugf("VMScraper: agent facts for %q not forwarded; will retry", vm.Key())
+		return false
+	}
+}
+
+func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, meta *pb.ResponseMeta) {
+	mapped, ok := snapshotAgentFacts(meta)
+	if !ok {
+		return
+	}
+	vm.AgentFacts = mapped
+	s.store.SetAgentFacts(vm.ID, mapped)
+}
+
+func (s *VMScraper) storedAgentFactsEqual(id virtualmachine.VMID, mapped map[string]string) bool {
+	var prev map[string]string
+	if stored := s.store.Get(id); stored != nil {
+		prev = stored.AgentFacts
+	}
+	return maps.Equal(prev, mapped)
+}
+
+// snapshotAgentFacts maps ResponseMeta onto AgentFacts. A non-empty result
+// replaces the last scrape as a whole; unspecified keys are omitted. ok is
+// false when nothing maps, so last-known values stay.
+func snapshotAgentFacts(meta *pb.ResponseMeta) (mapped map[string]string, ok bool) {
+	if meta == nil {
+		return nil, false
+	}
+	mapped = virtualmachine.AgentFactsFromResponse(meta.GetFacts(), meta.GetAgentVersion())
+	return mapped, len(mapped) > 0
+}
+
+// forwardAgentFactsIfChanged emits a VM update when roxagent facts changed
+// even if the index report is unchanged. The store is updated only after
+// enqueue succeeds so a failed send is retried on the next unchanged scrape.
+func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, meta *pb.ResponseMeta) {
+	mapped, ok := snapshotAgentFacts(meta)
+	if !ok {
+		return
+	}
+	logAndRecordDiscoveredFacts(vm.Key(), meta.GetFacts())
+	if s.storedAgentFactsEqual(vm.ID, mapped) {
+		return
+	}
+	toSend := vm.Copy()
+	toSend.AgentFacts = mapped
+	msg := s.vmUpdateMessage(toSend)
+	if msg == nil {
+		return
+	}
+	if err := s.enqueueToCentral(ctx, msg); err != nil {
+		log.Debugf("VMScraper: agent facts for %q not forwarded; will retry: %v", vm.Key(), err)
+		return
+	}
+	s.store.SetAgentFacts(vm.ID, mapped)
 }

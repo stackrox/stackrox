@@ -24,6 +24,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
+- ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
 
 ### Removed Features
 
@@ -36,6 +37,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
+- ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
 - ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.
 - ROX-32969: The `roxctl-linux` symlink has been removed from the `/assets/downloads/cli/` directory inside the main container image. Only the architecture-specific binaries (`roxctl-linux-amd64`, `roxctl-linux-arm64`, etc.) remain. This change does not affect CLI downloads from the Central UI or any other supported download path.
