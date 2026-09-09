@@ -802,15 +802,17 @@ func (s *VMScraper) maybeSyncRepoCPEMapping(ctx context.Context, vm *virtualmach
 	}
 }
 
-// recordMappingPath stores path on a live slot and recounts the tracked-VM
-// gauges. Missing keys are ignored so a concurrent prune cannot resurrect a slot.
+// recordMappingPath stores path on a live slot. Gauges are rewritten only
+// when the path changes; missing keys are ignored so a concurrent prune
+// cannot resurrect a slot.
 func (s *VMScraper) recordMappingPath(key string, path pb.RepoCPEMappingUpdatePath) {
+	label := mappingPathLabel(path)
 	concurrency.WithLock(&s.mu, func() {
 		st, ok := s.vmState[key]
-		if !ok {
+		if !ok || st.mappingPath == label {
 			return
 		}
-		st.mappingPath = mappingPathLabel(path)
+		st.mappingPath = label
 		s.setTrackedVMGaugesNoLock()
 	})
 }

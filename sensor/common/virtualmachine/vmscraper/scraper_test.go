@@ -1199,6 +1199,22 @@ func TestVMScraper_TrackedVMsByMappingPath(t *testing.T) {
 			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, nil)
 			assertTrackedByMappingPath(t, 1, 0, 0)
 		},
+		"repeating SENSOR meta keeps the mix": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			assertTrackedByMappingPath(t, 1, 0, 0)
+		},
+		"URL meta after SENSOR recounts to url": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL))
+			assertTrackedByMappingPath(t, 0, 1, 0)
+		},
 		"a VM leaving vmState drops its series": func(t *testing.T) {
 			vm := makeVM("ns1", "vm-a", 100)
 			store := &mockStore{vms: []*virtualmachine.Info{vm}}
