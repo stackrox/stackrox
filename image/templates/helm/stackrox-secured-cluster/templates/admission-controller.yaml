@@ -218,7 +218,7 @@ spec:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox") }}
+  name: {{ include "srox.globalResourceName" (list . "stackrox-security") }}
   labels:
     {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
   annotations:
