@@ -80,10 +80,16 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		BootOrder:   extractBootOrder(disks),
 		CDRomDisks:  extractCDRomDisks(disks),
 	}
-	// If the instance is NOT handled by a VirtualMachine
-	// Process the instance as a VirtualMachine
+	// Ownerless VMIs are the authoritative instance: UpdateStateOrCreate writes
+	// Running so a later boot is visible to ListRunning.
 	if !handled {
-		return processVirtualMachine(vm, action, d.clusterID, d.store)
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			d.store.Remove(vm.ID)
+		} else {
+			d.store.UpdateStateOrCreate(vm)
+		}
+		attachStoredAgentFacts(d.store, vm)
+		return component.NewEvent(createEvent(action, d.clusterID, vm))
 	}
 
 	// This is an instance that is handled by a VirtualMachine
