@@ -41,6 +41,7 @@ const (
 	minimumComplianceOperatorVersion = "v1.6.0"
 	CheckCountAnnotationKey          = "compliance.openshift.io/check-count"
 	LastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
+	ScanResultNotApplicable          = "NOT-APPLICABLE"
 	defaultChanelSize                = 100
 )
 
@@ -316,7 +317,19 @@ func (s *scanWatcherImpl) run() {
 			watcherFinishType.WithLabelValues(s.scanName(), "done").Inc()
 			return
 		}
+		if s.totalChecks == 0 && numCheckResults == 0 && IsScanNotApplicable(s.scanResults.Scan) {
+			log.Infof("Scan %s completed as NOT-APPLICABLE with 0 check results (watcher id: %s)", s.scanName(), s.scanResults.WatcherID)
+			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanName(), "not_applicable").Inc()
+			return
+		}
 	}
+}
+
+// IsScanNotApplicable returns true if the scan completed as NOT-APPLICABLE (e.g., a master-node
+// scan on an HCP cluster with no master nodes).
+func IsScanNotApplicable(scan *storage.ComplianceOperatorScanV2) bool {
+	return scan.GetStatus().GetResult() == ScanResultNotApplicable
 }
 
 func GetExpectedNumChecks(scan *storage.ComplianceOperatorScanV2) (int, error) {
@@ -341,20 +354,21 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 	if err != nil {
 		return err
 	}
-	s.totalChecks = numChecks
 
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()
 
-	if s.scanResults.Scan == nil {
-		s.scanResults.Scan = scan
-	}
 	// If we received a newer timestamp we need to reset the watcher.
 	if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) < 0 {
+		s.totalChecks = numChecks
 		s.lastStartedTime = scan.GetLastStartedTime()
 		s.scanResults.Scan = scan
 		s.scanResults.CheckResults = set.NewStringSet()
 		s.timeout.Reset()
+	} else if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) == 0 {
+		s.totalChecks = numChecks
+		// Same timestamp: update scan to pick up status changes (e.g., NOT-APPLICABLE).
+		s.scanResults.Scan = scan
 	}
 	return nil
 }
