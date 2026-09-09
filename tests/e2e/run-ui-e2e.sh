@@ -60,9 +60,12 @@ test_ui_e2e() {
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
+    export ROX_POLICY_CRITERIA_MODAL=false
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
+
+    image_prefetcher_system_await
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
