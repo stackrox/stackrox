@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ConfigService"
+      "name": "ConfigService",
+      "description": "ConfigService APIs can be used to manage Central config."
     }
   ],
   "consumes": [

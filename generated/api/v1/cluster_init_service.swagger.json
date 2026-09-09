@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ClusterInitService"
+      "name": "ClusterInitService",
+      "description": "ClusterInitService manages cluster init bundles and CRSs."
     }
   ],
   "consumes": [

@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "SensorUpgradeService"
+      "name": "SensorUpgradeService",
+      "description": "SensorUpgradeService is deprecated. Use operator-based installation instead;\nthe operator handles sensor upgrades and certificate rotation."
     }
   ],
   "consumes": [

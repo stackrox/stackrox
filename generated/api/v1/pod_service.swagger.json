@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "PodService"
+      "name": "PodService",
+      "description": "PodService APIs can be used to manage pods."
     }
   ],
   "consumes": [

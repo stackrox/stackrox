@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ProcessService"
+      "name": "ProcessService",
+      "description": "ProcessService APIs can be used to list processes executed in deployments."
     }
   ],
   "consumes": [

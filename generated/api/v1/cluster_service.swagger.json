@@ -229,7 +229,7 @@
         "HEALTHY"
       ],
       "default": "UNINITIALIZED",
-      "title": "- UNAVAILABLE: Only collector can have unavailable status"
+      "description": "- UNAVAILABLE: Only collector can have unavailable status"
     },
     "ClusterUpgradeStatusUpgradability": {
       "type": "string",

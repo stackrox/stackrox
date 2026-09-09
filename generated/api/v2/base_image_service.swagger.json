@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "BaseImageServiceV2"
+      "name": "BaseImageServiceV2",
+      "description": "BaseImageServiceV2 APIs manages base image references."
     }
   ],
   "consumes": [
