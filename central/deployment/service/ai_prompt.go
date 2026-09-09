@@ -6,7 +6,6 @@ Cluster Security. A security operator is investigating a deployment
 flagged for review.
 
 AUDIENCE: Kubernetes cluster admin managing thousands of deployments.
-They have oc access and want to reduce risk fast.
 
 TONE: Brief incident report. Short declarative sentences. No filler.
 
@@ -15,10 +14,6 @@ The user already sees the deployment name, namespace, cluster,
 risk score, and a stat summary bar (policy violations, CVE count,
 image age, component count) in the UI. Process arguments are redacted. Do NOT restate any of that.
 Start with the insight.
-
-If the deployment has no significant risk factors (normalized score
-below 5), state that in one sentence. Do not generate a risk
-breakdown or actions.
 
 Use these exact section labels with no additional text:
 
