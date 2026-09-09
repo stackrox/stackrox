@@ -23,6 +23,8 @@ COPY --from=ubi-micro-base / /out/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 
+COPY bin/roxctl* /tmp/bins/
+
 RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
@@ -33,11 +35,18 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         ca-certificates \
         gzip \
         less \
+        pigz \
         tar \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum
+    rm -rf /out/var/cache/dnf /out/var/cache/yum && \
+    mkdir -p /assets/downloads/cli && \
+    cd /tmp/bins && \
+    for f in roxctl-*; do \
+        [ -f "$f" ] && [ -x "$f" ] || continue; \
+        tar -I /out/usr/bin/pigz -cvf /assets/downloads/cli/${f%.exe}.tar.gz "$f"; \
+    done
 
 FROM ubi-micro-base
 
@@ -94,16 +103,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-# Raw binaries are accessed via bind mount so they never enter a final image layer.
-# Tarballs are created directly in the downloads directory; the entrypoint binary
-# is copied to /stackrox/roxctl.
-RUN mkdir -p /assets/downloads/cli
-RUN --mount=type=bind,source=bin,target=/tmp/bins \
-    find /tmp/bins -maxdepth 1 -type f -name 'roxctl-*' | while read f; do \
-        name=$(basename "$f"); \
-        tar czf /assets/downloads/cli/${name%.exe}.tar.gz -C /tmp/bins "$name"; \
-    done && \
-    cp /tmp/bins/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --from=package_installer /assets/downloads/cli /assets/downloads/cli
+COPY --from=package_installer /tmp/bins/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

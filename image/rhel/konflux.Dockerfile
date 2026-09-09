@@ -108,8 +108,10 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl
 # Only tarballs are copied to the final image layers.
 # But the entrypoint(RUN) needs a raw binary.
 # So copy appropriate binary to the final image layers.
-ARG TARGETARCH
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl-linux-${TARGETARCH} /stackrox/roxctl
+RUN --mount=type=bind,from=go-builder,source=/go/src/github.com/stackrox/rox/app/image/rhel/bin,target=/tmp/roxctl-bins \
+    arch=$(uname -m) ; \
+    case $arch in x86_64) arch=amd64 ;; aarch64) arch=arm64 ;; esac ; \
+    cp /tmp/roxctl-bins/roxctl-linux-${arch} /stackrox/roxctl
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/

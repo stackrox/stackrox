@@ -9,51 +9,69 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-var downloadPath = "/assets/downloads/cli"
+const downloadPath = "/assets/downloads/cli"
 
-// Handler for serving roxctl binaries from Central UI.
+var log = logging.LoggerForModule()
+
+// Handler serves roxctl binaries from Central UI.
 // Binaries are stored as .tar.gz and extracted on the fly on each request.
 func Handler() http.HandlerFunc {
+	return handlerWithDir(downloadPath)
+}
+
+func handlerWithDir(dir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filename := filepath.Base(r.URL.Path)
-		if err := serveFromTarball(w, filename); err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
+		switch r.Method {
+		case http.MethodGet, http.MethodHead:
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
 		}
+		filename := filepath.Base(r.URL.Path)
+		serveFromDir(w, r, dir, filename)
 	}
 }
 
-func serveFromTarball(w http.ResponseWriter, filename string) error {
-	return serveFromDir(w, downloadPath, filename)
-}
-
-func serveFromDir(w http.ResponseWriter, dir, filename string) error {
+func serveFromDir(w http.ResponseWriter, r *http.Request, dir, filename string) {
 	tarPath := filepath.Join(dir, strings.TrimSuffix(filename, ".exe")+".tar.gz")
 	f, err := os.Open(tarPath)
 	if err != nil {
-		return err
+		http.Error(w, "not found", http.StatusNotFound)
+		return
 	}
-	defer func() { _ = f.Close() }()
+	defer utils.IgnoreError(f.Close)
 
 	gz, err := gzip.NewReader(f)
 	if err != nil {
-		return err
+		http.Error(w, "invalid archive", http.StatusInternalServerError)
+		return
 	}
-	defer func() { _ = gz.Close() }()
+	defer utils.IgnoreError(gz.Close)
 
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
 		if err != nil {
-			return fmt.Errorf("entry %q not found in tarball", filename)
+			http.Error(w, "not found", http.StatusNotFound)
+			return
 		}
 		if hdr.Name == filename {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.Header().Set("Content-Length", fmt.Sprintf("%d", hdr.Size))
-			_, err = io.Copy(w, tr)
-			return err
+			w.Header().Set("Accept-Ranges", "none")
+			w.Header().Set("Cache-Control", "no-cache")
+			if r.Method != http.MethodHead {
+				if _, err = io.Copy(w, tr); err != nil {
+					log.Errorf("failed to stream %s: %v", filename, err)
+				}
+			}
+			return
 		}
 	}
 }
