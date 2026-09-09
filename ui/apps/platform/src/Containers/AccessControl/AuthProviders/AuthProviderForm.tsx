@@ -757,18 +757,59 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
-                        <RuleGroups
-                            authProviderId={selectedAuthProvider.id}
-                            groups={values.groups}
-                            roles={roles}
-                            onChange={onChange}
-                            setFieldValue={setFieldValue}
-                            disabled={isViewing}
-                            errors={errors?.groups as RuleGroupErrors[]}
-                            ruleAttributes={ruleAttributes}
-                        />
-                    </FormSection>
+                    {(selectedAuthProvider.type !== 'openshift-with-acm-roles' &&
+                        selectedAuthProvider.type !== 'oidc-with-acm-roles') && (
+                        <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
+                            <RuleGroups
+                                authProviderId={selectedAuthProvider.id}
+                                groups={values.groups}
+                                roles={roles}
+                                onChange={onChange}
+                                setFieldValue={setFieldValue}
+                                disabled={isViewing}
+                                errors={errors?.groups as RuleGroupErrors[]}
+                                ruleAttributes={ruleAttributes}
+                            />
+                        </FormSection>
+                    )}
+                    {(selectedAuthProvider.type === 'openshift-with-acm-roles' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
+                        <div id="acm-access-control-documentation">
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: this AuthProvider only supports role configuration in Red Hat Advanced Cluster Management."
+                                component="p"
+                            >
+                                <p>
+                                    This requires Red Hat Advanced Cluster Management
+                                    deployed on the cluster where the central entity of
+                                    Red Hat Advanced Cluster Security is deployed.
+                                </p>
+                                <p>
+                                    Additionally, Red Hat Advanced Cluster Management
+                                    must have 'fine-grained role-based access control'
+                                    activated.
+                                </p>
+                                <p>
+                                    For further information on the role configuration,
+                                    please refer to the Red Hat Advanced Cluster Management
+                                    documentation (version >= 2.16), area 'Secure clusters',
+                                    section 'Securing clusters', subsections 'Fine-grained
+                                    role-bases access control for virtual machines', 'Enabling
+                                    fine-grained role-based access control for virtualization',
+                                    and the subsections related to 'MulticlusterRoleAssignment'.
+                                </p>
+                                <p>
+                                    The OpenShift ClusterRoles created to configure the
+                                    Red Hat Advanced Cluster Security access control need
+                                    to have the label
+                                    'clusterview.open-cluster-management.io/discoverable'
+                                    present and set to 'true'.
+                                </p>
+                            </Alert>
+                        </div>
+                    )}
                 </FormSection>
             </FormikProvider>
         </Form>
