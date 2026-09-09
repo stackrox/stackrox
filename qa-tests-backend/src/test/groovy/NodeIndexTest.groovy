@@ -40,31 +40,9 @@ class NodeIndexTest extends BaseSpecification {
         waitForTrue(20, 6) {
             orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "scanner-v4-matcher")
         }
-        // Matcher-not-ready drops the first index report as unretryable, so force a
-        // prompt rescan after matcher is up. The default first-scan delay is 5m.
-        // Sometimes one pod in the daemon set misses the env variable despite updating.
-        waitForTrue(2, 20) {
-            log.info("Setting collector.compliance ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
-            orchestrator.updateDaemonSetEnv(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, "compliance",
-                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
-            try {
-                log.info("Wait for collector DS to be restarted with new values")
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetEnvVarUpdated(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS,
-                        "compliance", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
-                }
-
-                log.info("Wait for collector DS to be ready")
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
-                }
-            }
-            catch (Exception ignored) {
-                log.info("Unable to bring collector ds to the desired state")
-                return false
-            }
-            return true
-        }
+        // Matcher-not-ready drops the first index report as unretryable. CI deploy
+        // sets ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s and ROX_NODE_SCANNING_INTERVAL=30s
+        // so a later scan lands after matcher is up without restarting collector.
 
         then:
         "each OpenShift node scan has RPM packages, not only kubelet/kernel/runtime"
