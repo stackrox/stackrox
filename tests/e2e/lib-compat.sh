@@ -18,12 +18,6 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 managed_by="stackrox-tests"
 
-# Note: the caller must make sure to redirect stdin to /dev/null where needed.
-retrying_kubectl() {
-    "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@"
-}
-export -f retrying_kubectl
-
 # Implements a compatibility configuration layer.
 # For new use-cases, please use deploy_stackrox_with_roxie() instead.
 deploy_stackrox_with_roxie_compat() {
