@@ -37,6 +37,7 @@ import (
 
 const (
 	maxDeploymentsReturned = 1000
+	lowRiskThreshold       = 5.0
 )
 
 var log = logging.LoggerForModule()
@@ -301,6 +302,13 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
 	if err != nil {
 		return nil, err
+	}
+
+	// Skip LLM call for low-risk deployments.
+	if risk == nil || risk.GetScore() < lowRiskThreshold {
+		return &v1.DeploymentRiskAISummaryResponse{
+			Summary: "Skipping AI summary since this is a low risk deployment with normalized risk score below 5.",
+		}, nil
 	}
 
 	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
