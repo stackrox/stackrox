@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"math"
 	"regexp"
 	"slices"
 	"strings"
@@ -34,6 +35,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -96,6 +99,9 @@ type datastoreImpl struct {
 	compliancePruner          compliancePruning.Pruner
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
+	virtualMachineDataStore   virtualMachineDataStore.DataStore
+	// virtualMachineV2DataStore is nil when VirtualMachinesEnhancedDataModel is off.
+	virtualMachineV2DataStore virtualMachineV2DataStore.DataStore
 
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
@@ -691,6 +697,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
+	ds.removeClusterVirtualMachines(ctx, cluster)
+
 	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
@@ -766,6 +774,43 @@ func (ds *datastoreImpl) removeClusterPods(ctx context.Context, cluster *storage
 			log.Errorf("Failed to remove pod with id %s as part of removal of cluster %s: %v", pod.ID, cluster.GetId(), err)
 		}
 	}
+}
+
+// removeClusterVirtualMachines deletes V1 and V2 VM inventory for the cluster.
+// Child scan/component/CVE rows cascade from the VM; ClusterID has no FK to clusters.
+func (ds *datastoreImpl) removeClusterVirtualMachines(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	q.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
+
+	if ds.virtualMachineDataStore != nil {
+		vms, err := ds.virtualMachineDataStore.SearchRawVirtualMachines(ctx, q)
+		if err != nil {
+			log.Errorf("Failed to get virtual machines for removed cluster %s: %v", cluster.GetId(), err)
+		} else if ids := virtualMachineIDs(vms); len(ids) > 0 {
+			if err := ds.virtualMachineDataStore.DeleteVirtualMachines(ctx, ids...); err != nil {
+				log.Errorf("Failed to remove virtual machines as part of removal of cluster %s: %v", cluster.GetId(), err)
+			}
+		}
+	}
+
+	if ds.virtualMachineV2DataStore != nil {
+		results, err := ds.virtualMachineV2DataStore.Search(ctx, q)
+		if err != nil {
+			log.Errorf("Failed to get v2 virtual machines for removed cluster %s: %v", cluster.GetId(), err)
+		} else if ids := pkgSearch.ResultsToIDs(results); len(ids) > 0 {
+			if err := ds.virtualMachineV2DataStore.DeleteVirtualMachines(ctx, ids...); err != nil {
+				log.Errorf("Failed to remove v2 virtual machines as part of removal of cluster %s: %v", cluster.GetId(), err)
+			}
+		}
+	}
+}
+
+func virtualMachineIDs(vms []*storage.VirtualMachine) []string {
+	ids := make([]string, 0, len(vms))
+	for _, vm := range vms {
+		ids = append(ids, vm.GetId())
+	}
+	return ids
 }
 
 func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) []string {
