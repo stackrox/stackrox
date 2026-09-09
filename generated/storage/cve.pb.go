@@ -1390,12 +1390,13 @@ type CVEInfo struct {
 	CvssV3     *CVSSV3              `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
 	References []*CVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
 	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
-	CvssMetrics   []*CVSSScore `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
-	Epss          *EPSS        `protobuf:"bytes,12,opt,name=epss,proto3" json:"epss,omitempty"`
-	Exploit       *Exploit     `protobuf:"bytes,13,opt,name=exploit,proto3" json:"exploit,omitempty"`
-	CisaKev       bool         `protobuf:"varint,14,opt,name=cisa_kev,json=cisaKev,proto3" json:"cisa_kev,omitempty" search:"CISA KEV"` // @gotags: search:"CISA KEV"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CvssMetrics             []*CVSSScore `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
+	Epss                    *EPSS        `protobuf:"bytes,12,opt,name=epss,proto3" json:"epss,omitempty"`
+	Exploit                 *Exploit     `protobuf:"bytes,13,opt,name=exploit,proto3" json:"exploit,omitempty"`
+	CisaKev                 bool         `protobuf:"varint,14,opt,name=cisa_kev,json=cisaKev,proto3" json:"cisa_kev,omitempty" search:"CISA KEV"`                                                   // @gotags: search:"CISA KEV"
+	KnownRansomwareCampaign bool         `protobuf:"varint,15,opt,name=known_ransomware_campaign,json=knownRansomwareCampaign,proto3" json:"known_ransomware_campaign,omitempty" search:"Known Ransomware Campaign"` // @gotags: search:"Known Ransomware Campaign"
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CVEInfo) Reset() {
@@ -1522,6 +1523,13 @@ func (x *CVEInfo) GetExploit() *Exploit {
 func (x *CVEInfo) GetCisaKev() bool {
 	if x != nil {
 		return x.CisaKev
+	}
+	return false
+}
+
+func (x *CVEInfo) GetKnownRansomwareCampaign() bool {
+	if x != nil {
+		return x.KnownRansomwareCampaign
 	}
 	return false
 }
@@ -2843,7 +2851,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\fScoreVersion\x12\x06\n" +
 	"\x02V2\x10\x00\x12\x06\n" +
 	"\x02V3\x10\x01\x12\v\n" +
-	"\aUNKNOWN\x10\x02J\x04\b\x16\x10\x17J\x04\b\x15\x10\x16\"\xd9\x05\n" +
+	"\aUNKNOWN\x10\x02J\x04\b\x16\x10\x17J\x04\b\x15\x10\x16\"\x95\x06\n" +
 	"\aCVEInfo\x12\x10\n" +
 	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x18\n" +
 	"\asummary\x18\x02 \x01(\tR\asummary\x12\x12\n" +
@@ -2862,7 +2870,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12!\n" +
 	"\x04epss\x18\f \x01(\v2\r.storage.EPSSR\x04epss\x12*\n" +
 	"\aexploit\x18\r \x01(\v2\x10.storage.ExploitR\aexploit\x12\x19\n" +
-	"\bcisa_kev\x18\x0e \x01(\bR\acisaKev\x1a1\n" +
+	"\bcisa_kev\x18\x0e \x01(\bR\acisaKev\x12:\n" +
+	"\x19known_ransomware_campaign\x18\x0f \x01(\bR\x17knownRansomwareCampaign\x1a1\n" +
 	"\tReference\x12\x10\n" +
 	"\x03URI\x18\x01 \x01(\tR\x03URI\x12\x12\n" +
 	"\x04tags\x18\x02 \x03(\tR\x04tags\"+\n" +

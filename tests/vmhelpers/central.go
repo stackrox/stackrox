@@ -40,7 +40,7 @@ func waitForVMCondition(ctx context.Context, client v2.VirtualMachineServiceClie
 	err := pollUntil(ctx, opts, desc, func(ctx context.Context) (bool, string, error) {
 		cur, err := client.GetVirtualMachine(ctx, &v2.GetVirtualMachineRequest{Id: id})
 		if err != nil {
-			return false, "", err
+			return false, "", fmt.Errorf("get virtual machine %s: %w", id, err)
 		}
 		done, detail := check(cur)
 		if done {
@@ -154,7 +154,7 @@ func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceC
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list virtual machines: %w", err)
 	}
 	if vms := resp.GetVirtualMachines(); len(vms) > 0 {
 		return vms[0], nil

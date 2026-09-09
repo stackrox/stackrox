@@ -196,6 +196,7 @@ func (m *CVEInfo) CloneVT() *CVEInfo {
 	r.Epss = m.Epss.CloneVT()
 	r.Exploit = m.Exploit.CloneVT()
 	r.CisaKev = m.CisaKev
+	r.KnownRansomwareCampaign = m.KnownRansomwareCampaign
 	if rhs := m.References; rhs != nil {
 		tmpContainer := make([]*CVEInfo_Reference, len(rhs))
 		for k, v := range rhs {
@@ -811,6 +812,9 @@ func (this *CVEInfo) EqualVT(that *CVEInfo) bool {
 		return false
 	}
 	if this.CisaKev != that.CisaKev {
+		return false
+	}
+	if this.KnownRansomwareCampaign != that.KnownRansomwareCampaign {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1850,6 +1854,16 @@ func (m *CVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.KnownRansomwareCampaign {
+		i--
+		if m.KnownRansomwareCampaign {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x78
 	}
 	if m.CisaKev {
 		i--
@@ -3201,6 +3215,9 @@ func (m *CVEInfo) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.CisaKev {
+		n += 2
+	}
+	if m.KnownRansomwareCampaign {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -5520,6 +5537,26 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.CisaKev = bool(v != 0)
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KnownRansomwareCampaign", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.KnownRansomwareCampaign = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10003,6 +10040,26 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.CisaKev = bool(v != 0)
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KnownRansomwareCampaign", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.KnownRansomwareCampaign = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

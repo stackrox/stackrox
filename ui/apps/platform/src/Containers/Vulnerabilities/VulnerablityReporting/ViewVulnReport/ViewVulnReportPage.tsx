@@ -32,7 +32,11 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
-import { deleteReportConfiguration } from 'services/ReportsService';
+import {
+    deleteReportConfiguration,
+    fetchReportHistory,
+    runReportRequest,
+} from 'services/ReportsService';
 import type { ReportConfiguration } from 'services/ReportsService.types';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -72,7 +76,10 @@ function ViewVulnReportPage() {
         hasReadAccess('Integration'); // for notifiers
 
     const { reportConfiguration, isLoading, error: fetchError } = useFetchReport(reportId);
-    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfiguration);
+    const { reportSnapshots } = useWatchLastSnapshotForReports(
+        reportConfiguration,
+        fetchReportHistory
+    );
     const reportSnapshot = reportSnapshots[reportId];
 
     const {
@@ -92,6 +99,7 @@ function ViewVulnReportPage() {
     const { toasts, addToast, removeToast } = useToasts();
 
     const { isRunning, runError, runReport } = useRunReport({
+        runReportRequest,
         onCompleted: ({ reportNotificationMethod }) => {
             if (reportNotificationMethod === 'EMAIL') {
                 addToast('The report has been sent to the configured email notifier', 'success');
