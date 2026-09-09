@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,6 +51,9 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			}
 
 			t.Run("WaitForSensorPushedMapping", func(t *testing.T) {
+				if strings.TrimSpace(s.cfg.Repo2CPEURL) != "" {
+					t.Skip("ROXAGENT_REPO2CPE_URL set: agent is URL-managed, Sensor will not push mapping")
+				}
 				s.waitForSensorPushedMapping(vm)
 			})
 
