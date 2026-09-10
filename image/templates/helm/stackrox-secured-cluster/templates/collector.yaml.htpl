@@ -230,6 +230,9 @@ spec:
         - mountPath: /hostindex/usr/share
           name: usr-share-ro
           readOnly: true
+        - mountPath: /hostindex/usr/lib
+          name: usr-lib-ro
+          readOnly: true
         - mountPath: /tmp
           name: index-volume
       {{- end }}

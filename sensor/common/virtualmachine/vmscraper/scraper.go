@@ -143,6 +143,10 @@ type vmState struct {
 	backoff          time.Duration
 	vmID             virtualmachine.VMID
 	lastAgentVersion string
+	// mappingPath is the last RepoCPEMappingUpdatePath seen in ResponseMeta
+	// for this slot (sensor/url/unspecified). New and recreated slots start
+	// unspecified until a scrape with meta arrives.
+	mappingPath string
 }
 
 var _ common.SensorComponent = (*VMScraper)(nil)
@@ -353,10 +357,9 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	nDue := len(due)
+	// Mapping-path gauges are rewritten on reconcile, removal, and path updates.
 	nTracked := concurrency.WithLock1(&s.mu, func() int {
-		n := len(s.vmState)
-		metrics.PullTrackedVMs.Set(float64(n))
-		return n
+		return len(s.vmState)
 	})
 	metrics.PullDueVMs.Set(float64(nDue))
 	capN := min(s.concurrency, startBudget(nTracked, s.tickInterval, newVMIndexReportWindow(s.interval)))
@@ -409,11 +412,19 @@ func (s *VMScraper) reconcile() {
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
-				st = &vmState{nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())), vmID: vm.ID}
+				st = &vmState{
+					nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())),
+					vmID:          vm.ID,
+					mappingPath:   metrics.MappingPathUnspecified,
+				}
 				s.vmState[key] = st
 			} else if st.vmID != vm.ID {
 				// namespace/name can outlive a KubeVirt recreate; do not inherit scrape state.
-				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
+				st = &vmState{
+					nextAttemptAt: now,
+					vmID:          vm.ID,
+					mappingPath:   metrics.MappingPathUnspecified,
+				}
 				s.vmState[key] = st
 			}
 		}
@@ -424,6 +435,7 @@ func (s *VMScraper) reconcile() {
 		}
 		numVMs = len(s.vmState)
 		s.lastReconcile = now
+		s.setTrackedVMGaugesNoLock()
 	})
 	s.warnIfSpreadSaturated(numVMs)
 }
@@ -484,6 +496,7 @@ func (s *VMScraper) scrapeKey(ctx context.Context, key string) bool {
 		concurrency.WithLock(&s.mu, func() {
 			if st, ok := s.vmState[key]; ok && st.vmID == vmID {
 				delete(s.vmState, key)
+				s.setTrackedVMGaugesNoLock()
 			}
 		})
 		return false
@@ -786,6 +799,9 @@ func isAbnormalClose(err error, target *closeCoder) bool {
 // Sensor-managed and its reported hash is stale. A URL-managed agent with
 // a stale hash is only logged and counted, since Sensor doesn't own it.
 func (s *VMScraper) maybeSyncRepoCPEMapping(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, meta *pb.ResponseMeta) {
+	if meta != nil {
+		s.recordMappingPath(key, meta.GetRepoCpeMappingUpdatePath())
+	}
 	updatePath := meta.GetRepoCpeMappingUpdatePath()
 	if updatePath == pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED {
 		return
@@ -809,6 +825,54 @@ func (s *VMScraper) maybeSyncRepoCPEMapping(ctx context.Context, vm *virtualmach
 		log.Warnf("VMScraper: roxagent on %q reports a URL-managed repo-to-CPE mapping (hash=%s) that differs from Sensor's own cache (hash=%s)",
 			key, meta.GetRepoCpeMappingHash(), sensorHash)
 		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncURLHashMismatch).Inc()
+	}
+}
+
+// recordMappingPath stores path on a live slot. Gauges are rewritten only
+// when the path changes; missing keys are ignored so a concurrent prune
+// cannot resurrect a slot.
+func (s *VMScraper) recordMappingPath(key string, path pb.RepoCPEMappingUpdatePath) {
+	label := mappingPathLabel(path)
+	concurrency.WithLock(&s.mu, func() {
+		st, ok := s.vmState[key]
+		if !ok || st.mappingPath == label {
+			return
+		}
+		st.mappingPath = label
+		s.setTrackedVMGaugesNoLock()
+	})
+}
+
+func mappingPathLabel(path pb.RepoCPEMappingUpdatePath) string {
+	switch path {
+	case pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR:
+		return metrics.MappingPathSensor
+	case pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL:
+		return metrics.MappingPathURL
+	default:
+		return metrics.MappingPathUnspecified
+	}
+}
+
+// setTrackedVMGaugesNoLock writes vsock_pull_tracked_vms and the three
+// by-mapping-path series from vmState so the labeled counts always sum
+// to the unlabeled gauge.
+func (s *VMScraper) setTrackedVMGaugesNoLock() {
+	counts := map[string]int{
+		metrics.MappingPathSensor:      0,
+		metrics.MappingPathURL:         0,
+		metrics.MappingPathUnspecified: 0,
+	}
+	for _, st := range s.vmState {
+		path := st.mappingPath
+		if path == "" {
+			path = metrics.MappingPathUnspecified
+		}
+		counts[path]++
+	}
+	metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
+	for path, n := range counts {
+		metrics.PullTrackedVMsByMappingPath.WithLabelValues(path).Set(float64(n))
 	}
 }
 
