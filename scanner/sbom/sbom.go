@@ -40,7 +40,7 @@ func (s *SBOMer) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *O
 	)
 	encoder.Creators = append(encoder.Creators, spdx.Creator{Creator: fmt.Sprintf("scanner-v4-matcher-%s", version.Version), CreatorType: "Tool"})
 	encoder.Version = spdx.V2_3
-	encoder.Format = spdx.FormatJSON
+	encoder.Format = spdx.JSONFormat
 
 	b := &bytes.Buffer{}
 	err := encoder.Encode(ctx, b, ir)

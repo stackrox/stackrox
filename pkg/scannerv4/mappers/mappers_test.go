@@ -10,7 +10,6 @@ import (
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
-	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/features"
@@ -415,8 +414,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 					},
 					Packages: map[string]*v4.Package{
@@ -427,8 +425,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 					},
 					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
@@ -617,8 +614,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						"1": {
 							Id:      "1",
@@ -627,8 +623,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						"2": {
 							Id:      "2",
@@ -637,8 +632,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						"3": {
 							Id:      "3",
@@ -647,8 +641,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 					},
 					PackagesDEPRECATED: []*v4.Package{
@@ -659,8 +652,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						{
 							Id:      "1",
@@ -669,8 +661,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						{
 							Id:      "2",
@@ -679,8 +670,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 						{
 							Id:      "3",
@@ -689,8 +679,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
+							Cpe: emptyCPE,
 						},
 					},
 					Repositories: map[string]*v4.Repository{
@@ -895,7 +884,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "binary",
+						Kind: "sample pkg kind",
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -917,7 +906,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "binary",
+						Kind: "sample pkg kind",
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -995,7 +984,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						ID:      "sample pkg id",
 						Name:    "sample pkg name",
 						Version: "sample pkg version",
-						Kind:    types.BinaryPackage,
+						Kind:    "sample pkg kind",
 						Source: &claircore.Package{
 							ID:   "sample source id",
 							Name: "sample source name",
@@ -1076,7 +1065,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				ID:             "sample id",
 				Name:           "sample name",
 				Version:        "sample version",
-				Kind:           types.BinaryPackage,
+				Kind:           "sample kind",
 				Source:         nil,
 				PackageDB:      "sample package db",
 				Filepath:       "sample file path",
@@ -1097,7 +1086,7 @@ func Test_toProtoV4Package(t *testing.T) {
 					Kind: "test",
 					V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 				},
-				Kind:           "binary",
+				Kind:           "sample kind",
 				Source:         nil,
 				PackageDb:      "sample package db",
 				RepositoryHint: "sample hint",
@@ -1300,8 +1289,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 			want: &v4.Contents{
 				Packages: map[string]*v4.Package{
 					"sample pkg": {
-						Kind: "unknown",
-						Cpe:  emptyCPE,
+						Cpe: emptyCPE,
 						NormalizedVersion: &v4.NormalizedVersion{
 							Kind: "",
 							V:    make([]int32, 10),
@@ -1309,8 +1297,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 					},
 				},
 				PackagesDEPRECATED: []*v4.Package{{
-					Kind: "unknown",
-					Cpe:  emptyCPE,
+					Cpe: emptyCPE,
 					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "",
 						V:    make([]int32, 10),
