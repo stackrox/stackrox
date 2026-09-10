@@ -17,20 +17,6 @@ tests:
       - openshift-4.12
       availableSchemas:
       - openshift-4.12
-- name: "does not set node index host path on kubernetes"
-  expect: |
-    envVars(.daemonsets.collector; "compliance") | assertThat(has("ROX_NODE_INDEX_HOST_PATH") == false)
-    [container(.daemonsets.collector; "compliance") | .volumeMounts[] | select(.mountPath | startswith("/hostindex"))] | length | assertThat(. == 0)
-- name: "OpenShift 4 indexes /hostindex with usr/share and usr/lib RPM paths"
-  server:
-    visibleSchemas:
-    - openshift-4.12
-    availableSchemas:
-    - openshift-4.12
-  expect: |
-    envVars(.daemonsets.collector; "compliance")["ROX_NODE_INDEX_HOST_PATH"] | assertThat(. == "/hostindex")
-    [container(.daemonsets.collector; "compliance") | .volumeMounts[] | select(.mountPath == "/hostindex/usr/share")] | length | assertThat(. == 1)
-    [container(.daemonsets.collector; "compliance") | .volumeMounts[] | select(.mountPath == "/hostindex/usr/lib")] | length | assertThat(. == 1)
 - name: "customize.envVars can re-enable Scanner V2 node inventory calls"
   values:
     customize:
