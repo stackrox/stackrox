@@ -141,6 +141,21 @@ else
             exit 1
         fi
 
+        # Remove backups from prior major version upgrades. They are
+        # unrestorable because the old binaries are no longer shipped in
+        # this image, and they consume PVC space that the current upgrade
+        # needs for its own backup + verification copy.
+        CURRENT_UPGRADE_DIR="${PG_DATA_VERSION}-${PG_BINARY_VERSION}"
+        for location in ${backup_locations[*]}; do
+            for old_backup in "${location}"/*/; do
+                [ -d "${old_backup}" ] || continue
+                if [ "$(basename "${old_backup}")" != "${CURRENT_UPGRADE_DIR}" ]; then
+                    echo "Removing stale backup ${old_backup}"
+                    rm -rf "${old_backup}"
+                fi
+            done
+        done
+
         # This is the amount of disk space we currently consume. Normally we
         # could use df as well, since the data will be the only disk space
         # consumer, but in testing environment it might not be the case.
@@ -149,9 +164,9 @@ else
         echo "Verifying backup locations ${backup_locations[*]}"
         for location in ${backup_locations[*]}
         do
-            # The backup volume needs to accomodate two copies of data, one is the
+            # The backup volume needs to accommodate two copies of data, one is the
             # actual backup, and one is a restored copy, which will be deleted later.
-            echo "${location}: Checking avaibale disk space..."
+            echo "${location}: Checking available disk space..."
             if check_available_space "${location}" $((PG_DATA_USED * 2)); then
                 echo "Location has enough space."
                 PG_BACKUP_VOLUME="${location}"
@@ -260,4 +275,17 @@ else
         rm -rf "${PGDATA}"
         mv "${PGDATA_NEW}" "${PGDATA}"
     fi
+fi
+
+# Remove upgrade backups older than the configured retention period.
+# Default is 30 days; set PG_BACKUP_RETENTION_DAYS=0 to keep backups
+# indefinitely.
+PG_BACKUP_RETENTION_DAYS="${PG_BACKUP_RETENTION_DAYS:-30}"
+if [ "${PG_BACKUP_RETENTION_DAYS}" -gt 0 ] 2>/dev/null; then
+    get_backup_locations retention_locations
+    for location in ${retention_locations[*]}; do
+        find "${location}" -maxdepth 1 -mindepth 1 -type d \
+            -mtime +"${PG_BACKUP_RETENTION_DAYS}" -print \
+            -exec rm -rf {} + 2>/dev/null || true
+    done
 fi
