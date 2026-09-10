@@ -126,7 +126,7 @@ describe('Risk', () => {
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
             const deployOption = 'Deployment';
-            const deployValue = 'scanner';
+            const deployValue = 'scanner-v4-indexer';
 
             visitRiskDeploymentsWithSearchQuery(
                 'Platform view',
