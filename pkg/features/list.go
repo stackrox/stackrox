@@ -157,6 +157,9 @@ var (
 
 	// LightspeedRiskSummary enables Lightspeed AI risk summary
 	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
+
+	// RegistryAuthDetection enables auto-detection of registry authentication type via /v2/ probe
+	RegistryAuthDetection = registerFeature("Auto-detect registry authentication type", "ROX_REGISTRY_AUTH_DETECTION", enabled)
 )
 
 // The following feature flags are related to Scanner V4.

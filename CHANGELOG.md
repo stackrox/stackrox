@@ -25,6 +25,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- ROX-32532: Image registry integrations now auto-detect whether a registry requires bearer or basic authentication by probing the `/v2/` endpoint. This avoids spurious Basic auth headers that some registries reject. Gated by the `ROX_REGISTRY_AUTH_DETECTION` feature flag (enabled by default).
 
 ### Removed Features
 

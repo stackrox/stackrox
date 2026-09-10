@@ -6,6 +6,7 @@ import (
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
@@ -86,5 +87,9 @@ func DefaultTransport(cfg *Config) registry.Transport {
 	}
 	transport = cfg.MetricsHandler.RoundTripper(transport, cfg.RegistryType)
 	username, password := cfg.GetCredentials()
-	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
+	url := strings.TrimSuffix(cfg.formatURL(), "/")
+	if features.RegistryAuthDetection.Enabled() {
+		return registry.WrapTransportWithDetection(transport, url, username, password)
+	}
+	return registry.WrapTransport(transport, url, username, password)
 }
