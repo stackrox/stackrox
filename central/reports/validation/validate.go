@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -164,12 +165,15 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 	}
 
 	// Use allAccessCtx since report creator/updater might not have permissions for integrationSAC
-	exists, err := v.notifierDatastore.Exists(allAccessCtx, emailConfig.GetNotifierId())
+	notifier, exists, err := v.notifierDatastore.GetScrubbedNotifier(allAccessCtx, emailConfig.GetNotifierId())
 	if err != nil {
 		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
+	}
+	if notifier.GetType() != notifiers.EmailType && notifier.GetType() != notifiers.ACSCSEmailType {
+		return errox.InvalidArgs.New("report configuration requires an email notifier")
 	}
 	return nil
 }

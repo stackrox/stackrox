@@ -160,7 +160,7 @@ func TestValidateNotifiers(t *testing.T) {
 				},
 			},
 			setupMocks: func() {
-				notifierDS.EXPECT().Exists(gomock.Any(), "notifier-1").Return(true, nil)
+				notifierDS.EXPECT().GetScrubbedNotifier(gomock.Any(), "notifier-1").Return(&storage.Notifier{Type: "email"}, true, nil)
 			},
 			expectError: false,
 		},
@@ -220,7 +220,7 @@ func TestValidateEmailConfig(t *testing.T) {
 				MailingLists: []string{"user@example.com"},
 			},
 			setupMocks: func(notifierDS *notifierDSMocks.MockDataStore) {
-				notifierDS.EXPECT().Exists(gomock.Any(), "missing-notifier").Return(false, nil)
+				notifierDS.EXPECT().GetScrubbedNotifier(gomock.Any(), "missing-notifier").Return(nil, false, nil)
 			},
 			expectError: true,
 			errContains: "not found",
@@ -233,7 +233,7 @@ func TestValidateEmailConfig(t *testing.T) {
 				CustomBody:    "Report body",
 			},
 			setupMocks: func(notifierDS *notifierDSMocks.MockDataStore) {
-				notifierDS.EXPECT().Exists(gomock.Any(), "notifier-1").Return(true, nil)
+				notifierDS.EXPECT().GetScrubbedNotifier(gomock.Any(), "notifier-1").Return(&storage.Notifier{Type: "email"}, true, nil)
 			},
 			expectError: false,
 		},
