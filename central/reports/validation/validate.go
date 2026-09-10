@@ -83,8 +83,14 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 	if schedule == nil {
 		return nil
 	}
+	if schedule.GetHour() < 0 || schedule.GetHour() > 23 {
+		return errox.InvalidArgs.New("schedule hour must be within 0-23")
+	}
+	if schedule.GetMinute() < 0 || schedule.GetMinute() > 59 {
+		return errox.InvalidArgs.New("schedule minute must be within 0-59")
+	}
 	switch schedule.GetIntervalType() {
-	case apiV2.ReportSchedule_UNSET:
+	default:
 		return errox.InvalidArgs.New("report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
 	case apiV2.ReportSchedule_DAILY:
 		if schedule.GetDaysOfWeek() != nil || schedule.GetDaysOfMonth() != nil {
