@@ -61,7 +61,9 @@ func takeInterfaceMetaStep(metaStep pathutil.MetaStep, evaluator fieldEvaluator)
 	return fieldEvaluatorFunc(func(value pathutil.AugmentedValue) (*fieldResult, bool) {
 		underlying := value.Underlying()
 		if underlying.IsNil() {
-			return nil, false
+			// Unset protobuf oneof (e.g. Scanner V4 not-fixable CVE: no fixed_by).
+			// Evaluate against the field zero value so empty-string queries can match.
+			return evaluator.Evaluate(value.WithUnderlying(reflect.Zero(metaStep.Type)))
 		}
 		nextValue := value.Elem()
 		if nextValue.Underlying().Kind() == reflect.Pointer {
