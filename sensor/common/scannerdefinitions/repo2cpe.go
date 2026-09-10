@@ -182,6 +182,11 @@ func (r *Repo2CPE) FetchRepo2CPE(_ context.Context) (mapping []byte, hash string
 // mapping and updates the cache on success or "unchanged". It reports
 // whether the attempt succeeded, so the caller can pick the next delay.
 func (r *Repo2CPE) attemptRepo2CPERefresh(ctx context.Context) bool {
+	result := repoCPEMappingFetchError
+	defer func() {
+		repoCPEMappingFetch.WithLabelValues(result).Inc()
+	}()
+
 	etag, lastModified := concurrency.WithLock2(&r.cacheMu, func() (string, string) {
 		return r.cache.etag, r.cache.lastModified
 	})
@@ -202,6 +207,7 @@ func (r *Repo2CPE) attemptRepo2CPERefresh(ctx context.Context) bool {
 	switch resp.StatusCode {
 	case http.StatusNotModified:
 		r.recordRepo2CPEUnchanged(resp)
+		result = repoCPEMappingFetchUnchanged
 		return true
 	case http.StatusOK:
 		body, err := io.ReadAll(io.LimitReader(resp.Body, cpemapping.MaxMappingBytes+1))
@@ -213,7 +219,11 @@ func (r *Repo2CPE) attemptRepo2CPERefresh(ctx context.Context) bool {
 			log.Warnf("Repo-to-CPE mapping failed validation, keeping last-good: %v", err)
 			return false
 		}
-		r.recordRepo2CPESuccess(body, resp)
+		if r.recordRepo2CPESuccess(body, resp) {
+			result = repoCPEMappingFetchSuccess
+		} else {
+			result = repoCPEMappingFetchUnchanged
+		}
 		return true
 	default:
 		log.Warnf("Unexpected status %d fetching repo-to-CPE mapping from central", resp.StatusCode)
@@ -241,7 +251,7 @@ func (r *Repo2CPE) newRepo2CPERequest(ctx context.Context, etag, lastModified st
 
 func (r *Repo2CPE) recordRepo2CPEUnchanged(resp *http.Response) {
 	concurrency.WithLock(&r.cacheMu, func() {
-		r.cache.lastSuccess = time.Now()
+		r.markRepo2CPESuccessNoLock()
 		r.mergeRepo2CPEValidatorsNoLock(resp)
 	})
 	log.Debug("Repo-to-CPE mapping unchanged (304)")
@@ -249,12 +259,12 @@ func (r *Repo2CPE) recordRepo2CPEUnchanged(resp *http.Response) {
 
 // recordRepo2CPESuccess keeps the existing cached bytes when the new content
 // hashes the same as what's cached, treating a same-hash 200 like a 304.
-func (r *Repo2CPE) recordRepo2CPESuccess(body []byte, resp *http.Response) {
+func (r *Repo2CPE) recordRepo2CPESuccess(body []byte, resp *http.Response) bool {
 	hash := cpemapping.HashMapping(body)
 	var oldHash string
 	var changed bool
 	concurrency.WithLock(&r.cacheMu, func() {
-		r.cache.lastSuccess = time.Now()
+		r.markRepo2CPESuccessNoLock()
 		oldHash = r.cache.hash
 		if hash != r.cache.hash {
 			r.cache.mapping = body
@@ -268,6 +278,15 @@ func (r *Repo2CPE) recordRepo2CPESuccess(body []byte, resp *http.Response) {
 		log.Infof("Repo-to-CPE mapping content hash changed: old=%q new=%q", oldHash, hash)
 	}
 	log.Debugf("Fetched repo-to-CPE mapping from central, hash=%s", hash)
+	return changed
+}
+
+// markRepo2CPESuccessNoLock publishes lastSuccess to the last-success gauge
+// in the same critical section so scrapes cannot observe a stale timestamp.
+func (r *Repo2CPE) markRepo2CPESuccessNoLock() {
+	now := time.Now()
+	r.cache.lastSuccess = now
+	repo2CPELastSuccessUnix.Store(now.Unix())
 }
 
 // replaceRepo2CPEValidatorsNoLock copies validators from a 200, including
