@@ -155,7 +155,7 @@ func TestQueueScheduledReportsSkipsEmptyResourceScope(t *testing.T) {
 	defer cronScheduler.Stop()
 
 	s := newSchedulerImpl(mockReportConfigDS, nil, nil, nil, nil, nil, nil, cronScheduler)
-	s.queueScheduledReports()
+	assert.NoError(t, s.queueScheduledReports())
 
 	// Only the two valid configs should have been scheduled
 	assert.Len(t, s.reportConfigToEntryIDs, 2)
@@ -293,7 +293,7 @@ func TestQueuePendingReports(t *testing.T) {
 
 	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, nil, nil, nil, nil, cronScheduler)
 	s.isStarted.Store(true)
-	s.queuePendingReports()
+	assert.NoError(t, s.queuePendingReports())
 
 	assert.Equal(t, 2, s.queues[0].queue.Len())
 }

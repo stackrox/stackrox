@@ -31,10 +31,11 @@ type Scheduler interface {
 	// If the report is already being prepared or has completed execution, it cannot be cancelled.
 	CancelReportRequest(ctx context.Context, reportID string) (bool, error)
 
-	// Start acquires a PostgreSQL advisory lock and starts the scheduler.
-	// If the lock is already held by another process, the scheduler is not started.
-	// A scheduler instance can only be started once and cannot be re-started once stopped.
+	// Start asynchronously acquires ownership, retrying until successful or stopped.
+	// A scheduler instance can only be started once and cannot be restarted once stopped.
 	Start(db postgres.DB)
+	// Ready reports ownership and completed queue initialization.
+	Ready() bool
 	// Stop scheduler
 	Stop()
 }

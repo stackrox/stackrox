@@ -23,9 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var listenerCtx = sac.WithAllAccess(context.Background())
-
 type reportListener struct {
+	ctx                 context.Context
 	db                  postgres.DB
 	scheduler           schedulerV2.Scheduler
 	reportConfigStore   reportConfigDS.DataStore
@@ -47,6 +46,7 @@ func newReportListener(
 	notifierProcessor notifier.Processor,
 ) *reportListener {
 	return &reportListener{
+		ctx:                 sac.WithAllAccess(context.Background()),
 		db:                  db,
 		scheduler:           scheduler,
 		reportConfigStore:   reportConfigStore,
@@ -58,15 +58,19 @@ func newReportListener(
 	}
 }
 
-func (r *reportListener) start(ctx context.Context) {
+func (r *reportListener) start(ctx context.Context) func() {
+	ctx, cancel := context.WithCancel(ctx)
+	r.ctx = sac.WithAllAccess(ctx)
 	listener := pgNotify.NewListener(r.db, r.handleNotification,
 		pgNotify.NotifierChanged,
 		pgNotify.ReportConfigChanged,
 		pgNotify.ReportRequestSubmitted,
 		pgNotify.ReportRequestCancelled,
 	)
-	go listener.Listen(ctx)
-	go r.periodicResync(ctx)
+	var wg sync.WaitGroup
+	wg.Go(func() { listener.Listen(ctx) })
+	wg.Go(func() { r.periodicResync(ctx) })
+	return func() { cancel(); wg.Wait() }
 }
 
 func (r *reportListener) handleNotification(channel, payload string) {
@@ -83,13 +87,13 @@ func (r *reportListener) handleNotification(channel, payload string) {
 }
 
 func (r *reportListener) handleNotifierChanged(notifierID string) {
-	protoNotifier, exists, err := r.notifierStore.GetNotifier(listenerCtx, notifierID)
+	protoNotifier, exists, err := r.notifierStore.GetNotifier(r.ctx, notifierID)
 	if err != nil {
 		log.Errorf("Failed to load notifier %s: %v", notifierID, err)
 		return
 	}
 	if !exists {
-		r.notifierProcessor.RemoveNotifier(listenerCtx, notifierID)
+		r.notifierProcessor.RemoveNotifier(r.ctx, notifierID)
 		return
 	}
 	n, err := pkgNotifiers.CreateNotifier(protoNotifier)
@@ -97,11 +101,11 @@ func (r *reportListener) handleNotifierChanged(notifierID string) {
 		log.Errorf("Failed to create notifier %s: %v", notifierID, err)
 		return
 	}
-	r.notifierProcessor.UpdateNotifier(listenerCtx, n)
+	r.notifierProcessor.UpdateNotifier(r.ctx, n)
 }
 
 func (r *reportListener) handleConfigChanged(configID string) {
-	config, exists, err := r.reportConfigStore.GetReportConfiguration(listenerCtx, configID)
+	config, exists, err := r.reportConfigStore.GetReportConfiguration(r.ctx, configID)
 	if err != nil {
 		log.Errorf("Failed to load report config %s: %v", configID, err)
 		return
@@ -120,7 +124,7 @@ func (r *reportListener) handleConfigChanged(configID string) {
 }
 
 func (r *reportListener) handleRequestSubmitted(snapshotID string) {
-	snap, exists, err := r.snapshotStore.Get(listenerCtx, snapshotID)
+	snap, exists, err := r.snapshotStore.Get(r.ctx, snapshotID)
 	if err != nil || !exists {
 		log.Errorf("Failed to load report snapshot %s: exists=%v err=%v", snapshotID, exists, err)
 		return
@@ -131,7 +135,7 @@ func (r *reportListener) handleRequestSubmitted(snapshotID string) {
 
 	var collection *storage.ResourceCollection
 	if snap.GetCollection().GetId() != "" {
-		collection, exists, err = r.collectionDatastore.Get(listenerCtx, snap.GetCollection().GetId())
+		collection, exists, err = r.collectionDatastore.Get(r.ctx, snap.GetCollection().GetId())
 		if err != nil || !exists {
 			log.Errorf("Failed to load collection for snapshot %s: %v", snapshotID, err)
 			return
@@ -146,7 +150,7 @@ func (r *reportListener) handleRequestSubmitted(snapshotID string) {
 }
 
 func (r *reportListener) handleRequestCancelled(snapshotID string) {
-	if _, err := r.scheduler.CancelReportRequest(listenerCtx, snapshotID); err != nil {
+	if _, err := r.scheduler.CancelReportRequest(r.ctx, snapshotID); err != nil {
 		log.Errorf("Failed to cancel report request %s: %v", snapshotID, err)
 	}
 }
@@ -172,7 +176,7 @@ func (r *reportListener) resyncConfigs() {
 			storage.ReportConfiguration_NODE_VULNERABILITY.String(),
 		).
 		ProtoQuery()
-	configs, err := r.reportConfigStore.GetReportConfigurations(listenerCtx, query)
+	configs, err := r.reportConfigStore.GetReportConfigurations(r.ctx, query)
 	if err != nil {
 		log.Errorf("Error resyncing report configs: %v", err)
 		return
@@ -200,7 +204,7 @@ func (r *reportListener) resyncPendingRequests() {
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String()).
 		WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ReportQueuedTime))).
 		ProtoQuery()
-	snapshots, err := r.snapshotStore.SearchReportSnapshots(listenerCtx, query)
+	snapshots, err := r.snapshotStore.SearchReportSnapshots(r.ctx, query)
 	if err != nil {
 		log.Errorf("Error resyncing pending report requests: %v", err)
 		return
@@ -210,7 +214,7 @@ func (r *reportListener) resyncPendingRequests() {
 		var collection *storage.ResourceCollection
 		if collID := snap.GetCollection().GetId(); collID != "" {
 			var exists bool
-			collection, exists, err = r.collectionDatastore.Get(listenerCtx, collID)
+			collection, exists, err = r.collectionDatastore.Get(r.ctx, collID)
 			if err != nil || !exists {
 				log.Errorf("Error loading collection for pending snapshot %s: %v", snap.GetReportId(), err)
 				continue
@@ -232,7 +236,7 @@ func (r *reportListener) submitIfNew(reportID string, req *reportGen.ReportReque
 	if r.knownReportIDs.Contains(reportID) {
 		return
 	}
-	if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
+	if _, err := r.scheduler.SubmitReportRequest(r.ctx, req, true); err != nil {
 		log.Errorf("Failed to submit report request %s: %v", reportID, err)
 		return
 	}
