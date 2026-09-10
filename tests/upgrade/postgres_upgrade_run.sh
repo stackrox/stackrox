@@ -7,8 +7,8 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.10.7"
-EARLIER_SHA="5a4fced5248e20b2af68fe4bc88df95b40323225"
+EARLIER_TAG="4.11.3"
+EARLIER_SHA="9947d9c2267c78595af7af197c4af8900008b269"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 
 # shellcheck source=../../scripts/lib.sh
@@ -78,7 +78,7 @@ test_upgrade_path() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.10.7"
+    FORCE_ROLLBACK_VERSION="4.11.3"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -132,7 +132,7 @@ test_upgrade_path() {
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
-    # Upgrade the image to PG15
+    # Upgrade the image to PG16
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
@@ -190,7 +190,7 @@ test_not_enough_disk_space() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.10.7"
+    FORCE_ROLLBACK_VERSION="4.11.3"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -252,7 +252,7 @@ test_not_enough_disk_space() {
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
-    # Upgrade the image to PG15
+    # Upgrade the image to PG16
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image \
         deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
@@ -302,7 +302,7 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 
-    # Do not rollback central-db image, since downgrade from PG15 to PG13 is
+    # Do not rollback central-db image, since downgrade from PG16 to PG15 is
     # not possible.
 }
 
