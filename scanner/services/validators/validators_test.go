@@ -131,6 +131,14 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"}),
 			},
 		},
+		"when a package has an empty CPE": {
+			// An empty CPE is treated the same as an unset one (e.g. the bound
+			// wildcard), not an invalid CPE. See mappers.toClairCoreCPE.
+			argOpts: []opts{
+				addPackage(&v4.Package{Id: "foobar", Cpe: ""}),
+				addPackageDEPRECATED(&v4.Package{Id: "foobar", Cpe: ""}),
+			},
+		},
 		"when a package has a source package with another source package": {
 			wantErr: `Contents.Packages element "foo": package ID="foo" has a source with a source`,
 			argOpts: []opts{
