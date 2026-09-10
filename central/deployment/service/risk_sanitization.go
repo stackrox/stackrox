@@ -10,7 +10,9 @@ import (
 // processArgsPattern matches ' with args "..."' in process baseline messages.
 // Process arguments may contain sensitive data (passwords, tokens) and must be
 // redacted before sending to an external LLM.
-var processArgsPattern = regexp.MustCompile(` with args "[^"]*"`)
+// The pattern handles escaped quotes (from strconv.Quote) to ensure the entire
+// argument string is matched even when it contains embedded quotes.
+var processArgsPattern = regexp.MustCompile(` with args "(\\.|[^"\\])*"`)
 
 // buildSanitizedRiskContext produces a minimal JSON representation of the
 // deployment and risk data suitable for sending to an external LLM. It keeps

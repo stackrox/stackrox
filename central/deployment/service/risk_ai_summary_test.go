@@ -519,3 +519,50 @@ func TestBuildSanitizedRiskContext_ProcessArgsStripped(t *testing.T) {
 	// Other risk results should NOT have their messages modified.
 	assert.Contains(t, contextJSON, `with args \"should not be stripped\"`)
 }
+
+func TestBuildSanitizedRiskContext_ProcessArgsWithEmbeddedQuotes(t *testing.T) {
+	// Regression test: strconv.Quote escapes embedded quotes as \".
+	// The regex must handle escaped quotes to avoid leaving sensitive data exposed.
+	deployment := &storage.Deployment{
+		Id:          "dep-1",
+		Name:        "test-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+
+	risk := &storage.Risk{
+		Id:    "risk-1",
+		Score: 8.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  "Suspicious Process Executions",
+				Score: 2.0,
+				Factors: []*storage.Risk_Result_Factor{
+					// Args with embedded escaped quotes (as produced by strconv.Quote)
+					{Message: `Detected execution of suspicious process "/bin/bash" with args "-c echo \"password=secret123\"" in container app`},
+					{Message: `Detected execution of suspicious process "/bin/sh" with args "cmd with \"nested\" quotes and token=abc123" in container app`},
+				},
+			},
+		},
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	require.NoError(t, err)
+
+	// Process names SHOULD be present.
+	assert.Contains(t, contextJSON, "/bin/bash")
+	assert.Contains(t, contextJSON, "/bin/sh")
+
+	// Sensitive data with embedded quotes MUST be fully redacted.
+	assert.NotContains(t, contextJSON, "password=secret123")
+	assert.NotContains(t, contextJSON, "token=abc123")
+	assert.NotContains(t, contextJSON, "nested")
+
+	// The entire args section should be replaced with <redacted args>.
+	assert.Contains(t, contextJSON, `\u003credacted args\u003e`)
+
+	// Ensure no partial args remain (the old regex would stop at the first escaped quote).
+	assert.NotContains(t, contextJSON, `with args "-c echo`)
+	assert.NotContains(t, contextJSON, `with args "cmd with`)
+}
