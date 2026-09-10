@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -103,23 +102,7 @@ func (s *nodeIndexerSuite) TestLayer() {
 
 func (s *nodeIndexerSuite) TestLayerNoURI() {
 	_, err := layer(context.Background(), layerDigest, "")
-	s.ErrorContains(err, "host path is empty")
-}
-
-func (s *nodeIndexerSuite) TestLayerUsesFileURI() {
-	layer, err := layer(context.Background(), layerDigest, "testdata")
-	s.Require().NoError(err)
-	s.T().Cleanup(func() {
-		s.Require().NoError(layer.Close())
-	})
-
-	parsedURI, err := url.Parse(layer.URI)
-	s.Require().NoError(err)
-	s.Equal("file", parsedURI.Scheme)
-
-	expectedPath, err := filepath.Abs("testdata")
-	s.Require().NoError(err)
-	s.Equal(filepath.ToSlash(expectedPath), parsedURI.Path)
+	s.ErrorContains(err, "no URI provided")
 }
 
 func (s *nodeIndexerSuite) TestLayerIllegalDigest() {
