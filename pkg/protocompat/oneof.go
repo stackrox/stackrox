@@ -25,7 +25,7 @@ func GetOneOfTypesByInterface(msgType reflect.Type, oneOfInterfaceType reflect.T
 	oneOfFieldTypes := make([]reflect.Type, 0)
 
 	// Get proto message from Go reflect type.
-	msg, ok := reflect.New(msgType).Interface().(proto.Message)
+	msg, ok := reflect.TypeAssert[proto.Message](reflect.New(msgType))
 	if !ok {
 		return oneOfFieldTypes
 	}

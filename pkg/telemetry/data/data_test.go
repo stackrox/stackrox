@@ -26,7 +26,7 @@ func validateJSONFieldNames(t *testing.T, val reflect.Value) {
 			validateJSONFieldNames(t, val.Index(i))
 		}
 	case reflect.Map:
-		m, ok := val.Interface().(map[string]interface{})
+		m, ok := reflect.TypeAssert[map[string]interface{}](val)
 		assert.True(t, ok)
 		for mKey, mVal := range m {
 			validateFieldName(t, mKey)

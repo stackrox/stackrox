@@ -137,7 +137,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 	case reflect.Bool:
 		return v1.SearchDataType_SEARCH_BOOL
 	case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
-		enum, ok := reflect.Zero(original).Interface().(protoreflect.ProtoEnum)
+		enum, ok := reflect.TypeAssert[protoreflect.ProtoEnum](reflect.Zero(original))
 		if !ok {
 			return v1.SearchDataType_SEARCH_NUMERIC
 		}
