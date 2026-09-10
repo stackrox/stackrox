@@ -171,6 +171,26 @@ func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert
 	}
 }
 
+func runtimeDeploymentAlert(id, depID string, inactive bool, process *storage.ProcessIndicator) *storage.Alert {
+	v := &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{process}}
+	printer.UpdateProcessAlertViolationMessage(v)
+	return &storage.Alert{
+		Id:     id,
+		Policy: getPolicies()[0],
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:       depID,
+				Name:     depID,
+				Inactive: inactive,
+			},
+		},
+		LifecycleStage:   storage.LifecycleStage_RUNTIME,
+		State:            storage.ViolationState_ACTIVE,
+		Time:             protocompat.GetProtoTimestampFromSeconds(100),
+		ProcessViolation: v,
+	}
+}
+
 func getFakeResourceRuntimeAlert(resourceType storage.Alert_Resource_ResourceType, resourceName, clusterID, namespaceID, namespace string) *storage.Alert {
 	return &storage.Alert{
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -710,6 +730,48 @@ func (suite *AlertManagerTestSuite) TestDeploymentMarkedInactiveOnRemoval() {
 	suite.True(modified.Contains("dep-to-remove"), "removed deployment should appear in modified set")
 }
 
+// TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone covers a first runtime
+// alert arriving after the deployment is already gone.
+func (suite *AlertManagerTestSuite) TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone() {
+	incoming := runtimeDeploymentAlert("runtime-alert-new", "dep-gone", false, nowProcess)
+
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-gone").Return(true).AnyTimes()
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(nil, nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.True(a.GetDeployment().GetInactive(), "new runtime alert should be marked inactive")
+		return nil
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-gone"))
+}
+
+// TestMergedRuntimeAlertMarkedInactiveWhenDeploymentGone covers a later runtime
+// alert merging into a stored one after the deployment is already gone.
+func (suite *AlertManagerTestSuite) TestMergedRuntimeAlertMarkedInactiveWhenDeploymentGone() {
+	previous := runtimeDeploymentAlert("runtime-alert-1", "dep-gone", false, yesterdayProcess)
+	incoming := runtimeDeploymentAlert("runtime-alert-incoming", "dep-gone", false, nowProcess)
+
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-gone").Return(true).AnyTimes()
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		Return(alertsToMatchKeys([]*storage.Alert{previous}), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{previous.CloneVT()}, nil).AnyTimes()
+
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.True(a.GetDeployment().GetInactive(), "merged runtime alert should be marked inactive")
+		return nil
+	}).AnyTimes()
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return().AnyTimes()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-gone"))
+}
+
 func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeploymentID() {
 	alerts := getAlerts()
 
@@ -729,6 +791,33 @@ func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeployment
 	suite.NoError(err)
 	suite.True(modified.Contains(alerts[0].GetDeployment().GetId()),
 		"resolved deployment alert's deployment ID should appear in modified set")
+}
+
+func TestMergeAlertsPreservesDeploymentInactive(t *testing.T) {
+	cases := map[string]struct {
+		oldInactive bool
+		newInactive bool
+		want        bool
+	}{
+		"stored inactive is kept when Sensor sends a new process": {
+			oldInactive: true,
+			newInactive: false,
+			want:        true,
+		},
+		"active stays active when both sides are active": {
+			oldInactive: false,
+			newInactive: false,
+			want:        false,
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			old := runtimeDeploymentAlert("alert-1", "dep", c.oldInactive, yesterdayProcess)
+			newAlert := runtimeDeploymentAlert("alert-incoming", "dep", c.newInactive, nowProcess)
+			merged := mergeAlerts(old, newAlert)
+			assert.Equal(t, c.want, merged.GetDeployment().GetInactive())
+		})
+	}
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
