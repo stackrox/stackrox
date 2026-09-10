@@ -18,8 +18,8 @@ type AutoSenseResult struct {
 	EnableLocalImageScanning bool
 }
 
-// AutoSenseLocalScannerConfig returns a disabled scanner v2 result.
-// Scanner v2 has been removed; this function is kept for callers that
+// AutoSenseLocalScannerConfig returns a disabled legacy Scanner result.
+// The legacy Scanner has been removed; this function is kept for callers that
 // gate scanner-db-password secret cleanup on the auto-sense result.
 func AutoSenseLocalScannerConfig(_ context.Context, _ ctrlClient.Client, _ platform.SecuredCluster) (AutoSenseResult, error) {
 	return AutoSenseResult{}, nil

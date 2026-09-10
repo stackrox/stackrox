@@ -34,12 +34,12 @@ type CentralSpec struct {
 	Central *CentralComponentSpec `json:"central,omitempty"`
 
 	// Obsolete field. This field will be removed in a future release.
-	// Scanner V2 has been removed. This field is ignored.
+	// The legacy Scanner has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
-	// TODO(ROX-36705): renumber order annotations after Scanner V2 field removal
+	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
 

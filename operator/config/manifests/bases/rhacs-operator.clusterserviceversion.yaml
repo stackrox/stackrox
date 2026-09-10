@@ -946,7 +946,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: |-
           Obsolete field. This field will be removed in a future release.
-          Scanner V2 has been removed. This field is ignored.
+          The legacy Scanner has been removed. This field is ignored.
         displayName: Scanner
         path: scanner
         x-descriptors:
@@ -1100,7 +1100,8 @@ spec:
           The default is: Enabled.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
-      - description: 'Obsolete: Scanner v2 has been removed. This field is ignored.'
+      - description: 'Obsolete: The legacy Scanner has been removed. This field is
+          ignored.'
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: |-
@@ -1637,7 +1638,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: |-
           Obsolete field. This field will be removed in a future release.
-          Scanner V2 has been removed. This field is ignored.
+          The legacy Scanner has been removed. This field is ignored.
         displayName: Scanner
         path: scanner
         x-descriptors:

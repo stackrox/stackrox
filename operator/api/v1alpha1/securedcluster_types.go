@@ -70,12 +70,12 @@ type SecuredClusterSpec struct {
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
 	// Obsolete field. This field will be removed in a future release.
-	// Scanner V2 has been removed. This field is ignored.
+	// The legacy Scanner has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
-	// TODO(ROX-36705): renumber order annotations after Scanner V2 field removal
+	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
@@ -428,7 +428,7 @@ const (
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
-	// Obsolete: Scanner v2 has been removed. This field is ignored.
+	// Obsolete: The legacy Scanner has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 

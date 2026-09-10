@@ -149,7 +149,7 @@
 
 {{/* Scanner V2 has been removed. Warn if a user still tries to enable it. */}}
 {{- if and $._rox.scanner (not (kindIs "invalid" $._rox.scanner.disable)) (not $._rox.scanner.disable) -}}
-  {{- include "srox.warn" (list $ "Scanner V2 has been removed. The `scanner.disable` setting is ignored. Scanner V4 is the replacement.") -}}
+  {{- include "srox.warn" (list $ "The legacy Scanner has been removed. The `scanner.disable` setting is ignored. Scanner V4 is the replacement.") -}}
 {{- end -}}
 [<- end >]
 

@@ -139,7 +139,7 @@ spec:
               - urn:alm:descriptor:com.tectonic.ui:hidden
           - description: |-
               Obsolete field. This field will be removed in a future release.
-              Scanner V2 has been removed. This field is ignored.
+              The legacy Scanner has been removed. This field is ignored.
             displayName: Scanner
             path: scanner
             x-descriptors:
@@ -1087,7 +1087,7 @@ spec:
               - urn:alm:descriptor:com.tectonic.ui:hidden
           - description: |-
               Obsolete field. This field will be removed in a future release.
-              Scanner V2 has been removed. This field is ignored.
+              The legacy Scanner has been removed. This field is ignored.
             displayName: Scanner
             path: scanner
             x-descriptors:
@@ -1374,7 +1374,7 @@ spec:
           - description: A regex specifying namespaces whose process indicators should not be persisted.
             displayName: Exclude Namespace Regex
             path: processIndicators.excludeNamespaceRegex
-          - description: 'Obsolete: Scanner v2 has been removed. This field is ignored.'
+          - description: 'Obsolete: The legacy Scanner has been removed. This field is ignored.'
             displayName: Scanner Component
             path: scanner.scannerComponent
           - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
