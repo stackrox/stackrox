@@ -320,6 +320,24 @@ func (v *Validator) validateImageFilters(filters *apiV2.VulnerabilityReportFilte
 		return errox.InvalidArgs.New("vulnerability report filters should specify which image types to scan for CVEs; " +
 			"the valid options are 'DEPLOYED' and 'WATCHED'")
 	}
+	for _, imageType := range filters.GetImageTypes() {
+		if _, ok := apiV2.VulnerabilityReportFilters_ImageType_name[int32(imageType)]; !ok {
+			return errox.InvalidArgs.Newf("unsupported image type %d", imageType)
+		}
+	}
+	if _, ok := apiV2.VulnerabilityReportFilters_Fixability_name[int32(filters.GetFixability())]; !ok {
+		return errox.InvalidArgs.Newf("unsupported fixability %d", filters.GetFixability())
+	}
+	for _, severity := range filters.GetSeverities() {
+		if _, ok := apiV2.VulnerabilityReportFilters_VulnerabilitySeverity_name[int32(severity)]; !ok {
+			return errox.InvalidArgs.Newf("unsupported severity %d", severity)
+		}
+	}
+	if since, ok := filters.GetCvesSince().(*apiV2.VulnerabilityReportFilters_SinceStartDate); ok {
+		if since.SinceStartDate == nil || since.SinceStartDate.CheckValid() != nil {
+			return errox.InvalidArgs.New("invalid CVE start date")
+		}
+	}
 
 	if filters.GetCvesSince() == nil {
 		return errox.InvalidArgs.New("vulnerability report filters must specify how far back in time to look for CVEs; " +
@@ -369,6 +387,9 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	requestType storage.ReportStatus_RunMethod,
 	requesterID authn.Identity,
 ) (*reportGen.ReportRequest, error) {
+	if notificationMethod != storage.ReportStatus_EMAIL && notificationMethod != storage.ReportStatus_DOWNLOAD {
+		return nil, errox.InvalidArgs.Newf("unsupported notification method %d", notificationMethod)
+	}
 	config, found, err := v.reportConfigDatastore.GetReportConfiguration(allAccessCtx, configID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
