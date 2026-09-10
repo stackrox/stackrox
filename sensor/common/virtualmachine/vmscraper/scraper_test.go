@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -848,52 +849,176 @@ func TestVMScraper_NACK(t *testing.T) {
 	}
 }
 
-// TestVMScraper_InFlightSendCanOverwriteNACKReset exercises a known race involving
-// an unusually slow execution of `commitVMState` and a quick NACK from Central.
-func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		vmA := makeVM("ns1", "vm-a", 100)
-		vmA.ID = "vm-a-id"
-		store := &mockStore{vms: []*virtualmachine.Info{vmA}}
-		client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport("1")}}
-		s, clock := newTestScraper(t, store, &mockDialer{}, client)
+// TestVMScraper_ACKFeatureDisabledStopsScraping covers a 4.11 Central that
+// advertises VirtualMachinesSupported then ACKs index reports as feature-disabled.
+func TestVMScraper_ACKFeatureDisabledStopsScraping(t *testing.T) {
+	cases := map[string]struct {
+		reason      string
+		wantScrapes bool
+	}{
+		"stops scraping after a feature-disabled ACK": {
+			reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			wantScrapes: false,
+		},
+		"keeps scraping after an ACK with an empty reason": {
+			reason:      "",
+			wantScrapes: true,
+		},
+		"keeps scraping after an ACK with an unrelated reason": {
+			reason:      centralsensor.SensorACKReasonRateLimited,
+			wantScrapes: true,
+		},
+	}
 
-		s.pollOnce(t.Context())
-		require.Equal(t, "1", cachedToken(t, s, "ns1/vm-a"))
-		require.Equal(t, 1, forwardedCount(s))
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+			}
 
-		s.toCentral = make(chan *message.ExpiringMessage)
-		client.reset()
-		client.resultQueue = []*vsockclient.GetReportResult{makeReport("2")}
-		clock.Advance(s.interval)
-
-		done := make(chan struct{})
-		go func() {
-			defer close(done)
+			s, clock := newTestScraper(t, store, dialer, client)
 			s.pollOnce(t.Context())
-		}()
+			require.Equal(t, 1, forwardedCount(s))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported))
+			reconcilesAfterFirst := store.listRunningCalls
+			dialsAfterFirst := dialer.callIdx.Load()
 
-		// Block until the scrape goroutine is durably blocked in forwardReport,
-		// i.e. the report is on toCentral but not yet committed.
-		synctest.Wait()
-
-		require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
-			Msg: &central.MsgToSensor_SensorAck{
-				SensorAck: &central.SensorACK{
-					MessageType: central.SensorACK_VM_INDEX_REPORT,
-					Action:      central.SensorACK_NACK,
-					ResourceId:  "vm-a-id:100",
+			require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      central.SensorACK_ACK,
+						ResourceId:  "vm-a-id:100",
+						Reason:      tc.reason,
+					},
 				},
-			},
-		}))
-		assert.Empty(t, cachedToken(t, s, "ns1/vm-a"),
-			"NACK applies immediately while the send it targets is still in flight")
+			}))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported),
+				"hello capabilities are left unchanged")
+			assert.Equal(t, !tc.wantScrapes, s.indexReportsDisabled.Load())
 
-		<-s.toCentral
-		<-done
-		assert.Equal(t, "2", cachedToken(t, s, "ns1/vm-a"),
-			"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
-	})
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+			clock.Advance(5 * time.Minute)
+			s.pollOnce(t.Context())
+
+			if tc.wantScrapes {
+				require.Len(t, client.calls, 1)
+				assert.Equal(t, reconcilesAfterFirst+1, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst+1, dialer.callIdx.Load())
+			} else {
+				assert.Empty(t, client.calls)
+				assert.Equal(t, reconcilesAfterFirst, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst, dialer.callIdx.Load())
+			}
+		})
+	}
+}
+
+// TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable covers reconnect
+// after a feature-disabled ACK: the next Central is tried without a Sensor restart.
+func TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable(t *testing.T) {
+	vmA := makeVM("ns1", "vm-a", 100)
+	vmA.ID = "vm-a-id"
+	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(t.Context())
+	require.Equal(t, 1, forwardedCount(s))
+
+	require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				Action:      central.SensorACK_ACK,
+				ResourceId:  "vm-a-id:100",
+				Reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			},
+		},
+	}))
+	require.True(t, s.indexReportsDisabled.Load())
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+	clock.Advance(5 * time.Minute)
+	s.pollOnce(t.Context())
+	assert.Empty(t, client.calls)
+
+	s.Notify(common.SensorComponentEventCentralReachable)
+	require.False(t, s.indexReportsDisabled.Load())
+
+	s.pollOnce(t.Context())
+	require.Len(t, client.calls, 1)
+}
+
+// TestVMScraper_InFlightSendDoesNotOverwriteNACKReset covers NACK while
+// forwardReport is blocked: commit must not restore lastToken or clear NACK backoff.
+func TestVMScraper_InFlightSendDoesNotOverwriteNACKReset(t *testing.T) {
+	cases := map[string]struct {
+		priorPoll bool
+		sendToken string
+	}{
+		"after a prior successful commit": {priorPoll: true, sendToken: "2"},
+		"when lastToken is already empty": {priorPoll: false, sendToken: "1"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				vmA := makeVM("ns1", "vm-a", 100)
+				vmA.ID = "vm-a-id"
+				store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+				client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport("1")}}
+				s, clock := newTestScraper(t, store, &mockDialer{}, client)
+
+				if tc.priorPoll {
+					s.pollOnce(t.Context())
+					require.Equal(t, "1", cachedToken(t, s, "ns1/vm-a"))
+					clock.Advance(s.interval)
+				}
+
+				s.toCentral = make(chan *message.ExpiringMessage)
+				client.reset()
+				client.resultQueue = []*vsockclient.GetReportResult{makeReport(tc.sendToken)}
+
+				done := make(chan struct{})
+				go func() {
+					defer close(done)
+					s.pollOnce(t.Context())
+				}()
+
+				// Block until the scrape goroutine is durably blocked in forwardReport,
+				// i.e. the report is on toCentral but not yet committed.
+				synctest.Wait()
+
+				require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_SensorAck{
+						SensorAck: &central.SensorACK{
+							MessageType: central.SensorACK_VM_INDEX_REPORT,
+							Action:      central.SensorACK_NACK,
+							ResourceId:  "vm-a-id:100",
+						},
+					},
+				}))
+				assert.Empty(t, cachedToken(t, s, "ns1/vm-a"),
+					"NACK applies immediately while the send it targets is still in flight")
+
+				<-s.toCentral
+				<-done
+				assert.Empty(t, cachedToken(t, s, "ns1/vm-a"),
+					"the in-flight send must not restore lastToken after a NACK")
+				assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"),
+					"success scheduling must not clear the NACK backoff")
+			})
+		})
+	}
 }
 
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {

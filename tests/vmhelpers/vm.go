@@ -384,7 +384,7 @@ func virtualMachineStatusDetail(ctx context.Context, client dynamic.Interface, n
 		if apierrors.IsNotFound(err) {
 			return "virtual machine object not found", false, nil
 		}
-		return "", false, err
+		return "", false, fmt.Errorf("get virtual machine %s/%s: %w", namespace, name, err)
 	}
 	vm, err := vmFromUnstructured(obj)
 	if err != nil {

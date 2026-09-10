@@ -4,11 +4,16 @@ import io.stackrox.proto.api.v2.ReportServiceOuterClass
 
 import services.CollectionsService
 import services.ReportV2Service
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Shared
 
 @Tag("CentralWorker")
+// CentralWorkerTest requires a central-worker pod, which is off unless
+// ROX_CENTRAL_WORKER_ENABLED is true at deploy time.
+@IgnoreIf({ Env.get("ROX_CENTRAL_WORKER_ENABLED", "false") != "true" })
 class CentralWorkerTest extends BaseSpecification {
 
     @Shared
