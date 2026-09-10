@@ -587,6 +587,77 @@ func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource()
 	}
 }
 
+func (s *PolicyValueValidator) TestValidateAuditLogVerbResourceCombinations() {
+	cases := map[string]struct {
+		resource    string
+		verb        string
+		errExpected bool
+	}{
+		"DELETE on EVENTS should pass": {
+			resource: "EVENTS", verb: "DELETE", errExpected: false,
+		},
+		"CREATE on EVENTS should fail": {
+			resource: "EVENTS", verb: "CREATE", errExpected: true,
+		},
+		"UPDATE on EVENTS should fail": {
+			resource: "EVENTS", verb: "UPDATE", errExpected: true,
+		},
+		"PATCH on EVENTS should fail": {
+			resource: "EVENTS", verb: "PATCH", errExpected: true,
+		},
+		"GET on EVENTS should fail": {
+			resource: "EVENTS", verb: "GET", errExpected: true,
+		},
+		"GET on SECRETS should pass": {
+			resource: "SECRETS", verb: "GET", errExpected: false,
+		},
+		"GET on CLUSTER_ROLES should fail": {
+			resource: "CLUSTER_ROLES", verb: "GET", errExpected: true,
+		},
+		"DELETE on CLUSTER_ROLES should pass": {
+			resource: "CLUSTER_ROLES", verb: "DELETE", errExpected: false,
+		},
+		"case-insensitive resource and verb should work": {
+			resource: "events", verb: "delete", errExpected: false,
+		},
+		"case-insensitive invalid combination should fail": {
+			resource: "events", verb: "create", errExpected: true,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			err := Validate(&storage.Policy{
+				Name:            "audit-verb-resource-combo",
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.KubeResource,
+								Values:    []*storage.PolicyValue{{Value: c.resource}},
+							},
+							{
+								FieldName: fieldnames.KubeAPIVerb,
+								Values:    []*storage.PolicyValue{{Value: c.verb}},
+							},
+						},
+					},
+				},
+			}, ValidateSourceIsAuditLogEvents())
+
+			if c.errExpected {
+				s.Error(err)
+				s.Contains(err.Error(), "is not supported for resource")
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
 func (s *PolicyValueValidator) TestValidatePolicyHasCorrectVersion() {
 	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
 	s.NoError(Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{

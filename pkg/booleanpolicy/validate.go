@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auditlog"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -186,6 +187,55 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		errorList.AddError(err)
 	}
 
+	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {
+		if err := validateAuditLogVerbResourceCombinations(s); err != nil {
+			errorList.AddError(err)
+		}
+	}
+
+	return errorList.ToError()
+}
+
+// validateAuditLogVerbResourceCombinations checks that, when both a Kubernetes
+// Resource and a Kubernetes API Verb are specified in the same policy section,
+// the verb is actually collected for that resource.
+func validateAuditLogVerbResourceCombinations(s *storage.PolicySection) error {
+	var resources, verbs []string
+	for _, g := range s.GetPolicyGroups() {
+		switch g.GetFieldName() {
+		case fieldnames.KubeResource:
+			for _, v := range g.GetValues() {
+				resources = append(resources, v.GetValue())
+			}
+		case fieldnames.KubeAPIVerb:
+			for _, v := range g.GetValues() {
+				verbs = append(verbs, v.GetValue())
+			}
+		}
+	}
+
+	if len(resources) == 0 || len(verbs) == 0 {
+		return nil
+	}
+
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating audit log verb/resource combinations for %q", s.GetSectionName()))
+	for _, resource := range resources {
+		upperResource := strings.ToUpper(resource)
+		allowed, ok := auditlog.AllowedVerbsPerResource[upperResource]
+		if !ok {
+			continue
+		}
+		for _, verb := range verbs {
+			if !allowed.Contains(strings.ToUpper(verb)) {
+				allowedList := allowed.AsSlice()
+				slices.Sort(allowedList)
+				errorList.AddStringf(
+					"Kubernetes API Verb '%s' is not supported for resource '%s'; only %s is forwarded for this resource",
+					verb, resource, strings.Join(allowedList, ", "),
+				)
+			}
+		}
+	}
 	return errorList.ToError()
 }
 

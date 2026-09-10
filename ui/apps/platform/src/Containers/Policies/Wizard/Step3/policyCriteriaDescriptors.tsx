@@ -193,6 +193,22 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
     value: verb,
 }));
 
+/**
+ * Defines which API verbs are actually forwarded by the compliance agent for
+ * each audit log resource. Verb+resource combinations not listed here will
+ * never produce a policy violation.
+ */
+export const auditLogAllowedVerbsByResource: Record<string, string[]> = {
+    SECRETS: ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'],
+    CONFIGMAPS: ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'],
+    CLUSTER_ROLES: ['CREATE', 'DELETE', 'PATCH', 'UPDATE'],
+    CLUSTER_ROLE_BINDINGS: ['CREATE', 'DELETE', 'PATCH', 'UPDATE'],
+    NETWORK_POLICIES: ['CREATE', 'DELETE', 'PATCH', 'UPDATE'],
+    SECURITY_CONTEXT_CONSTRAINTS: ['CREATE', 'DELETE', 'PATCH', 'UPDATE'],
+    EGRESS_FIREWALLS: ['CREATE', 'DELETE', 'PATCH', 'UPDATE'],
+    EVENTS: ['DELETE'],
+};
+
 const fileOperationOptions: DescriptorOption[] = [
     ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
