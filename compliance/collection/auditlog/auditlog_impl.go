@@ -25,13 +25,16 @@ var (
 	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
 
 	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
+	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls", "events")
 
 	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
 	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
 
 	// verbsDenyListWithGet is the set of verbs that will NOT be sent if encountered.
 	verbsDenyListWithGet = set.NewFrozenStringSet("WATCH", "LIST", "GET")
+
+	// verbsDenyListDeleteOnly allows only DELETE through; all other verbs are denied.
+	verbsDenyListDeleteOnly = set.NewFrozenStringSet("WATCH", "LIST", "GET", "CREATE", "UPDATE", "PATCH")
 
 	// verbsDenyListPerResource is the set of verbs that will NOT be sent if encountered.
 	verbsDenyListPerResource = map[string]set.FrozenStringSet{
@@ -42,6 +45,7 @@ var (
 		"networkpolicies":            verbsDenyListWithGet,
 		"securitycontextconstraints": verbsDenyListWithGet,
 		"egressfirewalls":            verbsDenyListWithGet,
+		"events":                     verbsDenyListDeleteOnly,
 	}
 )
 

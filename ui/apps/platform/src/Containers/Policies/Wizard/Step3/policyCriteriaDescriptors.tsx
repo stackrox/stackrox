@@ -1669,6 +1669,10 @@ export const auditLogDescriptor: Descriptor[] = [
                 label: 'EgressFirewalls',
                 value: 'EGRESS_FIREWALLS',
             },
+            {
+                label: 'Events',
+                value: 'EVENTS',
+            },
         ],
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
