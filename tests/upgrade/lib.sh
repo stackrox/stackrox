@@ -249,10 +249,10 @@ EOT
     wait_for_scanner_V4 "$namespace"
 }
 
-restore_4_6_backup() {
-    info "Restoring a 4.6 backup into a newer central"
+restore_backup() {
+    info "Restoring a backup into a newer central"
 
-    restore_4_6_postgres_backup
+    restore_postgres_backup
 }
 
 force_rollback() {
