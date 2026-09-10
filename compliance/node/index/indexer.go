@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +40,6 @@ import (
 const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
-	rhcosPackageDB = "sqlite:usr/share/rpm"
-
 	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
 	// Direct import is prohibited by import rules
 	scannerDefinitionsRouteInSensor = "/scanner/definitions"
@@ -49,6 +48,16 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// rhcosPackageDBs are Claircore PackageDB names for RHCOS RPM databases.
+	// RHEL 8 uses Berkeley DB; RHEL 9+ uses SQLite. ostree reports the same RPMs
+	// under usr/share/rpm and usr/lib/sysimage/rpm-ostree-base-db.
+	rhcosPackageDBs = []string{
+		"sqlite:usr/share/rpm",
+		"sqlite:usr/lib/sysimage/rpm",
+		"bdb:usr/share/rpm",
+		"bdb:usr/lib/sysimage/rpm-ostree-base-db",
+	}
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
 	// Claircore indexing requires layers to have a digest, which is not stored,
@@ -118,11 +127,9 @@ type NodeIndexerConfig struct {
 	Repo2CPEMappingFile string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
-	// PackageDBFilter removes irrelevant packages. For node scanning, we are
-	// currently only interested in the RHCOS RPM database.
-	// Filters out all packages whose packageDB does not match the filter.
-	// Empty string corresponds to no filtering.
-	PackageDBFilter string
+	// PackageDBFilter keeps RHCOS RPM databases and drops other package DBs
+	// Claircore finds under the host index mount. Empty means no filtering.
+	PackageDBFilter []string
 }
 
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
@@ -134,7 +141,7 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 		Client:             nil,
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
-		PackageDBFilter:    rhcosPackageDB,
+		PackageDBFilter:    rhcosPackageDBs,
 	}
 }
 
@@ -273,28 +280,46 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	return repos, nil
 }
 
-func runPackageScanner(ctx context.Context, packageDBFilter string, layer *claircore.Layer) ([]*claircore.Package, error) {
+func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *claircore.Layer) ([]*claircore.Package, error) {
 	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
-	// Filter out packages in which we are not interested.
-	filtered := pkgs
-	if packageDBFilter != "" {
-		filtered = pkgs[:0]
-		for _, pkg := range pkgs {
-			if pkg.PackageDB == packageDBFilter {
-				filtered = append(filtered, pkg)
-			}
-		}
-	}
+	filtered := filterPackages(pkgs, packageDBFilter)
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
 	}
 
 	return filtered, nil
+}
+
+// filterPackages keeps packages whose PackageDB is in packageDBFilter.
+// ostree nodes expose the same RPMs in two PackageDBs, so duplicates
+// collapse to one per name/version/arch/kind.
+func filterPackages(pkgs []*claircore.Package, packageDBFilter []string) []*claircore.Package {
+	if len(packageDBFilter) == 0 {
+		return pkgs
+	}
+	type ident struct {
+		name, version, arch string
+		kind                types.PackageKind
+	}
+	out := make([]*claircore.Package, 0, len(pkgs))
+	seen := make(map[ident]struct{}, len(pkgs))
+	for _, pkg := range pkgs {
+		if !slices.Contains(packageDBFilter, pkg.PackageDB) {
+			continue
+		}
+		id := ident{pkg.Name, pkg.Version, pkg.Arch, pkg.Kind}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, pkg)
+	}
+	return out
 }
 
 func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*claircore.Repository, pkgs []*claircore.Package) (*claircore.IndexReport, error) {
