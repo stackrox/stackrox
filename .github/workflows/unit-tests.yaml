@@ -112,7 +112,7 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ 'default', '15' ]
+        pg: [ 'default', '16' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
           - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
