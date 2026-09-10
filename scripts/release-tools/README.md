@@ -2,8 +2,6 @@
 
 This directory contains a selection of helper scripts and configuration for the StackRox release process.
 
-:warning: The scripts are bleeding-edge - there is no guarantee that they would work for you the way they work for me. Test coverage is currently not provided.:warning:
-
 ## Contents
 
 ### Long-running cluster
@@ -19,7 +17,7 @@ To access long-running and upgrade clusters created during the release process, 
 
 ### Merge Window
 
-When on a release branches, the `MERGE_WINDOW` file describes whether or not changes are allowed to be merged to the respective release branch.
+When on a release branch, the `MERGE_WINDOW` file describes whether or not changes are allowed to be merged to the respective release branch.
 It contains either "OPEN" or "CLOSED".
 These states are set through release automation.
-Follow the documented process in case you need to bypass of a closed merge window.
+Follow the documented process in case you need to bypass a closed merge window.
