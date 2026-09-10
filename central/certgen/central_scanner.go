@@ -79,7 +79,7 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Query().Get("v") != "4" {
 		httputil.WriteErrorf(w, http.StatusBadRequest,
-			"scanner v2 certificate generation is not supported; pass v=4 for Scanner V4")
+			"legacy Scanner certificate generation is not supported; pass v=4 for Scanner V4")
 		return
 	}
 

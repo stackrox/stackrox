@@ -1033,7 +1033,7 @@ spec:
               scanner:
                 description: |-
                   Obsolete field. This field will be removed in a future release.
-                  Scanner V2 has been removed. This field is ignored.
+                  The legacy Scanner has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
@@ -1339,8 +1339,8 @@ spec:
                         type: array
                     type: object
                   scannerComponent:
-                    description: 'Obsolete: Scanner v2 has been removed. This field
-                      is ignored.'
+                    description: 'Obsolete: The legacy Scanner has been removed. This
+                      field is ignored.'
                     enum:
                     - AutoSense
                     - Disabled

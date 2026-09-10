@@ -13,7 +13,7 @@ var (
 )
 
 // Only returns Enabled or Disabled.
-// Scanner V4 is now always on (scanner v2 has been removed), so we default to
+// Scanner V4 is now always on (the legacy Scanner has been removed), so we default to
 // Enabled unless the user explicitly set Disabled in the CR spec.
 //
 // Second return value is `true`, if defaulting has been applied due to lack of explicit setting.

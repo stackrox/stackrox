@@ -2270,7 +2270,7 @@ spec:
               scanner:
                 description: |-
                   Obsolete field. This field will be removed in a future release.
-                  Scanner V2 has been removed. This field is ignored.
+                  The legacy Scanner has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
