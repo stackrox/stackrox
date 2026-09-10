@@ -259,11 +259,18 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 	}
 	seen := set.NewSet[entityFieldKey]()
 	for _, rule := range es.GetRules() {
-		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_UNSET {
+		switch rule.GetEntity() {
+		case apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT:
+		default:
 			return errox.InvalidArgs.Newf("unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
 			return errox.InvalidArgs.Newf("unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
+		}
+		switch rule.GetField() {
+		case apiV2.ScopeField_FIELD_NAME, apiV2.ScopeField_FIELD_LABEL, apiV2.ScopeField_FIELD_ANNOTATION:
+		default:
+			return errox.InvalidArgs.Newf("unsupported field %s for entity scope", rule.GetField())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
@@ -281,6 +288,12 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
 		for _, rv := range rule.GetValues() {
 			valOfValue := rv.GetValue()
+			if valOfValue == "" {
+				return errox.InvalidArgs.New("entity scope rule values must not be empty")
+			}
+			if rv.GetMatchType() != apiV2.MatchType_EXACT && rv.GetMatchType() != apiV2.MatchType_REGEX {
+				return errox.InvalidArgs.Newf("unsupported match type %s", rv.GetMatchType())
+			}
 			if isMapField {
 				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
 				if !found {
@@ -291,6 +304,8 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
 						return errox.InvalidArgs.Newf("invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
 					}
+				} else if _, err := regexp.Compile(mapKey); err != nil {
+					return errox.InvalidArgs.CausedByf("invalid regex key %q: %v", mapKey, err)
 				}
 				valOfValue = mapValue
 			}
