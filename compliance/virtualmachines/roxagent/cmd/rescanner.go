@@ -95,6 +95,7 @@ func (r *rescanner) Run(ctx context.Context) {
 			// overwritten by the post-scan Reset.
 			t.Reset(r.interval)
 			if err := r.scanOnce(ctx); err != nil {
+				r.cache.RecordIndexError(err)
 				retryIn := min(backoff, r.interval)
 				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
 				backoff = min(backoff*2, rescanRetryMaxBackoff)

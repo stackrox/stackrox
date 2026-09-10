@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // --- Mocks ---
@@ -525,6 +526,85 @@ func TestVMScraper_ForwardsChangedAgentFactsOnUnchangedReport(t *testing.T) {
 	clock.Advance(s.interval)
 	s.pollOnce(context.Background())
 	assert.Empty(t, drainToCentral(s), "should not emit a VM update when agent facts are unchanged")
+}
+
+func TestSnapshotAgentFacts(t *testing.T) {
+	generatedAt := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	cases := map[string]struct {
+		meta *pb.ResponseMeta
+		want map[string]string
+		ok   bool
+	}{
+		"nil meta": {},
+		"report generated at is copied as inventoryGeneratedAt": {
+			meta: &pb.ResponseMeta{
+				AgentVersion:      "roxagent-test",
+				ReportGeneratedAt: timestamppb.New(generatedAt),
+			},
+			want: map[string]string{
+				pkgVM.AgentVersionKey:         "roxagent-test",
+				pkgVM.InventoryGeneratedAtKey: "2026-01-02T03:04:05Z",
+			},
+			ok: true,
+		},
+		"last index error is copied": {
+			meta: &pb.ResponseMeta{
+				Facts: map[string]string{
+					"last_index_error":    "rpm: indexer failed",
+					"last_index_error_at": "2026-01-02T03:04:05Z",
+				},
+			},
+			want: map[string]string{
+				pkgVM.GuestIndexErrorKey:   "rpm: indexer failed",
+				pkgVM.GuestIndexErrorAtKey: "2026-01-02T03:04:05Z",
+			},
+			ok: true,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, ok := snapshotAgentFacts(tc.meta)
+			assert.Equal(t, tc.ok, ok)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestVMScraper_ForwardsGuestIndexErrorOnUnchangedReport(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, forwardedCount(s))
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportToken:  "1",
+			AgentVersion: "roxagent-test",
+			Facts: map[string]string{
+				"detected_os":         "RHEL",
+				"activation_status":   "ACTIVE",
+				"dnf_metadata_status": "AVAILABLE",
+				"last_index_error":    "rpm: indexer failed",
+				"last_index_error_at": "2026-01-02T03:04:05Z",
+			},
+		},
+	}}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	updates := drainVMUpdates(s)
+	require.Len(t, updates, 1)
+	assert.Equal(t, "rpm: indexer failed", updates[0].GetFacts()[pkgVM.GuestIndexErrorKey])
+	assert.Equal(t, "2026-01-02T03:04:05Z", updates[0].GetFacts()[pkgVM.GuestIndexErrorAtKey])
 }
 
 func TestVMScraper_ForwardsAgentVersionChangeOnUnchangedReport(t *testing.T) {

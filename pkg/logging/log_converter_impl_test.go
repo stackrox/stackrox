@@ -80,6 +80,25 @@ func TestConvert(t *testing.T) {
 				String("response", "some api response"),
 			},
 		},
+		{
+			event: &events.AdministrationEvent{
+				Domain:       "Virtual Machine Scanning",
+				Hint:         events.GetHint("Virtual Machine Scanning", "VirtualMachine", "vm-guest-index-failed"),
+				Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+				Message:      `Error: this is an events test {"virtual_machine": "rhel9", "virtual_machine_id": "vm-id-1", "err_code": "vm-guest-index-failed"}`,
+				ResourceType: "VirtualMachine",
+				ResourceName: "rhel9",
+				ResourceID:   "vm-id-1",
+				Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+			},
+			msg:    "Error: this is an events test",
+			level:  "error",
+			module: "sensor/service/pipeline/virtualmachines",
+			fields: []interface{}{
+				VirtualMachineName("rhel9"), VirtualMachineID("vm-id-1"),
+				ErrCode("vm-guest-index-failed"),
+			},
+		},
 	}
 
 	for i, tc := range cases {

@@ -145,6 +145,16 @@ In case a timeout error occurred, adjust the timeout for sending alerts by setti
 environment variable.`,
 			},
 		},
+		VirtualMachineScanningDomain: {
+			adminResources.VirtualMachine: {
+				codes.VMGuestIndexFailed: `Guest indexing failed. The virtual machine scan time is the last vulnerability rematch of cached inventory, not a fresh guest index.
+
+Ensure that:
+- roxagent is running in the guest.
+- RPM and DNF metadata are available.
+- The repository-to-CPE mapping is present and current.`,
+			},
+		},
 	}
 )
 

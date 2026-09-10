@@ -16,6 +16,8 @@ const (
 	responseOSVersionKey         = "os_version"
 	responseActivationStatusKey  = "activation_status"
 	responseDNFMetadataStatusKey = "dnf_metadata_status"
+	responseLastIndexErrorKey    = "last_index_error"
+	responseLastIndexErrorAtKey  = "last_index_error_at"
 )
 
 // Facts builds the VM facts map sent to Central.
@@ -86,6 +88,12 @@ func AgentFactsFromResponseFacts(facts map[string]string) map[string]string {
 		out[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusAvailable
 	case v1.DnfMetadataStatus_UNAVAILABLE.String():
 		out[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusUnavailable
+	}
+	if v := facts[responseLastIndexErrorKey]; v != "" {
+		out[pkgVM.GuestIndexErrorKey] = v
+	}
+	if v := facts[responseLastIndexErrorAtKey]; v != "" {
+		out[pkgVM.GuestIndexErrorAtKey] = v
 	}
 	if len(out) == 0 {
 		return nil

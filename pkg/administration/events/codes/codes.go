@@ -39,4 +39,7 @@ const (
 	SyslogGeneric            = "syslog-generic"
 	TeamsGeneric             = "teams-generic"
 	WebhookGeneric           = "webhook-generic"
+
+	// Virtual machine scanning codes.
+	VMGuestIndexFailed = "vm-guest-index-failed"
 )

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -172,6 +173,38 @@ func TestPipelineRun(t *testing.T) {
 					Return(nil)
 			},
 			message: getVirtualMachineAdditionMessage(upsertTestVM),
+		},
+		{
+			name: "Addition looks up existing VM when guestIndexError is set",
+			setupMocks: func(testMock *mocks) {
+				vmWithErr := &virtualMachineV1.VirtualMachine{
+					Id:        uuid.NewTestUUID(1).String(),
+					Namespace: "test-namespace",
+					Name:      "test-virtual-machine",
+					ClusterId: testClusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+					Facts:     map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+				}
+				storedVM := internaltostorage.VirtualMachine(vmWithErr)
+				storedVM.ClusterName = "test-cluster"
+				testMock.clusters.EXPECT().
+					GetClusterName(gomock.Any(), testClusterID).
+					Return("test-cluster", true, nil)
+				testMock.virtualMachines.EXPECT().
+					GetVirtualMachine(gomock.Any(), vmWithErr.GetId()).
+					Return(nil, false, nil)
+				testMock.virtualMachines.EXPECT().
+					UpsertVirtualMachine(gomock.Any(), protomock.GoMockMatcherEqualMessage(storedVM)).
+					Return(nil)
+			},
+			message: getVirtualMachineAdditionMessage(&virtualMachineV1.VirtualMachine{
+				Id:        uuid.NewTestUUID(1).String(),
+				Namespace: "test-namespace",
+				Name:      "test-virtual-machine",
+				ClusterId: testClusterID,
+				State:     virtualMachineV1.VirtualMachine_STOPPED,
+				Facts:     map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			}),
 		},
 	}
 
@@ -420,6 +453,38 @@ func TestPipelineRunV2(t *testing.T) {
 			},
 			message: getVirtualMachineAdditionMessage(upsertTestVM),
 		},
+		{
+			name: "V2 addition looks up existing VM when guestIndexError is set",
+			setupMocks: func(testMock *mocks) {
+				vmWithErr := &virtualMachineV1.VirtualMachine{
+					Id:        uuid.NewTestUUID(1).String(),
+					Namespace: "test-namespace",
+					Name:      "test-virtual-machine",
+					ClusterId: testClusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+					Facts:     map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+				}
+				storedVM := internaltostorage.VirtualMachineV2(vmWithErr)
+				storedVM.ClusterName = "test-cluster"
+				testMock.clusters.EXPECT().
+					GetClusterName(gomock.Any(), testClusterID).
+					Return("test-cluster", true, nil)
+				testMock.virtualMachinesV2.EXPECT().
+					GetVirtualMachine(gomock.Any(), vmWithErr.GetId()).
+					Return(nil, false, nil)
+				testMock.virtualMachinesV2.EXPECT().
+					UpsertVirtualMachine(gomock.Any(), protomock.GoMockMatcherEqualMessage(storedVM)).
+					Return(nil)
+			},
+			message: getVirtualMachineAdditionMessage(&virtualMachineV1.VirtualMachine{
+				Id:        uuid.NewTestUUID(1).String(),
+				Namespace: "test-namespace",
+				Name:      "test-virtual-machine",
+				ClusterId: testClusterID,
+				State:     virtualMachineV1.VirtualMachine_STOPPED,
+				Facts:     map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			}),
+		},
 	}
 
 	for _, tt := range tests {
@@ -542,6 +607,46 @@ func getNodeMessage() *central.MsgFromSensor {
 				Resource: &central.SensorEvent_Node{},
 			},
 		},
+	}
+}
+
+func TestGuestIndexErrorChanged(t *testing.T) {
+	cases := map[string]struct {
+		incoming map[string]string
+		existing map[string]string
+		wantMsg  string
+		want     bool
+	}{
+		"empty incoming is not a change": {
+			incoming: map[string]string{pkgVM.GuestOSKey: "rhel"},
+		},
+		"new error with no existing VM": {
+			incoming: map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			wantMsg:  "rpm: indexer failed",
+			want:     true,
+		},
+		"same error as stored is not a change": {
+			incoming: map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			existing: map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			wantMsg:  "rpm: indexer failed",
+		},
+		"changed error is a change": {
+			incoming: map[string]string{pkgVM.GuestIndexErrorKey: "dnf metadata missing"},
+			existing: map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+			wantMsg:  "dnf metadata missing",
+			want:     true,
+		},
+		"cleared error is not emitted": {
+			incoming: map[string]string{},
+			existing: map[string]string{pkgVM.GuestIndexErrorKey: "rpm: indexer failed"},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			msg, changed := guestIndexErrorChanged(tc.incoming, tc.existing)
+			assert.Equal(t, tc.wantMsg, msg)
+			assert.Equal(t, tc.want, changed)
+		})
 	}
 }
 

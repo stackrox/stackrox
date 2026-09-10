@@ -113,6 +113,23 @@ func TestAgentFactsFromResponseFacts(t *testing.T) {
 			},
 			expected: nil,
 		},
+		"copies last index error without enum facts": {
+			input: map[string]string{
+				"last_index_error":    "rpm: indexer failed",
+				"last_index_error_at": "2026-01-02T03:04:05Z",
+			},
+			expected: map[string]string{
+				pkgVM.GuestIndexErrorKey:   "rpm: indexer failed",
+				pkgVM.GuestIndexErrorAtKey: "2026-01-02T03:04:05Z",
+			},
+		},
+		"omits empty last index error": {
+			input: map[string]string{
+				"last_index_error":    "",
+				"last_index_error_at": "",
+			},
+			expected: nil,
+		},
 	}
 
 	for name, tc := range cases {

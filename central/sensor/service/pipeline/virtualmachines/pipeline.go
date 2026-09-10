@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/pkg/errors"
+	administrationEvents "github.com/stackrox/rox/central/administration/events"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/convert/internaltostorage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -17,15 +18,19 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 )
 
 var (
-	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	_   pipeline.Fragment = (*pipelineImpl)(nil)
+	log                   = logging.LoggerForModule(administrationEvents.EnableAdministrationEvents())
 )
 
 func GetPipeline() pipeline.Fragment {
@@ -162,6 +167,14 @@ func (p *pipelineImpl) runUpsertPipelineV1(
 		virtualMachineToStore.ClusterName = clusterName
 	}
 
+	p.maybeEmitGuestIndexError(virtualMachineToStore.GetId(), virtualMachineToStore.GetName(), virtualMachineToStore.GetFacts(), func() map[string]string {
+		existing, found, err := p.virtualMachineStore.GetVirtualMachine(ctx, virtualMachineToStore.GetId())
+		if err != nil || !found {
+			return nil
+		}
+		return existing.GetFacts()
+	})
+
 	return p.virtualMachineStore.UpsertVirtualMachine(ctx, virtualMachineToStore)
 }
 
@@ -177,5 +190,40 @@ func (p *pipelineImpl) runUpsertPipelineV2(
 		vmToStore.ClusterName = clusterName
 	}
 
+	p.maybeEmitGuestIndexError(vmToStore.GetId(), vmToStore.GetName(), vmToStore.GetFacts(), func() map[string]string {
+		existing, found, err := p.virtualMachineV2Store.GetVirtualMachine(ctx, vmToStore.GetId())
+		if err != nil || !found {
+			return nil
+		}
+		return existing.GetFacts()
+	})
+
 	return p.virtualMachineV2Store.UpsertVirtualMachine(ctx, vmToStore)
+}
+
+// guestIndexErrorChanged reports a new or changed guestIndexError on incoming
+// facts. Unchanged errors are skipped so KubeVirt informer UPDATEs do not
+// flood administration events.
+func guestIndexErrorChanged(incoming, existing map[string]string) (msg string, changed bool) {
+	msg = incoming[pkgVM.GuestIndexErrorKey]
+	if msg == "" || msg == existing[pkgVM.GuestIndexErrorKey] {
+		return msg, false
+	}
+	return msg, true
+}
+
+func (p *pipelineImpl) maybeEmitGuestIndexError(id, name string, incoming map[string]string, existingFacts func() map[string]string) {
+	if incoming[pkgVM.GuestIndexErrorKey] == "" {
+		return
+	}
+	msg, changed := guestIndexErrorChanged(incoming, existingFacts())
+	if !changed {
+		return
+	}
+	log.Errorw("Guest indexing failed",
+		logging.VirtualMachineName(name),
+		logging.VirtualMachineID(id),
+		logging.Err(errors.New(msg)),
+		logging.ErrCode(codes.VMGuestIndexFailed),
+	)
 }
