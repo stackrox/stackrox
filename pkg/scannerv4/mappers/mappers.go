@@ -45,6 +45,11 @@ const (
 	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
 
 	rhelRepositoryKey = "rhel-cpe-repository"
+
+	// unsetCPE is the bound form of an unset CPE. Every released StackRox
+	// component emits and accepts this form, so keep it on the wire instead of
+	// the empty string ClairCore now produces for unset CPEs.
+	unsetCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
 )
 
 var (
@@ -257,6 +262,10 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 	if err != nil {
 		return nil, err
 	}
+	cpeStr, err := toCPEString(p.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("package %q: %w", p.ID, err)
+	}
 	return &v4.Package{
 		Id:                p.ID,
 		Name:              p.Name,
@@ -268,7 +277,7 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 		RepositoryHint:    p.RepositoryHint,
 		Module:            p.Module,
 		Arch:              p.Arch,
-		Cpe:               toCPEString(p.CPE),
+		Cpe:               cpeStr,
 	}, nil
 }
 
@@ -322,6 +331,10 @@ func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 	if d == nil {
 		return nil, nil
 	}
+	cpeStr, err := toCPEString(d.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("distribution %q: %w", d.ID, err)
+	}
 	return &v4.Distribution{
 		Id:              d.ID,
 		Did:             d.DID,
@@ -330,7 +343,7 @@ func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 		VersionCodeName: d.VersionCodeName,
 		VersionId:       VersionID(d),
 		Arch:            d.Arch,
-		Cpe:             toCPEString(d.CPE),
+		Cpe:             cpeStr,
 		PrettyName:      d.PrettyName,
 	}, nil
 }
@@ -339,12 +352,16 @@ func v4Repository(r *claircore.Repository) (*v4.Repository, error) {
 	if r == nil {
 		return nil, nil
 	}
+	cpeStr, err := toCPEString(r.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("repository %q: %w", r.ID, err)
+	}
 	return &v4.Repository{
 		Id:   r.ID,
 		Name: r.Name,
 		Key:  r.Key,
 		Uri:  r.URI,
-		Cpe:  toCPEString(r.CPE),
+		Cpe:  cpeStr,
 	}, nil
 }
 
@@ -825,8 +842,15 @@ func toPackageKind(s string) types.PackageKind {
 	return k
 }
 
-func toCPEString(c cpe.WFN) string {
-	return c.BindFS()
+func toCPEString(c cpe.WFN) (string, error) {
+	if errors.Is(c.Valid(), cpe.ErrUnset) {
+		return unsetCPE, nil
+	}
+	b, err := c.AppendText(nil)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func toDigestString(digest claircore.Digest) string {
@@ -834,6 +858,9 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
+	if s == "" {
+		return cpe.WFN{}, nil
+	}
 	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
