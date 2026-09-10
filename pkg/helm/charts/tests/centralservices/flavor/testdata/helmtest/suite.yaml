@@ -6,7 +6,10 @@ defs: |
     container(.deployments.central; "central") | assertThat(.image == name);
 
   def assertScanner(name):
-    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == name);
+    [
+      (container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == name)),
+      (container(.deployments["scanner-v4-matcher"]; "matcher") | assertThat(.image == name))
+    ][];
 
   def assertScannerDB(name):
     container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == name);

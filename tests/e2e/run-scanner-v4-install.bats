@@ -470,7 +470,7 @@ EOT
         --reuse-values
 
     _begin "verify-scanners-are-deployed"
-    # TODO(ROX-XXX): Remove when 5.1 is cut.
+    # TODO(ROX-36705): Remove when 5.1 is cut.
     verify_no_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
@@ -491,7 +491,7 @@ EOT
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
     _begin "verify-scanners-are-deployed"
-    # TODO(ROX-XXX): Remove when 5.1 is cut.
+    # TODO(ROX-36705): Remove when 5.1 is cut.
     verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"

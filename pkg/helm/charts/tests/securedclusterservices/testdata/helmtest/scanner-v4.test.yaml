@@ -48,24 +48,6 @@ tests:
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V2 is not deployed"
-  set:
-    imagePullSecrets.allowNone: true
-  expect: |
-    .deployments["scanner"] | assertThat(. == null)
-    .deployments["scanner-db"] | assertThat(. == null)
-  tests:
-  - name: "for new installations"
-    release: { "isInstall": true, "isUpgrade": false }
-  - name: "for upgrades"
-    release: { "isInstall": false, "isUpgrade": true }
-  - name: "when scanner.disable is explicitly set to false"
-    set:
-      scanner.disable: false
-  - name: "when scanner.disable is explicitly set to true"
-    set:
-      scanner.disable: true
-
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
     scannerV4.disable: false

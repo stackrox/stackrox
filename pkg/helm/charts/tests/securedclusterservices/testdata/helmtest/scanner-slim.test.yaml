@@ -24,6 +24,7 @@ tests:
     set:
       scanner.disable: true
 
+# TODO(ROX-36705): Reorganize tests: move V4 related tests to dedicated file.
 - name: "scanner V4 is enabled by default"
   set:
     imagePullSecrets.allowNone: true
