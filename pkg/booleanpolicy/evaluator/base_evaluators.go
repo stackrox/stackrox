@@ -252,7 +252,7 @@ func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtrac
 		}
 	}
 	return func(instance reflect.Value) []valueMatchedPair {
-		ts, ok := instance.Interface().(*protocompat.Timestamp)
+		ts, ok := reflect.TypeAssert[*protocompat.Timestamp](instance)
 		if !ok {
 			return nil
 		}
@@ -335,7 +335,7 @@ func generateBoolMatcher(value string, _ reflect.Type, matchAll bool) (baseMatch
 }
 
 func generateIntMatcher(value string, fieldType reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
-	if enum, ok := reflect.Zero(fieldType).Interface().(protoreflect.ProtoEnum); ok {
+	if enum, ok := reflect.TypeAssert[protoreflect.ProtoEnum](reflect.Zero(fieldType)); ok {
 		return generateEnumMatcher(value, enum, matchAll)
 	}
 	if matchAll && value != "" {
