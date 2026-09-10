@@ -455,6 +455,13 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		d.stampInactiveIfDeploymentGone(a, deploymentsBeingRemoved)
 	}
 
+	// IDs already in updatedAlerts were stamped in memory. Re-fetching them
+	// would upsert the stored blob and drop merged processes.
+	alreadyUpdated := set.NewStringSet()
+	for _, a := range updatedAlerts {
+		alreadyUpdated.Add(a.GetId())
+	}
+
 	var needInactiveIDs []string
 	for _, key := range previousKeys {
 		if d.shouldMarkAlertResolved(key, incomingAlerts, oldAlertFilters...) {
@@ -467,6 +474,9 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		if key.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
 			key.GetState() == storage.ViolationState_ATTEMPTED {
 			if key.HasDeployment() && !key.IsDeploymentInactive() {
+				if alreadyUpdated.Contains(key.GetId()) {
+					continue
+				}
 				depID := key.GetDeploymentId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
 					needInactiveIDs = append(needInactiveIDs, key.GetId())

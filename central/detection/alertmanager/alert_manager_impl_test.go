@@ -759,13 +759,14 @@ func (suite *AlertManagerTestSuite) TestMergedRuntimeAlertMarkedInactiveWhenDepl
 
 	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
 		Return(alertsToMatchKeys([]*storage.Alert{previous}), nil)
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{previous.CloneVT()}, nil).AnyTimes()
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{previous.CloneVT()}, nil)
 
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
 		suite.True(a.GetDeployment().GetInactive(), "merged runtime alert should be marked inactive")
+		suite.Len(a.GetProcessViolation().GetProcesses(), 2, "inactive stamp must not replace the merged processes")
 		return nil
-	}).AnyTimes()
-	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return().AnyTimes()
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
 	suite.NoError(err)
