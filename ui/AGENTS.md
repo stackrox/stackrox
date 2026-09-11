@@ -122,6 +122,8 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 }
 ```
 
+**Apollo / GraphQL:** Do not import `@apollo/client` in new files. ESLint `no-restricted-imports` fences it; existing areas are allowlisted in `apps/platform/eslint.config.js`. New work uses `src/services/` + `useRestQuery` / `useRestMutation`. Rare missing-REST exceptions need a ticketed `eslint-disable`.
+
 **Best practices:**
 
 - Always check existing services before implementing new endpoints

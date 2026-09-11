@@ -631,6 +631,23 @@ module.exports = [
                             message:
                                 "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there.",
                         },
+                        {
+                            name: '@apollo/client',
+                            message:
+                                'Do not add new Apollo GraphQL usage. Use REST functions in src/services/ with useRestQuery / useRestMutation. Existing Apollo files are allowlisted in a later eslint.config.js block.',
+                        },
+                        {
+                            name: '@apollo/client/react/components',
+                            message:
+                                'Do not add new Apollo GraphQL usage. Use REST functions in src/services/ with useRestQuery / useRestMutation. Existing Apollo files are allowlisted in a later eslint.config.js block.',
+                        },
+                    ],
+                    patterns: [
+                        {
+                            group: ['@apollo/client/*'],
+                            message:
+                                'Do not add new Apollo GraphQL usage. Use REST functions in src/services/ with useRestQuery / useRestMutation. Existing Apollo files are allowlisted in a later eslint.config.js block.',
+                        },
                     ],
                 },
             ],
@@ -733,6 +750,59 @@ module.exports = [
             // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
             'react-hooks/rules-of-hooks': 'error',
+        },
+    },
+    {
+        // Existing Apollo GraphQL usage may continue. New files outside this allowlist
+        // cannot import @apollo/client (see no-restricted-imports above).
+        files: [
+            // Parked / deprecated GraphQL areas
+            'src/Containers/VulnMgmt/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Compliance/**',
+            'src/Containers/Risk/EventTimeline/**',
+            'src/Containers/Workflow/**',
+            // Active Apollo areas
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
+            'src/Containers/Vulnerabilities/NodeCves/**',
+            'src/Containers/Vulnerabilities/PlatformCves/**',
+            'src/Containers/Vulnerabilities/ExceptionManagement/**',
+            'src/Containers/Vulnerabilities/hooks/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Dashboard/**',
+            'src/Components/CompoundSearchFilter/**',
+            // Shared queries, Apollo bootstrap, and test utils
+            'src/queries/**',
+            'src/init/configureApolloClient.js',
+            'src/index.tsx',
+            'src/ConsolePlugin/PluginProvider.tsx',
+            'src/ConsolePlugin/consoleFetchAxiosAdapter.ts',
+            'src/test-utils/**',
+            // Leftover existing Apollo consumers (do not expand)
+            'src/Components/ThrowingQuery.jsx',
+            'src/Containers/Risk/RiskTablePage.tsx',
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/MainPage/Header/ClusterStatusProblems.tsx',
+            'src/Containers/NetworkGraph/simulation/DeploymentScopeModal.tsx',
+            'src/hooks/useFetchDeploymentCount.ts',
+            'src/hooks/useEntityName.js',
+            'src/utils/responseErrorUtils.ts',
+        ],
+        rules: {
+            // Restore axios restriction only so allowlisted files can keep importing Apollo.
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: 'axios',
+                            importNames: ['default'],
+                            message:
+                                "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there.",
+                        },
+                    ],
+                },
+            ],
         },
     },
     {

@@ -635,3 +635,7 @@ Given a change to a backend whatever_service.proto file in the proto/api/v1 fold
 
     * Import from type files (described in the previous section)
     * For function arguments and return types, follow existing examples of the correspondence between backend services and frontend functions
+
+#### GraphQL / Apollo
+
+New UI must use REST (`src/services/` + `useRestQuery` / `useRestMutation`). ESLint `no-restricted-imports` forbids `@apollo/client` and `@apollo/client/react/components` except in allowlisted existing areas (see `eslint.config.js`). Do not add new Apollo files outside that allowlist. Ticketed `eslint-disable` only for rare missing-REST exceptions.
