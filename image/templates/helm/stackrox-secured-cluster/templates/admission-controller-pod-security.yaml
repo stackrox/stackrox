@@ -35,8 +35,8 @@ spec:
       - min: 4000
         max: 4000
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: stackrox-admission-control-psp
   labels:

@@ -17,8 +17,8 @@ imagePullSecrets:
 {{- end }}
 
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:view-cluster") }}
   labels:
@@ -35,8 +35,8 @@ rules:
   - watch
   - list
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:monitor-cluster") }}
   labels:
@@ -54,8 +54,8 @@ roleRef:
 ---
 # Role edit has all verbs but 'use' to disallow using any SCCs (resources: *).
 # The permission to 'use' SCCs should be defined at finer granularity in other roles.
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: edit
   namespace: {{ ._rox._namespace }}
@@ -78,8 +78,8 @@ rules:
   - delete
   - deletecollection
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
   name: manage-namespace
   namespace: {{ ._rox._namespace }}
@@ -96,8 +96,8 @@ roleRef:
   name: edit
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:edit-workloads") }}
   labels:
@@ -124,8 +124,8 @@ rules:
   - patch
   - delete
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:enforce-policies") }}
   labels:
@@ -141,8 +141,8 @@ roleRef:
   name: {{ include "srox.globalResourceName" (list . "stackrox:edit-workloads") }}
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies") }}
   labels:
@@ -164,8 +164,8 @@ rules:
   - patch
   - delete
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies-binding") }}
   labels:
@@ -181,8 +181,8 @@ roleRef:
   name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies") }}
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces") }}
   labels:
@@ -196,8 +196,8 @@ rules:
   verbs:
   - update
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces-binding") }}
   labels:
@@ -213,8 +213,8 @@ roleRef:
   name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces") }}
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:create-events") }}
   labels:
@@ -230,8 +230,8 @@ rules:
   - patch
   - list
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:create-events-binding") }}
   labels:
@@ -247,8 +247,8 @@ roleRef:
   name: {{ include "srox.globalResourceName" (list . "stackrox:create-events") }}
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   labels:
@@ -262,8 +262,8 @@ rules:
   verbs:
   - create
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens-binding") }}
   labels:
@@ -279,8 +279,8 @@ roleRef:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-access") }}
   labels:
@@ -294,8 +294,8 @@ rules:
   verbs:
   - create
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-access-binding") }}
   labels:
@@ -312,8 +312,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 {{- if ._rox.virtualMachines.enabled }}
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:vsock-access") }}
   labels:
@@ -327,8 +327,8 @@ rules:
   verbs:
   - get
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:vsock-access-binding") }}
   labels:

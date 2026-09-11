@@ -16,8 +16,8 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 ---
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: watch-config
   namespace: {{ ._rox._namespace }}
@@ -30,8 +30,8 @@ rules:
     resources: ['configmaps']
     verbs: ['get', 'list', 'watch']
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
   name: admission-control-watch-config
   namespace: {{ ._rox._namespace }}

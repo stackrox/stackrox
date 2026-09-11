@@ -57,7 +57,16 @@ jobs:
           repository: "stackrox/workflow"
           path: workflow
 
-      # Create scale cluster with larger nodes.
+      - name: Retrieve roxie version from repository
+        id: roxie-version
+        run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Install roxie
+        uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+        with:
+          version: "v${{ steps.roxie-version.outputs.version }}"
+
+    # Create scale cluster with larger nodes.
       - name: Create testing cluster
         uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
@@ -97,7 +106,7 @@ jobs:
       - name: Clean previous installation
         run: |
           source ./workflow/env.sh
-          ./scripts/k8s/cleanup.sh stackrox
+          roxie teardown central --single-namespace
 
           # Delete all namespaces created by scale script.
           for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
@@ -112,27 +121,24 @@ jobs:
       # Install Central + CentralDB
       - name: Launch central services
         env:
-          LOAD_BALANCER: lb
-          ROX_POSTGRES_DATASTORE: "true"
-          MONITORING_SUPPORT: "false"
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          source ./workflow/env.sh
+          set -euo pipefail
 
           # ROX-29641: We are facing issues with workload generation on GKE when Scanner v4 is enabled.
-          export ROX_SCANNER_V4=false
-          ./scale/dev/launch_central.sh
+          roxie deploy central --single-namespace --verbose --envrc .roxie.env \
+            --set central.spec.scannerV4.scannerComponent=Disabled
 
+          source .roxie.env
           # Required for k6 tests to run.
-          echo "ROX_ADMIN_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "ROX_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "::add-mask::$(cat ./deploy/k8s/central-deploy/password)"
+          echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
+          echo "ROX_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
-          LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
-          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
-          echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
-          echo "::add-mask::${LB_IP}"
+          echo "HOST=${ROX_BASE_URL}" >> "$GITHUB_ENV"
+          echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
+          echo "::add-mask::${API_ENDPOINT}"
 
       - name: Generate workload
         env:
