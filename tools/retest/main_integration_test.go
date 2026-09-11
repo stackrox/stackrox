@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
-	"github.com/google/go-github/v60/github"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-github/v91/github"
 )
 
 func TestIntegration(t *testing.T) {
@@ -21,26 +21,26 @@ func TestIntegration(t *testing.T) {
 			switch r.RequestURI {
 			case "/repos/stackrox/stackrox/issues/132/comments":
 				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				assert.JSONEq(t, `{"body":"/retest"}`, string(b))
+				assertNoError(t, err)
+				assertJSONEq(t, `{"body":"/retest"}`, string(b))
 				_, err = w.Write([]byte(`{"html_url": "some url"}`))
-				assert.NoError(t, err)
+				assertNoError(t, err)
 			case "/repos/stackrox/stackrox/issues/2/comments":
 				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				assert.JSONEq(t, `{"body":"/test job-name-1\n/test job-name-2"}`, string(b))
+				assertNoError(t, err)
+				assertJSONEq(t, `{"body":"/test job-name-1\n/test job-name-2"}`, string(b))
 				_, err = w.Write([]byte(`{"html_url": "some url"}`))
-				assert.NoError(t, err)
+				assertNoError(t, err)
 			case "/repos/stackrox/stackrox/issues/500/comments":
 				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				assert.JSONEq(t,
+				assertNoError(t, err)
+				assertJSONEq(t,
 					`{"body":":x: There was an error with a comment. Please edit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range"}`,
 					string(b))
 				_, err = w.Write([]byte(`{"html_url": "some url"}`))
-				assert.NoError(t, err)
+				assertNoError(t, err)
 			default:
-				assert.Failf(t, "unexpected call ", r.RequestURI)
+				t.Errorf("unexpected call %s", r.RequestURI)
 			}
 			return
 		}
@@ -79,13 +79,13 @@ func TestIntegration(t *testing.T) {
     }
   ]
 }`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/user":
 			_, err := w.Write([]byte(`{
             "login": "octocat",
             "html_url": "https://github.com/octocat"
         }`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/issues/2/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
@@ -98,7 +98,7 @@ func TestIntegration(t *testing.T) {
         }
     }
 ]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/issues/500/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
@@ -111,7 +111,7 @@ func TestIntegration(t *testing.T) {
         }
     }
 ]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/issues/501/comments?direction=asc&page=2&sort=created":
 			_, err := w.Write([]byte(`[
     {
@@ -124,7 +124,7 @@ func TestIntegration(t *testing.T) {
         }
     }
 ]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/issues/501/comments?direction=asc&sort=created":
 			w.Header().Set("link", `<?page=2>; rel="next";`)
 			_, err := w.Write([]byte(`[
@@ -138,7 +138,7 @@ func TestIntegration(t *testing.T) {
         }
     }
 ]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/pulls/132", "/repos/stackrox/stackrox/pulls/2", "/repos/stackrox/stackrox/pulls/500", "/repos/stackrox/stackrox/pulls/501":
 			_, err := w.Write([]byte(`{
     "html_url": "https://github.com/octocat/Hello-World/pull/1347",
@@ -148,7 +148,7 @@ func TestIntegration(t *testing.T) {
     },
 	"statuses_url": "` + server.URL + `/repos/octocat/Hello-World/statuses/6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/issues/132/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
@@ -161,7 +161,7 @@ func TestIntegration(t *testing.T) {
         }
     }
 ]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case "/repos/stackrox/stackrox/pulls/404":
 			http.NotFound(w, r)
 		case `/repos/stackrox/stackrox/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/check-runs?filter=latest&status=completed`:
@@ -182,29 +182,28 @@ func TestIntegration(t *testing.T) {
     }
   ]
 }`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		case `/repos/octocat/Hello-World/statuses/6dcb09b5b57875f334f61aebed695e2e4193db5e`:
 			_, err := w.Write([]byte(`[
   {
     "state": "failure",
     "context": "ci/prow/gke-upgrade-tests"
 }]`))
-			assert.NoError(t, err)
+			assertNoError(t, err)
 		default:
-			assert.Failf(t, "unexpected call ", r.RequestURI)
+			t.Errorf("unexpected call %s", r.RequestURI)
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}
 	server = httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	client := github.NewClient(server.Client())
-	parse, err := url.Parse(server.URL + "/")
-	assert.NoError(t, err)
-	client.BaseURL = parse
+	baseURL := server.URL + "/"
+	client, err := github.NewClient(github.WithHTTPClient(server.Client()), github.WithURLs(&baseURL, nil))
+	mustNoError(t, err)
 
 	err = run(context.Background(), client)
-	assert.NoError(t, err)
+	assertNoError(t, err)
 
 }
 
@@ -216,17 +215,48 @@ func TestGetStatuses(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		t.Logf("%s %s", r.Method, r.RequestURI)
 		_, err := w.Write(statusesResponse)
-		assert.NoError(t, err)
+		assertNoError(t, err)
 	}
 	server = httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	client := github.NewClient(server.Client())
-	baseUrl, err := url.Parse(server.URL + "/")
-	assert.NoError(t, err)
-	client.BaseURL = baseUrl
+	baseURL2 := server.URL + "/"
+	client, err := github.NewClient(github.WithHTTPClient(server.Client()), github.WithURLs(&baseURL2, nil))
+	mustNoError(t, err)
 
-	statuses, err := statusesForPR(context.Background(), client, baseUrl.String())
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]jobState{"gke-upgrade-tests": jobOK}, statuses)
+	statuses, err := statusesForPR(context.Background(), client, baseURL2)
+	assertNoError(t, err)
+	want := map[string]jobState{"gke-upgrade-tests": jobOK}
+	if !maps.Equal(statuses, want) {
+		t.Errorf("statuses = %v, want %v", statuses, want)
+	}
+}
+
+func mustNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertJSONEq(t *testing.T, want, got string) {
+	t.Helper()
+	want, got = canonicalJSON(t, want), canonicalJSON(t, got)
+	if want != got {
+		t.Errorf("JSON mismatch:\n got: %s\nwant: %s", got, want)
+	}
+}
+
+func canonicalJSON(t *testing.T, raw string) string {
+	t.Helper()
+
+	var value any
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		t.Fatalf("invalid JSON %q: %v", raw, err)
+	}
+	normalized, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("could not normalize JSON: %v", err)
+	}
+	return string(normalized)
 }

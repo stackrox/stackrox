@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"slices"
+	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // Test_logSkipReason checks the exact log line logSkipReason produces for a
@@ -35,7 +35,9 @@ func Test_logSkipReason(t *testing.T) {
 
 			logSkipReason(testPRNumber, tt.reason)
 
-			assert.Contains(t, buf.String(), tt.wantLog)
+			if !strings.Contains(buf.String(), tt.wantLog) {
+				t.Errorf("log = %q, want it to contain %q", buf.String(), tt.wantLog)
+			}
 		})
 	}
 }
@@ -267,12 +269,16 @@ func Test_jobsToRetestFromComments(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotJobsToRetest, gotSkipped, err := jobsToRetestFromComments(tt.userComments, tt.allComments)
 			if tt.error == "" {
-				assert.NoError(t, err)
+				assertNoError(t, err)
 			} else {
-				assert.EqualError(t, err, tt.error)
+				assertError(t, err, tt.error)
 			}
-			assert.Equal(t, tt.wantJobsToRetest, gotJobsToRetest)
-			assert.Equal(t, tt.wantSkipped, gotSkipped)
+			if !slices.Equal(gotJobsToRetest, tt.wantJobsToRetest) {
+				t.Errorf("jobsToRetest = %v, want %v", gotJobsToRetest, tt.wantJobsToRetest)
+			}
+			if !slices.Equal(gotSkipped, tt.wantSkipped) {
+				t.Errorf("skipped = %v, want %v", gotSkipped, tt.wantSkipped)
+			}
 		})
 	}
 }
@@ -361,9 +367,14 @@ func Test_skipRetestReason(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotReason := skipRetestReason(tt.statuses, tt.comments, tt.checks)
 			if tt.wantSkipReasonMsg == "" {
-				assert.Nil(t, gotReason)
+				if gotReason != nil {
+					t.Errorf("skipRetestReason() = %v, want nil", gotReason)
+				}
 			} else {
-				assert.Equal(t, []skipReason{{message: tt.wantSkipReasonMsg}}, gotReason)
+				want := []skipReason{{message: tt.wantSkipReasonMsg}}
+				if !slices.Equal(gotReason, want) {
+					t.Errorf("skipRetestReason() = %v, want %v", gotReason, want)
+				}
 			}
 		})
 	}
@@ -450,8 +461,12 @@ func Test_commentsToCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotComments, gotSkipped := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest)
-			assert.Equal(t, tt.wantComments, gotComments)
-			assert.Equal(t, tt.wantSkipped, gotSkipped)
+			if !slices.Equal(gotComments, tt.wantComments) {
+				t.Errorf("comments = %v, want %v", gotComments, tt.wantComments)
+			}
+			if !slices.Equal(gotSkipped, tt.wantSkipped) {
+				t.Errorf("skipped = %v, want %v", gotSkipped, tt.wantSkipped)
+			}
 		})
 	}
 }
@@ -512,7 +527,9 @@ func Test_failingCheck(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			gotName := failingCheck(tt.checks)
-			assert.Equal(t, tt.wantName, gotName)
+			if gotName != tt.wantName {
+				t.Errorf("failingCheck() = %q, want %q", gotName, tt.wantName)
+			}
 		})
 	}
 }
@@ -583,7 +600,9 @@ func Test_decideRetest(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := decideRetest(tt.userComments, tt.allComments, tt.checks, tt.statuses)
-			assert.Equal(t, tt.want, got)
+			if !equalRetestDecision(got, tt.want) {
+				t.Errorf("decideRetest() = %+v, want %+v", got, tt.want)
+			}
 		})
 	}
 }
@@ -630,7 +649,35 @@ func Test_splitMultilineComment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.comment, func(t *testing.T) {
 			gotLines := splitMultilineComment(tt.comment)
-			assert.Equal(t, tt.wantLines, gotLines)
+			if !slices.Equal(gotLines, tt.wantLines) {
+				t.Errorf("lines = %v, want %v", gotLines, tt.wantLines)
+			}
 		})
 	}
+}
+
+func assertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func assertError(t *testing.T, err error, want string) {
+	t.Helper()
+	if err == nil {
+		t.Errorf("expected error %q, got nil", want)
+		return
+	}
+	if got := err.Error(); got != want {
+		t.Errorf("error = %q, want %q", got, want)
+	}
+}
+
+func equalRetestDecision(a, b retestDecision) bool {
+	return a.commentParseErr == b.commentParseErr &&
+		a.alreadyReported == b.alreadyReported &&
+		slices.Equal(a.jobsToRetest, b.jobsToRetest) &&
+		slices.Equal(a.skipped, b.skipped) &&
+		a.comment == b.comment
 }

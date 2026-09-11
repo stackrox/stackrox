@@ -3,8 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/google/go-github/v60/github"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-github/v91/github"
 )
 
 // Test_jobStateMapping checks how parseJobState and checkToState each map
@@ -70,10 +69,14 @@ func Test_jobStateMapping(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if tt.fromCheck {
 				check := &github.CheckRun{Conclusion: new(tt.raw)}
-				assert.Equal(t, tt.wantState, checkToState(check))
+				if got := checkToState(check); got != tt.wantState {
+					t.Errorf("checkToState(%q) = %v, want %v", tt.raw, got, tt.wantState)
+				}
 				return
 			}
-			assert.Equal(t, tt.wantState, parseJobState(tt.raw))
+			if got := parseJobState(tt.raw); got != tt.wantState {
+				t.Errorf("parseJobState(%q) = %v, want %v", tt.raw, got, tt.wantState)
+			}
 		})
 	}
 }
