@@ -24,6 +24,7 @@ const (
 	MetadataService_GetDatabaseStatus_FullMethodName       = "/v1.MetadataService/GetDatabaseStatus"
 	MetadataService_GetDatabaseBackupStatus_FullMethodName = "/v1.MetadataService/GetDatabaseBackupStatus"
 	MetadataService_GetCentralCapabilities_FullMethodName  = "/v1.MetadataService/GetCentralCapabilities"
+	MetadataService_GetLightspeedStatus_FullMethodName     = "/v1.MetadataService/GetLightspeedStatus"
 )
 
 // MetadataServiceClient is the client API for MetadataService service.
@@ -40,6 +41,8 @@ type MetadataServiceClient interface {
 	GetDatabaseStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseStatus, error)
 	GetDatabaseBackupStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseBackupStatus, error)
 	GetCentralCapabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CentralServicesCapabilities, error)
+	// GetLightspeedStatus returns the availability status of the Lightspeed AI service.
+	GetLightspeedStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*LightspeedStatusResponse, error)
 }
 
 type metadataServiceClient struct {
@@ -100,6 +103,16 @@ func (c *metadataServiceClient) GetCentralCapabilities(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *metadataServiceClient) GetLightspeedStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*LightspeedStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LightspeedStatusResponse)
+	err := c.cc.Invoke(ctx, MetadataService_GetLightspeedStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetadataServiceServer is the server API for MetadataService service.
 // All implementations should embed UnimplementedMetadataServiceServer
 // for forward compatibility.
@@ -114,6 +127,8 @@ type MetadataServiceServer interface {
 	GetDatabaseStatus(context.Context, *Empty) (*DatabaseStatus, error)
 	GetDatabaseBackupStatus(context.Context, *Empty) (*DatabaseBackupStatus, error)
 	GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error)
+	// GetLightspeedStatus returns the availability status of the Lightspeed AI service.
+	GetLightspeedStatus(context.Context, *Empty) (*LightspeedStatusResponse, error)
 }
 
 // UnimplementedMetadataServiceServer should be embedded to have
@@ -137,6 +152,9 @@ func (UnimplementedMetadataServiceServer) GetDatabaseBackupStatus(context.Contex
 }
 func (UnimplementedMetadataServiceServer) GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCentralCapabilities not implemented")
+}
+func (UnimplementedMetadataServiceServer) GetLightspeedStatus(context.Context, *Empty) (*LightspeedStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLightspeedStatus not implemented")
 }
 func (UnimplementedMetadataServiceServer) testEmbeddedByValue() {}
 
@@ -248,6 +266,24 @@ func _MetadataService_GetCentralCapabilities_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetadataService_GetLightspeedStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetLightspeedStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetadataService_GetLightspeedStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetLightspeedStatus(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetadataService_ServiceDesc is the grpc.ServiceDesc for MetadataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +310,10 @@ var MetadataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCentralCapabilities",
 			Handler:    _MetadataService_GetCentralCapabilities_Handler,
+		},
+		{
+			MethodName: "GetLightspeedStatus",
+			Handler:    _MetadataService_GetLightspeedStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

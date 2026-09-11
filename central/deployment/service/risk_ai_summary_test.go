@@ -30,6 +30,10 @@ func (m *mockOLSClient) Query(_ context.Context, req *olsClient.QueryRequest) (*
 	return m.response, m.err
 }
 
+func (m *mockOLSClient) TestConnectivity() error {
+	return m.err
+}
+
 func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockDS := deploymentMocks.NewMockDataStore(ctrl)
