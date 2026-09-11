@@ -217,11 +217,9 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
 
-    # Now go back to the current release
-    kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
-
-    wait_for_api
+    # Now go back to the current release. The HEAD chart installs Scanner V4,
+    # which smoke test needs.
+    upgrade_central_helm_to_head
     wait_for_background_migrations
 
     # Cleanup the scaled sensor before smoke tests
@@ -242,12 +240,6 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:${COLLECTOR_TAG}" \
         "compliance=$REGISTRY/main:$CURRENT_TAG"
-    if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
-        echo "Upgrading node-inventory container"
-        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:${SCANNER_TAG}"
-    else
-        echo "Skipping node-inventory container as this is not Openshift 4"
-    fi
 
     sensor_wait
     # Bounce collectors to avoid restarts on initial module pull

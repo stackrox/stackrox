@@ -121,48 +121,12 @@ central:
       none: true
       {{- end }}
 
-scanner:
-  # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following
-  # line to "true".
-  disable: false
-
-  {{- if .K8sConfig.ImageOverrides.Scanner }}
-  image:
-    {{- if .K8sConfig.ImageOverrides.Scanner.Registry }}
-    registry: {{ .K8sConfig.ImageOverrides.Scanner.Registry }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.Scanner.Name }}
-    name: {{ .K8sConfig.ImageOverrides.Scanner.Name }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.Scanner.Tag }}
-    # WARNING: You are using a non-default Scanner image tag. Upgrades via 'helm upgrade'
-    # will not work as expected. To ensure a smooth upgrade experience, make sure
-    # StackRox images are mirrored with the same tags as in the quay.io/stackrox-io registry.
-    tag: {{ .K8sConfig.ImageOverrides.Scanner.Tag }}
-    {{- end }}
-  {{- end }}
-
-  {{- if .K8sConfig.ImageOverrides.ScannerDB }}
-  dbImage:
-    {{- if .K8sConfig.ImageOverrides.ScannerDB.Registry }}
-    registry: {{ .K8sConfig.ImageOverrides.ScannerDB.Registry }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.ScannerDB.Name }}
-    name: {{ .K8sConfig.ImageOverrides.ScannerDB.Name }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.ScannerDB.Tag }}
-    # WARNING: You are using a non-default Scanner DB image tag. Upgrades via
-    # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-    # make sure StackRox images are mirrored with the same tags as in the quay.io/stackrox-io
-    # registry.
-    tag: {{ .K8sConfig.ImageOverrides.ScannerDB.Tag }}
-    {{- end }}
-  {{- end }}
-
 scannerV4:
-  disable: true
   {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
   image:
+  {{- if .K8sConfig.ImageOverrides.ScannerV4.Registry }}
+    registry: {{ .K8sConfig.ImageOverrides.ScannerV4.Registry }}
+  {{- end }}
   {{- if .K8sConfig.ImageOverrides.ScannerV4.Name }}
     name: {{ .K8sConfig.ImageOverrides.ScannerV4.Name }}
   {{- end }}
@@ -173,6 +137,9 @@ scannerV4:
   db:
     {{- if .K8sConfig.ImageOverrides.ScannerV4DB }}
     image:
+      {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Registry }}
+      registry: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Registry }}
+      {{- end }}
       {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
       name: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
       {{- end }}

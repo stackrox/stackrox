@@ -133,7 +133,10 @@ test_part_1() {
     remove_qa_test_results
 
     local test_target
-    if is_openshift_CI_rehearse_PR; then
+    if [[ "${BYODB_TEST:-}" == "true" ]]; then
+        info "BYODB test, running BAT tests only..."
+        test_target="bat-test"
+    elif is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         test_target="bat-test"
     elif is_in_PR_context && pr_has_label ci-all-qa-tests; then

@@ -5,11 +5,11 @@ testRunSelector:
   matchLabels:
     openshift: "false"
 ---
-# The central CR and its operands are gone in previous step.
-# On platforms where local scanner is not supported (i.e. on non-OpenShift ones)
-# the reconciler should NOT create a local scanner now that the central scanner is gone.
-# So we have this errors file to make sure it is gone and not re-created.
+# The central CR and its operands are gone in the previous step.
+# On platforms where local (delegated) scanning is not supported (i.e. non-OpenShift ones)
+# the reconciler should NOT create a local Scanner V4 indexer now that the central scanner
+# is gone. So we have this errors file to make sure it is gone and not re-created.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
+  name: scanner-v4-indexer

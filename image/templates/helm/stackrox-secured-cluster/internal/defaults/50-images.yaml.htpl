@@ -14,13 +14,7 @@ image:
     name: [< required "" .FactImageRemote >]
     tag: [< required "" .FactImageTag >]
   [<- end >]
-  scanner:
-    name: [< required "" .ScannerSlimImageRemote >]
-    tag: [< required "" .ScannerImageTag >]
   [<- if not .KubectlOutput >]
-  scannerDb:
-    name: [< required "" .ScannerDBSlimImageRemote >]
-    tag: [< required "" .ScannerImageTag >]
   scannerV4:
     name: [< required "" .ScannerV4ImageRemote >]
     tag: [< required "" .ScannerV4ImageTag >]
@@ -39,11 +33,7 @@ image:
   fact:
     registry: {{ ._rox.image.registry }}
   [<- end >]
-  scanner:
-    registry: {{ ._rox.image.registry }}
   [<- if not .KubectlOutput >]
-  scannerDb:
-    registry: {{ ._rox.image.registry }}
   scannerV4:
     registry: {{ ._rox.image.registry }}
   scannerV4DB:
@@ -60,11 +50,7 @@ image:
   fact:
     repository: {{ list ._rox.image.fact.registry ._rox.image.fact.name | compact | join "/" }}
   [<- end >]
-  scanner:
-    repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
   [<- if not .KubectlOutput >]
-  scannerDb:
-    repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
   scannerV4:
     repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
   scannerV4DB:
@@ -113,11 +99,7 @@ image:
   fact:
     fullRef: "{{ printf "%s:%s" ._rox.image.fact.repository ._rox.image.fact.tag }}"
   [<- end >]
-  scanner:
-    fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
   [<- if not .KubectlOutput >]
-  scannerDb:
-    fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
   scannerV4:
     fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
   scannerV4DB:

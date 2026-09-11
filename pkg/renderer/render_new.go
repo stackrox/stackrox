@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -24,7 +23,6 @@ var (
 	}
 
 	kubectlScannerScriptMap = FileNameMap{
-		"common/setup-scanner.sh":    "scanner/scripts/setup.sh",
 		"common/setup-scanner-v4.sh": "scanner-v4/scripts/setup.sh",
 	}
 
@@ -71,8 +69,6 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 		subDir := "central"
 		if strings.HasPrefix(path.Base(fileName), "02-scanner-v4-") {
 			subDir = "scanner-v4"
-		} else if strings.HasPrefix(path.Base(fileName), "02-scanner-") {
-			subDir = "scanner"
 		}
 		renderedFiles = append(renderedFiles, zip.NewFile(path.Join(subDir, path.Base(fileName)), []byte(contents), 0))
 	}
@@ -135,23 +131,6 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 		return nil, errors.Errorf("unsupported deployment format %v", c.K8sConfig.DeploymentFormat)
 	}
 
-	// For rendering out deploymend bundles we need to activate Scanner V4, otherwise
-	// no Scanner V4 manifests will be contained in the bundle. Therefore we make sure
-	// here to flip scannerV4.disable to false. To have precedence we need to prepend
-	// the Scanner V4 activation switch to the list of Helm values files.
-	//
-	// This can be removed once Scanner V4 is activated by default.
-	activateScannerV4 := map[string]interface{}{
-		"scannerV4": map[string]interface{}{
-			"disable": false,
-		},
-	}
-	activateScannerV4Bytes, err := yaml.Marshal(activateScannerV4)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling Scanner V4 activation switch")
-	}
-	valuesFiles = append([]*zip.File{zip.NewFile("activate-scanner-v4.yaml", activateScannerV4Bytes, 0)}, valuesFiles...)
-
 	renderedFiles, err := renderHelmChart(chartFiles, mode, valuesFiles)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering helm chart")
@@ -200,12 +179,10 @@ func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
 	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 		if mode == centralDBOnly {
 			auxFiles = append(auxFiles, withPrefix("scripts", assets)...)
-		} else {
-			auxFiles = append(auxFiles, withPrefix("scanner/scripts", assets)...)
-		}
-		if mode == renderAll {
+		} else if mode == renderAll {
 			auxFiles = append(auxFiles, withPrefix("central/scripts", assets)...)
 		}
+		// Other modes (scannerOnly): no assets needed — scanner-v4's setup.sh does not use docker-auth.sh.
 	} else {
 		auxFiles = append(auxFiles, withPrefix("scripts", assets)...)
 	}
