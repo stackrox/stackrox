@@ -84,5 +84,6 @@ func TestHandler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler(rr, req)
 		assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+		assert.Equal(t, "GET, HEAD", rr.Header().Get("Allow"))
 	})
 }
