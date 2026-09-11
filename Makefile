@@ -562,8 +562,9 @@ UNIT_TEST_PACKAGES ?= ./...
 # Root-module test discovery must not pass tests from nested Go modules to the
 # root module's go list. Those modules are tested separately in their own
 # working directories.
-NESTED_GO_MODULE_REGEX := $(shell find . -mindepth 2 -name go.mod -printf '%h\n' | sed 's@^\./@@' | paste -sd'|' -)
-NESTED_GO_MODULES_WITH_TESTS := $(shell for dir in $(shell find . -mindepth 2 -name go.mod -printf '%h\n' | sed 's@^\./@@'); do git ls-files "$$dir/*_test.go" | grep -q . && echo "$$dir"; done)
+NESTED_GO_MODULE_DIRS := $(shell find . -mindepth 2 -name go.mod -exec dirname {} \; | sed 's@^\./@@')
+NESTED_GO_MODULE_REGEX := $(shell printf '%s\n' $(NESTED_GO_MODULE_DIRS) | paste -sd'|' -)
+NESTED_GO_MODULES_WITH_TESTS := $(shell for dir in $(NESTED_GO_MODULE_DIRS); do git ls-files "$$dir/*_test.go" | grep -q . && echo "$$dir"; done)
 
 .PHONY: test-prep
 test-prep:
