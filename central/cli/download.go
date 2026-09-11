@@ -46,7 +46,7 @@ func handlerWithDir(dir string) http.HandlerFunc {
 
 		gz, err := gzip.NewReader(f)
 		if err != nil {
-			log.Warnf("error opening reader for tar.gz: %v", tarPath, err)
+			log.Warnf("error opening gzip reader for %s: %v", tarPath, err)
 			http.Error(w, "invalid archive", http.StatusInternalServerError)
 			return
 		}
