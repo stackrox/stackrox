@@ -1810,8 +1810,8 @@ _record_build_info() {
     set_ci_shared_export "build" "${build_info}"
 }
 
-restore_4_6_postgres_backup() {
-    info "Restoring a 4.6 postgres backup"
+restore_postgres_backup() {
+    info "Restoring a postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
@@ -1821,10 +1821,10 @@ restore_4_6_postgres_backup() {
     if is_CI; then
         setup_gcp
     fi
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_10.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-            central db restore --timeout 5m postgres_db_4_6.sql.zip
+            central db restore --timeout 5m postgres_db_4_10.sql.zip
 }
 
 update_public_config() {
