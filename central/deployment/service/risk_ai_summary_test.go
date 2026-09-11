@@ -177,7 +177,7 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 
 	risk := &storage.Risk{
 		Id:    "risk-2",
-		Score: 4.0,
+		Score: 6.0,
 		Subject: &storage.RiskSubject{
 			Id:        "dep-2",
 			Namespace: "operations",
@@ -268,7 +268,7 @@ func TestGetDeploymentRiskAISummary_OLSError(t *testing.T) {
 		ClusterName: "test-cluster",
 		Type:        "Deployment",
 	}
-	risk := &storage.Risk{Score: 2.0}
+	risk := &storage.Risk{Score: 8.0}
 
 	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-3").Return(deployment, true, nil)
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
@@ -309,19 +309,45 @@ func TestGetDeploymentRiskAISummary_NilRisk(t *testing.T) {
 	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-4").Return(deployment, true, nil)
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(nil, false, nil)
 
-	olsMock := &mockOLSClient{
-		response: &olsClient.QueryResponse{Response: "No significant risk factors identified."},
-	}
-
+	// OLS client should NOT be called for nil/low risk - no mock needed
 	svc := &serviceImpl{
-		datastore:        mockDS,
-		risks:            mockRisks,
-		lightspeedClient: olsMock,
+		datastore: mockDS,
+		risks:     mockRisks,
 	}
 
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-4"})
 	require.NoError(t, err)
-	assert.Equal(t, "No significant risk factors identified.", resp.GetSummary())
+	// Nil risk returns a specific message without calling OLS
+	assert.Equal(t, "No risk data available for this deployment.", resp.GetSummary())
+}
+
+func TestGetDeploymentRiskAISummary_LowRiskScore(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockDS := deploymentMocks.NewMockDataStore(ctrl)
+	mockRisks := riskMocks.NewMockDataStore(ctrl)
+
+	deployment := &storage.Deployment{
+		Id:          "dep-5",
+		Name:        "low-risk-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+
+	risk := &storage.Risk{Score: 3.5} // Below threshold of 5.0
+
+	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-5").Return(deployment, true, nil)
+	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
+
+	// OLS client should NOT be called for low risk scores
+	svc := &serviceImpl{
+		datastore: mockDS,
+		risks:     mockRisks,
+	}
+
+	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-5"})
+	require.NoError(t, err)
+	assert.Equal(t, "Skipping AI summary since this is a low risk deployment with normalized risk score below 5.", resp.GetSummary())
 }
 
 func TestBuildSanitizedRiskContext_FieldSelection(t *testing.T) {
