@@ -148,3 +148,27 @@ func TestGenerateCSV_NilFieldsProduceDefaults(t *testing.T) {
 	assert.Equal(t, "Not Available", row[10]) // First System Occurrence
 	assert.Equal(t, "", row[11])              // Link
 }
+
+func TestGenerateCSV_EmptyOperatingSystemProducesDefault(t *testing.T) {
+	emptyOS := ""
+	responses := []*NodeCVEQueryResponse{
+		{OperatingSystem: &emptyOS},
+	}
+
+	buf, err := generateCSV(responses, "empty-os-test")
+	require.NoError(t, err)
+
+	reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	require.NoError(t, err)
+
+	rc, err := reader.File[0].Open()
+	require.NoError(t, err)
+	defer func() { _ = rc.Close() }()
+
+	csvReader := csv.NewReader(rc)
+	records, err := csvReader.ReadAll()
+	require.NoError(t, err)
+	require.Len(t, records, 2)
+
+	assert.Equal(t, "Not Available", records[1][2])
+}

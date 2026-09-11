@@ -39,7 +39,9 @@ func (r *NodeCVEQueryResponse) GetNode() string {
 }
 
 func (r *NodeCVEQueryResponse) GetOperatingSystem() string {
-	if r.OperatingSystem == nil {
+	// Nodes scanned without OS metadata come back as an empty string rather than
+	// NULL, so both cases need the placeholder.
+	if r.OperatingSystem == nil || *r.OperatingSystem == "" {
 		return "Not Available"
 	}
 	return *r.OperatingSystem
