@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-postgres_major=15
+postgres_major=16
 pg_rhel_major=9
 
 arch="$(uname -m)"
