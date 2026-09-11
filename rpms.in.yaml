@@ -8,6 +8,26 @@ packages:
 # final stage in image/rhel/konflux.Dockerfile
 - findutils
 - postgresql
+# package_installer stages in image/postgres/konflux.Dockerfile and scanner/image/db/konflux.Dockerfile
+- bash
+- coreutils
+- glibc-langpack-en
+- glibc-locale-source
+- libicu
+- libxslt
+- lz4
+- openldap
+- perl-libs
+- postgresql-contrib
+- postgresql-server
+- postgresql-upgrade
+- python3
+- shadow-utils
+- systemd-sysv
+- tzdata
+- util-linux
+- uuid
+- zstd
 # builder stage in operator/konflux.bundle.Dockerfile
 - go-toolset
 - python3.12-pyyaml

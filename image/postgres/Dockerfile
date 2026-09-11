@@ -55,4 +55,7 @@ CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
 
 HEALTHCHECK --interval=10s --timeout=5s CMD pg_isready
 
+# pg_upgrade requires read and write access to the current directory.
+WORKDIR /var/lib/postgresql
+
 USER 70:70

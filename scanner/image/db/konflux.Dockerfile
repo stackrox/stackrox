@@ -1,4 +1,39 @@
-FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:26ca481f6fea9df09cb9e758188ad96382262d7487b104b1d6fd97b9b1ad15c9
+ARG PG_VERSION=15
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:f332c99eb8f798a8486821c91937f10ad64ee83d7e739303be2df051040918f6 AS ubi-micro-base
+
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:25a147defd01e19674714f55d17538c8dbe55d8c305fa157ecc3f9c8977b05b6 AS package_installer
+
+ARG PG_VERSION
+
+COPY --from=ubi-micro-base / /out/
+
+RUN dnf module enable -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=9 \
+        postgresql:${PG_VERSION} && \
+    dnf install -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=9 \
+        --setopt=install_weak_deps=0 \
+        --nodocs \
+        bash ca-certificates findutils glibc-langpack-en \
+        glibc-locale-source gzip less libicu libxslt lz4 openldap openssl \
+        perl-libs postgresql postgresql-contrib postgresql-server python3 \
+        shadow-utils systemd-sysv tar tzdata util-linux uuid zstd && \
+    dnf reinstall -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=9 \
+        tzdata && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+FROM ubi-micro-base
+
+USER root
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -22,7 +57,7 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
-USER root
+COPY --from=package_installer /out/ /
 
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \
@@ -31,18 +66,16 @@ COPY \
      /usr/local/bin/
 
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
-    mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
-    chown -R postgres:postgres /var/lib/postgresql && \
-    chown -R postgres:postgres /var/run/postgresql && \
-    dnf clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+    mkdir -p /var/lib/postgresql /var/run/postgresql && \
+    chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql
 
 COPY LICENSE /licenses/LICENSE
 
-ENV LANG=en_US.utf8
+ENV PG_MAJOR=15 \
+    PGDATA="/var/lib/postgresql/data/pgdata" \
+    LANG="en_US.utf8"
 
 STOPSIGNAL SIGINT
 

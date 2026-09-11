@@ -49,9 +49,11 @@ spec:
     value: 'true'
   - name: hermetic
     value: "true"
-  # No language dependencies are required for central-db image.
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "rpm", "path": "." }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
