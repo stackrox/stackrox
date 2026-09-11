@@ -147,7 +147,10 @@ func Test_commandTree(t *testing.T) {
 	assert.Equal(t, commandTree, result)
 }
 
-func TestVersionCommand_TextOutput_NoCompatibleVersions(t *testing.T) {
+// Deploy scripts and external tooling parse "roxctl version" output expecting
+// a single line containing only the version string. Adding extra lines or
+// content breaks version-match checks and causes deployment failures.
+func TestVersionCommand_TextOutput_SingleVersionLine(t *testing.T) {
 	versiontestutils.SetMainVersion(t, "5.0.0")
 
 	testIO, _, out, _ := cliIO.TestIO()
@@ -155,9 +158,8 @@ func TestVersionCommand_TextOutput_NoCompatibleVersions(t *testing.T) {
 	cmd := versionCommand(env)
 	require.NoError(t, cmd.Execute())
 
-	output := out.String()
-	assert.Contains(t, output, "5.0.0")
-	assert.NotContains(t, output, "Compatible Central versions:")
+	output := strings.TrimSpace(out.String())
+	assert.Equal(t, "5.0.0", output)
 }
 
 func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
