@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,18 +29,11 @@ func writeTarball(t *testing.T, dir, tarName, entryName string, content []byte) 
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tw.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	if err := tw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := gz.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
+	_, err = tw.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, tw.Close())
+	require.NoError(t, gz.Close())
+	require.NoError(t, f.Close())
 }
 
 type HandlerSuite struct {
@@ -53,7 +47,7 @@ func TestHandlerSuite(t *testing.T) {
 	suite.Run(t, new(HandlerSuite))
 }
 
-func (s *HandlerSuite) SetupSuite() {
+func (s *HandlerSuite) SetupTest() {
 	s.dir = s.T().TempDir()
 	s.handler = handlerWithDir(s.dir)
 	s.payload = []byte("fake roxctl binary content")
