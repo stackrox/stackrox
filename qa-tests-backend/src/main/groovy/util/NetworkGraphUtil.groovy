@@ -64,11 +64,24 @@ class NetworkGraphUtil {
         }
     }
 
-    static List<Edge> findEdges(NetworkGraphServiceOuterClass.NetworkGraph graph, String sourceId, String targetId) {
+    static List<Edge> findEdges(NetworkGraphServiceOuterClass.NetworkGraph graph, String sourceId, String targetId,
+                                 boolean deploymentsOnly = false) {
         log.debug "Checking for edge between deployments: sourceId ${sourceId}, targetId ${targetId}"
+
+        // NetworkPolicy simulation is purely policy-derived and never models traffic touching
+        // EXTERNAL_SOURCE/INTERNET nodes unless a rule has an explicit ipBlock peer, whereas the real/baseline
+        // graph reflects actually observed flows (which can include e.g. node/kubelet-probe traffic classified
+        // as an EXTERNAL_SOURCE). Callers comparing simulated vs. baseline edge counts should pass
+        // deploymentsOnly=true to avoid flaking on such environmental, policy-independent edges.
+        def isDeployment = { node ->
+            node.entity.type == NetworkFlowOuterClass.NetworkEntityInfo.Type.DEPLOYMENT
+        }
 
         def sourceNodes = sourceId == null ? graph.nodesList : graph.nodesList.findAll {
             it.deploymentId == sourceId
+        }
+        if (deploymentsOnly) {
+            sourceNodes = sourceNodes.findAll(isDeployment)
         }
         def targetNodeIndex = graph.nodesList.findIndexOf {
             it.deploymentId == targetId
@@ -92,8 +105,11 @@ class NetworkGraphUtil {
                 if (targetNodeIndex != -1 && it.key != targetNodeIndex) {
                     return []
                 }
-                log.debug "Source Id ${currentSourceId} -> edge target key: ${it.key}"
                 def targetNode = graph.nodesList.get(it.key)
+                if (deploymentsOnly && !isDeployment(targetNode)) {
+                    return []
+                }
+                log.debug "Source Id ${currentSourceId} -> edge target key: ${it.key}"
                 log.debug "  -> targetId: ${targetNode.deploymentId}"
 
                 def props = it.value.propertiesList
