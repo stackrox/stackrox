@@ -31,6 +31,7 @@ import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
 import { setAnalyticsSource } from 'init/initializeAnalytics';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
+import { LightspeedStatusProvider } from 'providers/LightspeedStatusProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
@@ -71,7 +72,9 @@ root.render(
                                 <PublicConfigProvider>
                                     <TelemetryConfigProvider>
                                         <MetadataProvider>
-                                            <AppPage />
+                                            <LightspeedStatusProvider>
+                                                <AppPage />
+                                            </LightspeedStatusProvider>
                                         </MetadataProvider>
                                     </TelemetryConfigProvider>
                                 </PublicConfigProvider>

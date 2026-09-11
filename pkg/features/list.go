@@ -156,7 +156,7 @@ var (
 	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
 
 	// LightspeedRiskSummary enables Lightspeed AI risk summary
-	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
