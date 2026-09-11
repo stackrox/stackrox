@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, ToolbarItem } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
+import type { SearchCategory } from 'services/SearchService';
 import type { SearchFilter } from 'types/search';
 
 import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
@@ -13,7 +14,7 @@ export type SearchFilterAutocompleteSelectProps = {
     attribute: GenericSearchFilterAttribute;
     isDisabled?: boolean;
     onSearch: OnSearchCallback;
-    searchCategory: string;
+    searchCategory: SearchCategory;
     searchFilter: SearchFilter;
 };
 

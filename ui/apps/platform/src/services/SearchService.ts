@@ -153,9 +153,12 @@ export function fetchGlobalSearchResults(
 }
 
 // Fetches the autocomplete response.
-export function fetchAutoCompleteResults(rawSearchRequest: RawSearchRequest): Promise<string[]> {
+export function fetchAutoCompleteResults(
+    rawSearchRequest: RawSearchRequest,
+    signal?: AbortSignal
+): Promise<string[]> {
     const params = qs.stringify(rawSearchRequest, { arrayFormat: 'repeat' });
     return axios
-        .get<AutocompleteResponse>(`${autoCompleteURL}?${params}`)
+        .get<AutocompleteResponse>(`${autoCompleteURL}?${params}`, { signal })
         .then((response) => response?.data?.values ?? []);
 }

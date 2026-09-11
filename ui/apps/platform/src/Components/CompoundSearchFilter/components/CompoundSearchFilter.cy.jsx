@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
 import { nodeComponentAttributes } from '../attributes/nodeComponent';
@@ -70,15 +69,41 @@ const selectors = {
     attributeSelectItem: (text) => `${selectors.attributeSelectItems} button:contains(${text})`,
 };
 
-const imageNameResponseMock = {
-    data: {
-        searchAutocomplete: [
-            'docker.io/library/centos:7',
-            'docker.io/library/centos:8',
-            'quay.io/centos:7',
-        ],
-    },
-};
+const imageNameSuggestions = [
+    'docker.io/library/centos:7',
+    'docker.io/library/centos:8',
+    'quay.io/centos:7',
+];
+
+const autocompleteMenuToggle =
+    'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
+const autocompleteMenuItems = '[aria-label="Filter results select menu"] li';
+const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
+const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
+
+function getAutocompleteQueryFromRequest(req) {
+    return (
+        req.query?.query ?? new URL(req.url, window.location.origin).searchParams.get('query') ?? ''
+    );
+}
+
+function getAutocompleteCategoriesFromRequest(req) {
+    const categories = req.query?.categories;
+    if (Array.isArray(categories)) {
+        return categories;
+    }
+    if (typeof categories === 'string') {
+        return [categories];
+    }
+    return new URL(req.url, window.location.origin).searchParams.getAll('categories');
+}
+
+function getAutocompleteFilterValue(query) {
+    if (!query.includes(':')) {
+        return '';
+    }
+    return query.split(':').slice(1).join(':').replace(/^r\//, '');
+}
 
 function Wrapper({ config, searchFilter, onSearch }) {
     return (
@@ -96,22 +121,14 @@ function setup(config, searchFilter, onSearch) {
     );
 }
 
-function mockAutocompleteResponse() {
-    cy.intercept('POST', graphqlUrl('autocomplete'), (req) => {
-        const query = req?.body?.variables?.query || '';
-        const filterValue = query.includes(':') ? query.split(':')[1].replace('r/', '') : '';
+function mockAutocompleteResponse(values = imageNameSuggestions) {
+    cy.intercept('GET', '/v1/search/autocomplete*', (req) => {
+        const query = getAutocompleteQueryFromRequest(req);
+        const filterValue = getAutocompleteFilterValue(query);
 
-        const response = {
-            data: {
-                searchAutocomplete: filterValue
-                    ? imageNameResponseMock.data.searchAutocomplete.filter((value) =>
-                          value.includes(filterValue)
-                      )
-                    : imageNameResponseMock.data.searchAutocomplete,
-            },
-        };
-
-        req.reply(response);
+        req.reply({
+            values: filterValue ? values.filter((value) => value.includes(filterValue)) : values,
+        });
     }).as('autocomplete');
 }
 
@@ -457,17 +474,14 @@ describe(Cypress.spec.relative, () => {
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
-        const autocompleteMenuToggle =
-            'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
-        const autocompleteMenuItems = '[aria-label="Filter results select menu"] li';
-        const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
-        const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
-
         setup(config, searchFilter, onSearch);
 
         cy.get(autocompleteMenuToggle).click();
 
-        cy.wait('@autocomplete');
+        cy.wait('@autocomplete').then(({ request }) => {
+            expect(getAutocompleteQueryFromRequest(request)).to.equal('Image:');
+            expect(getAutocompleteCategoriesFromRequest(request)).to.deep.equal(['IMAGES']);
+        });
 
         cy.get(autocompleteMenuItems).should('have.length', 3);
         cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
@@ -489,7 +503,10 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(autocompleteInput).type('docker.io');
 
-        cy.wait('@autocomplete');
+        cy.wait('@autocomplete').then(({ request }) => {
+            expect(getAutocompleteQueryFromRequest(request)).to.equal('Image:r/docker.io');
+            expect(getAutocompleteCategoriesFromRequest(request)).to.deep.equal(['IMAGES']);
+        });
 
         cy.get(autocompleteMenuItems).should('have.length', 2);
         cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
@@ -503,6 +520,93 @@ describe(Cypress.spec.relative, () => {
                 value: 'docker.io',
             },
         ]);
+    });
+
+    it('should show a loading skeleton while autocomplete results are fetching', () => {
+        cy.intercept('GET', '/v1/search/autocomplete*', (req) => {
+            req.reply({ delay: 400, body: { values: imageNameSuggestions } });
+        }).as('autocomplete');
+
+        const config = [imageSearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+
+        setup(config, {}, onSearch);
+
+        cy.get(autocompleteMenuToggle).click();
+        cy.get(autocompleteMenuItems).should('contain.text', 'Loading suggested options');
+
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 3);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'docker.io/library/centos:7');
+    });
+
+    it('should show no options when autocomplete returns an empty list', () => {
+        mockAutocompleteResponse([]);
+
+        const config = [imageSearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+
+        setup(config, {}, onSearch);
+
+        cy.get(autocompleteMenuToggle).click();
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 1);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'No options');
+    });
+
+    it('should fall back to no options when the autocomplete request fails', () => {
+        cy.intercept('GET', '/v1/search/autocomplete*', {
+            statusCode: 500,
+            body: { message: 'autocomplete unavailable' },
+        }).as('autocomplete');
+
+        const config = [imageSearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+
+        setup(config, {}, onSearch);
+
+        cy.get(autocompleteMenuToggle).click();
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 1);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'No options');
+    });
+
+    it('should offer to add the typed value when autocomplete returns no matches', () => {
+        mockAutocompleteResponse(imageNameSuggestions);
+
+        const config = [imageSearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+
+        setup(config, {}, onSearch);
+
+        cy.wait('@autocomplete');
+        cy.get(autocompleteInput).type('not-a-real-image');
+        cy.wait('@autocomplete');
+
+        cy.get(autocompleteMenuItems).should('have.length', 1);
+        cy.get(autocompleteMenuItems).eq(0).should('have.text', 'Add "not-a-real-image"');
+    });
+
+    it('should omit Fixable and the current search term from the autocomplete query', () => {
+        mockAutocompleteResponse();
+
+        const config = [imageSearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {
+            Cluster: 'prod',
+            Fixable: 'true',
+            Image: 'already-selected',
+        };
+
+        setup(config, searchFilter, onSearch);
+
+        cy.wait('@autocomplete').then(({ request }) => {
+            expect(getAutocompleteQueryFromRequest(request)).to.equal('Cluster:prod+Image:');
+            expect(getAutocompleteCategoriesFromRequest(request)).to.deep.equal(['IMAGES']);
+        });
     });
 
     it('should display the default entity and attribute when the selected entity and attribute are not in the config', () => {

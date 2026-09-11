@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Button,
@@ -15,9 +15,10 @@ import {
 } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';
 import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
-import { useQuery } from '@apollo/client';
-import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
-import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
+import useRestQuery from 'hooks/useRestQuery';
+import { makeCancellableAxiosRequest } from 'services/cancellationUtils';
+import { fetchAutoCompleteResults } from 'services/SearchService';
+import type { SearchCategory } from 'services/SearchService';
 import {
     formatKeyValue,
     getRequestQueryStringForSearchFilter,
@@ -28,7 +29,7 @@ import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
 type AutocompleteSelectProps = {
-    searchCategory: string;
+    searchCategory: SearchCategory;
     searchTerm: string;
     value: string;
     onChange: (value: string) => void;
@@ -40,7 +41,7 @@ type AutocompleteSelectProps = {
 };
 
 function getSelectOptions(
-    data: SearchAutocompleteQueryResponse | undefined,
+    options: string[],
     isLoading: boolean,
     filterValue: string
 ): SelectOptionProps[] {
@@ -61,14 +62,13 @@ function getSelectOptions(
         ];
     }
 
-    if (data && data.searchAutocomplete && data.searchAutocomplete.length !== 0) {
-        const options: SelectOptionProps[] = data.searchAutocomplete.map((optionValue) => {
+    if (options.length !== 0) {
+        return options.map((optionValue) => {
             return {
                 value: optionValue,
                 children: optionValue,
             };
         });
-        return options;
     }
 
     if (filterValue === '') {
@@ -145,22 +145,25 @@ function AutocompleteSelect({
             ? [autocompleteContextString, autocompleteSearchString].join('+')
             : autocompleteSearchString;
 
-    const { data: rawData, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
-        SEARCH_AUTOCOMPLETE_QUERY,
-        {
-            variables: {
-                query: autocompleteQuery,
-                categories: searchCategory,
-            },
-        }
+    const requestFn = useCallback(
+        () =>
+            makeCancellableAxiosRequest((signal) =>
+                fetchAutoCompleteResults(
+                    {
+                        query: autocompleteQuery,
+                        categories: [searchCategory],
+                    },
+                    signal
+                )
+            ),
+        [autocompleteQuery, searchCategory]
     );
+    const { data: rawData, isLoading } = useRestQuery(requestFn);
     // Filter out empty strings
-    const data: SearchAutocompleteQueryResponse = {
-        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '').sort() ?? [],
-    };
+    const searchAutocomplete = rawData?.filter((item) => item !== '').sort() ?? [];
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(
-        data,
+        searchAutocomplete,
         isLoading || isTyping,
         filterValue
     );
@@ -174,7 +177,7 @@ function AutocompleteSelect({
     // and regex search for manual/fallback entries.
     const applySelectedText = (rawValue: string | number) => {
         const value = ensureString(rawValue);
-        const isAutocompleteSuggestion = data.searchAutocomplete.includes(value);
+        const isAutocompleteSuggestion = searchAutocomplete.includes(value);
         const valueToApply = isAutocompleteSuggestion ? wrapInQuotes(value) : value;
         onChange(valueToApply);
         onSearch(valueToApply);
