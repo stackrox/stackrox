@@ -17,8 +17,8 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 		return
 	}
 	log.Printf("#%d will be commented with: %s", prNumber, comment)
-	issueComment := &github.IssueComment{
-		Body: &comment,
+	issueComment := github.IssueCommentRequest{
+		Body: comment,
 	}
 	c, _, err := client.Issues.CreateComment(ctx, s, s, prNumber, issueComment)
 	if err != nil {
