@@ -18,18 +18,24 @@ import (
 
 func TestCLIDownload(t *testing.T) {
 	t.Run("all binaries are downloadable", func(t *testing.T) {
-		// Magic bytes to identify binary format: ELF (Linux), Mach-O 64-bit LE (Darwin), PE/MZ (Windows)
+		// Magic bytes to identify binary format: ELF (Linux), Mach-O 64-bit LE (Darwin), PE/MZ (Windows).
+		var (
+			linuxMagic   = []byte{0x7f, 'E', 'L', 'F'}
+			darwinMagic  = []byte{0xcf, 0xfa, 0xed, 0xfe}
+			windowsMagic = []byte{'M', 'Z'}
+		)
+
 		testCases := []struct {
 			filename string
 			magic    []byte
 		}{
-			{"roxctl-linux-amd64", []byte{0x7f, 'E', 'L', 'F'}},
-			{"roxctl-linux-arm64", []byte{0x7f, 'E', 'L', 'F'}},
-			{"roxctl-linux-ppc64le", []byte{0x7f, 'E', 'L', 'F'}},
-			{"roxctl-linux-s390x", []byte{0x7f, 'E', 'L', 'F'}},
-			{"roxctl-darwin-amd64", []byte{0xcf, 0xfa, 0xed, 0xfe}},
-			{"roxctl-darwin-arm64", []byte{0xcf, 0xfa, 0xed, 0xfe}},
-			{"roxctl-windows-amd64.exe", []byte{'M', 'Z'}},
+			{"roxctl-linux-amd64", linuxMagic},
+			{"roxctl-linux-arm64", linuxMagic},
+			{"roxctl-linux-ppc64le", linuxMagic},
+			{"roxctl-linux-s390x", linuxMagic},
+			{"roxctl-darwin-amd64", darwinMagic},
+			{"roxctl-darwin-arm64", darwinMagic},
+			{"roxctl-windows-amd64.exe", windowsMagic},
 		}
 
 		for _, tc := range testCases {
