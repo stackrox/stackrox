@@ -36,6 +36,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
 
 ### Technical Changes
+
 - ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
 - ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
@@ -44,9 +45,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-33078: Fixed telemetry gatherer failing to report database size metrics when using an external database. The database name is now read from the connection config instead of using the hardcoded default.
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
 - ROX-34804: The machine access configuration for `config-controller` now validates the audience (`aud` claim) of the service account token. The expected audience is `central.stackrox.io`. When users have added their own role bindings to this machine access configuration, the audience check is not enforced by default to keep backwards compatibility. It is recommended to set the expected audience to `central.stackrox.io` after ensuring that all exchange tokens are being created with this audience claim.
-
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
+- ROX-21628: Improved regular expressions in "Environment Variable Contains Secret" policy in order to reduce the number of false positive violations.
 
 ## [4.11.0]
 
