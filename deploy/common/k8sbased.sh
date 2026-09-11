@@ -576,6 +576,17 @@ function launch_central {
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
 
+      # CI-only: central's migrator gives up connecting to central-db after ~6 minutes.
+      # On slow clusters central-db may not be listening yet when central's pod starts,
+      # which crashes central, stalls the rollout past its progress deadline and gets
+      # flagged as an unexplained pod restart. Park central until the database is up.
+      if [[ -n "${CI}" && -z "${EXTERNAL_DB}" ]]; then
+          echo "Waiting for central-db to be available before starting central..."
+          ${ORCH_CMD} -n stackrox scale deployment/central --replicas=0
+          ${ORCH_CMD} -n stackrox wait --for=condition=Available deployment/central-db --timeout=20m
+          ${ORCH_CMD} -n stackrox scale deployment/central --replicas=1
+      fi
+
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1

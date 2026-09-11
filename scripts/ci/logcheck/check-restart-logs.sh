@@ -23,6 +23,7 @@ for logfile in "$@"; do
 done
 
 patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
+tail_lines=25
 (
     IFS='
 '
@@ -46,6 +47,8 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
         done
         if ! ${this_log_is_ok}; then
             echo "This restart does not match any ignore patterns"
+            echo "Last ${tail_lines} lines of the previous log (for triage):"
+            tail -n "${tail_lines}" "${logfile}" || true
             if [[ -n "${ARTIFACT_DIR:-}" ]]; then
                 cp "${logfile}" "${ARTIFACT_DIR}" || true
                 echo "$(basename "${logfile}") copied to Artifacts" # do not change - required by pod restart check
