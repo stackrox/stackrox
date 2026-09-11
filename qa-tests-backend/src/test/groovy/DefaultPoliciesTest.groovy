@@ -100,7 +100,9 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
             .addLabel ("app", "test")
-            .setEnv([SECRET: 'true']),
+            // Value must look like a token/key/password for the hardened
+            // "Environment Variable Contains Secret" policy to trigger (ROX-21628).
+            .setEnv([SECRET: 'SomethingLikeBase64String=']),
         STRUTS_DEPLOYMENT,
         // new Deployment()
         //     .setName(SSL_TERMINATOR)
