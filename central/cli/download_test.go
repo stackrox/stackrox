@@ -17,7 +17,6 @@ func writeTarball(t *testing.T, dir, tarName, entryName string, content []byte) 
 	t.Helper()
 	f, err := os.Create(filepath.Join(dir, tarName+".tar.gz"))
 	require.NoError(t, err)
-	defer func() { require.NoError(t, f.Close()) }()
 
 	gz := gzip.NewWriter(f)
 	tw := tar.NewWriter(gz)
@@ -30,6 +29,7 @@ func writeTarball(t *testing.T, dir, tarName, entryName string, content []byte) 
 	require.NoError(t, err)
 	require.NoError(t, tw.Close())
 	require.NoError(t, gz.Close())
+	require.NoError(t, f.Close())
 }
 
 func TestHandler(t *testing.T) {

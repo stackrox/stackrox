@@ -28,7 +28,7 @@ func Handler() http.HandlerFunc {
 func handlerWithDir(dir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			w.Header().Set("Allow", http.MethodGet + ", " + http.MethodHead)
+			w.Header().Set("Allow", http.MethodGet+", "+http.MethodHead)
 			http.Error(w, fmt.Sprintf("method %s not allowed", r.Method), http.StatusMethodNotAllowed)
 			return
 		}
@@ -46,6 +46,7 @@ func handlerWithDir(dir string) http.HandlerFunc {
 
 		gz, err := gzip.NewReader(f)
 		if err != nil {
+			log.Warnf("error opening reader for tar.gz: %v", tarPath, err)
 			http.Error(w, "invalid archive", http.StatusInternalServerError)
 			return
 		}
