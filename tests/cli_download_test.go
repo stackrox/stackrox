@@ -56,11 +56,13 @@ func TestCLIDownload(t *testing.T) {
 
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 
-				// Read only the first bytes to verify the binary magic without downloading the whole file.
+				// Read the magic bytes first, then drain the rest to confirm the full stream completes without error.
 				firstBytes := make([]byte, len(tc.magic))
 				_, err = io.ReadFull(resp.Body, firstBytes)
 				require.NoError(t, err)
 				assert.Equal(t, tc.magic, firstBytes)
+				_, err = io.Copy(io.Discard, resp.Body)
+				require.NoError(t, err)
 			})
 		}
 	})
