@@ -757,6 +757,13 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
+    # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
+    # Matcher-not-ready drops the first index as unretryable; a short interval
+    # covers the next scan without restarting collector.
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_MAX_INITIAL_WAIT'
+    customize_envVars+=$'\n      value: "1s"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
+    customize_envVars+=$'\n      value: "30s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
