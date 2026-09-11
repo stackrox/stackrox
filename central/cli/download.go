@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,7 +63,7 @@ func serveFromDir(w http.ResponseWriter, r *http.Request, dir, filename string) 
 		if hdr.Name == filename {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 			w.Header().Set("Content-Type", "application/octet-stream")
-			w.Header().Set("Content-Length", fmt.Sprintf("%d", hdr.Size))
+			w.Header().Set("Content-Length", strconv.FormatInt(hdr.Size, 10))
 			w.Header().Set("Accept-Ranges", "none")
 			w.Header().Set("Cache-Control", "no-cache")
 			if r.Method == http.MethodGet {
