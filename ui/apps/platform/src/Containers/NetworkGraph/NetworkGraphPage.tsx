@@ -147,17 +147,16 @@ function NetworkGraphPageContent() {
 
     const selectedClusterId = clusterFromUrl.id;
 
-    const { deploymentCount } = useFetchDeploymentCount(
-        getSearchFilterFromScopeHierarchy(scopeHierarchy),
-        {
-            onCompleted: ({ count }) => {
-                // If the selected scope has no deployments, clear the graph data to avoid showing stale data
-                if (count === 0) {
-                    setModels(emptyModelState);
-                }
-            },
-        }
+    const { data: deploymentCount } = useFetchDeploymentCount(
+        getSearchFilterFromScopeHierarchy(scopeHierarchy)
     );
+
+    useEffect(() => {
+        // If the selected scope has no deployments, clear the graph data to avoid showing stale data
+        if (deploymentCount === 0) {
+            setModels(emptyModelState);
+        }
+    }, [deploymentCount]);
 
     const [prevEpochCount, setPrevEpochCount] = useState(0);
     const [currentEpochCount, setCurrentEpochCount] = useState(0);

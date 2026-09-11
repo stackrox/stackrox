@@ -1,48 +1,18 @@
-import { gql, useQuery } from '@apollo/client';
-import type { ApolloError, QueryHookOptions } from '@apollo/client';
-
+import { useCallback } from 'react';
+import { fetchDeploymentsCount } from 'services/DeploymentsService';
 import type { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useRestQuery from 'hooks/useRestQuery';
 
-type DeploymentCountResponse = {
-    count: number;
-};
-
-type DeploymentCountParameters = {
-    query: string;
-};
-
-type UseFetchDeploymentCount = {
-    loading: boolean;
-    error: ApolloError | undefined;
-    deploymentCount: number | undefined;
-};
-
-const DEPLOYMENT_COUNT_QUERY = gql`
-    query getDeploymentCount($query: String) {
-        count: deploymentCount(query: $query)
-    }
-`;
-
-function useFetchDeploymentCount(
-    searchFilter: SearchFilter,
-    queryOptions: Omit<
-        QueryHookOptions<DeploymentCountResponse, DeploymentCountParameters>,
-        'variables'
-    > = {}
-): UseFetchDeploymentCount {
+export default function useFetchDeploymentCount(searchFilter: SearchFilter) {
+    // Serialize the filter so a new object with the same criteria does not refetch.
     const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const options = { ...queryOptions, variables: { query } };
-    const { loading, error, data } = useQuery<DeploymentCountResponse, { query: string }>(
-        DEPLOYMENT_COUNT_QUERY,
-        options
+    const restQuery = useCallback(
+        () => fetchDeploymentsCount(searchFilter),
+        // searchFilter is represented by `query`, which is what the REST API uses.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [query]
     );
 
-    return {
-        loading,
-        error,
-        deploymentCount: data?.count,
-    };
+    return useRestQuery(restQuery);
 }
-
-export default useFetchDeploymentCount;
