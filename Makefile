@@ -559,6 +559,12 @@ swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 
 UNIT_TEST_PACKAGES ?= ./...
 
+# Root-module test discovery must not pass tests from nested Go modules to the
+# root module's go list. Those modules are tested separately in their own
+# working directories.
+NESTED_GO_MODULE_REGEX := $(shell find . -mindepth 2 -name go.mod -printf '%h\n' | sed 's@^\./@@' | paste -sd'|' -)
+NESTED_GO_MODULES_WITH_TESTS := $(shell for dir in $(shell find . -mindepth 2 -name go.mod -printf '%h\n' | sed 's@^\./@@'); do git ls-files "$$dir/*_test.go" | grep -q . && echo "$$dir"; done)
+
 .PHONY: test-prep
 test-prep:
 	@echo "+ $@"
@@ -568,8 +574,15 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*_test.go' | grep -v -E '^($(NESTED_GO_MODULE_REGEX))(/|$$)' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
+	# Nested modules have independent coverage profiles, so keep their coverage
+	# out of the root profile while including their verbose output in JUnit.
+	@set -o pipefail; \
+	for module_dir in $(NESTED_GO_MODULES_WITH_TESTS); do \
+		echo "Run tests in $$module_dir"; \
+		(cd "$$module_dir" && go test -buildvcs=false -race -v ./...) 2>&1 | tee -a $(GO_TEST_OUTPUT_PATH); \
+	done
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	@echo "Run log tests"
 	for encoding in console json; do \
