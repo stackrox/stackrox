@@ -667,7 +667,7 @@ class ImageScanningTest extends BaseSpecification {
                 { -> AzureRegistryIntegration.createDefaultIntegration() }
         "acr-config-only"     | "acr"       | true               | /^acr$/                    |
                 { -> AzureRegistryIntegration.createDefaultIntegration() }
-        "quay-auto"           | "quay"      | false              | source(".*.quay.io")       | null
+        "quay-auto"           | "quay"      | false              | source(".*quay\\.io.*")    | null
         // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
         //"gcr-auto"            | "gcr"       | false              | source(".*.gcr.io")        | null
     }
