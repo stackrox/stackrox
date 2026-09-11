@@ -74,7 +74,8 @@ func handlerWithDir(dir string) http.HandlerFunc {
 			w.Header().Set("Cache-Control", "no-cache")
 			if r.Method == http.MethodGet {
 				if _, err = io.Copy(w, tr); err != nil {
-					log.Errorf("failed to stream %s: %v", filename, err)
+					log.Warnf("failed to stream %s: %v", filename, err)
+					panic(http.ErrAbortHandler)
 				}
 			}
 			return
