@@ -145,6 +145,12 @@ func rawListQueryNamespaceAndName(namespace, name string) string {
 	return fmt.Sprintf("%s:%q+%s:%q", search.Namespace, namespace, search.VirtualMachineName, name)
 }
 
+// rawListQueryNamespaceNameGuestOS adds an exact Guest OS match so search
+// hits the same string List/GetVM return.
+func rawListQueryNamespaceNameGuestOS(namespace, name, guestOS string) string {
+	return fmt.Sprintf("%s+%s:%q", rawListQueryNamespaceAndName(namespace, name), search.GuestOS, guestOS)
+}
+
 // ListVMByNamespaceName returns the first VirtualMachine in Central whose namespace and name
 // match the given values. Returns (nil, nil) when no match is found.
 func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceClient, namespace, name string) (*v2.VirtualMachine, error) {
