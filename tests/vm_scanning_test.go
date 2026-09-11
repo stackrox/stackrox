@@ -125,6 +125,25 @@ func (s *VMScanningSuite) TestScanPipeline() {
 					"GetVM.guest_os should prefer facts.detectedGuestOS")
 			})
 
+			t.Run("VirtualMachineV2GuestOSSearch", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				detail := s.mustGetVMV2(snapshot.ID)
+				guestOS := detail.GetGuestOs()
+				require.Regexp(t, `^Red Hat Enterprise Linux \d`, guestOS,
+					"guest_os must be versioned so quoted informer search can miss")
+
+				found, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, guestOS)
+				require.NoError(t, err)
+				require.NotNil(t, found, "ListVMs Guest OS:%q should find this VM", guestOS)
+				require.Equal(t, snapshot.ID, found.GetId())
+
+				const informerGuestOS = "Red Hat Enterprise Linux"
+				miss, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, informerGuestOS)
+				require.NoError(t, err)
+				require.Nil(t, miss,
+					"quoted informer Guest OS must not match a versioned guest_os column")
+			})
+
 			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
 				s.skipUnlessV2VMAPI(t)
 				listed := s.mustListV2VMByNamespaceAndName(vm.Namespace, vm.Name)

@@ -891,9 +891,21 @@ func TestLookupGuestOS(t *testing.T) {
 		},
 		"v2 guest OS populates scan": {
 			v2Enabled: true,
-			v2VM:      &storage.VirtualMachineV2{GuestOs: "Red Hat Enterprise Linux 9"},
-			v2Found:   true,
-			wantOS:    "Red Hat Enterprise Linux 9",
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: "Red Hat Enterprise Linux 9",
+				Facts:   map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux 9"},
+			},
+			v2Found: true,
+			wantOS:  "Red Hat Enterprise Linux 9",
+		},
+		"v2 stamps scan from informer fact not display column": {
+			v2Enabled: true,
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: "Red Hat Enterprise Linux 9.2",
+				Facts:   map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux"},
+			},
+			v2Found: true,
+			wantOS:  "Red Hat Enterprise Linux",
 		},
 		"v1 VM not found leaves scan OS empty": {
 			v1Found: false,

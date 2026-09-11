@@ -98,16 +98,24 @@ func TestVirtualMachineV2GuestOsDisplay(t *testing.T) {
 		storedOS string
 		want     string
 	}{
-		"prefers detected guest OS": {
+		"returns stored guest OS": {
 			facts: map[string]string{
 				pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
 				pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
 			},
-			storedOS: "Red Hat Enterprise Linux",
+			storedOS: "Red Hat Enterprise Linux 9.2",
 			want:     "Red Hat Enterprise Linux 9.2",
 		},
-		"falls back to stored guest OS": {
+		"returns stored guest OS when detected is absent": {
 			facts:    map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux"},
+			storedOS: "Red Hat Enterprise Linux",
+			want:     "Red Hat Enterprise Linux",
+		},
+		"does not overlay detected onto the stored column": {
+			facts: map[string]string{
+				pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
+				pkgVM.GuestOSKey:         "Red Hat Enterprise Linux",
+			},
 			storedOS: "Red Hat Enterprise Linux",
 			want:     "Red Hat Enterprise Linux",
 		},
