@@ -158,8 +158,7 @@ func TestVersionCommand_TextOutput_SingleVersionLine(t *testing.T) {
 	cmd := versionCommand(env)
 	require.NoError(t, cmd.Execute())
 
-	output := strings.TrimSpace(out.String())
-	assert.Equal(t, "5.0.0", output)
+	assert.Equal(t, "5.0.0\n", out.String())
 }
 
 func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
