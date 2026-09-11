@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -70,6 +71,36 @@ func (ds *datastoreImpl) Flush(ctx context.Context) error {
 	err := ds.writer.Flush(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to flush administration events")
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) DeleteEventsForResource(ctx context.Context, resourceID string) error {
+	if resourceID == "" {
+		return nil
+	}
+	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+
+	// Drop matching buffered events first so a later Flush cannot reinsert them.
+	ds.writer.DropForResource(resourceID)
+
+	var ids []string
+	err := ds.store.GetByQueryFn(ctx, search.EmptyQuery(), func(event *storage.AdministrationEvent) error {
+		if event.GetResource().GetId() == resourceID {
+			ids = append(ids, event.GetId())
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to list administration events for resource %q", resourceID)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := ds.store.DeleteMany(ctx, ids); err != nil {
+		return errors.Wrapf(err, "failed to delete administration events for resource %q", resourceID)
 	}
 	return nil
 }
