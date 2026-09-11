@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/versioncheck"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,6 +32,15 @@ type GRPCOption func(*grpcConfig)
 func WithRetryTimeout(timeout time.Duration) GRPCOption {
 	return func(config *grpcConfig) {
 		config.retryTimeout = timeout
+	}
+}
+
+// WithVersionCheck enables version compatibility checking on gRPC responses.
+// Warnings are written to w at most once when a version incompatibility is
+// detected from the Central version response header.
+func WithVersionCheck(w io.Writer) GRPCOption {
+	return func(config *grpcConfig) {
+		config.versionCheckWriter = w
 	}
 }
 
@@ -67,14 +78,15 @@ func GetGRPCConnection(am auth.Method, connectionOpts ...GRPCOption) (*grpc.Clie
 }
 
 type grpcConfig struct {
-	usePlaintext  bool
-	insecure      bool
-	opts          clientconn.Options
-	serverName    string
-	useDirectGRPC bool
-	forceHTTP1    bool
-	endpoint      string
-	retryTimeout  time.Duration
+	usePlaintext       bool
+	insecure           bool
+	opts               clientconn.Options
+	serverName         string
+	useDirectGRPC      bool
+	forceHTTP1         bool
+	endpoint           string
+	retryTimeout       time.Duration
+	versionCheckWriter io.Writer
 }
 
 func makeCtxWithCommandHeader(ctx context.Context) context.Context {
@@ -122,13 +134,19 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		grpc_retry.WithRetriable(shouldRetry),
 	}
 
+	unaryInterceptors := []grpc.UnaryClientInterceptor{
+		addCommandHeaderUnaryInterceptor,
+		grpc_retry.UnaryClientInterceptor(retryOpts...),
+	}
+	if c.versionCheckWriter != nil {
+		unaryInterceptors = append(unaryInterceptors, versioncheck.UnaryClientInterceptor(c.versionCheckWriter))
+	}
+
 	grpcDialOpts := []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(
 			addCommandHeaderStreamInterceptor,
 			grpc_retry.StreamClientInterceptor(retryOpts...)),
-		grpc.WithChainUnaryInterceptor(
-			addCommandHeaderUnaryInterceptor,
-			grpc_retry.UnaryClientInterceptor(retryOpts...)),
+		grpc.WithChainUnaryInterceptor(unaryInterceptors...),
 	}
 
 	if c.usePlaintext {

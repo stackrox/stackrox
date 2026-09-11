@@ -218,6 +218,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/grpc/versionheader"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -668,6 +669,8 @@ func startGRPCServer() {
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
+
+	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.UnaryServerInterceptor())
 
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
