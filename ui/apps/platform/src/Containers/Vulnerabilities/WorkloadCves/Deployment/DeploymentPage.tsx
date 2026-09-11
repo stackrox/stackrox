@@ -11,7 +11,6 @@ import {
     Tabs,
 } from '@patternfly/react-core';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
-import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -25,8 +24,7 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import { wrapInQuotes } from 'utils/searchUtils';
 import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
-import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
-import type { DeploymentMetadata } from './DeploymentPageHeader';
+import DeploymentPageHeader from './DeploymentPageHeader';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
@@ -35,17 +33,10 @@ import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import useDeploymentMetadata from '../hooks/useDeploymentMetadata';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 
-const deploymentMetadataQuery = gql`
-    ${deploymentMetadataFragment}
-    query getDeploymentMetadata($id: ID!) {
-        deployment(id: $id) {
-            ...DeploymentMetadata
-        }
-    }
-`;
 export type DeploymentPageProps = {
     showVulnerabilityStateTabs: boolean;
     vulnerabilityState: VulnerabilityState;
@@ -65,12 +56,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const metadataRequest = useQuery<{ deployment: DeploymentMetadata | null }, { id: string }>(
-        deploymentMetadataQuery,
-        {
-            variables: { id: deploymentId },
-        }
-    );
+    const metadataRequest = useDeploymentMetadata(deploymentId);
 
     const deploymentName = metadataRequest.data?.deployment?.name;
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;

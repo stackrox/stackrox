@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { gql, useQuery } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';
 
 import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import useFetchDeploymentCountByQuery from 'hooks/useFetchDeploymentCountByQuery';
+import useFetchImageCount from 'hooks/useFetchImageCount';
 import usePermissions from 'hooks/usePermissions';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -24,6 +25,7 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as cveDefaultColumns } from '../Tables/WorkloadCVEOverviewTable';
 import type { defaultColumns as imageDefaultColumns } from '../Tables/ImageOverviewTable';
 import type { defaultColumns as deploymentDefaultColumns } from '../Tables/DeploymentOverviewTable';
+import useImageCveCount from './useImageCveCount';
 
 function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Image' | 'Deployment' {
     switch (entityTab) {
@@ -37,14 +39,6 @@ function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Imag
             return ensureExhaustive(entityTab);
     }
 }
-
-export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
 
 type VulnerabilitiesOverviewProps = {
     defaultFilters: DefaultFilters;
@@ -103,20 +97,14 @@ function VulnerabilitiesOverview({
 
     const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
 
-    const { data } = useQuery<{
-        imageCount: number;
-        imageCVECount: number;
-        deploymentCount: number;
-    }>(entityTypeCountsQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-        },
-    });
+    const { data: imageCount } = useFetchImageCount(workloadCvesScopedQueryString);
+    const { data: deploymentCount } = useFetchDeploymentCountByQuery(workloadCvesScopedQueryString);
+    const { data: imageCveCountData } = useImageCveCount(workloadCvesScopedQueryString);
 
     const entityCounts = {
-        CVE: data?.imageCVECount ?? 0,
-        Image: data?.imageCount ?? 0,
-        Deployment: data?.deploymentCount ?? 0,
+        CVE: imageCveCountData?.imageCVECount ?? 0,
+        Image: imageCount ?? 0,
+        Deployment: deploymentCount ?? 0,
     };
 
     const filterToolbar = (

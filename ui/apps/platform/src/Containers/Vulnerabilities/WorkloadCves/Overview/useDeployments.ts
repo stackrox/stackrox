@@ -1,3 +1,7 @@
+/**
+ * GAP: GET /v1/deployments returns storage.ListDeployment (id, name, cluster, namespace)
+ * and is not data-equivalent to GraphQL deployments (imageCVECountBySeverity, imageCount).
+ */
 import { useQuery } from '@apollo/client';
 import type { QueryHookOptions } from '@apollo/client';
 

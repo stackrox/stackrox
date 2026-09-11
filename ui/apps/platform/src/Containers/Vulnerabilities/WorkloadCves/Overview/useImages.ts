@@ -1,3 +1,8 @@
+/**
+ * GAP: GET /v1/images returns storage.ListImage (id, name, total/fixable CVE counts)
+ * and is not data-equivalent to GraphQL images/imageV2s (severity breakdown,
+ * deploymentCount, watchStatus, scan notes, signature verification).
+ */
 import { useQuery } from '@apollo/client';
 import type { QueryHookOptions } from '@apollo/client';
 

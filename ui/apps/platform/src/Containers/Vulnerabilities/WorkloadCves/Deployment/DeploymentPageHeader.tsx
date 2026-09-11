@@ -1,4 +1,3 @@
-import { gql } from '@apollo/client';
 import { Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 import { getDateTime } from 'utils/dateUtils';
 
@@ -12,17 +11,6 @@ export type DeploymentMetadata = {
     created: string | null;
     imageCount: number;
 };
-
-export const deploymentMetadataFragment = gql`
-    fragment DeploymentMetadata on Deployment {
-        id
-        name
-        namespace
-        clusterName
-        created
-        imageCount
-    }
-`;
 
 export type DeploymentPageHeaderProps = {
     data: DeploymentMetadata | null | undefined;

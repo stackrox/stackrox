@@ -11,78 +11,22 @@ import {
     PageSection,
     Spinner,
 } from '@patternfly/react-core';
-import { gql, useQuery } from '@apollo/client';
-
 import { getDateTime } from 'utils/dateUtils';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import KeyValueListModal from 'Components/KeyValueListModal';
+import useDeploymentDetails from '../hooks/useDeploymentDetails';
 
 export type DeploymentPageDetailsProps = {
     deploymentId: string;
 };
 
-type DeploymentDetails = {
-    id: string;
-    name: string;
-    cluster: {
-        id: string;
-        name: string;
-    } | null;
-    namespace: string;
-    replicas: number;
-    created: string | null;
-    serviceAccount: string;
-    type: string;
-    labels: {
-        key: string;
-        value: string;
-    }[];
-    annotations: {
-        key: string;
-        value: string;
-    }[];
-};
-
-const deploymentDetailsQuery = gql`
-    query getDeploymentDetails($id: ID!) {
-        deployment(id: $id) {
-            id
-            name
-            cluster {
-                id
-                name
-            }
-            namespace
-            replicas
-            created
-            serviceAccount
-            type
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-        }
-    }
-`;
-
 // TODO: We want to potentially create reusable Deployment Details components to be shared between Vuln Management, Violations, and Compliance in the future
 // Reference: https://redhat-internal.slack.com/archives/C02MN2N2UG4/p1710184053971889
 function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
-    const { data, previousData, loading, error } = useQuery<{ deployment: DeploymentDetails }>(
-        deploymentDetailsQuery,
-        {
-            variables: {
-                id: deploymentId,
-            },
-        }
-    );
+    const { data, loading, error } = useDeploymentDetails(deploymentId);
 
-    const deploymentDetailsData = data?.deployment ?? previousData?.deployment;
+    const deploymentDetailsData = data?.deployment;
 
     return (
         <>

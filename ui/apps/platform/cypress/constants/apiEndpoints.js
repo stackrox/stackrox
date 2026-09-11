@@ -33,6 +33,7 @@ export const risks = {
     deploymentsCount: '/v1/deploymentscount*',
     getDeployment: '/v1/deployments/*',
     fetchDeploymentWithRisk: '/v1/deploymentswithrisk/*',
+    imagesCount: '/v1/imagescount*',
     graphqlOps: {
         autocomplete: 'autocomplete',
         getProcessTags: 'getProcessTags',

@@ -1,5 +1,6 @@
 import withAuth from '../../../helpers/basicAuth';
 import { verifyColumnManagement } from '../../../helpers/tableHelpers';
+import { risks } from '../../../constants/apiEndpoints';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
@@ -24,14 +25,23 @@ describe('Workload CVE Deployment Single page', () => {
             cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).click();
         });
 
-        const routeMatcherMap = getRouteMatcherMapForGraphQL([
-            'getDeploymentMetadata',
-            'getCvesForDeployment',
-            'getDeploymentSummaryData',
-        ]);
+        const routeMatcherMap = {
+            getDeployment: {
+                method: 'GET',
+                url: risks.getDeployment,
+            },
+            getDeploymentImageCount: {
+                method: 'GET',
+                url: risks.imagesCount,
+            },
+            ...getRouteMatcherMapForGraphQL(['getCvesForDeployment', 'getDeploymentSummaryData']),
+        };
         const staticResponseMap = {
-            getDeploymentMetadata: {
-                fixture: 'vulnerabilities/workloadCves/getDeploymentMetadata.json',
+            getDeployment: {
+                fixture: 'vulnerabilities/workloadCves/getDeployment.json',
+            },
+            getDeploymentImageCount: {
+                body: { count: 1 },
             },
             getCvesForDeployment: {
                 fixture: 'vulnerabilities/workloadCves/getCvesForDeployment.json',

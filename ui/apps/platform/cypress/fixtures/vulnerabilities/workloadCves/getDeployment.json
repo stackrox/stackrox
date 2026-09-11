@@ -1,0 +1,35 @@
+{
+    "id": "mock-deployment-001",
+    "name": "cypress-test-deployment",
+    "hash": "1",
+    "type": "Deployment",
+    "namespace": "stackrox",
+    "namespaceId": "ns-1",
+    "orchestratorComponent": false,
+    "replicas": "1",
+    "labels": {
+        "app": "cypress"
+    },
+    "podLabels": {},
+    "created": "2024-01-15T10:30:00Z",
+    "clusterId": "cluster-1",
+    "clusterName": "remote",
+    "containers": [],
+    "annotations": {
+        "owner": "qa"
+    },
+    "priority": "1",
+    "inactive": false,
+    "imagePullSecrets": [],
+    "serviceAccount": "default",
+    "serviceAccountPermissionLevel": "DEFAULT",
+    "automountServiceAccountToken": false,
+    "hostNetwork": false,
+    "hostPid": false,
+    "hostIpc": false,
+    "tolerations": [],
+    "ports": [],
+    "stateTimestamp": "0",
+    "riskScore": 0,
+    "platformComponent": false
+}

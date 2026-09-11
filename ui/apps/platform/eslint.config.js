@@ -763,7 +763,21 @@ module.exports = [
             'src/Containers/Risk/EventTimeline/**',
             'src/Containers/Workflow/**',
             // Active Apollo areas
-            'src/Containers/Vulnerabilities/WorkloadCves/**',
+            // WorkloadCves: remaining GraphQL islands after Phase 3a. Migrated files
+            // (counts, deployment metadata/details) must not import @apollo/client.
+            'src/Containers/Vulnerabilities/WorkloadCves/Tables/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/Image/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/ImageCve/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/NamespaceView/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/components/ImageDetailBadges.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/Deployment/DeploymentPageResources.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/Deployment/ImageResourceTable.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/Deployment/DeploymentPageVulnerabilities.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/Overview/useDeployments.ts',
+            'src/Containers/Vulnerabilities/WorkloadCves/Overview/useImageCves.ts',
+            'src/Containers/Vulnerabilities/WorkloadCves/Overview/useImages.ts',
+            'src/Containers/Vulnerabilities/WorkloadCves/Overview/useImageCveCount.ts',
+            'src/Containers/Vulnerabilities/WorkloadCves/Overview/WorkloadCvesOverviewPage.tsx',
             'src/Containers/Vulnerabilities/NodeCves/**',
             'src/Containers/Vulnerabilities/PlatformCves/**',
             'src/Containers/Vulnerabilities/ExceptionManagement/**',

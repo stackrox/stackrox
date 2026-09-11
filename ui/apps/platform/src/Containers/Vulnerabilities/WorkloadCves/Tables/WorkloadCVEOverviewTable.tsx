@@ -162,12 +162,6 @@ export const cveListQuery = gql`
     }
 `;
 
-export const unfilteredImageCountQuery = gql`
-    query getUnfilteredImageCount {
-        imageCount
-    }
-`;
-
 export type CVEListQueryResult = {
     imageCVEs: ImageCVE[];
 };

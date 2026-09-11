@@ -1,4 +1,3 @@
-import { useQuery } from '@apollo/client';
 import { DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -12,11 +11,11 @@ import type { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import useFetchImageCount from 'hooks/useFetchImageCount';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
     defaultColumns,
     tableId,
-    unfilteredImageCountQuery,
 } from '../Tables/WorkloadCVEOverviewTable';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
@@ -65,7 +64,7 @@ function CVEsTableContainer({
         vulnerabilityState,
     });
 
-    const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
+    const { data: unfilteredImageCount } = useFetchImageCount();
 
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
@@ -166,7 +165,7 @@ function CVEsTableContainer({
             >
                 <WorkloadCVEOverviewTable
                     tableState={tableState}
-                    unfilteredImageCount={imageCountData?.imageCount || 0}
+                    unfilteredImageCount={unfilteredImageCount || 0}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                     filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}

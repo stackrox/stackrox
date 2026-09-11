@@ -1,9 +1,12 @@
+import queryString from 'qs';
+
 import type { ListImage, WatchedImage } from 'types/image.proto';
 
 import axios from './instance';
 import type { Empty } from './types';
 
 const imagesUrl = '/v1/images';
+const imagesCountUrl = '/v1/imagescount';
 const watchedImagesUrl = '/v1/watchedimages';
 
 /*
@@ -16,6 +19,15 @@ export function getImages(): Promise<ListImage[]> {
     return axios
         .get<{ images: ListImage[] }>(imagesUrl)
         .then((response) => response.data?.images ?? []);
+}
+
+/**
+ * Count images that match the raw search query (same RawQuery format as GraphQL imageCount).
+ */
+export function fetchImagesCount(query = ''): Promise<number> {
+    const params = queryString.stringify(query ? { query } : {}, { arrayFormat: 'repeat' });
+    const url = params ? `${imagesCountUrl}?${params}` : imagesCountUrl;
+    return axios.get<{ count: number }>(url).then((response) => response.data?.count ?? 0);
 }
 
 /*

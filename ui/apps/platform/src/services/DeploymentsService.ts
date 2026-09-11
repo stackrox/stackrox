@@ -119,13 +119,17 @@ export type ListDeploymentWithProcessInfo = {
     baselineStatuses: ContainerNameAndBaselineStatus[];
 };
 
+/**
+ * Count deployments that match the raw search query (same RawQuery format as GraphQL deploymentCount).
+ */
+export function fetchDeploymentsCountByQuery(query = ''): Promise<number> {
+    const params = queryString.stringify(query ? { query } : {}, { arrayFormat: 'repeat' });
+    const url = params ? `${deploymentsCountUrl}?${params}` : deploymentsCountUrl;
+    return axios.get<{ count: number }>(url).then((response) => response?.data?.count ?? 0);
+}
+
 export function fetchDeploymentsCount(searchFilter: SearchFilter): Promise<number> {
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const queryObject = query ? { query } : {};
-    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
-    return axios
-        .get<{ count: number }>(`${deploymentsCountUrl}?${params}`)
-        .then((response) => response?.data?.count ?? 0);
+    return fetchDeploymentsCountByQuery(getRequestQueryStringForSearchFilter(searchFilter));
 }
 
 /**

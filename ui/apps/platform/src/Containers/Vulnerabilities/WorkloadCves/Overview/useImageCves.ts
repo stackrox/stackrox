@@ -1,3 +1,8 @@
+/**
+ * GAP: no REST list/count API for image CVEs. Existing /v1/nodecves and /v1/clustercves
+ * only suppress/unsuppress. GraphQL imageCVEs includes severity counts, CVSS, EPSS,
+ * distro tuples, and exceptionCount — none of which exist on a REST list endpoint.
+ */
 import { useQuery } from '@apollo/client';
 import type { QueryHookOptions } from '@apollo/client';
 

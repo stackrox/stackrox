@@ -70,3 +70,7 @@ export function isTimeoutError(error: unknown): boolean {
     }
     return false;
 }
+
+export function isNotFoundError(error: unknown): boolean {
+    return error instanceof Error && isAxiosError(error) && error.response?.status === 404;
+}

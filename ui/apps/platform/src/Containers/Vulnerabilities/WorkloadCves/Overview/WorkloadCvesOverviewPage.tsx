@@ -11,7 +11,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
-import { gql, useApolloClient } from '@apollo/client';
+import { useApolloClient } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
@@ -70,14 +70,6 @@ import { imageListQuery } from '../Tables/ImageOverviewTable';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
-
-export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
 
 // Merge the default filters with the local filters.
 // - Default filters that were removed are removed from the local filters.
