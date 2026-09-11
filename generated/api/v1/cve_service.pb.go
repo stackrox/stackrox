@@ -7,10 +7,12 @@
 package v1
 
 import (
+	storage "github.com/stackrox/rox/generated/storage"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -129,23 +131,516 @@ func (x *UnsuppressCVERequest) GetCves() []string {
 	return nil
 }
 
+// ListImageCVEsRequest is the ListImages-style RawQuery (query + pagination)
+// plus the optional exception-status filter GraphQL getImageCVEList passes as
+// statusesForExceptionCount.
+type ListImageCVEsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Search query in RawQuery format, e.g. "CVE:CVE-2021-44228+Severity:CRITICAL".
+	Query      string      `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// Optional vulnerability-exception request statuses counted into exception_count,
+	// matching GraphQL exceptionCount(requestStatus). Examples: PENDING, APPROVED_PENDING_UPDATE.
+	RequestStatuses []string `protobuf:"bytes,3,rep,name=request_statuses,json=requestStatuses,proto3" json:"request_statuses,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListImageCVEsRequest) Reset() {
+	*x = ListImageCVEsRequest{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImageCVEsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImageCVEsRequest) ProtoMessage() {}
+
+func (x *ListImageCVEsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImageCVEsRequest.ProtoReflect.Descriptor instead.
+func (*ListImageCVEsRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ListImageCVEsRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *ListImageCVEsRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+func (x *ListImageCVEsRequest) GetRequestStatuses() []string {
+	if x != nil {
+		return x.RequestStatuses
+	}
+	return nil
+}
+
+type CountImageCVEsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CountImageCVEsResponse) Reset() {
+	*x = CountImageCVEsResponse{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CountImageCVEsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CountImageCVEsResponse) ProtoMessage() {}
+
+func (x *CountImageCVEsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CountImageCVEsResponse.ProtoReflect.Descriptor instead.
+func (*CountImageCVEsResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CountImageCVEsResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type ListImageCVEsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageCves     []*ImageCVE            `protobuf:"bytes,1,rep,name=image_cves,json=imageCves,proto3" json:"image_cves,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListImageCVEsResponse) Reset() {
+	*x = ListImageCVEsResponse{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImageCVEsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImageCVEsResponse) ProtoMessage() {}
+
+func (x *ListImageCVEsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImageCVEsResponse.ProtoReflect.Descriptor instead.
+func (*ListImageCVEsResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListImageCVEsResponse) GetImageCves() []*ImageCVE {
+	if x != nil {
+		return x.ImageCves
+	}
+	return nil
+}
+
+// ResourceCountByCVESeverity is the Workload CVE table's affectedImageCountBySeverity
+// (GraphQL ResourceCountByCVESeverity.total per bucket).
+type ResourceCountByCVESeverity struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Critical      int32                  `protobuf:"varint,1,opt,name=critical,proto3" json:"critical,omitempty"`
+	Important     int32                  `protobuf:"varint,2,opt,name=important,proto3" json:"important,omitempty"`
+	Moderate      int32                  `protobuf:"varint,3,opt,name=moderate,proto3" json:"moderate,omitempty"`
+	Low           int32                  `protobuf:"varint,4,opt,name=low,proto3" json:"low,omitempty"`
+	Unknown       int32                  `protobuf:"varint,5,opt,name=unknown,proto3" json:"unknown,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResourceCountByCVESeverity) Reset() {
+	*x = ResourceCountByCVESeverity{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourceCountByCVESeverity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceCountByCVESeverity) ProtoMessage() {}
+
+func (x *ResourceCountByCVESeverity) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceCountByCVESeverity.ProtoReflect.Descriptor instead.
+func (*ResourceCountByCVESeverity) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ResourceCountByCVESeverity) GetCritical() int32 {
+	if x != nil {
+		return x.Critical
+	}
+	return 0
+}
+
+func (x *ResourceCountByCVESeverity) GetImportant() int32 {
+	if x != nil {
+		return x.Important
+	}
+	return 0
+}
+
+func (x *ResourceCountByCVESeverity) GetModerate() int32 {
+	if x != nil {
+		return x.Moderate
+	}
+	return 0
+}
+
+func (x *ResourceCountByCVESeverity) GetLow() int32 {
+	if x != nil {
+		return x.Low
+	}
+	return 0
+}
+
+func (x *ResourceCountByCVESeverity) GetUnknown() int32 {
+	if x != nil {
+		return x.Unknown
+	}
+	return 0
+}
+
+// ImageCVEDistroTuple is the GraphQL ImageCVECore.distroTuples projection used by
+// the Workload CVE overview table (summary, OS, CVSS, EPSS, exploit).
+type ImageCVEDistroTuple struct {
+	state                      protoimpl.MessageState        `protogen:"open.v1"`
+	Summary                    string                        `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	OperatingSystem            string                        `protobuf:"bytes,2,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	Cvss                       float32                       `protobuf:"fixed32,3,opt,name=cvss,proto3" json:"cvss,omitempty"`
+	ScoreVersion               string                        `protobuf:"bytes,4,opt,name=score_version,json=scoreVersion,proto3" json:"score_version,omitempty"`
+	NvdCvss                    float32                       `protobuf:"fixed32,5,opt,name=nvd_cvss,json=nvdCvss,proto3" json:"nvd_cvss,omitempty"`
+	NvdScoreVersion            string                        `protobuf:"bytes,6,opt,name=nvd_score_version,json=nvdScoreVersion,proto3" json:"nvd_score_version,omitempty"`
+	EpssProbability            float32                       `protobuf:"fixed32,7,opt,name=epss_probability,json=epssProbability,proto3" json:"epss_probability,omitempty"`
+	KnownRansomwareCampaignUse string                        `protobuf:"bytes,8,opt,name=known_ransomware_campaign_use,json=knownRansomwareCampaignUse,proto3" json:"known_ransomware_campaign_use,omitempty"`
+	Severity                   storage.VulnerabilitySeverity `protobuf:"varint,9,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *ImageCVEDistroTuple) Reset() {
+	*x = ImageCVEDistroTuple{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageCVEDistroTuple) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageCVEDistroTuple) ProtoMessage() {}
+
+func (x *ImageCVEDistroTuple) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageCVEDistroTuple.ProtoReflect.Descriptor instead.
+func (*ImageCVEDistroTuple) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ImageCVEDistroTuple) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *ImageCVEDistroTuple) GetOperatingSystem() string {
+	if x != nil {
+		return x.OperatingSystem
+	}
+	return ""
+}
+
+func (x *ImageCVEDistroTuple) GetCvss() float32 {
+	if x != nil {
+		return x.Cvss
+	}
+	return 0
+}
+
+func (x *ImageCVEDistroTuple) GetScoreVersion() string {
+	if x != nil {
+		return x.ScoreVersion
+	}
+	return ""
+}
+
+func (x *ImageCVEDistroTuple) GetNvdCvss() float32 {
+	if x != nil {
+		return x.NvdCvss
+	}
+	return 0
+}
+
+func (x *ImageCVEDistroTuple) GetNvdScoreVersion() string {
+	if x != nil {
+		return x.NvdScoreVersion
+	}
+	return ""
+}
+
+func (x *ImageCVEDistroTuple) GetEpssProbability() float32 {
+	if x != nil {
+		return x.EpssProbability
+	}
+	return 0
+}
+
+func (x *ImageCVEDistroTuple) GetKnownRansomwareCampaignUse() string {
+	if x != nil {
+		return x.KnownRansomwareCampaignUse
+	}
+	return ""
+}
+
+func (x *ImageCVEDistroTuple) GetSeverity() storage.VulnerabilitySeverity {
+	if x != nil {
+		return x.Severity
+	}
+	return storage.VulnerabilitySeverity(0)
+}
+
+// ImageCVE is the GraphQL ImageCVECore row for the Workload CVE overview table.
+// It is an aggregated view (one row per CVE name), not storage.ImageCVE / ImageCVEV2.
+type ImageCVE struct {
+	state                        protoimpl.MessageState      `protogen:"open.v1"`
+	Cve                          string                      `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
+	TopCvss                      float32                     `protobuf:"fixed32,2,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty"`
+	TopNvdCvss                   float32                     `protobuf:"fixed32,3,opt,name=top_nvd_cvss,json=topNvdCvss,proto3" json:"top_nvd_cvss,omitempty"`
+	AffectedImageCount           int32                       `protobuf:"varint,4,opt,name=affected_image_count,json=affectedImageCount,proto3" json:"affected_image_count,omitempty"`
+	AffectedImageCountBySeverity *ResourceCountByCVESeverity `protobuf:"bytes,5,opt,name=affected_image_count_by_severity,json=affectedImageCountBySeverity,proto3" json:"affected_image_count_by_severity,omitempty"`
+	FirstDiscoveredInSystem      *timestamppb.Timestamp      `protobuf:"bytes,6,opt,name=first_discovered_in_system,json=firstDiscoveredInSystem,proto3" json:"first_discovered_in_system,omitempty"`
+	PublishedOn                  *timestamppb.Timestamp      `protobuf:"bytes,7,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty"`
+	DistroTuples                 []*ImageCVEDistroTuple      `protobuf:"bytes,8,rep,name=distro_tuples,json=distroTuples,proto3" json:"distro_tuples,omitempty"`
+	ExceptionCount               int32                       `protobuf:"varint,9,opt,name=exception_count,json=exceptionCount,proto3" json:"exception_count,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
+}
+
+func (x *ImageCVE) Reset() {
+	*x = ImageCVE{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageCVE) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageCVE) ProtoMessage() {}
+
+func (x *ImageCVE) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageCVE.ProtoReflect.Descriptor instead.
+func (*ImageCVE) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ImageCVE) GetCve() string {
+	if x != nil {
+		return x.Cve
+	}
+	return ""
+}
+
+func (x *ImageCVE) GetTopCvss() float32 {
+	if x != nil {
+		return x.TopCvss
+	}
+	return 0
+}
+
+func (x *ImageCVE) GetTopNvdCvss() float32 {
+	if x != nil {
+		return x.TopNvdCvss
+	}
+	return 0
+}
+
+func (x *ImageCVE) GetAffectedImageCount() int32 {
+	if x != nil {
+		return x.AffectedImageCount
+	}
+	return 0
+}
+
+func (x *ImageCVE) GetAffectedImageCountBySeverity() *ResourceCountByCVESeverity {
+	if x != nil {
+		return x.AffectedImageCountBySeverity
+	}
+	return nil
+}
+
+func (x *ImageCVE) GetFirstDiscoveredInSystem() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstDiscoveredInSystem
+	}
+	return nil
+}
+
+func (x *ImageCVE) GetPublishedOn() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PublishedOn
+	}
+	return nil
+}
+
+func (x *ImageCVE) GetDistroTuples() []*ImageCVEDistroTuple {
+	if x != nil {
+		return x.DistroTuples
+	}
+	return nil
+}
+
+func (x *ImageCVE) GetExceptionCount() int32 {
+	if x != nil {
+		return x.ExceptionCount
+	}
+	return 0
+}
+
 var File_api_v1_cve_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cve_service_proto_rawDesc = "" +
 	"\n" +
-	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"e\n" +
+	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"e\n" +
 	"\x12SuppressCVERequest\x12\x12\n" +
 	"\x04cves\x18\x01 \x03(\tR\x04cves\x125\n" +
 	"\bduration\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bdurationJ\x04\b\x02\x10\x03\"*\n" +
 	"\x14UnsuppressCVERequest\x12\x12\n" +
-	"\x04cves\x18\x01 \x03(\tR\x04cves2\xc0\x01\n" +
+	"\x04cves\x18\x01 \x03(\tR\x04cves\"\x87\x01\n" +
+	"\x14ListImageCVEsRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12.\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\x12)\n" +
+	"\x10request_statuses\x18\x03 \x03(\tR\x0frequestStatuses\".\n" +
+	"\x16CountImageCVEsResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"D\n" +
+	"\x15ListImageCVEsResponse\x12+\n" +
+	"\n" +
+	"image_cves\x18\x01 \x03(\v2\f.v1.ImageCVER\timageCves\"\x9e\x01\n" +
+	"\x1aResourceCountByCVESeverity\x12\x1a\n" +
+	"\bcritical\x18\x01 \x01(\x05R\bcritical\x12\x1c\n" +
+	"\timportant\x18\x02 \x01(\x05R\timportant\x12\x1a\n" +
+	"\bmoderate\x18\x03 \x01(\x05R\bmoderate\x12\x10\n" +
+	"\x03low\x18\x04 \x01(\x05R\x03low\x12\x18\n" +
+	"\aunknown\x18\x05 \x01(\x05R\aunknown\"\x84\x03\n" +
+	"\x13ImageCVEDistroTuple\x12\x18\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary\x12)\n" +
+	"\x10operating_system\x18\x02 \x01(\tR\x0foperatingSystem\x12\x12\n" +
+	"\x04cvss\x18\x03 \x01(\x02R\x04cvss\x12#\n" +
+	"\rscore_version\x18\x04 \x01(\tR\fscoreVersion\x12\x19\n" +
+	"\bnvd_cvss\x18\x05 \x01(\x02R\anvdCvss\x12*\n" +
+	"\x11nvd_score_version\x18\x06 \x01(\tR\x0fnvdScoreVersion\x12)\n" +
+	"\x10epss_probability\x18\a \x01(\x02R\x0fepssProbability\x12A\n" +
+	"\x1dknown_ransomware_campaign_use\x18\b \x01(\tR\x1aknownRansomwareCampaignUse\x12:\n" +
+	"\bseverity\x18\t \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\"\xf2\x03\n" +
+	"\bImageCVE\x12\x10\n" +
+	"\x03cve\x18\x01 \x01(\tR\x03cve\x12\x19\n" +
+	"\btop_cvss\x18\x02 \x01(\x02R\atopCvss\x12 \n" +
+	"\ftop_nvd_cvss\x18\x03 \x01(\x02R\n" +
+	"topNvdCvss\x120\n" +
+	"\x14affected_image_count\x18\x04 \x01(\x05R\x12affectedImageCount\x12f\n" +
+	" affected_image_count_by_severity\x18\x05 \x01(\v2\x1e.v1.ResourceCountByCVESeverityR\x1caffectedImageCountBySeverity\x12W\n" +
+	"\x1afirst_discovered_in_system\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x17firstDiscoveredInSystem\x12=\n" +
+	"\fpublished_on\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedOn\x12<\n" +
+	"\rdistro_tuples\x18\b \x03(\v2\x17.v1.ImageCVEDistroTupleR\fdistroTuples\x12'\n" +
+	"\x0fexception_count\x18\t \x01(\x05R\x0eexceptionCount2\xc0\x01\n" +
 	"\x0eNodeCVEService\x12S\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/nodecves/suppress\x12Y\n" +
 	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/nodecves/unsuppress2\xc9\x01\n" +
 	"\x11ClusterCVEService\x12V\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/clustercves/suppress\x12\\\n" +
-	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppressB'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
+	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppress2\xc6\x01\n" +
+	"\x0fImageCVEService\x12[\n" +
+	"\rListImageCVEs\x12\x18.v1.ListImageCVEsRequest\x1a\x19.v1.ListImageCVEsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/v1/imagecves\x12V\n" +
+	"\x0eCountImageCVEs\x12\f.v1.RawQuery\x1a\x1a.v1.CountImageCVEsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/imagecvescountB'\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x03b\x06proto3"
 
 var (
 	file_api_v1_cve_service_proto_rawDescOnce sync.Once
@@ -159,28 +654,49 @@ func file_api_v1_cve_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_cve_service_proto_rawDescData
 }
 
-var file_api_v1_cve_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_v1_cve_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_cve_service_proto_goTypes = []any{
-	(*SuppressCVERequest)(nil),   // 0: v1.SuppressCVERequest
-	(*UnsuppressCVERequest)(nil), // 1: v1.UnsuppressCVERequest
-	(*durationpb.Duration)(nil),  // 2: google.protobuf.Duration
-	(*Empty)(nil),                // 3: v1.Empty
+	(*SuppressCVERequest)(nil),         // 0: v1.SuppressCVERequest
+	(*UnsuppressCVERequest)(nil),       // 1: v1.UnsuppressCVERequest
+	(*ListImageCVEsRequest)(nil),       // 2: v1.ListImageCVEsRequest
+	(*CountImageCVEsResponse)(nil),     // 3: v1.CountImageCVEsResponse
+	(*ListImageCVEsResponse)(nil),      // 4: v1.ListImageCVEsResponse
+	(*ResourceCountByCVESeverity)(nil), // 5: v1.ResourceCountByCVESeverity
+	(*ImageCVEDistroTuple)(nil),        // 6: v1.ImageCVEDistroTuple
+	(*ImageCVE)(nil),                   // 7: v1.ImageCVE
+	(*durationpb.Duration)(nil),        // 8: google.protobuf.Duration
+	(*Pagination)(nil),                 // 9: v1.Pagination
+	(storage.VulnerabilitySeverity)(0), // 10: storage.VulnerabilitySeverity
+	(*timestamppb.Timestamp)(nil),      // 11: google.protobuf.Timestamp
+	(*RawQuery)(nil),                   // 12: v1.RawQuery
+	(*Empty)(nil),                      // 13: v1.Empty
 }
 var file_api_v1_cve_service_proto_depIdxs = []int32{
-	2, // 0: v1.SuppressCVERequest.duration:type_name -> google.protobuf.Duration
-	0, // 1: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 2: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	0, // 3: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 4: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	3, // 5: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 6: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	3, // 7: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 8: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	8,  // 0: v1.SuppressCVERequest.duration:type_name -> google.protobuf.Duration
+	9,  // 1: v1.ListImageCVEsRequest.pagination:type_name -> v1.Pagination
+	7,  // 2: v1.ListImageCVEsResponse.image_cves:type_name -> v1.ImageCVE
+	10, // 3: v1.ImageCVEDistroTuple.severity:type_name -> storage.VulnerabilitySeverity
+	5,  // 4: v1.ImageCVE.affected_image_count_by_severity:type_name -> v1.ResourceCountByCVESeverity
+	11, // 5: v1.ImageCVE.first_discovered_in_system:type_name -> google.protobuf.Timestamp
+	11, // 6: v1.ImageCVE.published_on:type_name -> google.protobuf.Timestamp
+	6,  // 7: v1.ImageCVE.distro_tuples:type_name -> v1.ImageCVEDistroTuple
+	0,  // 8: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1,  // 9: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	0,  // 10: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1,  // 11: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	2,  // 12: v1.ImageCVEService.ListImageCVEs:input_type -> v1.ListImageCVEsRequest
+	12, // 13: v1.ImageCVEService.CountImageCVEs:input_type -> v1.RawQuery
+	13, // 14: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
+	13, // 15: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	13, // 16: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
+	13, // 17: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	4,  // 18: v1.ImageCVEService.ListImageCVEs:output_type -> v1.ListImageCVEsResponse
+	3,  // 19: v1.ImageCVEService.CountImageCVEs:output_type -> v1.CountImageCVEsResponse
+	14, // [14:20] is the sub-list for method output_type
+	8,  // [8:14] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_cve_service_proto_init() }
@@ -189,15 +705,17 @@ func file_api_v1_cve_service_proto_init() {
 		return
 	}
 	file_api_v1_empty_proto_init()
+	file_api_v1_pagination_proto_init()
+	file_api_v1_search_service_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_cve_service_proto_rawDesc), len(file_api_v1_cve_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   8,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_api_v1_cve_service_proto_goTypes,
 		DependencyIndexes: file_api_v1_cve_service_proto_depIdxs,

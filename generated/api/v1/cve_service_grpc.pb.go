@@ -309,3 +309,155 @@ var ClusterCVEService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/cve_service.proto",
 }
+
+const (
+	ImageCVEService_ListImageCVEs_FullMethodName  = "/v1.ImageCVEService/ListImageCVEs"
+	ImageCVEService_CountImageCVEs_FullMethodName = "/v1.ImageCVEService/CountImageCVEs"
+)
+
+// ImageCVEServiceClient is the client API for ImageCVEService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ImageCVEService lists aggregated image CVEs for the Workload CVE overview table.
+// It wraps the same ImageCVEView / ImageCVEV2 / vuln-request stores as GraphQL
+// imageCVEs (central/graphql/resolvers/image_cve_core.go).
+type ImageCVEServiceClient interface {
+	// ListImageCVEs returns image CVEs matching the query, with field parity for
+	// GraphQL getImageCVEList (imageCVEs + distroTuples + exceptionCount).
+	ListImageCVEs(ctx context.Context, in *ListImageCVEsRequest, opts ...grpc.CallOption) (*ListImageCVEsResponse, error)
+	// CountImageCVEs returns the number of distinct image CVEs matching the query.
+	CountImageCVEs(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountImageCVEsResponse, error)
+}
+
+type imageCVEServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewImageCVEServiceClient(cc grpc.ClientConnInterface) ImageCVEServiceClient {
+	return &imageCVEServiceClient{cc}
+}
+
+func (c *imageCVEServiceClient) ListImageCVEs(ctx context.Context, in *ListImageCVEsRequest, opts ...grpc.CallOption) (*ListImageCVEsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListImageCVEsResponse)
+	err := c.cc.Invoke(ctx, ImageCVEService_ListImageCVEs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *imageCVEServiceClient) CountImageCVEs(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountImageCVEsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CountImageCVEsResponse)
+	err := c.cc.Invoke(ctx, ImageCVEService_CountImageCVEs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ImageCVEServiceServer is the server API for ImageCVEService service.
+// All implementations should embed UnimplementedImageCVEServiceServer
+// for forward compatibility.
+//
+// ImageCVEService lists aggregated image CVEs for the Workload CVE overview table.
+// It wraps the same ImageCVEView / ImageCVEV2 / vuln-request stores as GraphQL
+// imageCVEs (central/graphql/resolvers/image_cve_core.go).
+type ImageCVEServiceServer interface {
+	// ListImageCVEs returns image CVEs matching the query, with field parity for
+	// GraphQL getImageCVEList (imageCVEs + distroTuples + exceptionCount).
+	ListImageCVEs(context.Context, *ListImageCVEsRequest) (*ListImageCVEsResponse, error)
+	// CountImageCVEs returns the number of distinct image CVEs matching the query.
+	CountImageCVEs(context.Context, *RawQuery) (*CountImageCVEsResponse, error)
+}
+
+// UnimplementedImageCVEServiceServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedImageCVEServiceServer struct{}
+
+func (UnimplementedImageCVEServiceServer) ListImageCVEs(context.Context, *ListImageCVEsRequest) (*ListImageCVEsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListImageCVEs not implemented")
+}
+func (UnimplementedImageCVEServiceServer) CountImageCVEs(context.Context, *RawQuery) (*CountImageCVEsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CountImageCVEs not implemented")
+}
+func (UnimplementedImageCVEServiceServer) testEmbeddedByValue() {}
+
+// UnsafeImageCVEServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ImageCVEServiceServer will
+// result in compilation errors.
+type UnsafeImageCVEServiceServer interface {
+	mustEmbedUnimplementedImageCVEServiceServer()
+}
+
+func RegisterImageCVEServiceServer(s grpc.ServiceRegistrar, srv ImageCVEServiceServer) {
+	// If the following call panics, it indicates UnimplementedImageCVEServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ImageCVEService_ServiceDesc, srv)
+}
+
+func _ImageCVEService_ListImageCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListImageCVEsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageCVEServiceServer).ListImageCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ImageCVEService_ListImageCVEs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageCVEServiceServer).ListImageCVEs(ctx, req.(*ListImageCVEsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ImageCVEService_CountImageCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageCVEServiceServer).CountImageCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ImageCVEService_CountImageCVEs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageCVEServiceServer).CountImageCVEs(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ImageCVEService_ServiceDesc is the grpc.ServiceDesc for ImageCVEService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ImageCVEService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.ImageCVEService",
+	HandlerType: (*ImageCVEServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListImageCVEs",
+			Handler:    _ImageCVEService_ListImageCVEs_Handler,
+		},
+		{
+			MethodName: "CountImageCVEs",
+			Handler:    _ImageCVEService_CountImageCVEs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/cve_service.proto",
+}

@@ -3,8 +3,12 @@ syntax = "proto3";
 package v1;
 
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
+import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
@@ -27,6 +31,64 @@ message UnsuppressCVERequest {
   // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
   // For example, CVE-2021-44832.
   repeated string cves = 1;
+}
+
+// ListImageCVEsRequest is the ListImages-style RawQuery (query + pagination)
+// plus the optional exception-status filter GraphQL getImageCVEList passes as
+// statusesForExceptionCount.
+message ListImageCVEsRequest {
+  // Search query in RawQuery format, e.g. "CVE:CVE-2021-44228+Severity:CRITICAL".
+  string query = 1;
+  Pagination pagination = 2;
+  // Optional vulnerability-exception request statuses counted into exception_count,
+  // matching GraphQL exceptionCount(requestStatus). Examples: PENDING, APPROVED_PENDING_UPDATE.
+  repeated string request_statuses = 3;
+}
+
+message CountImageCVEsResponse {
+  int32 count = 1;
+}
+
+message ListImageCVEsResponse {
+  repeated ImageCVE image_cves = 1;
+}
+
+// ResourceCountByCVESeverity is the Workload CVE table's affectedImageCountBySeverity
+// (GraphQL ResourceCountByCVESeverity.total per bucket).
+message ResourceCountByCVESeverity {
+  int32 critical = 1;
+  int32 important = 2;
+  int32 moderate = 3;
+  int32 low = 4;
+  int32 unknown = 5;
+}
+
+// ImageCVEDistroTuple is the GraphQL ImageCVECore.distroTuples projection used by
+// the Workload CVE overview table (summary, OS, CVSS, EPSS, exploit).
+message ImageCVEDistroTuple {
+  string summary = 1;
+  string operating_system = 2;
+  float cvss = 3;
+  string score_version = 4;
+  float nvd_cvss = 5;
+  string nvd_score_version = 6;
+  float epss_probability = 7;
+  string known_ransomware_campaign_use = 8;
+  storage.VulnerabilitySeverity severity = 9;
+}
+
+// ImageCVE is the GraphQL ImageCVECore row for the Workload CVE overview table.
+// It is an aggregated view (one row per CVE name), not storage.ImageCVE / ImageCVEV2.
+message ImageCVE {
+  string cve = 1;
+  float top_cvss = 2;
+  float top_nvd_cvss = 3;
+  int32 affected_image_count = 4;
+  ResourceCountByCVESeverity affected_image_count_by_severity = 5;
+  google.protobuf.Timestamp first_discovered_in_system = 6;
+  google.protobuf.Timestamp published_on = 7;
+  repeated ImageCVEDistroTuple distro_tuples = 8;
+  int32 exception_count = 9;
 }
 
 // NodeCVEService APIs can be used to manage node cves.
@@ -62,5 +124,21 @@ service ClusterCVEService {
       patch: "/v1/clustercves/unsuppress"
       body: "*"
     };
+  }
+}
+
+// ImageCVEService lists aggregated image CVEs for the Workload CVE overview table.
+// It wraps the same ImageCVEView / ImageCVEV2 / vuln-request stores as GraphQL
+// imageCVEs (central/graphql/resolvers/image_cve_core.go).
+service ImageCVEService {
+  // ListImageCVEs returns image CVEs matching the query, with field parity for
+  // GraphQL getImageCVEList (imageCVEs + distroTuples + exceptionCount).
+  rpc ListImageCVEs(ListImageCVEsRequest) returns (ListImageCVEsResponse) {
+    option (google.api.http) = {get: "/v1/imagecves"};
+  }
+
+  // CountImageCVEs returns the number of distinct image CVEs matching the query.
+  rpc CountImageCVEs(RawQuery) returns (CountImageCVEsResponse) {
+    option (google.api.http) = {get: "/v1/imagecvescount"};
   }
 }

@@ -68,6 +68,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
+	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -449,6 +450,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		grpcPreferences.Singleton(),
 		helmcharts.NewService(),
 		iiService.Singleton(),
+		imageCVEService.Singleton(),
 		imageService.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),

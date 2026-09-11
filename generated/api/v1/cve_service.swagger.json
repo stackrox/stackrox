@@ -10,6 +10,9 @@
     },
     {
       "name": "ClusterCVEService"
+    },
+    {
+      "name": "ImageCVEService"
     }
   ],
   "consumes": [
@@ -82,6 +85,170 @@
         ],
         "tags": [
           "ClusterCVEService"
+        ]
+      }
+    },
+    "/v1/imagecves": {
+      "get": {
+        "summary": "ListImageCVEs returns image CVEs matching the query, with field parity for\nGraphQL getImageCVEList (imageCVEs + distroTuples + exceptionCount).",
+        "operationId": "ImageCVEService_ListImageCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListImageCVEsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "description": "Search query in RawQuery format, e.g. \"CVE:CVE-2021-44228+Severity:CRITICAL\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "requestStatuses",
+            "description": "Optional vulnerability-exception request statuses counted into exception_count,\nmatching GraphQL exceptionCount(requestStatus). Examples: PENDING, APPROVED_PENDING_UPDATE.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "ImageCVEService"
+        ]
+      }
+    },
+    "/v1/imagecvescount": {
+      "get": {
+        "summary": "CountImageCVEs returns the number of distinct image CVEs matching the query.",
+        "operationId": "ImageCVEService_CountImageCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountImageCVEsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ImageCVEService"
         ]
       }
     },
@@ -183,8 +350,205 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v1CountImageCVEsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1Empty": {
       "type": "object"
+    },
+    "v1ImageCVE": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "topNvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "affectedImageCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "affectedImageCountBySeverity": {
+          "$ref": "#/definitions/v1ResourceCountByCVESeverity"
+        },
+        "firstDiscoveredInSystem": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "distroTuples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ImageCVEDistroTuple"
+          }
+        },
+        "exceptionCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ImageCVE is the GraphQL ImageCVECore row for the Workload CVE overview table.\nIt is an aggregated view (one row per CVE name), not storage.ImageCVE / ImageCVEV2."
+    },
+    "v1ImageCVEDistroTuple": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "scoreVersion": {
+          "type": "string"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "nvdScoreVersion": {
+          "type": "string"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "knownRansomwareCampaignUse": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        }
+      },
+      "description": "ImageCVEDistroTuple is the GraphQL ImageCVECore.distroTuples projection used by\nthe Workload CVE overview table (summary, OS, CVSS, EPSS, exploit)."
+    },
+    "v1ListImageCVEsResponse": {
+      "type": "object",
+      "properties": {
+        "imageCves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ImageCVE"
+          }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1ResourceCountByCVESeverity": {
+      "type": "object",
+      "properties": {
+        "critical": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "important": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "moderate": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "low": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "unknown": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ResourceCountByCVESeverity is the Workload CVE table's affectedImageCountBySeverity\n(GraphQL ResourceCountByCVESeverity.total per bucket)."
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
     },
     "v1SuppressCVERequest": {
       "type": "object",
