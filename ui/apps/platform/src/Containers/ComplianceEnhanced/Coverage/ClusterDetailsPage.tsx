@@ -211,6 +211,17 @@ function ClusterDetailsPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
+                {(checkResultsResponse?.outdatedClusterCount ?? 0) > 0 && (
+                    <Alert
+                        variant="warning"
+                        isInline
+                        className="pf-v6-u-mb-md"
+                        title="This cluster's compliance data is outdated"
+                        component="p"
+                    >
+                        Some compliance results may not reflect the latest scan cycle.
+                    </Alert>
+                )}
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     profileName={profileName}

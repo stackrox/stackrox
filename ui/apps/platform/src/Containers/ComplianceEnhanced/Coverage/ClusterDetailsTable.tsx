@@ -27,6 +27,7 @@ import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
+import DataStateLabel from './components/DataStateLabel';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
@@ -118,13 +119,16 @@ function ClusterDetailsTable({
                             Controls
                         </Th>
                         <Th modifier="fitContent" width={10}>
+                            Data status
+                        </Th>
+                        <Th modifier="fitContent" width={10}>
                             Compliance status
                         </Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={3}
+                    colSpan={4}
                     errorProps={{
                         title: 'There was an error loading results for this cluster',
                     }}
@@ -136,7 +140,8 @@ function ClusterDetailsTable({
                     renderer={({ data }) => (
                         <>
                             {data.map((checkResult, rowIndex) => {
-                                const { checkName, rationale, status, controls } = checkResult;
+                                const { checkName, rationale, status, controls, dataState } =
+                                    checkResult;
                                 const clusterStatusObject = getClusterResultsStatusObject(status);
                                 const isRowExpanded = expandedRows.includes(rowIndex);
 
@@ -195,6 +200,9 @@ function ClusterDetailsTable({
                                                 ) : (
                                                     '-'
                                                 )}
+                                            </Td>
+                                            <Td dataLabel="Data status" modifier="fitContent">
+                                                <DataStateLabel dataState={dataState} />
                                             </Td>
                                             <Td dataLabel="Compliance status" modifier="fitContent">
                                                 <StatusIcon

@@ -12,6 +12,7 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
+
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -25,6 +26,7 @@ import {
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
+import DataStateLabel from './components/DataStateLabel';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
@@ -106,11 +108,12 @@ function CheckDetailsTable({
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
                         <Th>Compliance status</Th>
+                        <Th>Data status</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={3}
+                    colSpan={4}
                     errorProps={{
                         title: 'There was an error loading results for this check',
                     }}
@@ -151,6 +154,11 @@ function CheckDetailsTable({
                                         <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
                                         <Td dataLabel="Compliance status">
                                             <StatusIcon clusterStatusObject={clusterStatusObject} />
+                                        </Td>
+                                        <Td dataLabel="Data status">
+                                            <DataStateLabel
+                                                dataState={clusterInfo.dataState}
+                                            />
                                         </Td>
                                     </Tr>
                                 );

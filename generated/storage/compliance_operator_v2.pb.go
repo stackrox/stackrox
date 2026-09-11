@@ -962,7 +962,7 @@ func (x *RuleControls) GetControl() string {
 	return ""
 }
 
-// Next Tag: 19
+// Next Tag: 20
 type ComplianceOperatorScanConfigurationV2 struct {
 	state                  protoimpl.MessageState                               `protogen:"open.v1"`
 	Id                     string                                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"`                                                 // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
@@ -985,12 +985,17 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	CreatedTime     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	LastUpdatedTime *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
 	// Most recent user to update the scan configurations
-	ModifiedBy    *SlimUser                                        `protobuf:"bytes,14,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	Description   string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
-	Clusters      []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
-	Notifiers     []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ModifiedBy  *SlimUser                                        `protobuf:"bytes,14,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	Description string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
+	Clusters    []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	Notifiers   []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	// last_scan_requested_time records when a user last triggered an on-demand
+	// "Scan now" (ProcessRescanRequest). Used by outdated-data detection as the
+	// on-demand expected-refresh term. Stored in the serialized blob only (no
+	// column, no search tag); unset until the first on-demand rescan.
+	LastScanRequestedTime *timestamppb.Timestamp `protobuf:"bytes,19,opt,name=last_scan_requested_time,json=lastScanRequestedTime,proto3" json:"last_scan_requested_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanConfigurationV2) Reset() {
@@ -1145,6 +1150,13 @@ func (x *ComplianceOperatorScanConfigurationV2) GetClusters() []*ComplianceOpera
 func (x *ComplianceOperatorScanConfigurationV2) GetNotifiers() []*NotifierConfiguration {
 	if x != nil {
 		return x.Notifiers
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorScanConfigurationV2) GetLastScanRequestedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastScanRequestedTime
 	}
 	return nil
 }
@@ -3089,7 +3101,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\fRuleControls\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x1e\n" +
 	"\bcontrols\x18\x02 \x03(\tB\x02\x18\x01R\bcontrols\x12\x18\n" +
-	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xaa\v\n" +
+	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xff\v\n" +
 	"%ComplianceOperatorScanConfigurationV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x10scan_config_name\x18\x02 \x01(\tR\x0escanConfigName\x126\n" +
@@ -3111,7 +3123,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"modifiedBy\x12 \n" +
 	"\vdescription\x18\x0f \x01(\tR\vdescription\x12R\n" +
 	"\bclusters\x18\x10 \x03(\v26.storage.ComplianceOperatorScanConfigurationV2.ClusterR\bclusters\x12<\n" +
-	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x1a9\n" +
+	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x12S\n" +
+	"\x18last_scan_requested_time\x18\x13 \x01(\v2\x1a.google.protobuf.TimestampR\x15lastScanRequestedTime\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -3433,51 +3446,52 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	51, // 18: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
 	37, // 19: storage.ComplianceOperatorScanConfigurationV2.clusters:type_name -> storage.ComplianceOperatorScanConfigurationV2.Cluster
 	52, // 20: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
-	50, // 21: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
-	38, // 22: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
-	5,  // 23: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
-	2,  // 24: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
-	39, // 25: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
-	40, // 26: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	50, // 27: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 28: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
-	9,  // 29: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
-	41, // 30: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
-	42, // 31: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
-	1,  // 32: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
-	0,  // 33: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
-	17, // 34: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
-	50, // 35: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 36: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
-	50, // 37: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
-	43, // 38: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	44, // 39: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	21, // 40: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
-	50, // 41: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	20, // 42: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
-	21, // 43: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
-	26, // 44: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
-	51, // 45: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
-	45, // 46: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
-	25, // 47: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
-	46, // 48: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
-	13, // 49: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
-	48, // 50: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
-	50, // 51: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
-	6,  // 52: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
-	50, // 53: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
-	50, // 54: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	8,  // 55: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
-	7,  // 56: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
-	3,  // 57: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
-	50, // 58: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
-	50, // 59: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
-	47, // 60: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
-	61, // [61:61] is the sub-list for method output_type
-	61, // [61:61] is the sub-list for method input_type
-	61, // [61:61] is the sub-list for extension type_name
-	61, // [61:61] is the sub-list for extension extendee
-	0,  // [0:61] is the sub-list for field type_name
+	50, // 21: storage.ComplianceOperatorScanConfigurationV2.last_scan_requested_time:type_name -> google.protobuf.Timestamp
+	50, // 22: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
+	38, // 23: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
+	5,  // 24: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
+	2,  // 25: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
+	39, // 26: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
+	40, // 27: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	50, // 28: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	50, // 29: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
+	9,  // 30: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
+	41, // 31: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
+	42, // 32: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
+	1,  // 33: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
+	0,  // 34: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
+	17, // 35: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
+	50, // 36: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
+	50, // 37: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
+	50, // 38: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
+	43, // 39: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	44, // 40: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	21, // 41: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
+	50, // 42: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	20, // 43: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
+	21, // 44: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
+	26, // 45: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
+	51, // 46: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
+	45, // 47: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
+	25, // 48: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
+	46, // 49: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	13, // 50: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
+	48, // 51: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
+	50, // 52: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
+	6,  // 53: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
+	50, // 54: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
+	50, // 55: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	8,  // 56: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
+	7,  // 57: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
+	3,  // 58: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
+	50, // 59: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
+	50, // 60: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
+	47, // 61: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
+	62, // [62:62] is the sub-list for method output_type
+	62, // [62:62] is the sub-list for method input_type
+	62, // [62:62] is the sub-list for extension type_name
+	62, // [62:62] is the sub-list for extension extendee
+	0,  // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_storage_compliance_operator_v2_proto_init() }
