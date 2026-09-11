@@ -150,9 +150,6 @@ spec:
         {{- if ._rox._legacyScannerEnabled }}
         - name: ROX_LEGACY_SCANNER
           value: "true"
-        {{- else }}
-        - name: ROX_LEGACY_SCANNER
-          value: "false"
         {{- end }}
         [<- end >]
         {{- if ._rox.centralWorker.enabled }}

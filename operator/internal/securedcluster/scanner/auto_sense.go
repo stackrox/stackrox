@@ -44,15 +44,8 @@ func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client
 
 }
 
-func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComponent platform.LocalScannerComponentPolicy, namespace string) (AutoSenseResult, error) {
-	switch scannerComponent {
-	case platform.LocalScannerComponentAutoSense:
-		return autoSense(ctx, client, namespace)
-	case platform.LocalScannerComponentDisabled:
-		return AutoSenseResult{}, nil
-	}
-
-	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
+func autoSenseScanner(_ context.Context, _ ctrlClient.Client, _ platform.LocalScannerComponentPolicy, _ string) (AutoSenseResult, error) {
+	return AutoSenseResult{}, nil
 }
 
 func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymentPolicy platform.LocalScannerV4ComponentPolicy, namespace string) (AutoSenseResult, error) {
