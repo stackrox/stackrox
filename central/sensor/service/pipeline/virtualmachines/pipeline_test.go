@@ -1,6 +1,7 @@
 package virtualmachines
 
 import (
+	"strconv"
 	"testing"
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -24,11 +25,25 @@ import (
 
 func TestCapabilities(t *testing.T) {
 	pipeline := &pipelineImpl{}
-	assert.ElementsMatch(
-		t,
-		[]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported},
-		pipeline.Capabilities(),
-	)
+	cases := map[string]struct {
+		enabled bool
+		want    []centralsensor.CentralCapability
+	}{
+		"flag on advertises VirtualMachinesSupported": {
+			enabled: true,
+			want:    []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported},
+		},
+		"flag off advertises nothing": {
+			enabled: false,
+			want:    nil,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), strconv.FormatBool(tc.enabled))
+			assert.Equal(t, tc.want, pipeline.Capabilities())
+		})
+	}
 }
 
 func TestMatch(t *testing.T) {
