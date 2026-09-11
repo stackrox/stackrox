@@ -19,11 +19,10 @@ spec:
     - podSelector:
         matchLabels:
           app: central
-    {{- if ._rox.centralWorker.enabled }}
+    # Keep access during disable/upgrade so terminating workers can release DB locks.
     - podSelector:
         matchLabels:
           app: central-worker
-    {{- end }}
     ports:
     - port: 5432
       protocol: TCP

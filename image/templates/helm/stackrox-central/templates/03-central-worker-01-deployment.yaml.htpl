@@ -106,7 +106,7 @@ spec:
           readOnly: true
         {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 120
       volumes:
       - name: central-certs-volume
         secret:

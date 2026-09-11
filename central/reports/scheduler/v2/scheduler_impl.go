@@ -31,11 +31,7 @@ import (
 	"gopkg.in/robfig/cron.v2"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	scheduledCtx = sac.WithAllAccess(context.Background())
-)
+var log = logging.LoggerForModule()
 
 // queueGeneratorBinding pairs a report job queue with the generator that processes
 // jobs from that queue. E.g., image CVE report job queue <-> image CVE report
@@ -68,12 +64,19 @@ type scheduler struct {
 	readyForReports concurrency.Signal
 
 	/* Concurrency and synchronization related fields */
-	// isStarted will make sure only one scheduling routine runs for an instance of scheduler
+	// isStarted permits submissions to enter the local queues after lock acquisition.
 	isStarted atomic.Bool
 	// isStopped will prevent scheduler from being re-started once it is stopped
 	isStopped atomic.Bool
 
-	stopper concurrency.Stopper
+	// lifecycleLock serializes Start and Stop, including Stop before Start.
+	lifecycleLock  sync.Mutex
+	cronStop       sync.Once
+	startRequested bool
+	ctx            context.Context
+	cancel         context.CancelCauseFunc
+	done           chan struct{}
+	ready          atomic.Bool
 
 	// Use to synchronize access to reportConfigToEntryIDs map
 	cronJobsLock sync.Mutex
@@ -82,9 +85,8 @@ type scheduler struct {
 	// NOTE: Lock only one mutex at a time. Do not lock another mutex when one is already held.
 	//      If you need to lock another mutex, you must free the locked one first.
 
-	cron                *cron.Cron
-	concurrencySema     *semaphore.Weighted
-	advisoryLockRelease func()
+	cron            *cron.Cron
+	concurrencySema *semaphore.Weighted
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
@@ -118,6 +120,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		queueByType[storage.ReportSnapshot_NODE_VULNERABILITY] = nodeQueue
 	}
 
+	ctx, cancel := context.WithCancelCause(context.Background())
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		reportConfigDatastore:  reportConfigDatastore,
@@ -129,7 +132,9 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		nextQueueIdx:           0,
 		queueByType:            queueByType,
 		readyForReports:        concurrency.NewSignal(),
-		stopper:                concurrency.NewStopper(),
+		ctx:                    ctx,
+		cancel:                 cancel,
+		done:                   make(chan struct{}),
 		cron:                   cronScheduler,
 		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
@@ -138,63 +143,89 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 
 /* Concurrency and scheduling functions */
 
-// Start acquires a PostgreSQL advisory lock and starts the scheduler.
-// If the lock is already held by another process, the scheduler is not started.
-// A scheduler instance can only be started once and cannot be re-started once stopped.
+// Start begins acquiring ownership in the background. Contention and transient
+// database errors are retried until acquisition succeeds or Stop is called.
 func (s *scheduler) Start(db postgres.DB) {
-	acquired, release, err := dblock.TryAcquireAdvisoryLock(scheduledCtx, db, dblock.ReportSchedulerLockID)
-	if err != nil {
-		log.Errorf("Report scheduler: failed to acquire advisory lock: %v", err)
+	s.lifecycleLock.Lock()
+	defer s.lifecycleLock.Unlock()
+	if s.startRequested || s.isStopped.Load() {
 		return
 	}
-	if !acquired {
-		log.Info("Report scheduler: advisory lock held by another process, not starting")
-		return
-	}
-	if s.isStopped.Load() {
-		release()
-		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
-		return
-	}
-	swapped := s.isStarted.CompareAndSwap(false, true)
-	if !swapped {
-		release()
-		log.Error("Scheduler already running")
-		return
-	}
-	s.advisoryLockRelease = release
-	s.queuePendingReports()
-	s.recoverMissedSchedules()
-	s.queueScheduledReports()
-	go s.runReports()
+	s.startRequested = true
+	go s.run(db)
 }
 
-// Stop scheduler
+// Ready reports whether this scheduler owns the lock and has initialized its queues.
+func (s *scheduler) Ready() bool {
+	return s.ready.Load() && !s.isStopped.Load()
+}
+
+func (s *scheduler) run(db postgres.DB) {
+	defer close(s.done)
+	defer s.isStarted.Store(false)
+	defer s.ready.Store(false)
+
+	for s.ctx.Err() == nil {
+		acquired, release, err := dblock.TryAcquireAdvisoryLock(s.ctx, db, dblock.ReportSchedulerLockID)
+		if acquired {
+			// Release only after execution and all in-flight reports have stopped.
+			defer release()
+			if s.ctx.Err() != nil {
+				return
+			}
+			s.isStarted.Store(true)
+			// Retry each initialization phase separately, so later query failures do
+			// not enqueue previously recovered reports a second time.
+			for _, initialize := range []func() error{s.queuePendingReports, s.recoverMissedSchedules, s.queueScheduledReports} {
+				if err := s.retryInitialization(initialize); err != nil {
+					return
+				}
+			}
+			if s.ctx.Err() != nil {
+				return
+			}
+			s.ready.Store(true)
+			log.Info("Report scheduler acquired ownership and is ready")
+			s.runReports()
+			return
+		}
+		if err != nil {
+			log.Errorf("Report scheduler: failed to acquire advisory lock, retrying: %v", err)
+		} else {
+			log.Info("Report scheduler: advisory lock held by another process, retrying")
+		}
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+		}
+	}
+}
+
+// Stop cancels acquisition and execution, waits for reports to stop, and releases ownership.
+// It is safe to call concurrently or before Start, and a stopped scheduler cannot restart.
 func (s *scheduler) Stop() {
-	if !s.isStarted.Load() {
-		log.Error("Scheduler not started")
-		return
+	started := concurrency.WithLock1(&s.lifecycleLock, func() bool {
+		s.isStopped.Store(true)
+		s.cancel(reportGen.ErrSchedulerStopped)
+		return s.startRequested
+	})
+	if started {
+		<-s.done
 	}
-	swapped := s.isStopped.CompareAndSwap(false, true)
-	if !swapped {
-		log.Error("Scheduler already stopped")
-		return
-	}
-	s.stopper.Client().Stop()
-	err := s.stopper.Client().Stopped().Wait()
-	if err != nil {
-		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
-	}
-	if s.advisoryLockRelease != nil {
-		s.advisoryLockRelease()
-	}
+	s.cronStop.Do(func() {
+		s.cronJobsLock.Lock()
+		defer s.cronJobsLock.Unlock()
+		s.cron.Stop()
+	})
 }
 
 func (s *scheduler) runReports() {
-	defer s.stopper.Flow().ReportStopped()
+	var running sync.WaitGroup
+	defer running.Wait()
 	for {
 		select {
-		case <-s.stopper.Flow().StopRequested():
+		case <-s.ctx.Done():
 			return
 		case <-s.readyForReports.Done():
 			req, q, gen := s.selectNextJobRoundRobin()
@@ -202,12 +233,17 @@ func (s *scheduler) runReports() {
 				s.readyForReports.Reset()
 				continue
 			}
-			if err := s.concurrencySema.Acquire(scheduledCtx, 1); err != nil {
-				log.Errorf("Error acquiring semaphore to run new report: %v", err)
-				continue
+			if err := s.concurrencySema.Acquire(s.ctx, 1); err != nil {
+				return
+			}
+			if s.ctx.Err() != nil {
+				s.concurrencySema.Release(1)
+				return
 			}
 			log.Infof("Executing report '%s' at %v", req.ReportSnapshot.GetName(), time.Now().Format(time.RFC822))
-			go s.runSingleReport(q, gen, req)
+			running.Go(func() {
+				s.runSingleReport(q, gen, req)
+			})
 		}
 	}
 }
@@ -231,7 +267,7 @@ func (s *scheduler) runSingleReport(q *reportqueue.ReportQueue, gen reportGen.Re
 	defer q.MarkReportDoneForConfig(req.ReportSnapshot.GetReportConfigurationId())
 
 	reportID := req.ReportSnapshot.GetReportId()
-	ctx, cancel := context.WithCancelCause(context.Background())
+	ctx, cancel := context.WithCancelCause(s.ctx)
 	q.AddCancelFunc(reportID, cancel)
 	defer cancel(nil)
 	defer q.RemoveCancelFunc(reportID)
@@ -243,6 +279,10 @@ func (s *scheduler) runSingleReport(q *reportqueue.ReportQueue, gen reportGen.Re
 func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
+
+	if s.isStopped.Load() {
+		return nil
+	}
 
 	// Remove the old entry if this is an update
 	if oldEntryID, ok := s.reportConfigToEntryIDs[reportConfig.GetId()]; ok {
@@ -333,12 +373,14 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 
 	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
 	request.ReportSnapshot.ReportStatus.QueuedAt = protocompat.TimestampNow()
-	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
+	reportID, err := s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err
 	}
 
-	if s.isStarted.Load() {
+	request.ReportSnapshot.ReportId = reportID
+
+	if s.isStarted.Load() && !s.isStopped.Load() {
 		q.Enqueue(request)
 		s.readyForReports.Signal()
 	}
@@ -358,79 +400,89 @@ func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) fun
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
-		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, false)
+		_, err = s.SubmitReportRequest(sac.WithAllAccess(s.ctx), reportReq, false)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
 	}
 }
 
-func (s *scheduler) queuePendingReports() {
+// retryInitialization retries a single discovery query or record without repeating
+// successfully queued records. Cancellation also interrupts the retry delay.
+func (s *scheduler) retryInitialization(initialize func() error) error {
+	for s.ctx.Err() == nil {
+		if err := initialize(); err == nil {
+			return nil
+		} else {
+			log.Errorf("Report scheduler initialization failed, retrying: %v", err)
+		}
+		select {
+		case <-s.ctx.Done():
+			return s.ctx.Err()
+		case <-time.After(5 * time.Second):
+		}
+	}
+	return s.ctx.Err()
+}
+
+func (s *scheduler) queuePendingReports() error {
 	pendingReportsQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ReportQueuedTime))).
 		ProtoQuery()
-	pendingReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, pendingReportsQuery)
+	pendingReports, err := s.reportSnapshotStore.SearchReportSnapshots(sac.WithAllAccess(s.ctx), pendingReportsQuery)
 	if err != nil {
-		log.Errorf("Error finding pending reports: %s", err)
-		return
+		return errors.Wrap(err, "finding pending reports")
 	}
-
 	for _, snap := range pendingReports {
-		// View-based reports have no associated report configuration, resource scope, or collection.
-		if snap.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
-			repRequest := &reportGen.ReportRequest{
-				ReportSnapshot: snap,
-			}
-			_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
-			if err != nil {
-				log.Errorf("Error rescheduling pending view-based report job '%s': %s", snap.GetReportId(), err)
-			}
-			continue
-		}
-
-		_, found, err := s.reportConfigDatastore.GetReportConfiguration(scheduledCtx, snap.GetReportConfigurationId())
-		if err != nil {
-			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
-			continue
-		}
-		if !found {
-			log.Errorf("Report configuration with ID %s had pending reports but the configuration no longer exists",
-				snap.GetReportConfigurationId())
-			continue
-		}
-
-		if !common.HasValidResourceScope(snap.GetResourceScope()) {
-			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", snap.GetReportConfigurationId())
-			continue
-		}
-
-		repRequest := &reportGen.ReportRequest{
-			ReportSnapshot: snap,
-		}
-
-		if snap.GetCollection() != nil {
-			collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
-			if err != nil {
-				log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
-				continue
-			}
-			if !found {
-				log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
-			}
-
-			repRequest.Collection = collection
-
-		}
-
-		_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
-		if err != nil {
-			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
+		if err := s.retryInitialization(func() error { return s.queuePendingReport(snap) }); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
-func (s *scheduler) queueScheduledReports() {
+func (s *scheduler) queuePendingReport(snap *storage.ReportSnapshot) error {
+	req := &reportGen.ReportRequest{ReportSnapshot: snap}
+	// View-based reports have no configuration or collection to reload.
+	if snap.GetReportStatus().GetReportRequestType() != storage.ReportStatus_VIEW_BASED {
+		_, found, err := s.reportConfigDatastore.GetReportConfiguration(sac.WithAllAccess(s.ctx), snap.GetReportConfigurationId())
+		if err != nil {
+			return errors.Wrapf(err, "loading report configuration %s", snap.GetReportConfigurationId())
+		}
+		if !found {
+			log.Errorf("Report configuration %s no longer exists; skipping pending report %s", snap.GetReportConfigurationId(), snap.GetReportId())
+			return nil
+		}
+		if !common.HasValidResourceScope(snap.GetResourceScope()) {
+			log.Errorf("Report configuration %s has an empty resource scope; skipping pending report %s", snap.GetReportConfigurationId(), snap.GetReportId())
+			return nil
+		}
+		if snap.GetCollection() != nil {
+			collection, found, err := s.collectionDatastore.Get(sac.WithAllAccess(s.ctx), snap.GetCollection().GetId())
+			if err != nil {
+				return errors.Wrapf(err, "loading collection %s", snap.GetCollection().GetId())
+			}
+			if !found {
+				log.Errorf("Collection %s no longer exists; skipping pending report %s", snap.GetCollection().GetId(), snap.GetReportId())
+				return nil
+			}
+			req.Collection = collection
+		}
+	}
+	// Invalid/disabled report types cannot be fixed by retrying a database operation.
+	if err := reportGen.ValidateReportRequest(req); err != nil {
+		log.Errorf("Skipping invalid pending report %s: %v", snap.GetReportId(), err)
+		return nil
+	}
+	if s.queueForSnapshot(snap) == nil {
+		return nil
+	}
+	_, err := s.SubmitReportRequest(sac.WithAllAccess(s.ctx), req, true)
+	return err
+}
+
+func (s *scheduler) queueScheduledReports() error {
 	reportTypes := []string{storage.ReportConfiguration_VULNERABILITY.String()}
 	if features.NodeVulnerabilityReports.Enabled() {
 		reportTypes = append(reportTypes, storage.ReportConfiguration_NODE_VULNERABILITY.String())
@@ -438,10 +490,9 @@ func (s *scheduler) queueScheduledReports() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, reportTypes...).
 		ProtoQuery()
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(sac.WithAllAccess(s.ctx), query)
 	if err != nil {
-		log.Errorf("Error finding scheduled reports: %s", err)
-		return
+		return errors.Wrap(err, "finding scheduled reports")
 	}
 	for _, rc := range reportConfigs {
 		if !common.HasValidResourceScope(rc.GetResourceScope()) {
@@ -455,11 +506,12 @@ func (s *scheduler) queueScheduledReports() {
 			}
 		}
 	}
+	return nil
 }
 
-func (s *scheduler) recoverMissedSchedules() {
+func (s *scheduler) recoverMissedSchedules() error {
 	if !env.ReportMissedScheduleRecovery.BooleanSetting() {
-		return
+		return nil
 	}
 
 	reportTypes := []string{storage.ReportConfiguration_VULNERABILITY.String()}
@@ -469,10 +521,9 @@ func (s *scheduler) recoverMissedSchedules() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, reportTypes...).
 		ProtoQuery()
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(sac.WithAllAccess(s.ctx), query)
 	if err != nil {
-		log.Errorf("Error finding report configs for missed schedule recovery: %s", err)
-		return
+		return errors.Wrap(err, "finding report configs for missed schedule recovery")
 	}
 
 	for _, rc := range reportConfigs {
@@ -508,7 +559,7 @@ func (s *scheduler) recoverMissedSchedules() {
 				AddSortOption(search.NewSortOption(search.ReportQueuedTime).Reversed(true)).
 				Limit(1)).
 			ProtoQuery()
-		snapshots, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, snapshotQuery)
+		snapshots, err := s.reportSnapshotStore.SearchReportSnapshots(sac.WithAllAccess(s.ctx), snapshotQuery)
 		if err != nil {
 			log.Errorf("Error querying snapshots for missed schedule recovery, config '%s': %v", rc.GetId(), err)
 			continue
@@ -548,12 +599,13 @@ func (s *scheduler) recoverMissedSchedules() {
 				log.Errorf("Error generating report request for missed schedule recovery, config '%s': %v", rc.GetId(), err)
 				continue
 			}
-			_, err = s.SubmitReportRequest(scheduledCtx, reportReq, false)
+			_, err = s.SubmitReportRequest(sac.WithAllAccess(s.ctx), reportReq, false)
 			if err != nil {
 				log.Errorf("Error submitting missed scheduled report for config '%s': %v", rc.GetId(), err)
 			}
 		}
 	}
+	return nil
 }
 
 // findPreviousFireTime finds the most recent time before `now` that the cron schedule would have fired.
@@ -630,7 +682,7 @@ func (s *scheduler) doesUserHaveViewBasedPendingReport(userID string, reportType
 		AddExactMatches(search.UserID, userID).
 		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.Count(scheduledCtx, query)
+	runningReports, err := s.reportSnapshotStore.Count(sac.WithAllAccess(s.ctx), query)
 	if err != nil {
 		return false, err
 	}
@@ -644,7 +696,7 @@ func (s *scheduler) doesUserHavePendingReport(configID string, userID string, re
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
 		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, query)
+	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(sac.WithAllAccess(s.ctx), query)
 	if err != nil {
 		return false, err
 	}
