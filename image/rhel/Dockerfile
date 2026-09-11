@@ -105,8 +105,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-COPY --from=cli_tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
-COPY --from=cli_tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 
