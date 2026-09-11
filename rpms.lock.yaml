@@ -137,20 +137,20 @@ arches:
     name: openssl-devel
     evr: 1:3.5.5-6.el9_8
     sourcerpm: openssl-3.5.5-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 1819455
-    checksum: sha256:9a533624ca7110176ccfedbd4ec54d339fadeeb985f7016eed7e4e738dd44ed2
+    size: 2040087
+    checksum: sha256:cf5f5043d9457d0ae9165aedcc18e3bbeb40e4f9905af205b2939966ec95eab8
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el9.8.0+24358+32c5830e.aarch64.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/postgresql-private-libs-16.14-1.module+el9.8.0+24360+ff98e86a.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 149345
-    checksum: sha256:7168e8dc1147af4fe2033ddaa86418321f850c746c1a92f7aa0e5416b2b37ced
+    size: 149737
+    checksum: sha256:de32cdae1d28a06c0be0f3098d05a7794c519e4339732ebc50abbfb2105d05b5
     name: postgresql-private-libs
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-3.12.14-1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 32440
@@ -1070,12 +1070,12 @@ arches:
     checksum: sha256:2f5ece89d6a8d892816f386462d8be291ad83f1500b4c4b3655dcc7ed5192c0d
     name: mpdecimal
     evr: 2.5.1-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
-    size: 45775054
-    checksum: sha256:5955f781730fe817b08b7ddc3d2117a7c0a0c95ed2fd2044cbc1ff7d1eba1b28
+    size: 48442323
+    checksum: sha256:a6e5d5ae3807b707632863dd9f2c628d7b269710433ab0af08ab65ee678b8e45
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
     size: 20894742
@@ -1774,20 +1774,20 @@ arches:
     name: openssl-devel
     evr: 1:3.5.5-6.el9_8
     sourcerpm: openssl-3.5.5-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 1881747
-    checksum: sha256:6aee4d674c4b3b504a62e263386ebc1bf4f9daed2cd89b3a9578de4fc3e3dcce
+    size: 2104011
+    checksum: sha256:befb58401f89cba3d6404b63694b7b7c8862bfe9d9577c64b67d4f7012dc2c60
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el9.8.0+24358+32c5830e.ppc64le.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/postgresql-private-libs-16.14-1.module+el9.8.0+24360+ff98e86a.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 170196
-    checksum: sha256:388ed8fa7cddbdcf4c20bfd13986e2c1d25090daadcb585e442fe7ca99a76955
+    size: 172003
+    checksum: sha256:b21475eaadae8f0757a0bd117abddadc77e878306d500a3c7e72706ad53a7c17
     name: postgresql-private-libs
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-3.12.14-1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 32494
@@ -2714,12 +2714,12 @@ arches:
     checksum: sha256:2f5ece89d6a8d892816f386462d8be291ad83f1500b4c4b3655dcc7ed5192c0d
     name: mpdecimal
     evr: 2.5.1-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
-    size: 45775054
-    checksum: sha256:5955f781730fe817b08b7ddc3d2117a7c0a0c95ed2fd2044cbc1ff7d1eba1b28
+    size: 48442323
+    checksum: sha256:a6e5d5ae3807b707632863dd9f2c628d7b269710433ab0af08ab65ee678b8e45
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
     size: 20894742
@@ -3424,20 +3424,20 @@ arches:
     name: openssl-devel
     evr: 1:3.5.5-6.el9_8
     sourcerpm: openssl-3.5.5-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 1851802
-    checksum: sha256:dec726e071d7a3d2fd601eaa3d0dc88797022ebf3145c5d3facfdc5ff6827602
+    size: 2077103
+    checksum: sha256:44e3ce2801de75b1752ffede84e40220fc84537c19d75486950cdd41605c2404
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el9.8.0+24358+32c5830e.s390x.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/postgresql-private-libs-16.14-1.module+el9.8.0+24360+ff98e86a.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 147697
-    checksum: sha256:504ab6379c9051e1b745d0ab259f6957e0a2c0eee3042c9989302229af7dd3cd
+    size: 150601
+    checksum: sha256:c8209b61acbff55eadde52850f0e8f1cd3090e6b8a14e7801ad35bf0d3a5bfc2
     name: postgresql-private-libs
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-3.12.14-1.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 32298
@@ -4351,12 +4351,12 @@ arches:
     checksum: sha256:2f5ece89d6a8d892816f386462d8be291ad83f1500b4c4b3655dcc7ed5192c0d
     name: mpdecimal
     evr: 2.5.1-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 45775054
-    checksum: sha256:5955f781730fe817b08b7ddc3d2117a7c0a0c95ed2fd2044cbc1ff7d1eba1b28
+    size: 48442323
+    checksum: sha256:a6e5d5ae3807b707632863dd9f2c628d7b269710433ab0af08ab65ee678b8e45
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el9_8.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
     size: 20894742
@@ -5048,20 +5048,20 @@ arches:
     name: openssl-devel
     evr: 1:3.5.5-6.el9_8
     sourcerpm: openssl-3.5.5-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 1832108
-    checksum: sha256:1f2f8e5526bac45da979c876fbb9a069459ec5a6476d89398433048005fb786b
+    size: 2058539
+    checksum: sha256:9325e51249f2c5c94ebe82805f66e37574f6757504b394f4c1ee44733a4d7b2d
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el9.8.0+24358+32c5830e.x86_64.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/postgresql-private-libs-16.14-1.module+el9.8.0+24360+ff98e86a.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 154248
-    checksum: sha256:a8fca7c9e1d9cf9aa6eb95fd39e90068960190b40cac303f546930cab667ae11
+    size: 153300
+    checksum: sha256:c637e020443076818c6b8d271fc49090f52fef850b12aa3f1068d695293b9991
     name: postgresql-private-libs
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
-    sourcerpm: postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
+    sourcerpm: postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-3.12.14-1.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 32484
@@ -5974,12 +5974,12 @@ arches:
     checksum: sha256:2f5ece89d6a8d892816f386462d8be291ad83f1500b4c4b3655dcc7ed5192c0d
     name: mpdecimal
     evr: 2.5.1-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el9.8.0+24358+32c5830e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/postgresql-16.14-1.module+el9.8.0+24360+ff98e86a.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 45775054
-    checksum: sha256:5955f781730fe817b08b7ddc3d2117a7c0a0c95ed2fd2044cbc1ff7d1eba1b28
+    size: 48442323
+    checksum: sha256:a6e5d5ae3807b707632863dd9f2c628d7b269710433ab0af08ab65ee678b8e45
     name: postgresql
-    evr: 15.18-1.module+el9.8.0+24358+32c5830e
+    evr: 16.14-1.module+el9.8.0+24360+ff98e86a
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
     size: 20894742
