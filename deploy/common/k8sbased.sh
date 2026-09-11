@@ -463,6 +463,12 @@ function launch_central {
         fi
       fi
 
+      if [[ "${ROX_CENTRAL_WORKER_ENABLED:-}" == "true" ]]; then
+        helm_args+=(
+          --set centralWorker.enabled=true
+        )
+      fi
+
       if [[ -n "$EXTERNAL_DB" ]]; then
           helm_args+=(
             --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
@@ -956,6 +962,14 @@ function launch_sensor {
       elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
         extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
+
+      # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
+      # Matcher-not-ready drops the first index as unretryable; a short interval
+      # covers the next scan without restarting collector.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=30s
+      )
 
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(

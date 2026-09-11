@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -164,7 +165,7 @@ func (s *nodeIndexerSuite) TestRunRepositoryScannerAnyPath() {
 func (s *nodeIndexerSuite) TestRunPackageScanner() {
 	layer := s.mustCreateLayer("testdata")
 
-	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDBs, layer)
 	s.NoError(err)
 
 	s.Len(packages, 106)
@@ -173,7 +174,7 @@ func (s *nodeIndexerSuite) TestRunPackageScanner() {
 func (s *nodeIndexerSuite) TestRunPackageScannerWithUnmatchedFilter() {
 	layer := s.mustCreateLayer("testdata")
 
-	packages, err := runPackageScanner(context.Background(), "invalidPackageDB", layer)
+	packages, err := runPackageScanner(context.Background(), []string{"invalidPackageDB"}, layer)
 	s.NoError(err)
 
 	// All packages are filtered out.
@@ -183,11 +184,90 @@ func (s *nodeIndexerSuite) TestRunPackageScannerWithUnmatchedFilter() {
 func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	layer := s.mustCreateLayer(s.T().TempDir())
 
-	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDBs, layer)
 	s.NoError(err)
 
 	// The scanner must not error out, but produce 0 results
 	s.Len(packages, 0)
+}
+
+func (s *nodeIndexerSuite) TestRHCOSPackageDBs() {
+	tests := map[string]bool{
+		"sqlite:usr/share/rpm":                    true,
+		"sqlite:usr/lib/sysimage/rpm":             true,
+		"bdb:usr/share/rpm":                       true,
+		"bdb:usr/lib/sysimage/rpm-ostree-base-db": true,
+		"sqlite:var/lib/rpm":                      false,
+	}
+	for db, want := range tests {
+		s.Run(db, func() {
+			s.Equal(want, slices.Contains(rhcosPackageDBs, db))
+		})
+	}
+}
+
+func (s *nodeIndexerSuite) TestFilterPackages() {
+	pkg := func(db, name, version string) *claircore.Package {
+		return &claircore.Package{
+			PackageDB: db,
+			Name:      name,
+			Version:   version,
+			Arch:      "x86_64",
+			Kind:      types.BinaryPackage,
+		}
+	}
+	share := "bdb:usr/share/rpm"
+	ostree := "bdb:usr/lib/sysimage/rpm-ostree-base-db"
+	filter := []string{share, ostree}
+
+	tests := map[string]struct {
+		pkgs   []*claircore.Package
+		filter []string
+		want   int
+	}{
+		"empty filter keeps all": {
+			pkgs:   []*claircore.Package{pkg(share, "bash", "1"), pkg("other", "zsh", "1")},
+			filter: nil,
+			want:   2,
+		},
+		"unmatched PackageDB dropped": {
+			pkgs:   []*claircore.Package{pkg("sqlite:var/lib/rpm", "bash", "1")},
+			filter: filter,
+			want:   0,
+		},
+		"ostree duplicate PackageDBs collapse": {
+			pkgs: []*claircore.Package{
+				pkg(share, "bash", "5.0"),
+				pkg(ostree, "bash", "5.0"),
+			},
+			filter: filter,
+			want:   1,
+		},
+		"distinct NEVRAs kept": {
+			pkgs: []*claircore.Package{
+				pkg(share, "bash", "5.0"),
+				pkg(share, "coreutils", "8.0"),
+			},
+			filter: filter,
+			want:   2,
+		},
+	}
+	for name, tc := range tests {
+		s.Run(name, func() {
+			s.Len(filterPackages(tc.pkgs, tc.filter), tc.want)
+		})
+	}
+
+	s.Run("does not alias input backing array", func() {
+		a := pkg(share, "bash", "5.0")
+		b := pkg(ostree, "bash", "5.0")
+		in := []*claircore.Package{a, b}
+		got := filterPackages(in, filter)
+		s.Len(got, 1)
+		s.Same(a, in[0])
+		s.Same(b, in[1])
+		s.Len(in, 2)
+	})
 }
 
 func (s *nodeIndexerSuite) TestBuildMappingURL() {
@@ -285,7 +365,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 		cfg := DefaultNodeIndexerConfig()
 		cfg.HostPath = "testdata"
 		cfg.Repo2CPEMappingURL = server.URL
-		cfg.PackageDBFilter = rhcosPackageDB
+		cfg.PackageDBFilter = rhcosPackageDBs
 
 		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
 		s.NoError(err)
@@ -304,7 +384,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 		s.Equal(buildMappingURL(), cfg.Repo2CPEMappingURL)
 		s.Nil(cfg.Client)
 		cfg.HostPath = "testdata"
-		cfg.PackageDBFilter = rhcosPackageDB
+		cfg.PackageDBFilter = rhcosPackageDBs
 
 		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
 		s.NoError(err)
@@ -324,7 +404,7 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 	cfg.OSReleasePath = "testdata-rhcos"
 	cfg.Repo2CPEMappingURL = server.URL
 	cfg.Client = server.Client()
-	cfg.PackageDBFilter = rhcosPackageDB
+	cfg.PackageDBFilter = rhcosPackageDBs
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())
@@ -354,7 +434,7 @@ func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	cfg.Client = server.Client()
 	cfg.HostPath = "doesnotexist"
 	cfg.Repo2CPEMappingURL = server.URL
-	cfg.PackageDBFilter = rhcosPackageDB
+	cfg.PackageDBFilter = rhcosPackageDBs
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())

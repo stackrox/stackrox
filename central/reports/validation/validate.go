@@ -738,6 +738,13 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 			return nil, errox.InvalidArgs.New("node vulnerability report filters must be provided")
 		}
 
+		// Node vulnerability view based reports should default to allVuln in CVEs since time filter if not provided.
+		if nodeFilters.GetCvesSince() == nil {
+			nodeFilters.CvesSince = &apiV2.NodeVulnerabilityReportFilters_AllVuln{
+				AllVuln: true,
+			}
+		}
+
 		if err := v.validateNodeFilters(nodeFilters); err != nil {
 			return nil, err
 		}

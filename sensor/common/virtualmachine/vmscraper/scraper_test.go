@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -848,6 +849,116 @@ func TestVMScraper_NACK(t *testing.T) {
 	}
 }
 
+// TestVMScraper_ACKFeatureDisabledStopsScraping covers a 4.11 Central that
+// advertises VirtualMachinesSupported then ACKs index reports as feature-disabled.
+func TestVMScraper_ACKFeatureDisabledStopsScraping(t *testing.T) {
+	cases := map[string]struct {
+		reason      string
+		wantScrapes bool
+	}{
+		"stops scraping after a feature-disabled ACK": {
+			reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			wantScrapes: false,
+		},
+		"keeps scraping after an ACK with an empty reason": {
+			reason:      "",
+			wantScrapes: true,
+		},
+		"keeps scraping after an ACK with an unrelated reason": {
+			reason:      centralsensor.SensorACKReasonRateLimited,
+			wantScrapes: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+			}
+
+			s, clock := newTestScraper(t, store, dialer, client)
+			s.pollOnce(t.Context())
+			require.Equal(t, 1, forwardedCount(s))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported))
+			reconcilesAfterFirst := store.listRunningCalls
+			dialsAfterFirst := dialer.callIdx.Load()
+
+			require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      central.SensorACK_ACK,
+						ResourceId:  "vm-a-id:100",
+						Reason:      tc.reason,
+					},
+				},
+			}))
+			require.True(t, centralcaps.Has(centralsensor.VirtualMachinesSupported),
+				"hello capabilities are left unchanged")
+			assert.Equal(t, !tc.wantScrapes, s.indexReportsDisabled.Load())
+
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+			clock.Advance(5 * time.Minute)
+			s.pollOnce(t.Context())
+
+			if tc.wantScrapes {
+				require.Len(t, client.calls, 1)
+				assert.Equal(t, reconcilesAfterFirst+1, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst+1, dialer.callIdx.Load())
+			} else {
+				assert.Empty(t, client.calls)
+				assert.Equal(t, reconcilesAfterFirst, store.listRunningCalls)
+				assert.Equal(t, dialsAfterFirst, dialer.callIdx.Load())
+			}
+		})
+	}
+}
+
+// TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable covers reconnect
+// after a feature-disabled ACK: the next Central is tried without a Sensor restart.
+func TestVMScraper_ACKFeatureDisabledResumesOnCentralReachable(t *testing.T) {
+	vmA := makeVM("ns1", "vm-a", 100)
+	vmA.ID = "vm-a-id"
+	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, clock := newTestScraper(t, store, dialer, client)
+	s.pollOnce(t.Context())
+	require.Equal(t, 1, forwardedCount(s))
+
+	require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				Action:      central.SensorACK_ACK,
+				ResourceId:  "vm-a-id:100",
+				Reason:      centralsensor.SensorACKReasonFeatureDisabled,
+			},
+		},
+	}))
+	require.True(t, s.indexReportsDisabled.Load())
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+	clock.Advance(5 * time.Minute)
+	s.pollOnce(t.Context())
+	assert.Empty(t, client.calls)
+
+	s.Notify(common.SensorComponentEventCentralReachable)
+	require.False(t, s.indexReportsDisabled.Load())
+
+	s.pollOnce(t.Context())
+	require.Len(t, client.calls, 1)
+}
+
 // TestVMScraper_InFlightSendDoesNotOverwriteNACKReset covers NACK while
 // forwardReport is blocked: commit must not restore lastToken or clear NACK backoff.
 func TestVMScraper_InFlightSendDoesNotOverwriteNACKReset(t *testing.T) {
@@ -1156,6 +1267,104 @@ func TestVMScraper_IgnoresLateScrapeAfterVMReplacement(t *testing.T) {
 			"late schedule must not inherit the predecessor's poll timer")
 		assert.Contains(t, s.dueKeys(), key)
 	})
+}
+
+// TestVMScraper_TrackedVMsByMappingPath covers the currently-tracked gauge
+// mix. Path updates use maybeSyncRepoCPEMapping so they do not need a VSOCK push.
+func TestVMScraper_TrackedVMsByMappingPath(t *testing.T) {
+	const key = "ns1/vm-a"
+
+	tests := map[string]func(t *testing.T){
+		"a new VM starts as unspecified": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			assertTrackedByMappingPath(t, 0, 0, 1)
+		},
+		"SENSOR meta moves the recount to sensor": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			assertTrackedByMappingPath(t, 1, 0, 0)
+		},
+		"URL meta moves the recount to url": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL))
+			assertTrackedByMappingPath(t, 0, 1, 0)
+		},
+		"unspecified meta stays unspecified": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED))
+			assertTrackedByMappingPath(t, 0, 0, 1)
+		},
+		"nil meta does not change a live slot": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, nil)
+			assertTrackedByMappingPath(t, 1, 0, 0)
+		},
+		"repeating SENSOR meta keeps the mix": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			assertTrackedByMappingPath(t, 1, 0, 0)
+		},
+		"URL meta after SENSOR recounts to url": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL))
+			assertTrackedByMappingPath(t, 0, 1, 0)
+		},
+		"a VM leaving vmState drops its series": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			store := &mockStore{vms: []*virtualmachine.Info{vm}}
+			s, _ := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			require.Equal(t, 1.0, testutil.ToFloat64(metrics.PullTrackedVMsByMappingPath.WithLabelValues(metrics.MappingPathSensor)))
+			store.vms = nil
+			s.reconcile()
+			assertTrackedByMappingPath(t, 0, 0, 0)
+		},
+		"a vmID recreate returns to unspecified": func(t *testing.T) {
+			vm := makeVM("ns1", "vm-a", 100)
+			store := &mockStore{vms: []*virtualmachine.Info{vm}}
+			s, _ := newTestScraper(t, store, &mockDialer{}, &mockProtocolClient{})
+			s.reconcile()
+			s.maybeSyncRepoCPEMapping(t.Context(), vm, key, 1, metaWithMapping("h", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR))
+			store.vms = []*virtualmachine.Info{{
+				ID:        "uid-new",
+				Namespace: "ns1",
+				Name:      "vm-a",
+				VSOCKCID:  new(uint32(101)),
+				Running:   true,
+			}}
+			s.reconcile()
+			assertTrackedByMappingPath(t, 0, 0, 1)
+		},
+	}
+	for name, fn := range tests {
+		t.Run(name, fn)
+	}
+}
+
+func assertTrackedByMappingPath(t *testing.T, sensor, url, unspecified float64) {
+	t.Helper()
+	assert.Equal(t, sensor, testutil.ToFloat64(metrics.PullTrackedVMsByMappingPath.WithLabelValues(metrics.MappingPathSensor)), "sensor")
+	assert.Equal(t, url, testutil.ToFloat64(metrics.PullTrackedVMsByMappingPath.WithLabelValues(metrics.MappingPathURL)), "url")
+	assert.Equal(t, unspecified, testutil.ToFloat64(metrics.PullTrackedVMsByMappingPath.WithLabelValues(metrics.MappingPathUnspecified)), "unspecified")
+	assert.Equal(t, sensor+url+unspecified, testutil.ToFloat64(metrics.PullTrackedVMs), "labeled series must sum to vsock_pull_tracked_vms")
 }
 
 // hasScheduleSlot reports whether key has a vmState slot (reconcile membership).

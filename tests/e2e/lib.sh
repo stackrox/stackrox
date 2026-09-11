@@ -42,8 +42,9 @@ POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-contro
 POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
+# Matcher and indexer are separate deployments: scanner-v4-matcher-*, scanner-v4-indexer-*.
+POD_CONTAINERS_MAP["pod: scanner-v4-matcher - container: matcher"]="scanner-v4-matcher-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-indexer - container: indexer"]="scanner-v4-indexer-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
 POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za-z0-9]+-sensor-previous.log"
@@ -756,6 +757,13 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
+    # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
+    # Matcher-not-ready drops the first index as unretryable; a short interval
+    # covers the next scan without restarting collector.
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_MAX_INITIAL_WAIT'
+    customize_envVars+=$'\n      value: "1s"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
+    customize_envVars+=$'\n      value: "30s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
