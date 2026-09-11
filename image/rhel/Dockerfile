@@ -39,11 +39,12 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-FROM ubi-base AS cli_tarballs
+FROM ubi-base AS cli-tarballs
 
 RUN dnf install -y pigz
 COPY bin/roxctl* /tmp/roxctl/
 RUN cd /tmp/roxctl && \
+    shopt -s nullglob && \
     for f in roxctl-*; do \
         [[ -f "$f" && -x "$f" ]] || continue; \
         tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \

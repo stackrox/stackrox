@@ -28,8 +28,8 @@ func Handler() http.HandlerFunc {
 func handlerWithDir(dir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			w.Header().Set("Allow", "GET, HEAD")
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			w.Header().Set("Allow", http.MethodGet + ", " + http.MethodHead)
+			http.Error(w, fmt.Sprintf("method %s not allowed", r.Method), http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -38,7 +38,7 @@ func handlerWithDir(dir string) http.HandlerFunc {
 
 		f, err := os.Open(tarPath)
 		if err != nil {
-			log.Warnf("tarball not found for binary %q: %v", filename, err)
+			log.Warnf("error opening tarball for requested binary %q: %v", filename, err)
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
@@ -60,7 +60,7 @@ func handlerWithDir(dir string) http.HandlerFunc {
 				return
 			}
 			if err != nil {
-				log.Errorf("error reading archive %s: %v", tarPath, err)
+				log.Warnf("error reading archive %s: %v", tarPath, err)
 				http.Error(w, "error reading archive", http.StatusInternalServerError)
 				return
 			}
