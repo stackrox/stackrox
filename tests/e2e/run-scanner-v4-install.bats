@@ -282,6 +282,7 @@ select_worker_node() {
 teardown_file() {
     local test_suite_end_timestamp=$(date +%s)
     _begin "teardown-file"
+    concurrently_remove_existing_stackrox_resources
     emit_timing_data "" "test-suite" "$test_suite_begin_timestamp" "$test_suite_end_timestamp"
     _end
 }
@@ -302,15 +303,6 @@ setup() {
 
     _begin "pre-test-tear-down"
 
-    if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
-        # executing teardown to begin test execution in a well-defined state
-        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    fi
-    if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
-        echo "Only tearing down resources, exiting now..."
-        exit 0
-    fi
-
     test_case_no=$(( test_case_no + 1))
 
     export ROX_SCANNER_V4=true
@@ -323,13 +315,12 @@ setup() {
     _end
 }
 
-# CRD needs to be owned by Helm if upgrading to 4.8+ from 4.7.x via Helm
-apply_crd_ownership_for_upgrade() {
+fix_up_crd_ownership() {
     local namespace=$1
     echo "Making sure that SecurityPolicies CRD has the correct metadata..."
-    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
-    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
-    "${ORCH_CMD}" </dev/null label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
+    "${ORCH_CMD}" </dev/null annotate --overwrite crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
+    "${ORCH_CMD}" </dev/null annotate --overwrite crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
+    "${ORCH_CMD}" </dev/null label --overwrite crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
 }
 
 describe_pods_in_namespace() {
@@ -396,17 +387,34 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
-    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
-        echo "ERROR: Collecting analysis data during teardown did not finish in time."
-        echo "NOTE: This failure will be ignored to not cause a test failure."
-        true # Explicit.
-    }
+    if [[ "${BATS_TEST_COMPLETED:-}" != "1" ]]; then
+        # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
+        timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+            echo "ERROR: Collecting analysis data during teardown did not finish in time."
+            echo "NOTE: This failure will be ignored to not cause a test failure."
+            true # Explicit.
+        }
+    else
+        echo "Test case passed, skipping log collection"
+    fi
 
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    if (( BATS_TEST_NUMBER < ${#BATS_TEST_NAMES[@]} )); then
+        SKIP_OPERATOR_TEARDOWN=true concurrently_remove_existing_stackrox_resources
+    fi
     echo "Post-test teardown complete."
 
     _end
+}
+
+concurrently_remove_existing_stackrox_resources() {
+    local central_cleanup_pid=""
+    SKIP_GLOBAL_RESOURCES=true \
+        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" & central_cleanup_pid=$!
+    local sensor_cleanup_pid=""
+    SKIP_GLOBAL_RESOURCES=true \
+        remove_existing_stackrox_resources "${CUSTOM_SENSOR_NAMESPACE}" & sensor_cleanup_pid=$!
+    wait "$central_cleanup_pid" "$sensor_cleanup_pid"
+    remove_existing_stackrox_resources "stackrox"
 }
 
 collect_analysis_data() {
@@ -765,26 +773,19 @@ EOT
     _end
 }
 
-@test "[Operator] Fresh installation with Scanner V4 enabled" {
-    init
-
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
-        skip "This test is currently only supported on OpenShift"
-    fi
-    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
-        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
-    fi
-
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
-    # shellcheck disable=SC2030,SC2031
-    export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-
+@test "Fresh installation using roxctl with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="true"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_HELM_DEPLOY="false"
+
     _deploy_stackrox
 
     _begin "verify"
@@ -792,50 +793,51 @@ EOT
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
-
-    _begin "verify-cert-watchers"
-
-    verify_cert_watcher_running "stackrox" "central-db"
-    verify_cert_watcher_running "stackrox" "scanner-v4-db"
 
     _end
 }
 
-@test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
-    init
-
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
-        skip "This test is currently only supported on OpenShift"
-    fi
-    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
-        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
-    fi
-
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
-    # shellcheck disable=SC2030,SC2031
-    export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-
+@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
-    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    if [[ "$CI" = "true" ]]; then
+        setup_default_TLS_certs
+    fi
+
+    # Install using roxctl deployment bundles
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
+    info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
+    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
     _begin "verify"
 
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    verify_scannerV2_deployed
+    verify_no_scannerV4_deployed
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+    _begin "upgrade-stackrox"
+
+    info "Upgrading StackRox using HEAD deployment bundles"
+    ROX_SCANNER_V4=true _deploy_stackrox
+
+    _begin "verify"
+
+    verify_scannerV2_deployed
+    verify_scannerV4_deployed
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
 }
+
+# --- Operator tests ---
+# The operator is deployed once by the [Operator] Upgrade test (first) and reused by subsequent operator tests.
+# To preserve this, operator tests must:
+#   1. Be grouped at the end of this file, with the [Operator] Upgrade test first.
+#   2. Not call deploy_stackrox_operator (except the [Operator] Upgrade test, which deploys via OLM directly).
 
 @test "[Operator] Upgrade multi-namespace installation" {
     init
@@ -919,24 +921,33 @@ EOT
 
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
-    ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _end
 }
 
-@test "Fresh installation using roxctl with Scanner V4 enabled" {
-    _begin "deploy-stackrox"
+@test "[Operator] Fresh installation with Scanner V4 enabled" {
+    init
+
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+    if ! retrying_kubectl </dev/null get crd centrals.platform.stackrox.io >/dev/null 2>&1; then
+        skip "Operator not deployed (prerequisite [Operator] Upgrade test likely failed)"
+    fi
 
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-      export ROX_OPENSHIFT_VERSION=4
-    fi
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
-    export SENSOR_HELM_DEPLOY="false"
+    export SENSOR_SCANNER_SUPPORT=true
+
+    _begin "deploy-stackrox"
 
     _deploy_stackrox
 
@@ -945,42 +956,49 @@ EOT
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _begin "verify-cert-watchers"
+
+    verify_cert_watcher_running "stackrox" "central-db"
+    verify_cert_watcher_running "stackrox" "scanner-v4-db"
 
     _end
 }
 
-@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
-    _begin "deploy-stackrox"
+@test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
+    init
 
-    if [[ "$CI" = "true" ]]; then
-        setup_default_TLS_certs
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+    if ! retrying_kubectl </dev/null get crd centrals.platform.stackrox.io >/dev/null 2>&1; then
+        skip "Operator not deployed (prerequisite [Operator] Upgrade test likely failed)"
     fi
 
-    # Install using roxctl deployment bundles
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
-    info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
-    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
+    _begin "deploy-stackrox"
+
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _begin "verify"
 
-    verify_scannerV2_deployed
-    verify_no_scannerV4_deployed
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
-    _begin "upgrade-stackrox"
-
-    info "Upgrading StackRox using HEAD deployment bundles"
-    ROX_SCANNER_V4=true _deploy_stackrox
-
-    _begin "verify"
-
-    verify_scannerV2_deployed
-    verify_scannerV4_deployed
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _end
 }
@@ -1167,6 +1185,7 @@ _deploy_stackrox() {
     local sensor_namespace=${3:-stackrox}
     local validate=${4:-true}
 
+    fix_up_crd_ownership "${central_namespace}"
     _deploy_central "${central_namespace}"
     # shellcheck disable=SC2031
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
@@ -1180,11 +1199,6 @@ _deploy_stackrox() {
 
     _deploy_sensor "${sensor_namespace}" "${central_namespace}" "${validate}"
     echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait "${sensor_namespace}"
-
-    # Bounce collectors to avoid restarts on initial module pull
-    "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
-
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
@@ -1239,6 +1253,11 @@ EOT
         )
     fi
 
+    # The SecurityPolicies CRD is cluster-scoped and may survive teardown between tests.
+    # Patch its Helm ownership annotations to match the target namespace so that both
+    # fresh installs and upgrades can adopt it.
+    fix_up_crd_ownership "$central_namespace"
+
     command=("install" "--create-namespace")
     if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
         helm_generated_values_file=$(mktemp)
@@ -1248,7 +1267,6 @@ EOT
             > "$helm_generated_values_file"
         command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
         upgrade="true"
-        apply_crd_ownership_for_upgrade "$central_namespace"
     else
         create_central_pull_secrets "$central_namespace"
 
@@ -1642,7 +1660,6 @@ wait_until_central_validation_webhook_is_ready() {
     local central_namespace=$1
 
     info "Waiting for AdmissionWebhook to be functional by trying to patch Central in namespace ${central_namespace}..."
-    sleep 1m
     patch_test_file=$(mktemp)
     cat >"${patch_test_file}" <<EOT
 spec:

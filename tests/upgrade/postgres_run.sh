@@ -60,7 +60,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     touch "${UPGRADE_PROGRESS_POSTGRES_PREP}"

@@ -54,7 +54,6 @@ test_byodb() {
 
     preamble
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     run_byodb_test "$log_output_dir"
