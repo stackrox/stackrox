@@ -160,7 +160,7 @@ const TopologyComponent = ({
         }
     }
 
-    const { deploymentCount } = useFetchDeploymentCount(
+    const { data: deploymentCount } = useFetchDeploymentCount(
         getSearchFilterFromScopeHierarchy(scopeHierarchy)
     );
 

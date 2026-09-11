@@ -784,7 +784,6 @@ module.exports = [
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/MainPage/Header/ClusterStatusProblems.tsx',
             'src/Containers/NetworkGraph/simulation/DeploymentScopeModal.tsx',
-            'src/hooks/useFetchDeploymentCount.ts',
             'src/hooks/useEntityName.js',
             'src/utils/responseErrorUtils.ts',
         ],
