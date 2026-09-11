@@ -40,7 +40,7 @@ func (r *NodeCVEQueryResponse) GetNode() string {
 
 func (r *NodeCVEQueryResponse) GetOperatingSystem() string {
 	if r.OperatingSystem == nil {
-		return ""
+		return "Not Available"
 	}
 	return *r.OperatingSystem
 }

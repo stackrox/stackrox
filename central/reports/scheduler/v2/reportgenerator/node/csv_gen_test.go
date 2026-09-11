@@ -137,7 +137,7 @@ func TestGenerateCSV_NilFieldsProduceDefaults(t *testing.T) {
 	row := records[1]
 	assert.Equal(t, "", row[0])               // Cluster
 	assert.Equal(t, "", row[1])               // Node
-	assert.Equal(t, "", row[2])               // Operating System
+	assert.Equal(t, "Not Available", row[2])  // Operating System
 	assert.Equal(t, "", row[3])               // Component
 	assert.Equal(t, "", row[4])               // ComponentVersion
 	assert.Equal(t, "", row[5])               // CVE
