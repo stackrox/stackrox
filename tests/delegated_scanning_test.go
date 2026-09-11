@@ -75,6 +75,10 @@ const (
 	// deleScanDefaultRetryDelay the time to wait between retries.
 	deleScanDefaultRetryDelay = 5 * time.Second
 
+	// deleScanDefaultScanTimeout the per-call timeout for scan API requests. This prevents a single
+	// hung call from consuming the entire test timeout, allowing the retry mechanism to function.
+	deleScanDefaultScanTimeout = 3 * time.Minute
+
 	// deleScanArtifactsDir the base directory to store test artifacts on failure.
 	deleScanArtifactsDir = "dele-scan"
 )
@@ -135,6 +139,20 @@ var (
 		// - http: non-successful response (status=504 body="<html>...<title>504 Gateway Time-out</title>...")
 		"non-successful response (status=502",
 		"non-successful response (status=504",
+
+		// Central's internal scan semaphore may reject enrichment requests when under load,
+		// retry when this happens.
+		"acquiring scan semaphore",
+
+		// Intermittent network timeouts dialing the registry/CDN (e.g. quay.io's Akamai
+		// edge) may interrupt fetching a layer blob. These surface as a gRPC DeadlineExceeded
+		// wrapping a net dial timeout, so retry when this happens.
+		//
+		// ex:
+		// - create index: rpc error: code = DeadlineExceeded desc = getting layer request URL
+		//   and headers (digest: "sha256:..."): Get "https://cdn01.quay.io/...": dial tcp
+		//   23.192.220.151:443: i/o timeout
+		"i/o timeout",
 	}
 )
 
@@ -1024,7 +1042,9 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 	var img *storage.Image
 
 	retryFunc := func() error {
-		img, err = service.ScanImage(ctx, req)
+		callCtx, cancel := context.WithTimeout(ctx, deleScanDefaultScanTimeout)
+		defer cancel()
+		img, err = service.ScanImage(callCtx, req)
 		if err == nil {
 			return nil
 		}
@@ -1301,6 +1321,7 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 	}
 
 	return retry.WithRetry(retryFunc,
+		retry.WithContext(ts.ctx),
 		retry.BetweenAttempts(betweenAttemptsFunc),
 		retry.Tries(deleScanDefaultMaxRetries),
 		retry.WithExponentialBackoff(),

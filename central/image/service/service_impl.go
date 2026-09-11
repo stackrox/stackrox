@@ -857,6 +857,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			logging.Err(err),
 			logging.String("request_id", request.GetRequestId()),
 		)
+		s.informScanWaiter(request.GetRequestId(), nil, err)
 		return nil, err
 	}
 	defer func() {
@@ -1011,6 +1012,7 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 			logging.Err(err),
 			logging.String("request_id", request.GetRequestId()),
 		)
+		s.informScanWaiterV2(request.GetRequestId(), nil, err)
 		return nil, err
 	}
 	defer func() {
