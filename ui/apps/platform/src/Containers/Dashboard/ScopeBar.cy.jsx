@@ -1,5 +1,4 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import ScopeBar from './ScopeBar';
 
@@ -30,8 +29,23 @@ const mockData = {
 };
 
 function setup() {
-    cy.intercept('POST', graphqlUrl('getAllNamespacesByCluster'), (req) => {
-        req.reply({ data: mockData });
+    cy.intercept('GET', '/v1/clusters*', (req) => {
+        req.reply({
+            clusters: mockData.clusters.map(({ id, name }) => ({ id, name })),
+        });
+    });
+    cy.intercept('GET', '/v1/namespaces*', (req) => {
+        req.reply({
+            namespaces: mockData.clusters.flatMap((cluster) =>
+                cluster.namespaces.map((namespace) => ({
+                    metadata: {
+                        ...namespace.metadata,
+                        clusterId: cluster.id,
+                        clusterName: cluster.name,
+                    },
+                }))
+            ),
+        });
     });
 
     // Work-around for cy.location('search') assertions.
@@ -59,6 +73,7 @@ describe(Cypress.spec.relative, () => {
         clusterToggle().click();
         dropdownOption('All clusters', { selector: 'input' }).should('be.checked');
         namespaceToggle().should('be.disabled');
+        cy.screenshot('after-scope-bar');
     });
 
     it('allows selection of multiple clusters and namespaces', () => {

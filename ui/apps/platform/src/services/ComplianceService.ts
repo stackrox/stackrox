@@ -1,7 +1,50 @@
+import qs from 'qs';
+
 import axios from './instance';
 import type { Empty } from './types';
 
 const standardsUrl = '/v1/compliance/standards';
+const aggregatedResultsUrl = '/v1/compliance/aggregatedresults';
+
+export type ComplianceAggregationKey = {
+    id: string;
+    scope: string;
+};
+
+export type ComplianceAggregationResult = {
+    aggregationKeys: ComplianceAggregationKey[];
+    numFailing: number;
+    numPassing: number;
+    numSkipped: number;
+    unit: string;
+};
+
+export type ComplianceAggregationResponse = {
+    results?: ComplianceAggregationResult[];
+    errorMessage?: string;
+};
+
+export function fetchComplianceAggregatedResults({
+    groupBy,
+    unit,
+    where,
+}: {
+    groupBy: string[];
+    unit: string;
+    where: string;
+}): Promise<ComplianceAggregationResponse> {
+    const params = qs.stringify(
+        {
+            group_by: groupBy,
+            unit,
+            where: { query: where },
+        },
+        { allowDots: true, arrayFormat: 'repeat' }
+    );
+    return axios
+        .get<ComplianceAggregationResponse>(`${aggregatedResultsUrl}?${params}`)
+        .then((response) => response.data);
+}
 
 export type ComplianceStandardScope = 'UNSET' | 'CLUSTER' | 'NAMESPACE' | 'DEPLOYMENT' | 'NODE';
 

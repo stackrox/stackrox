@@ -769,7 +769,6 @@ module.exports = [
             'src/Containers/Vulnerabilities/ExceptionManagement/**',
             'src/Containers/Vulnerabilities/hooks/**',
             'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Dashboard/**',
             // Shared queries, Apollo bootstrap, and test utils
             'src/queries/**',
             'src/init/configureApolloClient.js',

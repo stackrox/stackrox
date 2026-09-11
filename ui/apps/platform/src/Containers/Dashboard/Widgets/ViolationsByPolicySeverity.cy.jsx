@@ -1,43 +1,53 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { violationsBasePath } from 'routePaths';
 
 import ViolationsByPolicySeverity from './ViolationsByPolicySeverity';
 
-const mostRecentAlertsMock = {
-    data: {
-        alerts: [
-            {
-                id: '1',
-                time: '2022-06-24T00:35:42.299667447Z',
-                deployment: {
-                    clusterName: 'production',
-                    namespace: 'kube-system',
-                    name: 'kube-proxy',
-                },
-                resource: null,
-                policy: { name: 'Ubuntu Package Manager in Image', severity: 'CRITICAL_SEVERITY' },
-            },
-        ],
+const mostRecentAlerts = [
+    {
+        id: '1',
+        time: '2022-06-24T00:35:42.299667447Z',
+        commonEntityInfo: {
+            resourceType: 'DEPLOYMENT',
+            clusterName: 'production',
+            namespace: 'kube-system',
+            clusterId: 'cluster-1',
+            namespaceId: 'ns-1',
+        },
+        deployment: {
+            clusterName: 'production',
+            namespace: 'kube-system',
+            name: 'kube-proxy',
+            id: 'dep-1',
+            clusterId: 'cluster-1',
+            inactive: false,
+            namespaceId: 'ns-1',
+        },
+        policy: { name: 'Ubuntu Package Manager in Image', severity: 'CRITICAL_SEVERITY' },
     },
-};
+];
 
-const alertsBySeverityMock = {
-    data: {
-        LOW_SEVERITY: 220,
-        MEDIUM_SEVERITY: 70,
-        HIGH_SEVERITY: 140,
-        CRITICAL_SEVERITY: 3,
-    },
+const alertsBySeverityCounts = {
+    groups: [
+        {
+            group: '',
+            counts: [
+                { severity: 'LOW_SEVERITY', count: '220' },
+                { severity: 'MEDIUM_SEVERITY', count: '70' },
+                { severity: 'HIGH_SEVERITY', count: '140' },
+                { severity: 'CRITICAL_SEVERITY', count: '3' },
+            ],
+        },
+    ],
 };
 
 function setup() {
-    cy.intercept('POST', graphqlUrl('mostRecentAlerts'), (req) => {
-        req.reply(mostRecentAlertsMock);
+    cy.intercept('GET', '/v1/alerts/summary/counts*', (req) => {
+        req.reply(alertsBySeverityCounts);
     });
 
-    cy.intercept('POST', graphqlUrl('alertCountsBySeverity'), (req) => {
-        req.reply(alertsBySeverityMock);
+    cy.intercept('GET', '/v1/alerts?*', (req) => {
+        req.reply({ alerts: mostRecentAlerts });
     });
 
     cy.mount(
@@ -56,11 +66,10 @@ describe(Cypress.spec.relative, () => {
         cy.get('a').contains(/140\s*High/);
         cy.get('a').contains(/3\s*Critical/);
 
-        const { data } = alertsBySeverityMock;
-        const alertCount =
-            data.LOW_SEVERITY + data.MEDIUM_SEVERITY + data.HIGH_SEVERITY + data.CRITICAL_SEVERITY;
+        const alertCount = 220 + 70 + 140 + 3;
 
         cy.findByText(`${alertCount} policy violations by severity`).should('exist');
+        cy.screenshot('after-violations-by-policy-severity');
     });
 
     it('should link to the correct violations pages when clicking links in the widget', () => {
@@ -83,9 +92,6 @@ describe(Cypress.spec.relative, () => {
 
         // Test links from the 'most recent violations' section
         cy.findByText(/ubuntu package manager/i).click();
-        cy.location('pathname').should(
-            'eq',
-            `${violationsBasePath}/${mostRecentAlertsMock.data.alerts[0].id}`
-        );
+        cy.location('pathname').should('eq', `${violationsBasePath}/${mostRecentAlerts[0].id}`);
     });
 });

@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom-v5-compat';
-import { gql, useQuery } from '@apollo/client';
 import {
     Flex,
     FlexItem,
@@ -20,8 +19,9 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import ImagesAtMostRiskTable from './ImagesAtMostRiskTable';
-import type { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
+import type { CveStatusOption } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
+import useImagesAtMostRisk from '../hooks/useImagesAtMostRisk';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
@@ -40,40 +40,12 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${vulnManagementImagesPath}${queryString}`;
 }
 
-export const imagesAtMostRiskQuery = gql`
-    query getImagesAtMostRisk($query: String) {
-        images(
-            query: $query
-            pagination: { limit: 6, sortOption: { field: "Image Risk Priority", reversed: false } }
-        ) {
-            id
-            name {
-                remote
-                fullName
-            }
-            priority
-            imageVulnerabilityCounter {
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-        }
-    }
-`;
-
 // If no resource scope is applied and the user selects "Active images" only, we
 // can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
-function getQueryVariables(searchFilter: SearchFilter, statusOption: ImageStatusOption) {
-    const query =
-        statusOption === 'Active' && !isResourceScoped(searchFilter)
-            ? 'Namespace:*'
-            : getRequestQueryStringForSearchFilter(searchFilter);
-    return { query };
+function getQuery(searchFilter: SearchFilter, statusOption: ImageStatusOption) {
+    return statusOption === 'Active' && !isResourceScoped(searchFilter)
+        ? 'Namespace:*'
+        : getRequestQueryStringForSearchFilter(searchFilter);
 }
 
 const fieldIdPrefix = 'images-at-most-risk';
@@ -101,18 +73,14 @@ function ImagesAtMostRisk() {
     );
     const { cveStatus, imageStatus } = config;
 
-    const variables = getQueryVariables(searchFilter, imageStatus);
-    const { data, previousData, loading, error } = useQuery<ImageData>(imagesAtMostRiskQuery, {
-        variables,
-    });
-
-    const imageData = data || previousData;
+    const query = getQuery(searchFilter, imageStatus);
+    const { data: imageData, isLoading, error } = useImagesAtMostRisk(query);
     const isScopeApplied = isResourceScoped(searchFilter);
     const isOptionsChanged = !isEqual(config, defaultConfig);
 
     return (
         <WidgetCard
-            isLoading={loading || !imageData}
+            isLoading={isLoading || !imageData}
             error={error}
             header={
                 <Flex

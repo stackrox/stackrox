@@ -4,15 +4,18 @@ import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
-import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
-import type { Alert } from 'types/alert.proto';
+import type { ListAlert, ResourceListAlert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { violationsBasePath } from 'routePaths';
 import NoDataEmptyState from './NoDataEmptyState';
 
 export type MostRecentViolationsProps = {
-    alerts: Alert[];
+    alerts: ListAlert[];
 };
+
+function isResourceListAlert(alert: ListAlert): alert is ResourceListAlert {
+    return 'resource' in alert && Boolean(alert.resource);
+}
 
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
@@ -28,10 +31,10 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                             let icon = <ResourceIcon className="pf-v6-u-mr-sm" kind="Unknown" />;
                             let name = <Truncate content="Unknown Violation" />;
 
-                            if (isDeploymentAlert(alert)) {
+                            if ('deployment' in alert && alert.deployment) {
                                 icon = <ResourceIcon className="pf-v6-u-mr-sm" kind="Deployment" />;
                                 name = <Truncate content={alert.deployment.name} />;
-                            } else if (isResourceAlert(alert)) {
+                            } else if (isResourceListAlert(alert)) {
                                 const resourceTypeToKind = {
                                     UNKNOWN: 'Unknown',
                                     SECRETS: 'Secret',
@@ -42,7 +45,9 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     SECURITY_CONTEXT_CONSTRAINTS: 'SecurityContextConstraints',
                                     EGRESS_FIREWALLS: 'EgressFirewalls',
                                 } as const;
-                                const kind = resourceTypeToKind[alert.resource.resourceType];
+                                const kind =
+                                    resourceTypeToKind[alert.commonEntityInfo.resourceType] ??
+                                    'Unknown';
                                 icon = <ResourceIcon className="pf-v6-u-mr-sm" kind={kind} />;
                                 name = <Truncate content={alert.resource.name} />;
                             }

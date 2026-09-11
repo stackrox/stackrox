@@ -13,7 +13,6 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
-import { useQuery } from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 
@@ -26,11 +25,10 @@ import {
     getRequestQueryStringForSearchFilter,
     getUrlQueryStringForSearchFilter,
 } from 'utils/searchUtils';
-import entityTypes from 'constants/entityTypes';
-import type { StandardEntityType, standardTypes } from 'constants/entityTypes';
-import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import { complianceBasePath } from 'routePaths';
 import { standardLabels } from 'messages/standards';
+import useComplianceLevelsByStandard from '../hooks/useComplianceLevelsByStandard';
+import type { AggregationResult } from '../hooks/useComplianceLevelsByStandard';
 import ComplianceLevelsByStandardChart from './ComplianceLevelsByStandardChart';
 import type { ComplianceLevelByStandard } from './ComplianceLevelsByStandardChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
@@ -96,22 +94,6 @@ function processData(
     };
 }
 
-type AggregationResult = {
-    controls: {
-        results: {
-            aggregationKeys: {
-                id: keyof typeof standardTypes;
-                scope: StandardEntityType;
-            }[];
-            numFailing: number;
-            numPassing: number;
-            numSkipped: number;
-            unit: StandardEntityType;
-        }[];
-    };
-    complianceStandards: ComplianceStandard[];
-};
-
 type SortBy = 'asc' | 'desc';
 
 const defaultConfig = { sortDataBy: 'asc' } as const;
@@ -130,25 +112,18 @@ function ComplianceLevelsByStandard() {
         ...searchFilter,
         Cluster: searchFilter.Cluster || '*',
     });
-    const variables = {
-        groupBy: [entityTypes.STANDARD],
-        where,
-    };
-    const { loading, error, data, previousData } = useQuery<AggregationResult>(
-        AGGREGATED_RESULTS_ACROSS_ENTITIES,
-        { variables }
-    );
+    const { isLoading, error, data } = useComplianceLevelsByStandard(where);
 
     const complianceData = useMemo(
-        () => processData(searchFilter, sortDataBy, data || previousData),
-        [searchFilter, sortDataBy, data, previousData]
+        () => processData(searchFilter, sortDataBy, data),
+        [searchFilter, sortDataBy, data]
     );
 
     const isOptionsChanged = !isEqual(sortDataBy, defaultConfig.sortDataBy);
 
     return (
         <WidgetCard
-            isLoading={loading && !complianceData}
+            isLoading={isLoading && !complianceData}
             error={error}
             header={
                 <Flex

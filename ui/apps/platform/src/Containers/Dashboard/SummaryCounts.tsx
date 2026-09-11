@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';
 
@@ -15,21 +14,13 @@ import { resourceTypes } from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
+import useSummaryCounts from './hooks/useSummaryCounts';
+import type { SummaryCountsResponse, TileResource } from './hooks/useSummaryCounts';
 import SummaryCount from './SummaryCount';
 
-export type SummaryCountsResponse = {
-    clusterCount: number;
-    nodeCount: number;
-    violationCount: number;
-    deploymentCount: number;
-    imageCount: number;
-    secretCount: number;
-};
-
 const tileResources = ['Cluster', 'Node', 'Alert', 'Deployment', 'Image', 'Secret'] as const;
-type TileResource = (typeof tileResources)[number];
 
-const dataKey: Record<TileResource, string> = {
+const dataKey: Record<TileResource, keyof SummaryCountsResponse> = {
     Cluster: 'clusterCount',
     Node: 'nodeCount',
     Alert: 'violationCount',
@@ -66,23 +57,16 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
     };
 
-    const tileResourcesQuery = tileResources
-        .filter((tileResource) => hasReadAccessForResource[tileResource])
-        .map((tileResource) => dataKey[tileResource])
-        .join('\n');
-    const query = gql`
-        query summary_counts {
-            ${tileResourcesQuery}
-        }
-    `;
-
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-    const { loading, error, data } = useQuery<SummaryCountsResponse>(query, {
-        fetchPolicy: 'network-only',
-        onCompleted: () => setLastUpdate(new Date()),
-    });
+    const { isLoading, error, data } = useSummaryCounts(hasReadAccessForResource);
 
-    if (loading) {
+    useEffect(() => {
+        if (data && !isLoading) {
+            setLastUpdate(new Date());
+        }
+    }, [data, isLoading]);
+
+    if (isLoading) {
         return (
             <Skeleton
                 height="32px"
@@ -119,7 +103,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                             return (
                                 <SummaryCount
                                     key={tileResource}
-                                    count={data[dataKey[tileResource]]}
+                                    count={data[dataKey[tileResource]] as number}
                                     href={tileLinks[tileResource]}
                                     noun={tileNouns[tileResource]}
                                     tooltip={tooltip}

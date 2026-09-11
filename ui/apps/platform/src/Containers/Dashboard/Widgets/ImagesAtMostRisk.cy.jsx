@@ -1,5 +1,4 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
 
 import ImagesAtMostRisk from './ImagesAtMostRisk';
@@ -44,15 +43,59 @@ const mockImages = [1, 2, 3, 4, 5, 6].map((n) =>
     makeMockImage(`${n}`, `name-${n}`, `reg/name-${n}:tag`, n, vulnCounts)
 );
 
-const mock = {
-    data: {
-        images: mockImages,
-    },
-};
+function vulnsForCounts(prefix, severity, total, fixable) {
+    return [
+        ...Array.from({ length: fixable }, (_, index) => ({
+            cve: `${prefix}-fix-${index}`,
+            severity,
+            fixedBy: '1.0.0',
+        })),
+        ...Array.from({ length: total - fixable }, (_, index) => ({
+            cve: `${prefix}-${index}`,
+            severity,
+        })),
+    ];
+}
 
 function setup() {
-    cy.intercept('POST', graphqlUrl('getImagesAtMostRisk'), (req) => {
-        req.reply(mock);
+    cy.intercept('GET', '/v1/images?*', (req) => {
+        req.reply({
+            images: mockImages.map(({ id, name, priority }) => ({
+                id,
+                name: name.fullName,
+                priority: String(priority),
+            })),
+        });
+    });
+    cy.intercept('GET', '/v1/images/*', (req) => {
+        const { pathname } = new URL(req.url, window.location.origin);
+        const imageId = decodeURIComponent(pathname.replace(/^\/v1\/images\//, ''));
+        const image = mockImages.find((item) => item.id === imageId);
+        req.reply({
+            id: image.id,
+            name: image.name,
+            priority: image.priority,
+            scan: {
+                components: [
+                    {
+                        vulns: [
+                            ...vulnsForCounts(
+                                `${image.id}-crit`,
+                                'CRITICAL_VULNERABILITY_SEVERITY',
+                                totalCritical,
+                                fixableCritical
+                            ),
+                            ...vulnsForCounts(
+                                `${image.id}-imp`,
+                                'IMPORTANT_VULNERABILITY_SEVERITY',
+                                totalImportant,
+                                fixableImportant
+                            ),
+                        ],
+                    },
+                ],
+            },
+        });
     });
 
     cy.mount(
@@ -85,6 +128,7 @@ describe(Cypress.spec.relative, () => {
         // Default should show fixable CVEs
         cy.findAllByText(`${fixableCritical} fixable`).should('have.length', mockImages.length);
         cy.findAllByText(`${fixableImportant} fixable`).should('have.length', mockImages.length);
+        cy.screenshot('after-images-at-most-risk');
 
         // Switch to show total CVEs
         cy.findByLabelText('Options').click();

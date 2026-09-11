@@ -59,6 +59,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('svg a:eq(2)').should('have.text', 'Anomalous Activity');
         cy.get('svg a:eq(3)').should('have.text', 'Privileges');
         cy.get('svg a:eq(4)').should('have.text', 'Network Tools');
+        cy.screenshot('after-violations-by-policy-category');
     });
 
     it('should allow toggling of severities for a policy violations by category widget', () => {

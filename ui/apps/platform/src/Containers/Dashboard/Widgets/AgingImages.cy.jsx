@@ -1,5 +1,4 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { PublicConfigContext } from 'hooks/usePublicConfig';
 
 import AgingImages from './AgingImages';
@@ -21,17 +20,34 @@ const result1 = 1;
 const result2 = 13;
 const result3 = 18;
 
-const mock = {
-    data: {
-        timeRange0: result0,
-        timeRange1: result1,
-        timeRange2: result2,
-        timeRange3: result3,
-    },
-};
+function countForQuery(url) {
+    const decoded = decodeURIComponent(url);
+    if (decoded.includes('30d-90d')) {
+        return result0;
+    }
+    if (decoded.includes('90d-180d')) {
+        return result1;
+    }
+    if (decoded.includes('180d-365d')) {
+        return result2;
+    }
+    if (decoded.includes('>365d')) {
+        return result3;
+    }
+    // Merged buckets used when a middle range is disabled
+    if (decoded.includes('30d-180d')) {
+        return result0;
+    }
+    if (decoded.includes('90d-365d')) {
+        return result1;
+    }
+    return 0;
+}
 
 function setup() {
-    cy.intercept('POST', graphqlUrl('agingImagesQuery'), (req) => req.reply(mock));
+    cy.intercept('GET', '/v1/imagescount*', (req) => {
+        req.reply({ count: countForQuery(req.url) });
+    });
 
     cy.mount(
         <ComponentTestProvider>
@@ -56,6 +72,7 @@ describe(Cypress.spec.relative, () => {
         cy.findByText(result1);
         cy.findByText(result2);
         cy.findByText(result3);
+        cy.screenshot('after-aging-images');
     });
 
     it('should render graph bars with the correct image counts when time buckets are toggled', () => {

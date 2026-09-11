@@ -152,6 +152,13 @@ export function fetchGlobalSearchResults(
     return axios.get<SearchResponse>(`${baseUrl}?${params}`).then((response) => response.data);
 }
 
+export function fetchNodeCount(): Promise<number> {
+    return fetchGlobalSearchResults({ query: 'Node:*', categories: ['NODES'] }).then((response) => {
+        const match = response.counts?.find((item) => item.category === 'NODES');
+        return Number(match?.count ?? 0);
+    });
+}
+
 // Fetches the autocomplete response.
 export function fetchAutoCompleteResults(
     rawSearchRequest: RawSearchRequest,

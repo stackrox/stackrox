@@ -1,10 +1,68 @@
+import queryString from 'qs';
+
 import type { ListImage, WatchedImage } from 'types/image.proto';
+import type { ApiSortOption } from 'types/search';
+import type { EmbeddedVulnerability } from 'types/vulnerability.proto';
+import { getPaginationParams } from 'utils/searchUtils';
 
 import axios from './instance';
 import type { Empty } from './types';
 
 const imagesUrl = '/v1/images';
+const imagesCountUrl = '/v1/imagescount';
 const watchedImagesUrl = '/v1/watchedimages';
+
+export type ImageDetails = {
+    id: string;
+    name?: {
+        remote?: string;
+        fullName?: string;
+    };
+    priority?: string | number;
+    scan?: {
+        components?: {
+            vulns?: EmbeddedVulnerability[];
+        }[];
+    };
+};
+
+export function fetchImageCount(query = ''): Promise<number> {
+    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+    return axios
+        .get<{ count: number }>(`${imagesCountUrl}?${params}`)
+        .then((response) => response.data?.count ?? 0);
+}
+
+export function listImages({
+    query = '',
+    sortOption,
+    page = 1,
+    perPage = 6,
+}: {
+    query?: string;
+    sortOption: ApiSortOption;
+    page?: number;
+    perPage?: number;
+}): Promise<ListImage[]> {
+    const params = queryString.stringify(
+        {
+            query,
+            pagination: getPaginationParams({ page, perPage, sortOption }),
+        },
+        { allowDots: true }
+    );
+    return axios
+        .get<{ images: ListImage[] }>(`${imagesUrl}?${params}`)
+        .then((response) => response.data?.images ?? []);
+}
+
+export function getImage(id: string): Promise<ImageDetails> {
+    return axios
+        .get<ImageDetails>(`${imagesUrl}/${encodeURIComponent(id)}`, {
+            params: { strip_description: true },
+        })
+        .then((response) => response.data);
+}
 
 /*
  * Get array of images.

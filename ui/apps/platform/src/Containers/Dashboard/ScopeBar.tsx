@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { gql, useQuery } from '@apollo/client';
 import omit from 'lodash/omit';
 
 import useURLSearch from 'hooks/useURLSearch';
@@ -9,34 +8,13 @@ import { flattenFilterValue } from 'utils/searchUtils';
 import NamespaceSelect from './NamespaceSelect';
 import ClusterSelect from './ClusterSelect';
 import type { SelectionChangeAction } from './ClusterSelect';
-import type { Cluster } from './types';
-
-type NamespacesResponse = {
-    clusters: Cluster[];
-};
-
-export const namespacesQuery = gql`
-    query getAllNamespacesByCluster($query: String) {
-        clusters(query: $query) {
-            id
-            name
-            namespaces {
-                metadata {
-                    id
-                    name
-                }
-            }
-        }
-    }
-`;
+import useClustersWithNamespaces from './hooks/useClustersWithNamespaces';
 
 function ScopeBar() {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { data, loading, error } = useQuery<NamespacesResponse>(namespacesQuery, {
-        variables: { query: '' },
-    });
+    const { data, isLoading, error } = useClustersWithNamespaces();
     const selectedClusterData = useMemo(() => {
-        return data?.clusters.filter(({ name }) => searchFilter.Cluster?.includes(name)) ?? [];
+        return data?.filter(({ name }) => searchFilter.Cluster?.includes(name)) ?? [];
     }, [data, searchFilter.Cluster]);
 
     function onClusterChange(changeAction: SelectionChangeAction) {
@@ -53,7 +31,7 @@ function ScopeBar() {
             // do a more fine-grained update of the selection. When a new cluster is selected, all
             // namespaces belonging to that cluster should be selected. When a cluster is
             // removed, any selected namespaces that belong to that cluster should be removed.
-            const changedCluster = data?.clusters.find((cs) => cs.name === value);
+            const changedCluster = data?.find((cs) => cs.name === value);
             const toggledNamespaceIds =
                 changedCluster?.namespaces.map(({ metadata }) => metadata.id) ?? [];
             const selectedNamespaceIds =
@@ -89,9 +67,9 @@ function ScopeBar() {
                 </ToolbarItem>
                 <ToolbarItem>
                     <ClusterSelect
-                        clusters={data?.clusters ?? []}
+                        clusters={data ?? []}
                         clusterSearch={searchFilter.Cluster}
-                        isDisabled={loading || Boolean(error)}
+                        isDisabled={isLoading || Boolean(error)}
                         onChange={onClusterChange}
                         onSelectAll={onClusterSelectAll}
                     />
@@ -100,7 +78,7 @@ function ScopeBar() {
                     <NamespaceSelect
                         clusters={selectedClusterData}
                         namespaceSearch={searchFilter['Namespace ID']}
-                        isDisabled={selectedClusterData.length === 0 || loading || Boolean(error)}
+                        isDisabled={selectedClusterData.length === 0 || isLoading || Boolean(error)}
                         onChange={onNamespaceChange}
                         onSelectAll={onNamespaceSelectAll}
                     />

@@ -1,50 +1,91 @@
 import pf6 from '../selectors/pf6';
 
 import { hasFeatureFlag } from './features';
-import { getRouteMatcherMapForGraphQL } from './request';
 import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
-/*
- * Import relevant alias constants in test files that call visitMainDashboard function
- * with staticResponseMap argument to provide mock data for a widget.
- */
-export const summaryCountsOpname = 'summary_counts';
-export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
-export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
-export const mostRecentAlertsOpname = 'mostRecentAlerts';
-export const getImagesAtMostRiskOpname = 'getImagesAtMostRisk';
-export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
-export const agingImagesQueryOpname = 'agingImagesQuery';
-export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
-export const getAggregatedResultsOpname = 'getAggregatedResults';
-
-export const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
-const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
-    getAllNamespacesByClusterOpname,
-]);
-const routeMatcherMapForViolationsByPolicySeverity = {
-    ...getRouteMatcherMapForGraphQL([alertCountsBySeverityOpname]),
-    ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
+const summaryCountMatchers = {
+    Cluster: { method: 'GET', url: '/v1/clusters' },
+    Node: { method: 'GET', url: '/v1/search?*' },
+    Alert: { method: 'GET', url: '/v1/alertscount*' },
+    Deployment: { method: 'GET', url: '/v1/deploymentscount*' },
+    Image: { method: 'GET', url: '/v1/imagescount*' },
+    Secret: { method: 'GET', url: '/v1/secretscount*' },
 };
-const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([
-    getImagesAtMostRiskOpname,
+
+/**
+ * REST route matchers for Dashboard summary counts. Pass only the resources the
+ * role can read so visit helpers do not wait for requests that never fire.
+ *
+ * @param {Array<keyof typeof summaryCountMatchers>} resources
+ */
+export function routeMatcherMapForSummaryCountResources(resources) {
+    return Object.fromEntries(
+        resources.map((resource) => [`summary${resource}`, summaryCountMatchers[resource]])
+    );
+}
+
+export const routeMatcherMapForSummaryCounts = routeMatcherMapForSummaryCountResources([
+    'Cluster',
+    'Node',
+    'Alert',
+    'Deployment',
+    'Image',
+    'Secret',
 ]);
+
+export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
+export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
+
+const routeMatcherMapForSearchFilter = {
+    scopeNamespaces: {
+        method: 'GET',
+        url: '/v1/namespaces',
+    },
+};
+const routeMatcherMapForViolationsByPolicySeverity = {
+    alertCountsBySeverity: {
+        method: 'GET',
+        url: '/v1/alerts/summary/counts*',
+    },
+    mostRecentAlerts: {
+        method: 'GET',
+        url: '/v1/alerts?*',
+    },
+};
+const routeMatcherMapForImagesAtMostRisk = {
+    imagesAtMostRisk: {
+        method: 'GET',
+        url: '/v1/images?*',
+    },
+};
 const routeMatcherMapForDeploymentsAtMostRisk = {
     [deploymentsWithProcessInfoAlias]: {
         method: 'GET',
         url: '/v1/deploymentswithprocessinfo?*',
     },
 };
-const routeMatcherMapForAgingImages = getRouteMatcherMapForGraphQL([agingImagesQueryOpname]);
+const routeMatcherMapForAgingImages = {
+    agingImages: {
+        method: 'GET',
+        url: '/v1/imagescount*',
+    },
+};
 const routeMatcherMapForViolationsByPolicyCategory = {
     [alertsSummaryCountsGroupByCategoryAlias]: {
         method: 'GET',
         url: '/v1/alerts/summary/counts?request.query=&group_by=CATEGORY',
     },
 };
-const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQL([
-    getAggregatedResultsOpname,
-]);
+const routeMatcherMapForComplianceLevelsByStandard = {
+    aggregatedResults: {
+        method: 'GET',
+        url: '/v1/compliance/aggregatedresults*',
+    },
+    complianceStandards: {
+        method: 'GET',
+        url: '/v1/compliance/standards',
+    },
+};
 
 function getRouteMatcherMap() {
     return {

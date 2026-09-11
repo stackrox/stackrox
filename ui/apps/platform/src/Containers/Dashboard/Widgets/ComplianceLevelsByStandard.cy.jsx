@@ -1,5 +1,4 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
-import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import { standardEntityTypes } from 'constants/entityTypes';
 import { complianceBasePath, urlEntityListTypes } from 'routePaths';
@@ -40,8 +39,11 @@ const mock = {
 };
 
 const setup = () => {
-    cy.intercept('POST', graphqlUrl('getAggregatedResults'), (req) => {
-        req.reply(mock);
+    cy.intercept('GET', '/v1/compliance/aggregatedresults*', (req) => {
+        req.reply({ results: mock.data.controls.results });
+    });
+    cy.intercept('GET', '/v1/compliance/standards', (req) => {
+        req.reply({ standards: mock.data.complianceStandards });
     });
 
     cy.mount(
@@ -67,6 +69,7 @@ describe(Cypress.spec.relative, () => {
         cy.findAllByText(titlesRegex).eq(-4).should('have.text', 'NIST SP 800-53');
         cy.findAllByText(titlesRegex).eq(-5).should('have.text', 'PCI DSS 3.2.1');
         cy.findAllByText(titlesRegex).eq(-6).should('have.text', 'ocp4-cis');
+        cy.screenshot('after-compliance-levels-by-standard');
 
         // Sort by descending
         cy.findByLabelText('Options').click();

@@ -9,7 +9,6 @@ import {
     Title,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { gql, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
@@ -27,18 +26,10 @@ import AgingImagesChart, {
 } from './AgingImagesChart';
 import type { TimeRangeCounts, TimeRangeTuple, TimeRangeTupleIndex } from './AgingImagesChart';
 import isResourceScoped from '../utils';
+import useAgingImageCounts from '../hooks/useAgingImageCounts';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
-
-export const imageCountQuery = gql`
-    query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
-        timeRange0: imageCount(query: $query0)
-        timeRange1: imageCount(query: $query1)
-        timeRange2: imageCount(query: $query2)
-        timeRange3: imageCount(query: $query3)
-    }
-`;
 
 function queryStringFor(searchFilter: SearchFilter, ageRange: number, nextAgeRange?: number) {
     const timeFilter = getTimeFilterOption(ageRange, nextAgeRange);
@@ -163,10 +154,13 @@ function AgingImages() {
     );
 
     const variables = getQueryVariables(timeRanges, searchFilter);
-    const { data, previousData, loading, error } = useQuery<TimeRangeCounts>(imageCountQuery, {
-        variables,
-    });
-    const timeRangeCounts = data ?? previousData;
+    const { data, isLoading, error } = useAgingImageCounts([
+        variables.query0,
+        variables.query1,
+        variables.query2,
+        variables.query3,
+    ]);
+    const timeRangeCounts = data;
     const isCountsDataEmpty =
         timeRangeCounts &&
         Object.values(timeRangeCounts).every(
@@ -190,7 +184,7 @@ function AgingImages() {
 
     return (
         <WidgetCard
-            isLoading={loading && !timeRangeCounts}
+            isLoading={isLoading && !timeRangeCounts}
             error={error || inputError}
             errorTitle={errorTitle}
             errorMessage={errorMessage}
