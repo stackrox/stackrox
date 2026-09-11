@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This file is from https://github.com/docker-library/postgres/tree/master/15/bookworm
+# This file is from https://github.com/docker-library/postgres/tree/master/16/bookworm
 set -Eeo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
