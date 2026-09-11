@@ -41,6 +41,7 @@ func serveFromDir(w http.ResponseWriter, r *http.Request, dir, filename string) 
 	tarPath := filepath.Join(dir, strings.TrimSuffix(filename, ".exe")+".tar.gz")
 	f, err := os.Open(tarPath)
 	if err != nil {
+		log.Warnf("tarball not found for binary %q: %v", filename, err)
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
@@ -56,8 +57,14 @@ func serveFromDir(w http.ResponseWriter, r *http.Request, dir, filename string) 
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
-		if err != nil {
+		if err == io.EOF {
+			log.Warnf("binary %q not found in %s; tarball does not contain the roxctl binary", filename, tarPath)
 			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		if err != nil {
+			log.Errorf("error reading archive %s: %v", tarPath, err)
+			http.Error(w, "error reading archive", http.StatusInternalServerError)
 			return
 		}
 		if hdr.Name == filename {
