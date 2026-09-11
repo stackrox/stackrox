@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -83,8 +84,14 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 	if schedule == nil {
 		return nil
 	}
+	if schedule.GetHour() < 0 || schedule.GetHour() > 23 {
+		return errox.InvalidArgs.New("schedule hour must be within 0-23")
+	}
+	if schedule.GetMinute() < 0 || schedule.GetMinute() > 59 {
+		return errox.InvalidArgs.New("schedule minute must be within 0-59")
+	}
 	switch schedule.GetIntervalType() {
-	case apiV2.ReportSchedule_UNSET:
+	default:
 		return errox.InvalidArgs.New("report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
 	case apiV2.ReportSchedule_DAILY:
 		if schedule.GetDaysOfWeek() != nil || schedule.GetDaysOfMonth() != nil {
@@ -158,12 +165,15 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 	}
 
 	// Use allAccessCtx since report creator/updater might not have permissions for integrationSAC
-	exists, err := v.notifierDatastore.Exists(allAccessCtx, emailConfig.GetNotifierId())
+	notifier, exists, err := v.notifierDatastore.GetScrubbedNotifier(allAccessCtx, emailConfig.GetNotifierId())
 	if err != nil {
 		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
+	}
+	if notifier.GetType() != notifiers.EmailType && notifier.GetType() != notifiers.ACSCSEmailType {
+		return errox.InvalidArgs.New("report configuration requires an email notifier")
 	}
 	return nil
 }
@@ -249,11 +259,18 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 	}
 	seen := set.NewSet[entityFieldKey]()
 	for _, rule := range es.GetRules() {
-		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_UNSET {
+		switch rule.GetEntity() {
+		case apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT:
+		default:
 			return errox.InvalidArgs.Newf("unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
 			return errox.InvalidArgs.Newf("unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
+		}
+		switch rule.GetField() {
+		case apiV2.ScopeField_FIELD_NAME, apiV2.ScopeField_FIELD_LABEL, apiV2.ScopeField_FIELD_ANNOTATION:
+		default:
+			return errox.InvalidArgs.Newf("unsupported field %s for entity scope", rule.GetField())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
@@ -271,6 +288,12 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
 		for _, rv := range rule.GetValues() {
 			valOfValue := rv.GetValue()
+			if valOfValue == "" {
+				return errox.InvalidArgs.New("entity scope rule values must not be empty")
+			}
+			if rv.GetMatchType() != apiV2.MatchType_EXACT && rv.GetMatchType() != apiV2.MatchType_REGEX {
+				return errox.InvalidArgs.Newf("unsupported match type %s", rv.GetMatchType())
+			}
 			if isMapField {
 				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
 				if !found {
@@ -281,6 +304,8 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
 						return errox.InvalidArgs.Newf("invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
 					}
+				} else if _, err := regexp.Compile(mapKey); err != nil {
+					return errox.InvalidArgs.CausedByf("invalid regex key %q: %v", mapKey, err)
 				}
 				valOfValue = mapValue
 			}
@@ -313,6 +338,24 @@ func (v *Validator) validateImageFilters(filters *apiV2.VulnerabilityReportFilte
 	if len(filters.GetImageTypes()) == 0 {
 		return errox.InvalidArgs.New("vulnerability report filters should specify which image types to scan for CVEs; " +
 			"the valid options are 'DEPLOYED' and 'WATCHED'")
+	}
+	for _, imageType := range filters.GetImageTypes() {
+		if _, ok := apiV2.VulnerabilityReportFilters_ImageType_name[int32(imageType)]; !ok {
+			return errox.InvalidArgs.Newf("unsupported image type %d", imageType)
+		}
+	}
+	if _, ok := apiV2.VulnerabilityReportFilters_Fixability_name[int32(filters.GetFixability())]; !ok {
+		return errox.InvalidArgs.Newf("unsupported fixability %d", filters.GetFixability())
+	}
+	for _, severity := range filters.GetSeverities() {
+		if _, ok := apiV2.VulnerabilityReportFilters_VulnerabilitySeverity_name[int32(severity)]; !ok {
+			return errox.InvalidArgs.Newf("unsupported severity %d", severity)
+		}
+	}
+	if since, ok := filters.GetCvesSince().(*apiV2.VulnerabilityReportFilters_SinceStartDate); ok {
+		if since.SinceStartDate == nil || since.SinceStartDate.CheckValid() != nil {
+			return errox.InvalidArgs.New("invalid CVE start date")
+		}
 	}
 
 	if filters.GetCvesSince() == nil {
@@ -363,6 +406,9 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	requestType storage.ReportStatus_RunMethod,
 	requesterID authn.Identity,
 ) (*reportGen.ReportRequest, error) {
+	if notificationMethod != storage.ReportStatus_EMAIL && notificationMethod != storage.ReportStatus_DOWNLOAD {
+		return nil, errox.InvalidArgs.Newf("unsupported notification method %d", notificationMethod)
+	}
 	config, found, err := v.reportConfigDatastore.GetReportConfiguration(allAccessCtx, configID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
