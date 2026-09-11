@@ -23,8 +23,6 @@ COPY --from=ubi-micro-base / /out/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 
-COPY bin/roxctl* /tmp/bins/
-
 RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
@@ -35,17 +33,20 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         ca-certificates \
         gzip \
         less \
-        pigz \
         tar \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum && \
-    mkdir -p /assets/downloads/cli && \
-    cd /tmp/bins && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+FROM ubi-base AS cli_tarballs
+
+RUN dnf install -y pigz
+COPY bin/roxctl* /tmp/roxctl/
+RUN cd /tmp/roxctl && \
     for f in roxctl-*; do \
-        [ -f "$f" ] && [ -x "$f" ] || continue; \
-        tar -I /out/usr/bin/pigz -cvf /assets/downloads/cli/${f%.exe}.tar.gz "$f"; \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
     done
 
 FROM ubi-micro-base
@@ -103,8 +104,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-COPY --from=package_installer /assets/downloads/cli /assets/downloads/cli
-COPY --from=package_installer /tmp/bins/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --from=cli_tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=cli_tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 
