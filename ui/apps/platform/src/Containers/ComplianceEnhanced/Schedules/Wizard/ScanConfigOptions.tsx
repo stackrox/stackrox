@@ -1,4 +1,4 @@
-import type { FormEvent, ReactElement } from 'react';
+import { type FormEvent, type ReactElement, useState, type KeyboardEvent } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 import {
@@ -6,6 +6,8 @@ import {
     Flex,
     FlexItem,
     Form,
+    Label,
+    LabelGroup,
     PageSection,
     Stack,
     StackItem,
@@ -26,10 +28,15 @@ import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './u
 
 import './ScanConfigOptions.css';
 
+const nodeRoleRegex = /^[a-zA-Z0-9-]{1,39}$/;
+const allNodesRole = '@all';
+
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     const { pageAction } = usePageAction<PageActions>();
     const isEditAction = pageAction === 'edit';
+    const [nodeRoleInput, setNodeRoleInput] = useState('');
+    const [nodeRoleInputError, setNodeRoleInputError] = useState('');
 
     function handleSelectChange(id: string, value: string): void {
         formik.setFieldValue('parameters.daysOfWeek', []);
@@ -43,6 +50,48 @@ function ScanConfigOptions(): ReactElement {
 
     function onScheduledDaysChange(id: string, selection: string[]) {
         formik.setFieldValue(id, selection, true);
+    }
+
+    function addNodeRole(role: string) {
+        const trimmed = role.trim();
+        if (!trimmed) {
+            return;
+        }
+        if (trimmed !== allNodesRole && !nodeRoleRegex.test(trimmed)) {
+            setNodeRoleInputError(
+                `"${trimmed}" is invalid. Use alphanumeric characters and hyphens, 1-39 characters, or @all.`
+            );
+            return;
+        }
+        setNodeRoleInputError('');
+        const currentRoles = formik.values.parameters.nodeRoles;
+        if (currentRoles.includes(trimmed)) {
+            setNodeRoleInput('');
+            return;
+        }
+        let newRoles: string[];
+        if (trimmed === allNodesRole) {
+            newRoles = [allNodesRole];
+        } else if (currentRoles.includes(allNodesRole)) {
+            newRoles = [trimmed];
+        } else {
+            newRoles = [...currentRoles, trimmed];
+        }
+        formik.setFieldValue('parameters.nodeRoles', newRoles);
+        setNodeRoleInput('');
+    }
+
+    function removeNodeRole(role: string) {
+        const newRoles = formik.values.parameters.nodeRoles.filter((r) => r !== role);
+        formik.setFieldValue('parameters.nodeRoles', newRoles);
+    }
+
+    function handleNodeRoleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            addNodeRole(nodeRoleInput);
+        }
     }
 
     return (
@@ -221,6 +270,69 @@ function ScanConfigOptions(): ReactElement {
                                         </FormLabelGroup>
                                     </FlexItem>
                                 </Flex>
+                            </FlexItem>
+                        </Flex>
+                    </StackItem>
+                    <StackItem>
+                        <Divider component="div" />
+                    </StackItem>
+                    <StackItem>
+                        <Flex direction={{ default: 'column' }}>
+                            <FlexItem>
+                                <Title headingLevel="h3">Node roles</Title>
+                            </FlexItem>
+                            <FlexItem>
+                                <FormLabelGroup
+                                    label="Roles"
+                                    fieldId="parameters.nodeRoles"
+                                    errors={formik.errors}
+                                    touched={formik.touched}
+                                    helperText="Determines which nodes are scanned for node-type profiles. If left empty, defaults to master and worker. Common roles: master, worker, infra, control-plane. Use @all to scan all nodes."
+                                >
+                                    <Stack hasGutter>
+                                        <StackItem>
+                                            <TextInput
+                                                type="text"
+                                                id="parameters.nodeRoleInput"
+                                                placeholder="Type a role and press Enter to add"
+                                                value={nodeRoleInput}
+                                                validated={
+                                                    nodeRoleInputError ? 'error' : 'default'
+                                                }
+                                                onChange={(_event, value) => {
+                                                    setNodeRoleInput(value);
+                                                    if (nodeRoleInputError) {
+                                                        setNodeRoleInputError('');
+                                                    }
+                                                }}
+                                                onKeyDown={handleNodeRoleKeyDown}
+                                            />
+                                            {nodeRoleInputError && (
+                                                <div className="pf-v6-u-color-status-danger pf-v6-u-font-size-sm pf-v6-u-mt-xs">
+                                                    {nodeRoleInputError}
+                                                </div>
+                                            )}
+                                        </StackItem>
+                                        {formik.values.parameters.nodeRoles.length > 0 && (
+                                            <StackItem>
+                                                <LabelGroup>
+                                                    {formik.values.parameters.nodeRoles.map(
+                                                        (role) => (
+                                                            <Label
+                                                                key={role}
+                                                                onClose={() =>
+                                                                    removeNodeRole(role)
+                                                                }
+                                                            >
+                                                                {role}
+                                                            </Label>
+                                                        )
+                                                    )}
+                                                </LabelGroup>
+                                            </StackItem>
+                                        )}
+                                    </Stack>
+                                </FormLabelGroup>
                             </FlexItem>
                         </Flex>
                     </StackItem>

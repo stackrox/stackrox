@@ -506,6 +506,10 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 	}, nil
 }
 
+// nodeRoleRegexp matches the Compliance Operator validation for a single role value:
+// alphanumeric characters and hyphens, 1-39 characters.
+var nodeRoleRegexp = regexp.MustCompile(`^[a-zA-Z0-9-]{1,39}$`)
+
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	if len(req.GetClusters()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "At least one cluster is required for a scan configuration")
@@ -517,6 +521,47 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 
 	if len(req.GetScanConfig().GetProfiles()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "At least one profile is required for a scan configuration")
+	}
+
+	if err := validateNodeRoles(req.GetScanConfig().GetNodeRoles()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateNodeRoles validates the node roles following the Compliance Operator rules:
+// - Each role must match ^[a-zA-Z0-9-]{1,39}$ or be "@all"
+// - "@all" cannot be mixed with other roles
+// - Empty list is valid (defaults to ["master", "worker"])
+func validateNodeRoles(roles []string) error {
+	if len(roles) == 0 {
+		return nil
+	}
+
+	hasAll := false
+	seen := make(map[string]struct{}, len(roles))
+	for _, role := range roles {
+		if role == "" {
+			return errors.Wrap(errox.InvalidArgs, "Node role must not be empty")
+		}
+		if _, dup := seen[role]; dup {
+			return errors.Wrapf(errox.InvalidArgs, "Duplicate node role %q", role)
+		}
+		seen[role] = struct{}{}
+		if role == allNodesRole {
+			hasAll = true
+			continue
+		}
+		if !nodeRoleRegexp.MatchString(role) {
+			return errors.Wrapf(errox.InvalidArgs,
+				"Node role %q is invalid: must contain only alphanumeric characters and hyphens, 1-39 characters", role)
+		}
+	}
+
+	if hasAll && len(roles) > 1 {
+		return errors.Wrap(errox.InvalidArgs,
+			"The \"@all\" node role targets all nodes and cannot be combined with other roles")
 	}
 
 	return nil

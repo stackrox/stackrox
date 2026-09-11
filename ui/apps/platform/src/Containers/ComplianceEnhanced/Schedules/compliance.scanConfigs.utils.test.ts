@@ -17,6 +17,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '03:00',
                 daysOfWeek: [],
                 daysOfMonth: [],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);
@@ -37,6 +38,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '13:00',
                 daysOfWeek: ['1'],
                 daysOfMonth: [],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);
@@ -60,6 +62,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '23:00',
                 daysOfWeek: [],
                 daysOfMonth: ['1', '15'],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);

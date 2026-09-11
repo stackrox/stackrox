@@ -75,6 +75,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     scanName={formikValues.parameters.name}
                     description={formikValues.parameters.description}
                     scanSchedule={scanSchedule}
+                    nodeRoles={formikValues.parameters.nodeRoles}
                 />
                 <Flex direction={{ default: 'column' }}>
                     <Flex spaceItems={{ default: 'spaceItemsSm' }}>
