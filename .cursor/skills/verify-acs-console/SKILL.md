@@ -1,6 +1,6 @@
 ---
 name: verify-acs-console
-description: "Drive the ACS (StackRox) web console the way a user does — Vite UI plus live Central — and capture proof. Use when a change touches ui/apps/platform, ACS routes (Dashboard, Workload CVEs, Search, Network Graph), or when an agent would otherwise ship Cypress-component screenshots as console evidence."
+description: "Drive the ACS (StackRox) web console the way a user does — Vite UI plus live Central — and capture proof. Use when a change touches ui/apps/platform, ACS routes (Dashboard, Workload CVEs, Search, Network Graph), or when Cypress-component screenshots would otherwise be treated as console evidence."
 ---
 
 # Verify the ACS console
@@ -13,11 +13,11 @@ This skill is for the **standalone ACS / StackRox console**: the React 18 + Type
 
 ## Isolation (read before Launch)
 
-Full Central + k8s **cannot run two instances easily**. Local deploy uses namespace `stackrox`, Central port-forward **8000→8443**, and Vite **3000**. `scripts/port-forward-ui.sh` exits if 8000 is already bound. A typical Cursor cloud VM has **no kubectl, no cluster, no container engine** — `deploy-local` will not start there.
+Full Central + k8s **cannot run two instances easily**. Local deploy uses namespace `stackrox`, Central port-forward **8000→8443**, and Vite **3000**. `scripts/port-forward-ui.sh` exits if 8000 is already bound. If this machine has no kubectl, no cluster, or no Central, Doctor fails and this run is **inconclusive** — `deploy-local` will not start here.
 
 - **Refuse to double-drive a shared cluster.** If `stackrox` already has Central, or 8000/3000 are owned by someone else's session, do not deploy another stack, do not steal the port-forward, do not click around a user's live session.
 - **If Central is not up, Doctor fails.** Report **inconclusive**. Do not substitute Cypress component tests, Vitest, or fixture-stubbed GraphQL as console proof.
-- **NOTE — live prove-once on this generator host:** blocked. This environment has Node 22 but no kubectl, no Docker/Podman, no k8s, no `ui/apps/platform/node_modules`, and no Central. Doctor can check deps and repo files only. Do not invent a passing live run.
+- **Do not invent a passing live run.** When Doctor cannot reach Central, check repo files and deps only. Component Cypress is not console proof.
 
 ## Launch
 
@@ -73,7 +73,7 @@ UI_START_TARGET=https://<central-host>:443 npm run start
 
 `UI_START_TARGET` must include the scheme. Prefer a stable IP/LB; `kubectl port-forward` drops on sleep/load (`ui/README.md`). Extra overrides: `UI_CUSTOM_PROXIES` (`ui/apps/platform/README.md`).
 
-Agent-oriented deploy (non-interactive) also exists as `roxie deploy --envrc <file>` / `scripts/roxie.sh` (`deploy/AGENTS.md`). Use `--envrc` so the admin password is not dumped. Teardown for a roxie install is `roxie teardown` (or `scripts/teardown.sh`). **Do not teardown a cluster this run did not start.**
+Non-interactive deploy also exists as `roxie deploy --envrc <file>` / `scripts/roxie.sh` (`deploy/AGENTS.md`). Use `--envrc` so the admin password is not dumped. Teardown for a roxie install is `roxie teardown` (or `scripts/teardown.sh`). **Do not teardown a cluster this run did not start.**
 
 ### 2. Vite UI
 
@@ -172,7 +172,7 @@ Feature recipes: [features/README.md](features/README.md). Drive **every** mappe
 
 ## Evidence
 
-Write artifacts under **`${VERIFY_ACS_EVIDENCE_DIR:-/tmp/verify-acs-console}`** (host path, not git). Do **not** commit screenshots, videos, or binaries.
+Write artifacts under **`${VERIFY_ACS_EVIDENCE_DIR:-/tmp/verify-acs-console}`** (local path, not git). Do **not** commit screenshots, videos, or binaries.
 
 Must include:
 

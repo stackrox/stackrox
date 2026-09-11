@@ -27,7 +27,7 @@ inconclusive() { echo "INCONCLUSIVE  $*"; INCONCLUSIVE=$((INCONCLUSIVE + 1)); }
 
 owning_pid() {
     local port="$1"
-    # Prefer the listener PID. ss/lsof may be missing on some hosts.
+    # Prefer the listener PID. ss/lsof may be missing on some machines.
     if command -v ss >/dev/null 2>&1; then
         ss -ltnp 2>/dev/null | awk -v p=":${port}" '$4 ~ p"$" { print; found=1 } END { exit !found }' || true
         return 0
@@ -123,7 +123,7 @@ if command -v kubectl >/dev/null 2>&1; then
         note "kubectl present but no reachable cluster"
     fi
 else
-    note "kubectl not on PATH (local deploy-local cannot run on this host)"
+    note "kubectl not on PATH (local deploy-local cannot run on this machine)"
 fi
 
 # --- Live instance ---
