@@ -1066,7 +1066,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
