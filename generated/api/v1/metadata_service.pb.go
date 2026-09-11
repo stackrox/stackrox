@@ -180,7 +180,7 @@ func (x CentralServicesCapabilities_CapabilityStatus) Number() protoreflect.Enum
 
 // Deprecated: Use CentralServicesCapabilities_CapabilityStatus.Descriptor instead.
 func (CentralServicesCapabilities_CapabilityStatus) EnumDescriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6, 0}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{7, 0}
 }
 
 type Metadata struct {
@@ -569,6 +569,58 @@ func (x *DatabaseBackupStatus) GetBackupInfo() *storage.BackupInfo {
 	return nil
 }
 
+type LightspeedStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Available     bool                   `protobuf:"varint,1,opt,name=available,proto3" json:"available,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LightspeedStatusResponse) Reset() {
+	*x = LightspeedStatusResponse{}
+	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LightspeedStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LightspeedStatusResponse) ProtoMessage() {}
+
+func (x *LightspeedStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LightspeedStatusResponse.ProtoReflect.Descriptor instead.
+func (*LightspeedStatusResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *LightspeedStatusResponse) GetAvailable() bool {
+	if x != nil {
+		return x.Available
+	}
+	return false
+}
+
+func (x *LightspeedStatusResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 // Provides availability of certain functionality of Central Services in the current configuration.
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 type CentralServicesCapabilities struct {
@@ -595,7 +647,7 @@ type CentralServicesCapabilities struct {
 
 func (x *CentralServicesCapabilities) Reset() {
 	*x = CentralServicesCapabilities{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -607,7 +659,7 @@ func (x *CentralServicesCapabilities) String() string {
 func (*CentralServicesCapabilities) ProtoMessage() {}
 
 func (x *CentralServicesCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -620,7 +672,7 @@ func (x *CentralServicesCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentralServicesCapabilities.ProtoReflect.Descriptor instead.
 func (*CentralServicesCapabilities) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CentralServicesCapabilities) GetCentralScanningCanUseContainerIamRoleForEcr() CentralServicesCapabilities_CapabilityStatus {
@@ -702,7 +754,10 @@ const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"PostgresDB\x10\x02\"L\n" +
 	"\x14DatabaseBackupStatus\x124\n" +
 	"\vbackup_info\x18\x01 \x01(\v2\x13.storage.BackupInfoR\n" +
-	"backupInfo\"\x90\x06\n" +
+	"backupInfo\"R\n" +
+	"\x18LightspeedStatusResponse\x12\x1c\n" +
+	"\tavailable\x18\x01 \x01(\bR\tavailable\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x90\x06\n" +
 	"\x1bCentralServicesCapabilities\x12\x9a\x01\n" +
 	"3central_scanning_can_use_container_iam_role_for_ecr\x18\x01 \x01(\x0e20.v1.CentralServicesCapabilities.CapabilityStatusR+centralScanningCanUseContainerIamRoleForEcr\x12\x89\x01\n" +
 	")central_can_use_cloud_backup_integrations\x18\x02 \x01(\x0e20.v1.CentralServicesCapabilities.CapabilityStatusR$centralCanUseCloudBackupIntegrations\x12\x91\x01\n" +
@@ -711,13 +766,14 @@ const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"'central_can_use_acscs_email_integration\x18\x05 \x01(\x0e20.v1.CentralServicesCapabilities.CapabilityStatusR\"centralCanUseAcscsEmailIntegration\"C\n" +
 	"\x10CapabilityStatus\x12\x17\n" +
 	"\x13CapabilityAvailable\x10\x00\x12\x16\n" +
-	"\x12CapabilityDisabled\x10\x012\xc1\x03\n" +
+	"\x12CapabilityDisabled\x10\x012\xa0\x04\n" +
 	"\x0fMetadataService\x12<\n" +
 	"\vGetMetadata\x12\t.v1.Empty\x1a\f.v1.Metadata\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/metadata\x12\\\n" +
 	"\fTLSChallenge\x12\x17.v1.TLSChallengeRequest\x1a\x18.v1.TLSChallengeResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/tls-challenge\x12O\n" +
 	"\x11GetDatabaseStatus\x12\t.v1.Empty\x1a\x12.v1.DatabaseStatus\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/database/status\x12Y\n" +
 	"\x17GetDatabaseBackupStatus\x12\t.v1.Empty\x1a\x18.v1.DatabaseBackupStatus\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/backup/status\x12f\n" +
-	"\x16GetCentralCapabilities\x12\t.v1.Empty\x1a\x1f.v1.CentralServicesCapabilities\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/central-capabilitiesB'\n" +
+	"\x16GetCentralCapabilities\x12\t.v1.Empty\x1a\x1f.v1.CentralServicesCapabilities\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/central-capabilities\x12]\n" +
+	"\x13GetLightspeedStatus\x12\t.v1.Empty\x1a\x1c.v1.LightspeedStatusResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/lightspeed/statusB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
@@ -733,7 +789,7 @@ func file_api_v1_metadata_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_metadata_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_api_v1_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_v1_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_metadata_service_proto_goTypes = []any{
 	(Metadata_LicenseStatus)(0),                       // 0: v1.Metadata.LicenseStatus
 	(DatabaseStatus_DatabaseType)(0),                  // 1: v1.DatabaseStatus.DatabaseType
@@ -744,31 +800,34 @@ var file_api_v1_metadata_service_proto_goTypes = []any{
 	(*TLSChallengeRequest)(nil),                       // 6: v1.TLSChallengeRequest
 	(*DatabaseStatus)(nil),                            // 7: v1.DatabaseStatus
 	(*DatabaseBackupStatus)(nil),                      // 8: v1.DatabaseBackupStatus
-	(*CentralServicesCapabilities)(nil),               // 9: v1.CentralServicesCapabilities
-	(*storage.BackupInfo)(nil),                        // 10: storage.BackupInfo
-	(*Empty)(nil),                                     // 11: v1.Empty
+	(*LightspeedStatusResponse)(nil),                  // 9: v1.LightspeedStatusResponse
+	(*CentralServicesCapabilities)(nil),               // 10: v1.CentralServicesCapabilities
+	(*storage.BackupInfo)(nil),                        // 11: storage.BackupInfo
+	(*Empty)(nil),                                     // 12: v1.Empty
 }
 var file_api_v1_metadata_service_proto_depIdxs = []int32{
 	0,  // 0: v1.Metadata.license_status:type_name -> v1.Metadata.LicenseStatus
 	1,  // 1: v1.DatabaseStatus.database_type:type_name -> v1.DatabaseStatus.DatabaseType
-	10, // 2: v1.DatabaseBackupStatus.backup_info:type_name -> storage.BackupInfo
+	11, // 2: v1.DatabaseBackupStatus.backup_info:type_name -> storage.BackupInfo
 	2,  // 3: v1.CentralServicesCapabilities.central_scanning_can_use_container_iam_role_for_ecr:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
 	2,  // 4: v1.CentralServicesCapabilities.central_can_use_cloud_backup_integrations:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
 	2,  // 5: v1.CentralServicesCapabilities.central_can_display_declarative_config_health:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
 	2,  // 6: v1.CentralServicesCapabilities.central_can_update_cert:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
 	2,  // 7: v1.CentralServicesCapabilities.central_can_use_acscs_email_integration:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	11, // 8: v1.MetadataService.GetMetadata:input_type -> v1.Empty
+	12, // 8: v1.MetadataService.GetMetadata:input_type -> v1.Empty
 	6,  // 9: v1.MetadataService.TLSChallenge:input_type -> v1.TLSChallengeRequest
-	11, // 10: v1.MetadataService.GetDatabaseStatus:input_type -> v1.Empty
-	11, // 11: v1.MetadataService.GetDatabaseBackupStatus:input_type -> v1.Empty
-	11, // 12: v1.MetadataService.GetCentralCapabilities:input_type -> v1.Empty
-	3,  // 13: v1.MetadataService.GetMetadata:output_type -> v1.Metadata
-	5,  // 14: v1.MetadataService.TLSChallenge:output_type -> v1.TLSChallengeResponse
-	7,  // 15: v1.MetadataService.GetDatabaseStatus:output_type -> v1.DatabaseStatus
-	8,  // 16: v1.MetadataService.GetDatabaseBackupStatus:output_type -> v1.DatabaseBackupStatus
-	9,  // 17: v1.MetadataService.GetCentralCapabilities:output_type -> v1.CentralServicesCapabilities
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
+	12, // 10: v1.MetadataService.GetDatabaseStatus:input_type -> v1.Empty
+	12, // 11: v1.MetadataService.GetDatabaseBackupStatus:input_type -> v1.Empty
+	12, // 12: v1.MetadataService.GetCentralCapabilities:input_type -> v1.Empty
+	12, // 13: v1.MetadataService.GetLightspeedStatus:input_type -> v1.Empty
+	3,  // 14: v1.MetadataService.GetMetadata:output_type -> v1.Metadata
+	5,  // 15: v1.MetadataService.TLSChallenge:output_type -> v1.TLSChallengeResponse
+	7,  // 16: v1.MetadataService.GetDatabaseStatus:output_type -> v1.DatabaseStatus
+	8,  // 17: v1.MetadataService.GetDatabaseBackupStatus:output_type -> v1.DatabaseBackupStatus
+	10, // 18: v1.MetadataService.GetCentralCapabilities:output_type -> v1.CentralServicesCapabilities
+	9,  // 19: v1.MetadataService.GetLightspeedStatus:output_type -> v1.LightspeedStatusResponse
+	14, // [14:20] is the sub-list for method output_type
+	8,  // [8:14] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -786,7 +845,7 @@ func file_api_v1_metadata_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_metadata_service_proto_rawDesc), len(file_api_v1_metadata_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

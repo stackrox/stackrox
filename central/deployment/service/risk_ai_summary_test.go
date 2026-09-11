@@ -8,7 +8,9 @@ import (
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	olsClient "github.com/stackrox/rox/central/lightspeed/client"
+	processViews "github.com/stackrox/rox/central/processindicator/views"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	deployment "github.com/stackrox/rox/central/risk/multipliers/deployment"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +30,10 @@ type mockOLSClient struct {
 func (m *mockOLSClient) Query(_ context.Context, req *olsClient.QueryRequest) (*olsClient.QueryResponse, error) {
 	m.captured = req
 	return m.response, m.err
+}
+
+func (m *mockOLSClient) TestConnectivity() error {
+	return m.err
 }
 
 func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
@@ -454,4 +460,146 @@ func TestBuildSanitizedRiskContext_FieldSelection(t *testing.T) {
 	// notPullable and isClusterLocal should not be included.
 	assert.NotContains(t, contextJSON, "notPullable")
 	assert.NotContains(t, contextJSON, "isClusterLocal")
+}
+
+func TestBuildSanitizedRiskContext_ProcessArgsStripped(t *testing.T) {
+	dep := &storage.Deployment{
+		Id:          "dep-1",
+		Name:        "test-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+
+	// Use FormatProcess to generate realistic messages. This ensures the test
+	// will catch any changes to FormatProcess that break our sanitization regex.
+	processWithSensitiveArgs1 := &processViews.ProcessIndicatorRiskView{
+		SignalName:    "/bin/bash",
+		SignalArgs:    "-c export PASSWORD=secret123 && ./script.sh",
+		ContainerName: "app",
+	}
+	processWithSensitiveArgs2 := &processViews.ProcessIndicatorRiskView{
+		SignalName:    "/usr/bin/curl",
+		SignalArgs:    "https://api.example.com?token=abc123&secret=xyz",
+		ContainerName: "app",
+	}
+	processWithoutArgs := &processViews.ProcessIndicatorRiskView{
+		SignalName:    "/bin/sh",
+		SignalArgs:    "", // no args
+		ContainerName: "sidecar",
+	}
+
+	risk := &storage.Risk{
+		Id:    "risk-1",
+		Score: 8.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  deployment.ProcessBaselineHeading,
+				Score: 2.5,
+				Factors: []*storage.Risk_Result_Factor{
+					// Generated using FormatProcess to stay in sync with the actual format.
+					{Message: deployment.FormatProcess(processWithSensitiveArgs1)},
+					{Message: deployment.FormatProcess(processWithSensitiveArgs2)},
+					{Message: deployment.FormatProcess(processWithoutArgs)},
+				},
+			},
+			{
+				// Other risk results should NOT have args stripped.
+				Name:  "Policy Violations",
+				Score: 1.5,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: `Some message with args "should not be stripped"`},
+				},
+			},
+		},
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(dep, risk)
+	require.NoError(t, err)
+
+	// Process names and container names SHOULD be present.
+	assert.Contains(t, contextJSON, "/bin/bash")
+	assert.Contains(t, contextJSON, "/usr/bin/curl")
+	assert.Contains(t, contextJSON, "/bin/sh")
+	assert.Contains(t, contextJSON, "container app")
+	assert.Contains(t, contextJSON, "container sidecar")
+	assert.Contains(t, contextJSON, deployment.ProcessBaselineHeading)
+
+	// Process arguments MUST be redacted from process baseline results (may contain secrets).
+	assert.NotContains(t, contextJSON, "PASSWORD=secret123")
+	assert.NotContains(t, contextJSON, "token=abc123")
+	assert.NotContains(t, contextJSON, "secret=xyz")
+	assert.NotContains(t, contextJSON, "script.sh")
+
+	// The ' with args "..."' pattern should be replaced with '<redacted args>'.
+	// Note: JSON encoding escapes < and > as \u003c and \u003e.
+	assert.NotContains(t, contextJSON, `with args "-c export`)
+	assert.NotContains(t, contextJSON, `with args "https://api`)
+	assert.Contains(t, contextJSON, `\u003credacted args\u003e`)
+
+	// Message without args should remain intact (no <redacted args> added).
+	// Use the exact format from FormatProcess.
+	assert.Contains(t, contextJSON, `Detected execution of suspicious process \"/bin/sh\" in container sidecar`)
+
+	// Other risk results should NOT have their messages modified.
+	assert.Contains(t, contextJSON, `with args \"should not be stripped\"`)
+}
+
+func TestBuildSanitizedRiskContext_ProcessArgsWithEmbeddedQuotes(t *testing.T) {
+	// Regression test: strconv.Quote escapes embedded quotes as \".
+	// The regex must handle escaped quotes to avoid leaving sensitive data exposed.
+	// Using FormatProcess ensures this test will catch format changes.
+	dep := &storage.Deployment{
+		Id:          "dep-1",
+		Name:        "test-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+
+	// Args with embedded quotes - FormatProcess uses strconv.Quote which escapes them.
+	processWithEmbeddedQuotes1 := &processViews.ProcessIndicatorRiskView{
+		SignalName:    "/bin/bash",
+		SignalArgs:    `-c echo "password=secret123"`,
+		ContainerName: "app",
+	}
+	processWithEmbeddedQuotes2 := &processViews.ProcessIndicatorRiskView{
+		SignalName:    "/bin/sh",
+		SignalArgs:    `cmd with "nested" quotes and token=abc123`,
+		ContainerName: "app",
+	}
+
+	risk := &storage.Risk{
+		Id:    "risk-1",
+		Score: 8.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  deployment.ProcessBaselineHeading,
+				Score: 2.0,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: deployment.FormatProcess(processWithEmbeddedQuotes1)},
+					{Message: deployment.FormatProcess(processWithEmbeddedQuotes2)},
+				},
+			},
+		},
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(dep, risk)
+	require.NoError(t, err)
+
+	// Process names SHOULD be present.
+	assert.Contains(t, contextJSON, "/bin/bash")
+	assert.Contains(t, contextJSON, "/bin/sh")
+
+	// Sensitive data with embedded quotes MUST be fully redacted.
+	assert.NotContains(t, contextJSON, "password=secret123")
+	assert.NotContains(t, contextJSON, "token=abc123")
+	assert.NotContains(t, contextJSON, "nested")
+
+	// The entire args section should be replaced with <redacted args>.
+	assert.Contains(t, contextJSON, `\u003credacted args\u003e`)
+
+	// Ensure no partial args remain (the old regex would stop at the first escaped quote).
+	assert.NotContains(t, contextJSON, `with args "-c echo`)
+	assert.NotContains(t, contextJSON, `with args "cmd with`)
 }

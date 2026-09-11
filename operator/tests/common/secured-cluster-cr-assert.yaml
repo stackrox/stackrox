@@ -62,13 +62,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: scanner-v4-db
 status:
   availableReplicas: 1

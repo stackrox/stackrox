@@ -74,7 +74,7 @@ export const integrationHealth = {
 export const credentialHealth = {
     central: '/v1/credentialexpiry?component=CENTRAL',
     centralDb: '/v1/credentialexpiry?component=CENTRAL_DB',
-    scanner: '/v1/credentialexpiry?component=SCANNER',
+    scannerV4: '/v1/credentialexpiry?component=SCANNER_V4',
 };
 
 export const integrations = {

@@ -118,7 +118,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 
 	return EnrichmentResult{
 		ScanResult: ScanNotDone,
-	}, errors.New("no image vulnerability retrievers are integrated")
+	}, noMatchingScannerErr(components.ScannerType())
 }
 
 func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
