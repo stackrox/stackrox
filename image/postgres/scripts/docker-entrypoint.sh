@@ -362,7 +362,7 @@ _main() {
 	### ROX_TLS_MIN_VERSION: passed to ssl_min_protocol_version (e.g. "TLSv1.2", "TLSv1.3").
 	### ROX_TLS_OPENSSL_CIPHERS: colon-separated OpenSSL cipher names
 	###   (e.g. "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384").
-	###   Only affects TLS 1.2; TLS 1.3 ciphers are not configurable in PostgreSQL 15.
+	###   Only affects TLS 1.2; TLS 1.3 ciphers are not configurable in PostgreSQL 16.
 	if [ -n "${ROX_TLS_MIN_VERSION:-}" ]; then
 		set -- "$@" -c "ssl_min_protocol_version=${ROX_TLS_MIN_VERSION}"
 	fi
