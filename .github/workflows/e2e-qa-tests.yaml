@@ -158,7 +158,7 @@ jobs:
         env:
           MACHINE_TYPE: "e2-standard-8"
           NUM_NODES: "3"
-          GKE_SPOT: "true"
+          GKE_SPOT: "false"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
