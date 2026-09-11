@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/stackrox/rox/central/risk/multipliers/deployment"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -136,9 +137,9 @@ func sanitizeRisk(r *storage.Risk) sanitizedRisk {
 			if msg == "" {
 				continue
 			}
-			// Redact process arguments from "Suspicious Process Executions" messages
+			// Redact process arguments from process baseline violation messages
 			// as they may contain sensitive information (passwords, tokens, etc.).
-			if result.GetName() == "Suspicious Process Executions" {
+			if result.GetName() == deployment.ProcessBaselineHeading {
 				msg = processArgsPattern.ReplaceAllString(msg, "<redacted args>")
 			}
 			srr.Factors = append(srr.Factors, sanitizedRiskFactor{
