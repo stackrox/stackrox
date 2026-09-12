@@ -48,6 +48,7 @@ type ImageCVEQueryResponse struct {
 	CisaKev                 *bool                          `db:"cisa_kev"`
 	KnownRansomwareCampaign *bool                          `db:"known_ransomware_campaign"`
 	DiscoveredAtImage       *time.Time                     `db:"first_image_occurrence_timestamp"`
+	ImageCreatedAt          *time.Time                     `db:"image_created_time"`
 	AdvisoryName            *string                        `db:"advisory_name"`
 	AdvisoryLink            *string                        `db:"advisory_link"`
 	Origin                  *storage.VulnOrigin            `db:"cve_origin"`
@@ -184,6 +185,13 @@ func (res *ImageCVEQueryResponse) GetDiscoveredAtImage() string {
 		return "Not Available"
 	}
 	return res.DiscoveredAtImage.Format("January 02, 2006")
+}
+
+func (res *ImageCVEQueryResponse) GetImageCreatedAt() string {
+	if res.ImageCreatedAt == nil {
+		return "Not Available"
+	}
+	return res.ImageCreatedAt.Format("2006-01-02")
 }
 
 // ReportQueryParts contains the parts used to build the report query

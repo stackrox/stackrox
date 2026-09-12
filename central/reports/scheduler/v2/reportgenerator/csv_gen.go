@@ -32,6 +32,7 @@ var (
 		"NVDCVSS",
 		"EPSS Probability Percentage",
 		"Discovered At",
+		"Image Created Date",
 		"Reference",
 		"Advisory Name",
 		"Advisory Link",
@@ -96,6 +97,7 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 
 	csvRow = append(csvRow,
 		r.GetDiscoveredAtImage(),
+		r.GetImageCreatedAt(),
 		r.Link,
 		r.GetAdvisoryName(),
 		r.GetAdvisoryLink(),
@@ -167,6 +169,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 		}
 		row = append(row,
 			r.GetDiscoveredAtImage(),
+			r.GetImageCreatedAt(),
 			r.Link,
 			r.GetAdvisoryName(),
 			r.GetAdvisoryLink(),
