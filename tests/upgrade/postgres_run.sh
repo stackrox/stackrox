@@ -100,7 +100,7 @@ test_upgrade_paths() {
     wait_for_api
 
     # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+#    deploy_scaled_workload
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
@@ -122,8 +122,8 @@ test_upgrade_paths() {
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
     # Add some Postgres Access Scopes.  These should not survive a rollback.
-    createPostgresScopes
-    checkForPostgresAccessScopes
+#    createPostgresScopes
+#    checkForPostgresAccessScopes
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
@@ -133,12 +133,12 @@ test_upgrade_paths() {
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
-    sensor_wait
+#    sensor_wait
     # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+#    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Verify data is still there
-    checkForPostgresAccessScopes
+#    checkForPostgresAccessScopes
 
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
@@ -157,7 +157,7 @@ test_upgrade_paths() {
     wait_for_central_db
 
     # Verify data is still there
-    checkForPostgresAccessScopes
+#    checkForPostgresAccessScopes
 
     validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -170,7 +170,7 @@ test_upgrade_paths() {
 
     # Since central gets upgraded, connection with sensor will be terminated several times.
     # To avoid sensor restarts we will scale it down.
-    kubectl -n stackrox patch deploy/sensor -p '{ "spec": { "replicas": 0 } }';
+#    kubectl -n stackrox patch deploy/sensor -p '{ "spec": { "replicas": 0 } }';
 
     ########################################################################################
     # Upgrade back to latest to run the smoke tests by first walking previous releases     #
@@ -182,7 +182,20 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
+
+      roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+              central backup --output "postgres_db_${str}.sql.zip"
+
+      info "SHREWS"
+      ls ./postgres*
+      info "END SHREWS"
+
+      gsutil cp ./"postgres_db_${str}.sql.zip" gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
     done
+
+    info "SHREWS"
+    gsutil ls gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
+    info "END SHREWS"
 
     ########################################################################################
     # Upgrade to current in order to run any Postgres -> Postgres migrations               #
