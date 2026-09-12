@@ -132,6 +132,8 @@ type Deployments struct {
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
+	Deleted                       *time.Time              `gorm:"column:deleted;type:timestamp;index:deployments_deleted,type:btree"`
+	State                         storage.DeploymentState `gorm:"column:state;type:integer"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
