@@ -152,4 +152,6 @@ enum ImageIntegrationCategory {
   // so the image integration is also currently used for node integrations.
   // This decision was made because we currently only support one node scanner (our scanner).
   NODE_SCANNER = 2;
+  // Image integrations can also be marked as the source of virtual machine scanning.
+  VIRTUAL_MACHINE_SCANNER = 3;
 }
