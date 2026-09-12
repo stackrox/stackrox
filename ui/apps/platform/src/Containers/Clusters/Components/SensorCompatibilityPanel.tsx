@@ -16,26 +16,54 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
 import { getSensorCompatibilityInfo, shouldShowSensorVersionRangeChart } from '../cluster.helpers';
 import SensorVersionRangeChart from './SensorVersionRangeChart';
 
-// TODO: add documentation link for guidance text
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// TODO: replace with actual documentation URL
 const COMPATIBILITY_DOC_LINK = '';
 
-function getGuidanceText(compatibility: SensorVersionCompatibility | undefined): string {
+const documentationLink = (
+    <ExternalLink>
+        <a href={COMPATIBILITY_DOC_LINK} target="_blank" rel="noopener noreferrer">
+            See documentation
+        </a>
+    </ExternalLink>
+);
+
+function getGuidanceText(compatibility: SensorVersionCompatibility | undefined): ReactNode {
     switch (compatibility) {
         case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
-            return 'Match Sensor to Central version, or at minimum to be within the compatible version range. See documentation.';
+            return (
+                <>
+                    Match Sensor to Central version, or at minimum to be within the compatible
+                    version range. {documentationLink}.
+                </>
+            );
         case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
-            return 'No immediate action is required. It is recommended to match Sensor and Central versions for optimal functionality. See documentation.';
+            return (
+                <>
+                    No immediate action is required. It is recommended to match Sensor and Central
+                    versions for optimal functionality. {documentationLink}.
+                </>
+            );
         case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
             return '';
         case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
-            return 'No immediate action is required. It is recommended to match Sensor and Central versions for optimal functionality. See documentation.';
+            return (
+                <>
+                    No immediate action is required. It is recommended to match Sensor and Central
+                    versions for optimal functionality. {documentationLink}.
+                </>
+            );
         case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
-            return 'Match Sensor to Central version, or at minimum to be within the compatible version range. See documentation.';
+            return (
+                <>
+                    Match Sensor to Central version, or at minimum to be within the compatible
+                    version range. {documentationLink}.
+                </>
+            );
         case 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN':
             return '-';
         default:
