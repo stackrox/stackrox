@@ -1049,6 +1049,25 @@ central:
         - server-name
         - token-file
         - use-current-k8s-context
+  version:
+    PERSISTENT_FLAGS:
+      - json
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   whoami:
     PERSISTENT_FLAGS:
       - retry-timeout
