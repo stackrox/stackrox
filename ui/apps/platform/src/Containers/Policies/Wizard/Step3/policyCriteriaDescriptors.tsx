@@ -492,6 +492,21 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        // SPIKE: 'Container Age' maps to the oldest_container_started field on Deployment.Container,
+        // populated transiently at policy evaluation time from pod store data.
+        // Unlike 'Image Age' (when the image was built), this measures how long the running
+        // container instance has been alive. DEPLOY+RUNTIME lifecycles apply; BUILD is excluded.
+        label: 'Days since container started',
+        name: 'Container Age',
+        shortName: 'Container age',
+        longName: 'Minimum days since container instance started running',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'number',
+        placeholder: '1',
+        canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Days since image was created',
         name: 'Image Age',
         shortName: 'Image age',
