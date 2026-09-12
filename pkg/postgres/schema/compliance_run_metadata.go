@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceRunMetadataSchema() })
+}
 
 var (
 	// CreateTableComplianceRunMetadataStmt holds the create statement for table `compliance_run_metadata`.
@@ -26,7 +31,7 @@ var (
 	}
 
 	// ComplianceRunMetadataSchema is the go schema for table `compliance_run_metadata`.
-	ComplianceRunMetadataSchema = func() *walker.Schema {
+	ComplianceRunMetadataSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_run_metadata")
 		if schema != nil {
 			return schema
@@ -37,7 +42,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceRunMetadataStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_METADATA, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -31,7 +31,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.AlertsSchema
+	schema         = pkgSchema.AlertsSchema()
 	targetResource = resources.Alert
 )
 

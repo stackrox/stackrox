@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessBaselinesSchema
+	schema         = pkgSchema.ProcessBaselinesSchema()
 	targetResource = resources.DeploymentExtension
 )
 

@@ -28,7 +28,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.DiscoveredClustersSchema
+	schema         = pkgSchema.DiscoveredClustersSchema()
 	targetResource = resources.Administration
 )
 

@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.AuthMachineToMachineConfigsSchema
+	schema         = pkgSchema.AuthMachineToMachineConfigsSchema()
 	targetResource = resources.Access
 )
 

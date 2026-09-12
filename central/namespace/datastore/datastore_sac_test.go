@@ -41,7 +41,7 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 	s.Require().NotNil(s.pgTestBase)
 	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgTestBase.DB)
 	s.Require().NoError(err)
-	s.optionsMap = schema.NamespacesSchema.OptionsMap
+	s.optionsMap = schema.NamespacesSchema().OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Namespace)

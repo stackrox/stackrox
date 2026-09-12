@@ -18,7 +18,7 @@ var (
 func NewComponentFlatView(db postgres.DB) ComponentFlatView {
 	return &imageComponentFlatViewImpl{
 		db:     db,
-		schema: schema.ImageComponentV2Schema,
+		schema: schema.ImageComponentV2Schema(),
 	}
 }
 

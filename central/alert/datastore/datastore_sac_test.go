@@ -48,7 +48,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
 	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
-	s.optionsMap = schema.AlertsSchema.OptionsMap
+	s.optionsMap = schema.AlertsSchema().OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }

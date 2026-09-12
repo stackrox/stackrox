@@ -24,9 +24,9 @@ var Options = []search.FieldLabel{
 var SearchOptionsMultiMap = search.MultiMapFromMapsFiltered(
 	Options,
 	index.StandardOptions,
-	schema.ClustersSchema.OptionsMap,
-	schema.NodesSchema.OptionsMap,
-	schema.NamespacesSchema.OptionsMap,
+	schema.ClustersSchema().OptionsMap,
+	schema.NodesSchema().OptionsMap,
+	schema.NamespacesSchema().OptionsMap,
 	index.ControlOptions,
 	deployments.OptionsMap,
 )

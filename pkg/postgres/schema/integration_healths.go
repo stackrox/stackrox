@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { IntegrationHealthsSchema() })
+}
 
 var (
 	// CreateTableIntegrationHealthsStmt holds the create statement for table `integration_healths`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// IntegrationHealthsSchema is the go schema for table `integration_healths`.
-	IntegrationHealthsSchema = func() *walker.Schema {
+	IntegrationHealthsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("integration_healths")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableIntegrationHealthsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

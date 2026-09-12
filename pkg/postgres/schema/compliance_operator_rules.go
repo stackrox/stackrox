@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorRulesSchema() })
+}
 
 var (
 	// CreateTableComplianceOperatorRulesStmt holds the create statement for table `compliance_operator_rules`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// ComplianceOperatorRulesSchema is the go schema for table `compliance_operator_rules`.
-	ComplianceOperatorRulesSchema = func() *walker.Schema {
+	ComplianceOperatorRulesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_rules")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorRulesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

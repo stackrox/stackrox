@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ClusterInitBundlesSchema
+	schema         = pkgSchema.ClusterInitBundlesSchema()
 	targetResource = resources.InitBundleMeta
 )
 

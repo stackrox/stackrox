@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { BaseImageRepositoriesSchema() })
+}
 
 var (
 	// CreateTableBaseImageRepositoriesStmt holds the create statement for table `base_image_repositories`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// BaseImageRepositoriesSchema is the go schema for table `base_image_repositories`.
-	BaseImageRepositoriesSchema = func() *walker.Schema {
+	BaseImageRepositoriesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("base_image_repositories")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageRepositoriesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -88,7 +88,7 @@ func BenchmarkInitializeRankers(b *testing.B) {
 			ranker := ranking.NewRanker()
 			count := 0
 			err := pgSearch.RunSelectRequestForSchemaFn[views.ComponentRiskView](
-				ctx, testDB.DB, pkgSchema.ImageComponentV2Schema, query,
+				ctx, testDB.DB, pkgSchema.ImageComponentV2Schema(), query,
 				func(r *views.ComponentRiskView) error {
 					ranker.Add(r.ComponentID, r.ComponentRiskScore)
 					count++

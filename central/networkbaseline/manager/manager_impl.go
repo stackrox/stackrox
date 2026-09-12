@@ -1062,7 +1062,7 @@ func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query strin
 
 	q = search.ConjunctionQuery(q, clusterMatch)
 
-	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
+	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema().OptionsMap)
 
 	return m.networkEntities.GetEntityByQuery(ctx, q)
 }

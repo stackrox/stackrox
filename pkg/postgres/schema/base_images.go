@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { BaseImagesSchema() })
+}
 
 var (
 	// CreateTableBaseImagesStmt holds the create statement for table `base_images`.
@@ -32,16 +37,16 @@ var (
 	}
 
 	// BaseImagesSchema is the go schema for table `base_images`.
-	BaseImagesSchema = func() *walker.Schema {
+	BaseImagesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("base_images")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImage)(nil)), "base_images")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
-			"storage.Image":               ImagesSchema,
-			"storage.ImageV2":             ImagesV2Schema,
+			"storage.BaseImageRepository": BaseImageRepositoriesSchema(),
+			"storage.Image":               ImagesSchema(),
+			"storage.ImageV2":             ImagesV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -60,7 +65,7 @@ var (
 		RegisterTable(schema, CreateTableBaseImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

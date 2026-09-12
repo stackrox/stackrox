@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ServiceAccountsSchema
+	schema         = pkgSchema.ServiceAccountsSchema()
 	targetResource = resources.ServiceAccount
 )
 

@@ -33,7 +33,7 @@ func TestNewGenericStore(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	assert.NotNil(t, NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
-		pkgSchema.TestSingleKeyStructsSchema,
+		pkgSchema.TestSingleKeyStructsSchema(),
 		pkGetter,
 		insertIntoTestSingleKeyStructs,
 		copyFromTestSingleKeyStructs,
@@ -50,7 +50,7 @@ func TestNewGloballyScopedGenericStore(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	assert.NotNil(t, NewGloballyScopedGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
-		pkgSchema.TestSingleKeyStructsSchema,
+		pkgSchema.TestSingleKeyStructsSchema(),
 		pkGetter,
 		insertIntoTestSingleKeyStructs,
 		copyFromTestSingleKeyStructs,
@@ -610,7 +610,7 @@ type storeFactory func(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyS
 func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
-		pkgSchema.TestSingleKeyStructsSchema,
+		pkgSchema.TestSingleKeyStructsSchema(),
 		pkGetter,
 		insertIntoTestSingleKeyStructs,
 		copyFromTestSingleKeyStructs,
@@ -626,7 +626,7 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 func newCachedStoreForTest(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStoreWithCache[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
-		pkgSchema.TestSingleKeyStructsSchema,
+		pkgSchema.TestSingleKeyStructsSchema(),
 		pkGetter,
 		insertIntoTestSingleKeyStructs,
 		copyFromTestSingleKeyStructs,

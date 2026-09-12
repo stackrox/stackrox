@@ -18,7 +18,7 @@ var (
 func NewCVEView(db postgres.DB) CveView {
 	return &platformCVECoreViewImpl{
 		db:     db,
-		schema: schema.ClusterCvesSchema,
+		schema: schema.ClusterCvesSchema(),
 	}
 }
 

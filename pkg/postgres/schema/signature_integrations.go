@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { SignatureIntegrationsSchema() })
+}
 
 var (
 	// CreateTableSignatureIntegrationsStmt holds the create statement for table `signature_integrations`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// SignatureIntegrationsSchema is the go schema for table `signature_integrations`.
-	SignatureIntegrationsSchema = func() *walker.Schema {
+	SignatureIntegrationsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("signature_integrations")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

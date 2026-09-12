@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NamespacesSchema
+	schema         = pkgSchema.NamespacesSchema()
 	targetResource = resources.Namespace
 )
 
