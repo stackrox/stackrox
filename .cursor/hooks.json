@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/cursor-hooks@latest/schema/hooks.schema.json",
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": ".claude/hooks/lint.sh",
+        "matcher": "Write|Edit|StrReplace",
+        "description": "Surface lint findings to the agent after file edits"
+      }
+    ]
+  }
+}
