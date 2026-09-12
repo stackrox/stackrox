@@ -98,7 +98,7 @@ jobs:
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -191,7 +191,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -304,7 +304,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -369,7 +369,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -415,7 +415,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -453,7 +453,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
@@ -546,7 +546,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
