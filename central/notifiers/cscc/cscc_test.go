@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
+	"cloud.google.com/go/securitycenter/apiv2/securitycenterpb"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
