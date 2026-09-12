@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -64,6 +65,68 @@ func (r k8sResource) String() string {
 	return fmt.Sprintf("%s.%s", r.Resource, r.Group)
 }
 
+// groupVersion returns the API group version string used by the Discovery API.
+// Core resources (empty group) map to "v1", all others to "group/v1".
+func (r k8sResource) groupVersion() string {
+	if r.Group == "" {
+		return "v1"
+	}
+	return r.Group + "/v1"
+}
+
+// filterAvailableResources queries the Discovery API to determine which resources
+// actually exist in the cluster and returns only those. Resources whose API group
+// is not found are excluded. On transient Discovery errors, resources are kept
+// to avoid silently skipping authorization checks (fail-open).
+func filterAvailableResources(client kubernetes.Interface, resources []k8sResource) []k8sResource {
+	type groupResult struct {
+		resources []string
+		available bool
+	}
+	discovered := make(map[string]groupResult)
+
+	for _, r := range resources {
+		gv := r.groupVersion()
+		if _, checked := discovered[gv]; checked {
+			continue
+		}
+
+		resourceList, err := client.Discovery().ServerResourcesForGroupVersion(gv)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				log.Infof("API group %q not available in cluster, skipping authorization checks for its resources", gv)
+				discovered[gv] = groupResult{available: false}
+				continue
+			}
+			log.Warnf("Failed to discover resources for API group %q, keeping authorization checks (fail-open): %v", gv, err)
+			discovered[gv] = groupResult{available: true}
+			continue
+		}
+
+		names := make([]string, 0, len(resourceList.APIResources))
+		for _, apiRes := range resourceList.APIResources {
+			names = append(names, apiRes.Name)
+		}
+		discovered[gv] = groupResult{resources: names, available: true}
+	}
+
+	var filtered []k8sResource
+	for _, r := range resources {
+		gv := r.groupVersion()
+		result := discovered[gv]
+		if !result.available {
+			log.Infof("Skipping authorization check for %s (API group %q not available)", r, gv)
+			continue
+		}
+		if result.resources != nil && !slices.Contains(result.resources, r.Resource) {
+			log.Infof("Skipping authorization check for %s (resource not found in API group %q)", r, gv)
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	return filtered
+}
+
 // k8sAuthorizer verifies that a bearer token has the required Kubernetes permissions.
 // It validates tokens using TokenReview and checks permissions using SubjectAccessReview.
 // The user is authorized if they have get and list permissions to all deployment-like
@@ -80,9 +143,28 @@ type k8sAuthorizer struct {
 	authzGroup *coalescer.Coalescer[authzResult]
 }
 
+// allResourcesToCheck is the full list of deployment-like resources that the authorizer
+// checks permissions for. At construction time, this list is filtered to only include
+// resources that actually exist in the cluster.
+var allResourcesToCheck = []k8sResource{
+	{Resource: "pods", Group: ""},
+	{Resource: "replicationcontrollers", Group: ""},
+	{Resource: "daemonsets", Group: "apps"},
+	{Resource: "deployments", Group: "apps"},
+	{Resource: "replicasets", Group: "apps"},
+	{Resource: "statefulsets", Group: "apps"},
+	{Resource: "cronjobs", Group: "batch"},
+	{Resource: "jobs", Group: "batch"},
+	{Resource: "deploymentconfigs", Group: "apps.openshift.io"},
+}
+
 // newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
-// SubjectAccessReview caching.
+// SubjectAccessReview caching. It queries the cluster's Discovery API to determine
+// which resources exist and only checks permissions for those.
 func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
+	available := filterAvailableResources(client, allResourcesToCheck)
+	log.Infof("Authorizer will check permissions for %d resources: %v", len(available), available)
+
 	return &k8sAuthorizer{
 		client:           client,
 		tokenCache:       expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
@@ -90,17 +172,7 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 		verbsToCheck:     []string{"get", "list"},
 		tokenReviewGroup: coalescer.New[*authenticationv1.UserInfo](),
 		authzGroup:       coalescer.New[authzResult](),
-		resourcesToCheck: []k8sResource{
-			{Resource: "pods", Group: ""},
-			{Resource: "replicationcontrollers", Group: ""},
-			{Resource: "daemonsets", Group: "apps"},
-			{Resource: "deployments", Group: "apps"},
-			{Resource: "replicasets", Group: "apps"},
-			{Resource: "statefulsets", Group: "apps"},
-			{Resource: "cronjobs", Group: "batch"},
-			{Resource: "jobs", Group: "batch"},
-			{Resource: "deploymentconfigs", Group: "apps.openshift.io"},
-		},
+		resourcesToCheck: available,
 	}
 }
 
