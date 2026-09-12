@@ -1,0 +1,44 @@
+{
+  "id": "5fb4a36f-1a16-4a95-8cee-6350901f3334",
+  "name": "File activity from node process on audit logs",
+  "description": "",
+  "rationale": "",
+  "remediation": "",
+  "disabled": false,
+  "categories": [
+    "File Activity Monitoring"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "NODE_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Rule 1",
+      "policyGroups": [
+        {
+          "fieldName": "File Path",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "/var/log/kube-apiserver/*"
+            },
+            {
+              "value": "/var/log/oauth-apiserver/*"
+            },
+            {
+              "value": "/var/log/openshift-apiserver/*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "criteriaLocked": false,
+  "mitreVectorsLocked": false,
+  "isDefault": false
+}
