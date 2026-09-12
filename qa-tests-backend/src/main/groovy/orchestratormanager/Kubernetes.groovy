@@ -2678,8 +2678,11 @@ class Kubernetes {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
         }
-        if (waitForDeletion) {
-            waitForNamespaceDeletion(ns)
+        if (waitForDeletion && !waitForNamespaceDeletion(ns)) {
+            // Fail loudly: a namespace stuck Terminating leaks into later tests
+            // (e.g. NamespaceTest's ACS/orchestrator comparison) instead of being
+            // silently ignored.
+            throw new OrchestratorManagerException("Timed out waiting for namespace ${ns} to be deleted")
         }
     }
 
