@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testRSAPublicKeyPEM = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAryQICCl6NZ5gDKrnSztO\n3Hy8PEUcuyvg/ikC+VcIo2SFFSf18a3IMYldIugqqqZCs4/4uVW3sbdLs/6PfgdX\n7O9D22ZiFWHPYA2k2N744MNiCD1UE+tJyllUhSblK48bn+v1oZHCM0nYQ2NqUkvS\nj+hwUU3RiWl7x3D2s9wSdNt7XUtW05a/FXehsPSiJfKvHJJnGOX0BgTvkLnkAOTd\nOrUZ/wK69Dzu4IvrN4vs9Nes8vbwPa/ddZEzGR0cQMt0JBkhk9kU/qwqUseP1QRJ\n5I1jR4g8aYPL/ke9K35PxZWuDp3U0UPAZ3PjFAh+5T+fc7gzCs9dPzSHloruU+gl\nFQIDAQAB\n-----END PUBLIC KEY-----"
+
 var (
 	goodName                   = "Sheer Heart Attack"
 	goodID                     = "io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13"
@@ -23,7 +25,7 @@ var (
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "key name",
-				PublicKeyPemEnc: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAryQICCl6NZ5gDKrnSztO\n3Hy8PEUcuyvg/ikC+VcIo2SFFSf18a3IMYldIugqqqZCs4/4uVW3sbdLs/6PfgdX\n7O9D22ZiFWHPYA2k2N744MNiCD1UE+tJyllUhSblK48bn+v1oZHCM0nYQ2NqUkvS\nj+hwUU3RiWl7x3D2s9wSdNt7XUtW05a/FXehsPSiJfKvHJJnGOX0BgTvkLnkAOTd\nOrUZ/wK69Dzu4IvrN4vs9Nes8vbwPa/ddZEzGR0cQMt0JBkhk9kU/qwqUseP1QRJ\n5I1jR4g8aYPL/ke9K35PxZWuDp3U0UPAZ3PjFAh+5T+fc7gzCs9dPzSHloruU+gl\nFQIDAQAB\n-----END PUBLIC KEY-----",
+				PublicKeyPemEnc: testRSAPublicKeyPEM,
 			},
 		},
 	}
@@ -70,6 +72,54 @@ var (
 	invalidRekorURLConfig = &storage.TransparencyLogVerification{
 		Enabled: true,
 		Url:     "invalid-url",
+	}
+
+	invalidTrustRootURLConfig = &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "key name",
+				PublicKeyPemEnc: testRSAPublicKeyPEM,
+				TrustRoot:       &storage.TrustRoot{TufRepositoryUrl: "://no-host"},
+			},
+		},
+	}
+
+	invalidCertTrustRootConfig = []*storage.CosignCertificateVerification{
+		{
+			CertificateOidcIssuer: ".*",
+			CertificateIdentity:   ".*",
+			TrustRoot:             &storage.TrustRoot{TufRepositoryUrl: "://no-host"},
+		},
+	}
+
+	emptyTrustRootConfig = &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "key name",
+				PublicKeyPemEnc: testRSAPublicKeyPEM,
+				TrustRoot:       &storage.TrustRoot{},
+			},
+		},
+	}
+
+	goodCosignConfigWithTrustRootNoScheme = &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "key name",
+				PublicKeyPemEnc: testRSAPublicKeyPEM,
+				TrustRoot:       &storage.TrustRoot{TufRepositoryUrl: "tuf-repo-cdn.sigstore.dev"},
+			},
+		},
+	}
+
+	goodCosignConfigWithTrustRoot = &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "key name",
+				PublicKeyPemEnc: testRSAPublicKeyPEM,
+				TrustRoot:       &storage.TrustRoot{TufRepositoryUrl: "https://tuf-repo-cdn.sigstore.dev"},
+			},
+		},
 	}
 )
 
@@ -132,6 +182,21 @@ func TestValidateSignatureIntegration_Failure(t *testing.T) {
 			Name:            goodName,
 			TransparencyLog: invalidRekorURLConfig,
 		},
+		"invalid trust root TUF URL on public key": {
+			Id:     goodID,
+			Name:   goodName,
+			Cosign: invalidTrustRootURLConfig,
+		},
+		"invalid trust root TUF URL on certificate": {
+			Id:                 goodID,
+			Name:               goodName,
+			CosignCertificates: invalidCertTrustRootConfig,
+		},
+		"empty trust root rejected": {
+			Id:     goodID,
+			Name:   goodName,
+			Cosign: emptyTrustRootConfig,
+		},
 	}
 
 	for desc, signatureIntegration := range testCasesBad {
@@ -148,6 +213,16 @@ func TestValidateSignatureIntegration_Success(t *testing.T) {
 			Id:     goodID,
 			Name:   goodName,
 			Cosign: goodCosignConfig,
+		},
+		"valid trust root TUF URL without scheme gets HTTPS": {
+			Id:     goodID,
+			Name:   goodName,
+			Cosign: goodCosignConfigWithTrustRootNoScheme,
+		},
+		"valid name, id, and cosign config with trust root TUF URL": {
+			Id:     goodID,
+			Name:   goodName,
+			Cosign: goodCosignConfigWithTrustRoot,
 		},
 		"valid name, id, and cosign certificate config": {
 			Id:                 goodID,

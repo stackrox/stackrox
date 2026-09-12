@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	rekorClient "github.com/sigstore/rekor/pkg/client"
 	sgbundle "github.com/sigstore/sigstore-go/pkg/bundle"
 	"github.com/sigstore/sigstore-go/pkg/root"
+	sgtuf "github.com/sigstore/sigstore-go/pkg/tuf"
 	"github.com/sigstore/sigstore-go/pkg/verify"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
@@ -77,11 +80,16 @@ func setupTufRootDir() {
 }
 
 type cosignSignatureVerifier struct {
-	parsedPublicKeys []crypto.PublicKey
-	certs            []certVerificationData
-	transparencyLog  *tlogVerificationData
+	publicKeys      []publicKeyVerificationData
+	certs           []certVerificationData
+	transparencyLog *tlogVerificationData
 
 	verifierOpts []cosign.CheckOpts
+}
+
+type publicKeyVerificationData struct {
+	key       crypto.PublicKey
+	trustRoot *storage.TrustRoot
 }
 
 type certVerificationData struct {
@@ -91,6 +99,7 @@ type certVerificationData struct {
 	identityExpr   string
 	ctlogEnabled   bool
 	ctlogPublicKey string
+	trustRoot      *storage.TrustRoot
 }
 
 type tlogVerificationData struct {
@@ -114,9 +123,8 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 	setupTufRootDir()
 
 	publicKeys := config.GetCosign().GetPublicKeys()
-	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
+	parsedKeys := make([]publicKeyVerificationData, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
-		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			return nil, errox.InvariantViolation.Newf("failed to decode PEM block containing public key %q", publicKey.GetName())
@@ -126,7 +134,10 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing DER encoded public key")
 		}
-		parsedKeys = append(parsedKeys, parsedKey)
+		parsedKeys = append(parsedKeys, publicKeyVerificationData{
+			key:       parsedKey,
+			trustRoot: publicKey.GetTrustRoot(),
+		})
 	}
 
 	cosignCerts := config.GetCosignCertificates()
@@ -159,6 +170,7 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 			identityExpr:   cosignCert.GetCertificateIdentity(),
 			ctlogEnabled:   cosignCert.GetCertificateTransparencyLog().GetEnabled(),
 			ctlogPublicKey: cosignCert.GetCertificateTransparencyLog().GetPublicKeyPemEnc(),
+			trustRoot:      cosignCert.GetTrustRoot(),
 		})
 	}
 
@@ -171,9 +183,9 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 	}
 
 	return &cosignSignatureVerifier{
-		parsedPublicKeys: parsedKeys,
-		certs:            certsWithChains,
-		transparencyLog:  tlogVerificationData,
+		publicKeys:      parsedKeys,
+		certs:           certsWithChains,
+		transparencyLog: tlogVerificationData,
 	}, nil
 }
 
@@ -184,7 +196,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	image *storage.Image,
 ) (storage.ImageSignatureVerificationResult_Status, []string, error) {
 	// Short-circuit if we, for some reason, do not have anything to verify against.
-	if len(c.parsedPublicKeys) == 0 && len(c.certs) == 0 {
+	if len(c.publicKeys) == 0 && len(c.certs) == 0 {
 		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoVerificationData
 	}
 
@@ -344,6 +356,63 @@ func augmentTrustedMaterialWithSigChain(cosignOpts *cosign.CheckOpts, sig oci.Si
 	return nil
 }
 
+func resolveAndCacheTrustRoot(tr *storage.TrustRoot, cache map[string]root.TrustedMaterial) (root.TrustedMaterial, error) {
+	u := tr.GetTufRepositoryUrl()
+	if tm, ok := cache[u]; ok {
+		return tm, nil
+	}
+	tm, err := resolveTrustRoot(tr)
+	if err != nil {
+		return nil, err
+	}
+	if u != "" {
+		cache[u] = tm
+	}
+	return tm, nil
+}
+
+const fetchMaxBytes = 1 << 20 // 1 MiB.
+
+func fetchURL(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, fetchMaxBytes))
+}
+
+// resolveTrustRoot fetches the sigstore TrustedRoot from the configured TUF repository.
+func resolveTrustRoot(tr *storage.TrustRoot) (root.TrustedMaterial, error) {
+	u := tr.GetTufRepositoryUrl()
+	if u == "" {
+		return nil, nil
+	}
+	opts := sgtuf.DefaultOptions()
+	opts.RepositoryBaseURL = urlfmt.FormatURL(u, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	opts.CachePath = "/tmp/tuf-roots"
+	opts.CacheValidity = 1
+	rootURL := tr.GetTufRootUrl()
+	if rootURL == "" {
+		rootURL = opts.RepositoryBaseURL + "/root.json"
+	} else {
+		rootURL = urlfmt.FormatURL(rootURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	}
+	rootJSON, err := fetchURL(rootURL)
+	if err != nil {
+		return nil, fmt.Errorf("fetching TUF root.json from %s: %w", rootURL, err)
+	}
+	opts.Root = rootJSON
+	tm, err := root.FetchTrustedRootWithOptions(opts)
+	if err != nil {
+		return nil, fmt.Errorf("fetching trust root from TUF repository %s: %w", u, err)
+	}
+	return tm, nil
+}
+
 // sigstoreTrustedRoot returns the public Sigstore trusted root from TUF.
 func sigstoreTrustedRoot() (root.TrustedMaterial, error) {
 	tr, err := cosign.TrustedRoot()
@@ -359,29 +428,45 @@ func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error 
 		return errors.Wrap(err, "creating default cosign check opts")
 	}
 
-	// Build TrustedMaterial once from the tlog keys for public key verifiers.
+	// Build TrustedMaterial once from the tlog keys for public key verifiers
+	// that don't have their own trust root.
 	publicKeyTrustedMaterial, err := trustedMaterialFromTlogKeys(defaultOpts)
 	if err != nil {
 		return err
 	}
 
+	trustRootCache := make(map[string]root.TrustedMaterial)
+
 	var verifierErrs error
 	// Public key verifiers.
-	for _, key := range c.parsedPublicKeys {
-		v, err := signature.LoadVerifier(key, crypto.SHA256)
+	for _, pk := range c.publicKeys {
+		v, err := signature.LoadVerifier(pk.key, crypto.SHA256)
 		if err != nil {
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
 			continue
 		}
 		opts := defaultOpts
 		opts.SigVerifier = v
-		opts.TrustedMaterial = publicKeyTrustedMaterial
+		if pk.trustRoot != nil {
+			opts.TrustedMaterial, err = resolveAndCacheTrustRoot(pk.trustRoot, trustRootCache)
+			if err != nil {
+				verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "resolving trust root for public key"))
+				continue
+			}
+			// TrustedRoot from TUF contains all trust material; clear inherited integration defaults.
+			opts.IgnoreTlog = false
+			opts.Offline = false
+			opts.RekorClient = nil
+			opts.RekorPubKeys = nil
+		} else {
+			opts.TrustedMaterial = publicKeyTrustedMaterial
+		}
 		c.verifierOpts = append(c.verifierOpts, opts)
 	}
 
 	// Certificate verifiers.
 	for _, cert := range c.certs {
-		opts, err := cosignCheckOptsFromCert(ctx, cert, defaultOpts)
+		opts, err := cosignCheckOptsFromCert(ctx, cert, defaultOpts, trustRootCache)
 		if err != nil {
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts from cert"))
 			continue
@@ -447,7 +532,7 @@ func (c *cosignSignatureVerifier) defaultCosignCheckOpts(ctx context.Context) (c
 	return opts, nil
 }
 
-func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opts cosign.CheckOpts) (cosign.CheckOpts, error) {
+func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opts cosign.CheckOpts, trustRootCache map[string]root.TrustedMaterial) (cosign.CheckOpts, error) {
 	// Only set non-wildcard identities. CheckCertificatePolicy fails on BYOPKI certs
 	// that lack OIDC extensions. For the sigstore-go bundle path, verifySigstoreBundle
 	// injects wildcard identities when Identities is empty and SigVerifier is nil.
@@ -467,10 +552,20 @@ func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opt
 		}
 	}
 
-	// Build TrustedMaterial: custom chain when provided, Sigstore (Fulcio) root otherwise.
-	// All certificate chain validation flows through TrustedMaterial — the legacy
-	// RootCerts/IntermediateCerts fields are not needed.
-	if len(cert.chain) > 0 {
+	// Build TrustedMaterial: explicit trust root supersedes all other config.
+	if cert.trustRoot != nil {
+		opts.TrustedMaterial, err = resolveAndCacheTrustRoot(cert.trustRoot, trustRootCache)
+		if err != nil {
+			return opts, err
+		}
+		// TrustedRoot from TUF contains all trust material; clear inherited integration defaults.
+		opts.IgnoreTlog = false
+		opts.Offline = false
+		opts.RekorClient = nil
+		opts.RekorPubKeys = nil
+		opts.IgnoreSCT = false
+		opts.CTLogPubKeys = nil
+	} else if len(cert.chain) > 0 {
 		opts.TrustedMaterial, err = trustedMaterialFromCertificateChain(cert.chain, opts)
 		if err != nil {
 			return opts, err
