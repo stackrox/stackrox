@@ -14,7 +14,12 @@ settings=(
     --set central.adminPassword.value="$admin_password"
     --set enableOpenShiftMonitoring=true
     --set central.db.enabled=true
+    --set central.persistence.none=true
 )
+
+if [[ -n ${ROX_SCANNER_V4:-} ]]; then
+    settings+=(--set scannerV4.disable="$ROX_SCANNER_V4")
+fi
 
 if [[ -n ${DOCKER_USERNAME:-} ]]; then
     settings+=(--set imagePullSecrets.username="$DOCKER_USERNAME")
