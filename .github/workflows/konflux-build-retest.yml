@@ -1,0 +1,51 @@
+name: Retest Failed Konflux Builds
+
+on:
+  check_run:
+    types: [completed]
+
+env:
+  MAX_RETRIES: 3
+  CHECK_NAME_SUFFIX: '-on-pull-request'
+
+jobs:
+  auto-retest:
+    if: |
+      github.event.check_run.pull_requests[0] != null &&
+      github.event.check_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Auto-retest failed Konflux builds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAX_RETRIES: ${{ env.MAX_RETRIES }}
+          CHECK_NAME_SUFFIX: ${{ env.CHECK_NAME_SUFFIX }}
+        run: |
+          CHECK_NAME="${{ github.event.check_run.name }}"
+
+          # Check if the check name ends with the configured suffix
+          if [[ ! "$CHECK_NAME" == *"$CHECK_NAME_SUFFIX" ]]; then
+            echo "Skipping $CHECK_NAME (does not end with $CHECK_NAME_SUFFIX)"
+            exit 0
+          fi
+
+          # Remove the "Red Hat Konflux /" prefix to get the base check name
+          CHECK_NAME="${CHECK_NAME#Red Hat Konflux / }"
+          PR_NUMBER="${{ github.event.check_run.pull_requests[0].number }}"
+
+          # Count comments containing the retest command (fetches all comments via pagination)
+          RETRY_COUNT=$(gh api --paginate "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" \
+            --jq '[.[] | select(.body | contains("/retest '"$CHECK_NAME"'"))] | length' | \
+            awk '{s+=$1} END {print s}')
+
+          if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+            echo "::warning::Maximum retry limit ($MAX_RETRIES) reached for $CHECK_NAME on PR #$PR_NUMBER"
+          else
+            echo "Retrying $CHECK_NAME (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+            gh pr comment "$PR_NUMBER" --repo ${{ github.repository }} --body "/retest $CHECK_NAME"
+          fi
