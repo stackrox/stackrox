@@ -23,17 +23,12 @@ const (
 )
 
 var (
-	imageFlavorDefault = defaults.ImageFlavorNameRHACSRelease
+	// imageFlavorDefault is used when roxctl's --image-defaults flag is omitted.
+	imageFlavorDefault = defaults.ImageFlavorNameOpenSource
 )
 
 // ImageDefaultsFlagName is a shared constant for --image-defaults command line flag.
 const ImageDefaultsFlagName = "image-defaults"
-
-func init() {
-	if !buildinfo.ReleaseBuild {
-		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
-	}
-}
 
 // AddImageDefaults adds the image-defaults flag to the command.
 func AddImageDefaults(pf *pflag.FlagSet, destination *string) {
