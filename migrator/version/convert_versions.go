@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -28,7 +29,7 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	// During the transition to not use serialized, we may be coming from a database
 	// that uses it.  So if serialized is not nil, we will need to use that
 	if m.Serialized != nil {
-		if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+		if err := pgutils.UnmarshalVTMessage(&msg, m.Serialized); err != nil {
 			return nil, err
 		}
 		return &msg, nil

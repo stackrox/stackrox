@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
@@ -118,7 +119,7 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	var manifest v1.ProbeUploadManifest
-	if err := manifest.UnmarshalVTUnsafe(manifestBytes); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&manifest, manifestBytes); err != nil {
 		return errors.Wrap(err, "failed to unmarshal manifest")
 	}
 
