@@ -146,6 +146,8 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - **Central Services**: Deployed in management cluster (Central, Scanner, UI, Database)
 - **Secured Cluster Services**: Deployed per monitored cluster (Sensor, Admission Controller)
 - **Multi-cluster support**: One Central instance monitors multiple Kubernetes clusters
+- See `INSTALL_METHODS.md` for the full picture of installation methods, their history,
+  deprecation status, and the ongoing consolidation onto the operator
 
 ### Key Directories
 - `/central/` - Central management service code
