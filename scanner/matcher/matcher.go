@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -35,6 +36,7 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
@@ -107,6 +109,9 @@ var (
 			},
 		},
 	}
+
+	enrichersOnce    sync.Once
+	enabledEnrichers []driver.Enricher
 )
 
 func init() {
@@ -115,6 +120,26 @@ func init() {
 	mf := driver.MatcherStatic(&m)
 	registry.Register(m.Name(), mf)
 	matcherNames = append(matcherNames, m.Name())
+}
+
+// GetMatcherNames returns a copy of the Claircore matcher names to use.
+func GetMatcherNames() []string {
+	return slices.Clone(matcherNames)
+}
+
+// GetEnrichers returns the list of enrichers to use for vulnerability scanning.
+func GetEnrichers() []driver.Enricher {
+	enrichersOnce.Do(func() {
+		enabledEnrichers = make([]driver.Enricher, 0, len(enrichers))
+		for _, e := range enrichers {
+			enabled := e.flag == nil || e.flag.Enabled()
+			slog.Info("enricher", "name", e.name, "enabled", enabled)
+			if enabled {
+				enabledEnrichers = append(enabledEnrichers, e.init())
+			}
+		}
+	})
+	return enabledEnrichers
 }
 
 // Matcher represents a vulnerability matcher.
@@ -184,19 +209,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		Transport: httputil.DenyTransport,
 	}
 
-	enabledEnrichers := make([]driver.Enricher, 0, len(enrichers))
-	for _, e := range enrichers {
-		enabled := e.flag == nil || e.flag.Enabled()
-		slog.InfoContext(ctx, "enricher", "name", e.name, "enabled", enabled)
-		if !enabled {
-			continue
-		}
-		enabledEnrichers = append(enabledEnrichers, e.init())
-	}
+	enabledEnrichers := GetEnrichers()
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
-		MatcherNames:             matcherNames,
+		MatcherNames:             GetMatcherNames(),
 		Enrichers:                enabledEnrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
