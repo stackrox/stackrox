@@ -246,3 +246,211 @@ func TestEntityData_GetPodIPs(t *testing.T) {
 		})
 	}
 }
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPListenerConditionalUpdate() {
+	tests := map[string]struct {
+		setup    func(store *Store)
+		action   func(store *Store)
+		expected []string
+	}{
+		"private-only incremental add should not trigger listener": {
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont1", 80),
+				}, true)
+			},
+			expected: nil,
+		},
+		"incremental delete-only should not trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("", "", 0),
+				}, true)
+			},
+			expected: nil,
+		},
+		"public IP incremental add should trigger listener": {
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("34.118.224.226", "cont1", 80),
+				}, true)
+			},
+			expected: []string{"34.118.224.226"},
+		},
+		"public IP non-incremental replace should trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("1.1.1.1", "cont2", 80),
+				}, false)
+			},
+			// 8.8.8.8 moved to history, 1.1.1.1 added to current
+			expected: []string{"1.1.1.1", "8.8.8.8"},
+		},
+		"public IP removal via delete should trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("", "", 0),
+				}, false)
+			},
+			// 8.8.8.8 moved to history (memorySize=1), still present
+			expected: []string{"8.8.8.8"},
+		},
+		"mixed private and public should report only public": {
+			action: func(store *Store) {
+				ed := &EntityData{}
+				ep1 := buildEndpoint("10.0.0.1", 80)
+				ed.AddEndpoint(ep1, EndpointTargetInfo{ContainerPort: 80})
+				ed.AddIP(ep1.IPAndPort.Address)
+				ep2 := buildEndpoint("8.8.8.8", 443)
+				ed.AddEndpoint(ep2, EndpointTargetInfo{ContainerPort: 443})
+				ed.AddIP(ep2.IPAndPort.Address)
+				store.Apply(map[string]*EntityData{"depl1": ed}, true)
+			},
+			expected: []string{"8.8.8.8"},
+		},
+		"replacing public with private should still show history": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+				}, false)
+			},
+			// 8.8.8.8 moved to history (memorySize=1), still present
+			expected: []string{"8.8.8.8"},
+		},
+		"cross-store: updating one sub-store must not drop IPs from the other": {
+			setup: func(store *Store) {
+				ed := &EntityData{}
+				ed.AddEndpoint(buildEndpoint("8.8.8.8", 80), EndpointTargetInfo{ContainerPort: 80})
+				store.Apply(map[string]*EntityData{"depl1": ed}, true)
+			},
+			action: func(store *Store) {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("1.1.1.1"))
+				store.Apply(map[string]*EntityData{"depl2": ed}, true)
+			},
+			expected: []string{"8.8.8.8", "1.1.1.1"},
+		},
+	}
+
+	for name, tc := range tests {
+		s.Run(name, func() {
+			store := NewStore(1, nil, false)
+			listener := newTestPublicIPsListener(s.T())
+			store.RegisterPublicIPsListener(listener)
+			defer store.UnregisterPublicIPsListener(listener)
+
+			if tc.setup != nil {
+				tc.setup(store)
+			}
+			tc.action(store)
+
+			if tc.expected == nil {
+				s.Empty(listener.data, "expected no public IPs")
+			} else {
+				s.Equal(len(tc.expected), listener.data.Cardinality(), "wrong number of public IPs")
+				for _, ip := range tc.expected {
+					s.True(listener.data.Contains(net.ParseIP(ip)), "missing expected IP %s", ip)
+				}
+			}
+		})
+	}
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPReaddAfterRemoval() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	// Add a public IP, then remove it via replacement, then expire history.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+	}, false)
+	store.RecordTick()
+	s.Empty(listener.data, "public IP should be gone after history expiry")
+
+	// Re-add the same public IP — ref count must resurrect from zero.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont3", 80),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should reappear after re-add")
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPSharedBetweenDeployments() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	// Two deployments share the same public IP (different ports).
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	store.Apply(map[string]*EntityData{
+		"depl2": entityUpdate("8.8.8.8", "cont2", 443),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	// Remove one deployment — the IP should survive via the other's ref count.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("", "", 0),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should persist while second deployment still uses it")
+
+	// Remove the second deployment — IP moves to history.
+	store.Apply(map[string]*EntityData{
+		"depl2": entityUpdate("", "", 0),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should be in history")
+
+	// Expire history.
+	store.RecordTick()
+	s.Empty(listener.data, "public IP should be gone after history expiry")
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPHistoryExpiry() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	// Replace with private — public IP moves to history
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "should still be in history")
+
+	// Tick expires history (memorySize=1 means 1 tick to expire)
+	store.RecordTick()
+	s.Empty(listener.data, "history should have expired after tick")
+}
