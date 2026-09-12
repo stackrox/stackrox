@@ -32,6 +32,11 @@ func MakeFakeClient() *ClientSet {
 	}
 }
 
+// SetDynamic sets the dynamic client on the ClientSet.
+func (c *ClientSet) SetDynamic(d dynamic.Interface) {
+	c.dynamic = d
+}
+
 // MakeFakeClientFromRest creates a k8s client from rest.Config
 func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
 	client, err := kubernetes.NewForConfig(restConfig)
