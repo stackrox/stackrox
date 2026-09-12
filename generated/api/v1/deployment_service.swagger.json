@@ -911,9 +911,13 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "managingResource": {
+          "$ref": "#/definitions/storageManagingResource",
+          "description": "Non-native (CRD) resource that manages this deployment. Populated when\na deployment's OwnerReference chain includes a CRD controller rather than\n(or in addition to) native Kubernetes resource types."
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 37"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1015,6 +1019,32 @@
           "type": "boolean"
         }
       }
+    },
+    "storageManagingResource": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "title": "e.g. \"InferenceService\", \"Application\""
+        },
+        "apiGroup": {
+          "type": "string",
+          "title": "e.g. \"serving.kserve.io\", \"argoproj.io\""
+        },
+        "apiVersion": {
+          "type": "string",
+          "title": "e.g. \"v1beta1\", \"v1alpha1\""
+        },
+        "name": {
+          "type": "string",
+          "title": "Name of the managing CR"
+        },
+        "uid": {
+          "type": "string",
+          "title": "Kubernetes UID of the managing CR"
+        }
+      },
+      "description": "ManagingResource identifies a non-native (CRD) Kubernetes resource that\nmanages this deployment via an OwnerReference. This captures the controller\nOwnerReference that would otherwise be discarded because it points to a\ncustom resource rather than a native Kubernetes type."
     },
     "storagePermissionLevel": {
       "type": "string",
