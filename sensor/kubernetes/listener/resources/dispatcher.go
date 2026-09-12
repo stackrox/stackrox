@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	policyReportDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/policyreport"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/client-go/kubernetes"
@@ -86,10 +87,11 @@ func NewDispatcherRegistry(
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
 	registryStore := storeProvider.registryStore
 	registryMirrorStore := storeProvider.registryMirrorStore
+	hierarchy := references.NewParentHierarchy()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
+			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager, hierarchy),
 
 		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.VirtualMachines()),
@@ -116,7 +118,7 @@ func NewDispatcherRegistry(
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 
-		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID),
+		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments()),
 	}
 }
 
