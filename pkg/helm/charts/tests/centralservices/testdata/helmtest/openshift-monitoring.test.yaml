@@ -54,6 +54,42 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "Central DB PVC space alerts"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+  tests:
+    - name: "warning and critical alerts are created"
+      expect: |
+        .prometheusrules["central-telemeter-stackrox"].spec.groups |
+          assertThat(any(.[]; .name == "rhacs.central-db"))
+        .prometheusrules["central-telemeter-stackrox"].spec.groups[] |
+          select(.name == "rhacs.central-db") | .rules | [
+            assertThat(length == 2),
+            assertThat(all(.[]; .alert == "CentralDBPersistentVolumeFillingUp")),
+            assertThat(any(.[]; .labels.severity == "warning")),
+            assertThat(any(.[]; .labels.severity == "critical"))
+          ]
+        .prometheusrules["central-telemeter-stackrox"].spec.groups[] |
+          select(.name == "rhacs.central-db") | .rules[] |
+          select(.labels.severity == "warning") |
+          assertThat(.expr | contains("persistentvolumeclaim=\"central-db\"") and contains("> 0.8"))
+
+    - name: "custom claim name is honoured"
+      set:
+        central.db.persistence.persistentVolumeClaim.claimName: my-central-db
+      expect: |
+        .prometheusrules["central-telemeter-stackrox"].spec.groups[] |
+          select(.name == "rhacs.central-db") | .rules[0] |
+          assertThat(.expr | contains("persistentvolumeclaim=\"my-central-db\""))
+
+    - name: "omitted when central-db is not PVC-backed"
+      set:
+        central.db.persistence.hostPath: /var/lib/central-db-test
+      expect: |
+        .prometheusrules["central-telemeter-stackrox"].spec.groups |
+          assertThat(all(.[]; .name != "rhacs.central-db"))
+
 - name: "When enabled with Scanner V4"
   set:
     monitoring.openshift.enabled: true
