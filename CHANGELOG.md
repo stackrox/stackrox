@@ -37,6 +37,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - The `priority` field on API responses for deployments, images, nodes, and components is deprecated and will be removed in a future release. Use the `risk_score` field on the same objects instead. Sorting by "Risk Priority" in search queries is also deprecated; sort by "Risk Score" instead. For clusters and namespaces, the `priority` field will be removed and replaced by a `risk_score` field where applicable.
 
 ### Technical Changes
+- ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 - ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
 - ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
