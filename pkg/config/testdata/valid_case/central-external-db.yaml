@@ -1,5 +1,0 @@
-centralDB:
-  source: >
-    host=fakehost
-    port=5432
-    user=fakeuser
