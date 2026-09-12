@@ -36,7 +36,11 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     # Detect these with `find / -uid 26` in the original container.
     chown -R postgres /var/lib/pgsql && chown -R postgres /opt/app-root && \
     # Cleanup - cache mounts are automatically unmounted, no need to clean
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rpm --verbose -e --nodeps $(rpm -qa \
+        # Not needed by postgres, carry unfixable CVEs
+        'libcurl*' 'vim*' \
+        # Flagged by "Curl in Image" and "Red Hat Package Manager in Image" default policies
+        'curl*' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     mkdir /docker-entrypoint-initdb.d
 
 COPY --link scripts \
