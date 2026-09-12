@@ -7,11 +7,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	sacresources "github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 )
 
 // Keys to use the pre-defined scopes provided with GetNamespaceScopedTestContexts
 const (
+	NoAccessCtx                      = "NoAccessCtx"
+	OtherResourceReadCtx             = "OtherResourceReadCtx"
+	OtherResourceReadWriteCtx        = "OtherResourceReadWriteCtx"
 	UnrestrictedReadCtx              = "UnrestrictedReadCtx"
 	UnrestrictedReadWriteCtx         = "UnrestrictedReadWriteCtx"
 	Cluster1ReadWriteCtx             = "Cluster1ReadWriteCtx"
@@ -46,6 +50,22 @@ func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resources
 	for _, r := range resources {
 		resourceHandles = append(resourceHandles, r)
 	}
+
+	contextMap[NoAccessCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.DenyAllAccessScopeChecker())
+
+	contextMap[OtherResourceReadCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(sacresources.Administration)))
+
+	contextMap[OtherResourceReadWriteCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(sacresources.Administration)))
 
 	contextMap[UnrestrictedReadCtx] =
 		sac.WithGlobalAccessScopeChecker(ctx,
@@ -251,6 +271,47 @@ func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resources
 				sac.TestScopeMap{
 					storage.Access_READ_ACCESS: mixedAccessScope,
 				}))
+
+	return contextMap
+}
+
+// GetGloballyScopedTestContexts provides a set of pre-defined globally scoped contexts for use in scoped access control tests.
+// This function is suitable for testing resources that are globally scoped (not cluster or namespace scoped).
+// The otherResource parameter is used to create contexts with access to a different resource than the one being tested.
+func GetGloballyScopedTestContexts(ctx context.Context, t *testing.T, otherResource permissions.ResourceMetadata, resources ...permissions.ResourceMetadata) map[string]context.Context {
+	contextMap := make(map[string]context.Context, 0)
+	resourceHandles := make([]permissions.ResourceHandle, 0, len(resources))
+	for _, r := range resources {
+		resourceHandles = append(resourceHandles, r)
+	}
+
+	contextMap[NoAccessCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.DenyAllAccessScopeChecker())
+
+	contextMap[OtherResourceReadCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(otherResource)))
+
+	contextMap[OtherResourceReadWriteCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(otherResource)))
+
+	contextMap[UnrestrictedReadCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resourceHandles...)))
+
+	contextMap[UnrestrictedReadWriteCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resourceHandles...)))
 
 	return contextMap
 }
