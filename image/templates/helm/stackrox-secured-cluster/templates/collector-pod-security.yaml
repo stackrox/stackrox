@@ -46,10 +46,15 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-collector") | nindent 4 }}
 spec:
-  privileged: true
-  allowPrivilegeEscalation: true
+  privileged: false
+  allowPrivilegeEscalation: false
   allowedCapabilities:
-    - '*'
+    - BPF
+    - PERFMON
+    - SYS_PTRACE
+    - SYS_RESOURCE
+  requiredDropCapabilities:
+    - ALL
   volumes:
     - '*'
   allowedHostPaths:
@@ -57,7 +62,7 @@ spec:
       readOnly: true
   hostNetwork: false
   hostIPC: false
-  hostPID: true
+  hostPID: false
   runAsUser:
     rule: 'RunAsAny'
   seLinux:
