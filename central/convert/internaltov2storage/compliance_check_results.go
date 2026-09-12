@@ -37,7 +37,7 @@ var (
 func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string, clusterName string) *storage.ComplianceOperatorCheckResultV2 {
 	lastStartedTimestamp, _ := protocompat.ParseRFC3339NanoTimestamp(sensorData.GetAnnotations()[LastScannedAnnotationKey])
 	return &storage.ComplianceOperatorCheckResultV2{
-		Id:              sensorData.GetId(),
+		Id:              BuildCheckResultID(sensorData.GetId(), lastStartedTimestamp),
 		CheckId:         sensorData.GetCheckId(),
 		CheckName:       sensorData.GetCheckName(),
 		ClusterId:       clusterID,

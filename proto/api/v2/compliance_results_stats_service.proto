@@ -58,6 +58,17 @@ message ListComplianceClusterScanStatsResponse {
   int32 total_count = 2;
 }
 
+// ComplianceScanTrendDataPoint represents a single data point in a compliance trend over time
+message ComplianceScanTrendDataPoint {
+  google.protobuf.Timestamp scan_time = 1;
+  repeated ComplianceCheckStatusCount check_stats = 2;
+}
+
+// ListComplianceScanTrendResponse provides compliance trends over time
+message ListComplianceScanTrendResponse {
+  repeated ComplianceScanTrendDataPoint data_points = 1;
+}
+
 service ComplianceResultsStatsService {
   // GetComplianceProfileStats lists current scan stats grouped by profile
   // Optional RawQuery query fields can be combined.
@@ -101,5 +112,10 @@ service ComplianceResultsStatsService {
 
   rpc GetComplianceClusterStats(ComplianceProfileResultsRequest) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/clusters"};
+  }
+
+  // GetComplianceScanTrends returns compliance pass/fail counts grouped by scan time
+  rpc GetComplianceScanTrends(RawQuery) returns (ListComplianceScanTrendResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/trends"};
   }
 }
