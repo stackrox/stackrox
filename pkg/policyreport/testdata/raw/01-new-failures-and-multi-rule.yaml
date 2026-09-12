@@ -1,0 +1,332 @@
+apiVersion: v1
+items:
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:37:51Z"
+    generation: 3
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: 31c699a5-1798-49cf-85fb-62725c46779d
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: fail-tag-only
+      uid: 31c699a5-1798-49cf-85fb-62725c46779d
+    resourceVersion: "133851"
+    uid: 6c14bf46-fbf8-48f1-ae43-3ed142b631b4
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule autogen-disallow-latest-tag
+      failed at path /spec/template/spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320712
+  - message: validation rule 'autogen-require-team-label' passed.
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: pass
+    rule: autogen-require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320712
+  scope:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fail-tag-only
+    namespace: security-event-test
+    uid: 31c699a5-1798-49cf-85fb-62725c46779d
+  summary:
+    error: 0
+    fail: 1
+    pass: 1
+    skip: 0
+    warn: 0
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:37:51Z"
+    generation: 3
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: 46632384-8a71-4bc3-8fac-1b2005113c23
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: v1
+      kind: Pod
+      name: fail-tag-only-7f68f8847-k9pd2
+      uid: 46632384-8a71-4bc3-8fac-1b2005113c23
+    resourceVersion: "133570"
+    uid: 13781ace-dd0c-45c7-9da8-333891084753
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule disallow-latest-tag
+      failed at path /spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320717
+  - message: validation rule 'require-team-label' passed.
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: pass
+    rule: require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320717
+  scope:
+    apiVersion: v1
+    kind: Pod
+    name: fail-tag-only-7f68f8847-k9pd2
+    namespace: security-event-test
+    uid: 46632384-8a71-4bc3-8fac-1b2005113c23
+  summary:
+    error: 0
+    fail: 1
+    pass: 1
+    skip: 0
+    warn: 0
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:37:51Z"
+    generation: 3
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: 90c4c107-354f-467e-907a-fa72c98459f0
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: v1
+      kind: Pod
+      name: fail-multi-rule-cdb6d9f8d-pdmq4
+      uid: 90c4c107-354f-467e-907a-fa72c98459f0
+    resourceVersion: "133628"
+    uid: fbb4098f-3d11-4ff4-95a7-bead39c19e1b
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule disallow-latest-tag
+      failed at path /spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320721
+  - message: 'validation error: Pods must carry a ''team'' label. rule require-team-label
+      failed at path /metadata/labels/team/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320721
+  scope:
+    apiVersion: v1
+    kind: Pod
+    name: fail-multi-rule-cdb6d9f8d-pdmq4
+    namespace: security-event-test
+    uid: 90c4c107-354f-467e-907a-fa72c98459f0
+  summary:
+    error: 0
+    fail: 2
+    pass: 0
+    skip: 0
+    warn: 0
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:37:51Z"
+    generation: 3
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: bd48abf0-f733-4540-8a6a-44cb57c0489a
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: fail-multi-rule
+      uid: bd48abf0-f733-4540-8a6a-44cb57c0489a
+    resourceVersion: "133667"
+    uid: 54517f89-e984-47ef-8a5f-3db9c6e56338
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule autogen-disallow-latest-tag
+      failed at path /spec/template/spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320711
+  - message: 'validation error: Pods must carry a ''team'' label. rule autogen-require-team-label
+      failed at path /spec/template/metadata/labels/team/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320711
+  scope:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fail-multi-rule
+    namespace: security-event-test
+    uid: bd48abf0-f733-4540-8a6a-44cb57c0489a
+  summary:
+    error: 0
+    fail: 2
+    pass: 0
+    skip: 0
+    warn: 0
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:38:11Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: e31df1d7-dfaa-43df-87fd-53c5ec55ffe7
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: apps/v1
+      kind: ReplicaSet
+      name: fail-tag-only-7f68f8847
+      uid: e31df1d7-dfaa-43df-87fd-53c5ec55ffe7
+    resourceVersion: "133309"
+    uid: 1f005714-5112-4713-b8af-aaeb85b397a8
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule autogen-disallow-latest-tag
+      failed at path /spec/template/spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320713
+  - message: validation rule 'autogen-require-team-label' passed.
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: pass
+    rule: autogen-require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320713
+  scope:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: fail-tag-only-7f68f8847
+    namespace: security-event-test
+    uid: e31df1d7-dfaa-43df-87fd-53c5ec55ffe7
+  summary:
+    error: 0
+    fail: 1
+    pass: 1
+    skip: 0
+    warn: 0
+- apiVersion: wgpolicyk8s.io/v1alpha2
+  kind: PolicyReport
+  metadata:
+    creationTimestamp: "2026-07-17T20:38:11Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: kyverno
+    name: e3d501a1-9406-4415-b5d0-a5d0fc451e5d
+    namespace: security-event-test
+    ownerReferences:
+    - apiVersion: apps/v1
+      kind: ReplicaSet
+      name: fail-multi-rule-cdb6d9f8d
+      uid: e3d501a1-9406-4415-b5d0-a5d0fc451e5d
+    resourceVersion: "133432"
+    uid: 0367218f-1b49-4b08-a5fd-49ea8dd57be7
+  results:
+  - message: 'validation error: Using ''latest'' image tag is not allowed. rule autogen-disallow-latest-tag
+      failed at path /spec/template/spec/containers/0/image/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-disallow-latest-tag
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320715
+  - message: 'validation error: Pods must carry a ''team'' label. rule autogen-require-team-label
+      failed at path /spec/template/metadata/labels/team/'
+    policy: require-secure-pod-security-context
+    properties:
+      process: background scan
+    result: fail
+    rule: autogen-require-team-label
+    scored: true
+    severity: high
+    source: kyverno
+    timestamp:
+      nanos: 0
+      seconds: 1784320715
+  scope:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: fail-multi-rule-cdb6d9f8d
+    namespace: security-event-test
+    uid: e3d501a1-9406-4415-b5d0-a5d0fc451e5d
+  summary:
+    error: 0
+    fail: 2
+    pass: 0
+    skip: 0
+    warn: 0
+kind: List
+metadata:
+  resourceVersion: ""
