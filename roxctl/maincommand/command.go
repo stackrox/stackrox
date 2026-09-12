@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
@@ -27,6 +28,11 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
+type roxctlVersionInfo struct {
+	version.Versions
+	CompatibleCentralVersions []string `json:"CompatibleCentralVersions,omitempty"`
+}
+
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "version",
@@ -36,11 +42,15 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
 				enc.SetIndent("", "  ")
-				versions := version.GetAllVersionsDevelopment()
+				base := version.GetAllVersionsDevelopment()
 				if buildinfo.ReleaseBuild {
-					versions = version.GetAllVersionsUnified()
+					base = version.GetAllVersionsUnified()
 				}
-				return errors.Wrap(enc.Encode(versions), "could not encode version")
+				v := roxctlVersionInfo{
+					Versions:                  base,
+					CompatibleCentralVersions: compatibleVersionStrings(),
+				}
+				return errors.Wrap(enc.Encode(v), "could not encode version")
 			}
 			cliEnvironment.Logger().PrintfLn(version.GetMainVersion())
 			return nil
@@ -49,6 +59,19 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().Bool("json", false, "Display extended version information as JSON.")
 	flags.HideInheritedFlags(c)
 	return c
+}
+
+func compatibleVersionStrings() []string {
+	versions, err := versioncompatibility.CompatibleVersions()
+	if err != nil {
+		// Ignoring error because it's handled inside the function.
+		return nil
+	}
+	result := make([]string, 0, len(versions))
+	for _, v := range versions {
+		result = append(result, v.String())
+	}
+	return result
 }
 
 // Command constructs and returns the roxctl command tree
