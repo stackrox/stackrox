@@ -24,7 +24,7 @@ check-pr-fixes() {
         exit 0
     fi
 
-    if get_pr_details | jq -r '.title' | grep -iqF 'revert'; then
+    if grep -iqF 'revert' < <(get_pr_details | jq -r '.title'); then
        echo "This PR is a revert of another PR - it may introduce new TODOs!"
        exit 0
     fi

@@ -77,7 +77,7 @@ jobs:
 
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+          if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
             echo "detect-changes.yml modified, running all jobs" >&2
             exit 0
           fi
@@ -85,7 +85,7 @@ jobs:
           if [[ -n "${RUN_ALL}" ]]; then
             while IFS= read -r pattern; do
               [[ -z "$pattern" ]] && continue
-              if echo "${anchored}" | grep -qF "$pattern"; then
+              if grep -qF "$pattern" <<< "${anchored}"; then
                 echo "run_all: matched '${pattern}', running all jobs" >&2
                 exit 0
               fi
@@ -99,7 +99,7 @@ jobs:
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
 
-            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+            if ! grep -qv '^\^ui/' <<< "${anchored}"; then
               echo "All changed files are under ui/" >&2
               echo "ui_only=true" >> "${GITHUB_OUTPUT}"
             fi
