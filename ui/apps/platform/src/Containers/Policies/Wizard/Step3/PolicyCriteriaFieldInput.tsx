@@ -17,6 +17,7 @@ import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import type { ClientPolicy } from 'types/policy.proto';
 
 import type { Descriptor } from './policyCriteriaDescriptors';
+import { auditLogAllowedVerbsByResource } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import TableModalFieldInput from './TableModalFieldInput';
 import { getAvailableOptionsForField } from './policyCriteriaUtils';
@@ -136,7 +137,52 @@ function PolicyCriteriaFieldInput({
                 />
             );
         case 'select': {
-            const availableOptions = getAvailableOptionsForField(descriptor.options, name, values);
+            let filteredOptions = getAvailableOptionsForField(descriptor.options, name, values);
+
+            // For audit log policies, filter verb options based on the selected
+            // resources in the same section (and vice versa). Values within a
+            // group are OR'd, so a verb is shown if it's allowed for ANY
+            // selected resource.
+            if (descriptor.name === 'Kubernetes API Verb' || descriptor.name === 'Kubernetes Resource') {
+                const sectionMatch = name.match(/^policySections\[(\d+)\]/);
+                if (sectionMatch) {
+                    const sectionIndex = parseInt(sectionMatch[1], 10);
+                    const section = values.policySections[sectionIndex];
+                    if (section) {
+                        if (descriptor.name === 'Kubernetes API Verb') {
+                            const resourceGroup = section.policyGroups.find(
+                                (g) => g.fieldName === 'Kubernetes Resource'
+                            );
+                            const selectedResources = (resourceGroup?.values ?? [])
+                                .map((v) => (typeof v.value === 'string' ? v.value.toUpperCase() : ''))
+                                .filter(Boolean);
+                            if (selectedResources.length > 0) {
+                                filteredOptions = filteredOptions.filter((opt) =>
+                                    selectedResources.some((res) => {
+                                        const allowed = auditLogAllowedVerbsByResource[res];
+                                        return allowed?.includes(opt.value.toUpperCase()) ?? true;
+                                    })
+                                );
+                            }
+                        } else if (descriptor.name === 'Kubernetes Resource') {
+                            const verbGroup = section.policyGroups.find(
+                                (g) => g.fieldName === 'Kubernetes API Verb'
+                            );
+                            const selectedVerbs = (verbGroup?.values ?? [])
+                                .map((v) => (typeof v.value === 'string' ? v.value.toUpperCase() : ''))
+                                .filter(Boolean);
+                            if (selectedVerbs.length > 0) {
+                                filteredOptions = filteredOptions.filter((opt) => {
+                                    const allowed = auditLogAllowedVerbsByResource[opt.value.toUpperCase()];
+                                    return !allowed || selectedVerbs.some((v) => allowed.includes(v));
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            const availableOptions = filteredOptions;
 
             return (
                 <FormGroup

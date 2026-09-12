@@ -9,6 +9,7 @@ import (
 
 	"github.com/nxadm/tail"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auditlog"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -25,24 +26,13 @@ var (
 	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
 
 	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
+	resourceTypesAllowList = set.NewFrozenStringSet(auditlog.AllowedResourceNames()...)
 
-	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
-	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
-
-	// verbsDenyListWithGet is the set of verbs that will NOT be sent if encountered.
-	verbsDenyListWithGet = set.NewFrozenStringSet("WATCH", "LIST", "GET")
-
-	// verbsDenyListPerResource is the set of verbs that will NOT be sent if encountered.
-	verbsDenyListPerResource = map[string]set.FrozenStringSet{
-		"secrets":                    verbsDenyList,
-		"configmaps":                 verbsDenyList,
-		"clusterrolebindings":        verbsDenyListWithGet,
-		"clusterroles":               verbsDenyListWithGet,
-		"networkpolicies":            verbsDenyListWithGet,
-		"securitycontextconstraints": verbsDenyListWithGet,
-		"egressfirewalls":            verbsDenyListWithGet,
-	}
+	// verbsDenyListPerResource is derived from the shared auditlog package.
+	// It maps each lowercase k8s resource name to the set of verbs that
+	// should NOT be forwarded (always includes WATCH/LIST, plus any
+	// policy-valid verbs not in the allowed set for the resource).
+	verbsDenyListPerResource = auditlog.DeniedVerbsByKubeResource()
 )
 
 type auditLogReaderImpl struct {

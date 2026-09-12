@@ -111,6 +111,98 @@ describe('policyCriteriaValidators', () => {
         });
     });
 
+    describe('Audit log verb/resource combination validator', () => {
+        const validator = policySectionValidators.find(
+            (v) => v.name === 'Audit log verb/resource combination'
+        );
+
+        if (!validator) {
+            throw new Error('Audit log verb/resource combination validator not found');
+        }
+
+        const context: PolicyContext = {
+            eventSource: 'AUDIT_LOG_EVENT',
+            lifecycleStages: ['RUNTIME'],
+        };
+
+        it('should only apply to AUDIT_LOG_EVENT event source', () => {
+            policyEventSources.forEach((eventSource) => {
+                expect(
+                    validator.appliesTo({
+                        eventSource,
+                        lifecycleStages: ['RUNTIME'],
+                    })
+                ).toBe(eventSource === 'AUDIT_LOG_EVENT');
+            });
+        });
+
+        it('should pass for DELETE on EVENTS', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource', [{ value: 'EVENTS' }]),
+                    mockCriterionWithName('Kubernetes API Verb', [{ value: 'DELETE' }]),
+                ],
+            };
+            expect(validator.validate(section, context)).toBeUndefined();
+        });
+
+        it('should fail for CREATE on EVENTS', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource', [{ value: 'EVENTS' }]),
+                    mockCriterionWithName('Kubernetes API Verb', [{ value: 'CREATE' }]),
+                ],
+            };
+            const error = validator.validate(section, context);
+            expect(error).toBeDefined();
+            expect(error).toContain("is not supported for resource 'EVENTS'");
+        });
+
+        it('should fail for GET on CLUSTER_ROLES', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource', [{ value: 'CLUSTER_ROLES' }]),
+                    mockCriterionWithName('Kubernetes API Verb', [{ value: 'GET' }]),
+                ],
+            };
+            const error = validator.validate(section, context);
+            expect(error).toBeDefined();
+            expect(error).toContain("is not supported for resource 'CLUSTER_ROLES'");
+        });
+
+        it('should pass for GET on SECRETS', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource', [{ value: 'SECRETS' }]),
+                    mockCriterionWithName('Kubernetes API Verb', [{ value: 'GET' }]),
+                ],
+            };
+            expect(validator.validate(section, context)).toBeUndefined();
+        });
+
+        it('should pass when either resource or verb is missing', () => {
+            const sectionOnlyResource: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource', [{ value: 'EVENTS' }]),
+                ],
+            };
+            expect(validator.validate(sectionOnlyResource, context)).toBeUndefined();
+
+            const sectionOnlyVerb: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes API Verb', [{ value: 'CREATE' }]),
+                ],
+            };
+            expect(validator.validate(sectionOnlyVerb, context)).toBeUndefined();
+        });
+    });
+
     describe('Process criteria require file path validator', () => {
         const validator = policySectionValidators.find(
             (v) => v.name === 'Process criteria require file path'
