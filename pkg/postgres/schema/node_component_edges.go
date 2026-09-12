@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -32,7 +30,20 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentEdge)(nil)), "node_component_edges")
+		schema = &walker.Schema{
+			Table:    "node_component_edges",
+			Type:     "*storage.NodeComponentEdge",
+			TypeName: "NodeComponentEdge",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}},
+			{Schema: schema, Name: "NodeId", ProtoBufName: "node_id", ColumnName: "NodeId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNodeId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}},
+			{Schema: schema, Name: "NodeComponentId", ProtoBufName: "node_component_id", ColumnName: "NodeComponentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNodeComponentId()", false)},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("Node", "id", false, false, false, false)
+		schema.Fields[2].SetReference("NodeComponent", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Node":          NodesSchema,
 			"storage.NodeComponent": NodeComponentsSchema,
@@ -41,7 +52,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_EDGE, "nodecomponentedge", (*storage.NodeComponentEdge)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_COMPONENT_EDGE, map[search.FieldLabel]*search.Field{}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,

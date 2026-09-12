@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,7 +32,29 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
+		schema = &walker.Schema{
+			Table:    "image_component_v2",
+			Type:     "*storage.ImageComponentV2",
+			TypeName: "ImageComponentV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}, Search: walker.SearchField{FieldName: "Component ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "component count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Component", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVersion()", false), Search: walker.SearchField{FieldName: "Component Version", Enabled: true}},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Component Risk Priority", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "Source", ProtoBufName: "source", ColumnName: "Source", Type: "storage.SourceType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.SourceType", ObjectGetter: walker.MakeObjectGetter("GetSource()", false), Search: walker.SearchField{FieldName: "Component Source", Enabled: true}},
+			{Schema: schema, Name: "RiskScore", ProtoBufName: "risk_score", ColumnName: "RiskScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetRiskScore()", false), Search: walker.SearchField{FieldName: "Component Risk Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "component risk priority", DerivationType: search.SimpleReverseSortDerivationType, DerivedDataType: postgres.DataType("")}, {DerivedFrom: "component risk priority score max", DerivationType: search.MaxReverseSortDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "TopCvss", ProtoBufName: "top_cvss", ColumnName: "TopCvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetTopCvss()", false), Search: walker.SearchField{FieldName: "Component Top CVSS", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "component top cvss max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "OperatingSystem", ProtoBufName: "operating_system", ColumnName: "OperatingSystem", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetOperatingSystem()", false), Search: walker.SearchField{FieldName: "Operating System", Enabled: true}},
+			{Schema: schema, Name: "ImageId", ProtoBufName: "image_id", ColumnName: "ImageId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImageId()", false)},
+			{Schema: schema, Name: "Location", ProtoBufName: "location", ColumnName: "Location", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetLocation()", false), Search: walker.SearchField{FieldName: "Component Location", Enabled: true}},
+			{Schema: schema, Name: "ImageIdV2", ProtoBufName: "image_id_v2", ColumnName: "ImageIdV2", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImageIdV2()", false)},
+			{Schema: schema, Name: "LayerType", ProtoBufName: "layer_type", ColumnName: "LayerType", Type: "storage.LayerType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.LayerType", ObjectGetter: walker.MakeObjectGetter("GetLayerType()", false), Search: walker.SearchField{FieldName: "Component Layer Type", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[8].SetReference("Image", "id", false, false, false, true)
+		schema.Fields[10].SetReference("ImageV2", "id", false, false, false, true)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":   ImagesSchema,
 			"storage.ImageV2": ImagesV2Schema,
@@ -41,7 +63,21 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENTS_V2, "imagecomponentv2", (*storage.ImageComponentV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_COMPONENTS_V2, map[search.FieldLabel]*search.Field{
+			"Component":               {FieldPath: "imagecomponentv2.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component ID":            {FieldPath: "imagecomponentv2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Layer Type":    {FieldPath: "imagecomponentv2.layer_type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Location":      {FieldPath: "imagecomponentv2.location", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Risk Priority": {FieldPath: "imagecomponentv2.priority", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Risk Score":    {FieldPath: "imagecomponentv2.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Source":        {FieldPath: "imagecomponentv2.source", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Top CVSS":      {FieldPath: "imagecomponentv2.SetTopCvss.TopCvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Component Version":       {FieldPath: "imagecomponentv2.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+			"Operating System":        {FieldPath: "imagecomponentv2.operating_system", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGE_COMPONENTS_V2},
+		}))
+		enumregistry.AddValues("imagecomponentv2.layer_type", map[string]int32{"APPLICATION": 0, "BASE_IMAGE": 1})
+		enumregistry.AddValues("imagecomponentv2.source", map[string]int32{"DOTNETCORERUNTIME": 5, "GO": 7, "INFRASTRUCTURE": 6, "JAVA": 2, "NODEJS": 4, "OS": 0, "PYTHON": 1, "RUBY": 3})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,

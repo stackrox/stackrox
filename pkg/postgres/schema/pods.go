@@ -4,14 +4,13 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -36,7 +35,35 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
+		schema = &walker.Schema{
+			Table:    "pods",
+			Type:     "*storage.Pod",
+			TypeName: "Pod",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "pods_live_instances",
+			Type:         "*storage.ContainerInstance",
+			TypeName:     "ContainerInstance",
+			ObjectGetter: "GetLiveInstances()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "podID", ProtoBufName: "", ColumnName: "pods_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("podID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "ImageDigest", ProtoBufName: "image_digest", ColumnName: "ImageDigest", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImageDigest()", false), Search: walker.SearchField{FieldName: "Container Image Digest", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Pod ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Pod Name", Enabled: true}},
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeploymentId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[2].SetReference("Deployment", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment": DeploymentsSchema,
 		}
@@ -44,7 +71,16 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pod", (*storage.Pod)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PODS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":             {FieldPath: "pod.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PODS},
+			"Container Image Digest": {FieldPath: "pod.live_instances.image_digest", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PODS},
+			"Deployment ID":          {FieldPath: "pod.deployment_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PODS},
+			"Namespace":              {FieldPath: "pod.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PODS},
+			"Pod ID":                 {FieldPath: "pod.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PODS},
+			"Pod Name":               {FieldPath: "pod.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PODS},
+		}))
+		enumregistry.AddValues("pod.live_instances.instance_id.container_runtime", map[string]int32{"CRIO_CONTAINER_RUNTIME": 2, "DOCKER_CONTAINER_RUNTIME": 1, "UNKNOWN_CONTAINER_RUNTIME": 0})
+
 		schema.ScopingResource = resources.Deployment
 		RegisterTable(schema, CreateTablePodsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PODS, schema)

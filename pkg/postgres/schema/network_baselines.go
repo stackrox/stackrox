@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,8 +27,22 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), "network_baselines")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_BASELINE, "networkbaseline", (*storage.NetworkBaseline)(nil)))
+		schema = &walker.Schema{
+			Table:    "network_baselines",
+			Type:     "*storage.NetworkBaseline",
+			TypeName: "NetworkBaseline",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeploymentId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_BASELINE, map[search.FieldLabel]*search.Field{
+			"Cluster ID": {FieldPath: "networkbaseline.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NETWORK_BASELINE},
+			"Namespace":  {FieldPath: "networkbaseline.namespace", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NETWORK_BASELINE},
+		}))
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_BASELINE, schema)

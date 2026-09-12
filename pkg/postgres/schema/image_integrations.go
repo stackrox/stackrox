@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,8 +28,24 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageIntegration)(nil)), "image_integrations")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_INTEGRATIONS, "imageintegration", (*storage.ImageIntegration)(nil)))
+		schema = &walker.Schema{
+			Table:    "image_integrations",
+			Type:     "*storage.ImageIntegration",
+			TypeName: "ImageIntegration",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Integration Name", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_INTEGRATIONS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":       {FieldPath: "imageintegration.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGE_INTEGRATIONS},
+			"Integration Name": {FieldPath: "imageintegration.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGE_INTEGRATIONS},
+		}))
+		enumregistry.AddValues("imageintegration.categories", map[string]int32{"NODE_SCANNER": 2, "REGISTRY": 0, "SCANNER": 1})
+
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableImageIntegrationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_INTEGRATIONS, schema)

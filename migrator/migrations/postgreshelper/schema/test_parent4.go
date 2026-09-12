@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -23,7 +21,20 @@ var (
 
 	// TestParent4Schema is the go schema for table `test_parent4`.
 	TestParent4Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestParent4)(nil)), "test_parent4")
+		var schema *walker.Schema
+		schema = &walker.Schema{
+			Table:    "test_parent4",
+			Type:     "*storage.TestParent4",
+			TypeName: "TestParent4",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test Parent4 ID", Enabled: true}},
+			{Schema: schema, Name: "ParentId", ProtoBufName: "parent_id", ColumnName: "ParentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetParentId()", false)},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Parent4 Val", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("TestGrandparent", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestGrandparent": TestGrandparentsSchema,
 		}
@@ -31,7 +42,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(72), "testparent4", (*storage.TestParent4)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(72), map[search.FieldLabel]*search.Field{
+			"Test Parent4 ID":  {FieldPath: "testparent4.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(72)},
+			"Test Parent4 Val": {FieldPath: "testparent4.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(72)},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory(61),
 			v1.SearchCategory(74),

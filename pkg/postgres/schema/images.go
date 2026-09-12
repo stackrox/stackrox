@@ -3,16 +3,15 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,8 +33,133 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Image)(nil)), "images")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)))
+		schema = &walker.Schema{
+			Table:    "images",
+			Type:     "*storage.Image",
+			TypeName: "Image",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "images_layers",
+			Type:         "*storage.ImageLayer",
+			TypeName:     "ImageLayer",
+			ObjectGetter: "GetMetadata().GetV1().GetLayers()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "imageID", ProtoBufName: "", ColumnName: "images_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("imageID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Instruction", ProtoBufName: "instruction", ColumnName: "Instruction", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetInstruction()", false), Search: walker.SearchField{FieldName: "Dockerfile Instruction Keyword", Enabled: true}},
+			{Schema: child0, Name: "Value", ProtoBufName: "value", ColumnName: "Value", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetValue()", false), Search: walker.SearchField{FieldName: "Dockerfile Instruction Value", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Image Sha", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "image count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Registry", ProtoBufName: "registry", ColumnName: "Name_Registry", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName().GetRegistry()", false), Search: walker.SearchField{FieldName: "Image Registry", Enabled: true}},
+			{Schema: schema, Name: "Remote", ProtoBufName: "remote", ColumnName: "Name_Remote", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName().GetRemote()", false), Search: walker.SearchField{FieldName: "Image Remote", Enabled: true}},
+			{Schema: schema, Name: "Tag", ProtoBufName: "tag", ColumnName: "Name_Tag", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName().GetTag()", false), Search: walker.SearchField{FieldName: "Image Tag", Enabled: true}},
+			{Schema: schema, Name: "FullName", ProtoBufName: "full_name", ColumnName: "Name_FullName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName().GetFullName()", false), Search: walker.SearchField{FieldName: "Image", Enabled: true}},
+			{Schema: schema, Name: "Created", ProtoBufName: "created", ColumnName: "Metadata_V1_Created", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetCreated()", false), Search: walker.SearchField{FieldName: "Image Created Time", Enabled: true}},
+			{Schema: schema, Name: "User", ProtoBufName: "user", ColumnName: "Metadata_V1_User", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetUser()", false), Search: walker.SearchField{FieldName: "Image User", Enabled: true}},
+			{Schema: schema, Name: "Command", ProtoBufName: "command", ColumnName: "Metadata_V1_Command", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetCommand()", false), Search: walker.SearchField{FieldName: "Image Command", Enabled: true}},
+			{Schema: schema, Name: "Entrypoint", ProtoBufName: "entrypoint", ColumnName: "Metadata_V1_Entrypoint", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetEntrypoint()", false), Search: walker.SearchField{FieldName: "Image Entrypoint", Enabled: true}},
+			{Schema: schema, Name: "Volumes", ProtoBufName: "volumes", ColumnName: "Metadata_V1_Volumes", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetVolumes()", false), Search: walker.SearchField{FieldName: "Image Volumes", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Metadata_V1_Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetV1().GetLabels()", false), Search: walker.SearchField{FieldName: "Image Label", Enabled: true}},
+			{Schema: schema, Name: "ScanTime", ProtoBufName: "scan_time", ColumnName: "Scan_ScanTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetScan().GetScanTime()", false), Search: walker.SearchField{FieldName: "Image Scan Time", Enabled: true}},
+			{Schema: schema, Name: "OperatingSystem", ProtoBufName: "operating_system", ColumnName: "Scan_OperatingSystem", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScan().GetOperatingSystem()", false), Search: walker.SearchField{FieldName: "Image OS", Enabled: true}},
+			{Schema: schema, Name: "Fetched", ProtoBufName: "fetched", ColumnName: "Signature_Fetched", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetSignature().GetFetched()", false), Search: walker.SearchField{FieldName: "Image Signature Fetched Time", Enabled: true}},
+			{Schema: schema, Name: "Components", ProtoBufName: "components", ColumnName: "Components", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetComponents()", false), Search: walker.SearchField{FieldName: "Component Count", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "Cves", ProtoBufName: "cves", ColumnName: "Cves", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetCves()", false), Search: walker.SearchField{FieldName: "Image CVE Count", Enabled: true}},
+			{Schema: schema, Name: "FixableCves", ProtoBufName: "fixable_cves", ColumnName: "FixableCves", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetFixableCves()", false), Search: walker.SearchField{FieldName: "Fixable CVE Count", Enabled: true}},
+			{Schema: schema, Name: "LastUpdated", ProtoBufName: "last_updated", ColumnName: "LastUpdated", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdated()", false), Search: walker.SearchField{FieldName: "Last Updated", Enabled: true}},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Image Risk Priority", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "RiskScore", ProtoBufName: "risk_score", ColumnName: "RiskScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetRiskScore()", false), Search: walker.SearchField{FieldName: "Image Risk Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "image risk priority", DerivationType: search.SimpleReverseSortDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "TopCvss", ProtoBufName: "top_cvss", ColumnName: "TopCvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetTopCvss()", false), Search: walker.SearchField{FieldName: "Image Top CVSS", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGES, map[search.FieldLabel]*search.Field{
+			"Advisory Link":                  {FieldPath: "image.scan.components.vulns.advisory.link", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Advisory Name":                  {FieldPath: "image.scan.components.vulns.advisory.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"CVE":                            {FieldPath: "image.scan.components.vulns.cve", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"CVE Published On":               {FieldPath: "image.scan.components.vulns.published_on.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_IMAGES},
+			"CVE Snoozed":                    {FieldPath: "image.scan.components.vulns.suppressed", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_IMAGES},
+			"CVSS":                           {FieldPath: "image.scan.components.vulns.cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGES},
+			"Component":                      {FieldPath: "image.scan.components.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Component Count":                {FieldPath: "image.SetComponents.Components", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Component Risk Score":           {FieldPath: "image.scan.components.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Component Version":              {FieldPath: "image.scan.components.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Dockerfile Instruction Keyword": {FieldPath: "image.metadata.v1.layers.instruction", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Dockerfile Instruction Value":   {FieldPath: "image.metadata.v1.layers.value", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"EPSS Probability":               {FieldPath: "image.scan.components.vulns.epss.epss_probability", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGES},
+			"Fixable CVE Count":              {FieldPath: "image.SetFixable.FixableCves", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Fixed By":                       {FieldPath: "image.scan.components.vulns.SetFixedBy.FixedBy", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Image":                          {FieldPath: "image.name.full_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES, Analyzer: "standard"},
+			"Image CVE Count":                {FieldPath: "image.SetCves.Cves", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGES},
+			"Image Command":                  {FieldPath: "image.metadata.v1.command", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Created Time":             {FieldPath: "image.metadata.v1.created.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_IMAGES},
+			"Image Entrypoint":               {FieldPath: "image.metadata.v1.entrypoint", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Label":                    {FieldPath: "image.metadata.v1.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_IMAGES},
+			"Image OS":                       {FieldPath: "image.scan.operating_system", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Registry":                 {FieldPath: "image.name.registry", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Remote":                   {FieldPath: "image.name.remote", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Risk Priority":            {FieldPath: "image.priority", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Image Risk Score":               {FieldPath: "image.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Image Scan Time":                {FieldPath: "image.scan.scan_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_IMAGES},
+			"Image Sha":                      {FieldPath: "image.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Image Signature Fetched Time":   {FieldPath: "image.signature.fetched.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"Image Tag":                      {FieldPath: "image.name.tag", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Top CVSS":                 {FieldPath: "image.SetTopCvss.TopCvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGES},
+			"Image User":                     {FieldPath: "image.metadata.v1.user", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Image Volumes":                  {FieldPath: "image.metadata.v1.volumes", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGES},
+			"Last Updated":                   {FieldPath: "image.last_updated.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_IMAGES},
+			"NVD CVSS":                       {FieldPath: "image.scan.components.vulns.nvd_cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_IMAGES},
+			"Vulnerability State":            {FieldPath: "image.scan.components.vulns.state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_IMAGES},
+		}))
+		enumregistry.AddValues("image.notes", map[string]int32{"MISSING_METADATA": 0, "MISSING_SCAN_DATA": 1, "MISSING_SIGNATURE": 2, "MISSING_SIGNATURE_VERIFICATION_DATA": 3})
+		enumregistry.AddValues("image.scan.components.source", map[string]int32{"DOTNETCORERUNTIME": 5, "GO": 7, "INFRASTRUCTURE": 6, "JAVA": 2, "NODEJS": 4, "OS": 0, "PYTHON": 1, "RUBY": 3})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.CvssScore.Cvssv3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_metrics.source", map[string]int32{"SOURCE_NVD": 3, "SOURCE_OSV": 2, "SOURCE_RED_HAT": 1, "SOURCE_UNKNOWN": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("image.scan.components.vulns.cvss_v3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("image.scan.components.vulns.score_version", map[string]int32{"V2": 0, "V3": 1})
+		enumregistry.AddValues("image.scan.components.vulns.severity", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("image.scan.components.vulns.state", map[string]int32{"DEFERRED": 1, "FALSE_POSITIVE": 2, "OBSERVED": 0})
+		enumregistry.AddValues("image.scan.components.vulns.vulnerability_type", map[string]int32{"IMAGE_VULNERABILITY": 1, "ISTIO_VULNERABILITY": 3, "K8S_VULNERABILITY": 2, "NODE_VULNERABILITY": 4, "OPENSHIFT_VULNERABILITY": 5, "UNKNOWN_VULNERABILITY": 0})
+		enumregistry.AddValues("image.scan.components.vulns.vulnerability_types", map[string]int32{"IMAGE_VULNERABILITY": 1, "ISTIO_VULNERABILITY": 3, "K8S_VULNERABILITY": 2, "NODE_VULNERABILITY": 4, "OPENSHIFT_VULNERABILITY": 5, "UNKNOWN_VULNERABILITY": 0})
+		enumregistry.AddValues("image.scan.notes", map[string]int32{"CERTIFIED_RHEL_SCAN_UNAVAILABLE": 6, "LANGUAGE_CVES_UNAVAILABLE": 5, "OS_CVES_STALE": 4, "OS_CVES_UNAVAILABLE": 3, "OS_UNAVAILABLE": 1, "PARTIAL_SCAN_DATA": 2, "UNSET": 0})
+		enumregistry.AddValues("image.signature.signatures.Signature.Cosign.signature_format", map[string]int32{"DEAD_SIMPLE_SIGNING_ENVELOPE": 2, "SIGNATURE_FORMAT_UNSPECIFIED": 0, "SIMPLE_SIGNING": 1})
+		enumregistry.AddValues("image.signature_verification_data.results.status", map[string]int32{"CORRUPTED_SIGNATURE": 4, "FAILED_VERIFICATION": 2, "GENERIC_ERROR": 5, "INVALID_SIGNATURE_ALGO": 3, "UNSET": 0, "VERIFIED": 1})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,

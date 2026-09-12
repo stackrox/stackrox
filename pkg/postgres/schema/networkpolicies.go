@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,8 +28,31 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicy)(nil)), "networkpolicies")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_POLICIES, "networkpolicy", (*storage.NetworkPolicy)(nil)))
+		schema = &walker.Schema{
+			Table:    "networkpolicies",
+			Type:     "*storage.NetworkPolicy",
+			TypeName: "NetworkPolicy",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_POLICIES, map[search.FieldLabel]*search.Field{
+			"Cluster ID": {FieldPath: "networkpolicy.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NETWORK_POLICIES},
+			"Namespace":  {FieldPath: "networkpolicy.namespace", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NETWORK_POLICIES},
+		}))
+		enumregistry.AddValues("networkpolicy.spec.egress.ports.protocol", map[string]int32{"SCTP_PROTOCOL": 3, "TCP_PROTOCOL": 1, "UDP_PROTOCOL": 2, "UNSET_PROTOCOL": 0})
+		enumregistry.AddValues("networkpolicy.spec.egress.to.namespace_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("networkpolicy.spec.egress.to.pod_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("networkpolicy.spec.ingress.from.namespace_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("networkpolicy.spec.ingress.from.pod_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("networkpolicy.spec.ingress.ports.protocol", map[string]int32{"SCTP_PROTOCOL": 3, "TCP_PROTOCOL": 1, "UDP_PROTOCOL": 2, "UNSET_PROTOCOL": 0})
+		enumregistry.AddValues("networkpolicy.spec.pod_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("networkpolicy.spec.policy_types", map[string]int32{"EGRESS_NETWORK_POLICY_TYPE": 2, "INGRESS_NETWORK_POLICY_TYPE": 1, "UNSET_NETWORK_POLICY_TYPE": 0})
+
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_POLICIES, schema)

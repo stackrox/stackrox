@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,7 +29,22 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVEEdge)(nil)), "cluster_cve_edges")
+		schema = &walker.Schema{
+			Table:    "cluster_cve_edges",
+			Type:     "*storage.ClusterCVEEdge",
+			TypeName: "ClusterCVEEdge",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}},
+			{Schema: schema, Name: "IsFixable", ProtoBufName: "is_fixable", ColumnName: "IsFixable", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetIsFixable()", false), Search: walker.SearchField{FieldName: "Cluster CVE Fixable", Enabled: true}},
+			{Schema: schema, Name: "FixedBy", ProtoBufName: "fixed_by", ColumnName: "FixedBy", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetFixedBy()", false), Search: walker.SearchField{FieldName: "Cluster CVE Fixed By", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}},
+			{Schema: schema, Name: "CveId", ProtoBufName: "cve_id", ColumnName: "CveId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCveId()", false)},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[3].SetReference("Cluster", "id", false, false, false, false)
+		schema.Fields[4].SetReference("ClusterCVE", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":    ClustersSchema,
 			"storage.ClusterCVE": ClusterCvesSchema,
@@ -40,7 +53,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULN_EDGE, "clustercveedge", (*storage.ClusterCVEEdge)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_VULN_EDGE, map[search.FieldLabel]*search.Field{
+			"Cluster CVE Fixable":  {FieldPath: "clustercveedge.is_fixable", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_CLUSTER_VULN_EDGE},
+			"Cluster CVE Fixed By": {FieldPath: "clustercveedge.HasFixedBy.FixedBy", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_CLUSTER_VULN_EDGE},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
