@@ -2,6 +2,7 @@ package common
 
 import (
 	"go/ast"
+	"slices"
 
 	"golang.org/x/tools/go/ast/inspector"
 )
@@ -11,7 +12,7 @@ import (
 func FilteredPreorder(inspector *inspector.Inspector, fileFilter FileFilter, nodeTypes []ast.Node, fn func(n ast.Node)) {
 	// Limit the nodeTypes slice's capacity to its length. This ensures that any call to `append` will not write into
 	// the backing storage, but allocate a new slice.
-	effectiveTypes := nodeTypes[:len(nodeTypes):len(nodeTypes)]
+	effectiveTypes := slices.Clip(nodeTypes)
 	hadFile := hasFile(nodeTypes)
 	if !hadFile {
 		effectiveTypes = append(effectiveTypes, (*ast.File)(nil))
@@ -33,7 +34,7 @@ func FilteredPreorder(inspector *inspector.Inspector, fileFilter FileFilter, nod
 // FilteredNodes calls `inspector.Nodes(nodeTypes, fn)`, but filters out all files that do not pass the given
 // fileFilter.
 func FilteredNodes(inspector *inspector.Inspector, fileFilter FileFilter, nodeTypes []ast.Node, fn func(n ast.Node, push bool) bool) {
-	effTypes := nodeTypes[:len(nodeTypes):len(nodeTypes)]
+	effTypes := slices.Clip(nodeTypes)
 	hadFile := hasFile(nodeTypes)
 	if !hadFile {
 		effTypes = append(effTypes, (*ast.File)(nil))
