@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+  namespace: stackrox
+  labels:
+    app: scanner-v4-db
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-v4-db
+        app.kubernetes.io/component: scanner-v4
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.10.1
+        helm.sh/chart: stackrox-central-services-400.10.1
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                - "true"
+            weight: 100
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+            weight: 50
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+            weight: 25
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+            weight: 100
+      serviceAccountName: scanner-v4
+      terminationGracePeriodSeconds: 120
+      initContainers:
+      - name: init-db
+        image: "quay.io/stackrox-io/scanner-v4-db:4.10.1"
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
+        - name: POSTGRES_PASSWORD_FILE
+          value: "/run/secrets/stackrox.io/secrets/password"
+        - name: SCANNER_DB_INIT_BUNDLE_ENABLED
+          value: "true"
+        command:
+        - init-entrypoint.sh
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: scanner-v4-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+          requests:
+            cpu: 1000m
+            memory: 4Gi
+      containers:
+      - name: db
+        image: "quay.io/stackrox-io/scanner-v4-db:4.10.1"
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
+        
+        ports:
+        - name: tcp-postgresql
+          containerPort: 5432
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+          requests:
+            cpu: 1000m
+            memory: 4Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs
+        - name: shared-memory
+          mountPath: /dev/shm
+      securityContext:
+        fsGroup: 70
+        runAsUser: 70
+        runAsNonRoot: true
+        runAsGroup: 70
+      volumes:
+      - name: disk
+        persistentVolumeClaim:
+          claimName: scanner-v4-db
+      - name: config-volume
+        configMap:
+          name: scanner-v4-db-config
+      - name: certs
+        secret:
+          secretName: scanner-v4-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          sizeLimit: 750Mi
+      - name: scanner-v4-db-password
+        secret:
+          secretName: scanner-v4-db-password
