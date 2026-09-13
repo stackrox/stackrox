@@ -15,6 +15,10 @@ import type {
 } from 'types/schedule.proto';
 import { getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
 
+// Keep in sync with the backend defaults in central/complianceoperator/v2/scanconfigurations/service/convert.go
+// and sensor/kubernetes/complianceoperator/types.go (defaultNodeRoles).
+export const defaultNodeRoles: string[] = ['master', 'worker'];
+
 export type ScanConfigParameters = {
     name: string;
     description: string;
@@ -22,6 +26,7 @@ export type ScanConfigParameters = {
     time: string;
     daysOfWeek: DayOfWeek[];
     daysOfMonth: DayOfMonth[];
+    nodeRoles: string[];
 };
 
 export type ScanReportConfiguration = {
@@ -137,7 +142,7 @@ export function convertFormikToScanConfig(
     formikValues: ScanConfigFormValues
 ): ComplianceScanConfiguration {
     const { id, parameters, clusters, profiles, report } = formikValues;
-    const { name, description } = parameters;
+    const { name, description, nodeRoles } = parameters;
     const { notifierConfigurations } = report;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
@@ -151,6 +156,7 @@ export function convertFormikToScanConfig(
             profiles,
             scanSchedule,
             notifiers: notifierConfigurations,
+            nodeRoles,
         },
         clusters,
     };
@@ -160,7 +166,7 @@ export function convertScanConfigToFormik(
     existingConfig: ComplianceScanConfigurationStatus
 ): ScanConfigFormValues {
     const { id, scanName, scanConfig, clusterStatus } = existingConfig;
-    const { description = '', notifiers, profiles, scanSchedule } = scanConfig;
+    const { description = '', notifiers, profiles, scanSchedule, nodeRoles } = scanConfig;
 
     const { intervalType, time, daysOfWeek, daysOfMonth } =
         convertScheduleToFormikParameters(scanSchedule);
@@ -174,6 +180,9 @@ export function convertScanConfigToFormik(
             time,
             daysOfWeek,
             daysOfMonth,
+            // Legacy configs stored before node roles were configurable have empty
+            // nodeRoles but actually run master+worker on Sensor; fall back so the UI matches.
+            nodeRoles: nodeRoles && nodeRoles.length > 0 ? nodeRoles : defaultNodeRoles,
         },
         clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
         profiles,
