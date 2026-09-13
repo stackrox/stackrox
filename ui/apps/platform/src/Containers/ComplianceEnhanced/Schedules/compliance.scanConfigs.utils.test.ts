@@ -1,8 +1,10 @@
 import {
+    areNodeRolesValid,
     convertFormikParametersToSchedule,
     convertScanConfigToFormik,
     convertScheduleToFormikParameters,
     defaultNodeRoles,
+    isValidNodeRole,
 } from './compliance.scanConfigs.utils';
 import type { ScanConfigParameters } from './compliance.scanConfigs.utils';
 
@@ -175,6 +177,45 @@ describe('compliance.scanConfigs.utils', () => {
             const formValues = convertScanConfigToFormik(makeExistingConfig(['infra']));
 
             expect(formValues.parameters.nodeRoles).toEqual(['infra']);
+        });
+
+        it('returns a copy of the default node roles, not the shared reference', () => {
+            const formValues = convertScanConfigToFormik(makeExistingConfig([]));
+
+            expect(formValues.parameters.nodeRoles).toEqual(defaultNodeRoles);
+            expect(formValues.parameters.nodeRoles).not.toBe(defaultNodeRoles);
+        });
+    });
+
+    describe('isValidNodeRole', () => {
+        it('accepts a concrete role and the @all wildcard', () => {
+            expect(isValidNodeRole('master')).toBe(true);
+            expect(isValidNodeRole('control-plane')).toBe(true);
+            expect(isValidNodeRole('@all')).toBe(true);
+        });
+
+        it('rejects roles that are empty, too long, or have invalid characters', () => {
+            expect(isValidNodeRole('')).toBe(false);
+            expect(isValidNodeRole('bad role!')).toBe(false);
+            expect(isValidNodeRole('a'.repeat(40))).toBe(false);
+        });
+    });
+
+    describe('areNodeRolesValid', () => {
+        it('accepts a valid array of concrete roles', () => {
+            expect(areNodeRolesValid(['master', 'worker'])).toBe(true);
+        });
+
+        it('accepts @all on its own', () => {
+            expect(areNodeRolesValid(['@all'])).toBe(true);
+        });
+
+        it('rejects an array containing an invalid role', () => {
+            expect(areNodeRolesValid(['master', 'bad role!'])).toBe(false);
+        });
+
+        it('rejects @all combined with any other role', () => {
+            expect(areNodeRolesValid(['@all', 'infra'])).toBe(false);
         });
     });
 });

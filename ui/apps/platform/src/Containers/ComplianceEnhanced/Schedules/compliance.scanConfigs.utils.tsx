@@ -19,6 +19,26 @@ import { getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
 // and sensor/kubernetes/complianceoperator/types.go (defaultNodeRoles).
 export const defaultNodeRoles: string[] = ['master', 'worker'];
 
+// Special role that selects every node; mutually exclusive with any other role.
+export const allNodesRole = '@all';
+
+// A concrete node role is 1-39 alphanumeric or hyphen characters.
+export const nodeRoleRegex = /^[a-zA-Z0-9-]{1,39}$/;
+
+// A single node role is valid when it is either the @all wildcard or matches the regex.
+export function isValidNodeRole(role: string): boolean {
+    return role === allNodesRole || nodeRoleRegex.test(role);
+}
+
+// A node roles array is valid when every entry is a valid role and @all is not
+// combined with any other role.
+export function areNodeRolesValid(roles: string[]): boolean {
+    if (!roles.every(isValidNodeRole)) {
+        return false;
+    }
+    return !(roles.includes(allNodesRole) && roles.length > 1);
+}
+
 export type ScanConfigParameters = {
     name: string;
     description: string;
@@ -182,7 +202,7 @@ export function convertScanConfigToFormik(
             daysOfMonth,
             // Legacy configs stored before node roles were configurable have empty
             // nodeRoles but actually run master+worker on Sensor; fall back so the UI matches.
-            nodeRoles: nodeRoles && nodeRoles.length > 0 ? nodeRoles : defaultNodeRoles,
+            nodeRoles: nodeRoles && nodeRoles.length > 0 ? nodeRoles : [...defaultNodeRoles],
         },
         clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
         profiles,

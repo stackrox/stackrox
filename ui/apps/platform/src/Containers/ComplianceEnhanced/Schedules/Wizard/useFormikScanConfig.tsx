@@ -7,7 +7,7 @@ import {
     customSubjectValidation,
 } from 'Components/EmailTemplate/EmailTemplate.utils';
 
-import { defaultNodeRoles } from '../compliance.scanConfigs.utils';
+import { areNodeRolesValid, defaultNodeRoles } from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
@@ -73,7 +73,14 @@ const validationSchema = yup.object().shape({
                     ? schema.of(yup.string()).min(1, 'Selection is required')
                     : schema.notRequired()
             ),
-        nodeRoles: yup.array().of(yup.string().required()),
+        nodeRoles: yup
+            .array()
+            .of(yup.string().required())
+            .test(
+                'valid-node-roles',
+                'Each role must be alphanumeric with hyphens (1-39 characters), or @all used on its own.',
+                (roles) => areNodeRolesValid(roles ?? [])
+            ),
     }),
     clusters: yup.array().min(1),
     profiles: yup.array().min(1),
