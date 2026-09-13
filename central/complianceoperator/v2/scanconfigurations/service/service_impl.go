@@ -506,8 +506,8 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 	}, nil
 }
 
-// nodeRoleRegexp matches the Compliance Operator validation for a single role value:
-// alphanumeric characters and hyphens, 1-39 characters.
+// nodeRoleRegexp approximates the Compliance Operator's role naming rules for a single
+// role value: alphanumeric characters and hyphens, 1-39 characters.
 var nodeRoleRegexp = regexp.MustCompile(`^[a-zA-Z0-9-]{1,39}$`)
 
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {

@@ -989,8 +989,8 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	Clusters    []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	Notifiers   []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	// node_roles specifies which node roles the compliance scan should target.
-	// Each value must match the Compliance Operator validation: alphanumeric + hyphens,
-	// 1-39 chars, or the special value "@all" (which cannot be mixed with other roles).
+	// Each value must approximate the Compliance Operator's role naming rules: alphanumeric
+	// + hyphens, 1-39 chars, or the special value "@all" (which cannot be mixed with other roles).
 	// Defaults to ["master", "worker"] for backward compatibility when empty.
 	NodeRoles     []string `protobuf:"bytes,19,rep,name=node_roles,json=nodeRoles,proto3" json:"node_roles,omitempty"`
 	unknownFields protoimpl.UnknownFields

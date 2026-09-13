@@ -208,10 +208,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 
 	// Valid cases: validateScanConfiguration must accept these without error.
 	validCases := map[string][]string{
-		"custom roles":        {"infra", "control-plane"},
-		"@all alone":          {allNodesRole},
-		"empty (defaults":     nil,
-		"single default role": {"master"},
+		"custom roles":                    {"infra", "control-plane"},
+		"@all alone":                      {allNodesRole},
+		"empty defaults to master/worker": nil,
+		"single default role":             {"master"},
 	}
 	for name, roles := range validCases {
 		s.Run("valid/"+name, func() {
