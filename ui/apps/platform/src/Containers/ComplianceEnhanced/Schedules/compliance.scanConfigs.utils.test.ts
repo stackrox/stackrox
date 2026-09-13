@@ -1,9 +1,12 @@
 import {
     convertFormikParametersToSchedule,
+    convertScanConfigToFormik,
     convertScheduleToFormikParameters,
+    defaultNodeRoles,
 } from './compliance.scanConfigs.utils';
 import type { ScanConfigParameters } from './compliance.scanConfigs.utils';
 
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import type { Schedule } from 'types/schedule.proto';
 
 // @TODO: Consider making a more unique name for general utils file under Vulnerability Reporting
@@ -17,6 +20,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '03:00',
                 daysOfWeek: [],
                 daysOfMonth: [],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);
@@ -37,6 +41,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '13:00',
                 daysOfWeek: ['1'],
                 daysOfMonth: [],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);
@@ -60,6 +65,7 @@ describe('compliance.scanConfigs.utils', () => {
                 time: '23:00',
                 daysOfWeek: [],
                 daysOfMonth: ['1', '15'],
+                nodeRoles: ['master', 'worker'],
             };
 
             const scanConfig = convertFormikParametersToSchedule(formValues);
@@ -131,6 +137,44 @@ describe('compliance.scanConfigs.utils', () => {
                 daysOfWeek: [],
                 daysOfMonth: ['15'],
             });
+        });
+    });
+
+    describe('convertScanConfigToFormik', () => {
+        function makeExistingConfig(
+            nodeRoles: string[] | undefined
+        ): ComplianceScanConfigurationStatus {
+            return {
+                id: 'config-id',
+                scanName: 'legacy-config',
+                scanConfig: {
+                    oneTimeScan: false,
+                    profiles: ['ocp4-cis'],
+                    scanSchedule: { hour: 3, minute: 0, intervalType: 'DAILY' },
+                    description: '',
+                    notifiers: [],
+                    nodeRoles,
+                },
+                clusterStatus: [],
+            } as unknown as ComplianceScanConfigurationStatus;
+        }
+
+        it('falls back to default node roles when a legacy config has empty node roles', () => {
+            const formValues = convertScanConfigToFormik(makeExistingConfig([]));
+
+            expect(formValues.parameters.nodeRoles).toEqual(defaultNodeRoles);
+        });
+
+        it('falls back to default node roles when node roles are missing', () => {
+            const formValues = convertScanConfigToFormik(makeExistingConfig(undefined));
+
+            expect(formValues.parameters.nodeRoles).toEqual(defaultNodeRoles);
+        });
+
+        it('passes custom node roles through unchanged', () => {
+            const formValues = convertScanConfigToFormik(makeExistingConfig(['infra']));
+
+            expect(formValues.parameters.nodeRoles).toEqual(['infra']);
         });
     });
 });
