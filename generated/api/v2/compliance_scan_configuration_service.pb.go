@@ -250,14 +250,19 @@ func (x *ClusterScanStatus) GetSuiteStatus() *ClusterScanStatus_SuiteStatus {
 	return nil
 }
 
-// Next available tag: 5
+// Next available tag: 7
 type BaseComplianceScanConfigurationSettings struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	OneTimeScan   bool                     `protobuf:"varint,1,opt,name=one_time_scan,json=oneTimeScan,proto3" json:"one_time_scan,omitempty"`
-	Profiles      []string                 `protobuf:"bytes,2,rep,name=profiles,proto3" json:"profiles,omitempty"`
-	ScanSchedule  *Schedule                `protobuf:"bytes,3,opt,name=scan_schedule,json=scanSchedule,proto3" json:"scan_schedule,omitempty"`
-	Description   string                   `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Notifiers     []*NotifierConfiguration `protobuf:"bytes,5,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	state        protoimpl.MessageState   `protogen:"open.v1"`
+	OneTimeScan  bool                     `protobuf:"varint,1,opt,name=one_time_scan,json=oneTimeScan,proto3" json:"one_time_scan,omitempty"`
+	Profiles     []string                 `protobuf:"bytes,2,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	ScanSchedule *Schedule                `protobuf:"bytes,3,opt,name=scan_schedule,json=scanSchedule,proto3" json:"scan_schedule,omitempty"`
+	Description  string                   `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Notifiers    []*NotifierConfiguration `protobuf:"bytes,5,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	// node_roles specifies which node roles the compliance scan should target.
+	// Each value maps to a Kubernetes node label "node-role.kubernetes.io/<role>".
+	// The special value "@all" targets all nodes and cannot be mixed with other roles.
+	// Defaults to ["master", "worker"] when empty.
+	NodeRoles     []string `protobuf:"bytes,6,rep,name=node_roles,json=nodeRoles,proto3" json:"node_roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,6 +328,13 @@ func (x *BaseComplianceScanConfigurationSettings) GetDescription() string {
 func (x *BaseComplianceScanConfigurationSettings) GetNotifiers() []*NotifierConfiguration {
 	if x != nil {
 		return x.Notifiers
+	}
+	return nil
+}
+
+func (x *BaseComplianceScanConfigurationSettings) GetNodeRoles() []string {
+	if x != nil {
+		return x.NodeRoles
 	}
 	return nil
 }
@@ -1274,13 +1286,15 @@ const file_api_v2_compliance_scan_configuration_service_proto_rawDesc = "" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\tR\x06result\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12L\n" +
-	"\x14last_transition_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x12lastTransitionTime\"\xf7\x01\n" +
+	"\x14last_transition_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x12lastTransitionTime\"\x96\x02\n" +
 	"'BaseComplianceScanConfigurationSettings\x12\"\n" +
 	"\rone_time_scan\x18\x01 \x01(\bR\voneTimeScan\x12\x1a\n" +
 	"\bprofiles\x18\x02 \x03(\tR\bprofiles\x121\n" +
 	"\rscan_schedule\x18\x03 \x01(\v2\f.v2.ScheduleR\fscanSchedule\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x127\n" +
-	"\tnotifiers\x18\x05 \x03(\v2\x19.v2.NotifierConfigurationR\tnotifiers\"\xb4\x01\n" +
+	"\tnotifiers\x18\x05 \x03(\v2\x19.v2.NotifierConfigurationR\tnotifiers\x12\x1d\n" +
+	"\n" +
+	"node_roles\x18\x06 \x03(\tR\tnodeRoles\"\xb4\x01\n" +
 	"\x1bComplianceScanConfiguration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tscan_name\x18\x02 \x01(\tR\bscanName\x12L\n" +
