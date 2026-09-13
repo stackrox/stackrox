@@ -12,6 +12,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import {
+    defaultNodeRoles,
     getBodyDefault,
     getSubjectDefault,
     getTimeWithHourMinuteFromISO8601,
@@ -46,6 +47,12 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
     }
 
     if (scanConfig) {
+        // Legacy configs stored before node roles were configurable have empty nodeRoles
+        // but actually run master+worker on Sensor; fall back so the detail view matches
+        // the edit view (convertScanConfigToFormik applies the same default).
+        const { nodeRoles } = scanConfig.scanConfig;
+        const nodeRolesForDisplay =
+            nodeRoles && nodeRoles.length > 0 ? nodeRoles : defaultNodeRoles;
         return (
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                 <ScanConfigParametersView
@@ -53,7 +60,7 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     scanName={scanConfig.scanName}
                     description={scanConfig.scanConfig.description}
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
-                    nodeRoles={scanConfig.scanConfig.nodeRoles}
+                    nodeRoles={nodeRolesForDisplay}
                 >
                     <DescriptionListGroup>
                         <DescriptionListTerm>Last scanned</DescriptionListTerm>
