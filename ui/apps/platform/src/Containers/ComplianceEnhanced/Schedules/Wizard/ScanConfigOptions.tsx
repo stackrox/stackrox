@@ -65,7 +65,7 @@ function ScanConfigOptions(): ReactElement {
         }
         if (!isValidNodeRole(trimmed)) {
             setNodeRoleInputError(
-                `"${trimmed}" is invalid. Use alphanumeric characters and hyphens, 1-39 characters, or @all.`
+                `"${trimmed}" is invalid. Use 1-39 alphanumeric characters and hyphens, starting and ending with a letter or number, or @all.`
             );
             return;
         }

@@ -22,8 +22,13 @@ export const defaultNodeRoles: string[] = ['master', 'worker'];
 // Special role that selects every node; mutually exclusive with any other role.
 export const allNodesRole = '@all';
 
-// A concrete node role is 1-39 alphanumeric or hyphen characters.
-export const nodeRoleRegex = /^[a-zA-Z0-9-]{1,39}$/;
+// A concrete node role is 1-39 alphanumeric-or-hyphen characters that start and end
+// with an alphanumeric character. A leading/trailing hyphen would produce an invalid
+// "node-role.kubernetes.io/<role>" label key on the backend, so such a role is
+// rejected here (client-side) as well as server-side, instead of silently producing a
+// scan that matches zero nodes. Keep in sync with nodeRoleRegexp in
+// central/complianceoperator/v2/scanconfigurations/service/service_impl.go.
+export const nodeRoleRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/;
 
 // A single node role is valid when it is either the @all wildcard or matches the regex.
 export function isValidNodeRole(role: string): boolean {

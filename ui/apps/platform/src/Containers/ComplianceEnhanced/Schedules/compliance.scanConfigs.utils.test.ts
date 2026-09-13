@@ -199,6 +199,17 @@ describe('compliance.scanConfigs.utils', () => {
             expect(isValidNodeRole('bad role!')).toBe(false);
             expect(isValidNodeRole('a'.repeat(40))).toBe(false);
         });
+
+        it('accepts a single character role and a role of exactly 39 characters', () => {
+            expect(isValidNodeRole('a')).toBe(true);
+            expect(isValidNodeRole('a'.repeat(39))).toBe(true);
+        });
+
+        it('rejects roles with a leading or trailing hyphen', () => {
+            expect(isValidNodeRole('-infra')).toBe(false);
+            expect(isValidNodeRole('infra-')).toBe(false);
+            expect(isValidNodeRole('-')).toBe(false);
+        });
     });
 
     describe('areNodeRolesValid', () => {
