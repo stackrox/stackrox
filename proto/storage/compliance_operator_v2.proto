@@ -150,7 +150,8 @@ message ComplianceOperatorScanConfigurationV2 {
   repeated NotifierConfiguration notifiers = 17;
   // node_roles specifies which node roles the compliance scan should target.
   // Each value must approximate the Compliance Operator's role naming rules: alphanumeric
-  // + hyphens, 1-39 chars, or the special value "@all" (which cannot be mixed with other roles).
+  // + hyphens, 1-39 chars, must start/end with an alphanumeric character, or the special
+  // value "@all" (which cannot be mixed with other roles).
   // Defaults to ["master", "worker"] for backward compatibility when empty.
   repeated string node_roles = 19;
 }

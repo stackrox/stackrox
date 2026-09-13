@@ -507,8 +507,14 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 }
 
 // nodeRoleRegexp approximates the Compliance Operator's role naming rules for a single
-// role value: alphanumeric characters and hyphens, 1-39 characters.
-var nodeRoleRegexp = regexp.MustCompile(`^[a-zA-Z0-9-]{1,39}$`)
+// role value: alphanumeric characters and hyphens, 1-39 characters, must start and end
+// with an alphanumeric character. The Compliance Operator's own validation
+// (roleValRegexp in pkg/controller/scansettingbinding/scansettingbinding_controller.go)
+// is more permissive and allows leading/trailing hyphens, but such a role produces an
+// invalid "node-role.kubernetes.io/<role>" label key, so the resulting per-role
+// ComplianceScan's node selector can never match a real node. We reject it earlier
+// with a clear error instead of silently producing a scan with zero matching nodes.
+var nodeRoleRegexp = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$`)
 
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	if len(req.GetClusters()) == 0 {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -212,6 +213,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 		"@all alone":                      {allNodesRole},
 		"empty defaults to master/worker": nil,
 		"single default role":             {"master"},
+		"single character role":           {"a"},
+		"exactly 39 characters":           {strings.Repeat("a", 39)},
 	}
 	for name, roles := range validCases {
 		s.Run("valid/"+name, func() {
@@ -233,6 +236,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 		"empty string in list":        {[]string{"master", ""}, "empty"},
 		"too long":                    {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
 		"duplicate role":              {[]string{"worker", "worker"}, "Duplicate"},
+		"leading hyphen":              {[]string{"-infra"}, "invalid"},
+		"trailing hyphen":             {[]string{"infra-"}, "invalid"},
+		"hyphen alone":                {[]string{"-"}, "invalid"},
+		"too long by one character":   {[]string{strings.Repeat("a", 40)}, "invalid"},
 	}
 	for name, tc := range invalidCases {
 		s.Run("invalid/"+name, func() {
