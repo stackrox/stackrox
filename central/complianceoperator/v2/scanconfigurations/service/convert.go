@@ -27,7 +27,30 @@ storage type to apiV2 type conversions
 
 const (
 	suiteComplete = "DONE"
+
+	// allNodesRole is the special Compliance Operator value that matches all nodes.
+	allNodesRole = "@all"
 )
+
+// defaultNodeRoles returns the backward-compatible default roles used when the
+// user does not specify any. Keep in sync with the Sensor-side default in
+// sensor/kubernetes/complianceoperator/types.go and the UI default in
+// ui/.../Schedules/compliance.scanConfigs.utils.tsx.
+func defaultNodeRoles() []string {
+	return []string{"master", "worker"}
+}
+
+// nodeRolesOrDefault returns the stored node roles, falling back to
+// defaultNodeRoles() when empty. Pre-PR stored configs have an empty
+// node_roles blob but actually run master+worker on Sensor, so read paths
+// default here to keep the API/UI representation consistent with actual
+// behavior (matches the write-path defaulting in convertV2ScanConfigToStorage).
+func nodeRolesOrDefault(roles []string) []string {
+	if len(roles) == 0 {
+		return defaultNodeRoles()
+	}
+	return roles
+}
 
 var (
 	v2IntervalTypeToStorage = map[v2.Schedule_IntervalType]storage.Schedule_IntervalType{
@@ -95,6 +118,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
 			Description:  scanConfig.GetDescription(),
+			NodeRoles:    nodeRolesOrDefault(scanConfig.GetNodeRoles()),
 		},
 	}, nil
 }
@@ -186,6 +210,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		Description:            scanConfig.GetScanConfig().GetDescription(),
 		Clusters:               clusters,
 		Notifiers:              notifiers,
+		NodeRoles:              nodeRolesOrDefault(scanConfig.GetScanConfig().GetNodeRoles()),
 	}
 }
 
@@ -295,6 +320,7 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 			ScanSchedule: convertProtoScheduleToV2(reportData.GetScanConfiguration().GetSchedule()),
 			Description:  reportData.GetScanConfiguration().GetDescription(),
 			Notifiers:    notifiers,
+			NodeRoles:    nodeRolesOrDefault(reportData.GetScanConfiguration().GetNodeRoles()),
 		},
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 
@@ -424,6 +450,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			Profiles:     profiles,
 			Description:  scanConfig.GetDescription(),
 			Notifiers:    notifiers,
+			NodeRoles:    nodeRolesOrDefault(scanConfig.GetNodeRoles()),
 		},
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),
