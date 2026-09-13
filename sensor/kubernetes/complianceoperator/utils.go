@@ -101,6 +101,14 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
+func nodeRolesFromRequest(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []string {
+	roles := request.GetNodeRoles()
+	if len(roles) == 0 {
+		return defaultNodeRoles()
+	}
+	return roles
+}
+
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
@@ -113,7 +121,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 			Labels:      utils.GetSensorKubernetesLabels(),
 			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
-		Roles: []string{masterRole, workerRole},
+		Roles: nodeRolesFromRequest(request),
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
 			AutoApplyRemediations:  false,
 			AutoUpdateRemediations: false,
@@ -152,8 +160,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 }
 
 func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) *v1alpha1.ScanSetting {
-	// TODO:  Update additional fields as ACS capability expands
-	scanSetting.Roles = []string{masterRole, workerRole}
+	scanSetting.Roles = nodeRolesFromRequest(request.GetScanSettings())
 	scanSetting.ComplianceSuiteSettings = v1alpha1.ComplianceSuiteSettings{
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
