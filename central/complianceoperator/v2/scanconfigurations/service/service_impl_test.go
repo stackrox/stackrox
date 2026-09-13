@@ -203,6 +203,50 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().Nil(config)
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationNodeRoleValidation() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Valid cases: validateScanConfiguration must accept these without error.
+	validCases := map[string][]string{
+		"custom roles":        {"infra", "control-plane"},
+		"@all alone":          {allNodesRole},
+		"empty (defaults":     nil,
+		"single default role": {"master"},
+	}
+	for name, roles := range validCases {
+		s.Run("valid/"+name, func() {
+			request := getTestAPIRec()
+			request.ScanConfig.NodeRoles = roles
+			s.Require().NoError(validateScanConfiguration(request))
+		})
+	}
+
+	// Invalid cases: assert the error is an errox.InvalidArgs (robust, not
+	// dependent on user-facing message wording), plus a light substring check
+	// so a mixed-up case is still caught.
+	invalidCases := map[string]struct {
+		roles     []string
+		msgSubstr string
+	}{
+		"@all mixed with other roles": {[]string{allNodesRole, "worker"}, "@all"},
+		"special characters":          {[]string{"inv@lid"}, "invalid"},
+		"empty string in list":        {[]string{"master", ""}, "empty"},
+		"too long":                    {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
+		"duplicate role":              {[]string{"worker", "worker"}, "Duplicate"},
+	}
+	for name, tc := range invalidCases {
+		s.Run("invalid/"+name, func() {
+			request := getTestAPIRec()
+			request.ScanConfig.NodeRoles = tc.roles
+			config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+			s.Require().Error(err)
+			s.Require().Nil(config)
+			s.Require().ErrorIs(err, errox.InvalidArgs)
+			s.Require().Contains(err.Error(), tc.msgSubstr)
+		})
+	}
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
@@ -770,6 +814,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -836,6 +881,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -908,6 +954,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -1024,6 +1071,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -1178,6 +1226,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
 			Notifiers:    []*v2.NotifierConfiguration{},
+			NodeRoles:    []string{"master", "worker"},
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
@@ -1219,6 +1268,7 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
+			NodeRoles:    []string{"master", "worker"},
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}

@@ -521,6 +521,30 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 	}
 }
 
+// TestUpsertScanConfigurationNodeRoles verifies node_roles survive a storage
+// round-trip. node_roles is a blob-only field (no sql: gotag, no column), so
+// this guards the serialized-proto persistence path.
+func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfigurationNodeRoles() {
+	configID := uuid.NewV4().String()
+
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+	scanConfig.NodeRoles = []string{"infra", "control-plane"}
+
+	err := s.dataStore.UpsertScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig)
+	s.Require().NoError(err)
+
+	foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal([]string{"infra", "control-plane"}, foundConfig.GetNodeRoles())
+	protoassert.Equal(s.T(), scanConfig, foundConfig)
+
+	// Clean up
+	_, err = s.dataStore.DeleteScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], configID)
+	s.Require().NoError(err)
+}
+
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	testCases := []struct {
 		desc        string
