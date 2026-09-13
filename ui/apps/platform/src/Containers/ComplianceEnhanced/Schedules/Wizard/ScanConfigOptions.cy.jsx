@@ -68,4 +68,20 @@ describe(Cypress.spec.relative, () => {
 
         cy.findByText('control-plane').should('exist');
     });
+
+    // Regression guard for the blur-commit vs chip-remove race (ROX-34167):
+    // typing a role (uncommitted) then clicking an existing chip's remove button fires
+    // onBlur -> addNodeRole before the click's onClose -> removeNodeRole. Both must derive
+    // from the latest node roles so the removal does not clobber the just-added role.
+    it('does not drop a typed role when removing an existing chip on blur', () => {
+        setup();
+
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).type('infra');
+        cy.get('button[aria-label="Close master"]').click();
+
+        // Final state: master removed, worker kept, infra committed on blur.
+        cy.findByText('master').should('not.exist');
+        cy.findByText('worker').should('exist');
+        cy.findByText('infra').should('exist');
+    });
 });

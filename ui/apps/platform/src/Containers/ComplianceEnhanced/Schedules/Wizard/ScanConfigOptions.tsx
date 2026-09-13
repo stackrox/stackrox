@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent, ReactElement } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
@@ -7,6 +7,9 @@ import {
     Flex,
     FlexItem,
     Form,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
     LabelGroup,
     PageSection,
@@ -23,14 +26,12 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
 import usePageAction from 'hooks/usePageAction';
+import { allNodesRole, isValidNodeRole } from '../compliance.scanConfigs.utils';
 import type { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './useFormikScanConfig';
 
 import './ScanConfigOptions.css';
-
-const nodeRoleRegex = /^[a-zA-Z0-9-]{1,39}$/;
-const allNodesRole = '@all';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
@@ -39,38 +40,53 @@ function ScanConfigOptions(): ReactElement {
     const [nodeRoleInput, setNodeRoleInput] = useState('');
     const [nodeRoleInputError, setNodeRoleInputError] = useState('');
 
+    // Keep a ref to the latest node roles so that handlers reading them (addNodeRole,
+    // removeNodeRole) always derive from current state rather than a stale render closure.
+    // Without this, a blur-commit (addNodeRole) followed by a chip-remove click
+    // (removeNodeRole) in the same tick clobbers the just-added role, because the click
+    // handler was created on a render before the blur updated formik state, and formik's
+    // setFieldValue is async so it has not re-rendered yet. Composing updates through the
+    // ref makes back-to-back updates in the same tick see each other's result.
+    const nodeRolesRef = useRef(formik.values.parameters.nodeRoles);
+    // Sync from formik on each render so external value changes (e.g. loading an
+    // existing config) are reflected.
+    nodeRolesRef.current = formik.values.parameters.nodeRoles;
+
+    function updateNodeRoles(updater: (currentRoles: string[]) => string[]) {
+        const newRoles = updater(nodeRolesRef.current);
+        nodeRolesRef.current = newRoles;
+        formik.setFieldValue('parameters.nodeRoles', newRoles);
+    }
+
     function addNodeRole(role: string) {
         const trimmed = role.trim();
         if (!trimmed) {
             return;
         }
-        if (trimmed !== allNodesRole && !nodeRoleRegex.test(trimmed)) {
+        if (!isValidNodeRole(trimmed)) {
             setNodeRoleInputError(
                 `"${trimmed}" is invalid. Use alphanumeric characters and hyphens, 1-39 characters, or @all.`
             );
             return;
         }
         setNodeRoleInputError('');
-        const currentRoles = formik.values.parameters.nodeRoles;
-        if (currentRoles.includes(trimmed)) {
-            setNodeRoleInput('');
-            return;
-        }
-        let newRoles: string[];
-        if (trimmed === allNodesRole) {
-            newRoles = [allNodesRole];
-        } else if (currentRoles.includes(allNodesRole)) {
-            newRoles = [trimmed];
-        } else {
-            newRoles = [...currentRoles, trimmed];
-        }
-        formik.setFieldValue('parameters.nodeRoles', newRoles);
         setNodeRoleInput('');
+        updateNodeRoles((currentRoles) => {
+            if (currentRoles.includes(trimmed)) {
+                return currentRoles;
+            }
+            if (trimmed === allNodesRole) {
+                return [allNodesRole];
+            }
+            if (currentRoles.includes(allNodesRole)) {
+                return [trimmed];
+            }
+            return [...currentRoles, trimmed];
+        });
     }
 
     function removeNodeRole(role: string) {
-        const newRoles = formik.values.parameters.nodeRoles.filter((r) => r !== role);
-        formik.setFieldValue('parameters.nodeRoles', newRoles);
+        updateNodeRoles((currentRoles) => currentRoles.filter((r) => r !== role));
     }
 
     function handleNodeRoleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -294,7 +310,8 @@ function ScanConfigOptions(): ReactElement {
                                         <StackItem>
                                             <TextInput
                                                 type="text"
-                                                id="parameters.nodeRoleInput"
+                                                id="parameters.nodeRoles"
+                                                aria-label="Node role"
                                                 placeholder="Type a role and press Enter to add"
                                                 value={nodeRoleInput}
                                                 validated={nodeRoleInputError ? 'error' : 'default'}
@@ -308,9 +325,13 @@ function ScanConfigOptions(): ReactElement {
                                                 onBlur={() => addNodeRole(nodeRoleInput)}
                                             />
                                             {nodeRoleInputError && (
-                                                <div className="pf-v6-u-color-status-danger pf-v6-u-font-size-sm pf-v6-u-mt-xs">
-                                                    {nodeRoleInputError}
-                                                </div>
+                                                <FormHelperText>
+                                                    <HelperText isLiveRegion>
+                                                        <HelperTextItem variant="error">
+                                                            {nodeRoleInputError}
+                                                        </HelperTextItem>
+                                                    </HelperText>
+                                                </FormHelperText>
                                             )}
                                         </StackItem>
                                         {formik.values.parameters.nodeRoles.length > 0 && (
