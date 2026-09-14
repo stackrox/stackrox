@@ -69,11 +69,37 @@ jobs:
         # Only freeze CRDs for patch releases, i.e. once the first (.0) release of
         # this branch has been tagged. Before that the branch is still
         # stabilizing and CRD changes are allowed.
-        if ! git ls-remote --exit-code --tags origin "refs/tags/${first_release_tag}" >/dev/null 2>&1; then
-          echo "First release '${first_release_tag}' is not tagged yet; branch is still stabilizing. CRD changes are allowed."
-          exit 0
-        fi
-        echo "First release '${first_release_tag}' is tagged; enforcing CRD freeze for patch releases."
+        #
+        # `git ls-remote --exit-code` distinguishes its outcomes: 0 = the tag
+        # exists, 2 = the tag is definitively absent, any other code = a
+        # transport/other error. We must not treat a transient network failure as
+        # "not tagged" (that would silently disable the freeze), so we retry and
+        # fail closed if we cannot get an authoritative answer.
+        tag_ref="refs/tags/${first_release_tag}"
+        rc=0
+        for attempt in 1 2 3; do
+          rc=0
+          git ls-remote --exit-code --tags origin "$tag_ref" >/dev/null 2>&1 || rc=$?
+          if [[ "$rc" -eq 0 || "$rc" -eq 2 ]]; then
+            break
+          fi
+          echo "git ls-remote for '${tag_ref}' failed (exit $rc); retry ${attempt}/3..." >&2
+          sleep 5
+        done
+
+        case "$rc" in
+          0)
+            echo "First release '${first_release_tag}' is tagged; enforcing CRD freeze for patch releases."
+            ;;
+          2)
+            echo "First release '${first_release_tag}' is not tagged yet; branch is still stabilizing. CRD changes are allowed."
+            exit 0
+            ;;
+          *)
+            echo "::error::Could not determine whether '${first_release_tag}' is tagged (git ls-remote exit $rc). Failing closed."
+            exit 1
+            ;;
+        esac
 
         # Platform and config CRD manifests that must remain frozen on release
         # branches.
