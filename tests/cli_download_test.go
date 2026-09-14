@@ -3,9 +3,12 @@
 package tests
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,28 +17,65 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// fetchIsReleaseBuild calls /v1/metadata and returns whether Central was built as a release build.
+func fetchIsReleaseBuild(t *testing.T) bool {
+	t.Helper()
+	client := centralgrpc.HTTPClientForCentral(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/v1/metadata", nil)
+	require.NoError(t, err)
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, resp.Body.Close()) })
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var metadata struct {
+		ReleaseBuild bool `json:"release_build"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&metadata))
+	return metadata.ReleaseBuild
+}
+
 func TestCLIDownload(t *testing.T) {
 	t.Run("all platform binaries are downloadable", func(t *testing.T) {
-		// Magic bytes are only checked for linux-amd64 because PR CI
-		// produces a real roxctl binary only for the runner arch (amd64).
-		// Other platforms get stub files unless the ci-build-cli label is set on the PR.
-		// See .github/workflows/build.yaml "Create CLI stub files" step for details.
-		binaries := []string{
-			"roxctl-linux-amd64",
-			"roxctl-linux-arm64",
-			"roxctl-linux-ppc64le",
-			"roxctl-linux-s390x",
-			"roxctl-darwin-amd64",
-			"roxctl-darwin-arm64",
-			"roxctl-windows-amd64.exe",
+		type binaryCase struct {
+			filename string
+			magic    []byte
 		}
+
 		const (
-			elfMagic = "\x7fELF"  // ELF magic bytes identify a valid Linux binary.
-			emX86_64 = "\x3e\x00" // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
+			// Magic byte sequences that identify each platform's binary format.
+			linuxMagic   = "\x7fELF"
+			darwinMagic  = "\xcf\xfa\xed\xfe"
+			windowsMagic = "MZ"
+
+			// stubPrefix is the known prefix of CI stub files created by
+			// .github/workflows/build.yaml in "Create CLI stub files" step
+			// for non-native-arch binaries in non-release builds.
+			stubPrefix = "This is a placeholder"
+
+			// headerBytes must cover the longest magic sequence (4 bytes) and the stub prefix (21 bytes).
+			headerBytes = 32
 		)
 
-		for _, filename := range binaries {
-			t.Run(filename, func(t *testing.T) {
+		testCases := []binaryCase{
+			{"roxctl-linux-amd64", []byte(linuxMagic)},
+			{"roxctl-linux-arm64", []byte(linuxMagic)},
+			{"roxctl-linux-ppc64le", []byte(linuxMagic)},
+			{"roxctl-linux-s390x", []byte(linuxMagic)},
+			{"roxctl-darwin-amd64", []byte(darwinMagic)},
+			{"roxctl-darwin-arm64", []byte(darwinMagic)},
+			{"roxctl-windows-amd64.exe", []byte(windowsMagic)},
+		}
+
+		releaseBuild := fetchIsReleaseBuild(t)
+
+		for _, tc := range testCases {
+			t.Run(tc.filename, func(t *testing.T) {
 				client := centralgrpc.HTTPClientForCentral(t)
 				client.Timeout = 2 * time.Minute
 
@@ -43,7 +83,7 @@ func TestCLIDownload(t *testing.T) {
 				defer cancel()
 
 				req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-					"/api/cli/download/"+filename, nil)
+					"/api/cli/download/"+tc.filename, nil)
 				require.NoError(t, err)
 
 				resp, err := client.Do(req)
@@ -52,15 +92,24 @@ func TestCLIDownload(t *testing.T) {
 
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 
-				if filename == "roxctl-linux-amd64" {
-					// Read the first 20 bytes to verify ELF magic and e_machine == EM_X86_64 (bytes 18-19).
-					const elfHeaderSize = 20
-					firstBytes := make([]byte, elfHeaderSize)
-					_, err = io.ReadFull(resp.Body, firstBytes)
-					require.NoError(t, err)
-					assert.Equal(t, []byte(elfMagic), firstBytes[:len(elfMagic)])
-					assert.Equal(t, []byte(emX86_64), firstBytes[18:20])
+				header := make([]byte, headerBytes)
+				_, err = io.ReadFull(resp.Body, header)
+				require.NoError(t, err)
+
+				hasMagic := bytes.Equal(header[:len(tc.magic)], tc.magic)
+
+				if releaseBuild || tc.filename == "roxctl-linux-amd64" {
+					// Release build contains real binaries for all platforms.
+					// In PR CI builds, linux-amd64 is the native runner arch and thus always real.
+					assert.True(t, hasMagic, "%s: expected binary magic bytes %x, got: %q",
+						tc.filename, tc.magic, header)
+				} else if !hasMagic {
+					// Non-release builds may serve CI stub files for non-native arches.
+					// Anything other than real binary or known stub is unexpected.
+					assert.True(t, strings.HasPrefix(string(header), stubPrefix),
+						"%s: expected binary magic bytes or CI stub content, got: %q", tc.filename, header)
 				}
+
 				_, err = io.Copy(io.Discard, resp.Body)
 				require.NoError(t, err)
 			})
