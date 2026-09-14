@@ -187,19 +187,35 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 // HTTPClientForCentral returns an *http.Client for talking to central in tests. Basic auth credentials and
 // the hostname and scheme part of the URL may be omitted.
 func HTTPClientForCentral(t testutils.T) *http.Client {
+	return newHTTPClientForCentral(t, true)
+}
+
+// UnauthenticatedHTTPClientForCentral is like HTTPClientForCentral but does not inject credentials.
+// The hostname and scheme part of the URL may still be omitted.
+func UnauthenticatedHTTPClientForCentral(t testutils.T) *http.Client {
+	return newHTTPClientForCentral(t, false)
+}
+
+func newHTTPClientForCentral(t testutils.T, withAuth bool) *http.Client {
 	baseTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //#nosec G402
 		},
 	}
 
 	endpoint := RoxAPIEndpoint(t)
-	user := RoxUsername(t)
-	pw := RoxPassword(t)
+
+	var user, pw string
+	if withAuth {
+		user = RoxUsername(t)
+		pw = RoxPassword(t)
+	}
 
 	transport := httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		modReq := req.Clone(req.Context())
-		modReq.SetBasicAuth(user, pw)
+		if withAuth {
+			modReq.SetBasicAuth(user, pw)
+		}
 		if modReq.URL.Host == "" {
 			modReq.URL.Host = endpoint
 		}
@@ -214,10 +230,8 @@ func HTTPClientForCentral(t testutils.T) *http.Client {
 		return resp, nil
 	})
 
-	client := &http.Client{
+	return &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: transport,
 	}
-
-	return client
 }

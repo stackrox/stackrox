@@ -4,7 +4,6 @@ package tests
 
 import (
 	"context"
-	"crypto/tls"
 	"io"
 	"net/http"
 	"testing"
@@ -86,20 +85,14 @@ func TestCLIDownload(t *testing.T) {
 	})
 
 	t.Run("unauthenticated returns 401", func(t *testing.T) {
-		endpoint := centralgrpc.RoxAPIEndpoint(t)
-		// Not using centralgrpc.HTTPClientForCentral(t) because for this test we need the request to be unauthenticated.
-		unauthClient := &http.Client{
-			Timeout: 30 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //#nosec G402
-			},
-		}
+		unauthClient := centralgrpc.UnauthenticatedHTTPClientForCentral(t)
+		unauthClient.Timeout = 30 * time.Second
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-			"https://"+endpoint+"/api/cli/download/roxctl-linux-amd64", nil)
+			"/api/cli/download/roxctl-linux-amd64", nil)
 		require.NoError(t, err)
 
 		resp, err := unauthClient.Do(req)
