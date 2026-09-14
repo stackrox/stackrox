@@ -85,10 +85,10 @@ type ImageFlavor struct {
 
 	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
 	ScannerImageTag        string // todo: remove this
-	ScannerImageName       string
-	ScannerSlimImageName   string
-	ScannerDBImageName     string
-	ScannerDBSlimImageName string
+	ScannerImageName       string // todo: remove this
+	ScannerSlimImageName   string // todo: remove this
+	ScannerDBImageName     string // todo: remove this
+	ScannerDBSlimImageName string // todo: remove this
 
 	// ScannerV4ImageTag is used for all scanner-v4* images (scanner-v4, scanner-v4-db)
 	ScannerV4ImageTag    string
