@@ -327,8 +327,9 @@ ensure_vm_scan_ssh_identity() {
     info "Ephemeral VM scan SSH identity written to ${identity}"
 }
 
-# persist_vm_scan_virtctl copies virtctl next to the SSH identity so post-test
-# collection can find it after the test process's PATH goes away.
+# persist_vm_scan_virtctl copies virtctl next to the SSH identity and records
+# the resolved path so post-test can find it after the test process's PATH
+# goes away.
 persist_vm_scan_virtctl() {
     local dir src dest
     dir="$(vm_scan_e2e_dir)"
@@ -337,10 +338,11 @@ persist_vm_scan_virtctl() {
         info "virtctl not on PATH; post-test guest journal collection will skip"
         return 0
     }
+    printf '%s\n' "$src" > "${dir}/virtctl-path"
     dest="${dir}/virtctl"
     if cp "$src" "$dest" && chmod +x "$dest"; then
         info "Persisted virtctl to ${dest} for post-test guest journal collection"
     else
-        info "Could not persist virtctl to ${dest}; post-test will look on PATH"
+        info "Could not copy virtctl to ${dest}; post-test will use ${src}"
     fi
 }
