@@ -1,6 +1,13 @@
-# On release branches, CRD schemas must stay frozen: no changes to the platform
-# (Central/SecuredCluster) and config (SecurityPolicy) CRDs are allowed.
+# On release branches that already shipped their first (.0) release, CRD schemas
+# must stay frozen: no changes to the platform (Central/SecuredCluster) and
+# config (SecurityPolicy) CRDs are allowed in a patch release.
 #
+# The freeze only kicks in once the first release of the branch has been tagged.
+# The tag is derived from the branch name: release-X.Y -> X.Y.0. Before X.Y.0 is
+# tagged the branch is still stabilizing toward its first release, so CRD changes
+# are still permitted and this check is skipped.
+#
+# When the freeze is active:
 # - For PRs targeting a release branch, we diff the release branch (target)
 #   against the PR tip.
 # - For commits pushed to a release branch, we diff the master commit from which
@@ -37,10 +44,36 @@ jobs:
     - name: Ensure CRD schemas are unchanged
       env:
         EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         set -euo pipefail
+
+        # Determine the release branch this event concerns.
+        if [[ "$EVENT_NAME" == "pull_request" ]]; then
+          branch="$BASE_REF"
+        else
+          branch="$GITHUB_REF_NAME"
+        fi
+
+        # Derive the first release tag from the branch name: release-X.Y -> X.Y.0.
+        # Anything that is not a plain release-X.Y branch (e.g. a scanner branch)
+        # is out of scope for this check.
+        if [[ ! "$branch" =~ ^release-([0-9]+)\.([0-9]+)$ ]]; then
+          echo "Branch '$branch' is not a standard release-X.Y branch; skipping CRD freeze check."
+          exit 0
+        fi
+        first_release_tag="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.0"
+
+        # Only freeze CRDs for patch releases, i.e. once the first (.0) release of
+        # this branch has been tagged. Before that the branch is still
+        # stabilizing and CRD changes are allowed.
+        if ! git ls-remote --exit-code --tags origin "refs/tags/${first_release_tag}" >/dev/null 2>&1; then
+          echo "First release '${first_release_tag}' is not tagged yet; branch is still stabilizing. CRD changes are allowed."
+          exit 0
+        fi
+        echo "First release '${first_release_tag}' is tagged; enforcing CRD freeze for patch releases."
 
         # Platform and config CRD manifests that must remain frozen on release
         # branches.
