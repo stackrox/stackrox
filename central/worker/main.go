@@ -5,8 +5,8 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -27,6 +27,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -44,7 +45,7 @@ func main() {
 
 	log.Infof("Starting central-worker")
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	poolVal := workerPoolSize.IntegerSetting()
@@ -52,21 +53,41 @@ func main() {
 		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
 	}
 	globaldb.InitializePostgresWithPoolSize(ctx, int32(poolVal))
+	defer globaldb.Close()
 	log.Infof("DB pool initialized with max_conns=%d", poolVal)
 
 	waitForMigrations(ctx)
 	ensureDBCurrent()
 
-	startHealthServer()
+	scheduler := vulnReportV2Scheduler.Singleton()
+	var listenerStarted atomic.Bool
+	startHealthServer(func() bool {
+		return ctx.Err() == nil && listenerStarted.Load() && scheduler.Ready()
+	})
 
 	go startMetricsServer()
 
 	pruning.Singleton().Start()
 	log.Infof("Pruning GC started")
 
-	scheduler := vulnReportV2Scheduler.Singleton()
 	scheduler.Start(globaldb.GetPostgres())
-	log.Infof("Vulnerability report scheduler started")
+	var stopListener func()
+	defer func() {
+		stopBackgroundTasks(scheduler.Stop, pruning.Singleton().Stop, func() {
+			if stopListener != nil {
+				stopListener()
+			}
+		})
+	}()
+
+	// Do not register cron jobs from notifications before this process owns reporting.
+	for !scheduler.Ready() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second):
+		}
+	}
 
 	collectionDatastore, _ := collectionDS.Singleton()
 	rl := newReportListener(
@@ -78,19 +99,15 @@ func main() {
 		notifierDS.Singleton(),
 		notifierProcessor.Singleton(),
 	)
-	rl.start(ctx)
+	stopListener = rl.start(ctx)
+	listenerStarted.Store(true)
 	log.Infof("Report LISTEN/NOTIFY listener started")
 
 	log.Infof("central-worker is ready")
 
-	waitForTerminationSignal()
+	<-ctx.Done()
 
 	log.Infof("central-worker shutting down")
-
-	pruning.Singleton().Stop()
-	scheduler.Stop()
-
-	globaldb.Close()
 }
 
 func waitForMigrations(ctx context.Context) {
@@ -128,14 +145,8 @@ func ensureDBCurrent() {
 	log.Infof("DB version verified")
 }
 
-func startHealthServer() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+func startHealthServer(ready func() bool) {
+	mux := healthHandler(ready)
 
 	srv := &http.Server{
 		Addr:    healthAddr,
@@ -167,9 +178,28 @@ func startMetricsServer() {
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralWorkerSubsystem.String())
 }
 
-func waitForTerminationSignal() {
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-signalsC
-	log.Infof("Caught %s signal", sig)
+// Stop report scheduling independently of pruning so a long GC cycle does not
+// consume the scheduler's time to cancel reports and release its advisory lock.
+func stopBackgroundTasks(tasks ...func()) {
+	var wg sync.WaitGroup
+	for _, task := range tasks {
+		wg.Go(task)
+	}
+	wg.Wait()
+}
+
+func healthHandler(ready func() bool) http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		if !ready() {
+			http.Error(w, "report scheduler is not ready", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	return mux
 }

@@ -87,6 +87,20 @@ func (mr *MockSchedulerMockRecorder) GetScheduledConfigIDs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledConfigIDs", reflect.TypeOf((*MockScheduler)(nil).GetScheduledConfigIDs))
 }
 
+// Ready mocks base method.
+func (m *MockScheduler) Ready() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ready")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Ready indicates an expected call of Ready.
+func (mr *MockSchedulerMockRecorder) Ready() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockScheduler)(nil).Ready))
+}
+
 // RemoveReportSchedule mocks base method.
 func (m *MockScheduler) RemoveReportSchedule(reportConfigID string) {
 	m.ctrl.T.Helper()

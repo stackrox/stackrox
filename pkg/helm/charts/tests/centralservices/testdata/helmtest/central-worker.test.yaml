@@ -1,0 +1,18 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "disabled worker retains database access while terminating"
+  set:
+    centralWorker.enabled: false
+  expect: |
+    .deployments["central-worker"] | assertThat(. == null)
+    .networkpolicys["central-db"].spec.ingress[0] | assertThat(.from == [{"podSelector":{"matchLabels":{"app":"central"}}},{"podSelector":{"matchLabels":{"app":"central-worker"}}}])
+    .networkpolicys["central-db"].spec.ingress[0].ports | assertThat(. == [{"port":5432,"protocol":"TCP"}])
+
+- name: "enabled worker can release database locks during graceful shutdown"
+  set:
+    centralWorker.enabled: true
+  expect: |
+    .deployments["central-worker"].spec.template.spec.terminationGracePeriodSeconds | assertThat(. >= 120)
+    .networkpolicys["central-db"].spec.ingress[0] | assertThat(.from == [{"podSelector":{"matchLabels":{"app":"central"}}},{"podSelector":{"matchLabels":{"app":"central-worker"}}}])

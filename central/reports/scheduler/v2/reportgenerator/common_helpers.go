@@ -52,11 +52,26 @@ func UpdateReportStatus(ctx context.Context, snapshotStore reportSnapshotDS.Data
 }
 
 // LogAndUpsertError logs the error and updates the report snapshot status to FAILURE.
-// requestCtx is used to check for user cancellation; statusCtx is used for the DB update
+// Reports interrupted by scheduler shutdown remain recoverable.
+// requestCtx is used to check for cancellation; statusCtx is used for the DB update
 // (should be an all-access context since requestCtx may be cancelled).
 func LogAndUpsertError(requestCtx, statusCtx context.Context, snapshotStore reportSnapshotDS.DataStore, reportErr error, req *ReportRequest) {
 	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
+		return
+	}
+	if errors.Is(context.Cause(requestCtx), ErrSchedulerStopped) {
+		status := req.ReportSnapshot.GetReportStatus()
+		// GENERATED is final for downloads, but an email can still be awaiting
+		// delivery. Put an interrupted email back into the recovery query.
+		if status.GetRunState() == storage.ReportStatus_GENERATED && status.GetReportNotificationMethod() == storage.ReportStatus_EMAIL {
+			status.CompletedAt = nil
+			status.ErrorMsg = ""
+			if err := UpdateReportStatus(statusCtx, snapshotStore, req.ReportSnapshot, storage.ReportStatus_WAITING); err != nil {
+				log.Errorf("Error returning interrupted email report %s to WAITING: %v", req.ReportSnapshot.GetReportId(), err)
+			}
+		}
+		log.Infof("Report %s interrupted by scheduler shutdown", req.ReportSnapshot.GetReportId())
 		return
 	}
 	if errors.Is(context.Cause(requestCtx), ErrUserCancelled) {

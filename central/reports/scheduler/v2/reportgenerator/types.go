@@ -12,6 +12,9 @@ import (
 // ErrUserCancelled is the cause attached to a context when a user cancels a running report.
 var ErrUserCancelled = errors.New("report cancelled by user")
 
+// ErrSchedulerStopped marks interrupted work that the next scheduler must recover.
+var ErrSchedulerStopped = errors.New("report scheduler stopped")
+
 // ReportRequest contains information needed to generate and notify a report
 type ReportRequest struct {
 	ReportSnapshot *storage.ReportSnapshot

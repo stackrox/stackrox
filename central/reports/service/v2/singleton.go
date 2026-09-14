@@ -21,7 +21,7 @@ var (
 func initialize() {
 	scheduler := schedulerV2.Singleton()
 	if !env.CentralWorkerEnabled.BooleanSetting() {
-		go scheduler.Start(globaldb.GetPostgres())
+		scheduler.Start(globaldb.GetPostgres())
 	} else {
 		log.Info("Report scheduling is managed by central-worker, skipping start in Central")
 	}
