@@ -462,7 +462,6 @@ EOT
     )
 
     _begin "verify-scanners-are-deployed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
@@ -471,7 +470,8 @@ EOT
         --reuse-values
 
     _begin "verify-scanners-are-deployed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    # TODO(ROX-36705): Remove when 5.1 is cut.
+    verify_no_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
@@ -484,7 +484,6 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     _begin "verify-scanners-are-deployed"
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -492,7 +491,8 @@ EOT
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
     _begin "verify-scanners-are-deployed"
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    # TODO(ROX-36705): Remove when 5.1 is cut.
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -537,13 +537,11 @@ EOT
 
     ######################
     _begin "verifying-central-scanners-deployed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
     _begin "verifying-sensor-scanners-deployed"
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -564,14 +562,12 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
     _begin "verifying-sensor-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
@@ -629,7 +625,6 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are deployed"
-    verify_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
     info "Verifying that scanner V4 is enabled for sensor"
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
@@ -656,7 +651,6 @@ EOT
     ######################
     _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
-    verify_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
 
@@ -704,12 +698,9 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
     _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
 
-    verify_scannerV2_deployed "$central_namespace"
     verify_scannerV4_deployed "$central_namespace"
     verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
@@ -744,7 +735,6 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
@@ -779,8 +769,6 @@ EOT
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
 
     _begin "deploy-stackrox"
 
@@ -789,7 +777,6 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
@@ -816,8 +803,6 @@ EOT
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
 
     _begin "deploy-stackrox"
 
@@ -826,11 +811,9 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -850,8 +833,6 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
 
     _begin "deploy-stackrox"
@@ -863,10 +844,9 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    # Scanner V2 in sensor is disabled via operator deployment path.
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -885,10 +865,10 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_no_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_no_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -942,7 +922,6 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
@@ -965,7 +944,15 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed
+    # Note: The above deployment machinery is using the deployment scripts from this branch under the hood for working with
+    # manifest bundles generated by the previous roxctl version.
+    # The support in these scripts for deploying scanner V2 has been removed. Hence we cannot check here for installability
+    # of scanner V2.
+    #
+    # Also, we wouldn't be able to confirm any behaviour such as "existing scanner V2 is removed on upgrade", because
+    # manifest bundles don't provide this functionality.
+    #
+    # Bottom line is, this test case is now purely a V4 test case.
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
@@ -977,7 +964,6 @@ EOT
 
     _begin "verify"
 
-    verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
@@ -1075,16 +1061,6 @@ verify_no_scannerV4_matcher_deployed() {
     echo "Verifying that scanner V4 matcher is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
-}
-
-# TODO: For now, Scanner v2 is expected to run in parallel.
-# This must be removed when Scanner v2 will be phased out.
-verify_scannerV2_deployed() {
-    local namespace=${1:-stackrox}
-    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
-    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
-    wait_for_object_to_appear "$namespace" deploy/scanner 300
-    info "** Scanner V2 is deployed in namespace ${namespace}"
 }
 
 verify_no_scannerV2_deployed() {

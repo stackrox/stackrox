@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import type { ReactElement } from 'react';
 import {
     Breadcrumb,
@@ -28,9 +27,8 @@ import {
 } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
-import useRestQuery from 'hooks/useRestQuery';
+import useLightspeedStatus from 'hooks/useLightspeedStatus';
 import AiExperienceIcon from 'images/aiExperience.svg?react';
-import { testLightspeedConnection } from 'services/DeploymentsService';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
@@ -62,16 +60,8 @@ function RiskDetailsPage(): ReactElement {
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isRiskSummaryEnabled = isFeatureFlagEnabled('ROX_LIGHTSPEED_RISK_SUMMARY');
-    const connectionTest = useRestQuery(
-        useCallback(
-            () =>
-                isRiskSummaryEnabled
-                    ? testLightspeedConnection()
-                    : Promise.resolve({ success: false, message: '' }),
-            [isRiskSummaryEnabled]
-        )
-    );
-    const isAiSummaryAvailable = isRiskSummaryEnabled && connectionTest.data?.success === true;
+    const { isAvailable } = useLightspeedStatus();
+    const isAiSummaryAvailable = isRiskSummaryEnabled && isAvailable;
     const aiRiskSummary = useAiRiskSummary(deploymentId);
     const hasAiRiskSummary = Boolean(aiRiskSummary.summary);
 

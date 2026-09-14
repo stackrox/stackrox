@@ -42,10 +42,12 @@ jobs:
       POSTGRES_VERSION: "17"
       LONGTERM_LICENSE: "unused"
       BYODB_TEST: "true"
+      # roxctl helm values pin scannerV4.disable=true unless this is set.
+      ROX_SCANNER_V4: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 150
+    timeout-minutes: 361
     steps:
 
     - name: Checkout repo
@@ -138,7 +140,7 @@ jobs:
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
-      timeout-minutes: 110
+      timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
