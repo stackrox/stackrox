@@ -20,10 +20,12 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
@@ -73,7 +75,6 @@ const (
 )
 
 var (
-	setupLog                   = ctrl.Log.WithName("setup")
 	scheme                     = runtime.NewScheme()
 	enableProfiling            = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
 	profilingThresholdFraction = env.RegisterSetting("PROFILING_THRESHOLD_FRACTION", env.WithDefault("0.8"))
@@ -113,23 +114,27 @@ func init() {
 
 func main() {
 	if err := run(); err != nil {
-		setupLog.Error(err, "fatal error")
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	var enableHTTP2 bool
+type runtimeConfig struct {
+	metricsAddr          string
+	enableLeaderElection bool
+	probeAddr            string
+	enableHTTP2          bool
+}
 
-	flag.StringVar(&metricsAddr, "metrics-bind-address", "0.0.0.0:8443", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+func run() error {
+	var config runtimeConfig
+
+	flag.StringVar(&config.metricsAddr, "metrics-bind-address", "0.0.0.0:8443", "The address the metric endpoint binds to.")
+	flag.StringVar(&config.probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.BoolVar(&config.enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableHTTP2, "enable-http2", enableHTTP2, "If HTTP/2 should be enabled for the metrics server.")
+	flag.BoolVar(&config.enableHTTP2, "enable-http2", false, "If HTTP/2 should be enabled for the metrics server.")
 
 	opts := zap.Options{
 		Development: !buildinfo.ReleaseBuild,
@@ -139,15 +144,20 @@ func run() error {
 
 	zapLogger := zap.NewRaw(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+	setupLog := ctrl.Log.WithName("setup")
 	restore, err := rawZap.RedirectStdLogAt(zapLogger, zapcore.DebugLevel)
 	if err != nil {
 		return errors.Wrap(err, "unable to redirect std log")
 	}
 	defer restore()
 
+	return runWithLogger(setupLog, config)
+}
+
+func runWithLogger(setupLog logr.Logger, config runtimeConfig) error {
 	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
-	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(enableHTTP2)
+	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(setupLog, config.enableHTTP2)
 	if err != nil {
 		return err
 	}
@@ -165,7 +175,7 @@ func run() error {
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: server.Options{
-			BindAddress:    metricsAddr,
+			BindAddress:    config.metricsAddr,
 			SecureServing:  true,
 			FilterProvider: filters.WithAuthenticationAndAuthorization,
 			TLSOpts:        tlsOpts,
@@ -183,8 +193,8 @@ func run() error {
 				},
 			},
 		},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
+		HealthProbeBindAddress: config.probeAddr,
+		LeaderElection:         config.enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
 	})
 	if err != nil {
@@ -280,7 +290,7 @@ func run() error {
 // buildMetricsServerTLSOpts reads the cluster TLS profile and returns the
 // TLS options for the Operator's metrics server along with the cluster profile
 // for later use by the watcher and operand enricher.
-func buildMetricsServerTLSOpts(enableHTTP2 bool) (*tlsprofile.ClusterTLSProfile, []func(c *tls.Config), error) {
+func buildMetricsServerTLSOpts(setupLog logr.Logger, enableHTTP2 bool) (*tlsprofile.ClusterTLSProfile, []func(c *tls.Config), error) {
 	bootstrapClient, err := ctrlClient.New(utils.GetRHACSConfigOrDie(), ctrlClient.Options{Scheme: scheme})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to create bootstrap client for TLS profile")
