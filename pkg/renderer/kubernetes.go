@@ -95,16 +95,6 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		}
 	}
 
-	c.K8sConfig.ScannerRegistry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerImage)
-	if err != nil {
-		return err
-	}
-	if c.K8sConfig.Registry != c.K8sConfig.ScannerRegistry {
-		c.K8sConfig.ScannerSecretName = "stackrox-scanner"
-	} else {
-		c.K8sConfig.ScannerSecretName = "stackrox"
-	}
-
 	if mode == renderAll {
 		if err := injectImageTags(c); err != nil {
 			return err
