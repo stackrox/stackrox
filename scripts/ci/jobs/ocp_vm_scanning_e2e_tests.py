@@ -24,7 +24,7 @@ os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
 # Leave guests up so post-test can collect roxagent journals, then
-# collect-vm-guest-logs.sh deletes the test namespaces.
+# collect-vm-guest-logs.sh --cleanup-only deletes the test namespaces.
 os.environ["VM_SCAN_SKIP_CLEANUP"] = "true"
 # Selectively enable vulnerability bundles to prevent timeouts of matcher not being ready in 40 minutes.
 # The rhel-vex bundle alone has ~3M records and can take >30 min to import.

@@ -3,10 +3,11 @@
 set -euo pipefail
 
 # collect-vm-guest-logs.sh copies roxagent journals from VM-scanning e2e guests
-# via virtctl ssh, then deletes the test namespaces. Best-effort: always exits 0.
+# via virtctl ssh. Best-effort: always exits 0.
 #
 # Usage:
 #   collect-vm-guest-logs.sh <output-dir>
+#   collect-vm-guest-logs.sh --cleanup-only
 #
 # Environment:
 #   VM_SCAN_NAMESPACE_PREFIX  default: vm-scan-e2e
@@ -22,6 +23,7 @@ source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 usage() {
     echo "./scripts/ci/collect-vm-guest-logs.sh <output-dir>"
+    echo "./scripts/ci/collect-vm-guest-logs.sh --cleanup-only"
 }
 
 vm_scan_e2e_dir() {
@@ -181,10 +183,14 @@ main() {
         exit 1
     fi
 
+    if [[ "$1" == "--cleanup-only" ]]; then
+        delete_vm_scan_namespaces
+        exit 0
+    fi
+
     local output_dir="$1"
     mkdir -p "$output_dir"
     collect_journals "$output_dir" || true
-    delete_vm_scan_namespaces
     exit 0
 }
 
