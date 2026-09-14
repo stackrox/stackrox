@@ -42,7 +42,7 @@ teardown() {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'quay.io/rhacs-eng' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io/rhacs-eng' "$any_version" 'main' 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs should use redhat.io registry and display deprecation warning" {
@@ -50,7 +50,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
   has_deprecation_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
@@ -63,21 +63,21 @@ teardown() {
   run roxctl-development helm output central-services --image-defaults=rhacs --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=development_build should use quay.io/rhacs-eng registry" {
   run roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'quay.io/rhacs-eng' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io/rhacs-eng' "$any_version" 'main' 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=opensource should use quay.io/stackrox-io registry" {
   run roxctl-development helm output central-services --image-defaults=opensource --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'quay.io/stackrox-io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io/stackrox-io' "$any_version" 'main' 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=development_build should return error about --rhacs colliding with --image-defaults" {

@@ -44,7 +44,7 @@ func TestProcessBaselines(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processBaselineHeading,
+				Name:  ProcessBaselineHeading,
 				Score: 1.6,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
@@ -66,7 +66,7 @@ func TestProcessBaselines(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processBaselineHeading,
+				Name:  ProcessBaselineHeading,
 				Score: 2.14,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
