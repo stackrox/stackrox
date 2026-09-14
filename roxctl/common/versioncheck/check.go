@@ -20,15 +20,14 @@ import (
 // versions are incompatible. The warning is emitted at most once per
 // interceptor instance.
 func UnaryClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
-	var warned atomic.Bool
+	var checked atomic.Bool
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		getHeader := headerSource(&opts)
+		// Response headers are populated after the RPC completes.
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		if !warned.Load() {
-			if vals := getHeader().Get(clientconn.CentralVersionHeader); len(vals) > 0 {
-				if checkAndWarn(vals[0], w) {
-					warned.Store(true)
-				}
+		if vals := getHeader().Get(clientconn.CentralVersionHeader); len(vals) > 0 {
+			if !checked.Swap(true) {
+				checkAndWarn(vals[0], w)
 			}
 		}
 		return err
@@ -78,15 +77,7 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	return true
 }
 
-// headerSource returns a function that, when called after the RPC completes,
-// yields the response metadata. If opts already contains a grpc.Header option
-// the existing pointer is reused; otherwise a new one is appended.
 func headerSource(opts *[]grpc.CallOption) func() metadata.MD {
-	for _, o := range *opts {
-		if h, ok := o.(grpc.HeaderCallOption); ok {
-			return func() metadata.MD { return *h.HeaderAddr }
-		}
-	}
 	var md metadata.MD
 	*opts = append(*opts, grpc.Header(&md))
 	return func() metadata.MD { return md }
