@@ -18,8 +18,7 @@ export const integrationHealthVulnDefinitionsAlias =
 export const integrationHealthDeclarativeConfigsAlias = 'declarative-config/health';
 export const credentialForCentralExpiryAlias = 'credentialexpiry?component=CENTRAL';
 export const credentialForCentralDbExpiryAlias = 'credentialexpiry?component=CENTRAL_DB';
-export const credentialForScannerExpiryAlias = 'credentialexpiry?component=SCANNER';
-
+export const credentialForScannerV4ExpiryAlias = 'credentialexpiry?component=SCANNER_V4';
 const SystemHealthHeadingSelector = 'h1:contains("System Health")';
 const routeMatcherMap = {
     'integrationhealth/imageintegrations': {
@@ -50,9 +49,9 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.credentialHealth.centralDb,
     },
-    [credentialForScannerExpiryAlias]: {
+    [credentialForScannerV4ExpiryAlias]: {
         method: 'GET',
-        url: api.credentialHealth.scanner,
+        url: api.credentialHealth.scannerV4,
     },
     externalbackups: {
         method: 'GET',

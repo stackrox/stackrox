@@ -177,8 +177,9 @@ roxie_config_from_environment_compat() {
     )
 
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
+    handle_scanner_v4_vuln_readiness "$config_file"
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -222,14 +223,18 @@ handle_pod_security_policies() {
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
 }
 
+# handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is
+# the CRD enum when V4 is on: Central uses Enabled, SecuredCluster uses AutoSense.
 handle_scanner_v4_setting() {
     local config_file="$1"
     local path="$2"
-    local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
+    local enabled_value="$3"
+    # Scanner V4 is the default scanner. Jobs that must omit it set ROX_SCANNER_V4=false.
+    local rox_scanner_v4="${ROX_SCANNER_V4:-true}"
 
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$config_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"${enabled_value}\""
             ;;
         false)
             patch_yaml "$config_file" "${path} = \"Disabled\""
@@ -238,6 +243,36 @@ handle_scanner_v4_setting() {
             die "Unsupported value for ROX_SCANNER_V4: $rox_scanner_v4"
             ;;
     esac
+}
+
+# handle_scanner_v4_vuln_readiness gates the scanner-v4-matcher pod's readiness
+# probe on the vulnerability bundle being fully loaded. The matcher's default
+# readiness is "database" (ready as soon as Postgres is reachable), so without
+# this the deployment reports ready while vulns are still importing and tests
+# would scan before any vuln data exists. Setting
+# SCANNER_V4_MATCHER_READINESS=vulnerability keeps the matcher unready until the
+# initial load completes, so the deploy step waits for it. The env vars go into
+# the Central CR's customize.envVars, which the operator propagates to
+# scanner-v4-matcher.
+handle_scanner_v4_vuln_readiness() {
+    local config_file="$1"
+
+    # Only meaningful when Scanner V4 is enabled.
+    if [[ "${ROX_SCANNER_V4:-true}" == "false" ]]; then
+        return
+    fi
+
+    # export_test_environment establishes the default (true); jobs that don't
+    # need gating (e.g. install-only) set SCANNER_V4_VULN_READINESS=false.
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        info "  gating scanner-v4-matcher readiness on vulnerability load"
+        set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_READINESS" "vulnerability"
+    fi
+
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        info "  restricting vuln bundle sources to ${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+        set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+    fi
 }
 
 handle_trusted_ca_file() {

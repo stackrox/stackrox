@@ -5,13 +5,15 @@ testRunSelector:
   matchLabels:
     openshift: "true"
 ---
-# The central CR and its operands are gone in previous step.
-# However, the SecuredCluster reconciler should notice Central disappearing and
-# create a local scanner now that the central scanner is gone.
+# The central CR and its operands are gone in the previous step.
+# However, the SecuredCluster reconciler should notice Central disappearing and keep a
+# local Scanner V4 indexer for delegated scanning now that the central scanner is gone.
+# (The indexer is the Scanner V4 component that runs on the secured-cluster side; the
+# matcher is Central-only.)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
-# We do not assert anything about the status, since - with Central gone - scanner
-# might not be able to become healthy. Even if it does, we are only interested
-# in testing that the SecuredCluster reconciler was triggered correctly here.
+  name: scanner-v4-indexer
+# We do not assert anything about the status, since - with Central gone - the indexer
+# might not be able to become healthy. Even if it does, we are only interested in testing
+# that the SecuredCluster reconciler was triggered correctly here.
