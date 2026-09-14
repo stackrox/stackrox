@@ -16,19 +16,16 @@ import (
 func writeTarball(t *testing.T, dir, tarName, entryName string, content []byte) {
 	t.Helper()
 	f, err := os.Create(filepath.Join(dir, tarName+".tar.gz"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	gz := gzip.NewWriter(f)
 	tw := tar.NewWriter(gz)
-	if err := tw.WriteHeader(&tar.Header{
+	err = tw.WriteHeader(&tar.Header{
 		Name: entryName,
 		Size: int64(len(content)),
 		Mode: 0755,
-	}); err != nil {
-		t.Fatal(err)
-	}
+	})
+	require.NoError(t, err)
 	_, err = tw.Write(content)
 	require.NoError(t, err)
 	require.NoError(t, tw.Close())
