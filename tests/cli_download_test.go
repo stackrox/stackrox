@@ -37,35 +37,36 @@ func TestCLIDownload(t *testing.T) {
 
 		for _, filename := range binaries {
 			t.Run(filename, func(t *testing.T) {
-			client := centralgrpc.HTTPClientForCentral(t)
-			client.Timeout = 2 * time.Minute
+				client := centralgrpc.HTTPClientForCentral(t)
+				client.Timeout = 2 * time.Minute
 
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			defer cancel()
+				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+				defer cancel()
 
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-				"/api/cli/download/"+filename, nil)
-			require.NoError(t, err)
-
-			resp, err := client.Do(req)
-			require.NoError(t, err)
-			t.Cleanup(func() { assert.NoError(t, resp.Body.Close()) })
-
-			require.Equal(t, http.StatusOK, resp.StatusCode)
-
-			if filename == "roxctl-linux-amd64" {
-				// Read the first 20 bytes to verify ELF magic and e_machine == EM_X86_64 (bytes 18-19).
-				const elfHeaderSize = 20
-				firstBytes := make([]byte, elfHeaderSize)
-				_, err = io.ReadFull(resp.Body, firstBytes)
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+					"/api/cli/download/"+filename, nil)
 				require.NoError(t, err)
-				assert.Equal(t, []byte(elfMagic), firstBytes[:len(elfMagic)])
-				assert.Equal(t, []byte(emX86_64), firstBytes[18:20])
-			}
-			_, err = io.Copy(io.Discard, resp.Body)
-			require.NoError(t, err)
-		})
-	}
+
+				resp, err := client.Do(req)
+				require.NoError(t, err)
+				t.Cleanup(func() { assert.NoError(t, resp.Body.Close()) })
+
+				require.Equal(t, http.StatusOK, resp.StatusCode)
+
+				if filename == "roxctl-linux-amd64" {
+					// Read the first 20 bytes to verify ELF magic and e_machine == EM_X86_64 (bytes 18-19).
+					const elfHeaderSize = 20
+					firstBytes := make([]byte, elfHeaderSize)
+					_, err = io.ReadFull(resp.Body, firstBytes)
+					require.NoError(t, err)
+					assert.Equal(t, []byte(elfMagic), firstBytes[:len(elfMagic)])
+					assert.Equal(t, []byte(emX86_64), firstBytes[18:20])
+				}
+				_, err = io.Copy(io.Discard, resp.Body)
+				require.NoError(t, err)
+			})
+		}
+	})
 
 	t.Run("nonexistent binary returns 404", func(t *testing.T) {
 		client := centralgrpc.HTTPClientForCentral(t)
