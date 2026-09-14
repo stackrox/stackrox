@@ -32,7 +32,6 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 	baseValues := getBaseMetaValues(c, imageFlavor, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
-	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
 	collector := determineCollectorImage(mainImage, collectorImage, imageFlavor)
@@ -59,15 +58,6 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 	}
 
 	return mainImageName, collectorImageName, nil
-}
-
-// deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
-func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
-	scannerRemoteSlice := strings.Split(mainImage.GetRemote(), "/")
-	if len(scannerRemoteSlice) > 0 {
-		scannerRemoteSlice[len(scannerRemoteSlice)-1] = metaValues.ScannerSlimImageRemote
-		metaValues.ScannerSlimImageRemote = strings.Join(scannerRemoteSlice, "/")
-	}
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.

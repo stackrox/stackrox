@@ -29,8 +29,6 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.CollectorRegistry)
 			assert.NotEmpty(t, metaVals.CollectorImageRemote)
 			assert.NotEmpty(t, metaVals.CollectorImageTag)
-			assert.NotEmpty(t, metaVals.ScannerImageRemote)
-			assert.NotEmpty(t, metaVals.ScannerImageTag)
 			assert.NotEmpty(t, metaVals.ScannerV4ImageRemote)
 			assert.NotEmpty(t, metaVals.ScannerV4DBImageRemote)
 			assert.NotEmpty(t, metaVals.ScannerV4ImageTag)
