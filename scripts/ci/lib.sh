@@ -1137,13 +1137,6 @@ check_rhacs_eng_image_exists() {
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
-check_scanner_version() {
-    if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
-        echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
-        exit 1
-    fi
-}
-
 check_collector_version() {
     if ! is_release_version "$(make --quiet --no-print-directory collector-tag)"; then
         echo "::error::Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
