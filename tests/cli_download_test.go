@@ -29,8 +29,10 @@ func TestCLIDownload(t *testing.T) {
 		"roxctl-darwin-arm64",
 		"roxctl-windows-amd64.exe",
 	}
-	// ELF magic bytes identify a valid Linux binary.
-	const elfMagic = "\x7fELF"
+	const (
+		elfMagic  = "\x7fELF"   // ELF magic bytes identify a valid Linux binary.
+		emX86_64  = "\x3e\x00"  // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
+	)
 
 	for _, filename := range binaries {
 		t.Run(filename, func(t *testing.T) {
@@ -51,12 +53,13 @@ func TestCLIDownload(t *testing.T) {
 			require.Equal(t, http.StatusOK, resp.StatusCode)
 
 			if filename == "roxctl-linux-amd64" {
-				// Verify the real binary starts with ELF magic, then drain the rest to confirm
-				// the full stream completes without error.
-				firstBytes := make([]byte, len(elfMagic))
+				// Read the first 20 bytes to verify ELF magic and e_machine == EM_X86_64 (bytes 18-19).
+				const elfHeaderSize = 20
+				firstBytes := make([]byte, elfHeaderSize)
 				_, err = io.ReadFull(resp.Body, firstBytes)
 				require.NoError(t, err)
-				assert.Equal(t, []byte(elfMagic), firstBytes)
+				assert.Equal(t, []byte(elfMagic), firstBytes[:len(elfMagic)])
+				assert.Equal(t, []byte(emX86_64), firstBytes[18:20])
 			}
 			_, err = io.Copy(io.Discard, resp.Body)
 			require.NoError(t, err)
