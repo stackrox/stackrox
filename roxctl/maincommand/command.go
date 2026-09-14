@@ -62,11 +62,8 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func compatibleVersionStrings() []string {
-	versions, err := versioncompatibility.CompatibleVersions()
-	if err != nil {
-		// Ignoring error because it's handled inside the function.
-		return nil
-	}
+	// Ignoring error because it's handled inside the function.
+	versions, _ := versioncompatibility.CompatibleVersions()
 	result := make([]string, 0, len(versions))
 	for _, v := range versions {
 		result = append(result, v.String())
