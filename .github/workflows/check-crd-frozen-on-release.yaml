@@ -10,8 +10,9 @@
 # When the freeze is active:
 # - For PRs targeting a release branch, we diff the release branch (target)
 #   against the PR tip.
-# - For commits pushed to a release branch, we diff the master commit from which
-#   the release branch was cut against the current commit.
+# - For commits pushed to a release branch, we diff the first release tag (X.Y.0)
+#   against the current commit, so only changes made after the first release are
+#   considered.
 #
 # See https://redhat.atlassian.net/browse/ROX-36823
 name: Check CRDs Frozen on Release Branches
@@ -115,12 +116,12 @@ jobs:
           head="$HEAD_SHA"
           echo "Comparing release branch target ($base) against PR tip ($head)"
         else
-          # Diff the master commit from which the release branch was cut against
-          # the current commit.
+          # Diff the first release tag (X.Y.0) against the current commit, so
+          # only changes made after the first release are considered.
           head="$GITHUB_SHA"
-          git fetch --no-tags --quiet origin master
-          base="$(git merge-base origin/master "$head")"
-          echo "Comparing release branch cut point from master ($base) against current commit ($head)"
+          git fetch --no-tags --quiet origin "refs/tags/${first_release_tag}:refs/tags/${first_release_tag}"
+          base="$first_release_tag"
+          echo "Comparing first release tag $base against current commit ($head)"
         fi
 
         diff="$(git diff "$base" "$head" -- "${crd_files[@]}")"
