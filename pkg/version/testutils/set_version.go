@@ -31,7 +31,6 @@ func SetExampleVersion(t *testing.T) {
 func SetVersion(t *testing.T, version version.Versions) {
 	testutils.MustBeInTest(t)
 	internal.MainVersion = version.MainVersion
-	internal.ScannerVersion = version.ScannerVersion
 	internal.CollectorVersion = version.CollectorVersion
 	internal.GitShortSha = version.GitCommit
 	internal.FactVersion = version.FactVersion
