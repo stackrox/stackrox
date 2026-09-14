@@ -1,0 +1,140 @@
+# On release branches that already shipped their first (.0) release, CRD schemas
+# must stay frozen: no changes to the platform (Central/SecuredCluster) and
+# config (SecurityPolicy) CRDs are allowed in a patch release.
+#
+# The freeze only kicks in once the first release of the branch has been tagged.
+# The tag is derived from the branch name: release-X.Y -> X.Y.0. Before X.Y.0 is
+# tagged the branch is still stabilizing toward its first release, so CRD changes
+# are still permitted and this check is skipped.
+#
+# When the freeze is active:
+# - For PRs targeting a release branch, we diff the release branch (target)
+#   against the PR tip.
+# - For commits pushed to a release branch, we diff the first release tag (X.Y.0)
+#   against the current commit, so only changes made after the first release are
+#   considered.
+#
+# See https://redhat.atlassian.net/browse/ROX-36823
+name: Check CRDs Frozen on Release Branches
+
+on:
+  push:
+    branches:
+    - release-*
+  pull_request:
+    # Only PRs whose base (target) branch is a release branch.
+    branches:
+    - release-*
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+permissions:
+  contents: read
+
+jobs:
+  check-crds-frozen:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout stackrox/stackrox
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        # Full history so we can compute the point from which the release branch
+        # (or the PR) diverged.
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    - name: Ensure CRD schemas are unchanged
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Determine the release branch this event concerns.
+        if [[ "$EVENT_NAME" == "pull_request" ]]; then
+          branch="$BASE_REF"
+        else
+          branch="$GITHUB_REF_NAME"
+        fi
+
+        # Derive the first release tag from the branch name: release-X.Y -> X.Y.0.
+        # Anything that is not a plain release-X.Y branch (e.g. a scanner branch)
+        # is out of scope for this check.
+        if [[ ! "$branch" =~ ^release-([0-9]+)\.([0-9]+)$ ]]; then
+          echo "Branch '$branch' is not a standard release-X.Y branch; skipping CRD freeze check."
+          exit 0
+        fi
+        first_release_tag="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.0"
+
+        # Only freeze CRDs for patch releases, i.e. once the first (.0) release of
+        # this branch has been tagged. Before that the branch is still
+        # stabilizing and CRD changes are allowed.
+        #
+        # `git ls-remote --exit-code` distinguishes its outcomes: 0 = the tag
+        # exists, 2 = the tag is definitively absent, any other code = a
+        # transport/other error. We must not treat a transient network failure as
+        # "not tagged" (that would silently disable the freeze), so we retry and
+        # fail closed if we cannot get an authoritative answer.
+        tag_ref="refs/tags/${first_release_tag}"
+        rc=0
+        for attempt in 1 2 3; do
+          rc=0
+          git ls-remote --exit-code --tags origin "$tag_ref" >/dev/null 2>&1 || rc=$?
+          if [[ "$rc" -eq 0 || "$rc" -eq 2 ]]; then
+            break
+          fi
+          echo "git ls-remote for '${tag_ref}' failed (exit $rc); retry ${attempt}/3..." >&2
+          sleep 5
+        done
+
+        case "$rc" in
+          0)
+            echo "First release '${first_release_tag}' is tagged; enforcing CRD freeze for patch releases."
+            ;;
+          2)
+            echo "First release '${first_release_tag}' is not tagged yet; branch is still stabilizing. CRD changes are allowed."
+            exit 0
+            ;;
+          *)
+            echo "::error::Could not determine whether '${first_release_tag}' is tagged (git ls-remote exit $rc). Failing closed."
+            exit 1
+            ;;
+        esac
+
+        # Platform and config CRD manifests that must remain frozen on release
+        # branches.
+        crd_files=(
+          operator/config/crd/bases/platform.stackrox.io_centrals.yaml
+          operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml
+          config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+        )
+
+        if [[ "$EVENT_NAME" == "pull_request" ]]; then
+          # Diff the release branch (target) against the PR tip.
+          base="$BASE_SHA"
+          head="$HEAD_SHA"
+          echo "Comparing release branch target ($base) against PR tip ($head)"
+        else
+          # Diff the first release tag (X.Y.0) against the current commit, so
+          # only changes made after the first release are considered.
+          head="$GITHUB_SHA"
+          git fetch --no-tags --quiet origin "refs/tags/${first_release_tag}:refs/tags/${first_release_tag}"
+          base="$first_release_tag"
+          echo "Comparing first release tag $base against current commit ($head)"
+        fi
+
+        diff="$(git diff "$base" "$head" -- "${crd_files[@]}")"
+
+        if [[ -n "$diff" ]]; then
+          echo "::error::CRD schema changes are not allowed on release branches (ROX-36823)."
+          echo "The following platform/config CRD changes were detected:"
+          echo "$diff"
+          exit 1
+        fi
+
+        echo "No platform/config CRD schema changes detected. CRDs are frozen. ✅"

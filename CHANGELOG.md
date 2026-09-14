@@ -25,10 +25,12 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
 
 - Compliance container no longer collects Scanner V2 node inventories. Node scanning continues via Scanner V4 index reports, as long as Scanner V4 is enabled.
+- ROX-36654: Removed legacy scanner (StackRox Scanner) across all installation methods.
 
 ### Deprecated Features
 
