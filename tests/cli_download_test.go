@@ -16,26 +16,27 @@ import (
 )
 
 func TestCLIDownload(t *testing.T) {
-	// Magic bytes are only checked for linux-amd64 because PR CI
-	// produces a real roxctl binary only for the runner arch (amd64).
-	// Other platforms get stub files unless the `ci-build-cli`` label is set on the PR.
-	// See .github/workflows/build.yaml "Create CLI stub files" step for details.
-	binaries := []string{
-		"roxctl-linux-amd64",
-		"roxctl-linux-arm64",
-		"roxctl-linux-ppc64le",
-		"roxctl-linux-s390x",
-		"roxctl-darwin-amd64",
-		"roxctl-darwin-arm64",
-		"roxctl-windows-amd64.exe",
-	}
-	const (
-		elfMagic = "\x7fELF"  // ELF magic bytes identify a valid Linux binary.
-		emX86_64 = "\x3e\x00" // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
-	)
+	t.Run("all platform binaries are downloadable", func(t *testing.T) {
+		// Magic bytes are only checked for linux-amd64 because PR CI
+		// produces a real roxctl binary only for the runner arch (amd64).
+		// Other platforms get stub files unless the ci-build-cli label is set on the PR.
+		// See .github/workflows/build.yaml "Create CLI stub files" step for details.
+		binaries := []string{
+			"roxctl-linux-amd64",
+			"roxctl-linux-arm64",
+			"roxctl-linux-ppc64le",
+			"roxctl-linux-s390x",
+			"roxctl-darwin-amd64",
+			"roxctl-darwin-arm64",
+			"roxctl-windows-amd64.exe",
+		}
+		const (
+			elfMagic = "\x7fELF"  // ELF magic bytes identify a valid Linux binary.
+			emX86_64 = "\x3e\x00" // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
+		)
 
-	for _, filename := range binaries {
-		t.Run(filename, func(t *testing.T) {
+		for _, filename := range binaries {
+			t.Run(filename, func(t *testing.T) {
 			client := centralgrpc.HTTPClientForCentral(t)
 			client.Timeout = 2 * time.Minute
 
