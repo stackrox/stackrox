@@ -1,0 +1,76 @@
+# On release branches, CRD schemas must stay frozen: no changes to the platform
+# (Central/SecuredCluster) and config (SecurityPolicy) CRDs are allowed.
+#
+# - For PRs targeting a release branch, we diff the release branch (target)
+#   against the PR tip.
+# - For commits pushed to a release branch, we diff the master commit from which
+#   the release branch was cut against the current commit.
+#
+# See https://redhat.atlassian.net/browse/ROX-36823
+name: Check CRDs Frozen on Release Branches
+
+on:
+  push:
+    branches:
+    - release-*
+  pull_request:
+    # Only PRs whose base (target) branch is a release branch.
+    branches:
+    - release-*
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  check-crds-frozen:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout stackrox/stackrox
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        # Full history so we can compute the point from which the release branch
+        # (or the PR) diverged.
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    - name: Ensure CRD schemas are unchanged
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        set -euo pipefail
+
+        # Platform and config CRD manifests that must remain frozen on release
+        # branches.
+        crd_files=(
+          operator/config/crd/bases/platform.stackrox.io_centrals.yaml
+          operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml
+          config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+        )
+
+        if [[ "$EVENT_NAME" == "pull_request" ]]; then
+          # Diff the release branch (target) against the PR tip.
+          base="$BASE_SHA"
+          head="$HEAD_SHA"
+          echo "Comparing release branch target ($base) against PR tip ($head)"
+        else
+          # Diff the master commit from which the release branch was cut against
+          # the current commit.
+          head="$GITHUB_SHA"
+          git fetch --no-tags --quiet origin master
+          base="$(git merge-base origin/master "$head")"
+          echo "Comparing release branch cut point from master ($base) against current commit ($head)"
+        fi
+
+        diff="$(git diff "$base" "$head" -- "${crd_files[@]}")"
+
+        if [[ -n "$diff" ]]; then
+          echo "::error::CRD schema changes are not allowed on release branches (ROX-36823)."
+          echo "The following platform/config CRD changes were detected:"
+          echo "$diff"
+          exit 1
+        fi
+
+        echo "No platform/config CRD schema changes detected. CRDs are frozen. ✅"
