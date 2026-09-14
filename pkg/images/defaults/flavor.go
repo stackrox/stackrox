@@ -84,7 +84,7 @@ type ImageFlavor struct {
 	FactImageTag  string
 
 	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
-	ScannerImageTag        string
+	ScannerImageTag        string // todo: remove this
 	ScannerImageName       string
 	ScannerSlimImageName   string
 	ScannerDBImageName     string
@@ -125,7 +125,6 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 
@@ -165,7 +164,6 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 
 		ScannerImageName:       "rhacs-scanner-rhel9",
 		ScannerSlimImageName:   "rhacs-scanner-slim-rhel9",
-		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "rhacs-scanner-db-rhel9",
 		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel9",
 
@@ -214,7 +212,6 @@ func OpenSourceImageFlavor() ImageFlavor {
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 
