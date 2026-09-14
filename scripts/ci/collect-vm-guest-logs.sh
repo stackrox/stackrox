@@ -45,6 +45,16 @@ resolve_virtctl() {
         printf '%s\n' "$persisted"
         return 0
     fi
+    local pointed
+    pointed="$(vm_scan_e2e_dir)/virtctl-path"
+    if [[ -f "$pointed" ]]; then
+        local src
+        src="$(<"$pointed")"
+        if [[ -n "$src" && -x "$src" ]]; then
+            printf '%s\n' "$src"
+            return 0
+        fi
+    fi
     command -v virtctl
 }
 
@@ -64,22 +74,45 @@ resolve_ssh_identity() {
 
 list_vm_scan_namespaces() {
     local prefix="${VM_SCAN_NAMESPACE_PREFIX:-vm-scan-e2e}"
-    kubectl --request-timeout=30s get ns -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
-        | grep -E "^${prefix}(-|$)" || true
+    local out err
+    out="$(mktemp)"
+    err="$(mktemp)"
+    if ! kubectl --request-timeout=30s get ns \
+        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
+        > "$out" 2>"$err"; then
+        info "kubectl get ns failed: $(<"$err")" >&2
+        rm -f "$out" "$err"
+        return 1
+    fi
+    rm -f "$err"
+    grep -E "^${prefix}(-|$)" "$out" || true
+    rm -f "$out"
+    return 0
 }
 
 # list_vm_scan_vmis prints "namespace name" lines for VMIs in vm-scan-e2e namespaces.
+# Returns 1 when kubectl cannot list VMIs (distinct from zero matches).
 list_vm_scan_vmis() {
     local prefix="${VM_SCAN_NAMESPACE_PREFIX:-vm-scan-e2e}"
-    local ns name
+    local out err ns name
+    out="$(mktemp)"
+    err="$(mktemp)"
+    if ! kubectl --request-timeout=30s get vmi -A \
+        -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' \
+        > "$out" 2>"$err"; then
+        info "kubectl get vmi failed: $(<"$err")" >&2
+        rm -f "$out" "$err"
+        return 1
+    fi
+    rm -f "$err"
     while read -r ns name; do
         [[ -z "$ns" || -z "$name" ]] && continue
         if [[ "$ns" == "$prefix" || "$ns" == "${prefix}-"* ]]; then
             printf '%s %s\n' "$ns" "$name"
         fi
-    done < <(kubectl --request-timeout=30s get vmi -A \
-        -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' \
-        2>/dev/null || true)
+    done < "$out"
+    rm -f "$out"
+    return 0
 }
 
 run_with_timeout() {
@@ -129,14 +162,21 @@ collect_roxagent_journal() {
 }
 
 delete_vm_scan_namespaces() {
-    local ns
+    local ns ns_list
     info ">>> Cleaning up VM scan e2e namespaces <<<"
+    ns_list="$(mktemp)"
+    if ! list_vm_scan_namespaces > "$ns_list"; then
+        info "Skipping namespace delete: kubectl get ns failed"
+        rm -f "$ns_list"
+        return 0
+    fi
     while IFS= read -r ns; do
         [[ -z "$ns" ]] && continue
         info "Deleting namespace ${ns}"
         kubectl delete namespace "$ns" --wait=false --request-timeout=60s 2>&1 || \
             info "Namespace delete for ${ns} failed or already removed"
-    done < <(list_vm_scan_namespaces)
+    done < "$ns_list"
+    rm -f "$ns_list"
 }
 
 collect_journals() {
@@ -148,14 +188,27 @@ collect_journals() {
 
     if [[ -n "$virtctl_bin" && -n "$identity" ]]; then
         info ">>> Collecting roxagent journals into ${output_dir} <<<"
-        local vmi_count=0 ns vmi out_file
+        local vmi_count=0 ns vmi out_file vmi_list list_err
+        vmi_list="$(mktemp)"
+        list_err="$(mktemp)"
+        if ! list_vm_scan_vmis > "$vmi_list" 2>"$list_err"; then
+            info "Failed to list VMIs; writing collection-failed.txt"
+            {
+                echo "kubectl get vmi failed (not an empty match)"
+                cat "$list_err"
+            } > "${output_dir}/collection-failed.txt"
+            rm -f "$vmi_list" "$list_err"
+            return 0
+        fi
+        rm -f "$list_err"
         while read -r ns vmi; do
             [[ -z "$ns" || -z "$vmi" ]] && continue
             vmi_count=$((vmi_count + 1))
             out_file="${output_dir}/${ns}_${vmi}_roxagent.journal.log"
             info "Collecting roxagent journal for ${ns}/${vmi} -> ${out_file}"
             collect_roxagent_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" || true
-        done < <(list_vm_scan_vmis)
+        done < "$vmi_list"
+        rm -f "$vmi_list"
 
         if [[ "$vmi_count" -eq 0 ]]; then
             info "No VMIs found in VM scan namespaces"
