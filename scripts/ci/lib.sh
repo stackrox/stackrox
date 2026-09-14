@@ -554,19 +554,12 @@ push_matching_collector_scanner_images() {
 
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
-    local scanner_version
-    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
     local fact_version
     fact_version="$(make --quiet --no-print-directory fact-tag)"
 
     registry_rw_login "${registry}"
-
-    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}"
-    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}"
-    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}"
-    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}"
 
