@@ -154,7 +154,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
-	if s.scannerClientSingleton() == nil {
+	scannerClient := s.scannerClientSingleton()
+	if scannerClient == nil {
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
@@ -197,7 +198,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	// Only proceed if metadata was fetched successfully
 	if errorList.Empty() {
 		// Perform partial scan (image analysis / identify components) via local scanner.
-		scannerResp = s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
+		scannerResp = s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage, scannerClient)
 
 		// Fetch signatures associated with image from registry. Do this even if the scan above failed, because that
 		// doesn't necessarily mean signatures cannot be fetched
@@ -413,9 +414,9 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 }
 
 // fetchImageAnalysis analyzes an image via the local scanner.
-func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerclient.ImageAnalysis {
+func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image, scannerClient scannerclient.ScannerClient) *scannerclient.ImageAnalysis {
 	// Scan the image via local scanner.
-	scannerResp, err := s.scanImg(ctx, image, registry, s.scannerClientSingleton())
+	scannerResp, err := s.scanImg(ctx, image, registry, scannerClient)
 	if err != nil {
 		log.Debugf("Scan for image %q with id %v failed: %v", image.GetName().GetFullName(), image.GetId(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
