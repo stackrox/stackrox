@@ -30,6 +30,9 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  contents: read
+
 jobs:
   check-crds-frozen:
     runs-on: ubuntu-latest
@@ -48,6 +51,7 @@ jobs:
         BASE_REF: ${{ github.event.pull_request.base.ref }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      shell: bash
       run: |
         set -euo pipefail
 
