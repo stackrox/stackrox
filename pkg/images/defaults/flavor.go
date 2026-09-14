@@ -83,13 +83,6 @@ type ImageFlavor struct {
 	FactImageName string
 	FactImageTag  string
 
-	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
-	ScannerImageTag        string // todo: remove this
-	ScannerImageName       string // todo: remove this
-	ScannerSlimImageName   string // todo: remove this
-	ScannerDBImageName     string // todo: remove this
-	ScannerDBSlimImageName string // todo: remove this
-
 	// ScannerV4ImageTag is used for all scanner-v4* images (scanner-v4, scanner-v4-db)
 	ScannerV4ImageTag    string
 	ScannerV4ImageName   string
@@ -122,11 +115,6 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		FactRegistry:  "quay.io/rhacs-eng",
 		FactImageName: "fact",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ScannerV4ImageName:   "scanner-v4",
 		ScannerV4DBImageName: "scanner-v4-db",
@@ -161,11 +149,6 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		FactRegistry:  "registry.redhat.io/advanced-cluster-security",
 		FactImageName: "rhacs-fact-rhel9",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "rhacs-scanner-rhel9",
-		ScannerSlimImageName:   "rhacs-scanner-slim-rhel9",
-		ScannerDBImageName:     "rhacs-scanner-db-rhel9",
-		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel9",
 
 		ScannerV4ImageName:   "rhacs-scanner-v4-rhel9",
 		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel9",
@@ -209,11 +192,6 @@ func OpenSourceImageFlavor() ImageFlavor {
 		FactRegistry:  "quay.io/stackrox-io",
 		FactImageName: "fact",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ScannerV4ImageName:   "scanner-v4",
 		ScannerV4DBImageName: "scanner-v4-db",

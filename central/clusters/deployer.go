@@ -151,8 +151,6 @@ func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, ch
 		FactImageTag:    versions.FactVersion,
 		FactImageRemote: imageFlavor.FactImageName,
 
-		ScannerSlimImageRemote: imageFlavor.ScannerSlimImageName,
-
 		KubectlOutput: true,
 
 		Versions: versions,
