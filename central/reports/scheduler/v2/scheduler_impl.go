@@ -353,7 +353,7 @@ func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (b
 }
 
 func (s *scheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error) {
-	return s.doesUserHavePendingReport(reportConfig.GetId(), user.GetId(),
+	return s.doesUserHavePendingReport(s.ctx, reportConfig.GetId(), user.GetId(),
 		storage.ReportSnapshot_ReportType(reportConfig.GetType()))
 }
 
@@ -637,7 +637,7 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 		reportType := snapshot.GetType()
 
 		if requestType == storage.ReportStatus_ON_DEMAND {
-			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId(), reportType)
+			userHasAnotherReport, err := s.doesUserHavePendingReport(ctx, snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId(), reportType)
 			if err != nil {
 				return "", err
 			}
@@ -648,7 +648,7 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 		}
 
 		if requestType == storage.ReportStatus_VIEW_BASED {
-			userHasAnotherReport, err := s.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId(), reportType)
+			userHasAnotherReport, err := s.doesUserHaveViewBasedPendingReport(ctx, snapshot.GetRequester().GetId(), reportType)
 			if err != nil {
 				return "", err
 			}
@@ -675,28 +675,28 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	return snapshot.GetReportId(), nil
 }
 
-func (s *scheduler) doesUserHaveViewBasedPendingReport(userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
+func (s *scheduler) doesUserHaveViewBasedPendingReport(ctx context.Context, userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
 		AddExactMatches(search.UserID, userID).
 		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.Count(sac.WithAllAccess(s.ctx), query)
+	runningReports, err := s.reportSnapshotStore.Count(sac.WithAllAccess(ctx), query)
 	if err != nil {
 		return false, err
 	}
 	return runningReports > 0, nil
 }
 
-func (s *scheduler) doesUserHavePendingReport(configID string, userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
+func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID string, userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
 		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(sac.WithAllAccess(s.ctx), query)
+	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(sac.WithAllAccess(ctx), query)
 	if err != nil {
 		return false, err
 	}
