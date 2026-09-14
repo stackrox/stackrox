@@ -20,7 +20,7 @@ func TestCLIDownload(t *testing.T) {
 	// produces a real roxctl binary only for the runner arch (amd64).
 	// Other platforms get stub files unless the `ci-build-cli`` label is set on the PR.
 	// See .github/workflows/build.yaml "Create CLI stub files" step for details.
-	const binaries := []string{
+	binaries := []string{
 		"roxctl-linux-amd64",
 		"roxctl-linux-arm64",
 		"roxctl-linux-ppc64le",
@@ -30,8 +30,8 @@ func TestCLIDownload(t *testing.T) {
 		"roxctl-windows-amd64.exe",
 	}
 	const (
-		elfMagic  = "\x7fELF"   // ELF magic bytes identify a valid Linux binary.
-		emX86_64  = "\x3e\x00"  // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
+		elfMagic = "\x7fELF"  // ELF magic bytes identify a valid Linux binary.
+		emX86_64 = "\x3e\x00" // EM_X86_64 machine type, little-endian, at ELF header bytes 18-19.
 	)
 
 	for _, filename := range binaries {
