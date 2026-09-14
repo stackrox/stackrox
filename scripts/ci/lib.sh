@@ -1022,8 +1022,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 END
@@ -1052,8 +1050,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
@@ -1068,8 +1064,6 @@ release-main ${operator_controller_tag}
 release-central-db ${operator_controller_tag}
 release-collector ${operator_controller_tag}
 release-fact ${operator_controller_tag}
-release-scanner ${operator_controller_tag}
-release-scanner-db ${operator_controller_tag}
 release-scanner-v4 ${operator_controller_tag}
 release-scanner-v4-db ${operator_controller_tag}
 release-roxctl ${operator_controller_tag}
@@ -1082,8 +1076,6 @@ main ${tag}
 central-db ${tag}
 collector ${tag}
 fact ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
