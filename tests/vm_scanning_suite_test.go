@@ -200,9 +200,9 @@ func (s *VMScanningSuite) TearDownSuite() {
 		defer s.cancel()
 	}
 
-	// When VM_SCAN_SKIP_CLEANUP is set, leave VMs and the namespace intact so a
-	// developer can SSH into the guests or inspect cluster state after a failure
-	// without having to re-provision from scratch.
+	// When VM_SCAN_SKIP_CLEANUP is set, skip VM/namespace deletion here so CI
+	// post-test can collect guest journals first; local runs use this to debug
+	// without re-provisioning.
 	if s.cfg != nil && s.cfg.SkipCleanup {
 		s.logf("teardown: VM_SCAN_SKIP_CLEANUP is set — skipping VM and namespace deletion (VMs and namespace left intact for debugging)")
 		s.closeConn()
