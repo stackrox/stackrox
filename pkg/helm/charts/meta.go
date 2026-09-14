@@ -20,11 +20,11 @@ type MetaValues struct {
 	FactRegistry                     string
 	FactImageRemote                  string
 	FactImageTag                     string
-	ScannerImageRemote               string
-	ScannerSlimImageRemote           string
+	ScannerImageRemote               string // todo: remove this
+	ScannerSlimImageRemote           string // todo: remove this
 	ScannerImageTag                  string // todo: remove this
-	ScannerDBImageRemote             string
-	ScannerDBSlimImageRemote         string
+	ScannerDBImageRemote             string // todo: remove this
+	ScannerDBSlimImageRemote         string // todo: remove this
 	ScannerV4ImageRemote             string
 	ScannerV4DBImageRemote           string
 	ScannerV4ImageTag                string
