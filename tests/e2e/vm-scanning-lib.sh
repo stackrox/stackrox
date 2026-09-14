@@ -278,6 +278,23 @@ vm_scan_e2e_dir() {
     printf '%s\n' "${VM_SCAN_E2E_DIR:-/tmp/vm-scan-e2e}"
 }
 
+# export_vm_scan_public_key fills VM_SSH_PUBLIC_KEY from identity when unset.
+# LoadVMScanConfig requires both halves of the keypair.
+export_vm_scan_public_key() {
+    local identity="$1"
+    if [[ -n "${VM_SSH_PUBLIC_KEY:-}" ]]; then
+        return 0
+    fi
+    if [[ -f "${identity}.pub" ]]; then
+        VM_SSH_PUBLIC_KEY="$(<"${identity}.pub")"
+        export VM_SSH_PUBLIC_KEY
+        return 0
+    fi
+    VM_SSH_PUBLIC_KEY="$(ssh-keygen -y -f "$identity")"
+    printf '%s\n' "$VM_SSH_PUBLIC_KEY" > "${identity}.pub"
+    export VM_SSH_PUBLIC_KEY
+}
+
 # ensure_vm_scan_ssh_identity writes or reuses an SSH key under vm_scan_e2e_dir
 # so the Go suite and post-test guest log collection share the same identity.
 ensure_vm_scan_ssh_identity() {
@@ -290,6 +307,7 @@ ensure_vm_scan_ssh_identity() {
         printf '%s\n' "${VM_SSH_PRIVATE_KEY}" > "$identity"
         chmod 600 "$identity"
         export VM_SSH_PRIVATE_KEY_PATH="$identity"
+        export_vm_scan_public_key "$identity"
         return 0
     fi
 
@@ -297,10 +315,7 @@ ensure_vm_scan_ssh_identity() {
         export VM_SSH_PRIVATE_KEY_PATH="$identity"
         VM_SSH_PRIVATE_KEY="$(<"$identity")"
         export VM_SSH_PRIVATE_KEY
-        if [[ -f "${identity}.pub" ]]; then
-            VM_SSH_PUBLIC_KEY="$(<"${identity}.pub")"
-            export VM_SSH_PUBLIC_KEY
-        fi
+        export_vm_scan_public_key "$identity"
         return 0
     fi
 

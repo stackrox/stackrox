@@ -152,7 +152,7 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         collect_collector_metrics=True,
@@ -238,8 +238,9 @@ class PostClusterTest(StoreArtifacts):
         self.data_to_store.append(self.service_logs_destination)
 
     def collect_vm_guest_logs(self):
-        # Per-VM virtctl ssh is capped in the script; this bound covers a
-        # handful of guests plus namespace delete --wait=false.
+        # Per-VM virtctl ssh is capped in the script. Cleanup is a second
+        # process because a collect timeout SIGKILLs the first before it can
+        # delete namespaces.
         self.run_with_best_effort(
             [
                 "scripts/ci/collect-vm-guest-logs.sh",
@@ -248,6 +249,10 @@ class PostClusterTest(StoreArtifacts):
             timeout=10 * 60,
         )
         self.data_to_store.append(self.VM_GUEST_LOG_DIR)
+        self.run_with_best_effort(
+            ["scripts/ci/collect-vm-guest-logs.sh", "--cleanup-only"],
+            timeout=60,
+        )
 
     def collect_collector_metrics(self):
         self.run_with_best_effort(
