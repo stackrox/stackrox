@@ -25,6 +25,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
 

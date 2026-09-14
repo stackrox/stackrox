@@ -126,7 +126,7 @@ spec:
         path: central.telemetry.storage.endpoint
       - description: |-
           If set to true, pruning and reporting jobs run in a separate Deployment.
-          The default is: false.
+          The default is: true.
         displayName: Enabled
         path: centralWorker.enabled
       - description: |-
