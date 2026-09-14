@@ -59,8 +59,8 @@ func (h *HostPathPersistenceInstance) WithNodeSelector() bool {
 type CommonConfig struct {
 	MainImage        string
 	CentralDBImage   string
-	ScannerImage     string
-	ScannerDBImage   string
+	ScannerImage     string // todo: remove this
+	ScannerDBImage   string // todo: remove this
 	ScannerV4Image   string
 	ScannerV4DBImage string
 }
