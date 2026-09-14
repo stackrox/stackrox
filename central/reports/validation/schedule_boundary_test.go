@@ -10,8 +10,8 @@ import (
 
 func TestValidateScheduleRejectsInvalidBoundsAndIntervals(t *testing.T) {
 	tests := map[string]*apiV2.ReportSchedule{
-		"negative hour": {IntervalType: apiV2.ReportSchedule_DAILY, Hour: -1},
-		"hour 24":       {IntervalType: apiV2.ReportSchedule_DAILY, Hour: 24},
+		"negative hour":   {IntervalType: apiV2.ReportSchedule_DAILY, Hour: -1},
+		"hour 24":         {IntervalType: apiV2.ReportSchedule_DAILY, Hour: 24},
 		"negative minute": {IntervalType: apiV2.ReportSchedule_DAILY, Minute: -1},
 		"minute 60":       {IntervalType: apiV2.ReportSchedule_DAILY, Minute: 60},
 		"unknown interval": {
