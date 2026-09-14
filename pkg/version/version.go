@@ -51,11 +51,7 @@ type Versions struct {
 	GoVersion        string `json:"GoVersion"`
 	MainVersion      string `json:"MainVersion"`
 	Platform         string `json:"Platform"`
-	// ScannerVersion is exported for compatibility with users that depend on `roxctl version --json` output.
-	// Please do not depend on it. Rely on internal.ScannerVersion if you need the value from the SCANNER_VERSION file,
-	// or rely on defaults.ImageFlavor if you need a default collector image tag.
-	ScannerVersion string `json:"ScannerVersion"` // todo: delete this
-	ChartVersion   string `json:"ChartVersion"`
+	ChartVersion     string `json:"ChartVersion"`
 	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
 	Database              string `json:"Database,omitempty"`
 	DatabaseServerVersion string `json:"DatabaseServerVersion,omitempty"`
@@ -81,7 +77,6 @@ func GetAllVersionsDevelopment() Versions {
 func GetAllVersionsUnified() Versions {
 	v := GetAllVersionsDevelopment()
 	v.CollectorVersion = GetMainVersion()
-	v.ScannerVersion = GetMainVersion()
 	return v
 }
 

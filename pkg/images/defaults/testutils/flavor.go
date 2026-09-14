@@ -42,7 +42,6 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		Versions: version.Versions{
 			CollectorVersion: "3.2.1",
 			MainVersion:      "1.2.3",
-			ScannerVersion:   "2.2.2",
 			ChartVersion:     "1.23.4",
 			FactVersion:      "0.1.0",
 		},

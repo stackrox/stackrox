@@ -22,7 +22,7 @@ type MetaValues struct {
 	FactImageTag                     string
 	ScannerImageRemote               string
 	ScannerSlimImageRemote           string
-	ScannerImageTag                  string
+	ScannerImageTag                  string // todo: remove this
 	ScannerDBImageRemote             string
 	ScannerDBSlimImageRemote         string
 	ScannerV4ImageRemote             string

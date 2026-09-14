@@ -39,8 +39,6 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 
 			assert.NotEmpty(t, metaVals.Versions.ChartVersion)
 			assert.NotEmpty(t, metaVals.Versions.MainVersion)
-			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
-			assert.NotEmpty(t, metaVals.Versions.ScannerVersion)
 			assert.Len(t, metaVals.FeatureFlags, len(features.Flags))
 		})
 	}

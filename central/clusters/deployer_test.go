@@ -338,7 +338,6 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NotEmpty(t, fields.Versions.ChartVersion)
 	assert.NotEmpty(t, fields.Versions.MainVersion)
 	assert.NotEmpty(t, fields.Versions.CollectorVersion)
-	assert.NotEmpty(t, fields.Versions.ScannerVersion)
 
 	assert.NotEmpty(t, fields.ChartRepo.URL)
 }
