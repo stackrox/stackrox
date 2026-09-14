@@ -58,6 +58,10 @@ func TestCheckAndWarn(t *testing.T) {
 			localVersion:   "4.8.0",
 			centralVersion: "invalid",
 		},
+		"invalid local version": {
+			localVersion:   "invalid",
+			centralVersion: "4.10.1",
+		},
 	}
 
 	for name, tc := range cases {
@@ -159,6 +163,40 @@ func TestUnaryClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	assert.Empty(t, buf.String(), "warning should not be emitted a second time")
 }
 
+func TestUnaryClientInterceptor_DoesNotShadowCallerHeader(t *testing.T) {
+	testutils.SetMainVersion(t, "4.8.0")
+
+	// A second client interceptor that also appends grpc.Header internally,
+	// captures a header value, and stores it for assertion.
+	var captured string
+	otherClientInterceptor := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		var md metadata.MD
+		opts = append(opts, grpc.Header(&md))
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		if vals := md.Get(clientconn.CentralVersionHeader); len(vals) > 0 {
+			captured = vals[0]
+		}
+		return err
+	}
+
+	var buf bytes.Buffer
+	conn := setupServer(t,
+		[]grpc.UnaryServerInterceptor{
+			injectIdentityInterceptor(t),
+			fakeVersionHeaderInterceptor("4.2.0"),
+		},
+		// Two client interceptors, both appending their own grpc.Header.
+		[]grpc.UnaryClientInterceptor{UnaryClientInterceptor(&buf), otherClientInterceptor},
+	)
+
+	client := v1.NewMetadataServiceClient(conn)
+	_, err := client.GetMetadata(context.Background(), &v1.Empty{})
+	require.NoError(t, err)
+
+	assert.Contains(t, buf.String(), "too new", "first interceptor must receive the header")
+	assert.Equal(t, "4.2.0", captured, "second interceptor must also receive the header")
+}
+
 // --- helpers and mocks ---
 
 type fakeIdentity struct {
@@ -203,8 +241,12 @@ func injectIdentityInterceptor(t testing.TB) grpc.UnaryServerInterceptor {
 }
 
 func fakeVersionHeaderInterceptor(centralVersion string) grpc.UnaryServerInterceptor {
+	return fakeHeaderInterceptor(clientconn.CentralVersionHeader, centralVersion)
+}
+
+func fakeHeaderInterceptor(key, value string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		_ = grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion))
+		_ = grpc.SetHeader(ctx, metadata.Pairs(key, value))
 		return handler(ctx, req)
 	}
 }
