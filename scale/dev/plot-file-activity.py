@@ -9,6 +9,7 @@ and generates comparison plots for CPU, memory, and database table sizes.
 import matplotlib.pyplot as plt
 import sys
 import os
+from plot_utils import determine_baseline_timestamp
 
 def read_file(file_path, base_time=None):
     """
@@ -56,7 +57,8 @@ def read_file(file_path, base_time=None):
 
     return rel_time, values
 
-def plot_data(file1, label1, file2, label2, title, ylabel, base_time1=None, base_time2=None, output_file=None):
+def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, results_dir2=None,
+              component=None, base_time1=None, base_time2=None, output_file=None):
     """
     Plot comparison of two metric files.
 
@@ -67,10 +69,24 @@ def plot_data(file1, label1, file2, label2, title, ylabel, base_time1=None, base
         label2: Label for second dataset
         title: Plot title
         ylabel: Y-axis label
-        base_time1: Optional baseline timestamp for first dataset
-        base_time2: Optional baseline timestamp for second dataset
+        results_dir1: Directory containing first result set (for component-specific baseline)
+        results_dir2: Directory containing second result set (for component-specific baseline)
+        component: Component name for determining baseline (e.g., 'sensor', 'central', 'central-db')
+        base_time1: Optional baseline timestamp for first dataset (legacy, overrides component-based)
+        base_time2: Optional baseline timestamp for second dataset (legacy, overrides component-based)
         output_file: Output PNG file path
     """
+    # Determine baselines using component-specific logic if component is provided
+    if component and results_dir1 and (base_time1 is None or base_time1 == ''):
+        base_time1 = determine_baseline_timestamp(results_dir1, component)
+        if base_time1:
+            print(f"  Using component-specific baseline for {component} (dir1): t=0 at {base_time1}ms")
+
+    if component and results_dir2 and (base_time2 is None or base_time2 == ''):
+        base_time2 = determine_baseline_timestamp(results_dir2, component)
+        if base_time2:
+            print(f"  Using component-specific baseline for {component} (dir2): t=0 at {base_time2}ms")
+
     x1, y1 = read_file(file1, base_time1)
     x2, y2 = read_file(file2, base_time2)
 
@@ -98,13 +114,16 @@ def plot_data(file1, label1, file2, label2, title, ylabel, base_time1=None, base
 
 if __name__ == "__main__":
     if len(sys.argv) < 7:
-        print("Usage: python plot-file-activity.py <file1> <label1> <file2> <label2> <title> <y_label> [base_time1] [base_time2] [output_png]")
-        print("\nExample:")
+        print("Usage: python plot-file-activity.py <file1> <label1> <file2> <label2> <title> <y_label> [results_dir1] [results_dir2] [component] [output_png]")
+        print("\nExample (with component-specific baselines):")
         print("  python plot-file-activity.py \\")
         print("    results1/metrics_central_cpu.txt 'Without Policy' \\")
         print("    results2/metrics_central_cpu.txt 'With Policy' \\")
         print("    'Central CPU Usage' 'CPU Cores' \\")
+        print("    results1 results2 central \\")
         print("    output.png")
+        print("\nLegacy usage (with explicit base times):")
+        print("  python plot-file-activity.py <file1> <label1> <file2> <label2> <title> <y_label> <base_time1> <base_time2> <output_png>")
         sys.exit(1)
 
     file1 = sys.argv[1]
@@ -114,9 +133,29 @@ if __name__ == "__main__":
     title = sys.argv[5]
     y_label = sys.argv[6]
 
-    # Optional parameters
-    base_time1 = sys.argv[7] if len(sys.argv) > 7 else None
-    base_time2 = sys.argv[8] if len(sys.argv) > 8 else None
-    output_png = sys.argv[9] if len(sys.argv) > 9 else None
+    # Optional parameters - support both new (component-based) and legacy (explicit base_time) modes
+    results_dir1 = None
+    results_dir2 = None
+    component = None
+    base_time1 = None
+    base_time2 = None
+    output_png = None
 
-    plot_data(file1, label1, file2, label2, title, y_label, base_time1, base_time2, output_png)
+    if len(sys.argv) > 7:
+        arg7 = sys.argv[7]
+        # Check if arg7 looks like a directory path or a base time (number)
+        if arg7 and not arg7.isdigit():
+            # New mode: results_dir1
+            results_dir1 = arg7
+            results_dir2 = sys.argv[8] if len(sys.argv) > 8 else None
+            component = sys.argv[9] if len(sys.argv) > 9 else None
+            output_png = sys.argv[10] if len(sys.argv) > 10 else None
+        else:
+            # Legacy mode: base_time1
+            base_time1 = arg7
+            base_time2 = sys.argv[8] if len(sys.argv) > 8 else None
+            output_png = sys.argv[9] if len(sys.argv) > 9 else None
+
+    plot_data(file1, label1, file2, label2, title, y_label,
+              results_dir1, results_dir2, component,
+              base_time1, base_time2, output_png)

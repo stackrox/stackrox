@@ -14,6 +14,7 @@ import sys
 import os
 import glob
 import re
+from plot_utils import determine_baseline_timestamp
 
 def extract_batch_size(dirname):
     """
@@ -37,7 +38,7 @@ def extract_batch_size(dirname):
 
     return None
 
-def read_metric_average(file_path, start_offset=60.0, end_offset=None):
+def read_metric_average(file_path, start_offset=60.0, end_offset=None, base_time=None):
     """
     Read a metric file and return the average value over a time window.
 
@@ -45,6 +46,7 @@ def read_metric_average(file_path, start_offset=60.0, end_offset=None):
         file_path: Path to metrics file
         start_offset: Start time in seconds (to skip initial ramp-up)
         end_offset: End time in seconds (None = until end)
+        base_time: Optional baseline timestamp in milliseconds (if None, uses first timestamp)
 
     Returns:
         Average value over the time window, or None if file doesn't exist
@@ -73,7 +75,8 @@ def read_metric_average(file_path, start_offset=60.0, end_offset=None):
         return None
 
     # Convert to relative time in seconds
-    base_time = timestamps[0]
+    if base_time is None:
+        base_time = timestamps[0]
     rel_times = [(t - base_time) / 1000.0 for t in timestamps]
 
     # Filter to time window
@@ -88,7 +91,7 @@ def read_metric_average(file_path, start_offset=60.0, end_offset=None):
 
     return sum(filtered_values) / len(filtered_values)
 
-def read_metric_max(file_path, start_offset=60.0, end_offset=None):
+def read_metric_max(file_path, start_offset=60.0, end_offset=None, base_time=None):
     """
     Read a metric file and return the maximum value over a time window.
 
@@ -96,6 +99,7 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None):
         file_path: Path to metrics file
         start_offset: Start time in seconds (to skip initial ramp-up)
         end_offset: End time in seconds (None = until end)
+        base_time: Optional baseline timestamp in milliseconds (if None, uses first timestamp)
 
     Returns:
         Maximum value over the time window, or None if file doesn't exist
@@ -124,7 +128,8 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None):
         return None
 
     # Convert to relative time in seconds
-    base_time = timestamps[0]
+    if base_time is None:
+        base_time = timestamps[0]
     rel_times = [(t - base_time) / 1000.0 for t in timestamps]
 
     # Filter to time window
@@ -268,22 +273,27 @@ def plot_scaling_comparison(base_dir, output_dir):
         # Without policy
         if 'without' in data[batch_size]:
             without_dir = data[batch_size]['without']
+            # Determine component-specific baselines
+            central_baseline_without = determine_baseline_timestamp(without_dir, 'central')
+            centraldb_baseline_without = determine_baseline_timestamp(without_dir, 'central-db')
+            sensor_baseline_without = determine_baseline_timestamp(without_dir, 'sensor')
+
             metrics['central_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
             metrics['central_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
             metrics['centraldb_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['centraldb_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['sensor_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
             metrics['sensor_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
             metrics['alerts_count_without'].append(
-                read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET))
+                read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['alerts_size_without'].append(
-                read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET))
+                read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
                        'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
@@ -293,22 +303,27 @@ def plot_scaling_comparison(base_dir, output_dir):
         # With policy
         if 'with' in data[batch_size]:
             with_dir = data[batch_size]['with']
+            # Determine component-specific baselines
+            central_baseline_with = determine_baseline_timestamp(with_dir, 'central')
+            centraldb_baseline_with = determine_baseline_timestamp(with_dir, 'central-db')
+            sensor_baseline_with = determine_baseline_timestamp(with_dir, 'sensor')
+
             metrics['central_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
             metrics['central_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
             metrics['centraldb_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['centraldb_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['sensor_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
             metrics['sensor_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET))
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
             metrics['alerts_count_with'].append(
-                read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET))
+                read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['alerts_size_with'].append(
-                read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET))
+                read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
                        'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',

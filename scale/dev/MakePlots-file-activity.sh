@@ -24,22 +24,15 @@ fi
 # Create output directory
 mkdir -p "$output_dir"
 
-# Determine baseline times (if they exist)
-without_policy_baseline_time=""
-with_policy_baseline_time=""
-
-if [ -f "${without_policy_dir}/baseline_time.txt" ]; then
-    without_policy_baseline_time="$(cat "${without_policy_dir}/baseline_time.txt")"
-fi
-
-if [ -f "${with_policy_dir}/baseline_time.txt" ]; then
-    with_policy_baseline_time="$(cat "${with_policy_dir}/baseline_time.txt")"
-fi
-
-echo "Generating plots..."
+echo "Generating plots with component-specific baselines..."
 echo "  Without policy dir: ${without_policy_dir}"
 echo "  With policy dir: ${with_policy_dir}"
 echo "  Output dir: ${output_dir}"
+echo ""
+echo "Baseline logic:"
+echo "  - sensor: t=0 = first sensor data point"
+echo "  - central/central-db: t=0 = when deployments >= 100 (or 90% of max)"
+echo ""
 
 # CPU and Memory plots for each component
 for container in central central-db sensor; do
@@ -50,7 +43,7 @@ for container in central central-db sensor; do
         "${without_policy_dir}/metrics_${container}_mem.txt" "Without Policy" \
         "${with_policy_dir}/metrics_${container}_mem.txt" "With Policy" \
         "${container} Memory Usage" "Memory (bytes)" \
-        "$without_policy_baseline_time" "$with_policy_baseline_time" \
+        "${without_policy_dir}" "${with_policy_dir}" "${container}" \
         "${output_dir}/${container}_mem_usage.png"
 
     # CPU usage
@@ -58,11 +51,12 @@ for container in central central-db sensor; do
         "${without_policy_dir}/metrics_${container}_cpu.txt" "Without Policy" \
         "${with_policy_dir}/metrics_${container}_cpu.txt" "With Policy" \
         "${container} CPU Usage" "CPU Cores" \
-        "$without_policy_baseline_time" "$with_policy_baseline_time" \
+        "${without_policy_dir}" "${with_policy_dir}" "${container}" \
         "${output_dir}/${container}_cpu_usage.png"
 done
 
 # Database table sizes (only alerts and deployments are relevant for file activity)
+# Tables use central-db baseline since they're part of the database
 for table in alerts deployments; do
     echo "Plotting ${table} table metrics..."
 
@@ -71,7 +65,7 @@ for table in alerts deployments; do
         "${without_policy_dir}/metrics_${table}.txt" "Without Policy" \
         "${with_policy_dir}/metrics_${table}.txt" "With Policy" \
         "${table} Table Row Count" "Number of Rows" \
-        "$without_policy_baseline_time" "$with_policy_baseline_time" \
+        "${without_policy_dir}" "${with_policy_dir}" "central-db" \
         "${output_dir}/${table}_row_count.png"
 
     # Size in bytes
@@ -79,7 +73,7 @@ for table in alerts deployments; do
         "${without_policy_dir}/metrics_${table}_bytes.txt" "Without Policy" \
         "${with_policy_dir}/metrics_${table}_bytes.txt" "With Policy" \
         "${table} Table Size" "Size (bytes)" \
-        "$without_policy_baseline_time" "$with_policy_baseline_time" \
+        "${without_policy_dir}" "${with_policy_dir}" "central-db" \
         "${output_dir}/${table}_size_bytes.png"
 done
 
