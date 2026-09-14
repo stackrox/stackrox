@@ -187,15 +187,15 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 // HTTPClientForCentral returns an *http.Client for talking to central in tests. Basic auth credentials and
 // the hostname and scheme part of the URL may be omitted.
 func HTTPClientForCentral(t testutils.T) *http.Client {
-	user = RoxUsername(t)
-	pw = RoxPassword(t)
+	user := RoxUsername(t)
+	pw := RoxPassword(t)
 	return newHTTPClientForCentral(t, user, pw)
 }
 
-// UnauthenticatedHTTPClientForCentral is like HTTPClientForCentral but does not inject credentials.
+// UnauthenticatedHTTPClientForCentral is like HTTPClientForCentral but does not inject auth credentials.
 // The hostname and scheme part of the URL may still be omitted.
 func UnauthenticatedHTTPClientForCentral(t testutils.T) *http.Client {
-	return newHTTPClientForCentral(t, false)
+	return newHTTPClientForCentral(t, "", "")
 }
 
 func newHTTPClientForCentral(t testutils.T, username, password string) *http.Client {
