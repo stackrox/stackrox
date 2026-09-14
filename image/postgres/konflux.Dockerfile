@@ -41,7 +41,11 @@ RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
 
 COPY LICENSE /licenses/LICENSE
 
-COPY image/postgres/scripts \
+COPY \
+    image/postgres/scripts/backup-cleanup.sh \
+    image/postgres/scripts/cert-watcher.sh \
+    image/postgres/scripts/docker-entrypoint.sh \
+    image/postgres/scripts/init-entrypoint.sh \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"
