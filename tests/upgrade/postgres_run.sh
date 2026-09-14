@@ -7,12 +7,12 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.10.7"
-EARLIER_SHA="5a4fced5248e20b2af68fe4bc88df95b40323225"
+EARLIER_TAG="4.10.0"
+EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
-PREVIOUS_RELEASES=("4.11.3")
+PREVIOUS_RELEASES=("4.10.7" "4.11.3")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
