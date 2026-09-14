@@ -55,12 +55,6 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 	if c.K8sConfig.CentralDBImage == "" {
 		c.K8sConfig.CentralDBImage = imageFlavor.CentralDBImage()
 	}
-	if c.K8sConfig.ScannerImage == "" {
-		c.K8sConfig.ScannerImage = imageFlavor.ScannerImage()
-	}
-	if c.K8sConfig.ScannerDBImage == "" {
-		c.K8sConfig.ScannerDBImage = imageFlavor.ScannerDBImage()
-	}
 	if c.K8sConfig.ScannerV4Image == "" {
 		c.K8sConfig.ScannerV4Image = imageFlavor.ScannerV4Image()
 	}
