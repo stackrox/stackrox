@@ -308,21 +308,6 @@ func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
 	return f.MainImageNoTag() == overrideImageNoTag
 }
 
-// ScannerImage is the container image reference (full name) for the scanner image.
-func (f *ImageFlavor) ScannerImage() string { // todo: remove this
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerImageName, f.ScannerImageTag)
-}
-
-// ScannerSlimImage is the container image reference (full name) for the scanner-slim image.
-func (f *ImageFlavor) ScannerSlimImage() string { // todo: remove this
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerSlimImageName, f.ScannerImageTag)
-}
-
-// ScannerDBImage is the container image reference (full name) for the scanner-db image.
-func (f *ImageFlavor) ScannerDBImage() string { // todo: remove this
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
-}
-
 // ScannerV4Image is the container image reference (full name) for the scanner-v4 image.
 func (f *ImageFlavor) ScannerV4Image() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerV4ImageName, f.ScannerV4ImageTag)
