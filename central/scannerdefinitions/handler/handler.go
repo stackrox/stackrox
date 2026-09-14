@@ -20,6 +20,7 @@ import (
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -186,7 +187,25 @@ func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	log.Info("In online mode: scanner definitions will be updated automatically")
 
 	h.updaters = make(map[string]*requestedUpdater)
-	go h.cleanUpdatersPeriodic(opts.cleanupInterval, opts.cleanupAge)
+
+	interval := defaultCleanupInterval
+	if opts.cleanupInterval != nil {
+		interval = *opts.cleanupInterval
+	}
+	age := defaultCleanupAge
+	if opts.cleanupAge != nil {
+		age = *opts.cleanupAge
+	}
+	cleanupWorker := &backgroundworker.PeriodicWorker{
+		Name:     "scanner-defs-cleanup",
+		Interval: interval,
+		Run: func(_ context.Context) error {
+			h.cleanupUpdaters(age)
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(cleanupWorker)
+	cleanupWorker.Start(context.Background())
 
 	return h
 }
@@ -760,22 +779,6 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	}
 
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
-}
-
-func (h *httpHandler) cleanUpdatersPeriodic(cleanupInterval, cleanupAge *time.Duration) {
-	interval := defaultCleanupInterval
-	if cleanupInterval != nil {
-		interval = *cleanupInterval
-	}
-	age := defaultCleanupAge
-	if cleanupAge != nil {
-		age = *cleanupAge
-	}
-
-	t := time.NewTicker(interval)
-	for range t.C {
-		h.cleanupUpdaters(age)
-	}
 }
 
 func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {

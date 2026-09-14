@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -30,6 +31,9 @@ type controller struct {
 	injector common.MessageInjector
 
 	supportsCancellations bool
+
+	gcWorker     *backgroundworker.PeriodicWorker
+	prevNilChans set.StringSet
 }
 
 type telemetryCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error
@@ -40,8 +44,15 @@ func newController(capabilities set.Set[centralsensor.SensorCapability], injecto
 		returnChans:           make(map[string]chan *central.TelemetryResponsePayload),
 		injector:              injector,
 		supportsCancellations: capabilities.Contains(centralsensor.PullTelemetryDataCap),
+		prevNilChans:          set.NewStringSet(),
 	}
-	go ctrl.pruneReturnChans()
+	ctrl.gcWorker = &backgroundworker.PeriodicWorker{
+		Name:     "telemetry-channel-gc",
+		Interval: telemetryChanGCPeriod,
+		Run:      ctrl.pruneReturnChansOnce,
+	}
+	backgroundworker.Global.Register(ctrl.gcWorker)
+	ctrl.gcWorker.Start(context.Background())
 	return ctrl
 }
 
@@ -230,34 +241,20 @@ func (c *controller) ProcessTelemetryDataResponse(ctx context.Context, resp *cen
 	}
 }
 
-func (c *controller) pruneReturnChans() {
-	prevNilChans := set.NewStringSet()
-	t := time.NewTicker(telemetryChanGCPeriod)
-	defer t.Stop()
-
-	for {
-		select {
-		case <-c.stopSig.Done():
-			return
-		case <-t.C:
-		}
-
-		// Go through all channels, and collect those that are nil. If we find a channel to be nil in two subsequent
-		// iterations, that means it has been in this state for `telemetryChanGCPeriod` and now can be removed.
-		newNilChans := set.NewStringSet()
-		concurrency.WithLock(&c.returnChansMutex, func() {
-			for id, retC := range c.returnChans {
-				if retC != nil {
-					continue
-				}
-
-				if prevNilChans.Contains(id) {
-					delete(c.returnChans, id)
-				} else {
-					newNilChans.Add(id)
-				}
+func (c *controller) pruneReturnChansOnce(_ context.Context) error {
+	newNilChans := set.NewStringSet()
+	concurrency.WithLock(&c.returnChansMutex, func() {
+		for id, retC := range c.returnChans {
+			if retC != nil {
+				continue
 			}
-			prevNilChans = newNilChans
-		})
-	}
+			if c.prevNilChans.Contains(id) {
+				delete(c.returnChans, id)
+			} else {
+				newNilChans.Add(id)
+			}
+		}
+	})
+	c.prevNilChans = newNilChans
+	return nil
 }
