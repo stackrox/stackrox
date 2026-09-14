@@ -59,7 +59,7 @@ func TestCLIDownload(t *testing.T) {
 			stubPrefix = "This is a placeholder"
 
 			// headerBytes must cover the longest magic sequence (4 bytes) and the stub prefix (21 bytes).
-			headerBytes = 32
+			headerBytes = max(len(linuxMagic), len(darwinMagic), len(windowsMagic), len(stubPrefix))
 		)
 
 		testCases := []binaryCase{

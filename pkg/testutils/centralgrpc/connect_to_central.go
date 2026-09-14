@@ -187,7 +187,9 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 // HTTPClientForCentral returns an *http.Client for talking to central in tests. Basic auth credentials and
 // the hostname and scheme part of the URL may be omitted.
 func HTTPClientForCentral(t testutils.T) *http.Client {
-	return newHTTPClientForCentral(t, true)
+	user = RoxUsername(t)
+	pw = RoxPassword(t)
+	return newHTTPClientForCentral(t, user, pw)
 }
 
 // UnauthenticatedHTTPClientForCentral is like HTTPClientForCentral but does not inject credentials.
@@ -196,7 +198,7 @@ func UnauthenticatedHTTPClientForCentral(t testutils.T) *http.Client {
 	return newHTTPClientForCentral(t, false)
 }
 
-func newHTTPClientForCentral(t testutils.T, withAuth bool) *http.Client {
+func newHTTPClientForCentral(t testutils.T, username, password string) *http.Client {
 	baseTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true, //#nosec G402
@@ -205,16 +207,10 @@ func newHTTPClientForCentral(t testutils.T, withAuth bool) *http.Client {
 
 	endpoint := RoxAPIEndpoint(t)
 
-	var user, pw string
-	if withAuth {
-		user = RoxUsername(t)
-		pw = RoxPassword(t)
-	}
-
 	transport := httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		modReq := req.Clone(req.Context())
-		if withAuth {
-			modReq.SetBasicAuth(user, pw)
+		if username != "" || password != "" {
+			modReq.SetBasicAuth(username, password)
 		}
 		if modReq.URL.Host == "" {
 			modReq.URL.Host = endpoint
