@@ -26,6 +26,7 @@ const (
 	ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName     = "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats"
 	ComplianceResultsStatsService_GetComplianceOverallClusterStats_FullMethodName  = "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats"
 	ComplianceResultsStatsService_GetComplianceClusterStats_FullMethodName         = "/v2.ComplianceResultsStatsService/GetComplianceClusterStats"
+	ComplianceResultsStatsService_GetComplianceScanTrends_FullMethodName           = "/v2.ComplianceResultsStatsService/GetComplianceScanTrends"
 )
 
 // ComplianceResultsStatsServiceClient is the client API for ComplianceResultsStatsService service.
@@ -55,6 +56,8 @@ type ComplianceResultsStatsServiceClient interface {
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
+	// GetComplianceScanTrends returns compliance pass/fail counts grouped by scan time
+	GetComplianceScanTrends(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanTrendResponse, error)
 }
 
 type complianceResultsStatsServiceClient struct {
@@ -135,6 +138,16 @@ func (c *complianceResultsStatsServiceClient) GetComplianceClusterStats(ctx cont
 	return out, nil
 }
 
+func (c *complianceResultsStatsServiceClient) GetComplianceScanTrends(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanTrendResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListComplianceScanTrendResponse)
+	err := c.cc.Invoke(ctx, ComplianceResultsStatsService_GetComplianceScanTrends_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComplianceResultsStatsServiceServer is the server API for ComplianceResultsStatsService service.
 // All implementations should embed UnimplementedComplianceResultsStatsServiceServer
 // for forward compatibility.
@@ -162,6 +175,8 @@ type ComplianceResultsStatsServiceServer interface {
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error)
+	// GetComplianceScanTrends returns compliance pass/fail counts grouped by scan time
+	GetComplianceScanTrends(context.Context, *RawQuery) (*ListComplianceScanTrendResponse, error)
 }
 
 // UnimplementedComplianceResultsStatsServiceServer should be embedded to have
@@ -191,6 +206,9 @@ func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceOverallClus
 }
 func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetComplianceClusterStats not implemented")
+}
+func (UnimplementedComplianceResultsStatsServiceServer) GetComplianceScanTrends(context.Context, *RawQuery) (*ListComplianceScanTrendResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetComplianceScanTrends not implemented")
 }
 func (UnimplementedComplianceResultsStatsServiceServer) testEmbeddedByValue() {}
 
@@ -338,6 +356,24 @@ func _ComplianceResultsStatsService_GetComplianceClusterStats_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceResultsStatsService_GetComplianceScanTrends_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceResultsStatsServiceServer).GetComplianceScanTrends(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceResultsStatsService_GetComplianceScanTrends_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceResultsStatsServiceServer).GetComplianceScanTrends(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComplianceResultsStatsService_ServiceDesc is the grpc.ServiceDesc for ComplianceResultsStatsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -372,6 +408,10 @@ var ComplianceResultsStatsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComplianceClusterStats",
 			Handler:    _ComplianceResultsStatsService_GetComplianceClusterStats_Handler,
+		},
+		{
+			MethodName: "GetComplianceScanTrends",
+			Handler:    _ComplianceResultsStatsService_GetComplianceScanTrends_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
