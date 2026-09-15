@@ -417,13 +417,14 @@ func (x *ExchangeTokenRequest) GetState() string {
 }
 
 type ExchangeTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	ClientState   string                 `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
-	Test          bool                   `protobuf:"varint,3,opt,name=test,proto3" json:"test,omitempty"`
-	User          *AuthStatus            `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Token           string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ClientState     string                 `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
+	Test            bool                   `protobuf:"varint,3,opt,name=test,proto3" json:"test,omitempty"`
+	User            *AuthStatus            `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	AuthorizeRoxctl bool                   `protobuf:"varint,5,opt,name=authorize_roxctl,json=authorizeRoxctl,proto3" json:"authorize_roxctl,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ExchangeTokenResponse) Reset() {
@@ -482,6 +483,13 @@ func (x *ExchangeTokenResponse) GetUser() *AuthStatus {
 		return x.User
 	}
 	return nil
+}
+
+func (x *ExchangeTokenResponse) GetAuthorizeRoxctl() bool {
+	if x != nil {
+		return x.AuthorizeRoxctl
+	}
+	return false
 }
 
 type AvailableProviderTypesResponse struct {
@@ -679,12 +687,13 @@ const file_api_v1_authprovider_service_proto_rawDesc = "" +
 	"\x14ExchangeTokenRequest\x12%\n" +
 	"\x0eexternal_token\x18\x01 \x01(\tR\rexternalToken\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05state\x18\x03 \x01(\tR\x05state\"\x88\x01\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\"\xb3\x01\n" +
 	"\x15ExchangeTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
 	"\fclient_state\x18\x02 \x01(\tR\vclientState\x12\x12\n" +
 	"\x04test\x18\x03 \x01(\bR\x04test\x12\"\n" +
-	"\x04user\x18\x04 \x01(\v2\x0e.v1.AuthStatusR\x04user\"\xe0\x01\n" +
+	"\x04user\x18\x04 \x01(\v2\x0e.v1.AuthStatusR\x04user\x12)\n" +
+	"\x10authorize_roxctl\x18\x05 \x01(\bR\x0fauthorizeRoxctl\"\xe0\x01\n" +
 	"\x1eAvailableProviderTypesResponse\x12c\n" +
 	"\x13auth_provider_types\x18\x01 \x03(\v23.v1.AvailableProviderTypesResponse.AuthProviderTypeR\x11authProviderTypes\x1aY\n" +
 	"\x10AuthProviderType\x12\x12\n" +

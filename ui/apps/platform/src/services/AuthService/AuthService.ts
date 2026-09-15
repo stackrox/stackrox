@@ -269,6 +269,7 @@ export type ExchangeTokenResponse = {
     clientState: string;
     test: boolean;
     user: AuthStatus;
+    authorizeRoxctl: boolean;
 };
 
 /**
