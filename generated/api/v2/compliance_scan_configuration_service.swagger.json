@@ -749,9 +749,16 @@
             "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
+        },
+        "nodeRoles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "node_roles specifies which node roles the compliance scan should target.\nEach value maps to a Kubernetes node label \"node-role.kubernetes.io/<role>\".\nThe special value \"@all\" targets all nodes and cannot be mixed with other roles.\nDefaults to [\"master\", \"worker\"] when empty."
         }
       },
-      "title": "Next available tag: 5"
+      "title": "Next available tag: 7"
     },
     "v2ClusterScanStatus": {
       "type": "object",

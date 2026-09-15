@@ -4638,12 +4638,6 @@
                 "is_repeated": true
               },
               {
-                "id": 9,
-                "name": "node_roles",
-                "type": "NodeRole",
-                "is_repeated": true
-              },
-              {
                 "id": 10,
                 "name": "strict_node_scan",
                 "type": "bool"
@@ -4684,6 +4678,12 @@
                 "name": "notifiers",
                 "type": "NotifierConfiguration",
                 "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "node_roles",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -4703,6 +4703,9 @@
                   "type": "string"
                 }
               }
+            ],
+            "reserved_ids": [
+              9
             ],
             "messages": [
               {
