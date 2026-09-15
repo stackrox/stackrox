@@ -58,6 +58,9 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 
 ## Deploying StackRox
 
+For a comprehensive overview of all installation methods, their history, and
+deprecation status, see [INSTALL_METHODS.md](INSTALL_METHODS.md).
+
 ### Installation using the Operator
 
 As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
