@@ -14,6 +14,7 @@ import (
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -45,7 +46,7 @@ type datastoreImpl struct {
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
-	stopper concurrency.Stopper
+	pruneWorker *backgroundworker.PeriodicWorker
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -212,25 +213,6 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 	return err
 }
 
-func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
-	defer ds.stopper.Flow().ReportStopped()
-
-	if ds.prunerFactory == nil {
-		return
-	}
-
-	t := time.NewTicker(ds.prunerFactory.Period())
-	defer t.Stop()
-	for {
-		select {
-		case <-t.C:
-			ds.prune(ctx)
-		case <-ds.stopper.Flow().StopRequested():
-			return
-		}
-	}
-}
-
 func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ProcessIndicator", "getProcessInfoToArgs")
 	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
@@ -289,9 +271,12 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 }
 
 func (ds *datastoreImpl) Stop() {
-	ds.stopper.Client().Stop()
+	if ds.pruneWorker != nil {
+		ds.pruneWorker.Stop()
+	}
 }
 
-func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
-	return concurrency.WaitInContext(ds.stopper.Client().Stopped(), cancelWhen)
+func (ds *datastoreImpl) Wait(_ concurrency.Waitable) bool {
+	ds.Stop()
+	return true
 }

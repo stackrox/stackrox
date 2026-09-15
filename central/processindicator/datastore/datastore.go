@@ -12,6 +12,7 @@ import (
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -56,12 +57,20 @@ func New(db postgres.DB, store store.Store, plopStorage plopStore.Store, prunerF
 		plopStorage:           plopStorage,
 		prunerFactory:         prunerFactory,
 		prunedArgsLengthCache: make(map[processindicator.ProcessWithContainerInfo]int),
-		stopper:               concurrency.NewStopper(),
 	}
-	ctx := sac.WithAllAccess(context.Background())
 
-	if env.ProcessPruningEnabled.BooleanSetting() {
-		go d.prunePeriodically(ctx)
+	if env.ProcessPruningEnabled.BooleanSetting() && prunerFactory != nil {
+		ctx := sac.WithAllAccess(context.Background())
+		d.pruneWorker = &backgroundworker.PeriodicWorker{
+			Name:     "process-indicator-pruner",
+			Interval: prunerFactory.Period(),
+			Run: func(runCtx context.Context) error {
+				d.prune(ctx)
+				return nil
+			},
+		}
+		backgroundworker.Global.Register(d.pruneWorker)
+		d.pruneWorker.Start(ctx)
 	}
 	return d
 }

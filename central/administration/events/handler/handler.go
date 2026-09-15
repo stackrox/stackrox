@@ -2,11 +2,11 @@ package handler
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -33,6 +33,8 @@ type handlerImpl struct {
 	eventWriteCtx context.Context
 	stream        events.Stream
 	stopSignal    concurrency.Signal
+
+	flushWorker *backgroundworker.PeriodicWorker
 }
 
 func newHandler(ds datastore.DataStore, stream events.Stream) Handler {
@@ -47,6 +49,16 @@ func newHandler(ds datastore.DataStore, stream events.Stream) Handler {
 		stream:     stream,
 		stopSignal: concurrency.NewSignal(),
 	}
+
+	h.flushWorker = &backgroundworker.PeriodicWorker{
+		Name:     "admin-events-flush",
+		Interval: flushInterval,
+		Run: func(_ context.Context) error {
+			return h.ds.Flush(h.eventWriteCtx)
+		},
+	}
+	backgroundworker.Global.Register(h.flushWorker)
+
 	return h
 }
 
@@ -58,30 +70,16 @@ func (h *handlerImpl) watchForEvents() {
 	}
 }
 
-func (h *handlerImpl) runDatastoreFlush() {
-	ticker := time.NewTicker(flushInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			if err := h.ds.Flush(h.eventWriteCtx); err != nil {
-				log.Error(err)
-			}
-		case <-h.stopSignal.Done():
-			if err := h.ds.Flush(h.eventWriteCtx); err != nil {
-				log.Error(err)
-			}
-			return
-		}
-	}
-}
-
 func (h *handlerImpl) Start() {
 	go h.watchForEvents()
-	go h.runDatastoreFlush()
+	h.flushWorker.Start(context.Background())
 }
 
 func (h *handlerImpl) Stop() {
+	h.flushWorker.Stop()
+	// Final flush on stop preserves original behavior.
+	if err := h.ds.Flush(h.eventWriteCtx); err != nil {
+		log.Error(err)
+	}
 	h.stopSignal.Signal()
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
@@ -60,8 +61,8 @@ type managerImpl struct {
 	nameExtractor types.NameExtractor
 	idExtractor   types.IDExtractor
 
-	reconciliationTicker *time.Ticker
-	shortCircuitSignal   concurrency.Signal
+	reconcileWorker *backgroundworker.PeriodicWorker
+	shortCircuitCh  chan struct{}
 
 	reconciliationCtx context.Context
 
@@ -95,7 +96,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		errorsPerDeclarativeConfig:   map[string]int32{},
 		idExtractor:                  idExtractor,
 		nameExtractor:                nameExtractor,
-		shortCircuitSignal:           concurrency.NewSignal(),
+		shortCircuitCh:               make(chan struct{}, 1),
 	}
 }
 
@@ -199,31 +200,24 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 // Note that the reconciliation loop will not be run if:
 //   - the short circuit loop signal has not been reset yet and is de-duped.
 func (m *managerImpl) shortCircuitReconciliationLoop() {
-	// In case the signal is already triggered, the current call (and the Signal() call) will be effectively de-duped.
-	m.shortCircuitSignal.Signal()
+	select {
+	case m.shortCircuitCh <- struct{}{}:
+	default:
+	}
 }
 
 func (m *managerImpl) startReconciliationLoop() {
-	m.reconciliationTicker = time.NewTicker(m.reconciliationTickerDuration)
-
-	go m.reconciliationLoop()
-}
-
-func (m *managerImpl) reconciliationLoop() {
-	// While we currently do not have an exit in the form of "stopping" the reconciliation, still, ensure that
-	// the ticker is stopped when we stop running the reconciliation.
-	defer m.reconciliationTicker.Stop()
-	for {
-		select {
-		case <-m.shortCircuitSignal.Done():
-			log.Debug("Received a short circuit signal, running the reconciliation")
-			m.shortCircuitSignal.Reset()
+	m.reconcileWorker = &backgroundworker.PeriodicWorker{
+		Name:         "declarative-config-reconciler",
+		Interval:     m.reconciliationTickerDuration,
+		ShortCircuit: m.shortCircuitCh,
+		Run: func(_ context.Context) error {
 			m.runReconciliation()
-		case <-m.reconciliationTicker.C:
-			log.Debug("Received a ticker signal, running the reconciliation")
-			m.runReconciliation()
-		}
+			return nil
+		},
 	}
+	backgroundworker.Global.Register(m.reconcileWorker)
+	m.reconcileWorker.Start(context.Background())
 }
 
 func (m *managerImpl) runReconciliation() {
