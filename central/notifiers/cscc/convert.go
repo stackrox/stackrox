@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
+	"cloud.google.com/go/securitycenter/apiv2/securitycenterpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
