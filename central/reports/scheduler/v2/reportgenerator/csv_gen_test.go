@@ -71,7 +71,8 @@ func TestFormatCSVRow(t *testing.T) {
 	assert.Equal(t, "true", row[7])
 	assert.Equal(t, "CRITICAL", row[9])
 	assert.Equal(t, "95.000", row[12])
-	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[14])
+	assert.Equal(t, "Not Available", row[14]) // Image Created Date (nil → "Not Available")
+	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[15])
 }
 
 func TestFormatCSVRow_NilFields(t *testing.T) {
@@ -79,8 +80,9 @@ func TestFormatCSVRow_NilFields(t *testing.T) {
 	row := formatCSVRow(r)
 	assert.Equal(t, len(csvHeader), len(row))
 	assert.Equal(t, "", row[0])
-	assert.Equal(t, "Not Available", row[12])
-	assert.Equal(t, "Not Available", row[13])
+	assert.Equal(t, "Not Available", row[12]) // EPSS Probability Percentage
+	assert.Equal(t, "Not Available", row[13]) // Discovered At
+	assert.Equal(t, "Not Available", row[14]) // Image Created Date
 }
 
 func TestCsvReportName(t *testing.T) {
