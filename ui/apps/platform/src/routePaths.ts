@@ -26,7 +26,6 @@ export const apidocsPath = `${mainPath}/apidocs`;
 export const apidocsPathV2 = `${mainPath}/apidocs-v2`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
-export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
 export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
@@ -39,12 +38,10 @@ export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluste
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
-export const complianceEnhancedBasePath = `${mainPath}/compliance`;
-export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
-export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
+export const complianceEnhancedCoveragePath = `${complianceBasePath}/coverage`;
+export const complianceEnhancedSchedulesPath = `${complianceBasePath}/schedules`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
-export const dataRetentionPath = `${mainPath}/retention`;
 export const exceptionConfigurationPath = `${mainPath}/exception-configuration`;
 export const exceptionManagementPath = `${vulnerabilitiesBasePath}/exception-management`;
 export const integrationsPath = `${mainPath}/integrations`;
@@ -518,7 +515,6 @@ export const basePathToLabelMap: Record<string, string> = {
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
-    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
