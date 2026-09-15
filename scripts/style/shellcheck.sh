@@ -65,6 +65,11 @@ update_failing_list() {
     popd > /dev/null
 }
 
+run_single() {
+    local file="${1:?Usage: shellcheck.sh run_single <file>}"
+    shellcheck --norc -P SCRIPTDIR -x "$file"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         run_shellcheck "$@"
