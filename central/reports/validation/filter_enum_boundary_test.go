@@ -33,8 +33,8 @@ func TestValidateImageFiltersRejectsInvalidEnumsAndDates(t *testing.T) {
 		},
 		"fixability": {
 			ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{apiV2.VulnerabilityReportFilters_DEPLOYED},
-			Fixability:  apiV2.VulnerabilityReportFilters_Fixability(99),
-			CvesSince:   &apiV2.VulnerabilityReportFilters_AllVuln{AllVuln: true},
+			Fixability: apiV2.VulnerabilityReportFilters_Fixability(99),
+			CvesSince:  &apiV2.VulnerabilityReportFilters_AllVuln{AllVuln: true},
 		},
 		"severity": {
 			ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{apiV2.VulnerabilityReportFilters_DEPLOYED},
