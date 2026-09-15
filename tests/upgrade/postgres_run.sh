@@ -11,8 +11,7 @@ EARLIER_TAG="4.6.2"
 EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
-SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
-PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.10" "4.10.6" "4.11.2")
+PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.11" "4.10.7" "4.11.3")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -217,11 +216,9 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
 
-    # Now go back to the current release
-    kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
-
-    wait_for_api
+    # Now go back to the current release. The HEAD chart installs Scanner V4,
+    # which smoke test needs.
+    upgrade_central_helm_to_head
     wait_for_background_migrations
 
     # Cleanup the scaled sensor before smoke tests
@@ -242,12 +239,6 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:${COLLECTOR_TAG}" \
         "compliance=$REGISTRY/main:$CURRENT_TAG"
-    if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
-        echo "Upgrading node-inventory container"
-        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:${SCANNER_TAG}"
-    else
-        echo "Skipping node-inventory container as this is not Openshift 4"
-    fi
 
     sensor_wait
     # Bounce collectors to avoid restarts on initial module pull

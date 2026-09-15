@@ -7,18 +7,16 @@
 ## Instead, create a file that contains only those settings you want to override,
 ## and pass it to helm or roxctl via the `-f` parameter.
 ##
-## For example, if you want to disable the deployment of scanner, create a file
+## For example, if you want to disable Scanner V4, create a file
 ## `values-override.yaml` (or any name you choose) with the following contents:
 ##
-##  scanner:
+##  scannerV4:
 ##    disable: true
 ##
-## and then invoke helm by passing `-f values-override.yaml` to
-## `helm install`/`helm upgrade`.
+## and then invoke helm by passing `-f values-override.yaml`
+## to `helm install`/`helm upgrade`.
 ##
-## Alternatively, if you want to override just a few values, you can set them directly
-## via the `--set` command, e.g.,
-##  $ helm install --set scanner.disable=true ...
+## Alternatively, you can set values directly via the `--set` command.
 ##
 ## Note that an arbitrary number of `-f` and `--set` parameters can be combined. It is
 ## generally a good practice to store secret data such as the admin password separate from
@@ -247,78 +245,6 @@ central:
 #        storageClass: null
 #        size: null
 #      none: null
-#
-## Configuration options relating to StackRox Scanner.
-#scanner:
-#  # If this is set to true, StackRox will be deployed without scanner. No other setting in this
-#  # section will have any effect.
-#  disable: false
-#
-#  # Default number of scanner replicas created upon startup. The actual number might be higher
-#  # or lower if autoscaling is enabled (see below).
-#  replicas: 3
-#
-#  logLevel: INFO
-#
-#  # Settings related to autoscaling the scanner deployment.
-#  autoscaling:
-#    # If true, autoscaling will be disabled. None of the other settings in this section will
-#    # have any effect.
-#    disable: false
-#    minReplicas: 1
-#    maxReplicas: 5
-#
-#  # Resource settings for the scanner deployment.
-#  resources:
-#    requests:
-#      memory: "1500Mi"
-#      cpu: "1000m"
-#    limits:
-#      memory: "4Gi"
-#      cpu: "2000m"
-#
-#  image:
-#    registry: null
-#    name: scanner
-#    tag: 2.3.2
-#    fullRef: null
-#
-#  dbImage:
-#    registry: null
-#    name: scanner-db
-#    tag: 2.3.2
-#    fullRef: null
-#
-#  # Resource settings for the scanner-db deployment.
-#  dbResources:
-#    limits:
-#      cpu: 2
-#      memory: 4Gi
-#    requests:
-#      cpu: 200m
-#      memory: 200Mi
-#
-#  # The admin password setting for communication with scanner's DB.
-#  # When a value is set explicitly, this is always used, even on upgrade.
-#  # Otherwise, a password will be automatically generated if `generate` is set to true,
-#  # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
-#  dbPassword:
-#    value: null
-#    generate: null
-#
-#  # Settings for the internal service-to-service TLS certificate used by scanner.
-#  # See the documentation for `ca` at the top level for an explanation.
-#  serviceTLS:
-#    cert: null
-#    key: null
-#    generate: null
-#
-#  # Settings for the internal service-to-service TLS certificate used by scanner-db.
-#  # See the documentation for `ca` at the top level for an explanation.
-#  dbServiceTLS:
-#    cert: null
-#    key: null
-#    generate: null
 #
 ## Configuration options relating to Scanner V4.
 #scannerV4:

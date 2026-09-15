@@ -11,6 +11,8 @@ allowNonstandardNamespace: false
 allowNonstandardReleaseName: false
 {{- end }}
 
+_namespace: {{ quote .Release.Namespace }}
+
 meta:
   useLookup: true
   fileOverrides: {}

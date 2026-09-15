@@ -157,7 +157,7 @@ runs:
         echo "container_runtime=$([[ -f /.dockerenv ]] && echo container || echo None)" >> "$GITHUB_OUTPUT"
 
     - name: Record job info
-      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      uses: gacts/run-and-post-run@fc6503862aba998e2f2123225ad63c09a92ed46e # v1.4.0
       id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}

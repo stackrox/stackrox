@@ -109,6 +109,7 @@ func insertIntoVirtualMachineCvev2(batch *pgx.Batch, obj *storage.VirtualMachine
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 		obj.GetCveBaseInfo().GetCisaKev(),
+		obj.GetCveBaseInfo().GetKnownRansomwareCampaign(),
 		obj.GetPreferredCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -121,7 +122,7 @@ func insertIntoVirtualMachineCvev2(batch *pgx.Batch, obj *storage.VirtualMachine
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machine_cvev2 (Id, VmV2Id, VmComponentId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev, PreferredCvss, Severity, ImpactScore, Nvdcvss, IsFixable, FixedBy, EpssProbability, Advisory_Name, Advisory_Link, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, VmComponentId = EXCLUDED.VmComponentId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev = EXCLUDED.CveBaseInfo_CisaKev, PreferredCvss = EXCLUDED.PreferredCvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, EpssProbability = EXCLUDED.EpssProbability, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machine_cvev2 (Id, VmV2Id, VmComponentId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev, CveBaseInfo_KnownRansomwareCampaign, PreferredCvss, Severity, ImpactScore, Nvdcvss, IsFixable, FixedBy, EpssProbability, Advisory_Name, Advisory_Link, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, VmComponentId = EXCLUDED.VmComponentId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev = EXCLUDED.CveBaseInfo_CisaKev, CveBaseInfo_KnownRansomwareCampaign = EXCLUDED.CveBaseInfo_KnownRansomwareCampaign, PreferredCvss = EXCLUDED.PreferredCvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, EpssProbability = EXCLUDED.EpssProbability, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -136,6 +137,7 @@ var copyColsVirtualMachineCvev2 = []string{
 	"cvebaseinfo_createdat",
 	"cvebaseinfo_epss_epssprobability",
 	"cvebaseinfo_cisakev",
+	"cvebaseinfo_knownransomwarecampaign",
 	"preferredcvss",
 	"severity",
 	"impactscore",
@@ -187,6 +189,7 @@ func copyFromVirtualMachineCvev2(ctx context.Context, s pgSearch.Deleter, tx *po
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			obj.GetCveBaseInfo().GetCisaKev(),
+			obj.GetCveBaseInfo().GetKnownRansomwareCampaign(),
 			obj.GetPreferredCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

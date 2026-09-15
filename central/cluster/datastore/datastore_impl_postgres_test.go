@@ -30,6 +30,10 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	vmCVEDatastore "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
+	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	vmV2Datastore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
+	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -78,6 +82,9 @@ type ClusterPostgresDataStoreTestSuite struct {
 	imageIntegrationDatastore imageIntegrationDataStore.DataStore
 	clusterDatastore          DataStore
 	clusterInitStore          clusterInitStore.Store
+	vmDatastore               vmDatastore.DataStore
+	vmV2Datastore             vmV2Datastore.DataStore
+	vmCVEDatastore            vmCVEDatastore.DataStore
 
 	clusterHealthDBStore clusterHealthPostgresStore.Store
 }
@@ -112,11 +119,15 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.imageIntegrationDatastore = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.clusterInitStore = clusterInitStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.vmDatastore = vmDatastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.vmV2Datastore = vmV2Datastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.vmCVEDatastore = vmCVEDatastore.GetTestPostgresDataStore(s.T(), s.db)
 	s.clusterDatastore, err = New(clusterDBStore, s.clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
-		clusterRanker, networkBaselineM, compliancePruner, s.clusterInitStore)
+		clusterRanker, networkBaselineM, compliancePruner, s.clusterInitStore,
+		s.vmDatastore, s.vmV2Datastore)
 	s.NoError(err)
 }
 
@@ -170,6 +181,43 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	s.NotEmpty(imageIntegrationId)
 	s.NoError(imageIntegrationAddErr)
 
+	testV1VM := &storage.VirtualMachine{
+		Id:        fixtureconsts.VirtualMachine1,
+		Name:      "retired-vm-v1",
+		Namespace: "default",
+		ClusterId: clusterId,
+		Scan: &storage.VirtualMachineScan{
+			Components: []*storage.EmbeddedVirtualMachineScanComponent{
+				{Name: "openssl", Version: "1.1.1"},
+			},
+		},
+	}
+	s.NoError(s.vmDatastore.UpsertVirtualMachine(ctx, testV1VM))
+
+	testV2VM := &storage.VirtualMachineV2{
+		Id:          fixtureconsts.VirtualMachine2,
+		Name:        "retired-vm-v2",
+		Namespace:   "default",
+		ClusterId:   clusterId,
+		ClusterName: testCluster.GetName(),
+		GuestOs:     "rhel9",
+		State:       storage.VirtualMachineV2_RUNNING,
+	}
+	s.NoError(s.vmV2Datastore.UpsertVirtualMachine(ctx, testV2VM))
+	s.NoError(s.vmV2Datastore.UpsertScan(ctx, testV2VM.GetId(), clusterRemovalTestScanParts(testV2VM.GetId())))
+
+	keptCluster := &storage.Cluster{Name: fixtureconsts.ClusterName2, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}
+	keptClusterID, keptClusterAddErr := s.clusterDatastore.AddCluster(ctx, keptCluster)
+	s.NotEmpty(keptClusterID)
+	s.NoError(keptClusterAddErr)
+	keptV1VM := &storage.VirtualMachine{
+		Id:        fixtureconsts.VirtualMachineFake,
+		Name:      "kept-vm-v1",
+		Namespace: "default",
+		ClusterId: keptClusterID,
+	}
+	s.NoError(s.vmDatastore.UpsertVirtualMachine(ctx, keptV1VM))
+
 	// Remove cluster and verify that the removal has been cascaded to all related components
 	doneSignal := concurrency.NewSignal()
 	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
@@ -213,6 +261,66 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	_, imageIntegrationFound, imageIntegrationGetErr := s.imageIntegrationDatastore.GetImageIntegration(ctx, testImageIntegration.GetId())
 	s.NoError(imageIntegrationGetErr)
 	s.False(imageIntegrationFound)
+
+	v1Count, v1CountErr := s.vmDatastore.CountVirtualMachines(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterId).ProtoQuery())
+	s.NoError(v1CountErr)
+	s.Zero(v1Count)
+	_, v1Found, v1GetErr := s.vmDatastore.GetVirtualMachine(ctx, testV1VM.GetId())
+	s.NoError(v1GetErr)
+	s.False(v1Found)
+
+	v2Count, v2CountErr := s.vmV2Datastore.CountVirtualMachines(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterId).ProtoQuery())
+	s.NoError(v2CountErr)
+	s.Zero(v2Count)
+	_, v2Found, v2GetErr := s.vmV2Datastore.GetVirtualMachine(ctx, testV2VM.GetId())
+	s.NoError(v2GetErr)
+	s.False(v2Found)
+
+	cves, cveSearchErr := s.vmCVEDatastore.SearchRawVMCVEs(ctx, pkgSearch.EmptyQuery())
+	s.NoError(cveSearchErr)
+	s.Empty(cves)
+
+	_, keptFound, keptGetErr := s.vmDatastore.GetVirtualMachine(ctx, keptV1VM.GetId())
+	s.NoError(keptGetErr)
+	s.True(keptFound)
+}
+
+func clusterRemovalTestScanParts(vmID string) common.VMScanParts {
+	scanID := uuid.NewV4().String()
+	compID := uuid.NewV4().String()
+	cveID := uuid.NewV4().String()
+	return common.VMScanParts{
+		Scan: &storage.VirtualMachineScanV2{
+			Id:     scanID,
+			VmV2Id: vmID,
+			ScanOs: "rhel9",
+		},
+		Components: []*storage.VirtualMachineComponentV2{
+			{
+				Id:              compID,
+				VmScanId:        scanID,
+				Name:            "openssl",
+				Version:         "1.1.1",
+				Source:          storage.SourceType_OS,
+				OperatingSystem: "rhel:9",
+			},
+		},
+		CVEs: []*storage.VirtualMachineCVEV2{
+			{
+				Id:            cveID,
+				VmV2Id:        vmID,
+				VmComponentId: compID,
+				CveBaseInfo: &storage.CVEInfo{
+					Cve:     "CVE-2024-0001",
+					Summary: "test vulnerability",
+				},
+				PreferredCvss: 7.5,
+				Severity:      storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				IsFixable:     true,
+				HasFixedBy:    &storage.VirtualMachineCVEV2_FixedBy{FixedBy: "1.1.2"},
+			},
+		},
+	}
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {

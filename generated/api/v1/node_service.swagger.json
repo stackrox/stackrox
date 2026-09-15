@@ -307,6 +307,9 @@
         },
         "cisaKev": {
           "type": "boolean"
+        },
+        "knownRansomwareCampaign": {
+          "type": "boolean"
         }
       }
     },

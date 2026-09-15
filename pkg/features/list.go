@@ -132,7 +132,7 @@ var (
 	VulnerabilityReportStreamingDownload = registerFeature("Enables streaming downloadable vulnerability reports to blob storage", "ROX_VULNERABILITY_REPORT_STREAMING_DOWNLOAD", enabled)
 
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
-	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
+	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS", enabled)
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
@@ -149,17 +149,14 @@ var (
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
-	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
-	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+	// LegacyScanner enables Scanner V2 integration. Off by default; locked in release builds.
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", unchangeableInProd)
 
 	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
 	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
 
-	// AIIntegrations enables AI integrations management
-	AIIntegrations = registerFeature("Enable AI integrations management", "ROX_AI_INTEGRATIONS")
-
 	// LightspeedRiskSummary enables Lightspeed AI risk summary
-	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY", enabled)
 )
 
 // The following feature flags are related to Scanner V4.

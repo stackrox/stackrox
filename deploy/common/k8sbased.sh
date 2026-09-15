@@ -224,8 +224,6 @@ function launch_central {
     add_args -i "${MAIN_IMAGE}"
 
     add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    add_args "--scanner-image=${SCANNER_IMAGE}"
-    add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -369,10 +367,6 @@ function launch_central {
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
       fi
-      if [[ "$SCANNER_SUPPORT" != "true" ]]; then
-        helm_args+=(--set scanner.disable=true)
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -461,6 +455,12 @@ function launch_central {
             --set-json "customize.envVars.SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
           )
         fi
+      fi
+
+      if [[ -n "${ROX_CENTRAL_WORKER_ENABLED:-}" ]]; then
+        helm_args+=(
+          --set "centralWorker.enabled=${ROX_CENTRAL_WORKER_ENABLED}"
+        )
       fi
 
       if [[ -n "$EXTERNAL_DB" ]]; then
@@ -582,11 +582,6 @@ function launch_central {
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
-          echo "Deploying Scanner..."
-          if [[ -n "${REGISTRY_USERNAME}" ]]; then
-            "${unzip_dir}/scanner/scripts/setup.sh"
-          fi
-          launch_service "${unzip_dir}" scanner
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
               echo "Deploying ScannerV4..."
@@ -622,14 +617,6 @@ function launch_central {
               echo >&2 "WARNING: Scanner V4 will not be deployed now."
               echo >&2 "Possible reason for this: the roxctl in PATH does not support Scanner V4."
             fi
-          fi
-
-          if [[ -n "$CI" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-          elif [[ "${is_local_dev}" == "true" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
           fi
           echo
       fi
@@ -940,10 +927,6 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=false")
       fi
 
-      if [[ "$SENSOR_SCANNER_SUPPORT" == "true" ]]; then
-        helm_args+=(--set scanner.disable=false)
-      fi
-
       if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
         helm_args+=(--set scannerV4.disable=false)
       fi
@@ -956,6 +939,14 @@ function launch_sensor {
       elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
         extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
+
+      # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
+      # Matcher-not-ready drops the first index as unretryable; a short interval
+      # covers the next scan without restarting collector.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=30s
+      )
 
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(

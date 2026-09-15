@@ -199,6 +199,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssV3: CVSSV3",
 		"epss: EPSS",
 		"exploit: Exploit",
+		"knownRansomwareCampaign: Boolean!",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -3434,6 +3435,11 @@ func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error
 func (resolver *cVEInfoResolver) Exploit(ctx context.Context) (*exploitResolver, error) {
 	value := resolver.data.GetExploit()
 	return resolver.root.wrapExploit(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) KnownRansomwareCampaign(ctx context.Context) bool {
+	value := resolver.data.GetKnownRansomwareCampaign()
+	return value
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {

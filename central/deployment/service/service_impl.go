@@ -37,6 +37,7 @@ import (
 
 const (
 	maxDeploymentsReturned = 1000
+	lowRiskThreshold       = 5.0
 )
 
 var log = logging.LoggerForModule()
@@ -303,14 +304,28 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, err
 	}
 
+	// Skip LLM call for deployments without risk data.
+	if risk == nil {
+		return &v1.DeploymentRiskAISummaryResponse{
+			Summary: "No risk data available for this deployment.",
+		}, nil
+	}
+
+	// Skip LLM call for low-risk deployments.
+	if risk.GetScore() < lowRiskThreshold {
+		return &v1.DeploymentRiskAISummaryResponse{
+			Summary: "Skipping AI summary since this is a low risk deployment with normalized risk score below 5.",
+		}, nil
+	}
+
 	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
 	if err != nil {
 		return nil, errors.Wrap(err, "building risk context for AI summary")
 	}
 
+	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
 	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
-		Query:   aiSummaryPrompt,
-		Context: contextJSON,
+		Query: query,
 	})
 	if err != nil {
 		log.Errorf("Lightspeed query failed for deployment %s: %v", request.GetId(), err)

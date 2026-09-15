@@ -421,7 +421,9 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		ranking.NewRanker(),
 		networkBaselineMgr,
 		compliancePruner,
-		clusterInitStore)
+		clusterInitStore,
+		nil,
+		nil)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore

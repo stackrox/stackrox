@@ -21,13 +21,20 @@ const (
 // ListV2VMByNamespaceName returns the first VM matching namespace and name.
 // Returns (nil, nil) when no match is found.
 func ListV2VMByNamespaceName(ctx context.Context, client v2.VirtualMachineV2ServiceClient, namespace, name string) (*v2.VMListItem, error) {
+	return listV2VM(ctx, client, rawListQueryNamespaceAndName(namespace, name))
+}
+
+// ListV2VMByNamespaceNameGuestOS is ListV2VMByNamespaceName plus an exact Guest OS match.
+func ListV2VMByNamespaceNameGuestOS(ctx context.Context, client v2.VirtualMachineV2ServiceClient, namespace, name, guestOS string) (*v2.VMListItem, error) {
+	return listV2VM(ctx, client, rawListQueryNamespaceNameGuestOS(namespace, name, guestOS))
+}
+
+func listV2VM(ctx context.Context, client v2.VirtualMachineV2ServiceClient, query string) (*v2.VMListItem, error) {
 	resp, err := client.ListVMs(ctx, &v2.ListVMsRequest{
-		Query: &v2.RawQuery{
-			Query: rawListQueryNamespaceAndName(namespace, name),
-		},
+		Query: &v2.RawQuery{Query: query},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list vms: %w", err)
 	}
 	if vms := resp.GetVms(); len(vms) > 0 {
 		return vms[0], nil
@@ -62,7 +69,7 @@ func waitForV2VMCondition(ctx context.Context, client v2.VirtualMachineV2Service
 	err := pollUntil(ctx, opts, desc, func(ctx context.Context) (bool, string, error) {
 		cur, err := client.GetVM(ctx, &v2.GetVMRequest{Id: id})
 		if err != nil {
-			return false, "", err
+			return false, "", fmt.Errorf("get vm %s: %w", id, err)
 		}
 		done, detail := check(cur)
 		if done {
@@ -112,7 +119,7 @@ func WaitForV2ScanReady(ctx context.Context, client v2.VirtualMachineV2ServiceCl
 	err := pollUntil(ctx, opts, fmt.Sprintf("V2 scan ready (id=%q)", id), func(ctx context.Context) (bool, string, error) {
 		vm, err := client.GetVM(ctx, &v2.GetVMRequest{Id: id})
 		if err != nil {
-			return false, "", err
+			return false, "", fmt.Errorf("get vm %s: %w", id, err)
 		}
 		scan := vm.GetLatestScan()
 		if scan == nil {
@@ -178,12 +185,12 @@ func ListAllVMComponents(ctx context.Context, client v2.VirtualMachineV2ServiceC
 			},
 		})
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, fmt.Errorf("list vm components %s: %w", vmID, err)
 		}
 		total = resp.GetTotalCount()
 		all = append(all, resp.GetComponents()...)
-		if int32(len(all)) >= total || len(resp.GetComponents()) == 0 {
-			return all, total, nil
+		if v2ListExhausted(len(all), len(resp.GetComponents()), total) {
+			return all, max(total, int32(len(all))), nil
 		}
 	}
 	return nil, 0, fmt.Errorf("ListVMComponents: exceeded %d pages for vm %s (collected %d, total_count=%d)", v2ListMaxPages, vmID, len(all), total)
@@ -206,15 +213,21 @@ func ListAllVMCVEsByVM(ctx context.Context, client v2.VirtualMachineV2ServiceCli
 			},
 		})
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, fmt.Errorf("list vm cves %s: %w", vmID, err)
 		}
 		total = resp.GetTotalCount()
 		all = append(all, resp.GetCves()...)
-		if int32(len(all)) >= total || len(resp.GetCves()) == 0 {
-			return all, total, nil
+		if v2ListExhausted(len(all), len(resp.GetCves()), total) {
+			return all, max(total, int32(len(all))), nil
 		}
 	}
 	return nil, 0, fmt.Errorf("ListVMCVEsByVM: exceeded %d pages for vm %s (collected %d, total_count=%d)", v2ListMaxPages, vmID, len(all), total)
+}
+
+// v2ListExhausted is true on a short page, or when a positive total_count has
+// already been collected. A zero total_count with a full page is not exhausted.
+func v2ListExhausted(collected, pageLen int, total int32) bool {
+	return pageLen < int(v2ListPageSize) || (total > 0 && int32(collected) >= total)
 }
 
 // VulnCountBySeverityTotal sums the per-severity total fields.
@@ -257,7 +270,7 @@ func WaitForV2ScanMissingComponent(
 		func(ctx context.Context) (bool, string, error) {
 			vm, err := client.GetVM(ctx, &v2.GetVMRequest{Id: id})
 			if err != nil {
-				return false, "", err
+				return false, "", fmt.Errorf("get vm %s: %w", id, err)
 			}
 			scan := vm.GetLatestScan()
 			if scan == nil {
@@ -286,9 +299,9 @@ func WaitForV2ScanMissingComponent(
 			if err != nil {
 				return false, "", err
 			}
-			if filtered.GetTotalCount() > 0 {
+			if n := max(int(filtered.GetTotalCount()), len(filtered.GetComponents())); n > 0 {
 				return false, fmt.Sprintf("scan_time advances=%d but package %q still present (matches=%d)",
-					advances, packageName, filtered.GetTotalCount()), nil
+					advances, packageName, n), nil
 			}
 
 			comps, total, err := ListAllVMComponents(ctx, client, id)

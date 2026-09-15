@@ -2,5 +2,5 @@ tests:
 - name: should use custom tag
   expect: |
     assertCentral("test.registry/main:custom-main")
-    assertScanner("test.registry/scanner:custom-scanner")
-    assertScannerDB("test.registry/scanner-db:custom-scanner")
+    assertScanner("test.registry/scanner-v4:custom-scanner")
+    assertScannerDB("test.registry/scanner-v4-db:custom-scanner")

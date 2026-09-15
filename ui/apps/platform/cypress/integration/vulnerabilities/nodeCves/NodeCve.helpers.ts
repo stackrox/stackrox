@@ -1,14 +1,10 @@
 import type { RouteHandler, RouteMatcherOptions } from 'cypress/types/net-stubbing';
 
 import { graphql } from '../../../constants/apiEndpoints';
-import {
-    getRouteMatcherMapForGraphQL,
-    interactAndWaitForResponses,
-} from '../../../helpers/request';
 import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/visit';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 export const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
+export const nodePageBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 
 // Source of truth for keys in routeMatcherMap and staticResponseMap objects.
 // Overview page
@@ -100,6 +96,16 @@ export function visitNodeCvePage(
     return visit(mockNodeCvePageUrl, routeMatcherMap, staticResponseMap);
 }
 
+export function visitNodePage(
+    nodeId: string,
+    routeMatcherMap?: Record<string, RouteMatcherOptions>,
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
+) {
+    const paramString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return visit(`${nodePageBaseUrl}/${nodeId}${paramString}`, routeMatcherMap, staticResponseMap);
+}
+
 export function visitNodeCvePageWithStaticPermissions(
     mockCveName: string,
     resourceToAccess: Record<string, string>,
@@ -130,22 +136,8 @@ export const staticResponseMapForNodePage = {
     },
 };
 
-export function visitFirstNodeLinkFromTable(): Cypress.Chainable<string> {
-    // Get the name of the first node in the table and pass it to the caller
-    return cy
-        .get('tbody tr td[data-label="Node"] a')
-        .first()
-        .then(($link) => {
-            interactAndWaitForResponses(
-                () => cy.wrap($link).click(),
-                getRouteMatcherMapForGraphQL(['getNodeMetadata'])
-            );
-            return cy.wrap($link.text());
-        });
-}
-
-export function visitFirstNodeFromOverviewPage() {
-    visitNodeCveOverviewPage();
-    cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
-    visitFirstNodeLinkFromTable();
-}
+export const staticResponseMapForNodes = {
+    [getNodesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodesOpname}`,
+    },
+};

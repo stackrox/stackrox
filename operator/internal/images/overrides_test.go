@@ -10,14 +10,14 @@ import (
 
 func TestToValues(t *testing.T) {
 	testOverrides := Overrides{
-		Main:      "central.image.fullRef",
-		Scanner:   "scanner.image.fullRef",
-		ScannerDB: "scanner.dbImage.fullRef",
+		Main:        "central.image.fullRef",
+		ScannerV4:   "scannerV4.image.fullRef",
+		ScannerV4DB: "scannerV4.db.image.fullRef",
 	}
 
 	t.Setenv(Main.EnvVar(), "override-main")
-	t.Setenv(Scanner.EnvVar(), "")
-	t.Setenv(ScannerDB.EnvVar(), "")
+	t.Setenv(ScannerV4.EnvVar(), "")
+	t.Setenv(ScannerV4DB.EnvVar(), "")
 
 	vals, err := testOverrides.ToValues()
 	require.NoError(t, err)

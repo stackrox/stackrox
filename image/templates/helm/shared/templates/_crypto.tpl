@@ -235,7 +235,7 @@
 {{ $ := index . 0 }}
 {{ $out := index . 1 }}
 {{ $svcName := index . 2 }}
-{{ $releaseNS := $.Release.Namespace }}
+{{ $releaseNS := $._rox._namespace }}
 {{ $sans := list }}
 {{ range $ns := list $releaseNS "stackrox" | uniq | sortAlpha }}
   {{ $baseDNS := printf "%s.%s" $svcName $ns }}

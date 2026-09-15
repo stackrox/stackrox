@@ -36,7 +36,15 @@ describe('Collection deployment matching', () => {
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('stackrox');
 
         // Test that Stackrox deployments are matched
-        assertDeploymentsAreMatched(['central', 'central-db', 'collector', 'scanner', 'sensor']);
+        assertDeploymentsAreMatched([
+            'central',
+            'central-db',
+            'collector',
+            'scanner-v4-indexer',
+            'scanner-v4-matcher',
+            'scanner-v4-db',
+            'sensor',
+        ]);
 
         // Restrict collection to two specific deployments
         cy.get('button:contains("No deployments specified")').click();

@@ -39,13 +39,13 @@ jobs:
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
-      SENSOR_SCANNER_SUPPORT: "true"
+      SENSOR_SCANNER_V4_SUPPORT: "true"
       ROX_DEPLOY_SENSOR_WITH_CRS: "true"
       SENSOR_HELM_MANAGED: "true"
       SCANNER_V4_DB_STORAGE_CLASS: faster
       STORAGE: pvc
       STORAGE_CLASS: faster
-      ROX_SCANNER_V4: "false"
+      ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
     steps:

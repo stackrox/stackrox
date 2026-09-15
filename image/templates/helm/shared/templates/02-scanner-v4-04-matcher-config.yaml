@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: scanner-v4-matcher-config
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "configmap" "scanner-v4-matcher-config") | nindent 4 }}
   annotations:

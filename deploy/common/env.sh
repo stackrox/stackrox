@@ -88,11 +88,17 @@ echo "ROX_DECLARATIVE_CONFIGURATION is set to ${ROX_DECLARATIVE_CONFIGURATION}"
 export ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL:-false}"
 echo "ROX_MANAGED_CENTRAL is set to ${ROX_MANAGED_CENTRAL}"
 
+# central-worker is enabled by default in the central-services chart. Disabling it is only
+# possible through Helm values, which the kubectl output format does not support.
+export ROX_CENTRAL_WORKER_ENABLED="${ROX_CENTRAL_WORKER_ENABLED:-true}"
+echo "ROX_CENTRAL_WORKER_ENABLED is set to ${ROX_CENTRAL_WORKER_ENABLED}"
+if [[ "${ROX_CENTRAL_WORKER_ENABLED}" == "false" && "${OUTPUT_FORMAT}" != "helm" ]]; then
+  echo "ROX_CENTRAL_WORKER_ENABLED=false requires OUTPUT_FORMAT=helm, overriding"
+  export OUTPUT_FORMAT="helm"
+fi
+
 export SENSOR_DEV_RESOURCES="${SENSOR_DEV_RESOURCES:-true}"
 echo "SENSOR_DEV_RESOURCES is set to ${SENSOR_DEV_RESOURCES}"
-
-export SENSOR_SCANNER_SUPPORT="${SENSOR_SCANNER_SUPPORT:-false}"
-echo "SENSOR_SCANNER_SUPPORT is set to ${SENSOR_SCANNER_SUPPORT}"
 
 export SENSOR_SCANNER_V4_SUPPORT="${SENSOR_SCANNER_V4_SUPPORT:-false}"
 echo "SENSOR_SCANNER_V4_SUPPORT is set to ${SENSOR_SCANNER_V4_SUPPORT}"

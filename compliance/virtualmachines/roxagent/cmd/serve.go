@@ -198,7 +198,6 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 		HostPath:            hostPath,
 		Client:              &http.Client{Transport: proxy.RoundTripper()},
 		Repo2CPEMappingFile: mappingFilePath,
-		PackageDBFilter:     "",
 	}
 	return index.NewNodeIndexer(cfg).IndexNode(ctx)
 }

@@ -53,6 +53,9 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 				switch field.Type().Elem().Kind() {
 				case reflect.Struct:
 					if field.IsNil() {
+						if isObsoleteField(fieldSchema) {
+							t.Skipf("skipping obsolete field")
+						}
 						// Operator code provides no defaults for this subtree.
 						// Make sure the schema does not mention defaults either.
 						checkObjectNoDefaults(t, fieldSchema)
@@ -72,6 +75,15 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 			}
 		})
 	}
+}
+
+func isObsoleteField(schema chartutil.Values) bool {
+	desc, err := schema.PathValue("description")
+	if err != nil {
+		return false
+	}
+	s, ok := desc.(string)
+	return ok && strings.HasPrefix(s, "Obsolete field.")
 }
 
 func requireNoDefaultProperty(t *testing.T, schema chartutil.Values) {

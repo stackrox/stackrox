@@ -25,17 +25,21 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
 
 - Compliance container no longer collects Scanner V2 node inventories. Node scanning continues via Scanner V4 index reports, as long as Scanner V4 is enabled.
+- ROX-36654: Removed legacy scanner (StackRox Scanner) across all installation methods.
 
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
+- The `priority` field on API responses for deployments, images, nodes, and components is deprecated and will be removed in a future release. Use the `risk_score` field on the same objects instead. Sorting by "Risk Priority" in search queries is also deprecated; sort by "Risk Score" instead. For clusters and namespaces, the `priority` field will be removed and replaced by a `risk_score` field where applicable.
 
 ### Technical Changes
+- ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
 - ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
 - ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.

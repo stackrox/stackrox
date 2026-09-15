@@ -35,9 +35,10 @@ const (
 	colNVDCVSS      = 11
 	colEPSS         = 12
 	colDiscoveredAt = 13
-	colReference    = 14
-	colAdvName      = 15
-	colAdvLink      = 16
+	colImageCreated = 14
+	colReference    = 15
+	colAdvName      = 16
+	colAdvLink      = 17
 )
 
 // collectColumn extracts a single column from all rows.

@@ -3,11 +3,17 @@
 package tests
 
 import (
+	"context"
+	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/namespaces"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
 )
@@ -33,8 +39,8 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			roxagentOK := false
 
 			t.Run("EnsureRoxagentServing", func(t *testing.T) {
-				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s repo-cpe-url=%s)",
-					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval, s.cfg.Repo2CPEURL)
+				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s)",
+					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval)
 				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true
@@ -43,6 +49,13 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				t.Log("skipping remaining subtests: roxagent serve failed to become ready")
 				return
 			}
+
+			t.Run("WaitForSensorPushedMapping", func(t *testing.T) {
+				if strings.TrimSpace(s.cfg.Repo2CPEURL) != "" {
+					t.Skip("ROXAGENT_REPO2CPE_URL set: agent is URL-managed, Sensor will not push mapping")
+				}
+				s.waitForSensorPushedMapping(vm)
+			})
 
 			t.Run("WaitForScan", func(t *testing.T) {
 				var err error
@@ -110,6 +123,25 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				requireForwardedAgentFacts(t, detail.GetFacts())
 				require.Equal(t, detail.GetFacts()[pkgVM.DetectedGuestOSKey], detail.GetGuestOs(),
 					"GetVM.guest_os should prefer facts.detectedGuestOS")
+			})
+
+			t.Run("VirtualMachineV2GuestOSSearch", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				detail := s.mustGetVMV2(snapshot.ID)
+				guestOS := detail.GetGuestOs()
+				require.Regexp(t, `^Red Hat Enterprise Linux \d`, guestOS,
+					"guest_os must be versioned so quoted informer search can miss")
+
+				found, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, guestOS)
+				require.NoError(t, err)
+				require.NotNil(t, found, "ListVMs Guest OS:%q should find this VM", guestOS)
+				require.Equal(t, snapshot.ID, found.GetId())
+
+				const informerGuestOS = "Red Hat Enterprise Linux"
+				miss, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, informerGuestOS)
+				require.NoError(t, err)
+				require.Nil(t, miss,
+					"quoted informer Guest OS must not match a versioned guest_os column")
 			})
 
 			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
@@ -238,6 +270,19 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			})
 		})
 	}
+}
+
+// waitForSensorPushedMapping waits until Sensor logs a successful repo-to-CPE
+// mapping push for vm. Setup installs without --repo-cpe-url, so a scan cannot
+// complete until this push happens.
+func (s *VMScanningSuite) waitForSensorPushedMapping(vm *VMHandle) {
+	waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)
+	defer cancel()
+	re := regexp.MustCompile(regexp.QuoteMeta(
+		fmt.Sprintf(`VMScraper: synced repo-to-CPE mapping to "%s/%s"`, vm.Namespace, vm.Name)))
+	s.waitUntilLog(waitCtx, namespaces.StackRox, sensorPodLabels, sensorContainer,
+		"contain Sensor-pushed repo-to-CPE mapping sync",
+		logmatchers.ContainsLineMatching(re))
 }
 
 func (s *VMScanningSuite) requireProbePackagePresent(t *testing.T, snapshot *centralScanSnapshot, pkg string) int {
