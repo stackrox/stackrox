@@ -104,7 +104,7 @@ func validateScanName(req scanNameGetter) error {
 func nodeRolesFromRequest(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []string {
 	roles := request.GetNodeRoles()
 	if len(roles) == 0 {
-		return defaultNodeRoles()
+		return complianceoperator.DefaultNodeRoles()
 	}
 	return roles
 }

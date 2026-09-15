@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -32,22 +33,14 @@ const (
 	allNodesRole = "@all"
 )
 
-// defaultNodeRoles returns the backward-compatible default roles used when the
-// user does not specify any. Keep in sync with the Sensor-side default in
-// sensor/kubernetes/complianceoperator/types.go and the UI default in
-// ui/.../Schedules/compliance.scanConfigs.utils.tsx.
-func defaultNodeRoles() []string {
-	return []string{"master", "worker"}
-}
-
 // nodeRolesOrDefault returns the stored node roles, falling back to
-// defaultNodeRoles() when empty. Pre-PR stored configs have an empty
-// node_roles blob but actually run master+worker on Sensor, so read paths
-// default here to keep the API/UI representation consistent with actual
+// complianceoperator.DefaultNodeRoles() when empty. Pre-PR stored configs have
+// an empty node_roles blob but actually run master+worker on Sensor, so read
+// paths default here to keep the API/UI representation consistent with actual
 // behavior (matches the write-path defaulting in convertV2ScanConfigToStorage).
 func nodeRolesOrDefault(roles []string) []string {
 	if len(roles) == 0 {
-		return defaultNodeRoles()
+		return complianceoperator.DefaultNodeRoles()
 	}
 	return roles
 }

@@ -10,18 +10,6 @@ const (
 	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
 )
 
-// defaultNodeRoles returns the backward-compatible default roles used when
-// Central does not specify any (e.g. old Central version).
-// Central always populates BaseScanSettings.node_roles once compliance-v2 sync is
-// supported; conversely, old Sensor builds that predate the node_roles field ignore
-// it via normal protobuf forward-compatibility and fall back to this same default.
-// See the node_roles comment in proto/internalapi/central/compliance_operator.proto.
-// Keep in sync with central/complianceoperator/v2/scanconfigurations/service/convert.go
-// and the UI default in ui/.../Schedules/compliance.scanConfigs.utils.tsx.
-func defaultNodeRoles() []string {
-	return []string{"master", "worker"}
-}
-
 var (
 	defaultScanSettingName = "default-" + branding.GetProductNameShort()
 )

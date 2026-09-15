@@ -68,7 +68,3 @@ func TestNodeRolesOrDefault(t *testing.T) {
 		})
 	}
 }
-
-func TestDefaultNodeRoles(t *testing.T) {
-	assert.Equal(t, []string{"master", "worker"}, defaultNodeRoles())
-}
