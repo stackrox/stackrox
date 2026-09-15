@@ -31,7 +31,6 @@ func SetExampleVersion(t *testing.T) {
 func SetVersion(t *testing.T, version version.Versions) {
 	testutils.MustBeInTest(t)
 	internal.MainVersion = version.MainVersion
-	internal.ScannerVersion = version.ScannerVersion
 	internal.CollectorVersion = version.CollectorVersion
 	internal.GitShortSha = version.GitCommit
 	internal.FactVersion = version.FactVersion
@@ -46,7 +45,6 @@ func GetExampleVersion(t *testing.T) version.Versions {
 		GoVersion:        runtime.Version(),
 		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   "99.9.9",
 		ChartVersion:     "3.99.0",
 		FactVersion:      "0.1.0",
 	}
