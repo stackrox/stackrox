@@ -27,6 +27,9 @@ type podIPsStore struct {
 	reverseIPMap map[string]set.FrozenSet[net.IPAddress]
 	// historicalIPs is mimicking ipMap: IP Address -> deploymentID -> historyStatus
 	historicalIPs map[net.IPAddress]map[string]*entityStatus
+
+	publicIPs        set.Set[net.IPAddress]
+	publicIPsChanged bool
 }
 
 func newPodIPsStoreWithMemory(numTicks uint16) *podIPsStore {
@@ -41,6 +44,8 @@ func (e *podIPsStore) initMapsNoLock() {
 	e.ipMap = make(map[net.IPAddress]set.StringSet)
 	e.reverseIPMap = make(map[string]set.FrozenSet[net.IPAddress])
 	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
+	e.publicIPs = nil
+	e.publicIPsChanged = false
 }
 
 func (e *podIPsStore) resetMaps() {
@@ -74,27 +79,32 @@ func (e *podIPsStore) updateMetricsNoLock() {
 func (e *podIPsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	removedPublic := false
+	e.publicIPsChanged = false
 	for ip, m := range e.historicalIPs {
 		for deploymentID, status := range m {
 			status.recordTick()
-			// Remove all historical entries that expired in this tick.
-			removed := e.removeFromHistoryIfExpired(deploymentID, ip)
-			removedPublic = removedPublic || removed && ip.IsPublic()
+			e.removeFromHistoryIfExpired(deploymentID, ip)
 		}
 	}
 	e.updateMetricsNoLock()
-	return removedPublic
+	return e.publicIPsChanged
 }
 
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) {
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	e.applyNoLock(updates, incremental)
+	return e.applyNoLock(updates, incremental)
 }
 
-func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
+func (e *podIPsStore) PublicIPs() set.Set[net.IPAddress] {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.collectPublicIPsNoLock()
+}
+
+func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
+	e.publicIPsChanged = false
 	if !incremental {
 		for deploymentID := range updates {
 			e.purgeDeploymentNoLock(deploymentID)
@@ -102,11 +112,15 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
-			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
+	return e.publicIPsChanged
+}
+
+func (e *podIPsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
+	return e.publicIPs.Clone()
 }
 
 func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) {
@@ -150,18 +164,17 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	for ip := range data.ips {
 		ipsSet.Add(ip)
 
-		// Check if this IP already belongs to other deployment.
-		// If the `ip` is not in the `ipMap` then `e.ipMap[ip]` returns the zero-value of the StringSet,
-		// which is an empty (but initialized) StringSet.
 		deplSet := e.ipMap[ip]
 		deplSet.Add(deploymentID)
-		// This IP has more than one deployment! Interesting, let's record it.
 		if deplSet.Cardinality() > 1 {
 			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String())
 		}
 		e.ipMap[ip] = deplSet
-		// If the IP being currently added was already in history,
-		// we must remove it from there to prevent unwanted expiration.
+		if ip.IsPublic() {
+			if e.publicIPs.Add(ip) {
+				e.publicIPsChanged = true
+			}
+		}
 		_ = e.deleteFromHistory(deploymentID, ip)
 	}
 	e.reverseIPMap[deploymentID] = ipsSet.Freeze()
@@ -180,6 +193,11 @@ func (e *podIPsStore) addToHistory(deploymentID string) {
 			e.historicalIPs[ip] = make(map[string]*entityStatus)
 		}
 		e.historicalIPs[ip][deploymentID] = newHistoricalEntity(e.memorySize)
+		if ip.IsPublic() {
+			if e.publicIPs.Add(ip) {
+				e.publicIPsChanged = true
+			}
+		}
 	}
 }
 
@@ -191,6 +209,11 @@ func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) {
 		deploymentsHavingIP.Remove(deploymentID)
 		if deploymentsHavingIP.Cardinality() == 0 {
 			delete(e.ipMap, address)
+			if address.IsPublic() && len(e.historicalIPs[address]) == 0 {
+				if e.publicIPs.Remove(address) {
+					e.publicIPsChanged = true
+				}
+			}
 		}
 	}
 	delete(e.reverseIPMap, deploymentID)
@@ -200,13 +223,16 @@ func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) {
 // It does not check whether the historical entry has expired.
 func (e *podIPsStore) deleteFromHistory(deploymentID string, ip net.IPAddress) bool {
 	if _, ok := e.historicalIPs[ip]; !ok {
-		return false // nothing to remove
+		return false
 	}
-	// In most of the cases, "delete(e.historicalIPs, ip)"
-	// should be enough as one IP should belong maximally to one deployment, but let's cover here the general case.
 	delete(e.historicalIPs[ip], deploymentID)
 	if len(e.historicalIPs[ip]) == 0 {
 		delete(e.historicalIPs, ip)
+		if ip.IsPublic() && len(e.ipMap[ip]) == 0 {
+			if e.publicIPs.Remove(ip) {
+				e.publicIPsChanged = true
+			}
+		}
 	}
 	return true
 }
