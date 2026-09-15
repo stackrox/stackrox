@@ -115,6 +115,7 @@ func init() {
 		&storage.TokenMetadata{}:                                resources.Integration,
 		&storage.User{}:                                         resources.Access,
 		&storage.Version{}:                                      resources.Version,
+		&storage.AIWorkload{}:                                   resources.AIWorkload,
 		&storage.VirtualMachine{}:                               resources.VirtualMachine,
 		&storage.VirtualMachineComponentV2{}:                    resources.VirtualMachine,
 		&storage.VirtualMachineCVEV2{}:                          resources.VirtualMachine,

@@ -23,6 +23,7 @@ var (
 		// Direct resource mapping
 		"accesses.api.stackrox.io":                         resources.Access,
 		"administration.api.stackrox.io":                   resources.Administration,
+		"aiworkloads.api.stackrox.io":                      resources.AIWorkload,
 		"alerts.api.stackrox.io":                           resources.Alert,
 		"cves.api.stackrox.io":                             resources.CVE,
 		"clusters.api.stackrox.io":                         resources.Cluster,

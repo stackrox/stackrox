@@ -41,4 +41,5 @@ const (
 	NodeIndex
 	VirtualMachineIndex
 	VirtualMachine
+	AIWorkload
 )
