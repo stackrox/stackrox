@@ -87,8 +87,9 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 variant="info"
                 isInline
             >
-                Collection usage in automated reports has been replaced with a native scoping
-                implementation.
+                Collection scope is deprecated for scheduled vulnerability reports. To prepare for
+                future updates, we recommend updating each scheduled report in Vulnerability
+                reporting to use Custom scope.
             </Alert>
             <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
