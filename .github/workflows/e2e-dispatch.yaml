@@ -109,6 +109,7 @@ jobs:
             Job(name='e2e-db-backup-restore-tests'),
             Job(name='e2e-gke-upgrade-tests'),
             Job(name='e2e-nongroovy-tests'),
+            Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
             Job(name='e2e-qa-tests-gke', require_pr_label=True),
             Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
             Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
@@ -275,6 +276,17 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-nongroovy-tests-gke-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-nongroovy-tests-gke-konflux.yaml
+    with:
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests-gke-konflux }}
+    secrets: inherit
+    concurrency:
+      group: e2e-nongroovy-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-qa-tests-gke:
