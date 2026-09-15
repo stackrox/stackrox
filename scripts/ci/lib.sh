@@ -2724,6 +2724,7 @@ _record_cluster_info() {
     if command -v oc &>/dev/null; then
         local oc_version
         oc_version="$(oc version -o json 2>/dev/null || true)"
+        info "oc_version=${oc_version}"
         local openshiftVersion
         openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion // empty')
         set_ci_shared_export "cut_product_version" "$openshiftVersion"
@@ -2732,24 +2733,29 @@ _record_cluster_info() {
     # K8s version.
     local kubectl_version
     kubectl_version="$(kubectl version -o json 2>/dev/null || true)"
+    info "kubectl version=${kubectl_version}"
     local serverGitVersion
     serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion // empty')
     set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
+    # `kubectl get nodes` may fail and leave $nodes empty or non-JSON. jq's `?`
+    # operator only tolerates missing fields in valid JSON, not a parse error,
+    # which would otherwise abort this function under `set -e` and skip the
+    # exports below. Guard the whole block on valid JSON instead.
     local nodes
-    nodes="$(kubectl get nodes -o json 2>&1 || true)"
-    local osImage
-    osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
-    set_ci_shared_export "cut_os_image" "$osImage"
-
-    local kernelVersion
-    kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
-    set_ci_shared_export "cut_kernel_version" "$kernelVersion"
-
-    local containerRuntimeVersion
-    containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
-    set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
+    nodes="$(kubectl get nodes -o json || true)"
+    if [[ -z "$nodes" ]] || ! jq -e . <<<"$nodes" >/dev/null 2>&1; then
+        info "WARNING: 'kubectl get nodes' returned no valid JSON; skipping node info"
+    else
+        info "nodes[0] info=$(jq '.items?[0]?.status?.nodeInfo' <<<"$nodes")"
+        set_ci_shared_export "cut_os_image" \
+            "$(jq -r '.items?[0]?.status?.nodeInfo?.osImage // empty' <<<"$nodes")"
+        set_ci_shared_export "cut_kernel_version" \
+            "$(jq -r '.items?[0]?.status?.nodeInfo?.kernelVersion // empty' <<<"$nodes")"
+        set_ci_shared_export "cut_container_runtime_version" \
+            "$(jq -r '.items?[0]?.status?.nodeInfo?.containerRuntimeVersion // empty' <<<"$nodes")"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
