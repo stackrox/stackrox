@@ -88,5 +88,17 @@
         "job": "upgrade",
         "logfile": "scanner-previous",
         "logline": "Failed to initialize updater"
+    },
+    {
+        "comment": "Scanner V4 indexer restart when the db pod is slow to schedule (postgres itself starts in seconds; connection refused until it is up)",
+        "job": ".*",
+        "logfile": "scanner-v4-indexer-previous",
+        "logline": "connect: connection refused"
+    },
+    {
+        "comment": "Scanner V4 matcher restart when the db pod is slow to schedule",
+        "job": ".*",
+        "logfile": "scanner-v4-matcher-previous",
+        "logline": "connect: connection refused"
     }
 ]
