@@ -316,9 +316,16 @@ class AdmissionControllerTest extends BaseSpecification {
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
-        orchestrator.deleteNamespace(testNs, false)
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
+        try {
+            // Wait for full namespace deletion; a namespace left in Terminating state
+            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
+            orchestrator.deleteNamespace(testNs)
+        } finally {
+            // Delete the per-test policy even if the namespace deletion above times out
+            // and throws, otherwise the leftover policy affects later tests.
+            if (policyId) {
+                PolicyService.deletePolicy(policyId)
+            }
         }
 
         where:
@@ -413,9 +420,16 @@ class AdmissionControllerTest extends BaseSpecification {
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
-        orchestrator.deleteNamespace(testNs, false)
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
+        try {
+            // Wait for full namespace deletion; a namespace left in Terminating state
+            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
+            orchestrator.deleteNamespace(testNs)
+        } finally {
+            // Delete the per-test policy even if the namespace deletion above times out
+            // and throws, otherwise the leftover policy affects later tests.
+            if (policyId) {
+                PolicyService.deletePolicy(policyId)
+            }
         }
 
         where:
