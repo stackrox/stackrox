@@ -653,7 +653,7 @@ class NetworkFlowTest extends BaseSpecification {
                 log.warn("Failed calling ${targetUrl}. Trying again in 5 sec...", e)
             }
         }
-        log.info "Response: " + response.asString()
+        log.info "Response: " + (response?.asString() ?: "<no response: all HTTP attempts failed>")
         return response
     }
 
