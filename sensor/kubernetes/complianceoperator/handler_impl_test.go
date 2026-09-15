@@ -15,9 +15,11 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	storagev1 "k8s.io/api/storage/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type expectedResponse struct {
@@ -47,7 +49,18 @@ func (s *HandlerTestSuite) SetupSuite() {
 }
 
 func (s *HandlerTestSuite) SetupTest() {
-	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	s.client = fake.NewSimpleDynamicClient(
+		scheme.Scheme,
+		&v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}},
+		&storagev1.StorageClass{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "default-sc",
+				Annotations: map[string]string{
+					defaultStorageClassAnnotationKey: "true",
+				},
+			},
+		},
+	)
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
