@@ -8,6 +8,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 num_sensors=${1:-1}
 run_time=${2:-10m}
+results_base_dir=${3:-perf}  # base directory for results; defaults to perf
 
 # Array of batch sizes to test
 batch_sizes=(10 50 100 250 500)
@@ -20,7 +21,8 @@ for batch in "${batch_sizes[@]}"; do
     "$num_sensors" \
     "$run_time" \
     "file-activity-batch-${batch}" \
-    "false"
+    "false" \
+    "$results_base_dir"
 
   # Clean up between tests
   echo "Cleaning up before next test..."
@@ -36,7 +38,8 @@ for batch in "${batch_sizes[@]}"; do
     "$num_sensors" \
     "$run_time" \
     "file-activity-batch-${batch}" \
-    "true"
+    "true" \
+    "$results_base_dir"
 
   # Clean up between tests
   echo "Cleaning up before next test..."
@@ -45,4 +48,4 @@ for batch in "${batch_sizes[@]}"; do
 done
 
 echo "All file activity tests completed!"
-echo "Results are in perf/file_activity_results_* directories"
+echo "Results are in ${results_base_dir}/file_activity_results_* directories"

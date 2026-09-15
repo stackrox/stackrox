@@ -25,6 +25,7 @@ num_sensors=$1
 run_time=$2
 workload_name=$3  # e.g., file-activity-100ms, file-activity-50ms
 test_with_policy=${4:-false}  # true or false - whether to enable file activity policy
+results_base_dir=${5:-perf}  # base directory for results; defaults to perf
 
 logmein_script="${HOME}/go/src/github.com/stackrox/workflow/bin/logmein"
 
@@ -37,7 +38,7 @@ export ROX_SCANNER_V4=false
 
 kubectl delete ns stackrox1 || true
 
-results_dir="perf/file_activity_results_${num_sensors}_${run_time}_${workload_name}_policy_${test_with_policy}"
+results_dir="${results_base_dir}/file_activity_results_${num_sensors}_${run_time}_${workload_name}_policy_${test_with_policy}"
 rm -rf "$results_dir" || mkdir -p "$results_dir"
 
 script_start_time=$(date +%s)
