@@ -87,8 +87,8 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 variant="info"
                 isInline
             >
-                Collection scope is deprecated for scheduled vulnerability reports. To prepare for
-                future updates, we recommend updating each scheduled report in Vulnerability
+                Collection scope is deprecated for scheduled image vulnerability reports. To prepare
+                for future updates, we recommend updating each scheduled report in Vulnerability
                 reporting to use Custom scope.
             </Alert>
             <PageSection>
