@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -509,24 +511,36 @@ func (s *NodeReportSuite) TestCancelNodeReport() {
 		s.T().Logf("Cancel returned error (job may have already finished): %v", err)
 	}
 
-	statusCtx, statusCancel := context.WithTimeout(s.ctx, 30*time.Second)
-	defer statusCancel()
+	// Cancellation is processed asynchronously; poll until the report reaches a terminal state.
+	var finalStatus *apiV2.ReportStatus
+	s.Require().Eventually(func() bool {
+		ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+		defer cancel()
+		statusResp, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: runResp.GetReportId()})
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				s.T().Logf("Report not found after cancel: %v", err)
+				return true
+			}
+			s.T().Logf("Error checking report status after cancel: %v", err)
+			return false
+		}
+		finalStatus = statusResp.GetStatus()
+		state := finalStatus.GetRunState()
+		s.T().Logf("Report state after cancel: %s", state)
+		return state == apiV2.ReportStatus_FAILURE ||
+			state == apiV2.ReportStatus_GENERATED ||
+			state == apiV2.ReportStatus_DELIVERED
+	}, 2*time.Minute, 5*time.Second, "report did not reach terminal state after cancel")
 
-	statusResp, err := s.service.GetNodeReportStatus(statusCtx, &apiV2.ResourceByID{Id: runResp.GetReportId()})
-	if err != nil {
-		s.T().Logf("Report not found after cancel: %v", err)
-		return
+	if finalStatus == nil {
+		return // not-found case handled above
 	}
-
-	reportStatus := statusResp.GetStatus()
-	s.T().Logf("Report state after cancel: %s", reportStatus.GetRunState())
-	switch reportStatus.GetRunState() {
+	switch finalStatus.GetRunState() {
 	case apiV2.ReportStatus_FAILURE:
-		s.Equal("report cancelled by user", reportStatus.GetErrorMsg(), "cancelled report should have cancellation message")
+		s.Equal("report cancelled by user", finalStatus.GetErrorMsg(), "cancelled report should have cancellation message")
 	case apiV2.ReportStatus_GENERATED, apiV2.ReportStatus_DELIVERED:
 		s.T().Log("report completed before cancel took effect")
-	default:
-		s.Failf("unexpected report state after cancel", "got %s: %s", reportStatus.GetRunState(), reportStatus.GetErrorMsg())
 	}
 }
 

@@ -430,16 +430,10 @@ func testEmptyPullAfterSignal(t *testing.T, consumerName string, startConsumer f
 		<-consumerStarted
 		synctest.Wait()
 
-		q.Push(99)
-		pulled := q.Pull()
-		assert.Equal(t, 99, pulled)
-
+		// Simulate waking after another consumer has already taken the item.
+		// Using Push followed by Pull would race with the waiting consumer.
+		q.notEmptySignal.Signal()
 		synctest.Wait()
-		select {
-		case <-itemReceived:
-			t.Fatalf("%s should not have received the pulled item", consumerName)
-		default:
-		}
 
 		q.Push(42)
 		synctest.Wait()
