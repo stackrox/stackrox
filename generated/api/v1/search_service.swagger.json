@@ -531,7 +531,7 @@
         "IMAGE_CVE_INFOS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 85"
+      "description": "Next available tag: 85"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ImageIntegrationService"
+      "name": "ImageIntegrationService",
+      "description": "ImageIntegrationService APIs manage image registry and image scanner integration."
     }
   ],
   "consumes": [
