@@ -13,6 +13,14 @@ inputs:
     description: "VM OS: rhel9 or rhel10"
     required: false
     default: "rhel9"
+  agent-type:
+    description: "Agent install method: quadlet or native"
+    required: false
+    default: "native"
+  image-tag:
+    description: "ACS image tag for roxagent container (auto-detected from Central if omitted)"
+    required: false
+    default: ""
   ssh-public-key:
     description: "Optional SSH public key to add for human access to all target VMs"
     required: false
@@ -139,8 +147,13 @@ runs:
         ARGS=(
             --num-vms "${{ inputs.num-vms }}"
             --os "${{ inputs.vm-os }}"
+            --agent "${{ inputs.agent-type }}"
             --artifacts-dir "$ARTIFACTS_DIR"
         )
+
+        if [[ -n "${{ inputs.image-tag }}" ]]; then
+            ARGS+=(--image-tag "${{ inputs.image-tag }}")
+        fi
 
         if [[ -n "${USER_SSH_KEY_PATH:-}" ]]; then
             ARGS+=(--ssh-key "$USER_SSH_KEY_PATH")
