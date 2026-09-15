@@ -1474,20 +1474,20 @@ remove_existing_stackrox_resources() {
     # Check API Server Capabilities.
     local k8s_api_resources
     k8s_api_resources=$(retrying_kubectl </dev/null api-resources -o name)
-    if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
+    if grep -q "^securitycontextconstraints\.security\.openshift\.io$" <<< "${k8s_api_resources}"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^consoleplugins\.console\.openshift\.io$"; then
+    if grep -q "^consoleplugins\.console\.openshift\.io$" <<< "${k8s_api_resources}"; then
         global_resource_types="${global_resource_types},consoleplugins.console.openshift.io"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
+    if grep -q "^podsecuritypolicies\.policy$" <<< "${k8s_api_resources}"; then
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^centrals\.platform\.stackrox\.io$"; then
+    if grep -q "^centrals\.platform\.stackrox\.io$" <<< "${k8s_api_resources}"; then
         centrals_supported=true
     fi
-    if echo "${k8s_api_resources}" | grep -q "^securedclusters\.platform\.stackrox\.io$"; then
+    if grep -q "^securedclusters\.platform\.stackrox\.io$" <<< "${k8s_api_resources}"; then
         securedclusters_supported=true
     fi
 
