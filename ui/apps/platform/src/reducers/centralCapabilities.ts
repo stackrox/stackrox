@@ -43,23 +43,6 @@ const centralCapabilities: Reducer<CentralServicesCapabilities, CentralCapabilit
     return state;
 };
 
-const centralCapabilitiesError: Reducer<Error | null, CentralCapabilitiesAction> = (
-    state = null,
-    action
-) => {
-    switch (action.type) {
-        case 'metadata/FETCH_CENTRAL_CAPABILITIES_REQUEST':
-        case 'metadata/FETCH_CENTRAL_CAPABILITIES_SUCCESS':
-            return null;
-
-        case 'metadata/FETCH_CENTRAL_CAPABILITIES_FAILURE':
-            return action.error;
-
-        default:
-            return state;
-    }
-};
-
 const isLoadingCentralCapabilities = (state = true, action) => {
     switch (action.type) {
         case 'metadata/FETCH_CENTRAL_CAPABILITIES_REQUEST':
@@ -76,7 +59,6 @@ const isLoadingCentralCapabilities = (state = true, action) => {
 
 const reducer = combineReducers({
     centralCapabilities,
-    centralCapabilitiesError,
     isLoadingCentralCapabilities,
 });
 
