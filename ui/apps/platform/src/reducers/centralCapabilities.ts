@@ -83,12 +83,10 @@ const reducer = combineReducers({
 type State = ReturnType<typeof reducer>;
 
 const getCentralCapabilities = (state: State) => state.centralCapabilities;
-const getCentralCapabilitiesError = (state: State) => state.centralCapabilitiesError;
 const getIsLoadingCentralCapabilities = (state: State) => state.isLoadingCentralCapabilities;
 
 export const selectors = {
     getCentralCapabilities,
-    getCentralCapabilitiesError,
     getIsLoadingCentralCapabilities,
 };
 

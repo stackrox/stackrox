@@ -102,7 +102,6 @@ const reducer = combineReducers({
 const getRoles = (state) => state.roles;
 const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
-const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 /*
@@ -154,7 +153,6 @@ export const selectors = {
     getRoles,
     getSelectedRole,
     getUserRolePermissions,
-    getUserRolePermissionsError,
     getIsLoadingUserRolePermissions,
 };
 
