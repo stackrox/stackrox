@@ -4,6 +4,7 @@ package schema
 import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
@@ -54,7 +55,7 @@ func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id stri
 // ConvertImageToProto converts Gorm model `Images` to its protobuf type object
 func ConvertImageToProto(m *Images) (*storage.Image, error) {
 	var msg storage.Image
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&msg, m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

@@ -3,6 +3,7 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 // ConvertTestChild2FromProto converts a `*storage.TestChild2` to Gorm model
@@ -24,7 +25,7 @@ func ConvertTestChild2FromProto(obj *storage.TestChild2) (*TestChild2, error) {
 // ConvertTestChild2ToProto converts Gorm model `TestChild2` to its protobuf type object
 func ConvertTestChild2ToProto(m *TestChild2) (*storage.TestChild2, error) {
 	var msg storage.TestChild2
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&msg, m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

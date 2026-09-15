@@ -128,7 +128,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Config, bool, er
 	}
 
 	var msg storage.Config
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&msg, data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
