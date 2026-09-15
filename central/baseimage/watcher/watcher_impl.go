@@ -12,6 +12,7 @@ import (
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
@@ -23,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"golang.org/x/sync/semaphore"
 )
 
 var log = logging.LoggerForModule()
@@ -35,10 +35,6 @@ type watcherImpl struct {
 	delegator    delegatedregistry.Delegator
 	localScanner reposcan.Scanner
 
-	stopper     concurrency.Stopper
-	startedOnce sync.Once
-	stoppedOnce sync.Once
-
 	pollInterval     time.Duration
 	schedulerCadence time.Duration
 	batchSize        int
@@ -46,11 +42,14 @@ type watcherImpl struct {
 
 	delegationEnabled bool
 
-	// sem limits concurrent repository scans to maxConcurrent.
-	sem *semaphore.Weighted
+	scheduler *backgroundworker.PeriodicWorker
+	scanner   *backgroundworker.QueueConsumer[*storage.BaseImageRepository]
+	scanQueue chan *storage.BaseImageRepository
 
-	// wg tracks active scan goroutines for graceful shutdown.
-	wg sync.WaitGroup
+	failInFlightOnce sync.Once
+	cancel           context.CancelFunc
+	startOnce        sync.Once
+	stopOnce         sync.Once
 
 	// pendingStatus holds repos where scan completed but status update failed.
 	pendingStatus   map[string]repoDS.StatusUpdate
@@ -71,13 +70,12 @@ func New(
 	maxConcurrent int,
 	delegationEnabled bool,
 ) Watcher {
-	return &watcherImpl{
+	w := &watcherImpl{
 		repoDS:           repositoryDS,
 		tagDS:            tagDS,
 		baseImageDS:      baseImageDS,
 		delegator:        delegator,
 		localScanner:     reposcan.NewLocalScanner(registries),
-		stopper:          concurrency.NewStopper(),
 		pollInterval:     pollInterval,
 		schedulerCadence: schedulerCadence,
 		batchSize:        batchSize,
@@ -85,58 +83,64 @@ func New(
 
 		delegationEnabled: delegationEnabled,
 
-		sem:           semaphore.NewWeighted(int64(maxConcurrent)),
+		scanQueue:     make(chan *storage.BaseImageRepository, maxConcurrent),
 		pendingStatus: make(map[string]repoDS.StatusUpdate),
 	}
+
+	w.scheduler = &backgroundworker.PeriodicWorker{
+		Name:       "base-image-scheduler",
+		Interval:   schedulerCadence,
+		RunOnStart: true,
+		Run: func(ctx context.Context) error {
+			w.schedulerPass(ctx)
+			return nil
+		},
+	}
+
+	w.scanner = &backgroundworker.QueueConsumer[*storage.BaseImageRepository]{
+		Name:        "base-image-scanner",
+		Source:      w.scanQueue,
+		Handle:      w.scanRepository,
+		Concurrency: maxConcurrent,
+	}
+
+	backgroundworker.Global.Register(w.scheduler)
+	backgroundworker.Global.Register(w.scanner)
+
+	return w
 }
 
 // Start spawns the background polling goroutine.
 // Subsequent calls are no-ops.
 func (w *watcherImpl) Start() {
-	w.startedOnce.Do(func() {
-		go w.run()
+	w.startOnce.Do(func() {
+		ctx, cancel := context.WithCancel(sac.WithAllAccess(context.Background()))
+		w.cancel = cancel
+		log.Info("Base image watcher started")
+		w.scanner.Start(ctx)
+		w.scheduler.Start(ctx)
 	})
 }
 
 // Stop signals shutdown and blocks until all goroutines exit.
 // Subsequent calls are no-ops.
 func (w *watcherImpl) Stop() {
-	w.stoppedOnce.Do(func() {
-		w.stopper.Client().Stop()
-		_ = w.stopper.Client().Stopped().Wait()
-		w.wg.Wait()
+	w.stopOnce.Do(func() {
+		w.scheduler.Stop()
+		if w.cancel != nil {
+			w.cancel()
+		}
+		w.scanner.Stop()
+		log.Info("Base image watcher stopped")
 	})
 }
 
-// run is the main scheduling loop, runs until Stop() is called.
-func (w *watcherImpl) run() {
-	log.Info("Base image watcher started")
-
-	defer w.stopper.Flow().ReportStopped()
-
-	ctx := sac.WithAllAccess(concurrency.AsContext(w.stopper.LowLevel().GetStopRequestSignal()))
-
-	// Fail in-flight scans before starting the scheduler. At this point no scan
-	// goroutines exist, so any repo in QUEUED/IN_PROGRESS is leftover from a
-	// previous crash.
-	w.failInFlightScans(ctx)
-
-	ticker := time.NewTicker(w.schedulerCadence)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			w.schedulerPass(ctx)
-		case <-w.stopper.Flow().StopRequested():
-			log.Info("Base image watcher stopped")
-			return
-		}
-	}
-}
-
 // schedulerPass executes a single scheduler pass with metric tracking.
+// On the first invocation, it recovers any in-flight scans left over from a
+// previous crash.
 func (w *watcherImpl) schedulerPass(ctx context.Context) {
+	w.failInFlightOnce.Do(func() { w.failInFlightScans(ctx) })
+
 	w.updateStatus(ctx)
 
 	start := time.Now()
@@ -175,13 +179,13 @@ func (w *watcherImpl) doSchedulerPass(ctx context.Context) (int, error) {
 		return cmp.Compare(aTime.UnixNano(), bTime.UnixNano())
 	})
 
-	// Claim due repositories and spawn scans.
+	// Claim due repositories and enqueue for scanning.
 	var claimedCount int
 	for _, repo := range repos {
 		if !isRepositoryDue(repo, w.pollInterval) {
 			continue
 		}
-		if !w.sem.TryAcquire(1) {
+		if len(w.scanQueue) >= cap(w.scanQueue) {
 			break
 		}
 		claimedRepo, err := w.repoDS.UpdateStatus(ctx, repo.GetId(), repoDS.StatusUpdate{
@@ -193,15 +197,13 @@ func (w *watcherImpl) doSchedulerPass(ctx context.Context) (int, error) {
 			},
 		})
 		if err != nil || claimedRepo == nil {
-			w.sem.Release(1)
 			if err != nil {
 				log.Errorf("Failed to claim repository %q: %v", repo.GetRepositoryPath(), err)
 			}
 			continue
 		}
+		w.scanQueue <- claimedRepo
 		claimedCount++
-		w.wg.Add(1)
-		go w.scanRepository(ctx, claimedRepo)
 	}
 
 	if claimedCount > 0 {
@@ -239,10 +241,8 @@ func (w *watcherImpl) failInFlightScans(ctx context.Context) {
 }
 
 // scanRepository scans a claimed repository (QUEUED → IN_PROGRESS → READY/FAILED).
-func (w *watcherImpl) scanRepository(ctx context.Context, repo *storage.BaseImageRepository) {
-	defer w.wg.Done()
-	defer w.sem.Release(1)
-
+// It serves as the QueueConsumer's Handle function.
+func (w *watcherImpl) scanRepository(ctx context.Context, repo *storage.BaseImageRepository) error {
 	id := repo.GetId()
 	log.Debugf("Scanning repository: repository=%q pattern=%q",
 		repo.GetRepositoryPath(), repo.GetTagPattern())
@@ -271,6 +271,7 @@ func (w *watcherImpl) scanRepository(ctx context.Context, repo *storage.BaseImag
 			w.pendingStatus[id] = update
 		})
 	}
+	return scanErr
 }
 
 // updateStatus retries pending status updates from previous failures.

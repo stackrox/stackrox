@@ -67,8 +67,17 @@ func createTestWatcher(
 func runSchedulerPassAndWait(w Watcher) {
 	impl := w.(*watcherImpl)
 	ctx := sac.WithAllAccess(context.Background())
+
+	// Pre-drain crash recovery so tests don't need extra ListRepositories
+	// expectations for the one-time failInFlightScans call.
+	impl.failInFlightOnce.Do(func() {})
+
+	// Start the scanner so enqueued items get processed.
+	impl.scanner.Start(ctx)
 	impl.schedulerPass(ctx)
-	impl.wg.Wait()
+	// Give the scanner time to drain queued items.
+	time.Sleep(200 * time.Millisecond)
+	impl.scanner.Stop()
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
@@ -1746,9 +1755,11 @@ func TestWatcher_SchedulerFairness_SortsReposByLastPolledAt(t *testing.T) {
 		AnyTimes()
 
 	w := New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, 4*time.Hour, 10*time.Millisecond, 10, 100, 2, false)
+	impl := w.(*watcherImpl)
 
 	ctx := sac.WithAllAccess(context.Background())
-	claimed, err := w.(*watcherImpl).doSchedulerPass(ctx)
+	impl.scanner.Start(ctx)
+	claimed, err := impl.doSchedulerPass(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 2, claimed)
 
@@ -1760,7 +1771,8 @@ func TestWatcher_SchedulerFairness_SortsReposByLastPolledAt(t *testing.T) {
 		}
 	}
 	close(blockScan)
-	w.(*watcherImpl).wg.Wait()
+	time.Sleep(100 * time.Millisecond)
+	impl.scanner.Stop()
 
 	assert.Equal(t, []string{neverScanned.GetId(), oldestScanned.GetId()}, claimOrder)
 }
@@ -1981,6 +1993,7 @@ func TestWatcher_PendingStatus(t *testing.T) {
 
 			w := New(mockRepoDS, nil, nil, nil, nil, 1*time.Hour, 10*time.Millisecond, 10, 0, 5, false)
 			impl := w.(*watcherImpl)
+			impl.failInFlightOnce.Do(func() {})
 
 			if tt.initial != nil {
 				impl.pendingStatus[repoID] = *tt.initial
