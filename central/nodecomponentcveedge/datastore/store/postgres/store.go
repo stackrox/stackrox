@@ -25,7 +25,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NodeComponentsCvesEdgesSchema
+	schema         = pkgSchema.NodeComponentsCvesEdgesSchema()
 	targetResource = resources.Node
 )
 
@@ -63,7 +63,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		nil,
-		pkgSchema.NodesSchema.OptionsMap,
+		pkgSchema.NodesSchema().OptionsMap,
 	)
 }
 

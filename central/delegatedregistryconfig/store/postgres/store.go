@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.DelegatedRegistryConfigsSchema
+	schema         = pkgSchema.DelegatedRegistryConfigsSchema()
 	targetResource = resources.Administration
 )
 

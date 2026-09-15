@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestChild1P4Schema() })
+}
 
 var (
 	// CreateTableTestChild1P4Stmt holds the create statement for table `test_child1_p4`.
@@ -23,14 +28,14 @@ var (
 	}
 
 	// TestChild1P4Schema is the go schema for table `test_child1_p4`.
-	TestChild1P4Schema = func() *walker.Schema {
+	TestChild1P4Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_child1_p4")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestChild1P4)(nil)), "test_child1_p4")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestParent4": TestParent4Schema,
+			"storage.TestParent4": TestParent4Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -44,7 +49,7 @@ var (
 		RegisterTable(schema, CreateTableTestChild1P4Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(103), schema)
 		return schema
-	}()
+	})
 )
 
 const (

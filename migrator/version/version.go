@@ -34,10 +34,10 @@ func ReadVersionPostgres(t context.Context, dbName string) (*migrations.Migratio
 
 // ReadVersionGormDB - reads the version from the postgres database with a gorm instance.
 func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
-	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
+	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema().Table)
 	var modelVersion pkgSchema.Versions
 	ver := migrations.MigrationVersion{MainVersion: "0"}
-	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
+	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema().Table).First(&modelVersion)
 	if result.Error != nil {
 		return &ver, nil
 	}
@@ -85,7 +85,7 @@ func SetVersionPostgres(ctx context.Context, dbName string, updatedVersion *stor
 // SetVersion - sets the version in the postgres database specified with the Gorm instance
 func SetVersion(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version, ensureSchema bool) {
 	if ensureSchema {
-		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
+		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema().Table)
 	}
 
 	err := pgutils.Retry(ctx, func() error {

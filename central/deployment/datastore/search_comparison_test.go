@@ -52,11 +52,11 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 	if features.FlattenImageData.Enabled() {
 		imageV2DS := imageV2DataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 		s.imageV2Datastore = imageV2DS
-		s.optionsMap = pkgSchema.ImagesV2Schema.OptionsMap
+		s.optionsMap = pkgSchema.ImagesV2Schema().OptionsMap
 	} else {
 		imageDS := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 		s.imageDatastore = imageDS
-		s.optionsMap = pkgSchema.ImagesSchema.OptionsMap
+		s.optionsMap = pkgSchema.ImagesSchema().OptionsMap
 	}
 }
 

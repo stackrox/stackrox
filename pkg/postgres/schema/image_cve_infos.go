@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ImageCveInfosSchema() })
+}
 
 var (
 	// CreateTableImageCveInfosStmt holds the create statement for table `image_cve_infos`.
@@ -26,7 +31,7 @@ var (
 	}
 
 	// ImageCveInfosSchema is the go schema for table `image_cve_infos`.
-	ImageCveInfosSchema = func() *walker.Schema {
+	ImageCveInfosSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("image_cve_infos")
 		if schema != nil {
 			return schema
@@ -37,7 +42,7 @@ var (
 		RegisterTable(schema, CreateTableImageCveInfosStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_CVE_INFOS, schema)
 		return schema
-	}()
+	})
 )
 
 const (
