@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
 func main() {
@@ -29,5 +30,6 @@ func main() {
 }
 
 func listenAndServe(port int, dir string) error {
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), http.FileServer(http.Dir(dir)))
+	server := httputil.NewServer(fmt.Sprintf(":%d", port), http.FileServer(http.Dir(dir)))
+	return server.ListenAndServe()
 }

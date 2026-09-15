@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
 // StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
@@ -19,7 +20,8 @@ func (e *Store) StartDebugServer() {
 		n, err := fmt.Fprintf(w, "%s\n", e.Debug())
 		log.Debugf("Serving debug http endpoint: n=%d, err=%v", n, err)
 	})
-	err := http.ListenAndServe(":8099", nil)
+	server := httputil.NewServer(":8099", nil)
+	err := server.ListenAndServe()
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
 	}
