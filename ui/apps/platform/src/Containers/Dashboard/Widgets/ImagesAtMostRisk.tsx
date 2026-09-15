@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import isEqual from 'lodash/isEqual';
 
-import { vulnManagementImagesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import type { SearchFilter } from 'types/search';
@@ -35,9 +35,9 @@ function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOpti
 function getViewAllLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
         s: searchFilter,
-        sort: [{ id: 'Image Risk Priority', desc: 'false' }],
+        entityTab: 'Image',
     });
-    return `${vulnManagementImagesPath}${queryString}`;
+    return `${vulnerabilitiesAllImagesPath}${queryString}`;
 }
 
 export const imagesAtMostRiskQuery = gql`

@@ -1,11 +1,11 @@
-import { HashLink as Link } from 'react-router-hash-link';
+import { Link } from 'react-router-dom-v5-compat';
 import { Tooltip, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
 import { noViolationsColor } from 'constants/severityColors';
 import type { ImageName } from 'types/image.proto';
-import { vulnManagementPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 
 type VulnCounts = {
     total: number;
@@ -52,7 +52,7 @@ export type ImagesAtMostRiskTableProps = {
 };
 
 function linkToImage(id: string) {
-    return `${vulnManagementPath}/image/${id}#image-findings`;
+    return `${vulnerabilitiesAllImagesPath}/images/${id}`;
 }
 
 function ImagesAtMostRiskTable({
@@ -75,15 +75,7 @@ function ImagesAtMostRiskTable({
                 {images.map(({ id, name, priority, imageVulnerabilityCounter }) => (
                     <Tr key={id}>
                         <Td className="pf-v6-u-pl-0" dataLabel="Image">
-                            <Link
-                                to={linkToImage(id)}
-                                scroll={(el: HTMLElement) =>
-                                    // TODO This is a heavy handed way to scroll to the CVE section which is loaded on
-                                    // the target image page asynchronously. Without a delay, following data loads
-                                    // scroll the target element back off the screen.
-                                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 500)
-                                }
-                            >
+                            <Link to={linkToImage(id)}>
                                 <Tooltip content={<div>{name.fullName}</div>}>
                                     <Truncate
                                         content={name.remote ?? ''}

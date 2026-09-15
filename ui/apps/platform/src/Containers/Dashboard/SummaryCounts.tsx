@@ -6,12 +6,11 @@ import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';
 
 import {
     clustersBasePath,
-    configManagementPath,
-    urlEntityListTypes,
+    riskSecretsBasePath,
+    riskWorkloadsBasePath,
     violationsFullViewPath,
     vulnerabilitiesAllImagesPath,
 } from 'routePaths';
-import { resourceTypes } from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
@@ -55,15 +54,15 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
     // According to current minimalist philosophy, ignore that routes might have additional resource requirements.
     const tileLinks: Record<TileResource, string> = {
         Cluster: clustersBasePath,
-        Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
+        Node: clustersBasePath,
         Alert: violationsFullViewPath,
-        Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
+        Deployment: riskWorkloadsBasePath,
         Image: generatePathWithQuery(
             vulnerabilitiesAllImagesPath,
             {},
             { customParams: { entityTab: 'Image' } }
         ),
-        Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
+        Secret: riskSecretsBasePath,
     };
 
     const tileResourcesQuery = tileResources

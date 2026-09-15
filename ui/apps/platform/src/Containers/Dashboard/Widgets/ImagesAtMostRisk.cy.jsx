@@ -1,6 +1,6 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
-import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 
 import ImagesAtMostRisk from './ImagesAtMostRisk';
 
@@ -103,11 +103,13 @@ describe(Cypress.spec.relative, () => {
         const secondImageInList = mockImages.at(1);
         cy.findByText(secondImageInList.name.remote).click();
 
-        cy.location('pathname').should('eq', `${vulnManagementPath}/image/${secondImageInList.id}`);
-        cy.location('hash').should('eq', '#image-findings');
+        cy.location('pathname').should(
+            'eq',
+            `${vulnerabilitiesAllImagesPath}/images/${secondImageInList.id}`
+        );
 
         cy.findByText('View all').click();
-        cy.location('pathname').should('eq', `${vulnManagementImagesPath}`);
+        cy.location('pathname').should('eq', `${vulnerabilitiesAllImagesPath}`);
     });
 
     it('should contain a button that resets the widget options to default', () => {
