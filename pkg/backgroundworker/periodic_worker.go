@@ -59,6 +59,7 @@ type PeriodicWorker struct {
 
 	mu          sync.Mutex
 	stopper     concurrency.Stopper
+	cancel      context.CancelFunc
 	state       string
 	lastRunTime time.Time
 	lastRunDur  time.Duration
@@ -83,10 +84,12 @@ type WorkerStatus struct {
 // Start begins running the worker's loop in a new goroutine. It returns
 // immediately; the loop runs until Stop is called or ctx is done.
 func (w *PeriodicWorker) Start(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	stopper := concurrency.NewStopper()
 
 	w.mu.Lock()
 	w.stopper = stopper
+	w.cancel = cancel
 	w.state = stateRunning
 	w.mu.Unlock()
 
@@ -98,12 +101,16 @@ func (w *PeriodicWorker) Start(ctx context.Context) {
 func (w *PeriodicWorker) Stop() {
 	w.mu.Lock()
 	stopper := w.stopper
+	cancel := w.cancel
 	w.mu.Unlock()
 
 	if stopper == nil {
 		return
 	}
 
+	if cancel != nil {
+		cancel()
+	}
 	stopper.Client().Stop()
 	_ = stopper.Client().Stopped().Wait()
 
