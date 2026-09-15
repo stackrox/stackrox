@@ -9,7 +9,10 @@ get_diagnostic_bundle() {
           sleep 1
           echo "Waiting for port forward 8000"
   done
-  roxctl central debug dump -e localhost:8000 -p "${ROX_ADMIN_PASSWORD}" --insecure-skip-tls-verify
+  # download-diagnostics (unlike debug dump, which is Central-only) collects a
+  # platform-wide bundle: pod info and logs from Central and the Secured
+  # Clusters (Sensor, Collector, Admission Controller).
+  roxctl central debug download-diagnostics -e localhost:8000 -p "${ROX_ADMIN_PASSWORD}" --insecure-skip-tls-verify
   ls "$diagnostic_bundle_dir" || mkdir -p "$diagnostic_bundle_dir"
   mv *.zip "$diagnostic_bundle_dir"
 }
