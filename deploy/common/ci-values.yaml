@@ -25,7 +25,7 @@ scannerV4:
       disable: true
     # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     # Use the repaired ci-minimal bundle from GitHub for fast CI testing.
-    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/96f9728c6d/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/9a9347931c/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
     # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     resources:
       requests:
