@@ -137,10 +137,13 @@ collect_roxagent_journal() {
     local stderr_file
     stderr_file="$(mktemp)"
 
+    # virtctl ssh reads stdin (OpenSSH without -n) and would consume the VMI
+    # list from the caller's while-read loop.
     if ! run_with_timeout "$ssh_timeout" \
         "${virtctl_bin}" ssh \
         --namespace "$ns" \
         --identity-file "$identity" \
+        --local-ssh-opts="-n" \
         --local-ssh-opts="-o StrictHostKeyChecking=no" \
         --local-ssh-opts="-o IdentitiesOnly=yes" \
         --local-ssh-opts="-o UserKnownHostsFile=/dev/null" \
@@ -148,8 +151,8 @@ collect_roxagent_journal() {
         --local-ssh-opts="-o ConnectTimeout=30" \
         --username "$guest_user" \
         "vmi/${vmi}" \
-        --command "sudo journalctl -u roxagent.service -b --no-pager -o short-iso" \
-        > "$out_file" 2>"$stderr_file"; then
+        --command "sudo journalctl -u roxagent.service -u roxagent-serve.service -b --no-pager -o short-iso" \
+        < /dev/null > "$out_file" 2>"$stderr_file"; then
         {
             echo "roxagent journal collection failed for ${ns}/${vmi}"
             echo "virtctl: ${virtctl_bin}"
@@ -173,7 +176,7 @@ delete_vm_scan_namespaces() {
     while IFS= read -r ns; do
         [[ -z "$ns" ]] && continue
         info "Deleting namespace ${ns}"
-        kubectl delete namespace "$ns" --wait=false --request-timeout=60s 2>&1 || \
+        kubectl delete namespace "$ns" --wait=false --request-timeout=60s </dev/null 2>&1 || \
             info "Namespace delete for ${ns} failed or already removed"
     done < "$ns_list"
     rm -f "$ns_list"
