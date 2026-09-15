@@ -2,11 +2,8 @@
 set -eo pipefail
 
 artifacts_dir=$1
-DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 
-export KUBECONFIG="$artifacts_dir/kubeconfig"
-
-oc apply -f "$DIR/../config/collector-monitoring.yml"
+export KUBECONFIG=$artifacts_dir/kubeconfig
 
 name=namespace/stackrox
 if oc label "$name" openshift.io/cluster-monitoring="true" --overwrite=true | grep "${name} labeled"; then
