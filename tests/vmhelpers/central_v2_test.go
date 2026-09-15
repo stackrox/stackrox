@@ -104,6 +104,27 @@ func TestWaitForV2VMPresentInCentral_UsesListVMs(t *testing.T) {
 	require.Contains(t, sawQuery, `Virtual Machine Name:"vm1"`)
 }
 
+func TestListV2VMByNamespaceNameGuestOS_Query(t *testing.T) {
+	ctx := t.Context()
+	var sawQuery string
+	client := &stubV2Client{
+		listVMsFn: func(_ context.Context, req *v2.ListVMsRequest) (*v2.ListVMsResponse, error) {
+			sawQuery = req.GetQuery().GetQuery()
+			return &v2.ListVMsResponse{
+				Vms: []*v2.VMListItem{
+					{Id: "id-1", Namespace: "ns1", Name: "vm1", GuestOs: "Red Hat Enterprise Linux 8.10"},
+				},
+			}, nil
+		},
+	}
+	vm, err := ListV2VMByNamespaceNameGuestOS(ctx, client, "ns1", "vm1", "Red Hat Enterprise Linux 8.10")
+	require.NoError(t, err)
+	require.Equal(t, "id-1", vm.GetId())
+	require.Contains(t, sawQuery, `Guest OS:"Red Hat Enterprise Linux 8.10"`)
+	require.Contains(t, sawQuery, `Namespace:"ns1"`)
+	require.Contains(t, sawQuery, `Virtual Machine Name:"vm1"`)
+}
+
 func TestWaitForV2VMLatestScan(t *testing.T) {
 	ctx := t.Context()
 	opts := WaitOptions{Timeout: 150 * time.Millisecond, PollInterval: 5 * time.Millisecond}

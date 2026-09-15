@@ -49,7 +49,7 @@ func TestVirtualMachineV2(t *testing.T) {
 			},
 		},
 		{
-			name: "copies agent facts and keeps informer GuestOs column",
+			name: "writes detected guest OS into GuestOs column",
 			input: &virtualMachineV1.VirtualMachine{
 				Id:        "VM-ID-3",
 				Namespace: "ns",
@@ -72,7 +72,7 @@ func TestVirtualMachineV2(t *testing.T) {
 					pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux 9.2",
 					pkgVM.AgentVersionKey:    "4.10.0",
 				},
-				GuestOs: "Red Hat Enterprise Linux",
+				GuestOs: "Red Hat Enterprise Linux 9.2",
 				State:   storage.VirtualMachineV2_RUNNING,
 			},
 		},
