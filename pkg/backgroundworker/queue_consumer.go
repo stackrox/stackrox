@@ -33,6 +33,7 @@ type QueueConsumer[T any] struct {
 
 	mu           sync.Mutex
 	stopper      concurrency.Stopper
+	cancel       context.CancelFunc
 	state        string
 	itemCount    int64
 	errorCount   int64
@@ -43,10 +44,12 @@ type QueueConsumer[T any] struct {
 
 // Start begins draining Source in a new goroutine. It returns immediately.
 func (c *QueueConsumer[T]) Start(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	stopper := concurrency.NewStopper()
 
 	c.mu.Lock()
 	c.stopper = stopper
+	c.cancel = cancel
 	c.state = stateRunning
 	c.mu.Unlock()
 
@@ -59,12 +62,16 @@ func (c *QueueConsumer[T]) Start(ctx context.Context) {
 func (c *QueueConsumer[T]) Stop() {
 	c.mu.Lock()
 	stopper := c.stopper
+	cancel := c.cancel
 	c.mu.Unlock()
 
 	if stopper == nil {
 		return
 	}
 
+	if cancel != nil {
+		cancel()
+	}
 	stopper.Client().Stop()
 	_ = stopper.Client().Stopped().Wait()
 
