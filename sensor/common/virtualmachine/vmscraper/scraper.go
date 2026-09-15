@@ -412,12 +412,15 @@ func (s *VMScraper) reconcile() {
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
+				nextAt := now.Add(randOffset(newVMWindow, s.randFloat64()))
 				st = &vmState{
-					nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())),
+					nextAttemptAt: nextAt,
 					vmID:          vm.ID,
 					mappingPath:   metrics.MappingPathUnspecified,
 				}
 				s.vmState[key] = st
+				log.Infof("VMScraper: queued %q for first index pull in %s (spread window %s)",
+					key, nextAt.Sub(now), newVMWindow)
 			} else if st.vmID != vm.ID {
 				// namespace/name can outlive a KubeVirt recreate; do not inherit scrape state.
 				st = &vmState{
@@ -426,6 +429,7 @@ func (s *VMScraper) reconcile() {
 					mappingPath:   metrics.MappingPathUnspecified,
 				}
 				s.vmState[key] = st
+				log.Infof("VMScraper: re-queued %q for index pull (VM identity changed)", key)
 			}
 		}
 		for key := range s.vmState {
