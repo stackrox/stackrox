@@ -100,6 +100,7 @@ func newDeploymentHandler(
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	registryStore *registry.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
+	hierarchy references.ParentHierarchy,
 ) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
@@ -110,7 +111,7 @@ func newDeploymentHandler(
 		namespaceStore:         namespaceStore,
 		processFilter:          processFilter,
 		config:                 config,
-		hierarchy:              references.NewParentHierarchy(),
+		hierarchy:              hierarchy,
 		rbac:                   rbac,
 		orchestratorNamespaces: namespaces,
 		registryStore:          registryStore,
