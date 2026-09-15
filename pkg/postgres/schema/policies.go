@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,8 +32,49 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), "policies")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICIES, "policy", (*storage.Policy)(nil)))
+		schema = &walker.Schema{
+			Table:    "policies",
+			Type:     "*storage.Policy",
+			TypeName: "Policy",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Policy ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Policy", Enabled: true}},
+			{Schema: schema, Name: "Description", ProtoBufName: "description", ColumnName: "Description", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDescription()", false), Search: walker.SearchField{FieldName: "Description", Enabled: true}},
+			{Schema: schema, Name: "Disabled", ProtoBufName: "disabled", ColumnName: "Disabled", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetDisabled()", false), Search: walker.SearchField{FieldName: "Disabled", Enabled: true}},
+			{Schema: schema, Name: "Categories", ProtoBufName: "categories", ColumnName: "Categories", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetCategories()", false), Search: walker.SearchField{FieldName: "Category", Enabled: true}},
+			{Schema: schema, Name: "LifecycleStages", ProtoBufName: "lifecycle_stages", ColumnName: "LifecycleStages", Type: "[]storage.LifecycleStage", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetLifecycleStages()", false), Search: walker.SearchField{FieldName: "Lifecycle Stage", Enabled: true}},
+			{Schema: schema, Name: "Severity", ProtoBufName: "severity", ColumnName: "Severity", Type: "storage.Severity", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.Severity", ObjectGetter: walker.MakeObjectGetter("GetSeverity()", false), Search: walker.SearchField{FieldName: "Severity", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "severity max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}, {DerivedFrom: "unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "EnforcementActions", ProtoBufName: "enforcement_actions", ColumnName: "EnforcementActions", Type: "[]storage.EnforcementAction", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetEnforcementActions()", false), Search: walker.SearchField{FieldName: "Enforcement", Enabled: true}},
+			{Schema: schema, Name: "LastUpdated", ProtoBufName: "last_updated", ColumnName: "LastUpdated", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdated()", false), Search: walker.SearchField{FieldName: "Policy Last Updated", Enabled: true}},
+			{Schema: schema, Name: "SORTName", ProtoBufName: "SORT_name", ColumnName: "SORTName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSORTName()", false), Search: walker.SearchField{FieldName: "SORT_Policy", Enabled: true}},
+			{Schema: schema, Name: "SORTLifecycleStage", ProtoBufName: "SORT_lifecycleStage", ColumnName: "SORTLifecycleStage", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSORTLifecycleStage()", false), Search: walker.SearchField{FieldName: "SORT_Lifecycle Stage", Enabled: true}},
+			{Schema: schema, Name: "SORTEnforcement", ProtoBufName: "SORT_enforcement", ColumnName: "SORTEnforcement", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetSORTEnforcement()", false), Search: walker.SearchField{FieldName: "SORT_Enforcement", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICIES, map[search.FieldLabel]*search.Field{
+			"Category":             {FieldPath: "policy.categories", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_POLICIES},
+			"Description":          {FieldPath: "policy.description", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_POLICIES},
+			"Disabled":             {FieldPath: "policy.disabled", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_POLICIES},
+			"Enforcement":          {FieldPath: "policy.enforcement_actions", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_POLICIES},
+			"Lifecycle Stage":      {FieldPath: "policy.lifecycle_stages", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_POLICIES},
+			"Policy":               {FieldPath: "policy.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_POLICIES},
+			"Policy ID":            {FieldPath: "policy.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_POLICIES},
+			"Policy Last Updated":  {FieldPath: "policy.last_updated.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_POLICIES},
+			"SORT_Enforcement":     {FieldPath: "policy.SORT_enforcement", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_POLICIES},
+			"SORT_Lifecycle Stage": {FieldPath: "policy.SORT_lifecycleStage", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_POLICIES},
+			"SORT_Policy":          {FieldPath: "policy.SORT_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_POLICIES, Analyzer: "keyword"},
+			"Severity":             {FieldPath: "policy.severity", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_POLICIES},
+		}))
+		enumregistry.AddValues("policy.enforcement_actions", map[string]int32{"FAIL_BUILD_ENFORCEMENT": 4, "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT": 6, "FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT": 7, "FAIL_KUBE_REQUEST_ENFORCEMENT": 5, "KILL_POD_ENFORCEMENT": 3, "SCALE_TO_ZERO_ENFORCEMENT": 1, "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT": 2, "UNSET_ENFORCEMENT": 0})
+		enumregistry.AddValues("policy.evaluation_filter.skip_container_types", map[string]int32{"INIT": 1, "REGULAR": 0})
+		enumregistry.AddValues("policy.event_source", map[string]int32{"AUDIT_LOG_EVENT": 2, "DEPLOYMENT_EVENT": 1, "NODE_EVENT": 3, "NOT_APPLICABLE": 0})
+		enumregistry.AddValues("policy.lifecycle_stages", map[string]int32{"BUILD": 1, "DEPLOY": 0, "RUNTIME": 2})
+		enumregistry.AddValues("policy.policy_sections.policy_groups.boolean_operator", map[string]int32{"AND": 1, "OR": 0})
+		enumregistry.AddValues("policy.severity", map[string]int32{"CRITICAL_SEVERITY": 4, "HIGH_SEVERITY": 3, "LOW_SEVERITY": 1, "MEDIUM_SEVERITY": 2, "UNSET_SEVERITY": 0})
+		enumregistry.AddValues("policy.source", map[string]int32{"DECLARATIVE": 1, "IMPERATIVE": 0})
+
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTablePoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICIES, schema)

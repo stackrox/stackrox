@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,8 +25,24 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AuthProvider)(nil)), "auth_providers")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_AUTH_PROVIDERS, "authprovider", (*storage.AuthProvider)(nil)))
+		schema = &walker.Schema{
+			Table:    "auth_providers",
+			Type:     "*storage.AuthProvider",
+			TypeName: "AuthProvider",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "AuthProvider Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_AUTH_PROVIDERS, map[search.FieldLabel]*search.Field{
+			"AuthProvider Name": {FieldPath: "authprovider.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_AUTH_PROVIDERS},
+		}))
+		enumregistry.AddValues("authprovider.traits.mutability_mode", map[string]int32{"ALLOW_MUTATE": 0, "ALLOW_MUTATE_FORCED": 1})
+		enumregistry.AddValues("authprovider.traits.origin", map[string]int32{"DECLARATIVE": 2, "DECLARATIVE_ORPHANED": 3, "DEFAULT": 1, "EPHEMERAL": 4, "IMPERATIVE": 0})
+		enumregistry.AddValues("authprovider.traits.visibility", map[string]int32{"HIDDEN": 1, "VISIBLE": 0})
+
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableAuthProvidersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_AUTH_PROVIDERS, schema)

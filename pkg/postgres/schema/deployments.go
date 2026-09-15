@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -65,7 +65,154 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		schema = &walker.Schema{
+			Table:    "deployments",
+			Type:     "*storage.Deployment",
+			TypeName: "Deployment",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "deployments_containers",
+			Type:         "*storage.Container",
+			TypeName:     "Container",
+			ObjectGetter: "GetContainers()",
+		}
+		child0_child0 := &walker.Schema{
+			Parent:       child0,
+			Table:        "deployments_containers_envs",
+			Type:         "*storage.ContainerConfig_EnvironmentConfig",
+			TypeName:     "ContainerConfig_EnvironmentConfig",
+			ObjectGetter: "GetConfig().GetEnv()",
+		}
+		child0_child0.Fields = []walker.Field{
+			{Schema: child0_child0, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "deploymentContainerIdx", ProtoBufName: "", ColumnName: "deployments_containers_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("deploymentContainerIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "Key", ProtoBufName: "key", ColumnName: "Key", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey()", false), Search: walker.SearchField{FieldName: "Environment Key", Enabled: true}},
+			{Schema: child0_child0, Name: "Value", ProtoBufName: "value", ColumnName: "Value", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetValue()", false), Search: walker.SearchField{FieldName: "Environment Value", Enabled: true}},
+			{Schema: child0_child0, Name: "EnvVarSource", ProtoBufName: "env_var_source", ColumnName: "EnvVarSource", Type: "storage.ContainerConfig_EnvironmentConfig_EnvVarSource", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ContainerConfig_EnvironmentConfig_EnvVarSource", ObjectGetter: walker.MakeObjectGetter("GetEnvVarSource()", false), Search: walker.SearchField{FieldName: "Environment Variable Source", Enabled: true}},
+		}
+		child0_child0.Fields[0].SetParentReference(child0, "deployments_Id")
+		child0_child0.Fields[1].SetParentReference(child0, "idx")
+		child0_child1 := &walker.Schema{
+			Parent:       child0,
+			Table:        "deployments_containers_volumes",
+			Type:         "*storage.Volume",
+			TypeName:     "Volume",
+			ObjectGetter: "GetVolumes()",
+		}
+		child0_child1.Fields = []walker.Field{
+			{Schema: child0_child1, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child1, Name: "deploymentContainerIdx", ProtoBufName: "", ColumnName: "deployments_containers_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("deploymentContainerIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child1, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child1, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Volume Name", Enabled: true}},
+			{Schema: child0_child1, Name: "Source", ProtoBufName: "source", ColumnName: "Source", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSource()", false), Search: walker.SearchField{FieldName: "Volume Source", Enabled: true}},
+			{Schema: child0_child1, Name: "Destination", ProtoBufName: "destination", ColumnName: "Destination", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDestination()", false), Search: walker.SearchField{FieldName: "Volume Destination", Enabled: true}},
+			{Schema: child0_child1, Name: "ReadOnly", ProtoBufName: "read_only", ColumnName: "ReadOnly", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetReadOnly()", false), Search: walker.SearchField{FieldName: "Volume ReadOnly", Enabled: true}},
+			{Schema: child0_child1, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Volume Type", Enabled: true}},
+		}
+		child0_child1.Fields[0].SetParentReference(child0, "deployments_Id")
+		child0_child1.Fields[1].SetParentReference(child0, "idx")
+		child0_child2 := &walker.Schema{
+			Parent:       child0,
+			Table:        "deployments_containers_secrets",
+			Type:         "*storage.EmbeddedSecret",
+			TypeName:     "EmbeddedSecret",
+			ObjectGetter: "GetSecrets()",
+		}
+		child0_child2.Fields = []walker.Field{
+			{Schema: child0_child2, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child2, Name: "deploymentContainerIdx", ProtoBufName: "", ColumnName: "deployments_containers_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("deploymentContainerIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child2, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child2, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Secret", Enabled: true}},
+			{Schema: child0_child2, Name: "Path", ProtoBufName: "path", ColumnName: "Path", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPath()", false), Search: walker.SearchField{FieldName: "Secret Path", Enabled: true}},
+		}
+		child0_child2.Fields[0].SetParentReference(child0, "deployments_Id")
+		child0_child2.Fields[1].SetParentReference(child0, "idx")
+		child0.Children = []*walker.Schema{child0_child0, child0_child1, child0_child2}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Id", ProtoBufName: "id", ColumnName: "Image_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetId()", false), Search: walker.SearchField{FieldName: "Image Sha", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "image count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: child0, Name: "Registry", ProtoBufName: "registry", ColumnName: "Image_Name_Registry", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetRegistry()", false), Search: walker.SearchField{FieldName: "Image Registry", Enabled: true}},
+			{Schema: child0, Name: "Remote", ProtoBufName: "remote", ColumnName: "Image_Name_Remote", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetRemote()", false), Search: walker.SearchField{FieldName: "Image Remote", Enabled: true}},
+			{Schema: child0, Name: "Tag", ProtoBufName: "tag", ColumnName: "Image_Name_Tag", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetTag()", false), Search: walker.SearchField{FieldName: "Image Tag", Enabled: true}},
+			{Schema: child0, Name: "FullName", ProtoBufName: "full_name", ColumnName: "Image_Name_FullName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetFullName()", false), Search: walker.SearchField{FieldName: "Image", Enabled: true}},
+			{Schema: child0, Name: "IdV2", ProtoBufName: "id_v2", ColumnName: "Image_IdV2", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetIdV2()", false), Search: walker.SearchField{FieldName: "Image ID", Enabled: true}},
+			{Schema: child0, Name: "Privileged", ProtoBufName: "privileged", ColumnName: "SecurityContext_Privileged", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetSecurityContext().GetPrivileged()", false), Search: walker.SearchField{FieldName: "Privileged", Enabled: true}},
+			{Schema: child0, Name: "DropCapabilities", ProtoBufName: "drop_capabilities", ColumnName: "SecurityContext_DropCapabilities", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetSecurityContext().GetDropCapabilities()", false), Search: walker.SearchField{FieldName: "Drop Capabilities", Enabled: true}},
+			{Schema: child0, Name: "AddCapabilities", ProtoBufName: "add_capabilities", ColumnName: "SecurityContext_AddCapabilities", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetSecurityContext().GetAddCapabilities()", false), Search: walker.SearchField{FieldName: "Add Capabilities", Enabled: true}},
+			{Schema: child0, Name: "ReadOnlyRootFilesystem", ProtoBufName: "read_only_root_filesystem", ColumnName: "SecurityContext_ReadOnlyRootFilesystem", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetSecurityContext().GetReadOnlyRootFilesystem()", false), Search: walker.SearchField{FieldName: "Read Only Root Filesystem", Enabled: true}},
+			{Schema: child0, Name: "CpuCoresRequest", ProtoBufName: "cpu_cores_request", ColumnName: "Resources_CpuCoresRequest", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetResources().GetCpuCoresRequest()", false), Search: walker.SearchField{FieldName: "CPU Cores Request", Enabled: true}},
+			{Schema: child0, Name: "CpuCoresLimit", ProtoBufName: "cpu_cores_limit", ColumnName: "Resources_CpuCoresLimit", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetResources().GetCpuCoresLimit()", false), Search: walker.SearchField{FieldName: "CPU Cores Limit", Enabled: true}},
+			{Schema: child0, Name: "MemoryMbRequest", ProtoBufName: "memory_mb_request", ColumnName: "Resources_MemoryMbRequest", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetResources().GetMemoryMbRequest()", false), Search: walker.SearchField{FieldName: "Memory Request (MB)", Enabled: true}},
+			{Schema: child0, Name: "MemoryMbLimit", ProtoBufName: "memory_mb_limit", ColumnName: "Resources_MemoryMbLimit", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetResources().GetMemoryMbLimit()", false), Search: walker.SearchField{FieldName: "Memory Limit (MB)", Enabled: true}},
+			{Schema: child0, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.ContainerType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ContainerType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Container Type", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("Image", "id", true, false, false, false)
+		child0.Fields[7].SetReference("ImageV2", "id", true, false, false, true)
+		child1 := &walker.Schema{
+			Parent:       schema,
+			Table:        "deployments_ports",
+			Type:         "*storage.PortConfig",
+			TypeName:     "PortConfig",
+			ObjectGetter: "GetPorts()",
+		}
+		child1_child0 := &walker.Schema{
+			Parent:       child1,
+			Table:        "deployments_ports_exposure_infos",
+			Type:         "*storage.PortConfig_ExposureInfo",
+			TypeName:     "PortConfig_ExposureInfo",
+			ObjectGetter: "GetExposureInfos()",
+		}
+		child1_child0.Fields = []walker.Field{
+			{Schema: child1_child0, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1_child0, Name: "deploymentPortIdx", ProtoBufName: "", ColumnName: "deployments_ports_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("deploymentPortIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1_child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1_child0, Name: "Level", ProtoBufName: "level", ColumnName: "Level", Type: "storage.PortConfig_ExposureLevel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.PortConfig_ExposureLevel", ObjectGetter: walker.MakeObjectGetter("GetLevel()", false), Search: walker.SearchField{FieldName: "Exposure Level", Enabled: true}},
+			{Schema: child1_child0, Name: "ServiceName", ProtoBufName: "service_name", ColumnName: "ServiceName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetServiceName()", false), Search: walker.SearchField{FieldName: "Exposing Service", Enabled: true}},
+			{Schema: child1_child0, Name: "ServicePort", ProtoBufName: "service_port", ColumnName: "ServicePort", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetServicePort()", false), Search: walker.SearchField{FieldName: "Exposing Service Port", Enabled: true}},
+			{Schema: child1_child0, Name: "NodePort", ProtoBufName: "node_port", ColumnName: "NodePort", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetNodePort()", false), Search: walker.SearchField{FieldName: "Exposed Node Port", Enabled: true}},
+			{Schema: child1_child0, Name: "ExternalIps", ProtoBufName: "external_ips", ColumnName: "ExternalIps", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetExternalIps()", false), Search: walker.SearchField{FieldName: "External IP", Enabled: true}},
+			{Schema: child1_child0, Name: "ExternalHostnames", ProtoBufName: "external_hostnames", ColumnName: "ExternalHostnames", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetExternalHostnames()", false), Search: walker.SearchField{FieldName: "External Hostname", Enabled: true}},
+		}
+		child1_child0.Fields[0].SetParentReference(child1, "deployments_Id")
+		child1_child0.Fields[1].SetParentReference(child1, "idx")
+		child1.Children = []*walker.Schema{child1_child0}
+		child1.Fields = []walker.Field{
+			{Schema: child1, Name: "deploymentID", ProtoBufName: "", ColumnName: "deployments_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("deploymentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child1, Name: "ContainerPort", ProtoBufName: "container_port", ColumnName: "ContainerPort", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetContainerPort()", false), Search: walker.SearchField{FieldName: "Port", Enabled: true}},
+			{Schema: child1, Name: "Protocol", ProtoBufName: "protocol", ColumnName: "Protocol", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProtocol()", false), Search: walker.SearchField{FieldName: "Port Protocol", Enabled: true}},
+			{Schema: child1, Name: "Exposure", ProtoBufName: "exposure", ColumnName: "Exposure", Type: "storage.PortConfig_ExposureLevel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.PortConfig_ExposureLevel", ObjectGetter: walker.MakeObjectGetter("GetExposure()", false), Search: walker.SearchField{FieldName: "Max Exposure Level", Enabled: true}},
+		}
+		child1.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0, child1}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Deployment", Enabled: true}},
+			{Schema: schema, Name: "Hash", ProtoBufName: "hash", ColumnName: "Hash", Type: "uint64", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "uint64", ObjectGetter: walker.MakeObjectGetter("GetHash()", false), Search: walker.SearchField{FieldName: "Deployment Hash", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Deployment Type", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "NamespaceId", ProtoBufName: "namespace_id", ColumnName: "NamespaceId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespaceId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Namespace ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "namespace count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "OrchestratorComponent", ProtoBufName: "orchestrator_component", ColumnName: "OrchestratorComponent", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetOrchestratorComponent()", false), Search: walker.SearchField{FieldName: "Orchestrator Component", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Deployment Label", Enabled: true}},
+			{Schema: schema, Name: "PodLabels", ProtoBufName: "pod_labels", ColumnName: "PodLabels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetPodLabels()", false), Search: walker.SearchField{FieldName: "Pod Label", Enabled: true}},
+			{Schema: schema, Name: "Created", ProtoBufName: "created", ColumnName: "Created", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCreated()", false), Search: walker.SearchField{FieldName: "Created", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Search: walker.SearchField{FieldName: "Deployment Annotation", Enabled: true}},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Deployment Risk Priority", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "ImagePullSecrets", ProtoBufName: "image_pull_secrets", ColumnName: "ImagePullSecrets", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetImagePullSecrets()", false), Search: walker.SearchField{FieldName: "Image Pull Secret", Enabled: true}},
+			{Schema: schema, Name: "ServiceAccount", ProtoBufName: "service_account", ColumnName: "ServiceAccount", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetServiceAccount()", false), Search: walker.SearchField{FieldName: "Service Account", Enabled: true}},
+			{Schema: schema, Name: "ServiceAccountPermissionLevel", ProtoBufName: "service_account_permission_level", ColumnName: "ServiceAccountPermissionLevel", Type: "storage.PermissionLevel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.PermissionLevel", ObjectGetter: walker.MakeObjectGetter("GetServiceAccountPermissionLevel()", false), Search: walker.SearchField{FieldName: "Service Account Permission Level", Enabled: true}},
+			{Schema: schema, Name: "RiskScore", ProtoBufName: "risk_score", ColumnName: "RiskScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetRiskScore()", false), Search: walker.SearchField{FieldName: "Deployment Risk Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment risk priority", DerivationType: search.SimpleReverseSortDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "PlatformComponent", ProtoBufName: "platform_component", ColumnName: "PlatformComponent", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetPlatformComponent()", false), Search: walker.SearchField{FieldName: "Platform Component", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[5].SetReference("NamespaceMetadata", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
@@ -75,7 +222,70 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*search.Field{
+			"Add Capabilities":                 {FieldPath: "deployment.containers.security_context.add_capabilities", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"CPU Cores Limit":                  {FieldPath: "deployment.containers.resources.cpu_cores_limit", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"CPU Cores Request":                {FieldPath: "deployment.containers.resources.cpu_cores_request", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Cluster":                          {FieldPath: "deployment.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Cluster ID":                       {FieldPath: "deployment.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Container Type":                   {FieldPath: "deployment.containers.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Created":                          {FieldPath: "deployment.created.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment":                       {FieldPath: "deployment.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Annotation":            {FieldPath: "deployment.annotations", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Hash":                  {FieldPath: "deployment.hash", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment ID":                    {FieldPath: "deployment.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Label":                 {FieldPath: "deployment.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Risk Priority":         {FieldPath: "deployment.priority", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Risk Score":            {FieldPath: "deployment.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Deployment Type":                  {FieldPath: "deployment.type", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Drop Capabilities":                {FieldPath: "deployment.containers.security_context.drop_capabilities", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Environment Key":                  {FieldPath: "deployment.containers.config.env.key", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Environment Value":                {FieldPath: "deployment.containers.config.env.value", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Environment Variable Source":      {FieldPath: "deployment.containers.config.env.env_var_source", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Exposed Node Port":                {FieldPath: "deployment.ports.exposure_infos.node_port", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Exposing Service":                 {FieldPath: "deployment.ports.exposure_infos.service_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Exposing Service Port":            {FieldPath: "deployment.ports.exposure_infos.service_port", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Exposure Level":                   {FieldPath: "deployment.ports.exposure_infos.level", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_DEPLOYMENTS},
+			"External Hostname":                {FieldPath: "deployment.ports.exposure_infos.external_hostnames", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"External IP":                      {FieldPath: "deployment.ports.exposure_infos.external_ips", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image":                            {FieldPath: "deployment.containers.image.name.full_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS, Analyzer: "standard"},
+			"Image ID":                         {FieldPath: "deployment.containers.image.id_v2", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image Pull Secret":                {FieldPath: "deployment.image_pull_secrets", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image Registry":                   {FieldPath: "deployment.containers.image.name.registry", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image Remote":                     {FieldPath: "deployment.containers.image.name.remote", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image Sha":                        {FieldPath: "deployment.containers.image.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Image Tag":                        {FieldPath: "deployment.containers.image.name.tag", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Max Exposure Level":               {FieldPath: "deployment.ports.exposure", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Memory Limit (MB)":                {FieldPath: "deployment.containers.resources.memory_mb_limit", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Memory Request (MB)":              {FieldPath: "deployment.containers.resources.memory_mb_request", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Namespace":                        {FieldPath: "deployment.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Namespace ID":                     {FieldPath: "deployment.namespace_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Orchestrator Component":           {FieldPath: "deployment.orchestrator_component", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Platform Component":               {FieldPath: "deployment.platform_component", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Pod Label":                        {FieldPath: "deployment.pod_labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Port":                             {FieldPath: "deployment.ports.container_port", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Port Protocol":                    {FieldPath: "deployment.ports.protocol", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Privileged":                       {FieldPath: "deployment.containers.security_context.privileged", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Read Only Root Filesystem":        {FieldPath: "deployment.containers.security_context.read_only_root_filesystem", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Secret":                           {FieldPath: "deployment.containers.secrets.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Secret Path":                      {FieldPath: "deployment.containers.secrets.path", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Service Account":                  {FieldPath: "deployment.service_account", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Service Account Permission Level": {FieldPath: "deployment.service_account_permission_level", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Volume Destination":               {FieldPath: "deployment.containers.volumes.destination", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Volume Name":                      {FieldPath: "deployment.containers.volumes.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Volume ReadOnly":                  {FieldPath: "deployment.containers.volumes.read_only", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Volume Source":                    {FieldPath: "deployment.containers.volumes.source", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+			"Volume Type":                      {FieldPath: "deployment.containers.volumes.type", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_DEPLOYMENTS},
+		}))
+		enumregistry.AddValues("deployment.containers.config.env.env_var_source", map[string]int32{"CONFIG_MAP_KEY": 3, "FIELD": 4, "RAW": 1, "RESOURCE_FIELD": 5, "SECRET_KEY": 2, "UNKNOWN": 6, "UNSET": 0})
+		enumregistry.AddValues("deployment.containers.security_context.seccomp_profile.type", map[string]int32{"LOCALHOST": 2, "RUNTIME_DEFAULT": 1, "UNCONFINED": 0})
+		enumregistry.AddValues("deployment.containers.type", map[string]int32{"INIT": 1, "REGULAR": 0})
+		enumregistry.AddValues("deployment.containers.volumes.mount_propagation", map[string]int32{"BIDIRECTIONAL": 2, "HOST_TO_CONTAINER": 1, "NONE": 0})
+		enumregistry.AddValues("deployment.label_selector.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("deployment.ports.exposure", map[string]int32{"EXTERNAL": 1, "HOST": 4, "INTERNAL": 3, "NODE": 2, "ROUTE": 5, "UNSET": 0})
+		enumregistry.AddValues("deployment.ports.exposure_infos.level", map[string]int32{"EXTERNAL": 1, "HOST": 4, "INTERNAL": 3, "NODE": 2, "ROUTE": 5, "UNSET": 0})
+		enumregistry.AddValues("deployment.service_account_permission_level", map[string]int32{"CLUSTER_ADMIN": 5, "DEFAULT": 2, "ELEVATED_CLUSTER_WIDE": 4, "ELEVATED_IN_NAMESPACE": 3, "NONE": 1, "UNSET": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,

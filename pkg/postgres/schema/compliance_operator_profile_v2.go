@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,7 +37,39 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorProfileV2)(nil)), "compliance_operator_profile_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_profile_v2",
+			Type:     "*storage.ComplianceOperatorProfileV2",
+			TypeName: "ComplianceOperatorProfileV2",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_profile_v2_rules",
+			Type:         "*storage.ComplianceOperatorProfileV2_Rule",
+			TypeName:     "ComplianceOperatorProfileV2_Rule",
+			ObjectGetter: "GetRules()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "complianceOperatorProfileV2ID", ProtoBufName: "", ColumnName: "compliance_operator_profile_v2_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorProfileV2ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "RuleName", ProtoBufName: "rule_name", ColumnName: "RuleName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRuleName()", false), Search: walker.SearchField{Ignored: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("ComplianceOperatorRuleV2", "name", true, false, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "ProfileId", ProtoBufName: "profile_id", ColumnName: "ProfileId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProfileId()", false), Search: walker.SearchField{FieldName: "Compliance Profile ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Compliance Profile Name", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "compliance profile name count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ProfileVersion", ProtoBufName: "profile_version", ColumnName: "ProfileVersion", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProfileVersion()", false), Search: walker.SearchField{FieldName: "Compliance Profile Version", Enabled: true}},
+			{Schema: schema, Name: "ProductType", ProtoBufName: "product_type", ColumnName: "ProductType", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProductType()", false), Search: walker.SearchField{FieldName: "Compliance Profile Product Type", Enabled: true}},
+			{Schema: schema, Name: "Standard", ProtoBufName: "standard", ColumnName: "Standard", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetStandard()", false), Search: walker.SearchField{FieldName: "Compliance Standard", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ProfileRefId", ProtoBufName: "profile_ref_id", ColumnName: "ProfileRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProfileRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Profile Ref ID", Enabled: true}},
+			{Schema: schema, Name: "OperatorKind", ProtoBufName: "operator_kind", ColumnName: "OperatorKind", Type: "storage.ComplianceOperatorProfileV2_OperatorKind", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ComplianceOperatorProfileV2_OperatorKind", ObjectGetter: walker.MakeObjectGetter("GetOperatorKind()", false), Search: walker.SearchField{FieldName: "Compliance Profile Operator Kind", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorRuleV2": ComplianceOperatorRuleV2Schema,
 		}
@@ -45,7 +77,18 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILES, "complianceoperatorprofilev2", (*storage.ComplianceOperatorProfileV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_PROFILES, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                       {FieldPath: "complianceoperatorprofilev2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Profile ID":            {FieldPath: "complianceoperatorprofilev2.profile_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Profile Name":          {FieldPath: "complianceoperatorprofilev2.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Profile Operator Kind": {FieldPath: "complianceoperatorprofilev2.operator_kind", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Profile Product Type":  {FieldPath: "complianceoperatorprofilev2.product_type", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Profile Version":       {FieldPath: "complianceoperatorprofilev2.profile_version", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Compliance Standard":              {FieldPath: "complianceoperatorprofilev2.standard", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+			"Profile Ref ID":                   {FieldPath: "complianceoperatorprofilev2.profile_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_PROFILES},
+		}))
+		enumregistry.AddValues("complianceoperatorprofilev2.operator_kind", map[string]int32{"OPERATOR_KIND_UNSPECIFIED": 0, "PROFILE": 1, "TAILORED_PROFILE": 2})
+
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_PROFILES, schema)

@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +29,27 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ReportSnapshot)(nil)), "report_snapshots")
+		schema = &walker.Schema{
+			Table:    "report_snapshots",
+			Type:     "*storage.ReportSnapshot",
+			TypeName: "ReportSnapshot",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "ReportId", ProtoBufName: "report_id", ColumnName: "ReportId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetReportId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "ReportConfigurationId", ProtoBufName: "report_configuration_id", ColumnName: "ReportConfigurationId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetReportConfigurationId()", false), Search: walker.SearchField{FieldName: "Report Configuration ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Report Name", Enabled: true}},
+			{Schema: schema, Name: "RunState", ProtoBufName: "run_state", ColumnName: "ReportStatus_RunState", Type: "storage.ReportStatus_RunState", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ReportStatus_RunState", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetRunState()", false), Search: walker.SearchField{FieldName: "Report State", Enabled: true}},
+			{Schema: schema, Name: "QueuedAt", ProtoBufName: "queued_at", ColumnName: "ReportStatus_QueuedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetQueuedAt()", false), Search: walker.SearchField{FieldName: "Report Init Time", Enabled: true}},
+			{Schema: schema, Name: "CompletedAt", ProtoBufName: "completed_at", ColumnName: "ReportStatus_CompletedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetCompletedAt()", false), Search: walker.SearchField{FieldName: "Report Completion Time", Enabled: true}},
+			{Schema: schema, Name: "ReportRequestType", ProtoBufName: "report_request_type", ColumnName: "ReportStatus_ReportRequestType", Type: "storage.ReportStatus_RunMethod", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ReportStatus_RunMethod", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetReportRequestType()", false), Search: walker.SearchField{FieldName: "Report Request Type", Enabled: true}},
+			{Schema: schema, Name: "ReportNotificationMethod", ProtoBufName: "report_notification_method", ColumnName: "ReportStatus_ReportNotificationMethod", Type: "storage.ReportStatus_NotificationMethod", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ReportStatus_NotificationMethod", ObjectGetter: walker.MakeObjectGetter("GetReportStatus().GetReportNotificationMethod()", false), Search: walker.SearchField{FieldName: "Report Notification Method", Enabled: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Requester_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRequester().GetId()", false), Search: walker.SearchField{FieldName: "User ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Requester_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRequester().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "AreaOfConcern", ProtoBufName: "area_of_concern", ColumnName: "AreaOfConcern", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetAreaOfConcern()", false), Search: walker.SearchField{FieldName: "Area Of Concern", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("ReportConfiguration", "id", false, false, false, true)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ReportConfiguration": ReportConfigurationsSchema,
 		}
@@ -37,7 +57,31 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_SNAPSHOT, "reportsnapshot", (*storage.ReportSnapshot)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_SNAPSHOT, map[search.FieldLabel]*search.Field{
+			"Area Of Concern":            {FieldPath: "reportsnapshot.area_of_concern", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Completion Time":     {FieldPath: "reportsnapshot.report_status.completed_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Configuration ID":    {FieldPath: "reportsnapshot.report_configuration_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Init Time":           {FieldPath: "reportsnapshot.report_status.queued_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Name":                {FieldPath: "reportsnapshot.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Notification Method": {FieldPath: "reportsnapshot.report_status.report_notification_method", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report Request Type":        {FieldPath: "reportsnapshot.report_status.report_request_type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"Report State":               {FieldPath: "reportsnapshot.report_status.run_state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"User ID":                    {FieldPath: "reportsnapshot.requester.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+			"User Name":                  {FieldPath: "reportsnapshot.requester.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_SNAPSHOT},
+		}))
+		enumregistry.AddValues("reportsnapshot.Filter.ViewBasedVulnReportFilters.access_scope_rules.cluster_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportsnapshot.Filter.ViewBasedVulnReportFilters.access_scope_rules.namespace_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportsnapshot.Filter.VulnReportFilters.access_scope_rules.cluster_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportsnapshot.Filter.VulnReportFilters.access_scope_rules.namespace_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportsnapshot.Filter.VulnReportFilters.fixability", map[string]int32{"BOTH": 0, "FIXABLE": 1, "NOT_FIXABLE": 2})
+		enumregistry.AddValues("reportsnapshot.Filter.VulnReportFilters.image_types", map[string]int32{"DEPLOYED": 0, "WATCHED": 1})
+		enumregistry.AddValues("reportsnapshot.Filter.VulnReportFilters.severities", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("reportsnapshot.report_status.report_notification_method", map[string]int32{"DOWNLOAD": 1, "EMAIL": 0})
+		enumregistry.AddValues("reportsnapshot.report_status.report_request_type", map[string]int32{"ON_DEMAND": 0, "SCHEDULED": 1, "VIEW_BASED": 2})
+		enumregistry.AddValues("reportsnapshot.report_status.run_state", map[string]int32{"DELIVERED": 3, "FAILURE": 4, "GENERATED": 2, "PREPARING": 1, "WAITING": 0})
+		enumregistry.AddValues("reportsnapshot.schedule.interval_type", map[string]int32{"DAILY": 1, "MONTHLY": 3, "UNSET": 0, "WEEKLY": 2})
+		enumregistry.AddValues("reportsnapshot.type", map[string]int32{"VULNERABILITY": 0})
+
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableReportSnapshotsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_SNAPSHOT, schema)

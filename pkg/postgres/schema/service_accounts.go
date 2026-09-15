@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,8 +27,30 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), "service_accounts")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "serviceaccount", (*storage.ServiceAccount)(nil)))
+		schema = &walker.Schema{
+			Table:    "service_accounts",
+			Type:     "*storage.ServiceAccount",
+			TypeName: "ServiceAccount",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Service Account", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Service Account Label", Enabled: true}},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Search: walker.SearchField{FieldName: "Service Account Annotation", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SERVICE_ACCOUNTS, map[search.FieldLabel]*search.Field{
+			"Cluster":                    {FieldPath: "serviceaccount.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+			"Cluster ID":                 {FieldPath: "serviceaccount.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+			"Namespace":                  {FieldPath: "serviceaccount.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+			"Service Account":            {FieldPath: "serviceaccount.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+			"Service Account Annotation": {FieldPath: "serviceaccount.annotations", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+			"Service Account Label":      {FieldPath: "serviceaccount.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_SERVICE_ACCOUNTS},
+		}))
 		schema.ScopingResource = resources.ServiceAccount
 		RegisterTable(schema, CreateTableServiceAccountsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)

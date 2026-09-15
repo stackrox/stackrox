@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,7 +37,37 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorRuleV2)(nil)), "compliance_operator_rule_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_rule_v2",
+			Type:     "*storage.ComplianceOperatorRuleV2",
+			TypeName: "ComplianceOperatorRuleV2",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "compliance_operator_rule_v2_controls",
+			Type:         "*storage.RuleControls",
+			TypeName:     "RuleControls",
+			ObjectGetter: "GetControls()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "complianceOperatorRuleV2ID", ProtoBufName: "", ColumnName: "compliance_operator_rule_v2_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("complianceOperatorRuleV2ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Standard", ProtoBufName: "standard", ColumnName: "Standard", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetStandard()", false), Search: walker.SearchField{FieldName: "Compliance Standard", Enabled: true}},
+			{Schema: child0, Name: "Control", ProtoBufName: "control", ColumnName: "Control", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetControl()", false), Search: walker.SearchField{FieldName: "Compliance Control", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Compliance Rule Name", Enabled: true}},
+			{Schema: schema, Name: "RuleType", ProtoBufName: "rule_type", ColumnName: "RuleType", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRuleType()", false), Search: walker.SearchField{FieldName: "Compliance Rule Type", Enabled: true}},
+			{Schema: schema, Name: "Severity", ProtoBufName: "severity", ColumnName: "Severity", Type: "storage.RuleSeverity", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.RuleSeverity", ObjectGetter: walker.MakeObjectGetter("GetSeverity()", false), Search: walker.SearchField{FieldName: "Compliance Rule Severity", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "RuleRefId", ProtoBufName: "rule_ref_id", ColumnName: "RuleRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRuleRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Rule Ref ID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[4].SetReference("Cluster", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -45,7 +75,18 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_RULES, "complianceoperatorrulev2", (*storage.ComplianceOperatorRuleV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_RULES, map[search.FieldLabel]*search.Field{
+			"Cluster ID":               {FieldPath: "complianceoperatorrulev2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Compliance Control":       {FieldPath: "complianceoperatorrulev2.controls.control", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Compliance Rule Name":     {FieldPath: "complianceoperatorrulev2.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Compliance Rule Severity": {FieldPath: "complianceoperatorrulev2.severity", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Compliance Rule Type":     {FieldPath: "complianceoperatorrulev2.rule_type", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Compliance Standard":      {FieldPath: "complianceoperatorrulev2.controls.standard", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+			"Rule Ref ID":              {FieldPath: "complianceoperatorrulev2.rule_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_RULES},
+		}))
+		enumregistry.AddValues("complianceoperatorrulev2.operator_kind", map[string]int32{"CUSTOM_RULE": 2, "OPERATOR_KIND_UNSPECIFIED": 0, "RULE": 1})
+		enumregistry.AddValues("complianceoperatorrulev2.severity", map[string]int32{"HIGH_RULE_SEVERITY": 5, "INFO_RULE_SEVERITY": 2, "LOW_RULE_SEVERITY": 3, "MEDIUM_RULE_SEVERITY": 4, "UNKNOWN_RULE_SEVERITY": 1, "UNSET_RULE_SEVERITY": 0})
+
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorRuleV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_RULES, schema)

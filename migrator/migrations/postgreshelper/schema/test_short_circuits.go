@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -23,7 +21,21 @@ var (
 
 	// TestShortCircuitsSchema is the go schema for table `test_short_circuits`.
 	TestShortCircuitsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestShortCircuit)(nil)), "test_short_circuits")
+		var schema *walker.Schema
+		schema = &walker.Schema{
+			Table:    "test_short_circuits",
+			Type:     "*storage.TestShortCircuit",
+			TypeName: "TestShortCircuit",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test ShortCircuit ID", Enabled: true}},
+			{Schema: schema, Name: "ChildId", ProtoBufName: "child_id", ColumnName: "ChildId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetChildId()", false), Search: walker.SearchField{FieldName: "Test Child1 ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test child1 count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "G2GrandchildId", ProtoBufName: "g2_grandchild_id", ColumnName: "G2GrandchildId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetG2GrandchildId()", false), Search: walker.SearchField{FieldName: "Test G2Grandchild1 ID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("TestChild1", "id", true, false, true, false)
+		schema.Fields[2].SetReference("TestG2GrandChild1", "id", true, false, true, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestChild1":        TestChild1Schema,
 			"storage.TestG2GrandChild1": TestG2GrandChild1Schema,
@@ -32,7 +44,11 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(71), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(71), map[search.FieldLabel]*search.Field{
+			"Test Child1 ID":        {FieldPath: "testshortcircuit.child_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(71)},
+			"Test G2Grandchild1 ID": {FieldPath: "testshortcircuit.g2_grandchild_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(71)},
+			"Test ShortCircuit ID":  {FieldPath: "testshortcircuit.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(71)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		return schema
 	}()
