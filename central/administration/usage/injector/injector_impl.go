@@ -2,15 +2,13 @@ package injector
 
 import (
 	"context"
-	"time"
 
 	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -21,61 +19,32 @@ var (
 )
 
 type injectorImpl struct {
-	// injector gathers data on tick from this channel.
-	tickChan <-chan time.Time
-	// onStop is called after injector has stopped the gathering loop.
-	onStop         func()
-	ds             datastore.DataStore
-	stop           concurrency.Signal
-	gatherersGroup *sync.WaitGroup
+	ds datastore.DataStore
+
+	worker *backgroundworker.PeriodicWorker
 }
 
-func (i *injectorImpl) gather(ctx context.Context) {
+func (i *injectorImpl) gather(ctx context.Context) error {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, administrationUsageUsageWriteSCC)
 	newMetrics, err := i.ds.AggregateAndReset(ctx)
 	if err != nil {
 		log.Info("Failed to get and reset the aggregated administration usage metrics: ", err)
-		return
+		return err
 	}
 	if err := i.ds.Add(ctx, newMetrics); err != nil {
 		log.Info("Failed to store a usage snapshot: ", err)
+		return err
 	}
-}
-
-func (i *injectorImpl) gatherLoop() {
-	ctx, cancel := context.WithCancel(context.Background())
-	// There will most probably be no data on startup: sensors won't have time
-	// to report.
-	var wg sync.WaitGroup
-	for {
-		select {
-		case <-i.tickChan:
-			wg.Go(func() {
-				i.gather(ctx)
-			})
-		case <-i.stop.Done():
-			cancel()
-			wg.Wait()
-			log.Info("Usage reporting stopped")
-			i.stop.Reset()
-			return
-		}
-	}
+	return nil
 }
 
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	i.gatherersGroup.Go(func() {
-		i.gatherLoop()
-	})
+	i.worker.Start(context.Background())
 }
 
-// Stop stops the scheduled timer and wait for the gatherer to stop.
+// Stop stops the scheduled timer and waits for the gatherer to stop.
 func (i *injectorImpl) Stop() {
-	i.stop.Signal()
-	i.gatherersGroup.Wait()
-	if i.onStop != nil {
-		i.onStop()
-	}
+	i.worker.Stop()
 }

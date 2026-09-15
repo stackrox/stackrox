@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -79,6 +80,9 @@ type manager struct {
 	autoTriggerUpgrades        *concurrency.Flag
 	rateLimiter                *rate.Limiter
 	adminEventsStream          events.Stream
+
+	// TODO(backgroundworker): wire Stop() into Manager interface for graceful shutdown
+	healthWorker *backgroundworker.PeriodicWorker
 }
 
 // NewManager returns a new connection manager
@@ -152,32 +156,36 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 		return errors.Wrap(err, "failed to initialize upgrade controllers")
 	}
 
-	go m.updateClusterHealthForever()
+	m.healthWorker = &backgroundworker.PeriodicWorker{
+		Name:     "cluster-health-updater",
+		Interval: clusterCheckinInterval,
+		Run: func(ctx context.Context) error {
+			m.updateClusterHealth(ctx)
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(m.healthWorker)
+	m.healthWorker.Start(managerCtx)
 	return nil
 }
 
-func (m *manager) updateClusterHealthForever() {
-	t := time.NewTicker(clusterCheckinInterval)
-	defer t.Stop()
+func (m *manager) updateClusterHealth(ctx context.Context) {
+	clusters, err := m.clusters.GetClusters(ctx)
+	if err != nil {
+		log.Errorf("error updating cluster healths: %v", err)
+	}
 
-	for range t.C {
-		clusters, err := m.clusters.GetClusters(managerCtx)
-		if err != nil {
-			log.Errorf("error updating cluster healths: %v", err)
+	for _, cluster := range clusters {
+		conn := m.GetConnection(cluster.GetId())
+		if conn == nil {
+			m.updateInactiveClusterHealth(cluster)
+			continue
 		}
 
-		for _, cluster := range clusters {
-			conn := m.GetConnection(cluster.GetId())
-			if conn == nil {
-				m.updateInactiveClusterHealth(cluster)
-				continue
-			}
-
-			// Update cluster contact times for active sensors from here iff they do not have health monitoring capability.
-			// Otherwise, rely on cluster health pipeline.
-			if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
-				m.updateActiveClusterHealth(cluster)
-			}
+		// Update cluster contact times for active sensors from here iff they do not have health monitoring capability.
+		// Otherwise, rely on cluster health pipeline.
+		if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
+			m.updateActiveClusterHealth(cluster)
 		}
 	}
 }

@@ -4,8 +4,7 @@ import (
 	"time"
 
 	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 )
 
 const aggregationPeriod = 1 * time.Hour
@@ -18,12 +17,19 @@ type Injector interface {
 
 // NewInjector creates an injector instance.
 func NewInjector(ds datastore.DataStore) Injector {
-	ticker := time.NewTicker(aggregationPeriod)
-	return &injectorImpl{
-		tickChan:       ticker.C,
-		onStop:         ticker.Stop,
-		ds:             ds,
-		stop:           concurrency.NewSignal(),
-		gatherersGroup: &sync.WaitGroup{},
+	impl := &injectorImpl{
+		ds: ds,
 	}
+	impl.worker = &backgroundworker.PeriodicWorker{
+		Name:     "usage-metrics-injector",
+		Interval: aggregationPeriod,
+		// RunOnStart is intentionally omitted: there will most probably be no
+		// data on startup, since sensors won't have had time to report yet.
+		// gather runs synchronously in the PeriodicWorker loop. The original
+		// implementation spawned each call in a separate goroutine, but
+		// sequential execution is safer (no concurrent AggregateAndReset calls).
+		Run: impl.gather,
+	}
+	backgroundworker.Global.Register(impl.worker)
+	return impl
 }
