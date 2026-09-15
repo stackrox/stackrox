@@ -22,8 +22,8 @@ RUN dnf module enable -y \
         --nodocs \
         bash ca-certificates findutils glibc-langpack-en \
         glibc-locale-source gzip less libicu libxslt lz4 openldap openssl \
-        perl-libs postgresql postgresql-contrib postgresql-server python3 \
-        shadow-utils systemd-sysv tar tzdata util-linux uuid zstd && \
+        perl-libs postgresql postgresql-contrib postgresql-server postgresql-upgrade \
+        shadow-utils tar tzdata util-linux uuid zstd && \
     dnf reinstall -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
@@ -61,6 +61,15 @@ LABEL \
 COPY --from=package_installer /out/ /
 
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+    if [ ! -e /usr/pgsql-15/bin ]; then mkdir -p /usr/pgsql-15 && ln -s /usr/bin /usr/pgsql-15/bin; fi && \
+    if [ ! -e /usr/pgsql-13/bin ]; then mkdir -p /usr/pgsql-13 && ln -s /usr/lib64/pgsql/postgresql-13/bin /usr/pgsql-13/bin; fi && \
+    if [ ! -e /usr/lib64/libpq.so.private15-5 ]; then \
+        if [ -e /usr/pgsql-15/lib/libpq.so.5 ]; then \
+            ln -s /usr/pgsql-15/lib/libpq.so.5 /usr/lib64/libpq.so.private15-5; \
+        elif [ -e /usr/lib64/libpq.so.5 ]; then \
+            ln -s /usr/lib64/libpq.so.5 /usr/lib64/libpq.so.private15-5; \
+        fi; \
+    fi && ldconfig && \
     groupmod -g 70 postgres && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
     mkdir -p /var/lib/postgresql /var/run/postgresql && \
@@ -74,6 +83,8 @@ COPY image/postgres/scripts \
     /usr/local/bin/
 
 ENV PG_MAJOR=15 \
+    POSTGRESQL_PREV_VERSION=13 \
+    PATH="$PATH:/usr/pgsql-15/bin/" \
     PGDATA="/var/lib/postgresql/data/pgdata" \
     LANG="en_US.utf8"
 

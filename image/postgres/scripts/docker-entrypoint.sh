@@ -379,7 +379,7 @@ _main() {
 if ! _is_sourced; then
 	if [[ -v FORCE_OLD_BINARIES && "${FORCE_OLD_BINARIES}" == "true" ]]; then
 		PG_DATA_VERSION=$(cat "${PGDATA}/PG_VERSION")
-		export PATH="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin:$PATH"
+		export PATH="/usr/pgsql-${PG_DATA_VERSION}/bin:$PATH"
 	fi
 
 	_main "$@"

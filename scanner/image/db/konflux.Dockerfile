@@ -21,8 +21,8 @@ RUN dnf module enable -y \
         --nodocs \
         bash ca-certificates findutils glibc-langpack-en \
         glibc-locale-source gzip less libicu libxslt lz4 openldap openssl \
-        perl-libs postgresql postgresql-contrib postgresql-server python3 \
-        shadow-utils systemd-sysv tar tzdata util-linux uuid zstd && \
+        perl-libs postgresql postgresql-contrib postgresql-server \
+        shadow-utils tar tzdata util-linux uuid zstd && \
     dnf reinstall -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \

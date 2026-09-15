@@ -21,9 +21,7 @@ packages:
 - postgresql-contrib
 - postgresql-server
 - postgresql-upgrade
-- python3
 - shadow-utils
-- systemd-sysv
 - tzdata
 - util-linux
 - uuid
