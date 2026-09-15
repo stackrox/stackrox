@@ -277,9 +277,9 @@ func (m Message) writeContentBytes(buf *bytes.Buffer) {
 		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", applyRfc5322LineLengthLimit(branding.GetLogoBase64())))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
-		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br><div>\r\n")
+		// The body is expected to be a complete HTML document that references the
+		// inline logo via <img src="cid:logo.png">. We no longer wrap it here.
 		buf.WriteString(fmt.Sprintf("%s\r\n", applyRfc5322TextWordWrap(m.Body)))
-		buf.WriteString("</div>\r\n")
 	} else {
 		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
 		buf.WriteString(fmt.Sprintf("%s\r\n", applyRfc5322TextWordWrap(m.Body)))
