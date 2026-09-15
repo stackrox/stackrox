@@ -20,6 +20,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	extV1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
@@ -205,6 +207,242 @@ func TestIsTrackedReference(t *testing.T) {
 			assert.Equal(t, IsTrackedOwnerReference(c.ref), c.isTracked)
 		})
 	}
+}
+
+func TestGroupAndVersionFromAPIVersion(t *testing.T) {
+	cases := map[string]struct {
+		apiVersion    string
+		expectedGroup string
+		expectedVer   string
+	}{
+		"core API": {
+			apiVersion:    "v1",
+			expectedGroup: "",
+			expectedVer:   "v1",
+		},
+		"native grouped API": {
+			apiVersion:    "apps/v1",
+			expectedGroup: "apps",
+			expectedVer:   "v1",
+		},
+		"CRD API": {
+			apiVersion:    "serving.kserve.io/v1beta1",
+			expectedGroup: "serving.kserve.io",
+			expectedVer:   "v1beta1",
+		},
+		"k8s.io grouped API": {
+			apiVersion:    "rbac.authorization.k8s.io/v1",
+			expectedGroup: "rbac.authorization.k8s.io",
+			expectedVer:   "v1",
+		},
+		"empty string": {
+			apiVersion:    "",
+			expectedGroup: "",
+			expectedVer:   "",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			group, version := groupAndVersionFromAPIVersion(tc.apiVersion)
+			assert.Equal(t, tc.expectedGroup, group)
+			assert.Equal(t, tc.expectedVer, version)
+		})
+	}
+}
+
+func TestManagingResourceFromOwnerRefs(t *testing.T) {
+	controllerTrue := ptr.To(true)
+	controllerFalse := ptr.To(false)
+
+	cases := map[string]struct {
+		refs     []metav1.OwnerReference
+		expected *storage.ManagingResource
+	}{
+		"no owner references": {
+			refs:     nil,
+			expected: nil,
+		},
+		"only native tracked references": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       kubernetes.Deployment,
+					Name:       "parent-deploy",
+					UID:        types.UID("deploy-uid"),
+					Controller: controllerTrue,
+				},
+			},
+			expected: nil,
+		},
+		"CRD controller reference": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "serving.kserve.io/v1beta1",
+					Kind:       "InferenceService",
+					Name:       "granite-model",
+					UID:        types.UID("isvc-uid-123"),
+					Controller: controllerTrue,
+				},
+			},
+			expected: &storage.ManagingResource{
+				Kind:       "InferenceService",
+				ApiGroup:   "serving.kserve.io",
+				ApiVersion: "v1beta1",
+				Name:       "granite-model",
+				Uid:        "isvc-uid-123",
+			},
+		},
+		"CRD non-controller reference is ignored": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "serving.kserve.io/v1beta1",
+					Kind:       "InferenceService",
+					Name:       "granite-model",
+					UID:        types.UID("isvc-uid-123"),
+					Controller: controllerFalse,
+				},
+			},
+			expected: nil,
+		},
+		"CRD reference with nil Controller is ignored": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "serving.kserve.io/v1beta1",
+					Kind:       "InferenceService",
+					Name:       "granite-model",
+					UID:        types.UID("isvc-uid-123"),
+				},
+			},
+			expected: nil,
+		},
+		"mixed native and CRD references picks CRD controller": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       kubernetes.ReplicaSet,
+					Name:       "some-rs",
+					UID:        types.UID("rs-uid"),
+					Controller: controllerTrue,
+				},
+				{
+					APIVersion: "argoproj.io/v1alpha1",
+					Kind:       "Application",
+					Name:       "my-app",
+					UID:        types.UID("argo-uid"),
+					Controller: controllerTrue,
+				},
+			},
+			expected: &storage.ManagingResource{
+				Kind:       "Application",
+				ApiGroup:   "argoproj.io",
+				ApiVersion: "v1alpha1",
+				Name:       "my-app",
+				Uid:        "argo-uid",
+			},
+		},
+		"non-native non-deployment kind with controller": {
+			refs: []metav1.OwnerReference{
+				{
+					APIVersion: "kubevirt.io/v1",
+					Kind:       "VirtualMachine",
+					Name:       "my-vm",
+					UID:        types.UID("vm-uid"),
+					Controller: controllerTrue,
+				},
+			},
+			expected: &storage.ManagingResource{
+				Kind:       "VirtualMachine",
+				ApiGroup:   "kubevirt.io",
+				ApiVersion: "v1",
+				Name:       "my-vm",
+				Uid:        "vm-uid",
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := managingResourceFromOwnerRefs(tc.refs)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestNewDeploymentFromStaticResourceManagingResource(t *testing.T) {
+	controllerTrue := ptr.To(true)
+
+	t.Run("deployment with CRD controller gets ManagingResource", func(t *testing.T) {
+		deployment := &appsV1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("deploy-uid"),
+				Name:      "predictor-default",
+				Namespace: "ai-project",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "serving.kserve.io/v1beta1",
+						Kind:       "InferenceService",
+						Name:       "granite-model",
+						UID:        types.UID("isvc-uid"),
+						Controller: controllerTrue,
+					},
+				},
+			},
+			Spec: appsV1.DeploymentSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{Containers: []v1.Container{{Name: "kserve-container"}}},
+				},
+			},
+		}
+		d, err := NewDeploymentFromStaticResource(deployment, kubernetes.Deployment, "cluster-1", "")
+		require.NoError(t, err)
+		require.NotNil(t, d)
+		require.NotNil(t, d.GetManagingResource())
+		assert.Equal(t, "InferenceService", d.GetManagingResource().GetKind())
+		assert.Equal(t, "serving.kserve.io", d.GetManagingResource().GetApiGroup())
+		assert.Equal(t, "v1beta1", d.GetManagingResource().GetApiVersion())
+		assert.Equal(t, "granite-model", d.GetManagingResource().GetName())
+		assert.Equal(t, "isvc-uid", d.GetManagingResource().GetUid())
+	})
+
+	t.Run("deployment without owner references has nil ManagingResource", func(t *testing.T) {
+		deployment := &appsV1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("deploy-uid"),
+				Name:      "standalone",
+				Namespace: "default",
+			},
+			Spec: appsV1.DeploymentSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{Containers: []v1.Container{{Name: "app"}}},
+				},
+			},
+		}
+		d, err := NewDeploymentFromStaticResource(deployment, kubernetes.Deployment, "cluster-1", "")
+		require.NoError(t, err)
+		require.NotNil(t, d)
+		assert.Nil(t, d.GetManagingResource())
+	})
+
+	t.Run("resource owned by native type is suppressed", func(t *testing.T) {
+		rs := &appsV1.ReplicaSet{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       types.UID("rs-uid"),
+				Name:      "my-rs",
+				Namespace: "default",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       kubernetes.Deployment,
+						Name:       "my-deploy",
+						UID:        types.UID("deploy-uid"),
+						Controller: controllerTrue,
+					},
+				},
+			},
+		}
+		d, err := NewDeploymentFromStaticResource(rs, kubernetes.ReplicaSet, "cluster-1", "")
+		require.NoError(t, err)
+		assert.Nil(t, d, "resource with native owner should be suppressed")
+	})
 }
 
 func TestContainerLivenessProbePopulation(t *testing.T) {
