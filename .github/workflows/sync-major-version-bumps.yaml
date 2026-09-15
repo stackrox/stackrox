@@ -1,0 +1,131 @@
+name: Sync major version bumps to release branches
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - pkg/version/productstreams/major_version_bumps.yaml
+  pull_request:
+    paths:
+      - .github/workflows/sync-major-version-bumps.yaml
+  schedule:
+    - cron: '0 8 * * 1' # Weekly Monday 8am UTC safety net
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Log what would be updated without creating PRs'
+        type: boolean
+        default: true
+      target-branch:
+        description: 'Only target this release branch (e.g. release-5.0). Leave empty for all.'
+        type: string
+        default: ''
+
+jobs:
+  discover:
+    name: Discover release branches
+    if: ${{ github.repository_owner == 'stackrox' }}
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.find.outputs.branches }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Find branches with bump file
+        id: find
+        run: |
+          set -euo pipefail
+
+          TARGET="${{ inputs.target-branch }}"
+          BUMP_FILE="pkg/version/productstreams/major_version_bumps.yaml"
+
+          if [[ -n "$TARGET" ]]; then
+            if git show "origin/$TARGET:$BUMP_FILE" &>/dev/null; then
+              BRANCHES=$(jq -nc --arg b "$TARGET" '[$b]')
+            else
+              echo "::warning::Branch $TARGET does not have $BUMP_FILE, skipping"
+              BRANCHES="[]"
+            fi
+          else
+            BRANCHES="[]"
+            for ref in $(git branch -r --list 'origin/release-*' | tr -d ' '); do
+              branch="${ref#origin/}"
+              if git show "$ref:$BUMP_FILE" &>/dev/null; then
+                BRANCHES=$(echo "$BRANCHES" | jq --arg b "$branch" '. + [$b]')
+              fi
+            done
+          fi
+
+          echo "branches=$BRANCHES" >> "$GITHUB_OUTPUT"
+          echo "Branches to sync: $BRANCHES"
+
+  sync:
+    name: Sync to ${{ matrix.branch }}
+    needs: discover
+    if: ${{ needs.discover.outputs.branches != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{ fromJson(needs.discover.outputs.branches) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+      - name: Copy bump file from master
+        run: |
+          git show origin/master:pkg/version/productstreams/major_version_bumps.yaml \
+            > pkg/version/productstreams/major_version_bumps.yaml
+
+      - name: Show diff
+        run: |
+          if git diff --quiet; then
+            echo "Already up to date on ${{ matrix.branch }}"
+          else
+            echo "Changes to apply on ${{ matrix.branch }}:"
+            git diff
+          fi
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        id: cpr
+        if: ${{ steps.check.outputs.changed == 'true' && github.event_name != 'pull_request' && inputs.dry-run != 'true' }}
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          commit-message: 'chore: sync major_version_bumps.yaml from master'
+          committer: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+          author: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+          branch: lvm/rox-35365-${{ matrix.branch }}
+          base: ${{ matrix.branch }}
+          signoff: false
+          delete-branch: true
+          title: 'chore: sync major_version_bumps.yaml from master to ${{ matrix.branch }}'
+          body: |
+            Automated sync of `pkg/version/productstreams/major_version_bumps.yaml` from `master` to `${{ matrix.branch }}`.
+
+            This keeps the major version bump history up to date so that builds from this release branch compute correct version compatibility ranges.
+          labels: |
+            dependencies
+          draft: false
+
+      - name: Enable Pull Request Automerge
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # ratchet:peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
