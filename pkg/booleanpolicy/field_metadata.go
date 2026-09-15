@@ -916,12 +916,10 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{AuditLogEvent},
 	)
 
-	f.registerFieldMetadataRegex(
+	f.registerFieldMetadata(
 		fieldnames.SourceIPAddress,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesSourceIPAddressCustomTag), nil,
-		func(*validateConfiguration) *regexp.Regexp {
-			return ipAddressValueRegex
-		},
+		ipAddressValidator,
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
 	)
