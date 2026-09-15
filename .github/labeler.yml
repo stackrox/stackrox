@@ -60,7 +60,7 @@ ci-all-qa-tests:
 - changed-files:
   - any-glob-to-any-file:
     - COLLECTOR_VERSION
-    - SCANNER_VERSION
+    - FACT_VERSION
 
 backport:
 - base-branch: 'release-*'

@@ -554,19 +554,12 @@ push_matching_collector_scanner_images() {
 
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
-    local scanner_version
-    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
     local fact_version
     fact_version="$(make --quiet --no-print-directory fact-tag)"
 
     registry_rw_login "${registry}"
-
-    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}"
-    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}"
-    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}"
-    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}"
 
@@ -1029,8 +1022,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 END
@@ -1059,8 +1050,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
@@ -1075,8 +1064,6 @@ release-main ${operator_controller_tag}
 release-central-db ${operator_controller_tag}
 release-collector ${operator_controller_tag}
 release-fact ${operator_controller_tag}
-release-scanner ${operator_controller_tag}
-release-scanner-db ${operator_controller_tag}
 release-scanner-v4 ${operator_controller_tag}
 release-scanner-v4-db ${operator_controller_tag}
 release-roxctl ${operator_controller_tag}
@@ -1089,8 +1076,6 @@ main ${tag}
 central-db ${tag}
 collector ${tag}
 fact ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
@@ -1142,13 +1127,6 @@ check_rhacs_eng_image_exists() {
     check=$(curl --location -sS "${extra_args[@]}" "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
-}
-
-check_scanner_version() {
-    if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
-        echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
-        exit 1
-    fi
 }
 
 check_collector_version() {
