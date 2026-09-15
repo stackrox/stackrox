@@ -90,6 +90,15 @@ export default defineConfig(async () => {
     };
 
     return {
+        // Eagerly pre-bundle `formik` so Vite's dependency crawler discovers all of its lodash
+        // submodule imports (getIn/setIn use `lodash/get` etc.) up front. Without this, the first
+        // Cypress component test to render a Formik form triggers a "new dependencies optimized"
+        // dev-server reload mid-test-run, which crashes any component mounted at that moment with
+        // "Cannot read properties of null (reading 'useMemo')". Needed once
+        // ScanConfigOptions.cy.jsx became the first component test in the repo to import `formik`.
+        optimizeDeps: {
+            include: ['formik'],
+        },
         build: {
             assetsDir: './static',
             outDir: 'build',

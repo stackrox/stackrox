@@ -119,6 +119,12 @@ describe('Compliance Schedules', () => {
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
         cy.get('ul[role="menu"] button:contains("00:30")').click();
 
+        // Node roles: defaults to master + worker; add a custom role and remove worker
+        cy.get('input[placeholder="Type a role and press Enter to add"]').type('infra{enter}');
+        cy.get('.pf-v6-c-label__content:contains("infra")');
+        cy.get('.pf-v6-c-label:contains("worker") button[aria-label="Close worker"]').click();
+        cy.get('.pf-v6-c-label__content:contains("worker")').should('not.exist');
+
         navigateWizardNext();
 
         cy.get('tr:has(td:contains("Healthy")) td input[type="checkbox"]').click();
@@ -149,9 +155,57 @@ describe('Compliance Schedules', () => {
                         intervalType: 'WEEKLY',
                     },
                     notifiers: [],
+                    nodeRoles: ['master', 'infra'],
                 },
                 clusters: ['f781e077-fb39-4529-a19d-7a3403e181b2'],
             });
+        });
+    });
+
+    it('should send @all node role, replacing default roles, when creating a scan config', () => {
+        const scheduleName = 'all-nodes-scan';
+        const scheduleDescription = 'Scan every node role.';
+
+        visitComplianceEnhancedScanConfigs();
+
+        interceptAndMockComplianceIntegrations(() => {
+            cy.get('a:contains("Create scan schedule")').eq(0).click();
+        });
+
+        cy.get(`h1:contains("Create scan schedule")`);
+
+        // Step 1, fill required fields
+        getInputByLabel('Name').clear().type(scheduleName);
+        getInputByLabel('Description').click().type(scheduleDescription).blur();
+        getInputByLabel('Frequency').click();
+        getSelectOption('Daily').click();
+        cy.get('input[aria-label="Time picker"]').click();
+        cy.get('ul[role="menu"] button:contains("00:30")').click();
+
+        // Node roles: selecting @all replaces the default master + worker roles
+        cy.get('.pf-v6-c-label__content:contains("master")');
+        cy.get('.pf-v6-c-label__content:contains("worker")');
+        cy.get('input[placeholder="Type a role and press Enter to add"]').type('@all{enter}');
+        cy.get('.pf-v6-c-label__content:contains("@all")');
+        cy.get('.pf-v6-c-label__content:contains("master")').should('not.exist');
+        cy.get('.pf-v6-c-label__content:contains("worker")').should('not.exist');
+
+        navigateWizardNext();
+
+        cy.get('tr:has(td:contains("Healthy")) td input[type="checkbox"]').click();
+
+        interceptAndMockComplianceProfiles(navigateWizardNext);
+
+        cy.get('td input[type="checkbox"]').eq(0).click();
+
+        navigateWizardNext();
+
+        navigateWizardNext();
+
+        interceptAndWaitForCreateScanSchedule(() => {
+            cy.get('button:contains("Save")').click();
+        }).should(({ request }) => {
+            expect(request.body.scanConfig.nodeRoles).to.deep.equal(['@all']);
         });
     });
 });
