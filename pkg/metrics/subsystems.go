@@ -7,6 +7,7 @@ type Subsystem string
 const (
 	CentralSubsystem          Subsystem = "central"
 	CentralWorkerSubsystem    Subsystem = "central_worker"
+	BackgroundWorkerSubsystem Subsystem = "background_worker"
 	SensorSubsystem           Subsystem = "sensor"
 	AdmissionControlSubsystem Subsystem = "admission_control"
 	ComplianceSubsystem       Subsystem = "compliance"
