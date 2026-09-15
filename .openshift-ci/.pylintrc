@@ -85,7 +85,6 @@ disable=raw-checker-failed,
         missing-function-docstring,
         missing-module-docstring,
         missing-class-docstring,
-        no-self-use,
         broad-except,
         too-few-public-methods
 
@@ -322,10 +321,10 @@ ignore-docstrings=yes
 ignore-imports=yes
 
 # Signatures are removed from the similarity computation
-ignore-signatures=no
+ignore-signatures=yes
 
 # Minimum lines number of a similarity.
-min-similarity-lines=8
+min-similarity-lines=10
 
 
 [SPELLING]

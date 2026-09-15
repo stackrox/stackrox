@@ -77,7 +77,26 @@ function setup() {
 @test "checks them all" {
     run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log"
     [ "$status" -eq 2 ]
-    [ "${#lines[@]}" -eq 5 ]
+    # egrep obsolescence warnings (macOS grep, GNU grep >= 3.8) pollute the captured
+    # output; filter them so assertions are stable across platforms.
+    local -a clean_lines=()
+    while IFS='' read -r line; do clean_lines+=("${line}"); done < <(echo "${output}" | grep -v "^egrep: warning")
+    [ "${#clean_lines[@]}" -eq 16 ]
+    [ "${clean_lines[4]}" = "Last 25 lines of the previous log (for triage):" ]
+    [ "${clean_lines[14]}" = "exception" ]
+}
+
+@test "prints a bounded tail of an unmatched log" {
+    local big_log="${BATS_TEST_TMPDIR}/big-previous.log"
+    seq 1 30 > "${big_log}"
+    run "$CMD" "openshift-crio-api-e2e-tests" "${big_log}"
+    [ "$status" -eq 2 ]
+    local -a clean_lines=()
+    while IFS='' read -r line; do clean_lines+=("${line}"); done < <(echo "${output}" | grep -v "^egrep: warning")
+    [ "${clean_lines[2]}" = "Last 25 lines of the previous log (for triage):" ]
+    [ "${clean_lines[3]}" = "6" ]
+    [ "${clean_lines[27]}" = "30" ]
+    [ "${#clean_lines[@]}" -eq 29 ]
 }
 
 @test "collector sensor connection failure is OK for any job" {

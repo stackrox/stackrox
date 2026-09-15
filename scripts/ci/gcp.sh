@@ -40,9 +40,9 @@ setup_gcp() {
     retry 7 true _gcloud_auth
 
     gcloud auth list
-    gcloud config set project acs-san-stackroxci
-    gcloud config set compute/region us-central1
-    gcloud config unset compute/zone
+    retry 7 true gcloud config set project acs-san-stackroxci
+    retry 7 true gcloud config set compute/region us-central1
+    retry 7 true gcloud config unset compute/zone
 
     # Some tools require a credential file for API calls e.g. prometheus-metric-parser
     touch "$gcp_credentials_file"
