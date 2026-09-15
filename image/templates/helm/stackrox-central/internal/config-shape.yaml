@@ -125,7 +125,7 @@ central:
       none: null # bool
     extraMounts: null # [dict]
 centralWorker:
-  enabled: false # bool
+  enabled: true # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
   hostAliases: null # [dict]
@@ -158,18 +158,6 @@ customize:
       podAnnotations: {} # dict
       envVars: {} # dict
   config-controller:
-    labels: {} # dict
-    annotations: {} # dict
-    podLabels: {} # dict
-    podAnnotations: {} # dict
-    envVars: {} # dict
-  scanner:
-    labels: {} # dict
-    annotations: {} # dict
-    podLabels: {} # dict
-    podAnnotations: {} # dict
-    envVars: {} # dict
-  scanner-db:
     labels: {} # dict
     annotations: {} # dict
     podLabels: {} # dict

@@ -1,0 +1,21 @@
+# After upgrading to an operator that no longer ships Scanner V2, the leftover Scanner V2
+# operands from the pre-upgrade installation must be cleaned up. Verify that the scanner and
+# scanner-db Deployments and the scanner-db-password Secret are gone.
+#
+# Note: scanner-tls / scanner-db-tls are intentionally NOT checked here. Those secrets are
+# extension-managed and only removed when the Central CR is deleted (see reconcile_tls.go and
+# the delete-central-errors step), not during an upgrade.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scanner-db-password

@@ -47,7 +47,7 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ImageTag = "custom-main"
-			values.ScannerImageTag = "custom-scanner"
+			values.ScannerV4ImageTag = "custom-scanner"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
 	})

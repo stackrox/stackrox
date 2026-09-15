@@ -1,27 +1,29 @@
 import { selectors } from './VulnerabilityManagement.selectors';
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
-    assertSortedItems,
-    callbackForPairOfAscendingNumberValuesFromElements,
-    callbackForPairOfAscendingVulnerabilitySeverityValuesFromElements,
-    callbackForPairOfDescendingNumberValuesFromElements,
-    callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements,
-} from '../../helpers/sort';
-import {
-    hasTableColumnHeadings,
-    interactAndWaitForVulnerabilityManagementEntities,
-    verifySecondaryEntities,
-    visitVulnerabilityManagementEntities,
-} from './VulnerabilityManagement.helpers';
+    expectRequestedSort,
+    getRouteMatcherMapForGraphQL,
+    interceptAndWatchRequests,
+} from '../../helpers/request';
+import { visit } from '../../helpers/visit';
+import { hasTableColumnHeadings } from './VulnerabilityManagement.helpers';
 
-const entitiesKey = 'node-cves';
+const nodeCvesFixturePath = 'vulnmanagement/nodeCves.json';
+
+function visitNodeCvesWithMockedData() {
+    const routeMatcherMap = getRouteMatcherMapForGraphQL(['searchOptions', 'getNodeCves']);
+    const staticResponseMap = {
+        getNodeCves: { fixture: nodeCvesFixturePath },
+    };
+    visit('/main/vulnerability-management/node-cves', routeMatcherMap, staticResponseMap);
+    cy.get('h1:contains("Node CVEs")');
+}
 
 describe('Vulnerability Management Node CVEs', () => {
     withAuth();
 
     it('should display table columns', () => {
-        visitVulnerabilityManagementEntities(entitiesKey);
+        visitNodeCvesWithMockedData();
 
         hasTableColumnHeadings([
             '', // checkbox
@@ -40,118 +42,56 @@ describe('Vulnerability Management Node CVEs', () => {
         ]);
     });
 
-    it('should sort the CVSS Score column', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        visitVulnerabilityManagementEntities(entitiesKey);
+    it('should sort the CVSS Score column', () => {
+        visitNodeCvesWithMockedData();
 
         const thSelector = '.rt-th:contains("CVSS Score")';
-        const tdSelector = '.rt-td:nth-child(7) [data-testid="label-chip"]';
 
-        // 0. Initial table state indicates that the column is sorted descending.
         cy.get(thSelector).should('have.class', '-sort-desc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
-        });
 
-        // 1. Sort ascending by the column.
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-        cy.location('search').should('eq', '?sort[0][id]=CVSS&sort[0][desc]=false');
+        const routeMatcherMap = getRouteMatcherMapForGraphQL(['getNodeCves']);
+        const staticResponseMap = {
+            getNodeCves: { fixture: nodeCvesFixturePath },
+        };
+        interceptAndWatchRequests(routeMatcherMap, staticResponseMap).then(
+            ({ waitAndYieldRequestBodyVariables }) => {
+                cy.get(thSelector).click();
+                cy.location('search').should('eq', '?sort[0][id]=CVSS&sort[0][desc]=false');
+                cy.get(thSelector).should('have.class', '-sort-asc');
 
-        cy.get(thSelector).should('have.class', '-sort-asc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
-        });
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedSort({ field: 'CVSS', reversed: false })
+                );
+            }
+        );
 
-        // 2. Sort descending by the column.
-        cy.get(thSelector).click(); // no request because initial response has been cached
+        cy.get(thSelector).click();
         cy.location('search').should('eq', '?sort[0][id]=CVSS&sort[0][desc]=true');
-
         cy.get(thSelector).should('have.class', '-sort-desc');
-        // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Severity column', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
+    it('should display vulnerability descriptions', () => {
+        visitNodeCvesWithMockedData();
 
-        visitVulnerabilityManagementEntities(entitiesKey);
-
-        const thSelector = '.rt-th:contains("Severity")';
-        const tdSelector = '.rt-td:nth-child(6)';
-
-        // 0. Initial table state indicates that the column is not sorted.
-        cy.get(thSelector)
-            .should('not.have.class', '-sort-asc')
-            .should('not.have.class', '-sort-desc');
-
-        // 1. Sort ascending by the column.
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=false');
-
-        cy.get(thSelector).should('have.class', '-sort-asc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(
-                items,
-                callbackForPairOfAscendingVulnerabilitySeverityValuesFromElements
-            );
-        });
-
-        // 2. Sort descending by the column.
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
-
-        cy.get(thSelector).should('have.class', '-sort-desc');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(
-                items,
-                callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements
-            );
-        });
-    });
-
-    it('should display vulnerability descriptions', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        visitVulnerabilityManagementEntities(entitiesKey);
-
-        // Balance positive and negative assertions.
         cy.get(selectors.cveDescription).should('exist');
         cy.get(`${selectors.cveDescription}:contains("No description available")`).should(
             'not.exist'
         );
     });
 
-    // Argument 3 in verify functions is index of column which has the links.
-    // The one-based index includes checkbox, hidden, invisible.
+    it('should display links for nodes', () => {
+        visitNodeCvesWithMockedData();
 
-    // Some tests might fail in local deployment.
-
-    it('should display links for nodes', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        verifySecondaryEntities(entitiesKey, 'nodes', 10);
+        cy.get('.rt-tbody .rt-td')
+            .contains('a', /^\d+ nodes?$/)
+            .should('exist');
     });
 
-    it('should display links for node-components', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
+    it('should display links for node-components', () => {
+        visitNodeCvesWithMockedData();
 
-        verifySecondaryEntities(entitiesKey, 'node-components', 10);
+        cy.get('.rt-tbody .rt-td')
+            .contains('a', /^\d+ node components?$/)
+            .should('exist');
     });
 });

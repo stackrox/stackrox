@@ -54,7 +54,7 @@ spec:
             - name: ROX_SCANNER_V4
               value: "true"
             - name: ROX_LEGACY_SCANNER
-              value: "true"
+              value: "false"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:

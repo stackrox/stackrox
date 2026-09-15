@@ -24,6 +24,13 @@ func TestRawListQueryNamespaceAndName(t *testing.T) {
 	require.Contains(t, q, `Virtual Machine Name:"vm:special+name"`)
 }
 
+func TestRawListQueryNamespaceNameGuestOS(t *testing.T) {
+	q := rawListQueryNamespaceNameGuestOS("ns", "vm-rhel", "Red Hat Enterprise Linux 8.10")
+	require.Contains(t, q, `Namespace:"ns"`)
+	require.Contains(t, q, `Virtual Machine Name:"vm-rhel"`)
+	require.Contains(t, q, `Guest OS:"Red Hat Enterprise Linux 8.10"`)
+}
+
 type stubVirtualMachineClient struct {
 	listFn func(ctx context.Context, req *v2.ListVirtualMachinesRequest) (*v2.ListVirtualMachinesResponse, error)
 	getFn  func(ctx context.Context, req *v2.GetVirtualMachineRequest) (*v2.VirtualMachine, error)

@@ -19,7 +19,7 @@ os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 # delegated scanning support in the secured cluster
-os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
+os.environ["SENSOR_SCANNER_V4_SUPPORT"] = "true"
 
 # Enable new CRS-based flow for registering secured clusters
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
