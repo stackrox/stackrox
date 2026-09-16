@@ -22,10 +22,11 @@ import (
 func UnaryClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	var checked atomic.Bool
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		getHeader := headerSource(&opts)
+		var md metadata.MD
+		opts = append(opts, grpc.Header(&md))
 		// Response headers are populated after the RPC completes.
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		if vals := getHeader().Get(clientconn.CentralVersionHeader); len(vals) > 0 {
+		if vals := md.Get(clientconn.CentralVersionHeader); len(vals) > 0 {
 			if !checked.Swap(true) {
 				checkAndWarn(vals[0], w)
 			}
@@ -75,12 +76,6 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
 		roxctlVersion, centralVersion, compatRange)
 	return true
-}
-
-func headerSource(opts *[]grpc.CallOption) func() metadata.MD {
-	var md metadata.MD
-	*opts = append(*opts, grpc.Header(&md))
-	return func() metadata.MD { return md }
 }
 
 func formatVersionRange(versions []productstreams.XYVersion) string {
