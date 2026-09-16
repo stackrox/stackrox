@@ -40,11 +40,27 @@ securedCluster:
 
 ### Mapping install settings to CR values
 
+#### Central CR
+
 | Setting | V2 CR field (`scanner.scannerComponent`) | V4 CR field (`scannerV4.scannerComponent`) |
 |---|---|---|
 | default | omit (don't include in config) | omit |
 | enabled | `Enabled` | `Enabled` |
 | disabled | `Disabled` | `Disabled` |
+
+#### SecuredCluster CR
+
+The SecuredCluster CR accepts **different values** than the Central CR:
+
+| Setting | V2 CR field (`scanner.scannerComponent`) | V4 CR field (`scannerV4.scannerComponent`) |
+|---|---|---|
+| default | omit | omit |
+| enabled | `AutoSense` | `AutoSense` |
+| disabled | `Disabled` | `Disabled` |
+
+**Do not use `Enabled`** for SecuredCluster fields — it will fail validation.
+Valid values for `scanner.scannerComponent`: `AutoSense`, `Disabled`.
+Valid values for `scannerV4.scannerComponent`: `Default`, `AutoSense`, `Disabled`.
 
 In 5.0, the V2 field is marked obsolete and ignored, but setting it tests graceful handling.
 
@@ -160,8 +176,19 @@ Post-5.0: `ROX_LEGACY_SCANNER` should be `false`, `ROX_SCANNER_V4` should be `tr
 ```bash
 kubectl get deployment sensor -n <sc-ns> \
   -o jsonpath='{range .spec.template.spec.containers[?(@.name=="sensor")].env[*]}{.name}={.value}{"\n"}{end}' | \
-  grep -E "^ROX_(LOCAL_IMAGE_SCANNING_ENABLED|SCANNER_V4|SCANNER_GRPC_ENDPOINT)="
+  grep -iE "(scanner|local_image)"
 ```
+
+### Co-located wiring verification
+
+For co-located deployments (`--single-namespace`), check that Sensor points at
+Central's scanner — not just that no duplicate scanner deployments exist:
+
+```
+ROX_SCANNER_V4_INDEXER_ENDPOINT=scanner-v4-indexer.<ns>.svc:8443
+```
+
+This confirms Sensor is wired to Central's V4 indexer in the same namespace.
 
 ## Cleanup
 
@@ -174,3 +201,14 @@ Or for specific components:
 roxie teardown central
 roxie teardown secured-cluster
 ```
+
+**Note:** `roxie teardown` empties the namespaces but does **not** delete them. After
+teardown, explicitly delete the namespaces before the next test:
+
+```bash
+kubectl delete ns acs-central acs-sensor --timeout=120s
+# Or for single-namespace mode:
+kubectl delete ns stackrox --timeout=120s
+```
+
+Wait for namespace deletion to complete before starting the next test.

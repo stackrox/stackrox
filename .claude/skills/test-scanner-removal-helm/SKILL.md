@@ -67,6 +67,12 @@ helm install stackrox-central-services <chart-path> \
 
 Required before installing a Secured Cluster. Central must be running.
 
+**Important:** Each Secured Cluster must use a **unique cluster name**. If a cluster
+with the same name already exists in Central (from a previous test), the CRS handshake
+will fail with `PermissionDenied: forbidden to use a Cluster Registration Certificate
+for already-existing cluster`. Use a unique name per test run (e.g., `sc-helm-1`,
+`sc-helm-2`, etc.).
+
 ```bash
 kubectl rollout status deployment/central -n stackrox --timeout=300s
 
@@ -75,8 +81,8 @@ PF_PID=$!
 sleep 2
 
 roxctl -e https://localhost:18443 -p 'letmein123' --insecure-skip-tls-verify \
-  central crs generate test-cluster \
-  --output /tmp/test-cluster-crs.yaml
+  central crs generate <unique-cluster-name> \
+  --output /tmp/<unique-cluster-name>-crs.yaml
 
 kill $PF_PID
 ```
@@ -171,12 +177,23 @@ Post-5.0: `ROX_LEGACY_SCANNER` should be `false`, `ROX_SCANNER_V4` should be `tr
 ```bash
 kubectl get deployment sensor -n <ns> \
   -o jsonpath='{range .spec.template.spec.containers[?(@.name=="sensor")].env[*]}{.name}={.value}{"\n"}{end}' | \
-  grep -E "^ROX_(LOCAL_IMAGE_SCANNING_ENABLED|SCANNER_V4|SCANNER_GRPC_ENDPOINT)="
+  grep -iE "(scanner|local_image)"
 ```
 
 Key env vars: `ROX_LOCAL_IMAGE_SCANNING_ENABLED`, `ROX_SCANNER_V4`,
 `ROX_SCANNER_V4_INDEXER_ENDPOINT`. Post-5.0, `ROX_SCANNER_GRPC_ENDPOINT` should
 never be set.
+
+### Co-located wiring verification
+
+For co-located deployments, check that Sensor points at Central's scanner — not just
+that no duplicate scanner deployments exist. The critical env var is:
+
+```
+ROX_SCANNER_V4_INDEXER_ENDPOINT=scanner-v4-indexer.<ns>.svc:8443
+```
+
+This confirms Sensor is wired to Central's V4 indexer in the same namespace.
 
 ## Cleanup
 

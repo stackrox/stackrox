@@ -41,12 +41,17 @@ bin/darwin_arm64/roxctl central generate openshift pvc \
 Uses `quay.io/stackrox-io` registry. For k8s (non-OpenShift) clusters, replace
 `openshift` with `k8s`.
 
+**Important:** The generated bundle uses templates embedded in the roxctl binary, not
+the source tree. After changing renderer code, you must rebuild roxctl (`make cli_host-arch`)
+**and** regenerate the bundle — a stale binary produces a stale bundle even if the source
+is up to date.
+
 ### Bundle structure
 
-The bundle contains directories: `central/`, `scanner/`, `scanner-v4/`, `helm/`.
+The bundle contains directories: `central/`, `scanner-v4/`, `helm/`.
 
-- **4.11.3**: `scanner/` has YAML manifests (Scanner V2). `scanner-v4/` has YAML manifests.
-- **5.0**: `scanner/` has only scripts, no YAML (V2 removed). `scanner-v4/` has YAML manifests.
+- **4.11.3**: also has `scanner/` with YAML manifests (Scanner V2). `scanner-v4/` has YAML manifests.
+- **5.0**: no `scanner/` directory (V2 removed). `scanner-v4/` has YAML manifests.
 
 ## Install
 
@@ -126,4 +131,22 @@ Post-5.0: `ROX_LEGACY_SCANNER` should be `false`, `ROX_SCANNER_V4` should be `tr
 
 ```bash
 oc delete ns stackrox
+```
+
+**Note:** The CRD `securitypolicies.config.stackrox.io` is cluster-scoped and survives
+namespace deletion. It must be explicitly cleaned up between tests, especially before
+Helm installs (which fail if the CRD exists with wrong ownership labels):
+
+```bash
+kubectl delete crd securitypolicies.config.stackrox.io
+```
+
+**Note:** Cluster-scoped monitoring resources (ServiceMonitors, PrometheusRules) from
+operator deployments also survive namespace deletion. They can cause `AlreadyExists`
+errors on subsequent manifest installs. These are non-blocking (core resources still
+deploy) but noisy. Clean them up if switching between deploy methods:
+
+```bash
+kubectl delete servicemonitor central-monitor-stackrox scanner-v4-monitor-stackrox -n stackrox 2>/dev/null
+kubectl delete prometheusrule central-telemeter-stackrox -n stackrox 2>/dev/null
 ```
