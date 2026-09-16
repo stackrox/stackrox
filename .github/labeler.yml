@@ -75,18 +75,7 @@ konflux-build:
     - .konflux/**/*
     - rpms.*
 
-ai-review:
-- changed-files:
-  - any-glob-to-any-file:
-    - .github/**/*
-    - .openshift-ci/**/*
-    - pkg/auth/**/*
-    - pkg/sac/**/*
-    - roxctl/**/*
-    - scripts/ci/**/
-    - sensor/**/*
-
-coderabbit-review:
+stackrox-ai-review:
 - changed-files:
   - any-glob-to-any-file:
     - .github/**/*

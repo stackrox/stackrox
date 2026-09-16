@@ -1,0 +1,6 @@
+# Disable CodeRabbit for this temporary Harness review demonstration.
+reviews:
+  auto_review:
+    enabled: false
+chat:
+  auto_reply: false

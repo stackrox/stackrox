@@ -1,0 +1,22 @@
+name: StackRox AI review
+
+on:
+  # Demonstration only. Production should use pull_request_target after the
+  # trusted caller workflow is on the default branch.
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@e485a7e89991689d0520e2677677cf983d47906d
+    with:
+      harness-ref: e485a7e89991689d0520e2677677cf983d47906d
+      allow-draft-reviews: false
+      review-label: stackrox-ai-review
+      openshell-github-app-client-id: ${{ vars.OPENSHELL_GITHUB_APP_CLIENT_ID }}
+    secrets:
+      VERTEX_AI_SERVICE_ACCOUNT_KEY: ${{ secrets.VERTEX_AI_SERVICE_ACCOUNT_KEY }}
+      OPENSHELL_GITHUB_APP_PRIVATE_KEY: ${{ secrets.OPENSHELL_GITHUB_APP_PRIVATE_KEY }}

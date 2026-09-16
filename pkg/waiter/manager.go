@@ -87,6 +87,7 @@ func (w *managerImpl[T]) Start(ctx context.Context) {
 
 				// inform the waiters.
 				w.closeWaiters()
+				close(w.responseCh)
 				return
 			case r := <-w.responseCh:
 				waiterCh, found := w.removeWaiter(r.id)
