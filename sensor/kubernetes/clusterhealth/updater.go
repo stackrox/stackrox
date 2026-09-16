@@ -33,9 +33,6 @@ const (
 	admissionControlDeploymentName = "admission-control"
 	admissionControlContainerName  = "admission-control"
 
-	localScannerDeploymentName   = "scanner"
-	localScannerDBDeploymentName = "scanner-db"
-
 	localScannerV4IndexerDeploymentName = "scanner-v4-indexer"
 	localScannerV4DBDeploymentName      = "scanner-v4-db"
 )
@@ -205,19 +202,29 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		return nil
 	}
 
-	// It's possible that both Scanner and Scanner V4 are installed in the secured cluster
-	// at the same time, but only one will be used by Sensor at any given time, therefore
-	// only report the health of the active scanner.
-	scannerV4Active := features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported)
-
-	analyzerDeploymentName := localScannerDeploymentName
-	dbDeploymentName := localScannerDBDeploymentName
-	if scannerV4Active {
-		analyzerDeploymentName = localScannerV4IndexerDeploymentName
-		dbDeploymentName = localScannerV4DBDeploymentName
+	// Local image scanning requires Scanner V4; Scanner V2 is no longer supported.
+	// When Scanner V4 is not active, local scanning cannot function. Pod state is irrelevant
+	// in these cases. The two failure modes are reported distinctly:
+	//   - Scanner V4 is not enabled on this secured cluster, or
+	//   - Scanner V4 is enabled but Central does not advertise Scanner V4 support.
+	if !features.ScannerV4.Enabled() {
+		return &storage.ScannerHealthInfo{
+			StatusErrors: []string{
+				"local image scanning is enabled but Scanner V4 is not enabled; local image " +
+					"scanning requires Scanner V4",
+			},
+		}
+	}
+	if !centralcaps.Has(centralsensor.ScannerV4Supported) {
+		return &storage.ScannerHealthInfo{
+			StatusErrors: []string{
+				"local image scanning and Scanner V4 are enabled, but Central is not reporting " +
+					"support for Scanner V4; enable Scanner V4 in Central to enable local image scanning",
+			},
+		}
 	}
 
-	result := u.getScannerHealthInfo(analyzerDeploymentName, dbDeploymentName)
+	result := u.getScannerHealthInfo(localScannerV4IndexerDeploymentName, localScannerV4DBDeploymentName)
 	if len(result.GetStatusErrors()) > 0 {
 		log.Errorf("Errors while getting local scanner info: %v", result.GetStatusErrors())
 	}
