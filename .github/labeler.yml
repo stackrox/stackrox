@@ -6,12 +6,6 @@ area/ci:
   - any-glob-to-any-file:
     - .github/**/*
     - .openshift-ci/**/*
-    - pkg/auth/**/*
-    - pkg/sac/**/*
-    - roxctl/**/*
-    - scripts/ci/**/
-    - sensor/**/*
-    - .openshift-ci/**/*
     - scripts/ci/**/
 area/roxctl:
 - changed-files:
