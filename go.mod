@@ -78,7 +78,7 @@ require (
 	github.com/heimdalr/dag v1.5.1
 	github.com/helm/helm-mapkubeapis v0.6.1
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.20.0
@@ -111,7 +111,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.70.1
-	github.com/quay/claircore v1.6.1-0.20260916195820-3902930ff815
+	github.com/quay/claircore v1.6.1-0.20260924160021-464418f71802
 	github.com/quay/claircore/toolkit v1.7.0
 	github.com/quay/zlog/v2 v2.1.1
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
