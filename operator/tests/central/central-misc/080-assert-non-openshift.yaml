@@ -51,10 +51,10 @@ spec:
               value: "true"
             - name: ROX_LEGACY_SCANNER
               value: "false"
+            - name: ROX_CENTRAL_WORKER_ENABLED
+              value: "true"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:
                   key: NO_PROXY
                   name: central-stackrox-central-services-proxy-env
-            - name: ROX_CENTRAL_WORKER_ENABLED
-              value: "true"
