@@ -11,11 +11,12 @@ permissions:
 
 jobs:
   review:
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@7002692f6b5e6bd41b504afbbf33a6a1fd50d4db
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@ed8ba35cfb4821f135968856f9d936b396918841
     with:
-      harness-ref: 7002692f6b5e6bd41b504afbbf33a6a1fd50d4db
+      harness-ref: ed8ba35cfb4821f135968856f9d936b396918841
       allow-draft-reviews: false
       review-label: stackrox-ai-review
+      sandbox-image: quay.io/rcochran/openshell:sandbox-stackrox-ci-v0.3.0-93-gb81a700@sha256:ea81add33cfcee0e88e35b6cc700b7332ab4e2094b907438496b96993203e1e6
       openshell-github-app-client-id: ${{ vars.OPENSHELL_GITHUB_APP_CLIENT_ID }}
     secrets:
       VERTEX_AI_SERVICE_ACCOUNT_KEY: ${{ secrets.VERTEX_AI_SERVICE_ACCOUNT_KEY }}
