@@ -9,43 +9,63 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 num_sensors=${1:-1}
 run_time=${2:-10m}
 results_base_dir=${3:-perf}  # base directory for results; defaults to perf
+workload_type=${4:-fake}     # fake or berserker
+
+# Select the per-test script based on workload type. The two workloads also use
+# different workload-name conventions (see workload_name below).
+if [[ "$workload_type" == "berserker" ]]; then
+  perf_test_script="${DIR}/perf-test-file-activity-berserker.sh"
+else
+  perf_test_script="${DIR}/perf-test-file-activity.sh"
+fi
 
 # Array of batch sizes to test
 batch_sizes=(10 50 100 250 500)
 
-# Test each batch size without policy
-echo "=== Running tests WITHOUT file activity policy ==="
-for batch in "${batch_sizes[@]}"; do
-  echo "Testing file-activity-batch-${batch} without policy..."
-  "${DIR}/perf-test-file-activity.sh" \
+# Run a single test for the given batch size and policy setting.
+run_batch_test() {
+  local batch=$1
+  local with_policy=$2
+
+  # Fake workload names by batch size (file-activity-batch-10); berserker names
+  # by event rate, which is batch size * 10 (file-activity-100).
+  local workload_name
+  if [[ "$workload_type" == "berserker" ]]; then
+    workload_name="file-activity-$((batch * 10))"
+  else
+    workload_name="file-activity-batch-${batch}"
+  fi
+
+  "$perf_test_script" \
     "$num_sensors" \
     "$run_time" \
-    "file-activity-batch-${batch}" \
-    "false" \
+    "$workload_name" \
+    "$with_policy" \
     "$results_base_dir"
 
   # Clean up between tests
   echo "Cleaning up before next test..."
   "${DIR}/TeardownTest.sh" || true
   sleep 30
+}
+
+# Test each batch size without policy
+echo "=== Running ${workload_type} tests WITHOUT file activity policy ==="
+for batch in "${batch_sizes[@]}"; do
+  echo "Testing batch ${batch} without policy..."
+  run_batch_test "$batch" "false"
 done
 
 # Test each batch size with policy enabled
-echo "=== Running tests WITH file activity policy ==="
+echo "=== Running ${workload_type} tests WITH file activity policy ==="
 for batch in "${batch_sizes[@]}"; do
-  echo "Testing file-activity-batch-${batch} with policy..."
-  "${DIR}/perf-test-file-activity.sh" \
-    "$num_sensors" \
-    "$run_time" \
-    "file-activity-batch-${batch}" \
-    "true" \
-    "$results_base_dir"
-
-  # Clean up between tests
-  echo "Cleaning up before next test..."
-  "${DIR}/TeardownTest.sh" || true
-  sleep 30
+  echo "Testing batch ${batch} with policy..."
+  run_batch_test "$batch" "true"
 done
 
 echo "All file activity tests completed!"
-echo "Results are in ${results_base_dir}/file_activity_results_* directories"
+if [[ "$workload_type" == "berserker" ]]; then
+  echo "Results are in ${results_base_dir}/berserker_file_activity_results_* directories"
+else
+  echo "Results are in ${results_base_dir}/file_activity_results_* directories"
+fi
