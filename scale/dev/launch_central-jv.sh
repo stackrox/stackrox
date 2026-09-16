@@ -18,7 +18,15 @@ if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0
 fi
 
-kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"16Gi","cpu":"8"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
-kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"32Gi","cpu":"16"},"limits":{"memory":"32Gi","cpu":"16"}}}]}}}}'
+#kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"16Gi","cpu":"8"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
+#kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"32Gi","cpu":"16"},"limits":{"memory":"32Gi","cpu":"16"}}}]}}}}'
 
+# central.sh already opened a port-forward to the Central pod it deployed, but the
+# `set env` above rolls Central out again and kills that pod. The stale local
+# listener lingers long enough that port-forward-jv.sh's `nc -z` check thinks a
+# forward already exists and skips re-forwarding, leaving roxctl to hit a dead
+# forward (connection refused on 8000). Wait for the rollout to settle, drop the
+# stale forward, then establish a fresh one against the new pod.
+kubectl -n stackrox rollout status deploy/central --timeout=5m
+killpf 8000
 $DIR/port-forward-jv.sh 8000
