@@ -453,13 +453,35 @@ func TestVMScraper_LogsSkipOnceWhileCapabilityMissing(t *testing.T) {
 	s.pollOnce(t.Context())
 	s.pollOnce(t.Context())
 	assert.Equal(t, 1, logs.FilterMessageSnippet("skipping pull").Len())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("does not advertise VirtualMachinesSupported").Len())
 
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 	s.pollOnce(t.Context())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("will pull index reports").Len())
 
 	centralcaps.Set(nil)
 	s.pollOnce(t.Context())
 	assert.Equal(t, 2, logs.FilterMessageSnippet("skipping pull").Len())
+}
+
+// TestVMScraper_LogsSkipBeforeCentralHello covers a tick before Set, distinct
+// from TestVMScraper_LogsSkipOnceWhileCapabilityMissing's post-hello omit.
+func TestVMScraper_LogsSkipBeforeCentralHello(t *testing.T) {
+	core, logs := observer.New(zap.InfoLevel)
+	orig := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = orig })
+
+	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	})
+	centralcaps.Reset()
+
+	s.pollOnce(t.Context())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("Central capabilities not received yet").Len())
+	assert.Zero(t, forwardedCount(s))
 }
 
 func TestVMScraper_SkipsUnchangedToken(t *testing.T) {
@@ -1611,7 +1633,7 @@ func (c staticClusterID) GetNoWait() string { return string(c) }
 func newTestScraper(t *testing.T, store RunningVMStore, dialer VMDialer, client ProtocolClient) (*VMScraper, *testClock) {
 	t.Helper()
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
-	t.Cleanup(func() { centralcaps.Set(nil) })
+	t.Cleanup(centralcaps.Reset)
 
 	clock := newTestClock()
 	interval := 5 * time.Minute
