@@ -11,9 +11,9 @@ permissions:
 
 jobs:
   review:
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@8262f8f6f3b97abe0196df022473eaabbc708cbd
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@83fe9cb5690fadbd9078ac3d46cf83bc5cf8c5f7
     with:
-      harness-ref: 8262f8f6f3b97abe0196df022473eaabbc708cbd
+      harness-ref: 83fe9cb5690fadbd9078ac3d46cf83bc5cf8c5f7
       allow-draft-reviews: false
       review-label: stackrox-ai-review
       sandbox-image: quay.io/rcochran/openshell:sandbox-stackrox-ci-v0.3.0-93-gb81a700@sha256:ea81add33cfcee0e88e35b6cc700b7332ab4e2094b907438496b96993203e1e6
