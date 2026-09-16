@@ -131,6 +131,9 @@ export default defineConfig(async () => {
         resolve: {
             alias: {
                 ...getSrcAliases(),
+                // redoc's prebuilt bundle does require("yaml") without listing yaml.
+                // After dropping the unused 2.x direct dep, the remaining copy is nested 1.10.2.
+                yaml: path.resolve(__dirname, 'node_modules/swagger2openapi/node_modules/yaml'),
                 // Mocks for Cypress component tests
                 // For example, the OpenShift Console SDK requires the Console environment to be present,
                 // which is not the case when running Cypress component tests.
