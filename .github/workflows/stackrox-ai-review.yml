@@ -4,16 +4,16 @@ on:
   # Demonstration only. Production should use pull_request_target after the
   # trusted caller workflow is on the default branch.
   pull_request:
-    types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft, closed]
+    types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
 
 jobs:
   review:
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@f12d6806046fbce9d32cd69697b9c925a3d6d883
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@8262f8f6f3b97abe0196df022473eaabbc708cbd
     with:
-      harness-ref: f12d6806046fbce9d32cd69697b9c925a3d6d883
+      harness-ref: 8262f8f6f3b97abe0196df022473eaabbc708cbd
       allow-draft-reviews: false
       review-label: stackrox-ai-review
       sandbox-image: quay.io/rcochran/openshell:sandbox-stackrox-ci-v0.3.0-93-gb81a700@sha256:ea81add33cfcee0e88e35b6cc700b7332ab4e2094b907438496b96993203e1e6
