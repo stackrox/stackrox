@@ -12,52 +12,10 @@
 # as the pipeline evolves.
 
 storage:
-  bucket: definitions.stackrox.io
+  bucket: scanner-v4-test
   prefix: v4/vulnerability-bundles
 
 bundles:
-  dev:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
-  v2:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
-  v3:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
   v4:
     - alpine
     - aws
