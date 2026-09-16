@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// UnaryServerInterceptor returns a gRPC unary server interceptor that sets the
+// CentralVersionServerInterceptor returns a gRPC unary server interceptor that sets the
 // Central version in the response metadata for authenticated requests.
-func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+func CentralVersionServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		setVersionHeader(ctx)
 		return handler(ctx, req)
