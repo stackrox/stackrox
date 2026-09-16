@@ -139,7 +139,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		grpc_retry.UnaryClientInterceptor(retryOpts...),
 	}
 	if c.versionCheckWriter != nil {
-		unaryInterceptors = append(unaryInterceptors, versioncheck.UnaryClientInterceptor(c.versionCheckWriter))
+		unaryInterceptors = append(unaryInterceptors, versioncheck.CentralVersionClientInterceptor(c.versionCheckWriter))
 	}
 
 	grpcDialOpts := []grpc.DialOption{

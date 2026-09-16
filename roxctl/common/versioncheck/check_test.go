@@ -82,7 +82,7 @@ func TestCheckAndWarn(t *testing.T) {
 	}
 }
 
-func TestUnaryClientInterceptor(t *testing.T) {
+func TestCentralVersionClientInterceptor(t *testing.T) {
 	cases := map[string]struct {
 		authenticated  bool
 		centralVersion string
@@ -116,13 +116,13 @@ func TestUnaryClientInterceptor(t *testing.T) {
 			if tc.centralVersion != "" {
 				serverInterceptors = append(serverInterceptors, fakeVersionHeaderInterceptor(tc.centralVersion))
 			} else {
-				serverInterceptors = append(serverInterceptors, versionheader.UnaryServerInterceptor())
+				serverInterceptors = append(serverInterceptors, versionheader.CentralVersionServerInterceptor())
 			}
 
 			var buf bytes.Buffer
 			conn := setupServer(t,
 				serverInterceptors,
-				[]grpc.UnaryClientInterceptor{UnaryClientInterceptor(&buf)},
+				[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
 			)
 
 			client := v1.NewMetadataServiceClient(conn)
@@ -139,7 +139,7 @@ func TestUnaryClientInterceptor(t *testing.T) {
 	}
 }
 
-func TestUnaryClientInterceptor_WarnsOnlyOnce(t *testing.T) {
+func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
 
 	var buf bytes.Buffer
@@ -148,7 +148,7 @@ func TestUnaryClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 			injectIdentityInterceptor(t),
 			fakeVersionHeaderInterceptor("4.2.0"),
 		},
-		[]grpc.UnaryClientInterceptor{UnaryClientInterceptor(&buf)},
+		[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
 	)
 
 	client := v1.NewMetadataServiceClient(conn)
@@ -163,7 +163,7 @@ func TestUnaryClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	assert.Empty(t, buf.String(), "warning should not be emitted a second time")
 }
 
-func TestUnaryClientInterceptor_DoesNotShadowCallerHeader(t *testing.T) {
+func TestCentralVersionClientInterceptor_DoesNotShadowCallerHeader(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
 
 	// A second client interceptor that also appends grpc.Header internally,
@@ -186,7 +186,7 @@ func TestUnaryClientInterceptor_DoesNotShadowCallerHeader(t *testing.T) {
 			fakeVersionHeaderInterceptor("4.2.0"),
 		},
 		// Two client interceptors, both appending their own grpc.Header.
-		[]grpc.UnaryClientInterceptor{UnaryClientInterceptor(&buf), otherClientInterceptor},
+		[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf), otherClientInterceptor},
 	)
 
 	client := v1.NewMetadataServiceClient(conn)
@@ -241,12 +241,8 @@ func injectIdentityInterceptor(t testing.TB) grpc.UnaryServerInterceptor {
 }
 
 func fakeVersionHeaderInterceptor(centralVersion string) grpc.UnaryServerInterceptor {
-	return fakeHeaderInterceptor(clientconn.CentralVersionHeader, centralVersion)
-}
-
-func fakeHeaderInterceptor(key, value string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		_ = grpc.SetHeader(ctx, metadata.Pairs(key, value))
+		_ = grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion))
 		return handler(ctx, req)
 	}
 }

@@ -29,32 +29,27 @@ func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 }
 
 func TestCentralVersionHeader(t *testing.T) {
-	// Requires version stamped via ldflags (-X github.com/stackrox/rox/pkg/version/internal.MainVersion=<version>).
-	// scripts/go-test.sh sets this automatically; for manual runs pass the flag or set MAIN_IMAGE_TAG.
-	if version.GetMainVersion() == "" {
-		t.Skip("Skipping: version not stamped (run via scripts/go-test.sh or pass -ldflags)")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	service := v1.NewMetadataServiceClient(centralgrpc.GRPCConnectionToCentral(t))
 
 	var md metadata.MD
-	_, err := service.GetMetadata(ctx, &v1.Empty{}, grpc.Header(&md))
+	resp, err := service.GetMetadata(ctx, &v1.Empty{}, grpc.Header(&md))
 	require.NoError(t, err)
 
 	vals := md.Get(clientconn.CentralVersionHeader)
 	require.Len(t, vals, 1, "expected %s response header", clientconn.CentralVersionHeader)
-	assert.Equal(t, version.GetMainVersion(), vals[0])
+	assert.Equal(t, resp.GetVersion(), vals[0])
 }
 
 func TestCentralVersionHeader_AbsentForAnonymous(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	service := v1.NewMetadataServiceClient(centralgrpc.UnauthenticatedGRPCConnectionToCentral(t))
+	service := v1.NewPingServiceClient(centralgrpc.UnauthenticatedGRPCConnectionToCentral(t))
 
 	var md metadata.MD
-	_, _ = service.GetMetadata(ctx, &v1.Empty{}, grpc.Header(&md))
+	_, err := service.Ping(ctx, &v1.Empty{}, grpc.Header(&md))
+	require.NoError(t, err)
 
 	vals := md.Get(clientconn.CentralVersionHeader)
 	assert.Empty(t, vals, "anonymous requests must not receive %s", clientconn.CentralVersionHeader)

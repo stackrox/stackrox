@@ -15,11 +15,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// UnaryClientInterceptor returns a gRPC unary client interceptor that reads
+// CentralVersionClientInterceptor returns a gRPC unary client interceptor that reads
 // the Central version from response metadata and emits a warning if the
 // versions are incompatible. The warning is emitted at most once per
 // interceptor instance.
-func UnaryClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
+func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	var checked atomic.Bool
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		var md metadata.MD

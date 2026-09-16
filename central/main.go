@@ -666,7 +666,7 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.UnaryServerInterceptor())
+	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.CentralVersionServerInterceptor())
 
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
