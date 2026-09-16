@@ -9,7 +9,22 @@ and generates comparison plots for CPU, memory, and database table sizes.
 import matplotlib.pyplot as plt
 import sys
 import os
-from plot_utils import determine_baseline_timestamp
+from plot_utils import determine_baseline_timestamp, add_trendline, add_equation_text
+
+# Fit trend lines only over the stable window (skip ramp-up and tail), matching
+# the window used by plot-batch-comparison.py.
+TREND_START = 60.0   # seconds
+TREND_END = 660.0    # seconds
+
+
+def window_points(x, y, start=TREND_START, end=TREND_END):
+    """Return the (x, y) points whose x (seconds) falls within [start, end]."""
+    xw, yw = [], []
+    for xi, yi in zip(x, y):
+        if start <= xi <= end:
+            xw.append(xi)
+            yw.append(yi)
+    return xw, yw
 
 def read_file(file_path, base_time=None):
     """
@@ -92,16 +107,29 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
 
     plt.figure(figsize=(12, 7))
 
+    eq1 = eq2 = None
     if x1 and y1:
-        plt.plot(x1, y1, label=label1, marker='o', markersize=3, linewidth=1.5)
+        plt.plot(x1, y1, label=label1, marker='o', markersize=3, linewidth=1.5, color='C0')
+        xw1, yw1 = window_points(x1, y1)
+        eq1 = add_trendline(xw1, yw1, f'Trend ({label1}, {int(TREND_START)}-{int(TREND_END)}s)', 'C0')
     if x2 and y2:
-        plt.plot(x2, y2, label=label2, marker='x', markersize=3, linewidth=1.5)
+        plt.plot(x2, y2, label=label2, marker='x', markersize=3, linewidth=1.5, color='C1')
+        xw2, yw2 = window_points(x2, y2)
+        eq2 = add_trendline(xw2, yw2, f'Trend ({label2}, {int(TREND_START)}-{int(TREND_END)}s)', 'C1')
 
     plt.xlabel('Time (seconds)', fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
     plt.title(title, fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+
+    equations = []
+    if eq1:
+        equations.append((label1, eq1[0], eq1[1], 'C0'))
+    if eq2:
+        equations.append((label2, eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+
     plt.tight_layout()
 
     if output_file:

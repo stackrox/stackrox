@@ -9,12 +9,11 @@ This script generates plots that show:
 """
 
 import matplotlib.pyplot as plt
-import numpy as np
 import sys
 import os
 import glob
 import re
-from plot_utils import determine_baseline_timestamp
+from plot_utils import determine_baseline_timestamp, add_trendline, add_equation_text
 
 def extract_batch_size(dirname):
     """
@@ -143,63 +142,6 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None, base_time=Non
         return None
 
     return max(filtered_values)
-
-def add_trendline(x_data, y_data, label, color, linestyle='--'):
-    """
-    Add a linear trend line to the current plot and return the equation.
-
-    Args:
-        x_data: X-axis values (event rates)
-        y_data: Y-axis values (metric values)
-        label: Label for the trend line
-        color: Color for the trend line
-        linestyle: Line style for the trend line
-
-    Returns:
-        Tuple of (slope, intercept) or None if insufficient data
-    """
-    # Filter out None values
-    valid_points = [(x, y) for x, y in zip(x_data, y_data) if y is not None]
-    if len(valid_points) < 2:
-        return None  # Need at least 2 points for a trend line
-
-    x_valid = [p[0] for p in valid_points]
-    y_valid = [p[1] for p in valid_points]
-
-    # Fit linear trend line
-    coeffs = np.polyfit(x_valid, y_valid, 1)
-    trend_y = np.polyval(coeffs, x_valid)
-
-    # Plot trend line
-    plt.plot(x_valid, trend_y, linestyle=linestyle, linewidth=1.5, color=color,
-             alpha=0.7, label=label)
-
-    # Return slope and intercept
-    return (coeffs[0], coeffs[1])
-
-def add_equation_text(equations, y_position=0.95):
-    """
-    Add trend line equations as text on the plot.
-
-    Args:
-        equations: List of tuples (label, slope, intercept, color)
-        y_position: Vertical position for the text box (0-1, in axes coordinates)
-    """
-    if not equations:
-        return
-
-    equation_text = []
-    for label, slope, intercept, color in equations:
-        if slope is not None and intercept is not None:
-            # Format equation: y = mx + b
-            sign = '+' if intercept >= 0 else '-'
-            equation_text.append(f"{label}: y = {slope:.4e}x {sign} {abs(intercept):.4f}")
-
-    if equation_text:
-        text_str = '\n'.join(equation_text)
-        plt.text(0.02, y_position, text_str, transform=plt.gca().transAxes,
-                fontsize=9, verticalalignment='top',
-                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
 def plot_scaling_comparison(base_dir, output_dir):
     """
