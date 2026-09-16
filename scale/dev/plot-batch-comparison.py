@@ -13,7 +13,12 @@ import sys
 import os
 import glob
 import re
-from plot_utils import determine_baseline_timestamp, add_trendline, add_equation_text
+from plot_utils import (
+    determine_baseline_timestamp,
+    add_trendline,
+    add_equation_text,
+    read_metric_series,
+)
 
 def extract_batch_size(dirname):
     """
@@ -50,25 +55,8 @@ def read_metric_average(file_path, start_offset=60.0, end_offset=None, base_time
     Returns:
         Average value over the time window, or None if file doesn't exist
     """
-    if not os.path.exists(file_path):
-        return None
-
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-
-    timestamps = []
-    values = []
-
-    for line in lines:
-        parts = line.strip().split()
-        if len(parts) != 2:
-            continue
-        try:
-            ts, val = int(parts[0]), float(parts[1])
-            timestamps.append(ts)
-            values.append(val)
-        except ValueError:
-            continue
+    # Read sorted, de-duplicated series (drops duplicate-timestamp artifacts)
+    timestamps, values = read_metric_series(file_path)
 
     if not timestamps:
         return None
@@ -103,25 +91,8 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None, base_time=Non
     Returns:
         Maximum value over the time window, or None if file doesn't exist
     """
-    if not os.path.exists(file_path):
-        return None
-
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-
-    timestamps = []
-    values = []
-
-    for line in lines:
-        parts = line.strip().split()
-        if len(parts) != 2:
-            continue
-        try:
-            ts, val = int(parts[0]), float(parts[1])
-            timestamps.append(ts)
-            values.append(val)
-        except ValueError:
-            continue
+    # Read sorted, de-duplicated series (drops duplicate-timestamp artifacts)
+    timestamps, values = read_metric_series(file_path)
 
     if not timestamps:
         return None

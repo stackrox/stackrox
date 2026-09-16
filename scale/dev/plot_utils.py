@@ -9,6 +9,41 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def read_metric_series(file_path):
+    """
+    Read a metrics file and return (timestamps_ms, values) sorted by timestamp.
+
+    Lines are "<timestamp_ms> <value>"; malformed lines are skipped. Duplicate
+    timestamps are collapsed to their maximum value. Prometheus can return more
+    than one series for a component (e.g. a pod restart leaves a stale, low
+    container reading alongside the live one), which shows up as two datapoints
+    at the same timestamp. Those spurious readings are low, so keeping the max
+    per timestamp drops them and leaves the real series.
+
+    Returns:
+        Tuple of (timestamps, values); empty lists if the file is missing/empty.
+    """
+    if not os.path.exists(file_path):
+        return [], []
+
+    by_ts = {}
+    with open(file_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) != 2:
+                continue
+            try:
+                ts, val = int(parts[0]), float(parts[1])
+            except ValueError:
+                continue
+            if ts not in by_ts or val > by_ts[ts]:
+                by_ts[ts] = val
+
+    timestamps = sorted(by_ts)
+    values = [by_ts[ts] for ts in timestamps]
+    return timestamps, values
+
+
 def determine_baseline_timestamp(results_dir, component):
     """
     Determine the baseline timestamp (t=0) for a given component.

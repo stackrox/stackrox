@@ -8,7 +8,7 @@ Y-axis: Metric value
 import sys
 import os
 import matplotlib.pyplot as plt
-from plot_utils import determine_baseline_timestamp
+from plot_utils import determine_baseline_timestamp, read_metric_series
 
 def read_metric_file(file_path, base_time=None):
     """
@@ -21,20 +21,8 @@ def read_metric_file(file_path, base_time=None):
     if not os.path.exists(file_path):
         return [], []
 
-    timestamps = []
-    values = []
-
-    with open(file_path, 'r') as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) != 2:
-                continue
-            try:
-                ts, val = int(parts[0]), float(parts[1])
-                timestamps.append(ts)
-                values.append(val)
-            except ValueError:
-                continue
+    # Read sorted, de-duplicated series (drops duplicate-timestamp artifacts)
+    timestamps, values = read_metric_series(file_path)
 
     if not timestamps:
         return [], []

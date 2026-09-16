@@ -9,7 +9,12 @@ and generates comparison plots for CPU, memory, and database table sizes.
 import matplotlib.pyplot as plt
 import sys
 import os
-from plot_utils import determine_baseline_timestamp, add_trendline, add_equation_text
+from plot_utils import (
+    determine_baseline_timestamp,
+    add_trendline,
+    add_equation_text,
+    read_metric_series,
+)
 
 # Fit trend lines only over the stable window (skip ramp-up and tail), matching
 # the window used by plot-batch-comparison.py.
@@ -41,22 +46,8 @@ def read_file(file_path, base_time=None):
         print(f"Warning: File {file_path} does not exist, returning empty data")
         return [], []
 
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-
-    timestamps = []
-    values = []
-
-    for line in lines:
-        parts = line.strip().split()
-        if len(parts) != 2:
-            continue  # skip malformed lines
-        try:
-            ts, val = int(parts[0]), float(parts[1])
-            timestamps.append(ts)
-            values.append(val)
-        except ValueError:
-            continue  # skip unparseable lines
+    # Read sorted, de-duplicated series (drops duplicate-timestamp artifacts)
+    timestamps, values = read_metric_series(file_path)
 
     if not timestamps:
         return [], []
