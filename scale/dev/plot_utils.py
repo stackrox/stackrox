@@ -92,9 +92,15 @@ def determine_baseline_timestamp(results_dir, component):
     return None
 
 
-def add_trendline(x_data, y_data, label, color, linestyle='--'):
+def add_trendline(x_data, y_data, label, color, linestyle='--',
+                  max_iterations=10, sigma=2.0):
     """
     Add a linear trend line to the current plot and return the equation.
+
+    Outliers are removed iteratively: after each linear fit, points whose
+    residual exceeds `sigma` standard deviations of the residuals are dropped
+    and the line is refit. This repeats until no outliers remain or
+    `max_iterations` is reached (always keeping at least 2 points).
 
     Args:
         x_data: X-axis values
@@ -102,6 +108,8 @@ def add_trendline(x_data, y_data, label, color, linestyle='--'):
         label: Label for the trend line
         color: Color for the trend line
         linestyle: Line style for the trend line
+        max_iterations: Maximum number of outlier-removal iterations
+        sigma: Residual threshold (in standard deviations) for an outlier
 
     Returns:
         Tuple of (slope, intercept) or None if insufficient data
@@ -111,11 +119,23 @@ def add_trendline(x_data, y_data, label, color, linestyle='--'):
     if len(valid_points) < 2:
         return None  # Need at least 2 points for a trend line
 
-    x_valid = [p[0] for p in valid_points]
-    y_valid = [p[1] for p in valid_points]
+    x_valid = np.array([p[0] for p in valid_points], dtype=float)
+    y_valid = np.array([p[1] for p in valid_points], dtype=float)
 
-    # Fit linear trend line
+    # Fit linear trend line, iteratively removing residual outliers
     coeffs = np.polyfit(x_valid, y_valid, 1)
+    for _ in range(max_iterations):
+        residuals = y_valid - np.polyval(coeffs, x_valid)
+        std = residuals.std()
+        if std == 0:
+            break  # perfect fit, nothing to remove
+        keep = np.abs(residuals) <= sigma * std
+        if keep.all() or keep.sum() < 2:
+            break  # no outliers, or removing more would leave < 2 points
+        x_valid = x_valid[keep]
+        y_valid = y_valid[keep]
+        coeffs = np.polyfit(x_valid, y_valid, 1)
+
     trend_y = np.polyval(coeffs, x_valid)
 
     # Plot trend line
