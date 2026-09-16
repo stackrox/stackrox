@@ -14,6 +14,29 @@ source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+# ensure_writable_bash_env points BASH_ENV at a temp file when the CI image
+# default (/etc/initial-bash.env) is not readable or writable by the process
+# UID. Child bash then stops erroring on source, and cci-export can persist env.
+ensure_writable_bash_env() {
+    if [[ -z "${BASH_ENV:-}" ]]; then
+        return 0
+    fi
+    if [[ -r "${BASH_ENV}" && -w "${BASH_ENV}" ]]; then
+        return 0
+    fi
+
+    local new_bash_env
+    new_bash_env="$(mktemp)"
+    if [[ -r "${BASH_ENV}" ]]; then
+        cp "${BASH_ENV}" "${new_bash_env}"
+    fi
+    BASH_ENV="${new_bash_env}"
+    export BASH_ENV
+}
+
+# Remap before any later make/status.sh spawn child bash (OpenShift CI random UID).
+ensure_writable_bash_env
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -44,11 +67,7 @@ ci_export() {
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
     elif command -v cci-export >/dev/null; then
-        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
-        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
-            BASH_ENV=$(mktemp)
-            export BASH_ENV
-        fi
+        ensure_writable_bash_env
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
@@ -1513,6 +1532,8 @@ get_pr_details() {
 
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
+
+    ensure_writable_bash_env
 
     openshift_ci_debug
 
