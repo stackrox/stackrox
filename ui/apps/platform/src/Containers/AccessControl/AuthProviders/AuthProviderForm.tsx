@@ -94,8 +94,7 @@ function testModeSupported(provider) {
         provider.type === 'oidc' ||
         provider.type === 'saml' ||
         provider.type === 'openshift' ||
-        provider.type === 'openshift-with-acm-roles' ||
-        provider.type === 'oidc-with-acm-roles'
+        provider.type === 'openshift-with-acm-roles'
     );
 }
 
@@ -168,7 +167,7 @@ function AuthProviderForm({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             .when('type', {
-                is: (type) => type === 'oidc' || type === 'oidc-with-acm-roles',
+                is: (type) => type === 'oidc',
                 then: (configSchema) =>
                     configSchema.shape({
                         client_id: yup.string().required('A client ID is required.'),
@@ -533,8 +532,7 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {(selectedAuthProvider.type === 'oidc' ||
-                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
+                    {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Required attributes for the authentication provider"
                             titleElement="h2"
@@ -650,8 +648,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    {(selectedAuthProvider.type === 'oidc' ||
-                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
+                    {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Claim mappings for the authentication provider"
                             titleElement="h2"
@@ -757,23 +754,21 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    {selectedAuthProvider.type !== 'openshift-with-acm-roles' &&
-                        selectedAuthProvider.type !== 'oidc-with-acm-roles' && (
-                            <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
-                                <RuleGroups
-                                    authProviderId={selectedAuthProvider.id}
-                                    groups={values.groups}
-                                    roles={roles}
-                                    onChange={onChange}
-                                    setFieldValue={setFieldValue}
-                                    disabled={isViewing}
-                                    errors={errors?.groups as RuleGroupErrors[]}
-                                    ruleAttributes={ruleAttributes}
-                                />
-                            </FormSection>
-                        )}
-                    {(selectedAuthProvider.type === 'openshift-with-acm-roles' ||
-                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
+                    {selectedAuthProvider.type !== 'openshift-with-acm-roles' && (
+                        <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
+                            <RuleGroups
+                                authProviderId={selectedAuthProvider.id}
+                                groups={values.groups}
+                                roles={roles}
+                                onChange={onChange}
+                                setFieldValue={setFieldValue}
+                                disabled={isViewing}
+                                errors={errors?.groups as RuleGroupErrors[]}
+                                ruleAttributes={ruleAttributes}
+                            />
+                        </FormSection>
+                    )}
+                    {selectedAuthProvider.type === 'openshift-with-acm-roles' && (
                         <div id="acm-access-control-documentation">
                             <Alert
                                 isInline

@@ -27,9 +27,9 @@ scannerV4:
     resources:
       requests:
         cpu: "400m"
-        memory: "4Gi"
+        memory: "6Gi"
       limits:
-        memory: "4Gi"
+        memory: "6Gi"
   indexer:
     replicas: 1
     autoscaling:
