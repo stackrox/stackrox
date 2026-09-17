@@ -75,10 +75,6 @@ const getUserRolePermissions = (state) => state.userRolePermissions;
 const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
-/*
- * Given resource string (for example, "Integration") and role or permissionSet object,
- * return access level (for example, "READ_ACCESS").
- */
 const getAccessForPermission = (resource, userRolePermissionsArg) => {
     return userRolePermissionsArg?.resourceToAccess?.[resource] ?? ACCESS_LEVEL.NO_ACCESS;
 };
@@ -88,7 +84,6 @@ export const getHasReadPermission = (resource, userRolePermissionsArg) => {
     if (access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS) {
         return true;
     }
-    // If the given resource doesn't yield the required access, try with the replacing resource (if there is any).
     if (replacedResourceMapping.has(resource)) {
         const replacingResourceAccess = getAccessForPermission(
             replacedResourceMapping.get(resource),
@@ -99,7 +94,6 @@ export const getHasReadPermission = (resource, userRolePermissionsArg) => {
             replacingResourceAccess === ACCESS_LEVEL.READ_ACCESS
         );
     }
-    // Return false if neither the resource nor the replacing resource have the correct access.
     return false;
 };
 
@@ -108,7 +102,6 @@ export const getHasReadWritePermission = (resource, userRolePermissionsArg) => {
     if (access === ACCESS_LEVEL.READ_WRITE_ACCESS) {
         return true;
     }
-    // If the given resource doesn't yield the required access, try with the replacing resource (if there is any).
     if (replacedResourceMapping.has(resource)) {
         const replacingResourceAccess = getAccessForPermission(
             replacedResourceMapping.get(resource),
@@ -116,7 +109,6 @@ export const getHasReadWritePermission = (resource, userRolePermissionsArg) => {
         );
         return replacingResourceAccess === ACCESS_LEVEL.READ_WRITE_ACCESS;
     }
-    // Return false if neither the resource nor the replacing resource have the correct access.
     return false;
 };
 
