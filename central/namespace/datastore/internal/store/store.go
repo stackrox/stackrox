@@ -19,6 +19,7 @@ type Store interface {
 	Upsert(context.Context, *storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
 	GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error)
-	// Deprecated: It will not clone the object so it should be used only for SAC.
-	GetAllFromCacheForSAC() []*storage.NamespaceMetadata
+	// GetAllForSAC bypasses SAC filtering to build access scopes. Callers must
+	// not modify the returned objects, which may be shared with a store cache.
+	GetAllForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 }

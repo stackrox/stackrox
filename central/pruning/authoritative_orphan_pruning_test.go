@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,15 +90,17 @@ func assertPruningRows(t *testing.T, db postgres.DB, table string, expected []st
 
 func TestRemoveOrphanedResourcesAuthoritative(t *testing.T) {
 	for name, tc := range map[string]struct {
-		parents   int
-		cancelled bool
-		failed    bool
+		parents        int
+		cancelled      bool
+		failed         bool
+		workerBaseline bool
 	}{
-		"zero parents":                        {},
-		"one parent":                          {parents: 1},
-		"multiple parents":                    {parents: 2},
-		"cancelled queries preserve all rows": {parents: 1, cancelled: true},
-		"failed queries preserve all rows":    {parents: 1, failed: true},
+		"zero parents":                           {},
+		"one parent":                             {parents: 1},
+		"multiple parents":                       {parents: 2},
+		"cancelled queries preserve all rows":    {parents: 1, cancelled: true},
+		"failed queries preserve all rows":       {parents: 1, failed: true},
+		"worker baseline store predates inserts": {parents: 1, workerBaseline: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			db := pgtest.ForT(t).DB
@@ -129,6 +132,9 @@ func TestRemoveOrphanedResourcesAuthoritative(t *testing.T) {
 			baselines := baselinePostgres.New(db)
 			results := baselineResultsDatastore.GetTestPostgresDataStore(t, db)
 			gc.processbaseline = processBaselineDatastore.New(baselines, results, gc.processes)
+			if tc.workerBaseline {
+				gc.processbaseline = processBaselineDatastore.New(baselinePostgres.New(pgSearch.WithoutStoreCache(db)), results, gc.processes)
+			}
 			var expectedRBAC, expectedBaselines, expectedResults []string
 			for i, clusterID := range clusters {
 				id := deployments[i]

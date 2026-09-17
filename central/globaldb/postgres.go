@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pgStats "github.com/stackrox/rox/pkg/postgres/stats"
 	"github.com/stackrox/rox/pkg/retry"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	stats "github.com/stackrox/rox/pkg/telemetry/data"
@@ -140,6 +141,16 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 // InitializePostgresWithPoolSize creates a global database instance with an overridden
 // connection pool size. If maxConns is 0, the default from the DSN is used.
 func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgres.DB {
+	return initializePostgres(ctx, maxConns, nil)
+}
+
+// InitializeWorkerPostgres creates the global database with store caches disabled
+// before any Worker datastore is constructed. maxConns overrides the pool size.
+func InitializeWorkerPostgres(ctx context.Context, maxConns int32) postgres.DB {
+	return initializePostgres(ctx, maxConns, pgSearch.WithoutStoreCache)
+}
+
+func initializePostgres(ctx context.Context, maxConns int32, policy func(postgres.DB) postgres.DB) postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -164,6 +175,10 @@ func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgre
 			log.Errorf("open database: %v", err)
 		})); err != nil {
 			log.Fatalf("Timed out trying to open database: %v", err)
+		}
+
+		if policy != nil {
+			postgresDB = policy(postgresDB)
 		}
 
 		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")

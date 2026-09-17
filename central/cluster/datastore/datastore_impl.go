@@ -364,12 +364,23 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 }
 
 func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
-	return storagetoeffectiveaccessscope.Clusters(ds.clusterStorage.GetAllFromCacheForSAC()), nil
+	clusters, err := ds.clusterStorage.GetAllForSAC(sac.WithAllAccess(context.Background()))
+	if err != nil {
+		return nil, err
+	}
+	return storagetoeffectiveaccessscope.Clusters(clusters), nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return "", false, err
+	}
+	if !ds.useSecondaryCache() {
+		cluster, found, err := ds.clusterStorage.Get(ctx, id)
+		if err != nil || !found {
+			return "", false, err
+		}
+		return cluster.GetName(), true, nil
 	}
 	val, ok := ds.idToNameCache.Get(id)
 	if !ok {
@@ -379,15 +390,45 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 }
 
 func (ds *datastoreImpl) GetClusterID(ctx context.Context, name string) (string, bool, error) {
-	idVal, ok := ds.nameToIDCache.Get(name)
-	if !ok {
-		return "", false, nil
+	id, found, err := ds.getClusterID(ctx, name)
+	if err != nil || !found {
+		return "", false, err
 	}
-	id := idVal.(string)
 	if allowed, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !allowed {
 		return "", false, err
 	}
 	return id, true, nil
+}
+
+// Stores predating the generic cache capability retain their secondary caches.
+// Check the capability at each lookup so it can also reflect cache availability.
+func (ds *datastoreImpl) useSecondaryCache() bool {
+	if store, ok := ds.clusterStorage.(interface{ CacheEnabled() bool }); ok {
+		return store.CacheEnabled()
+	}
+	return true
+}
+
+// getClusterID resolves names independently of read permissions, as the name
+// index also serves duplicate checks and registration. Callers authorize access.
+func (ds *datastoreImpl) getClusterID(ctx context.Context, name string) (string, bool, error) {
+	if !ds.useSecondaryCache() {
+		var id string
+		query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Cluster, name).ProtoQuery()
+		err := ds.clusterStorage.WalkByQuery(sac.WithAllAccess(ctx), query, func(cluster *storage.Cluster) error {
+			id = cluster.GetId()
+			return nil
+		})
+		if err != nil {
+			return "", false, err
+		}
+		return id, id != "", nil
+	}
+	idVal, ok := ds.nameToIDCache.Get(name)
+	if !ok {
+		return "", false, nil
+	}
+	return idVal.(string), true, nil
 }
 
 // Figure out if an indicator matches provided namespace filter. We consider
@@ -402,6 +443,22 @@ func (ds *datastoreImpl) MatchProcessIndicator(ctx context.Context,
 		return false, err
 	}
 
+	if !ds.useSecondaryCache() {
+		cluster, found, err := ds.clusterStorage.Get(ctx, id)
+		if err != nil || !found {
+			return false, err
+		}
+		filter := clusterPkg.GetNamespaceFilter(cluster)
+		if filter == nil {
+			return false, nil
+		}
+		compiled, err := regexp.Compile(*filter)
+		if err != nil {
+			return false, err
+		}
+		return compiled.MatchString(indicator.GetNamespace()), nil
+	}
+
 	filter, ok := ds.idToNamespaceFilterCache.Get(id)
 	if !ok {
 		return false, nil
@@ -413,6 +470,10 @@ func (ds *datastoreImpl) MatchProcessIndicator(ctx context.Context,
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return false, err
+	}
+	if !ds.useSecondaryCache() {
+		_, found, err := ds.clusterStorage.Get(ctx, id)
+		return found, err
 	}
 	_, ok := ds.idToNameCache.Get(id)
 	return ok, nil
@@ -462,7 +523,10 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
 		return "", err
 	}
-	_, found := ds.nameToIDCache.Get(cluster.GetName())
+	_, found, err := ds.getClusterID(ctx, cluster.GetName())
+	if err != nil {
+		return "", err
+	}
 	if found {
 		return "", errox.AlreadyExists.Newf("the cluster with name %s exists, cannot re-add it", cluster.GetName())
 	}
@@ -1167,9 +1231,11 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 
 	// Try to resolve cluster ID from name if not provided
 	if clusterID == "" {
-		if cachedID, ok := ds.nameToIDCache.Get(clusterName); ok {
-			clusterID, _ = cachedID.(string)
+		id, _, err := ds.getClusterID(ctx, clusterName)
+		if err != nil {
+			return nil, false, err
 		}
+		clusterID = id
 	}
 
 	// Path 1: Lookup existing cluster by ID

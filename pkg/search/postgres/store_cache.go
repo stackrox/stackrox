@@ -49,6 +49,9 @@ func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		defaultSort,
 		transformOptionsMap,
 	)
+	if storeCacheDisabled(db) {
+		return underlyingStore
+	}
 	store := &cachedStore[T, PT]{
 		schema:          schema,
 		pkGetter:        pkGetter,
@@ -97,6 +100,9 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		defaultSort,
 		transformOptionsMap,
 	)
+	if storeCacheDisabled(db) {
+		return underlyingStore
+	}
 	store := &cachedStore[T, PT]{
 		schema:          schema,
 		pkGetter:        pkGetter,
@@ -127,6 +133,11 @@ type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	underlyingStore               Store[T, PT]
 	cache                         map[string]PT
 	cacheLock                     sync.RWMutex
+}
+
+// CacheEnabled reports whether secondary indexes can use this store's cache mode.
+func (c *cachedStore[T, PT]) CacheEnabled() bool {
+	return true
 }
 
 // Upsert saves the current state of an object in storage.
@@ -349,13 +360,12 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 	})
 }
 
-// GetAllFromCache returns all the objects in the store without cloning.
-//
-// Deprecated: It will not clone the object so it should be used only for SAC.
-func (c *cachedStore[T, PT]) GetAllFromCacheForSAC() []PT {
+// GetAllForSAC bypasses SAC filtering to build access scopes. Returned objects
+// are not cloned and must not be modified by callers.
+func (c *cachedStore[T, PT]) GetAllForSAC(_ context.Context) ([]PT, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache))
+	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache)), nil
 }
 
 // GetByQueryFn iterates over the objects from the store matching the query.
