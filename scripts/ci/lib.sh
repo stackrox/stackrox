@@ -26,9 +26,12 @@ ensure_writable_bash_env() {
     fi
 
     local new_bash_env
-    new_bash_env="$(mktemp)"
+    new_bash_env="$(mktemp)" || return 1
     if [[ -r "${BASH_ENV}" ]]; then
-        cp "${BASH_ENV}" "${new_bash_env}"
+        if ! cp "${BASH_ENV}" "${new_bash_env}"; then
+            rm -f "${new_bash_env}"
+            return 1
+        fi
     fi
     BASH_ENV="${new_bash_env}"
     export BASH_ENV
@@ -37,7 +40,8 @@ ensure_writable_bash_env() {
 # OpenShift CI cannot read /etc/initial-bash.env (random user). Switch BASH_ENV
 # to a writable file now, before make and status.sh start more bash processes.
 if is_CI; then
-    ensure_writable_bash_env
+    # A failure must not stop the rest of this file from loading.
+    ensure_writable_bash_env || true
 fi
 
 ensure_CI() {
