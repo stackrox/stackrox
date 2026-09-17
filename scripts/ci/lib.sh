@@ -34,8 +34,11 @@ ensure_writable_bash_env() {
     export BASH_ENV
 }
 
-# Remap before any later make/status.sh spawn child bash (OpenShift CI random UID).
-ensure_writable_bash_env
+# OpenShift CI cannot read /etc/initial-bash.env (random user). Switch BASH_ENV
+# to a writable file now, before make and status.sh start more bash processes.
+if is_CI; then
+    ensure_writable_bash_env
+fi
 
 ensure_CI() {
     if ! is_CI; then
