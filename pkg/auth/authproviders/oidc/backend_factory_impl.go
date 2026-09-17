@@ -20,10 +20,6 @@ const (
 	// TypeName is the standard type name for OIDC auth providers.
 	TypeName = "oidc"
 
-	// TypeNameWithACMAccessControlDelegation is the type name for OIDC auth providers
-	// with role resolution from ACM.
-	TypeNameWithACMAccessControlDelegation = authproviders.OIDCTypeNameWithACMRoles
-
 	callbackRelativePath = "callback"
 
 	nonceTTL     = 1 * time.Minute

@@ -92,7 +92,13 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		} else {
 			cisaKev = "Not Available"
 		}
-		csvRow = append(csvRow, cisaKev)
+		var knownRansomware string
+		if r.GetKnownRansomwareCampaign() != nil {
+			knownRansomware = strconv.FormatBool(*r.GetKnownRansomwareCampaign())
+		} else {
+			knownRansomware = "Not Available"
+		}
+		csvRow = append(csvRow, cisaKev, knownRansomware)
 	}
 
 	csvRow = append(csvRow,
