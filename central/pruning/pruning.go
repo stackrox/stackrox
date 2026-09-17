@@ -588,12 +588,19 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
+	// DEBUG(ROX prune-RBAC investigation): capture the exact cluster set the pruner
+	// resolved. If this is empty (or missing the live cluster) while RBAC rows exist,
+	// the orphan-negation query will match and delete ALL RBAC. Remove after triage.
+	log.Infof("[PruneDebug] GetClusters returned n=%d ids=%v (this set drives RBAC orphan detection)",
+		len(clusters), clusterIDs)
+
 	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
+	log.Infof("[PruneDebug] GetDeploymentIDs returned n=%d", deploymentSet.Cardinality())
 
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
@@ -608,9 +615,155 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedPLOPs()
 
 	q := clusterIDsToNegationQuery(clusterIDSet)
+	g.logRBACPruneDebug(clusterIDSet, q)
 	g.removeOrphanedServiceAccounts(q)
 	g.removeOrphanedK8SRoles(q)
 	g.removeOrphanedK8SRoleBindings(q)
+}
+
+// logRBACPruneDebug emits bounded diagnostics to root-cause spurious orphaned-RBAC
+// pruning. It cross-checks cluster visibility via three independent datastore paths
+// and reports, per RBAC type, how many objects match the orphan-negation query plus a
+// sample of the ClusterId stamped on those objects (to compare against the cluster set).
+// DEBUG(ROX prune-RBAC investigation): remove after triage.
+func (g *garbageCollectorImpl) logRBACPruneDebug(clusterIDSet set.FrozenStringSet, q *v1.Query) {
+	const sampleN = 10
+
+	// Cluster visibility via three independent code paths. If GetClusters disagrees with
+	// CountClusters/SearchRawClusters, the defect is in GetClusters (used by pruning). If
+	// all three report 0 while RBAC rows exist, the defect is below the datastore
+	// (store/DB/context) in the central-worker process.
+	getCl, getErr := g.clusters.GetClusters(pruningCtx)
+	getIDs := make([]string, 0, len(getCl))
+	for _, c := range getCl {
+		getIDs = append(getIDs, c.GetId())
+	}
+	cnt, cntErr := g.clusters.CountClusters(pruningCtx)
+	rawCl, rawErr := g.clusters.SearchRawClusters(pruningCtx, search.EmptyQuery())
+	rawIDs := make([]string, 0, len(rawCl))
+	for _, c := range rawCl {
+		rawIDs = append(rawIDs, c.GetId())
+	}
+	log.Infof("[PruneDebug] cluster visibility cross-check: GetClusters(n=%d ids=%v err=%v) | CountClusters(n=%d err=%v) | SearchRawClusters(n=%d ids=%v err=%v)",
+		len(getCl), getIDs, getErr, cnt, cntErr, len(rawCl), rawIDs, rawErr)
+	log.Infof("[PruneDebug] clusterIDSet feeding orphan negation: card=%d ids=%v", clusterIDSet.Cardinality(), clusterIDSet.AsSlice())
+	log.Infof("[PruneDebug] orphan negation query proto: %s", q.String())
+
+	// Raw-SQL layer: bypasses the datastore AND the search layer entirely, reading the
+	// physical table via this same worker's pool. Distinguishes "row absent from table"
+	// (DB/connection/txn issue) from "store or search layer can't see the row".
+	directSQLCount := func(sqlStr string) int64 {
+		var n int64
+		if err := g.postgres.QueryRow(pruningCtx, sqlStr).Scan(&n); err != nil {
+			log.Warnf("[PruneDebug] direct SQL %q err=%v", sqlStr, err)
+			return -1
+		}
+		return n
+	}
+	log.Infof("[PruneDebug] direct SQL SELECT count(*) FROM clusters = %d (compare to GetClusters/CountClusters above)",
+		directSQLCount("SELECT count(*) FROM clusters"))
+
+	// True clusterid distribution stamped on the RBAC rows, independent of search. Compare
+	// these ids against clusterIDSet: a mismatch => re-registration/ID drift; identical ids
+	// but rows still orphan-matched => the ClusterID search field/negation query is at fault.
+	directClusterIDDist := func(table string) {
+		rows, err := g.postgres.Query(pruningCtx, "SELECT clusterid::text, count(*) FROM "+table+" GROUP BY clusterid")
+		if err != nil {
+			log.Warnf("[PruneDebug] direct SQL clusterid dist %s err=%v", table, err)
+			return
+		}
+		defer rows.Close()
+		dist := map[string]int64{}
+		for rows.Next() {
+			var cid string
+			var n int64
+			if err := rows.Scan(&cid, &n); err != nil {
+				log.Warnf("[PruneDebug] direct SQL clusterid dist %s scan err=%v", table, err)
+				continue
+			}
+			dist[cid] = n
+		}
+		if err := rows.Err(); err != nil {
+			log.Warnf("[PruneDebug] direct SQL clusterid dist %s rows err=%v", table, err)
+		}
+		log.Infof("[PruneDebug] direct SQL clusterid distribution %s: %v", table, dist)
+	}
+	directClusterIDDist("k8s_roles")
+	directClusterIDDist("service_accounts")
+	directClusterIDDist("role_bindings")
+
+	// Positive ClusterID-match via the SAME search path pruning uses. If these come back ~0
+	// while the direct-SQL totals are non-zero, the ClusterID search field is empty/broken
+	// for RBAC objects -> the "NOT IN" negation then matches everything and deletes all RBAC.
+	if clusterIDSet.Cardinality() > 0 {
+		posQ := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()
+		saPos, saErr := g.serviceAccts.Count(pruningCtx, posQ)
+		rolePos, roleErr := g.k8sRoles.Count(pruningCtx, posQ)
+		bindPos, bindErr := g.k8sRoleBindings.Count(pruningCtx, posQ)
+		log.Infof("[PruneDebug] POSITIVE clusterID-match search counts (should ~= totals if ClusterID search works): service_accounts=%d k8s_roles=%d role_bindings=%d errs=[%v %v %v]",
+			saPos, rolePos, bindPos, saErr, roleErr, bindErr)
+	}
+
+	sampleClusterIDs := func(ids []string) []string {
+		if len(ids) > sampleN {
+			return ids[:sampleN]
+		}
+		return ids
+	}
+
+	// Service accounts.
+	if saTotal, err := g.serviceAccts.Count(pruningCtx, search.EmptyQuery()); err != nil {
+		log.Warnf("[PruneDebug] service_accounts Count err=%v", err)
+	} else {
+		matched, mErr := g.serviceAccts.SearchRawServiceAccounts(pruningCtx, q)
+		all, aErr := g.serviceAccts.SearchRawServiceAccounts(pruningCtx, search.EmptyQuery())
+		matchedCIDs := make([]string, 0, len(matched))
+		for _, o := range matched {
+			matchedCIDs = append(matchedCIDs, o.GetClusterId())
+		}
+		allCIDs := make([]string, 0, len(all))
+		for _, o := range all {
+			allCIDs = append(allCIDs, o.GetClusterId())
+		}
+		log.Infof("[PruneDebug] service_accounts: total=%d orphanMatched=%d matchedClusterIDs(sample)=%v allClusterIDs(sample)=%v searchErrs=[matched:%v all:%v]",
+			saTotal, len(matched), sampleClusterIDs(matchedCIDs), sampleClusterIDs(allCIDs), mErr, aErr)
+	}
+
+	// K8s roles.
+	if roleTotal, err := g.k8sRoles.Count(pruningCtx, search.EmptyQuery()); err != nil {
+		log.Warnf("[PruneDebug] k8s_roles Count err=%v", err)
+	} else {
+		matched, mErr := g.k8sRoles.SearchRawRoles(pruningCtx, q)
+		all, aErr := g.k8sRoles.SearchRawRoles(pruningCtx, search.EmptyQuery())
+		matchedCIDs := make([]string, 0, len(matched))
+		for _, o := range matched {
+			matchedCIDs = append(matchedCIDs, o.GetClusterId())
+		}
+		allCIDs := make([]string, 0, len(all))
+		for _, o := range all {
+			allCIDs = append(allCIDs, o.GetClusterId())
+		}
+		log.Infof("[PruneDebug] k8s_roles: total=%d orphanMatched=%d matchedClusterIDs(sample)=%v allClusterIDs(sample)=%v searchErrs=[matched:%v all:%v]",
+			roleTotal, len(matched), sampleClusterIDs(matchedCIDs), sampleClusterIDs(allCIDs), mErr, aErr)
+	}
+
+	// K8s role bindings.
+	if bindingTotal, err := g.k8sRoleBindings.Count(pruningCtx, search.EmptyQuery()); err != nil {
+		log.Warnf("[PruneDebug] role_bindings Count err=%v", err)
+	} else {
+		matched, mErr := g.k8sRoleBindings.SearchRawRoleBindings(pruningCtx, q)
+		all, aErr := g.k8sRoleBindings.SearchRawRoleBindings(pruningCtx, search.EmptyQuery())
+		matchedCIDs := make([]string, 0, len(matched))
+		for _, o := range matched {
+			matchedCIDs = append(matchedCIDs, o.GetClusterId())
+		}
+		allCIDs := make([]string, 0, len(all))
+		for _, o := range all {
+			allCIDs = append(allCIDs, o.GetClusterId())
+		}
+		log.Infof("[PruneDebug] role_bindings: total=%d orphanMatched=%d matchedClusterIDs(sample)=%v allClusterIDs(sample)=%v searchErrs=[matched:%v all:%v]",
+			bindingTotal, len(matched), sampleClusterIDs(matchedCIDs), sampleClusterIDs(allCIDs), mErr, aErr)
+	}
 }
 
 func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
