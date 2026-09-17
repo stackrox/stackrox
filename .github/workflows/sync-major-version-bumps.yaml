@@ -1,0 +1,179 @@
+name: Sync major version bumps to release branches
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - pkg/version/productstreams/major_version_bumps.yaml
+  pull_request:
+    paths:
+      - .github/workflows/sync-major-version-bumps.yaml
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Log what would be updated without creating PRs'
+        type: string
+        default: 'true'
+      target-branch:
+        description: 'Only target this release branch (e.g. release-5.0). Leave empty for all.'
+        type: string
+        default: ''
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  discover:
+    name: Discover release branches
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.find.outputs.branches }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Find target release branches
+        id: find
+        env:
+          TARGET_BRANCH: ${{ inputs.target-branch }}
+          RH_API_URL: "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes"
+        run: |
+          set -euo pipefail
+
+          BUMP_FILE="pkg/version/productstreams/major_version_bumps.yaml"
+
+          # Query the RH Product Lifecycles API to find the oldest supported version.
+          # All release branches with a version >= this threshold are eligible for sync.
+          # If the API is unreachable, fall back to syncing all branches that have the file.
+          MIN_MAJOR=0
+          MIN_MINOR=0
+          API_AVAILABLE=false
+
+          if response=$(curl -sf -H 'User-Agent: Mozilla/5.0' "$RH_API_URL" 2>/dev/null); then
+            oldest=$(echo "$response" | jq -r '
+              [.data[0].versions[]
+               | select(.type != "End of life")
+               | .name
+               | split(".")
+               | {major: (.[0] | tonumber), minor: (.[1] | tonumber)}
+              ] | sort_by(.major, .minor) | first | "\(.major) \(.minor)"
+            ')
+            if [[ -n "$oldest" && "$oldest" != "null" ]]; then
+              MIN_MAJOR=$(echo "$oldest" | cut -d' ' -f1)
+              MIN_MINOR=$(echo "$oldest" | cut -d' ' -f2)
+              API_AVAILABLE=true
+              echo "RH API: oldest supported version is ${MIN_MAJOR}.${MIN_MINOR}"
+            fi
+          fi
+
+          if [[ "$API_AVAILABLE" == "false" ]]; then
+            echo "::warning::RH Product Lifecycles API unreachable, falling back to all branches with bump file"
+          fi
+
+          BRANCHES="[]"
+
+          if [[ -n "$TARGET_BRANCH" ]]; then
+            # Single branch mode: validate it exists and has the bump file.
+            if git show "origin/${TARGET_BRANCH}:${BUMP_FILE}" &>/dev/null; then
+              BRANCHES=$(jq -nc --arg b "$TARGET_BRANCH" '[$b]')
+            else
+              echo "::warning::Branch ${TARGET_BRANCH} does not exist or does not have ${BUMP_FILE}, skipping"
+            fi
+          else
+            for ref in $(git branch -r --list 'origin/release-*' | tr -d ' '); do
+              branch="${ref#origin/}"
+              # Extract X.Y from "release-X.Y".
+              version="${branch#release-}"
+              major="${version%%.*}"
+              minor="${version#*.}"
+
+              # Skip branches older than the oldest supported version.
+              if [[ "$API_AVAILABLE" == "true" ]]; then
+                if (( major < MIN_MAJOR || (major == MIN_MAJOR && minor < MIN_MINOR) )); then
+                  echo "Skipping ${branch}: version ${major}.${minor} is older than supported ${MIN_MAJOR}.${MIN_MINOR}"
+                  continue
+                fi
+              fi
+
+              # Only sync to branches that already have the bump file.
+              if git show "${ref}:${BUMP_FILE}" &>/dev/null; then
+                BRANCHES=$(echo "$BRANCHES" | jq --arg b "$branch" '. + [$b]')
+              else
+                echo "Skipping ${branch}: does not have ${BUMP_FILE}"
+              fi
+            done
+          fi
+
+          echo "branches=$BRANCHES" >> "$GITHUB_OUTPUT"
+          echo "Branches to sync: $BRANCHES"
+
+  sync:
+    name: Sync to ${{ matrix.branch }}
+    needs: discover
+    if: needs.discover.outputs.branches != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      matrix:
+        branch: ${{ fromJson(needs.discover.outputs.branches) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Copy bump file from master
+        env:
+          BRANCH: ${{ matrix.branch }}
+        run: |
+          set -euo pipefail
+          git show origin/master:pkg/version/productstreams/major_version_bumps.yaml \
+            > pkg/version/productstreams/major_version_bumps.yaml
+
+      - name: Check for changes
+        id: check
+        env:
+          BRANCH: ${{ matrix.branch }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "Already up to date on ${BRANCH}"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Changes to apply on ${BRANCH}:"
+            git diff
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        if: >-
+          steps.check.outputs.changed == 'true'
+          && github.event_name != 'pull_request'
+          && inputs.dry-run != 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: sync major_version_bumps.yaml from master'
+          branch: automated/sync-version-bumps-${{ matrix.branch }}
+          base: ${{ matrix.branch }}
+          delete-branch: true
+          draft: true
+          title: 'chore(${{ matrix.branch }}): sync major_version_bumps.yaml from master'
+          body: |
+            Automated sync of `pkg/version/productstreams/major_version_bumps.yaml` from `master` to `${{ matrix.branch }}`.
+
+            This keeps the major version bump history up to date so that builds from this release branch compute correct version compatibility ranges.
+          labels: |
+            automated
