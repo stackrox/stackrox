@@ -32,10 +32,13 @@ echo ""
 echo "Baseline logic:"
 echo "  - sensor: t=0 = first sensor data point"
 echo "  - central/central-db: t=0 = when deployments >= 100 (or 90% of max)"
+echo "  - berserker runs: t=0 = recorded berserker-ready time (all components)"
 echo ""
 
-# CPU and Memory plots for each component
-for container in central central-db sensor; do
+# CPU and Memory plots for each component. collector and fact are containers in
+# the collector DaemonSet pod (fact monitors file activity); their metric files
+# only exist when collector metrics were collected, otherwise the plot is skipped.
+for container in central central-db sensor collector fact; do
     echo "Plotting ${container} metrics..."
 
     # Memory usage

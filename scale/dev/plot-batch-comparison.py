@@ -176,6 +176,14 @@ def plot_scaling_comparison(base_dir, output_dir):
         'sensor_cpu_with': [],
         'sensor_mem_without': [],
         'sensor_mem_with': [],
+        'collector_cpu_without': [],
+        'collector_cpu_with': [],
+        'collector_mem_without': [],
+        'collector_mem_with': [],
+        'fact_cpu_without': [],
+        'fact_cpu_with': [],
+        'fact_mem_without': [],
+        'fact_mem_with': [],
         'alerts_count_without': [],
         'alerts_count_with': [],
         'alerts_size_without': [],
@@ -190,6 +198,8 @@ def plot_scaling_comparison(base_dir, output_dir):
             central_baseline_without = determine_baseline_timestamp(without_dir, 'central')
             centraldb_baseline_without = determine_baseline_timestamp(without_dir, 'central-db')
             sensor_baseline_without = determine_baseline_timestamp(without_dir, 'sensor')
+            # collector and fact share the collector pod; one baseline covers both.
+            collector_baseline_without = determine_baseline_timestamp(without_dir, 'collector')
 
             metrics['central_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
@@ -203,6 +213,14 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
             metrics['sensor_mem_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
+            metrics['collector_cpu_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_collector_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_without))
+            metrics['collector_mem_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_collector_mem.txt'), START_OFFSET, END_OFFSET, collector_baseline_without))
+            metrics['fact_cpu_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_fact_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_without))
+            metrics['fact_mem_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_fact_mem.txt'), START_OFFSET, END_OFFSET, collector_baseline_without))
             metrics['alerts_count_without'].append(
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['alerts_size_without'].append(
@@ -210,6 +228,8 @@ def plot_scaling_comparison(base_dir, output_dir):
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
                        'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
+                       'collector_cpu_without', 'collector_mem_without',
+                       'fact_cpu_without', 'fact_mem_without',
                        'alerts_count_without', 'alerts_size_without']:
                 metrics[key].append(None)
 
@@ -220,6 +240,8 @@ def plot_scaling_comparison(base_dir, output_dir):
             central_baseline_with = determine_baseline_timestamp(with_dir, 'central')
             centraldb_baseline_with = determine_baseline_timestamp(with_dir, 'central-db')
             sensor_baseline_with = determine_baseline_timestamp(with_dir, 'sensor')
+            # collector and fact share the collector pod; one baseline covers both.
+            collector_baseline_with = determine_baseline_timestamp(with_dir, 'collector')
 
             metrics['central_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
@@ -233,6 +255,14 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
             metrics['sensor_mem_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
+            metrics['collector_cpu_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_collector_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_with))
+            metrics['collector_mem_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_collector_mem.txt'), START_OFFSET, END_OFFSET, collector_baseline_with))
+            metrics['fact_cpu_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_fact_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_with))
+            metrics['fact_mem_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_fact_mem.txt'), START_OFFSET, END_OFFSET, collector_baseline_with))
             metrics['alerts_count_with'].append(
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['alerts_size_with'].append(
@@ -240,6 +270,8 @@ def plot_scaling_comparison(base_dir, output_dir):
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
                        'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
+                       'collector_cpu_with', 'collector_mem_with',
+                       'fact_cpu_with', 'fact_mem_with',
                        'alerts_count_with', 'alerts_size_with']:
                 metrics[key].append(None)
 
@@ -435,6 +467,90 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sensor_mem_vs_rate.png'), dpi=150)
     print(f"Saved: sensor_mem_vs_rate.png")
+    plt.close()
+
+    # Plot 10: Collector CPU vs Event Rate (summed across all collector pods)
+    plt.figure(figsize=(12, 7))
+    plt.plot(event_rates, metrics['collector_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['collector_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    eq1 = add_trendline(event_rates, metrics['collector_cpu_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['collector_cpu_with'], 'Trend (With Policy)', 'C1')
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average CPU Usage (cores, all pods)', fontsize=12)
+    plt.title(f'Collector CPU Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'collector_cpu_vs_rate.png'), dpi=150)
+    print(f"Saved: collector_cpu_vs_rate.png")
+    plt.close()
+
+    # Plot 11: Collector Memory vs Event Rate (summed across all collector pods)
+    plt.figure(figsize=(12, 7))
+    collector_mem_without_gb = [m / (1024**3) if m else None for m in metrics['collector_mem_without']]
+    collector_mem_with_gb = [m / (1024**3) if m else None for m in metrics['collector_mem_with']]
+    plt.plot(event_rates, collector_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, collector_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    eq1 = add_trendline(event_rates, collector_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, collector_mem_with_gb, 'Trend (With Policy)', 'C1')
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average Memory Usage (GB, all pods)', fontsize=12)
+    plt.title(f'Collector Memory Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'collector_mem_vs_rate.png'), dpi=150)
+    print(f"Saved: collector_mem_vs_rate.png")
+    plt.close()
+
+    # Plot 12: Fact CPU vs Event Rate (fact container, summed across all collector pods)
+    plt.figure(figsize=(12, 7))
+    plt.plot(event_rates, metrics['fact_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['fact_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    eq1 = add_trendline(event_rates, metrics['fact_cpu_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['fact_cpu_with'], 'Trend (With Policy)', 'C1')
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average CPU Usage (cores, all pods)', fontsize=12)
+    plt.title(f'Fact (file-activity monitor) CPU Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'fact_cpu_vs_rate.png'), dpi=150)
+    print(f"Saved: fact_cpu_vs_rate.png")
+    plt.close()
+
+    # Plot 13: Fact Memory vs Event Rate (fact container, summed across all collector pods)
+    plt.figure(figsize=(12, 7))
+    fact_mem_without_gb = [m / (1024**3) if m else None for m in metrics['fact_mem_without']]
+    fact_mem_with_gb = [m / (1024**3) if m else None for m in metrics['fact_mem_with']]
+    plt.plot(event_rates, fact_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, fact_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    eq1 = add_trendline(event_rates, fact_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, fact_mem_with_gb, 'Trend (With Policy)', 'C1')
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average Memory Usage (GB, all pods)', fontsize=12)
+    plt.title(f'Fact (file-activity monitor) Memory Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'fact_mem_vs_rate.png'), dpi=150)
+    print(f"Saved: fact_mem_vs_rate.png")
     plt.close()
 
     print(f"\nAll comparison plots saved to {output_dir}")
