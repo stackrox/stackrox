@@ -15,6 +15,7 @@ os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["SCANNER_V4_VULN_READINESS"] = "false"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 
 ClusterTestRunner(
     cluster=GKECluster("scanner-v4-install-test", machine_type="e2-standard-8"),
