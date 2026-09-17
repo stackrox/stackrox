@@ -133,7 +133,6 @@ export default defineConfig(async () => {
             alias: {
                 ...getSrcAliases(),
                 // redoc's prebuilt bundle does require("yaml") without listing yaml.
-                // Resolve as swagger2openapi would so a later hoist still works.
                 yaml: path.dirname(
                     createRequire(
                         path.resolve(__dirname, 'node_modules/swagger2openapi/package.json')
