@@ -94,7 +94,7 @@ func TestCacheTransactionalTriggers(t *testing.T) {
 	}
 }
 
-func TestCacheNotificationSetupFailureFallsBack(t *testing.T) {
+func TestCacheNotificationSetupFailureRetries(t *testing.T) {
 	db := pgtest.ForT(t)
 	_, err := db.Exec(cachedStoreCtx, "DROP TABLE test_single_key_structs CASCADE")
 	require.NoError(t, err)
@@ -102,8 +102,9 @@ func TestCacheNotificationSetupFailureFallsBack(t *testing.T) {
 	started := time.Now()
 	store := newCachedStore(db)
 	require.Less(t, time.Since(started), cacheSetupTimeout)
-	_, retained := store.(*retainedTestStore)
-	require.False(t, retained)
+	retained, ok := store.(*retainedTestStore)
+	require.True(t, ok)
+	require.False(t, retained.CacheEnabled())
 	_, _, err = store.Get(cachedStoreCtx, "missing")
 	require.Error(t, err, "uncached fallback must propagate database failures")
 	_, err = store.GetAllForSAC(cachedStoreCtx)
