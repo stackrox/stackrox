@@ -72,11 +72,6 @@ while [[ "$error_code" != 0 ]]; do
     exit 1
   fi
 
-  # Apply resource patches for multi-node clusters if needed
-  if [[ $(kubectl get nodes -o json | jq '.items | length') != 1 ]]; then
-    kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"40Gi","cpu":"4"},"limits":{"memory":"40Gi","cpu":"8"}}}]}}}}'
-  fi
-
   error_code=$?
   echo "error_code= $error_code"
 done
