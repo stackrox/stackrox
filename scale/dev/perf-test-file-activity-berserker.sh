@@ -35,6 +35,14 @@ export STORAGE="pvc"
 export MONITORING_LOAD_BALANCER="none"
 export MONITORING_SUPPORT=true
 export ROX_SCANNER_V4=false
+# Force the Helm-based sensor deploy. The fact container (file-activity monitor)
+# is only rendered on the Helm path, where SFA_AGENT=true sets
+# collector.famEnabled=true; the roxctl bundle path has no equivalent flag.
+# deploy/k8s/sensor.sh only auto-enables Helm for helm v3, so newer helm (v4)
+# silently falls back to the bundle path and drops fact. Set this explicitly.
+export SENSOR_HELM_DEPLOY=true
+# Enable File Activity Monitoring (adds the fact container via the Helm chart).
+export SFA_AGENT=true
 
 kubectl delete ns stackrox || true
 
