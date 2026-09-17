@@ -155,47 +155,24 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 	}, 1*time.Second, 50*time.Millisecond)
 }
 
-func TestRegisterAdditionalMetric_RegistersCollector(t *testing.T) {
+func TestRegisterAdditionalCollector_RegistersWithPrometheus(t *testing.T) {
 	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
-	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_registers_collector"})
+	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_registers_with_prometheus"})
 
-	server.RegisterAdditionalMetric("my-metric", counter)
+	err := server.RegisterAdditionalCollector(counter)
 
-	got := server.GetMetric("my-metric")
-	require.NotNil(t, got)
-	assert.Same(t, counter, *got)
+	require.NoError(t, err)
 }
 
-func TestRegisterAdditionalMetric_DuplicateNameKeepsFirst(t *testing.T) {
+func TestRegisterAdditionalCollector_DuplicateReturnsError(t *testing.T) {
 	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
-	first := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_duplicate_name_keeps_first_a"})
-	second := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_duplicate_name_keeps_first_b"})
+	first := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_duplicate_returns_error"})
+	second := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_duplicate_returns_error"})
+	require.NoError(t, server.RegisterAdditionalCollector(first))
 
-	server.RegisterAdditionalMetric("my-metric", first)
-	server.RegisterAdditionalMetric("my-metric", second)
+	err := server.RegisterAdditionalCollector(second)
 
-	got := server.GetMetric("my-metric")
-	require.NotNil(t, got)
-	assert.Same(t, first, *got)
-}
-
-func TestGetMetric_UnknownNameReturnsNil(t *testing.T) {
-	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
-
-	assert.Nil(t, server.GetMetric("does-not-exist"))
-}
-
-func TestRegisterAdditionalMetric_ZeroValueServerLazilyInitializes(t *testing.T) {
-	server := &Server{}
-
-	assert.Nil(t, server.GetMetric("my-metric"))
-
-	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_zero_value_server_lazily_initializes"})
-	server.RegisterAdditionalMetric("my-metric", counter)
-
-	got := server.GetMetric("my-metric")
-	require.NotNil(t, got)
-	assert.Same(t, counter, *got)
+	assert.Error(t, err)
 }
 
 func fakeTLSConfig() (*tls.Config, error) {

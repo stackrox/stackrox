@@ -26,7 +26,6 @@ type Server struct {
 	secureMetricsServer *http.Server
 	tlsConfigurer       verifier.TLSConfigurer
 	uptimeMetric        prometheus.Gauge
-	additionalMetrics   map[string]prometheus.Collector
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
@@ -66,14 +65,11 @@ func NewServer(subsystem Subsystem, tlsConfigurer verifier.TLSConfigurer) *Serve
 	// Allow the metric to be registered multiple times for tests.
 	_ = prometheus.Register(uptimeMetric)
 
-	additionalMetrics := make(map[string]prometheus.Collector)
-
 	return &Server{
 		metricsServer:       metricsServer,
 		secureMetricsServer: secureMetricsServer,
 		tlsConfigurer:       tlsConfigurer,
 		uptimeMetric:        uptimeMetric,
-		additionalMetrics:   additionalMetrics,
 	}
 }
 
@@ -124,29 +120,10 @@ func (s *Server) Stop(ctx context.Context) {
 	}
 }
 
-// RegisterAdditionalMetric registers a new metric with the given name and collector.
+// RegisterAdditionalCollector registers a new collector with the prometheus registry.
 // This allows consumers to register additional metrics per component or subsystem
-func (s *Server) RegisterAdditionalMetric(name string, metric prometheus.Collector) {
-	if s.additionalMetrics == nil {
-		s.additionalMetrics = make(map[string]prometheus.Collector)
-	}
-	if _, exists := s.additionalMetrics[name]; exists {
-		log.Errorf("Metric %s already registered", name)
-		return
-	}
-	s.additionalMetrics[name] = metric
-	_ = prometheus.Register(metric)
-}
-
-// GetMetric returns the metric with the given name, if it exists.
-func (s *Server) GetMetric(name string) *prometheus.Collector {
-	if s.additionalMetrics == nil {
-		return nil
-	}
-	if metric, exists := s.additionalMetrics[name]; exists {
-		return &metric
-	}
-	return nil
+func (s *Server) RegisterAdditionalCollector(metric prometheus.Collector) error {
+	return prometheus.Register(metric)
 }
 
 func metricsEnabled() bool {

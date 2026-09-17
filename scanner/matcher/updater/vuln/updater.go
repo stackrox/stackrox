@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/metrics"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 )
 
@@ -395,7 +397,9 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
+	IsInitialLoad := prevTime.IsZero()
 
+	start := time.Now()
 	zipFile, zipTime, err := u.fetch(ctx, prevTime)
 	if err != nil {
 		return false, err
@@ -450,6 +454,8 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	// skipped ones.
 	var bundleErrs []error
 	succeeded := 0
+	loadTimeGauge := metrics.GetVulnDBUpdateDuration()
+
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
@@ -460,6 +466,10 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
 		succeeded++
+
+		if loadTimeGauge != nil {
+			loadTimeGauge.WithLabelValues(bundleName(bundleF.Name), strconv.FormatBool(IsInitialLoad)).Set(time.Since(start).Seconds())
+		}
 	}
 
 	// Skip GC and distribution update only when every bundle that was
@@ -653,5 +663,11 @@ func (u *Updater) isBundleAllowed(filename string) bool {
 	if u.vulnBundleAllowlist.IsEmpty() {
 		return true
 	}
-	return u.vulnBundleAllowlist.Contains(strings.TrimSuffix(path.Base(filename), ".json.zst"))
+	return u.vulnBundleAllowlist.Contains(bundleName(filename))
+}
+
+// bundleName returns the bare vulnerability bundle name for the given zip
+// entry filename (e.g. "bundles/alpine.json.zst" -> "alpine").
+func bundleName(filename string) string {
+	return strings.TrimSuffix(path.Base(filename), ".json.zst")
 }
