@@ -78,7 +78,7 @@ func main() {
 		notifierDS.Singleton(),
 		notifierProcessor.Singleton(),
 	)
-	rl.start(ctx)
+	stopReportListener := rl.start(ctx)
 	log.Infof("Report LISTEN/NOTIFY listener started")
 
 	log.Infof("central-worker is ready")
@@ -87,6 +87,7 @@ func main() {
 
 	log.Infof("central-worker shutting down")
 
+	stopReportListener()
 	pruning.Singleton().Stop()
 	scheduler.Stop()
 

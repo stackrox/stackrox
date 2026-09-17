@@ -21,5 +21,6 @@ type Processor interface {
 	UpdateNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
 	GetNotifier(ctx context.Context, id string) notifiers.Notifier
+	GetNotifiers(ctx context.Context) []notifiers.Notifier
 	UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string)
 }
