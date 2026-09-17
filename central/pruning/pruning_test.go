@@ -62,6 +62,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -133,6 +134,45 @@ func (s *PruningTestSuite) TearDownSuite() {
 
 func TestPruning(t *testing.T) {
 	suite.Run(t, new(PruningTestSuite))
+}
+
+func TestPruningOwnership(t *testing.T) {
+	assert.Equal(t, []pruningJob{pruningJobBulk}, pruningJobsForOwner(pruningOwnerWorker))
+	assert.Equal(t, []pruningJob{pruningJobClusters, pruningJobDynamicRBAC}, pruningJobsForOwner(pruningOwnerCentral))
+	assert.Contains(t, pruningJobsForOwner(pruningOwnerStandalone), pruningJobClusters)
+	assert.Contains(t, pruningJobsForOwner(pruningOwnerStandalone), pruningJobDynamicRBAC)
+}
+
+func TestSplitPruningOwnerRetriesBusyLock(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(context.Background(), testDB.DB, dblock.PruningGCLockID)
+	require.NoError(t, err)
+	require.True(t, acquired)
+
+	previousRetryInterval := pruningLockRetryInterval
+	pruningLockRetryInterval = 10 * time.Millisecond
+	t.Cleanup(func() { pruningLockRetryInterval = previousRetryInterval })
+
+	gc := &garbageCollectorImpl{postgres: testDB.DB, stopper: concurrency.NewStopper()}
+	result := make(chan bool, 1)
+	go func() {
+		unlock, acquired := gc.acquirePruningLock(pruningOwnerWorker)
+		if acquired {
+			unlock()
+		}
+		result <- acquired
+	}()
+
+	time.Sleep(30 * time.Millisecond)
+	release()
+	require.Eventually(t, func() bool {
+		select {
+		case acquired := <-result:
+			return acquired
+		default:
+			return false
+		}
+	}, time.Second, 10*time.Millisecond)
 }
 
 func newAlertInstance(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState) *storage.Alert {

@@ -61,8 +61,8 @@ func main() {
 
 	go startMetricsServer()
 
-	pruning.Singleton().Start()
-	log.Infof("Pruning GC started")
+	pruning.Singleton().StartBulk()
+	log.Infof("Bulk pruning GC started")
 
 	scheduler := vulnReportV2Scheduler.Singleton()
 	scheduler.Start(globaldb.GetPostgres())

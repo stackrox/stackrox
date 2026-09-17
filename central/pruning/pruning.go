@@ -81,6 +81,7 @@ var (
 	lastV1ImagePruneTime      time.Time
 	lastPrunedV1ImageID       string
 	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	pruningLockRetryInterval  = time.Second
 	prunedPLOPsWithoutPodUIDs = false
 
 	pruneInterval = env.PruneInterval.DurationSetting()
@@ -106,7 +107,36 @@ func disableDynamicRBACPruningForTest(*testing.T) {
 // GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
 	Start()
+	StartBulk()
+	StartCentralOwned()
 	Stop()
+}
+
+type pruningOwner uint8
+
+const (
+	pruningOwnerStandalone pruningOwner = iota
+	pruningOwnerWorker
+	pruningOwnerCentral
+)
+
+type pruningJob uint8
+
+const (
+	pruningJobBulk pruningJob = iota
+	pruningJobClusters
+	pruningJobDynamicRBAC
+)
+
+func pruningJobsForOwner(owner pruningOwner) []pruningJob {
+	switch owner {
+	case pruningOwnerWorker:
+		return []pruningJob{pruningJobBulk}
+	case pruningOwnerCentral:
+		return []pruningJob{pruningJobClusters, pruningJobDynamicRBAC}
+	default:
+		return []pruningJob{pruningJobBulk, pruningJobClusters, pruningJobDynamicRBAC}
+	}
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
@@ -192,17 +222,48 @@ type garbageCollectorImpl struct {
 }
 
 func (g *garbageCollectorImpl) Start() {
-	go g.runGC()
+	go g.runGC(pruningOwnerStandalone)
 }
 
-func (g *garbageCollectorImpl) pruneBasedOnConfig() {
-	acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
-	if err != nil {
-		log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
-		return
+func (g *garbageCollectorImpl) StartBulk() {
+	go g.runGC(pruningOwnerWorker)
+}
+
+func (g *garbageCollectorImpl) StartCentralOwned() {
+	go g.runGC(pruningOwnerCentral)
+}
+
+func (g *garbageCollectorImpl) acquirePruningLock(owner pruningOwner) (func(), bool) {
+	for {
+		acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
+		if err != nil {
+			log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
+			return nil, false
+		}
+		if acquired {
+			return release, true
+		}
+		if owner == pruningOwnerStandalone {
+			log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
+			return nil, false
+		}
+
+		timer := time.NewTimer(pruningLockRetryInterval)
+		select {
+		case <-timer.C:
+			continue
+		case <-g.stopper.Flow().StopRequested():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return nil, false
+		}
 	}
+}
+
+func (g *garbageCollectorImpl) pruneBasedOnConfig(owner pruningOwner) {
+	release, acquired := g.acquirePruningLock(owner)
 	if !acquired {
-		log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
 		return
 	}
 	defer release()
@@ -216,20 +277,33 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		log.Error("UNEXPECTED: Got nil config")
 		return
 	}
+
+	if owner == pruningOwnerCentral {
+		log.Info("[Pruning] Starting Central-owned garbage collection cycle")
+		g.collectClusters(pvtConfig)
+		g.removeExpiredDynamicRBACObjects()
+		log.Info("[Pruning] Finished Central-owned garbage collection cycle")
+		return
+	}
+
 	log.Info("[Pruning] Starting a garbage collection cycle")
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
-	g.collectClusters(pvtConfig)
+	if owner == pruningOwnerStandalone {
+		g.collectClusters(pvtConfig)
+	}
 	g.removeOldReportHistory(pvtConfig)
 	g.removeOldComplianceReportHistory(pvtConfig)
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	g.removeInvalidAPITokens()
-	g.removeExpiredDynamicRBACObjects()
+	if owner == pruningOwnerStandalone {
+		g.removeExpiredDynamicRBACObjects()
+	}
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()
@@ -243,19 +317,19 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 
-func (g *garbageCollectorImpl) runGC() {
+func (g *garbageCollectorImpl) runGC(owner pruningOwner) {
 	defer g.stopper.Flow().ReportStopped()
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	lastV1ImagePruneTime = time.Now().Add(-env.V1ImagePruneInterval.DurationSetting())
-	g.pruneBasedOnConfig()
+	g.pruneBasedOnConfig(owner)
 
 	t := time.NewTicker(pruneInterval)
 	for {
 		select {
 		case <-t.C:
-			g.pruneBasedOnConfig()
+			g.pruneBasedOnConfig(owner)
 		case <-g.stopper.Flow().StopRequested():
 			return
 		}

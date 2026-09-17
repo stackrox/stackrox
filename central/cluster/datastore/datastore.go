@@ -142,5 +142,6 @@ func New(
 	if err := ds.registerClusterForNetworkGraphExtSrcs(); err != nil {
 		return ds, err
 	}
+	ds.observeClusterCache()
 	return ds, nil
 }

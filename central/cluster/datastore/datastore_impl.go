@@ -55,6 +55,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	postgresSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
@@ -224,6 +225,75 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
+	return nil
+}
+
+func (ds *datastoreImpl) observeClusterCache() {
+	if _, ok := ds.clusterStorage.(interface {
+		ObserveCache(func(context.Context, postgresSearch.CacheChanges[*storage.Cluster]) error) (func(), error)
+	}); !ok {
+		return
+	}
+	if _, err := postgresSearch.ObserveCache[*storage.Cluster](ds.clusterStorage, func(ctx context.Context, _ postgresSearch.CacheChanges[*storage.Cluster]) error {
+		return ds.refreshSecondaryCaches(ctx)
+	}); err != nil {
+		log.Errorf("Unable to observe cluster cache changes: %v", err)
+	}
+}
+
+// refreshSecondaryCaches rebuilds only the indexes derived from cluster rows.
+// Cache notifications are hints: rereading the authoritative store prevents an
+// older delivery from overwriting a newer local or Worker write.
+func (ds *datastoreImpl) refreshSecondaryCaches(ctx context.Context) error {
+	// Serialize the authoritative read with local writes. Otherwise a local
+	// update could refresh the indexes and then be overwritten by this older
+	// snapshot before the observer takes the datastore lock.
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	idToName := make(map[string]string)
+	nameToID := make(map[string]string)
+	filters := make(map[string]*regexp.Regexp)
+	if err := ds.clusterStorage.Walk(sac.WithAllAccess(ctx), func(cluster *storage.Cluster) error {
+		idToName[cluster.GetId()] = cluster.GetName()
+		nameToID[cluster.GetName()] = cluster.GetId()
+		if filter := clusterPkg.GetNamespaceFilter(cluster); filter != nil {
+			compiledFilter, err := regexp.Compile(*filter)
+			if err != nil {
+				log.Errorf("Could not compile filter regexp for cluster %s: %v", cluster.GetId(), err)
+				return nil
+			}
+			filters[cluster.GetId()] = compiledFilter
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	replaceCache := func(cache simplecache.Cache, values map[string]interface{}) {
+		for _, key := range cache.Keys() {
+			cache.Remove(key)
+		}
+		for key, value := range values {
+			cache.Add(key, value)
+		}
+	}
+
+	names := make(map[string]interface{}, len(idToName))
+	for id, name := range idToName {
+		names[id] = name
+	}
+	ids := make(map[string]interface{}, len(nameToID))
+	for name, id := range nameToID {
+		ids[name] = id
+	}
+	compiledFilters := make(map[string]interface{}, len(filters))
+	for id, filter := range filters {
+		compiledFilters[id] = filter
+	}
+	replaceCache(ds.idToNameCache, names)
+	replaceCache(ds.nameToIDCache, ids)
+	replaceCache(ds.idToNamespaceFilterCache, compiledFilters)
 	return nil
 }
 
@@ -1108,6 +1178,11 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	if err := ds.clusterStorage.Upsert(ctx, cluster); err != nil {
 		return err
 	}
+	if oldName, ok := ds.idToNameCache.Get(cluster.GetId()); ok && oldName.(string) != cluster.GetName() {
+		if mappedID, mapped := ds.nameToIDCache.Get(oldName); mapped && mappedID.(string) == cluster.GetId() {
+			ds.nameToIDCache.Remove(oldName)
+		}
+	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
 	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
 
@@ -1118,6 +1193,7 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 			ds.idToNamespaceFilterCache.Add(cluster.GetId(), compiledFilter)
 		} else {
 			log.Errorf("Could not compile filter regexp: %v", err)
+			ds.idToNamespaceFilterCache.Remove(cluster.GetId())
 		}
 	} else {
 		// We got empty filter updating the cluster. Make sure the cache is

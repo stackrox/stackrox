@@ -14,10 +14,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	postgresSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
@@ -26,6 +28,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// It should not be possible that pod and deployment scope are different,
 	// so just use the same access controls as a deployment.
 	podsSAC = sac.ForResource(resources.Deployment)
@@ -49,6 +53,43 @@ func newDatastoreImpl(storage podStore.Store, indicators piDS.DataStore, plops p
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
+}
+
+func (ds *datastoreImpl) observePodCache() {
+	if _, ok := ds.podStore.(interface {
+		ObserveCache(func(context.Context, postgresSearch.CacheChanges[*storage.Pod]) error) (func(), error)
+	}); !ok {
+		return
+	}
+	if _, err := postgresSearch.ObserveCache[*storage.Pod](ds.podStore, ds.repairProcessFilterAfterExternalDeletion); err != nil {
+		log.Errorf("Unable to observe pod cache changes: %v", err)
+	}
+}
+
+// repairProcessFilterAfterExternalDeletion updates only Central-local filter
+// state. Persisted pod, process-indicator, and PLOP deletion remains owned by
+// the datastore that performed the delete.
+func (ds *datastoreImpl) repairProcessFilterAfterExternalDeletion(ctx context.Context, changes postgresSearch.CacheChanges[*storage.Pod]) error {
+	for _, deletedPod := range changes.Deleted {
+		if deletedPod == nil || deletedPod.GetId() == "" {
+			continue
+		}
+		if err := ds.keyedMutex.DoStatusWithLock(deletedPod.GetId(), func() error {
+			currentPod, found, err := ds.podStore.Get(ctx, deletedPod.GetId())
+			if err != nil {
+				return err
+			}
+			if found {
+				ds.processFilter.UpdateByPod(currentPod)
+			} else {
+				ds.processFilter.DeleteByPod(deletedPod)
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrapf(err, "repairing process filter for externally deleted pod %q", deletedPod.GetId())
+		}
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -123,8 +164,6 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")
 
-	ds.processFilter.UpdateByPod(pod)
-
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
 		oldPod, found, err := ds.podStore.Get(ctx, pod.GetId())
 		if err != nil {
@@ -137,6 +176,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		if err := ds.podStore.Upsert(ctx, pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
+		ds.processFilter.UpdateByPod(pod)
 		return nil
 	})
 	if err != nil {
@@ -186,18 +226,30 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Delete")
 
-	pod, found, err := ds.podStore.Get(ctx, id)
-	if err != nil || !found {
-		return err
-	}
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		return ds.podStore.Delete(ctx, id)
+	var pod *storage.Pod
+	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
+		var found bool
+		var err error
+		pod, found, err = ds.podStore.Get(ctx, id)
+		if err != nil || !found {
+			if !found {
+				pod = nil
+			}
+			return err
+		}
+		if err := ds.podStore.Delete(ctx, id); err != nil {
+			return err
+		}
+		ds.processFilter.DeleteByPod(pod)
+		return nil
 	})
 	if err != nil {
 		return err
 	}
 
-	ds.processFilter.DeleteByPod(pod)
+	if pod == nil {
+		return nil
+	}
 
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
