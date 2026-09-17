@@ -382,10 +382,11 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		pruning.Singleton().Start()
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		pruning.Singleton().StartCentralOwned()
+		log.Info("Central-owned pruning started; bulk pruning is managed by central-worker")
 	} else {
-		log.Info("Pruning is managed by central-worker, skipping start in Central")
+		pruning.Singleton().Start()
 	}
 	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
@@ -1064,9 +1065,7 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 	}
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
-	}
+	stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
 	stoppables = append(stoppables, []stoppableWithName{
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},

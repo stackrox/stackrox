@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"math"
 	"regexp"
@@ -954,6 +955,66 @@ func (s *clusterDataStoreTestSuite) TestProcessMatching() {
 	match, err = s.datastore.MatchProcessIndicator(ctx, indicator)
 	s.NoError(err)
 	assert.True(s.T(), match)
+}
+
+func (s *clusterDataStoreTestSuite) TestRefreshSecondaryCachesFromAuthoritativeStorage() {
+	ctx := sac.WithAllAccess(s.T().Context())
+	clusterID := fixtureconsts.Cluster1
+	oldName := "old-name"
+	cluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "new-name",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "^new-",
+				},
+			},
+		},
+	}
+	s.datastore.idToNameCache.Add(clusterID, oldName)
+	s.datastore.nameToIDCache.Add(oldName, clusterID)
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("^old-"))
+
+	s.clusterStore.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(*storage.Cluster) error) error {
+		return fn(cluster)
+	})
+
+	s.Require().NoError(s.datastore.refreshSecondaryCaches(ctx))
+
+	name, found, err := s.datastore.GetClusterName(ctx, clusterID)
+	s.Require().NoError(err)
+	s.True(found)
+	s.Equal("new-name", name)
+
+	_, found, err = s.datastore.GetClusterID(ctx, oldName)
+	s.Require().NoError(err)
+	s.False(found)
+
+	clusterFilter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.Require().True(ok)
+	s.Equal("^new-", clusterFilter.(*regexp.Regexp).String())
+
+	// A later authoritative snapshot removes the cluster and its derived state.
+	s.clusterStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.Require().NoError(s.datastore.refreshSecondaryCaches(ctx))
+	_, found, err = s.datastore.GetClusterName(ctx, clusterID)
+	s.Require().NoError(err)
+	s.False(found)
+	_, found, err = s.datastore.GetClusterID(ctx, "new-name")
+	s.Require().NoError(err)
+	s.False(found)
+
+	// An invalid replacement filter must not leave the former permissive filter active.
+	badFilterCluster := cluster.CloneVT()
+	badFilterCluster.HelmConfig.DynamicConfig.ProcessIndicators.ExcludeNamespaceFilter = "["
+	s.clusterStore.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(*storage.Cluster) error) error {
+		return fn(badFilterCluster)
+	})
+	s.Require().NoError(s.datastore.refreshSecondaryCaches(ctx))
+	_, ok = s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.False(ok)
 }
 
 func (s *clusterDataStoreTestSuite) TestUpdateCluster() {

@@ -4,13 +4,74 @@ package notify
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
+
+func TestListenerLifecycle(t *testing.T) {
+	db, err := postgres.Connect(context.Background(), pgtest.GetConnectionString(t))
+	require.NoError(t, err)
+	t.Cleanup(db.Close)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	ready := make(chan struct{}, 1)
+	received := make(chan string, 1)
+	disconnected := make(chan error, 1)
+	done := make(chan struct{})
+	l := NewListenerWithHooks(db, func(_, payload string) { received <- payload }, LifecycleHooks{
+		AfterListen: func(ctx context.Context) error {
+			// This write uses another connection. Receiving it proves LISTEN
+			// committed before the synchronization hook ran.
+			if err := Notify(ctx, db, "lifecycle", "after listen"); err != nil {
+				return err
+			}
+			ready <- struct{}{}
+			return nil
+		},
+		OnDisconnect: func(err error) { disconnected <- err },
+	}, "lifecycle")
+	go func() { l.Listen(ctx); close(done) }()
+	select {
+	case <-ready:
+	case <-time.After(10 * time.Second):
+		t.Fatal("LISTEN was not ready")
+	}
+	select {
+	case payload := <-received:
+		require.Equal(t, "after listen", payload)
+	case <-time.After(10 * time.Second):
+		t.Fatal("notification from synchronization hook was lost")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("listener did not close")
+	}
+	require.ErrorIs(t, <-disconnected, context.Canceled)
+}
+
+func TestListenerSynchronizationFailure(t *testing.T) {
+	db, err := postgres.Connect(context.Background(), pgtest.GetConnectionString(t))
+	require.NoError(t, err)
+	t.Cleanup(db.Close)
+	failure := errors.New("snapshot failed")
+	l := NewListenerWithHooks(db, func(_, _ string) { t.Error("dispatched after failed synchronization") },
+		LifecycleHooks{AfterListen: func(context.Context) error { return failure }}, "failure")
+	require.ErrorIs(t, l.listenLoop(context.Background()), failure)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var disconnected error
+	l.hooks.OnDisconnect = func(err error) { disconnected = err; cancel() }
+	l.Listen(ctx)
+	require.ErrorIs(t, disconnected, failure)
+}
 
 type ListenNotifySuite struct {
 	suite.Suite
@@ -38,6 +99,20 @@ func (s *ListenNotifySuite) TearDownTest() {
 	}
 }
 
+func (s *ListenNotifySuite) startListener(ctx context.Context, handler Handler, channels ...string) <-chan struct{} {
+	ready, done := make(chan struct{}), make(chan struct{})
+	listener := NewListenerWithHooks(s.pool, handler, LifecycleHooks{
+		AfterListen: func(context.Context) error { close(ready); return nil },
+	}, channels...)
+	go func() { listener.Listen(ctx); close(done) }()
+	select {
+	case <-ready:
+	case <-time.After(5 * time.Second):
+		s.T().Fatal("listener was not ready")
+	}
+	return done
+}
+
 func (s *ListenNotifySuite) TestNotifyAndReceive() {
 	received := make(chan struct {
 		channel string
@@ -51,15 +126,9 @@ func (s *ListenNotifySuite) TestNotifyAndReceive() {
 		}{channel, payload}
 	}
 
-	listener := NewListener(s.pool, handler, "test_channel")
-
 	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
-
-	go listener.Listen(ctx)
-
-	// Give the listener time to connect and register LISTEN.
-	time.Sleep(200 * time.Millisecond)
+	done := s.startListener(ctx, handler, "test_channel")
+	defer func() { cancel(); <-done }()
 
 	err := Notify(s.ctx, s.pool, "test_channel", "hello")
 	s.Require().NoError(err)
@@ -86,13 +155,9 @@ func (s *ListenNotifySuite) TestMultipleChannels() {
 		}{channel, payload}
 	}
 
-	listener := NewListener(s.pool, handler, "chan_a", "chan_b")
-
 	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
-
-	go listener.Listen(ctx)
-	time.Sleep(200 * time.Millisecond)
+	done := s.startListener(ctx, handler, "chan_a", "chan_b")
+	defer func() { cancel(); <-done }()
 
 	s.Require().NoError(Notify(s.ctx, s.pool, "chan_a", "msg_a"))
 	s.Require().NoError(Notify(s.ctx, s.pool, "chan_b", "msg_b"))
@@ -118,36 +183,27 @@ func (s *ListenNotifySuite) TestUnrelatedChannelIgnored() {
 		received <- payload
 	}
 
-	listener := NewListener(s.pool, handler, "my_channel")
-
 	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
-
-	go listener.Listen(ctx)
-	time.Sleep(200 * time.Millisecond)
+	done := s.startListener(ctx, handler, "my_channel")
+	defer func() { cancel(); <-done }()
 
 	s.Require().NoError(Notify(s.ctx, s.pool, "other_channel", "should_not_see"))
+	s.Require().NoError(Notify(s.ctx, s.pool, "my_channel", "barrier"))
 
 	select {
-	case <-received:
-		s.Fail("should not have received notification on unrelated channel")
-	case <-time.After(500 * time.Millisecond):
+	case payload := <-received:
+		s.Equal("barrier", payload)
+	case <-time.After(5 * time.Second):
+		s.Fail("did not receive barrier")
 	}
 }
 
 func (s *ListenNotifySuite) TestContextCancellationStopsListener() {
 	handler := func(channel, payload string) {}
 
-	listener := NewListener(s.pool, handler, "stop_test")
-
 	ctx, cancel := context.WithCancel(s.ctx)
-	done := make(chan struct{})
-	go func() {
-		listener.Listen(ctx)
-		close(done)
-	}()
-
-	time.Sleep(200 * time.Millisecond)
+	defer cancel()
+	done := s.startListener(ctx, handler, "stop_test")
 	cancel()
 
 	select {

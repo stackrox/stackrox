@@ -62,8 +62,9 @@ type Store interface {
 
 	Walk(ctx context.Context, fn callback) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
-	// Deprecated: Use for SAC only
-	GetAllFromCacheForSAC() []*storeType
+	// GetAllForSAC bypasses SAC filtering to build access scopes. Callers must
+	// not modify the returned objects, which may be shared with a store cache.
+	GetAllForSAC(ctx context.Context) ([]*storeType, error)
 }
 
 // New returns a new Store instance using the provided sql instance.

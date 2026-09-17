@@ -33,5 +33,7 @@ type DataStore interface {
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) DataStore {
 	store := pgStore.New(db)
-	return newDatastoreImpl(store, indicators, plops, processFilter)
+	ds := newDatastoreImpl(store, indicators, plops, processFilter)
+	ds.observePodCache()
+	return ds
 }

@@ -60,6 +60,7 @@ func (d *db) Begin(ctx context.Context) (*Tx, error) {
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
+			lifecycle:  tx.lifecycle,
 		}, nil
 	}
 
@@ -73,6 +74,7 @@ func (d *db) Begin(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		Tx:         tx,
 		cancelFunc: cancel,
+		lifecycle:  &txLifecycle{},
 	}, nil
 }
 

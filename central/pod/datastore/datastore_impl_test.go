@@ -11,9 +11,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
+	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	postgresSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -185,4 +188,31 @@ func (suite *PodDataStoreTestSuite) TestRemovePod() {
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().Delete(ctx, expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "error")
+}
+
+func (suite *PodDataStoreTestSuite) TestRepairProcessFilterAfterExternalDeletion() {
+	pod := expectedPod.CloneVT()
+	suite.filter.UpdateByPod(pod)
+
+	suite.storage.EXPECT().Get(ctx, pod.GetId()).Return(nil, false, nil)
+	suite.Require().NoError(suite.datastore.repairProcessFilterAfterExternalDeletion(ctx, postgresSearch.CacheChanges[*storage.Pod]{Deleted: []*storage.Pod{pod}}))
+
+	// The stale pod's container state must no longer be represented in the filter.
+	assert.True(suite.T(), suite.filter.Add(&storage.ProcessIndicator{
+		DeploymentId: pod.GetDeploymentId(),
+		Signal: &storage.ProcessSignal{
+			ContainerId:  pod.GetLiveInstances()[0].GetInstanceId().GetId(),
+			ExecFilePath: "/bin/sh",
+		},
+	}))
+}
+
+func (suite *PodDataStoreTestSuite) TestRepairProcessFilterKeepsRecreatedPodState() {
+	processFilter := filterMocks.NewMockFilter(suite.mockCtrl)
+	datastore := newDatastoreImpl(suite.storage, suite.processStore, suite.plopStore, processFilter)
+	pod := expectedPod.CloneVT()
+
+	suite.storage.EXPECT().Get(ctx, pod.GetId()).Return(pod, true, nil)
+	processFilter.EXPECT().UpdateByPod(pod)
+	suite.Require().NoError(datastore.repairProcessFilterAfterExternalDeletion(ctx, postgresSearch.CacheChanges[*storage.Pod]{Deleted: []*storage.Pod{pod}}))
 }

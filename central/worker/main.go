@@ -51,7 +51,7 @@ func main() {
 	if poolVal < 1 || poolVal > math.MaxInt32 {
 		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
 	}
-	globaldb.InitializePostgresWithPoolSize(ctx, int32(poolVal))
+	globaldb.InitializeWorkerPostgres(ctx, int32(poolVal))
 	log.Infof("DB pool initialized with max_conns=%d", poolVal)
 
 	waitForMigrations(ctx)
@@ -61,8 +61,8 @@ func main() {
 
 	go startMetricsServer()
 
-	pruning.Singleton().Start()
-	log.Infof("Pruning GC started")
+	pruning.Singleton().StartBulk()
+	log.Infof("Bulk pruning GC started")
 
 	scheduler := vulnReportV2Scheduler.Singleton()
 	scheduler.Start(globaldb.GetPostgres())
@@ -78,7 +78,7 @@ func main() {
 		notifierDS.Singleton(),
 		notifierProcessor.Singleton(),
 	)
-	rl.start(ctx)
+	stopReportListener := rl.start(ctx)
 	log.Infof("Report LISTEN/NOTIFY listener started")
 
 	log.Infof("central-worker is ready")
@@ -87,6 +87,7 @@ func main() {
 
 	log.Infof("central-worker shutting down")
 
+	stopReportListener()
 	pruning.Singleton().Stop()
 	scheduler.Stop()
 

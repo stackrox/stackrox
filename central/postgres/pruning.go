@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,6 +17,14 @@ import (
 )
 
 const (
+	pruneOrphanedClusterObjects = `DELETE FROM %s child WHERE NOT EXISTS
+		(SELECT 1 FROM ` + schema.ClustersTableName + ` parent WHERE parent.id = child.clusterid)`
+
+	getOrphanedProcessBaselines = `SELECT child.serialized FROM ` + schema.ProcessBaselinesTableName + ` child
+		WHERE child.id > $1 AND NOT EXISTS
+		(SELECT 1 FROM ` + schema.DeploymentsTableName + ` parent WHERE parent.id = child.key_deploymentid)
+		ORDER BY child.id LIMIT $2`
+
 	pruneClusterHealthStatusesStmt = `DELETE FROM cluster_health_statuses child WHERE NOT EXISTS
 		(SELECT 1 FROM clusters parent WHERE
 		child.Id = parent.Id)`
@@ -148,6 +157,47 @@ func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
 	if _, err := pool.Exec(pruneCtx, pruneClusterHealthStatusesStmt); err != nil {
 		log.Errorf("failed to prune cluster health statuses: %v", err)
 	}
+}
+
+// PruneOrphanedServiceAccounts removes service accounts whose clusters no longer exist in PostgreSQL.
+func PruneOrphanedServiceAccounts(ctx context.Context, pool postgres.DB) error {
+	return pruneClusterObjects(ctx, pool, schema.ServiceAccountsTableName)
+}
+
+// PruneOrphanedK8SRoles removes Kubernetes roles whose clusters no longer exist in PostgreSQL.
+func PruneOrphanedK8SRoles(ctx context.Context, pool postgres.DB) error {
+	return pruneClusterObjects(ctx, pool, schema.K8sRolesTableName)
+}
+
+// PruneOrphanedK8SRoleBindings removes role bindings whose clusters no longer exist in PostgreSQL.
+func PruneOrphanedK8SRoleBindings(ctx context.Context, pool postgres.DB) error {
+	return pruneClusterObjects(ctx, pool, schema.RoleBindingsTableName)
+}
+
+func pruneClusterObjects(ctx context.Context, pool postgres.DB, table string) error {
+	pruneCtx, cancel := context.WithTimeout(ctx, pruningTimeout)
+	defer cancel()
+
+	// Membership and deletion share a statement snapshot. These stores have no
+	// additional removal side effects; nested rows are deleted by foreign keys.
+	_, err := pool.Exec(pruneCtx, fmt.Sprintf(pruneOrphanedClusterObjects, table))
+	return errors.Wrapf(err, "pruning orphaned %s", table)
+}
+
+// GetOrphanedProcessBaselines returns a bounded page of baselines whose deployments
+// no longer exist in PostgreSQL. Callers must preserve grace periods and datastore
+// removal side effects. Advance afterID even for candidates that cannot be removed.
+func GetOrphanedProcessBaselines(ctx context.Context, pool postgres.DB, afterID string, limit int) ([]*storage.ProcessBaseline, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.ProcessBaseline, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
+		defer cancel()
+
+		rows, err := pool.Query(ctx, getOrphanedProcessBaselines, afterID, limit)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying orphaned process baselines")
+		}
+		return pgutils.ScanRows[storage.ProcessBaseline, *storage.ProcessBaseline](rows)
+	})
 }
 
 func getOrphanedIDs(ctx context.Context, pool postgres.DB, query string) ([]string, error) {

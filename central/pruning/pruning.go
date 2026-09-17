@@ -81,6 +81,7 @@ var (
 	lastV1ImagePruneTime      time.Time
 	lastPrunedV1ImageID       string
 	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	pruningLockRetryInterval  = time.Second
 	prunedPLOPsWithoutPodUIDs = false
 
 	pruneInterval = env.PruneInterval.DurationSetting()
@@ -106,7 +107,36 @@ func disableDynamicRBACPruningForTest(*testing.T) {
 // GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
 	Start()
+	StartBulk()
+	StartCentralOwned()
 	Stop()
+}
+
+type pruningOwner uint8
+
+const (
+	pruningOwnerStandalone pruningOwner = iota
+	pruningOwnerWorker
+	pruningOwnerCentral
+)
+
+type pruningJob uint8
+
+const (
+	pruningJobBulk pruningJob = iota
+	pruningJobClusters
+	pruningJobDynamicRBAC
+)
+
+func pruningJobsForOwner(owner pruningOwner) []pruningJob {
+	switch owner {
+	case pruningOwnerWorker:
+		return []pruningJob{pruningJobBulk}
+	case pruningOwnerCentral:
+		return []pruningJob{pruningJobClusters, pruningJobDynamicRBAC}
+	default:
+		return []pruningJob{pruningJobBulk, pruningJobClusters, pruningJobDynamicRBAC}
+	}
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
@@ -192,17 +222,48 @@ type garbageCollectorImpl struct {
 }
 
 func (g *garbageCollectorImpl) Start() {
-	go g.runGC()
+	go g.runGC(pruningOwnerStandalone)
 }
 
-func (g *garbageCollectorImpl) pruneBasedOnConfig() {
-	acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
-	if err != nil {
-		log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
-		return
+func (g *garbageCollectorImpl) StartBulk() {
+	go g.runGC(pruningOwnerWorker)
+}
+
+func (g *garbageCollectorImpl) StartCentralOwned() {
+	go g.runGC(pruningOwnerCentral)
+}
+
+func (g *garbageCollectorImpl) acquirePruningLock(owner pruningOwner) (func(), bool) {
+	for {
+		acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
+		if err != nil {
+			log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
+			return nil, false
+		}
+		if acquired {
+			return release, true
+		}
+		if owner == pruningOwnerStandalone {
+			log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
+			return nil, false
+		}
+
+		timer := time.NewTimer(pruningLockRetryInterval)
+		select {
+		case <-timer.C:
+			continue
+		case <-g.stopper.Flow().StopRequested():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return nil, false
+		}
 	}
+}
+
+func (g *garbageCollectorImpl) pruneBasedOnConfig(owner pruningOwner) {
+	release, acquired := g.acquirePruningLock(owner)
 	if !acquired {
-		log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
 		return
 	}
 	defer release()
@@ -216,20 +277,33 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		log.Error("UNEXPECTED: Got nil config")
 		return
 	}
+
+	if owner == pruningOwnerCentral {
+		log.Info("[Pruning] Starting Central-owned garbage collection cycle")
+		g.collectClusters(pvtConfig)
+		g.removeExpiredDynamicRBACObjects()
+		log.Info("[Pruning] Finished Central-owned garbage collection cycle")
+		return
+	}
+
 	log.Info("[Pruning] Starting a garbage collection cycle")
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
-	g.collectClusters(pvtConfig)
+	if owner == pruningOwnerStandalone {
+		g.collectClusters(pvtConfig)
+	}
 	g.removeOldReportHistory(pvtConfig)
 	g.removeOldComplianceReportHistory(pvtConfig)
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	g.removeInvalidAPITokens()
-	g.removeExpiredDynamicRBACObjects()
+	if owner == pruningOwnerStandalone {
+		g.removeExpiredDynamicRBACObjects()
+	}
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()
@@ -243,19 +317,19 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 
-func (g *garbageCollectorImpl) runGC() {
+func (g *garbageCollectorImpl) runGC(owner pruningOwner) {
 	defer g.stopper.Flow().ReportStopped()
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	lastV1ImagePruneTime = time.Now().Add(-env.V1ImagePruneInterval.DurationSetting())
-	g.pruneBasedOnConfig()
+	g.pruneBasedOnConfig(owner)
 
 	t := time.NewTicker(pruneInterval)
 	for {
 		select {
 		case <-t.C:
-			g.pruneBasedOnConfig()
+			g.pruneBasedOnConfig(owner)
 		case <-g.stopper.Flow().StopRequested():
 			return
 		}
@@ -538,42 +612,28 @@ func (g *garbageCollectorImpl) removeOrphanedNodes() {
 	}
 }
 
-func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
-	searchRes, err := searchFn(pruningCtx, searchQuery)
-	if err != nil {
-		log.Errorf("Error finding orphaned %s: %v", name, err)
-		return
-	}
-	if len(searchRes) == 0 {
-		log.Infof("[Pruning] Found no orphaned %s...", name)
-		return
-	}
-
-	log.Infof("[Pruning] Found %d orphaned %s. Deleting...", len(searchRes), name)
-
-	for _, res := range searchRes {
-		if err := removeFn(pruningCtx, res.ID); err != nil {
-			log.Errorf("Failed to remove %s with id %s: %v", name, res.ID, err)
-		}
-	}
-}
-
 // Remove ServiceAccounts where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts() {
 	defer metrics.SetPruningDuration(time.Now(), "ServiceAccounts")
-	removeOrphanedObjectsBySearch(searchQuery, "service accounts", g.serviceAccts.Search, g.serviceAccts.RemoveServiceAccount)
+	if err := postgres.PruneOrphanedServiceAccounts(pruningCtx, g.postgres); err != nil {
+		log.Error(err)
+	}
 }
 
 // Remove K8SRoles where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedK8SRoles(searchQuery *v1.Query) {
+func (g *garbageCollectorImpl) removeOrphanedK8SRoles() {
 	defer metrics.SetPruningDuration(time.Now(), "K8SRoles")
-	removeOrphanedObjectsBySearch(searchQuery, "K8S roles", g.k8sRoles.Search, g.k8sRoles.RemoveRole)
+	if err := postgres.PruneOrphanedK8SRoles(pruningCtx, g.postgres); err != nil {
+		log.Error(err)
+	}
 }
 
 // Remove K8SRoleBinding where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Query) {
+func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings() {
 	defer metrics.SetPruningDuration(time.Now(), "K8SRoleBindings")
-	removeOrphanedObjectsBySearch(searchQuery, "K8S role bindings", g.k8sRoleBindings.Search, g.k8sRoleBindings.RemoveRoleBinding)
+	if err := postgres.PruneOrphanedK8SRoleBindings(pruningCtx, g.postgres); err != nil {
+		log.Error(err)
+	}
 }
 
 func (g *garbageCollectorImpl) removeOrphanedResources() {
@@ -588,13 +648,6 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
-	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
-		return
-	}
-	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
 
@@ -604,41 +657,12 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	// The deletion of pods can trigger the deletion of indicators.  So in theory there could
 	// be fewer indicators to delete if we process orphaned pods first.
 	g.removeOrphanedProcesses()
-	g.removeOrphanedProcessBaselines(deploymentSet)
+	g.removeOrphanedProcessBaselines()
 	g.removeOrphanedPLOPs()
 
-	q := clusterIDsToNegationQuery(clusterIDSet)
-	g.removeOrphanedServiceAccounts(q)
-	g.removeOrphanedK8SRoles(q)
-	g.removeOrphanedK8SRoleBindings(q)
-}
-
-func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
-	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficient
-	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
-	// Bleve/booleanquery requires a conjunction so it can't be removed
-	var mustNot *v1.DisjunctionQuery
-	if clusterIDSet.Cardinality() > 1 {
-		mustNot = search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction()
-	} else {
-		// Manually generating a disjunction because search.DisjunctionQuery returns a v1.Query if there's only thing it's matching on
-		// which then results in a nil disjunction inside boolean query. That means this search will match everything.
-		mustNot = (&v1.Query{
-			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
-				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
-			}},
-		}).GetDisjunction()
-	}
-
-	must := (&v1.Query{
-		// Similar to disjunction, conjunction needs multiple queries, or it has to be manually created
-		// Unlike disjunction, if there's only one query when the boolean query is used it will panic
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
-		}},
-	}).GetConjunction()
-
-	return search.NewBooleanQuery(must, mustNot)
+	g.removeOrphanedServiceAccounts()
+	g.removeOrphanedK8SRoles()
+	g.removeOrphanedK8SRoleBindings()
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
@@ -689,49 +713,28 @@ func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, reaso
 	return g.processes.PruneProcessIndicators(pruneCtxWithTimeout, processesToRemove, reason)
 }
 
-func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {
+func (g *garbageCollectorImpl) removeOrphanedProcessBaselines() {
 	defer metrics.SetPruningDuration(time.Now(), "ProcessBaselines")
-	var baselineBatchOffset, prunedProcessBaselines int32
+	var afterID string
+	var prunedProcessBaselines int
 	for {
-		allQuery := &v1.Query{
-			Pagination: &v1.QueryPagination{
-				Offset: baselineBatchOffset,
-				Limit:  baselineBatchLimit,
-			},
-		}
-
-		res, err := g.processbaseline.Search(pruningCtx, allQuery)
+		baselines, err := postgres.GetOrphanedProcessBaselines(pruningCtx, g.postgres, afterID, baselineBatchLimit)
 		if err != nil {
 			log.Error(errors.Wrap(err, "error searching process baselines"))
 			return
 		}
 
-		baselineBatchOffset += baselineBatchLimit
-		var baselineKeysToPrune []*storage.ProcessBaselineKey
-		for _, baseline := range res {
-			baselineKey, err := processBaselineDatastore.IDToKey(baseline.ID)
-			if err != nil {
-				log.Error(errors.Wrapf(err, "Invalid id %s", baseline.ID))
-				continue
-			}
-
-			if !deployments.Contains(baselineKey.GetDeploymentId()) {
-				baselineKeysToPrune = append(baselineKeysToPrune, baselineKey)
-			}
-		}
-
 		now := protocompat.TimestampNow()
-		for _, baselineKey := range baselineKeysToPrune {
-			baseline, exists, err := g.processbaseline.GetProcessBaseline(pruningCtx, baselineKey)
-			if err != nil {
-				log.Error(errors.Wrapf(err, "unable to fetch process baseline for key %v", baselineKey))
+		for _, baseline := range baselines {
+			// Advance past retained or failed candidates as well as deleted ones.
+			// Offsets would skip rows as earlier pages are removed.
+			afterID = baseline.GetId()
+			if protoutils.Sub(now, baseline.GetCreated()) < orphanWindow {
 				continue
 			}
 
-			if !exists || protoutils.Sub(now, baseline.GetCreated()) < orphanWindow {
-				continue
-			}
-
+			// Preserve last-baseline result cleanup in the datastore.
+			baselineKey := baseline.GetKey()
 			if err = g.processbaseline.RemoveProcessBaseline(pruningCtx, baselineKey); err != nil {
 				log.Error(errors.Wrapf(err, "unable to remove process baseline: %v", baselineKey))
 				continue
@@ -740,7 +743,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 			prunedProcessBaselines++
 		}
 
-		if len(res) < baselineBatchLimit {
+		if len(baselines) < baselineBatchLimit {
 			break
 		}
 	}

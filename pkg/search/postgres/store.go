@@ -80,8 +80,9 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
-	// Deprecated: Use with caution it's unsafe but fast 🐉
-	GetAllFromCacheForSAC() []PT
+	// GetAllForSAC bypasses SAC filtering to build access scopes. Callers must
+	// not modify the returned objects, which may be shared with a store cache.
+	GetAllForSAC(ctx context.Context) ([]PT, error)
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
@@ -424,9 +425,22 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	})
 }
 
-// GetAllFromCache panics as generic store has no cache.
-func (s *genericStore[T, PT]) GetAllFromCacheForSAC() []PT {
-	panic("generic store has no cache")
+// CacheEnabled reports whether secondary indexes can use this store's cache mode.
+func (s *genericStore[T, PT]) CacheEnabled() bool {
+	return false
+}
+
+// GetAllForSAC reads the database without SAC filtering to build access scopes.
+func (s *genericStore[T, PT]) GetAllForSAC(ctx context.Context) ([]PT, error) {
+	var objects []PT
+	err := s.GetByQueryFn(sac.WithAllAccess(ctx), search.EmptyQuery(), func(obj PT) error {
+		objects = append(objects, obj)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return objects, nil
 }
 
 func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
