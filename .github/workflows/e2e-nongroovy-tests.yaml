@@ -44,7 +44,7 @@ jobs:
       SENSOR_HELM_MANAGED: "true"
       STORAGE: pvc
       STORAGE_CLASS: faster
-      SCANNER_V4_DB_STORAGE_CLASS: stackrox-gke-ssd
+      SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
