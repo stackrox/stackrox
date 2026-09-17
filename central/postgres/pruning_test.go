@@ -17,8 +17,10 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
+	baselinePostgres "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -29,6 +31,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,6 +51,70 @@ func TestPruning(t *testing.T) {
 func (s *PostgresPruningSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedProcessBaselinesPages() {
+	for name, pageSize := range map[string]int{"one row": 1, "two rows": 2, "single page": 10} {
+		s.T().Run(name, func(t *testing.T) {
+			db := pgtest.ForT(t).DB
+			baselines := baselinePostgres.New(db)
+			deployments, err := deploymentStore.GetTestPostgresDataStore(t, db)
+			require.NoError(t, err)
+			require.NoError(t, deployments.UpsertDeployment(s.ctx, &storage.Deployment{Id: fixtureconsts.Deployment1}))
+			for _, id := range []string{"a", "b", "c", "d", "e"} {
+				deploymentID := fixtureconsts.Deployment2
+				if id == "d" {
+					deploymentID = fixtureconsts.Deployment1
+				}
+				require.NoError(t, baselines.Upsert(s.ctx, &storage.ProcessBaseline{
+					Id: id, Key: &storage.ProcessBaselineKey{DeploymentId: deploymentID},
+				}))
+			}
+
+			var afterID string
+			var seen []string
+			for {
+				page, err := GetOrphanedProcessBaselines(s.ctx, db, afterID, pageSize)
+				require.NoError(t, err)
+				require.LessOrEqual(t, len(page), pageSize)
+				if len(page) == 0 {
+					break
+				}
+				for _, baseline := range page {
+					require.Greater(t, baseline.GetId(), afterID)
+					afterID = baseline.GetId()
+					seen = append(seen, afterID)
+					// Simulate a retained candidate between deleted candidates.
+					if afterID != "b" {
+						require.NoError(t, baselines.Delete(s.ctx, afterID))
+					}
+				}
+			}
+			assert.Equal(t, []string{"a", "b", "c", "e"}, seen)
+			remaining, err := baselines.GetIDs(s.ctx)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, []string{"b", "d"}, remaining)
+		})
+	}
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedProcessBaselinesQueryErrors() {
+	s.T().Setenv(env.PostgresDisableQueryRetries.EnvVar(), "true")
+	baselines := baselinePostgres.New(s.testDB.DB)
+	require.NoError(s.T(), baselines.Upsert(s.ctx, &storage.ProcessBaseline{Id: "a"}))
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+	page, err := GetOrphanedProcessBaselines(ctx, s.testDB.DB, "", 2)
+	s.ErrorIs(err, context.Canceled)
+	s.Empty(page)
+
+	// A decode failure after a valid row must discard the entire page, so the
+	// caller cannot delete a partial result set after a failed query/scan.
+	_, err = s.testDB.DB.Exec(s.ctx, "INSERT INTO process_baselines (id, serialized) VALUES ($1, $2)", "b", []byte{0xff})
+	s.Require().NoError(err)
+	page, err = GetOrphanedProcessBaselines(s.ctx, s.testDB.DB, "", 2)
+	s.Error(err)
+	s.Empty(page)
 }
 
 func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {

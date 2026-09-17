@@ -2160,8 +2160,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodeRisks() {
 
 func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 	clusters := []string{uuid.NewV4().String(), uuid.NewV4().String(), uuid.NewV4().String()}
-	cases := []struct {
-		name                  string
+	cases := map[string]struct {
 		validClusters         []string
 		serviceAccts          []*storage.ServiceAccount
 		roles                 []*storage.K8SRole
@@ -2170,8 +2169,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 		expectedRoleDeletions set.FrozenStringSet
 		expectedRBDeletions   set.FrozenStringSet
 	}{
-		{
-			name:          "remove SAs that belong to deleted clusters",
+		"remove SAs that belong to deleted clusters": {
 			validClusters: clusters,
 			serviceAccts: []*storage.ServiceAccount{
 				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
@@ -2181,8 +2179,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			},
 			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount4),
 		},
-		{
-			name:          "Removing when there is only one valid cluster",
+		"Removing when there is only one valid cluster": {
 			validClusters: clusters[:1],
 			serviceAccts: []*storage.ServiceAccount{
 				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
@@ -2192,8 +2189,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			},
 			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount4),
 		},
-		{
-			name:          "Removing when there are no valid clusters",
+		"Removing when there are no valid clusters": {
 			validClusters: []string{},
 			serviceAccts: []*storage.ServiceAccount{
 				{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]},
@@ -2203,8 +2199,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			},
 			expectedSADeletions: set.NewFrozenStringSet(fixtureconsts.ServiceAccount1, fixtureconsts.ServiceAccount2, fixtureconsts.ServiceAccount3, fixtureconsts.ServiceAccount4),
 		},
-		{
-			name:          "remove K8SRole that belong to deleted clusters",
+		"remove K8SRole that belong to deleted clusters": {
 			validClusters: clusters,
 			roles: []*storage.K8SRole{
 				{Id: fixtureconsts.Role1, ClusterId: clusters[0]},
@@ -2214,8 +2209,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			},
 			expectedRoleDeletions: set.NewFrozenStringSet(fixtureconsts.Role2, fixtureconsts.Role4),
 		},
-		{
-			name:          "remove K8SRoleBinding that belong to deleted clusters",
+		"remove K8SRoleBinding that belong to deleted clusters": {
 			validClusters: clusters,
 			bindings: []*storage.K8SRoleBinding{
 				{Id: fixtureconsts.RoleBinding1, ClusterId: clusters[0]},
@@ -2225,8 +2219,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			},
 			expectedRBDeletions: set.NewFrozenStringSet(fixtureconsts.RoleBinding2, fixtureconsts.RoleBinding4),
 		},
-		{
-			name:                  "Don't remove anything if all belong to valid cluster",
+		"Don't remove anything if all belong to valid cluster": {
 			validClusters:         clusters,
 			serviceAccts:          []*storage.ServiceAccount{{Id: fixtureconsts.ServiceAccount1, ClusterId: clusters[0]}},
 			roles:                 []*storage.K8SRole{{Id: fixtureconsts.Role1, ClusterId: clusters[0]}},
@@ -2235,8 +2228,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			expectedRoleDeletions: set.NewFrozenStringSet(),
 			expectedRBDeletions:   set.NewFrozenStringSet(),
 		},
-		{
-			name:                  "Remove all if they belong to a deleted cluster",
+		"Remove all if they belong to a deleted cluster": {
 			validClusters:         clusters,
 			serviceAccts:          []*storage.ServiceAccount{{Id: fixtureconsts.ServiceAccount1, ClusterId: fixtureconsts.ClusterFake1}},
 			roles:                 []*storage.K8SRole{{Id: fixtureconsts.Role1, ClusterId: fixtureconsts.ClusterFake1}},
@@ -2247,11 +2239,16 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 		},
 	}
 
-	for _, c := range cases {
-		s.T().Run(c.name, func(t *testing.T) {
-			serviceAccounts := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
-			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			db := pgtest.ForT(t).DB
+			parents := clusterPostgres.New(db)
+			for _, id := range c.validClusters {
+				require.NoError(t, parents.Upsert(pruningCtx, &storage.Cluster{Id: id, Name: id}))
+			}
+			serviceAccounts := serviceAccountDataStore.GetTestPostgresDataStore(t, db)
+			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, db)
+			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, db)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))
@@ -2269,12 +2266,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 				serviceAccts:    serviceAccounts,
 				k8sRoles:        k8sRoles,
 				k8sRoleBindings: k8sRoleBindings,
+				postgres:        db,
 			}
 
-			q := clusterIDsToNegationQuery(set.NewFrozenStringSet(c.validClusters...))
-			gc.removeOrphanedServiceAccounts(q)
-			gc.removeOrphanedK8SRoles(q)
-			gc.removeOrphanedK8SRoleBindings(q)
+			gc.removeOrphanedServiceAccounts()
+			gc.removeOrphanedK8SRoles()
+			gc.removeOrphanedK8SRoleBindings()
 
 			for _, sa := range c.serviceAccts {
 				_, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, sa.GetId())
