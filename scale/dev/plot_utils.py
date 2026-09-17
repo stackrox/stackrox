@@ -56,10 +56,25 @@ def determine_baseline_timestamp(results_dir, component):
         Baseline timestamp in milliseconds, or None if cannot be determined
 
     Logic:
+        - Berserker runs: use the recorded berserker-ready timestamp for every
+          component. Berserker is deployed last (all upstream components are
+          already up), so its ready time is t=0 for the whole pipeline.
         - For sensor: use earliest timestamp across all sensor metric files
         - For central/central-db: use timestamp when deployments >= 100
           (or 90% of max if never reaches 100)
     """
+    # Berserker runs record a single pipeline-wide t=0 (see
+    # perf-test-file-activity-berserker.sh). When present, it applies to all
+    # components; fall through to the fake-workload logic otherwise.
+    berserker_ts_file = os.path.join(results_dir, 'berserker_ready_timestamp.txt')
+    if os.path.exists(berserker_ts_file):
+        with open(berserker_ts_file, 'r') as f:
+            content = f.read().strip()
+        try:
+            return int(content)
+        except ValueError:
+            pass
+
     if component == 'sensor':
         # For sensor, use earliest timestamp across all sensor metric files
         sensor_files = [

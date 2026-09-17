@@ -89,6 +89,12 @@ kubectl -n stackrox delete deployment scanner-db || true
 echo "Deploying berserker workload: ${workload_name}"
 start_time=$(date +%s)
 "${DIR}/deploy-berserker.sh" "${workload_name}" "stackrox"
+# Record when berserker is up (epoch ms, matching the Prometheus metric
+# timestamps). deploy-berserker.sh blocks on the DaemonSet rollout, so control
+# returns here only once berserker is ready. Berserker is deployed last (central,
+# sensor and collector are already up), so this single timestamp is t=0 for every
+# component in the pipeline. Consumed by determine_baseline_timestamp in plot_utils.py.
+date +%s%3N > "${results_dir}/berserker_ready_timestamp.txt"
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Berserker deployment completed in ${duration} seconds."
