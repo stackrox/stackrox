@@ -40,8 +40,7 @@ ensure_writable_bash_env() {
 # OpenShift CI cannot read /etc/initial-bash.env (random user). Switch BASH_ENV
 # to a writable file now, before make and status.sh start more bash processes.
 if is_CI; then
-    # A failure must not stop the rest of this file from loading.
-    ensure_writable_bash_env || true
+    ensure_writable_bash_env
 fi
 
 ensure_CI() {
