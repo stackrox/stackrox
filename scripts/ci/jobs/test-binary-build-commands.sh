@@ -7,7 +7,14 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 make_test_bin() {
-    info "Making test-bin (lightweight: binaries extracted from images or built on demand at runtime)"
+    info "Making test-bin"
+
+    if command -v roxctl &>/dev/null; then
+        info "roxctl already available: $(command -v roxctl)"
+    else
+        make cli_host-arch upgrader
+        make cli-install
+    fi
 }
 
 make_test_bin "$*"
