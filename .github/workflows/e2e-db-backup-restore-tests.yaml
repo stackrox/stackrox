@@ -36,6 +36,12 @@ jobs:
       CI_JOB_NAME: gke-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
+<<<<<<< HEAD
+=======
+      STORAGE: pvc
+      STORAGE_CLASS: faster
+      SCANNER_V4_DB_STORAGE_CLASS: stackrox-gke-ssd
+>>>>>>> 2856ee3580 (Set *storage_class for GKE GHA tests)
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
