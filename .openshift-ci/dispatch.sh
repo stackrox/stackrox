@@ -66,6 +66,7 @@ case "$ci_job" in
 esac
 
 if [[ "$ci_job" =~ e2e|upgrade ]]; then
+    ensure_roxctl_from_image
     handle_nightly_binary_version_mismatch
 fi
 

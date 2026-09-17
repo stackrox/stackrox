@@ -7,10 +7,8 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 make_test_bin() {
-    info "Making test-bin"
+    info "Making test-bin (lightweight: roxctl extracted from image at runtime)"
 
-    make cli_host-arch upgrader
-    make cli-install
     (cd ./tools/check-workflow-run && go install .)
 }
 

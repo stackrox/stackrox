@@ -152,6 +152,34 @@ create_exit_trap() {
     trap ci_exit_trap EXIT
 }
 
+ensure_roxctl_from_image() {
+    if command -v roxctl &>/dev/null; then
+        info "roxctl already available: $(command -v roxctl) version=$(roxctl version 2>/dev/null || echo unknown)"
+        return 0
+    fi
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+    local roxctl_image="quay.io/stackrox-io/roxctl:${tag}"
+
+    info "Extracting roxctl from ${roxctl_image} (skipping local compilation)"
+
+    local id
+    if ! id="$(docker create "${roxctl_image}" 2>/dev/null)"; then
+        info "docker create failed — falling back to building roxctl from source"
+        make cli_host-arch
+        make cli-install
+        return $?
+    fi
+
+    local dest="${GOPATH:-${HOME}/go}/bin/roxctl"
+    mkdir -p "$(dirname "$dest")"
+    docker cp "${id}:/roxctl" "${dest}"
+    docker rm "${id}" >/dev/null
+    chmod +x "${dest}"
+    info "roxctl installed to ${dest} version=$(roxctl version 2>/dev/null || echo unknown)"
+}
+
 setup_deployment_env() {
     info "Setting up the deployment environment"
 
