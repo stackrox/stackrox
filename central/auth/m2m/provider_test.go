@@ -19,7 +19,7 @@ func TestNewProvider(t *testing.T) {
 		Type: storage.AuthMachineToMachineConfig_GENERIC,
 	}
 	mockRoleMapper := permissionsMocks.NewMockRoleMapper(mockCtrl)
-	provider := newProviderFromConfig(config, mockRoleMapper)
+	provider := newProviderFromConfigData(config.GetId(), config.GetType().String(), mockRoleMapper)
 	assert.NotNil(t, provider)
 	assert.Equal(t, cfgId, provider.ID())
 	providerName := fmt.Sprintf("%s-%s", storage.AuthMachineToMachineConfig_GENERIC.String(), cfgId)

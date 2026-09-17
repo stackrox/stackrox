@@ -21,32 +21,54 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type roleMapper struct {
-	config        *storage.AuthMachineToMachineConfig
-	configRegexps []*regexp.Regexp
-	roleDS        roleDataStore.DataStore
+type parsedMapping struct {
+	Key        string
+	Expression *regexp.Regexp
+	Role       string
 }
 
-func newRoleMapper(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore,
-	configRegExps []*regexp.Regexp) *roleMapper {
+type roleMapper struct {
+	mappings []parsedMapping
+	roleDS   roleDataStore.DataStore
+}
+
+func newRoleMapperFromMappings(
+	mappings []*storage.AuthMachineToMachineConfig_Mapping,
+	roleDS roleDataStore.DataStore) *roleMapper {
+	roleMappings := parseMappings(mappings)
 	return &roleMapper{
-		config:        config,
-		configRegexps: configRegExps,
-		roleDS:        roleDS,
+		mappings: roleMappings,
+		roleDS:   roleDS,
 	}
 }
 
-func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
-	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.config.GetMappings(), r.configRegexps)
+func parseMappings(mappings []*storage.AuthMachineToMachineConfig_Mapping) []parsedMapping {
+	result := make([]parsedMapping, 0, len(mappings))
+	for _, m := range mappings {
+		result = append(result, parsedMapping{
+			Key:        m.GetKey(),
+			Expression: regexp.MustCompile(m.GetValueExpression()),
+			Role:       m.GetRole(),
+		})
+	}
+	return result
 }
 
-func resolveRolesForClaims(ctx context.Context, claims map[string][]string, roleDS roleDataStore.DataStore,
-	mappings []*storage.AuthMachineToMachineConfig_Mapping, expressions []*regexp.Regexp) ([]permissions.ResolvedRole, error) {
+func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
+	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.mappings)
+}
+
+func resolveRolesForClaims(
+	ctx context.Context,
+	claims map[string][]string,
+	roleDS roleDataStore.DataStore,
+	mappings []parsedMapping,
+) ([]permissions.ResolvedRole, error) {
 	rolesForUser := set.NewStringSet()
 
-	for i, mapping := range mappings {
-		if anyValueMatches(expressions[i], claims[mapping.GetKey()]) {
-			rolesForUser.Add(mapping.GetRole())
+	for _, mapping := range mappings {
+		if anyValueMatches(mapping.Expression, claims[mapping.Key]) {
+			rolesForUser.Add(mapping.Role)
 		}
 	}
 

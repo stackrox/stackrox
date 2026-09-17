@@ -79,8 +79,9 @@ func TestResolveRolesForClaims(t *testing.T) {
 	for roleName, resolvedRole := range roles {
 		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
 	}
+	configMappings := parseMappings(config.GetMappings())
 
-	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, config.GetMappings(), createRegexp(config))
+	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, configMappings)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Admin"], roles["Analyst"], roles["roxctl"]})
 }
@@ -107,8 +108,9 @@ func TestResolveRolesForClaimsList(t *testing.T) {
 	for roleName, resolvedRole := range roles {
 		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
 	}
+	configMappings := parseMappings(config.GetMappings())
 
-	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, config.GetMappings(), createRegexp(config))
+	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, configMappings)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Analyst"]})
 }

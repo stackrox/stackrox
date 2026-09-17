@@ -12,11 +12,7 @@ func Test_newClaimExtractorFromConfig(t *testing.T) {
 	testNotImplementedErr := errox.NotImplemented
 
 	t.Run("GitHub Actions", func(t *testing.T) {
-		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
-			Id:     "id1",
-			Issuer: "test",
-			Type:   storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-		})
+		e := newClaimExtractorForConfigType(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
 				return testNotImplementedErr
@@ -42,10 +38,7 @@ func Test_newClaimExtractorFromConfig(t *testing.T) {
 	})
 
 	t.Run("Generic", func(t *testing.T) {
-		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
-			Id:   "id1",
-			Type: storage.AuthMachineToMachineConfig_GENERIC,
-		})
+		e := newClaimExtractorForConfigType(storage.AuthMachineToMachineConfig_GENERIC)
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
 				return testNotImplementedErr

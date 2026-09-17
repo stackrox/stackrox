@@ -190,6 +190,8 @@ func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return nil, false
 	}
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	return d.set.GetTokenExchanger(issuer)
 }
 
