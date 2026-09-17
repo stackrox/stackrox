@@ -47,8 +47,12 @@ jobs:
 =======
       STORAGE: pvc
       STORAGE_CLASS: faster
+<<<<<<< HEAD
       SCANNER_V4_DB_STORAGE_CLASS: stackrox-gke-ssd
 >>>>>>> 6e32b6f249 (Set *storage_class for GKE GHA tests)
+=======
+      SCANNER_V4_DB_STORAGE_CLASS: faster
+>>>>>>> f94f4afb19 (Flip nongroovy tests to `faster` class)
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 361
