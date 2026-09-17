@@ -1640,7 +1640,8 @@ wait_for_scanner_V4() {
         info "Listing available storage classes:"
         kubectl describe storageclasses 2>/dev/null || true
 
-        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-3600}
+        # (todo) re-visit the default timeout of 2h and make vuln loading more performant
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}
         info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 
