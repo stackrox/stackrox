@@ -39,7 +39,10 @@ export ROX_SCANNER_V4=false
 kubectl delete ns stackrox || true
 
 results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_policy_${test_with_policy}"
-rm -rf "$results_dir" || mkdir -p "$results_dir"
+# Start from a clean results dir. rm -rf succeeds even when the dir is absent,
+# so mkdir must run unconditionally (not as an || fallback) to ensure it exists.
+rm -rf "$results_dir"
+mkdir -p "$results_dir"
 
 script_start_time=$(date +%s)
 
