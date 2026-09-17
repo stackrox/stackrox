@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls/verifier/mocks"
@@ -152,6 +153,49 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, string(msg), "go_gc_duration_seconds")
 	}, 1*time.Second, 50*time.Millisecond)
+}
+
+func TestRegisterAdditionalMetric_RegistersCollector(t *testing.T) {
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
+	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_registers_collector"})
+
+	server.RegisterAdditionalMetric("my-metric", counter)
+
+	got := server.GetMetric("my-metric")
+	require.NotNil(t, got)
+	assert.Same(t, counter, *got)
+}
+
+func TestRegisterAdditionalMetric_DuplicateNameKeepsFirst(t *testing.T) {
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
+	first := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_duplicate_name_keeps_first_a"})
+	second := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_duplicate_name_keeps_first_b"})
+
+	server.RegisterAdditionalMetric("my-metric", first)
+	server.RegisterAdditionalMetric("my-metric", second)
+
+	got := server.GetMetric("my-metric")
+	require.NotNil(t, got)
+	assert.Same(t, first, *got)
+}
+
+func TestGetMetric_UnknownNameReturnsNil(t *testing.T) {
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
+
+	assert.Nil(t, server.GetMetric("does-not-exist"))
+}
+
+func TestRegisterAdditionalMetric_ZeroValueServerLazilyInitializes(t *testing.T) {
+	server := &Server{}
+
+	assert.Nil(t, server.GetMetric("my-metric"))
+
+	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_metric_zero_value_server_lazily_initializes"})
+	server.RegisterAdditionalMetric("my-metric", counter)
+
+	got := server.GetMetric("my-metric")
+	require.NotNil(t, got)
+	assert.Same(t, counter, *got)
 }
 
 func fakeTLSConfig() (*tls.Config, error) {
