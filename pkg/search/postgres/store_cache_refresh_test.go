@@ -162,6 +162,35 @@ WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '
 	require.Equal(t, "committed", got.GetName())
 }
 
+func TestCacheCallerTransactionDefersTrustUntilFinish(t *testing.T) {
+	db := pgtest.ForT(t)
+	storeDB := pgtest.ForTCustomPool(t, db.Config().ConnConfig.Database)
+	storeDB = WithCacheCoordination(cachedStoreCtx, storeDB)
+	t.Cleanup(storeDB.Close)
+	store := retainedStore(t, newCachedStore(&pgtest.TestPostgres{DB: storeDB}))
+	require.NoError(t, store.Upsert(cachedStoreCtx, newCachedTestSingleKeyStruct("row", "old", 0)))
+
+	tx, err := db.Begin(cachedStoreCtx)
+	require.NoError(t, err)
+	txCtx := postgres.ContextWithTx(cachedStoreCtx, tx)
+	require.NoError(t, store.Upsert(txCtx, newCachedTestSingleKeyStruct("row", "tentative", 1)))
+	require.False(t, store.CacheEnabled())
+
+	// A full scan while the caller transaction is still open must not
+	// re-trust its pre-commit snapshot.
+	require.Error(t, store.refreshCache(cachedStoreCtx, nil, true))
+	require.False(t, store.CacheEnabled())
+
+	require.NoError(t, tx.Commit(cachedStoreCtx))
+	require.Eventually(t, func() bool {
+		if !store.CacheEnabled() {
+			return false
+		}
+		got, found, err := store.Get(cachedStoreCtx, "row")
+		return err == nil && found && got.GetName() == "tentative"
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
 func TestCacheUntrustedAndTransactionReadShortcuts(t *testing.T) {
 	for mode, prepare := range map[string]func(*testing.T, *pgtest.TestPostgres, *retainedTestStore) context.Context{
 		"untrusted": func(t *testing.T, db *pgtest.TestPostgres, store *retainedTestStore) context.Context {

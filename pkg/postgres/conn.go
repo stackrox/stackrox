@@ -38,6 +38,7 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
+			lifecycle:  tx.lifecycle,
 		}
 		return t, ContextWithTx(ctx, t), nil
 	}
@@ -52,6 +53,7 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 	t := &Tx{
 		Tx:         tx,
 		cancelFunc: cancel,
+		lifecycle:  &txLifecycle{},
 	}
 	return t, ContextWithTx(ctx, t), nil
 }

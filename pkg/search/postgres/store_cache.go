@@ -65,11 +65,14 @@ func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	// Initial population of the cache. Make sure it is in sync with the DB.
 	err := store.initializeCache(db)
 	if err != nil {
-		// Failed to populate the cache, return the store connected to the DB
-		// in order to avoid serving data from a cache not consistent with
-		// the underlying database.
-		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
-		return underlyingStore
+		if cacheCoordinatorFor(db) == nil {
+			// Failed to populate an uncoordinated cache, return the store
+			// connected to the DB in order to avoid serving stale data.
+			log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
+			return underlyingStore
+		}
+		log.Errorf("Failed to initialize coordinated store cache; retrying: %v", err)
+		store.retryCacheInitialization(db)
 	}
 	return store
 }
@@ -116,11 +119,14 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	// Initial population of the cache. Make sure it is in sync with the DB.
 	err := store.initializeCache(db)
 	if err != nil {
-		// Failed to populate the cache, return the store connected to the DB
-		// in order to avoid serving data from a cache not consistent with
-		// the underlying database.
-		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
-		return underlyingStore
+		if cacheCoordinatorFor(db) == nil {
+			// Failed to populate an uncoordinated cache, return the store
+			// connected to the DB in order to avoid serving stale data.
+			log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
+			return underlyingStore
+		}
+		log.Errorf("Failed to initialize coordinated store cache; retrying: %v", err)
+		store.retryCacheInitialization(db)
 	}
 	return store
 }
@@ -142,6 +148,7 @@ type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	observerLock                  sync.Mutex
 	observers                     map[*cacheObserver[PT]]struct{}
 	observerCount                 atomic.Int32
+	pendingTransactions           atomic.Int32
 	removed                       []PT
 }
 

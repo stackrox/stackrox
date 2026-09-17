@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -47,13 +48,38 @@ func (c *cachedStore[T, PT]) initializeCache(db postgres.DB) error {
 	if coordinator == nil {
 		return c.populateCache()
 	}
-	c.registration = &cacheRegistration{
-		coordinator: coordinator, keys: make(map[string]struct{}), wake: make(chan struct{}, 1),
-		invalidate: c.invalidateCache, refresh: c.refreshCache, deliver: c.deliverCacheChanges,
+	if c.registration == nil {
+		c.registration = &cacheRegistration{
+			coordinator: coordinator, keys: make(map[string]struct{}), wake: make(chan struct{}, 1),
+			invalidate: c.invalidateCache, refresh: c.refreshCache, deliver: c.deliverCacheChanges,
+		}
 	}
 	ctx, cancel := context.WithTimeout(coordinator.ctx, cacheSetupTimeout)
 	defer cancel()
 	return coordinator.register(ctx, c.schema.Table, c.registration)
+}
+
+func (c *cachedStore[T, PT]) retryCacheInitialization(db postgres.DB) {
+	coordinator := cacheCoordinatorFor(db)
+	if coordinator == nil {
+		return
+	}
+	go func() {
+		ticker := time.NewTicker(cacheRetryInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-coordinator.ctx.Done():
+				return
+			case <-ticker.C:
+				if err := c.initializeCache(db); err == nil {
+					return
+				} else {
+					log.Errorf("Retrying coordinated store cache initialization: %v", err)
+				}
+			}
+		}
+	}()
 }
 
 func (c *cachedStore[T, PT]) invalidateCache() {
@@ -72,14 +98,16 @@ func (c *cachedStore[T, PT]) useCache(ctx context.Context) bool {
 // needed by an ordinary writer holding the gate. They never publish tentative
 // state. A second invalidation prevents an overlapping scan restoring trust.
 func (c *cachedStore[T, PT]) beginMutation(ctx context.Context) func() {
-	if postgres.HasTxInContext(ctx) {
+	if tx, ok := postgres.TxFromContext(ctx); ok {
+		c.pendingTransactions.Add(1)
 		c.invalidateCache()
-		return func() {
-			c.invalidateCache()
+		tx.AfterFinish(func() {
+			c.pendingTransactions.Add(-1)
 			if c.registration != nil {
 				c.registration.enqueue(nil, true)
 			}
-		}
+		})
+		return c.invalidateCache
 	}
 	c.mutationGate.RLock()
 	return c.mutationGate.RUnlock
@@ -160,7 +188,7 @@ func (c *cachedStore[T, PT]) refreshCache(ctx context.Context, keys []string, fu
 		}
 		c.cache = next
 		c.fullVersion++
-		c.trusted = c.generation == generation && connected
+		c.trusted = c.generation == generation && connected && c.pendingTransactions.Load() == 0
 		if !c.trusted {
 			return errors.New("cache invalidated during full reconciliation")
 		}

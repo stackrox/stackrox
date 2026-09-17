@@ -161,6 +161,11 @@ func (c *cacheCoordinator) register(ctx context.Context, tableName string, r *ca
 		return ctx.Err()
 	}
 	if table.err != nil {
+		concurrency.WithLock(&c.mu, func() {
+			if c.tables[tableName] == table {
+				delete(c.tables, tableName)
+			}
+		})
 		return table.err
 	}
 	concurrency.WithLock(&c.mu, func() { table.stores = append(table.stores, r) })

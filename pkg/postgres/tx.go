@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -32,6 +33,53 @@ type Tx struct {
 	pgx.Tx
 	cancelFunc context.CancelFunc
 	mode       txMode
+	lifecycle  *txLifecycle
+}
+
+type txLifecycle struct {
+	mu        sync.Mutex
+	finished  bool
+	callbacks []func()
+}
+
+func (l *txLifecycle) afterFinish(fn func()) {
+	if fn == nil {
+		return
+	}
+	l.mu.Lock()
+	if !l.finished {
+		l.callbacks = append(l.callbacks, fn)
+		l.mu.Unlock()
+		return
+	}
+	l.mu.Unlock()
+	fn()
+}
+
+func (l *txLifecycle) finish() {
+	l.mu.Lock()
+	if l.finished {
+		l.mu.Unlock()
+		return
+	}
+	l.finished = true
+	callbacks := l.callbacks
+	l.callbacks = nil
+	l.mu.Unlock()
+	for _, callback := range callbacks {
+		callback()
+	}
+}
+
+// AfterFinish registers a callback invoked once the outer transaction commits
+// or rolls back. It is intended for state maintained outside PostgreSQL, such
+// as retained caches, that must not be refreshed before the transaction ends.
+func (t *Tx) AfterFinish(fn func()) {
+	if t.lifecycle == nil {
+		fn()
+		return
+	}
+	t.lifecycle.afterFinish(fn)
 }
 
 // Exec wraps pgx.Tx Exec
@@ -78,7 +126,13 @@ func (t *Tx) Commit(ctx context.Context) error {
 
 	if err := t.Tx.Commit(ctx); err != nil {
 		incQueryErrors("commit", err)
+		if t.lifecycle != nil {
+			t.lifecycle.finish()
+		}
 		return err
+	}
+	if t.lifecycle != nil {
+		t.lifecycle.finish()
 	}
 	return nil
 }
@@ -100,10 +154,19 @@ func (t *Tx) Rollback(ctx context.Context) error {
 			// If this is an outer tx, the tx may have been rolled back
 			// in its inner tx, so log and ignore this error
 			log.Warnf("Failed to rollback outer tx: %v", err)
+			if t.lifecycle != nil {
+				t.lifecycle.finish()
+			}
 			return nil
 		}
 		incQueryErrors("rollback", err)
+		if t.lifecycle != nil {
+			t.lifecycle.finish()
+		}
 		return err
+	}
+	if t.lifecycle != nil {
+		t.lifecycle.finish()
 	}
 	return nil
 }
@@ -130,6 +193,7 @@ func GetTransaction(ctx context.Context, db DB) (*Tx, context.Context, error) {
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
+			lifecycle:  tx.lifecycle,
 		}, ctx, nil
 	}
 
