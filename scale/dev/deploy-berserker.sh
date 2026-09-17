@@ -23,7 +23,6 @@ if [[ -z "${WORKLOAD_NAME}" ]]; then
 fi
 
 WORKLOAD_FILE="${REPO_ROOT}/scale/berserker/workloads/${WORKLOAD_NAME}.ber"
-CONFIGMAP_TEMPLATE="${REPO_ROOT}/scale/berserker/deployments/berserker-configmap-template.yaml"
 DAEMONSET_TEMPLATE="${REPO_ROOT}/scale/berserker/deployments/berserker-daemonset-template.yaml"
 
 echo "================================================================"
@@ -39,17 +38,14 @@ if [[ ! -f "${WORKLOAD_FILE}" ]]; then
     exit 1
 fi
 
-# Validate templates exist
-if [[ ! -f "${CONFIGMAP_TEMPLATE}" || ! -f "${DAEMONSET_TEMPLATE}" ]]; then
-    echo "Error: Template files not found"
-    echo "Expected: ${CONFIGMAP_TEMPLATE}"
+# Validate template exists
+if [[ ! -f "${DAEMONSET_TEMPLATE}" ]]; then
+    echo "Error: Template file not found"
     echo "Expected: ${DAEMONSET_TEMPLATE}"
     exit 1
 fi
 
-# Read workload file content
-echo "Reading workload file: ${WORKLOAD_FILE}"
-WORKLOAD_CONTENT=$(cat "${WORKLOAD_FILE}")
+echo "Using workload file: ${WORKLOAD_FILE}"
 
 # Delete existing resources if they exist (idempotent)
 echo "Cleaning up existing resources (if any)..."
@@ -63,17 +59,13 @@ while kubectl get pods -n "${NAMESPACE}" -l "app=berserker-file-activity-${WORKL
     sleep 2
 done
 
-# Create ConfigMap
+# Create ConfigMap directly from the workload file. --from-file safely handles
+# arbitrary multi-line workload content, avoiding fragile sed/YAML templating.
 echo "Creating ConfigMap..."
-# We need to indent the workload content by 4 spaces for proper YAML formatting
-INDENTED_WORKLOAD=$(echo "${WORKLOAD_CONTENT}" | sed 's/^/    /')
-sed -e "s/WORKLOAD_NAME/${WORKLOAD_NAME}/g" \
-    -e "s/NAMESPACE/${NAMESPACE}/g" \
-    "${CONFIGMAP_TEMPLATE}" | \
-    sed "/WORKLOAD_CONTENT/d" | \
-    sed "/workload.ber: |/a\\
-${INDENTED_WORKLOAD}" | \
-    kubectl apply -f -
+kubectl create configmap "berserker-file-activity-config-${WORKLOAD_NAME}" \
+    -n "${NAMESPACE}" \
+    --from-file=workload.ber="${WORKLOAD_FILE}" \
+    --dry-run=client -o yaml | kubectl apply -f -
 
 # Create DaemonSet
 echo "Creating DaemonSet..."

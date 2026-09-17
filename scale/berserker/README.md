@@ -20,8 +20,7 @@ scale/berserker/
 │   ├── file-activity-2500.ber         # 2500 events/sec (rate=416.67 per worker)
 │   └── file-activity-5000.ber         # 5000 events/sec (rate=833.33 per worker)
 └── deployments/                        # Kubernetes deployment templates
-    ├── berserker-configmap-template.yaml
-    └── berserker-daemonset-template.yaml
+    └── berserker-daemonset-template.yaml   # ConfigMap is created from the .ber file via kubectl --from-file
 ```
 
 ## Workload Files
