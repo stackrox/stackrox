@@ -1,6 +1,5 @@
-import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
+import { all, call, put, select, takeLatest } from 'redux-saga/effects';
 import {
-    deleteRuleGroup as serviceDeleteRuleGroup,
     fetchGroups as serviceFetchGroups,
     getDefaultGroup as serviceGetDefaultGroup,
     updateOrAddGroup as serviceUpdateOrAddGroup,
@@ -66,28 +65,9 @@ function* saveRuleGroup(action) {
     }
 }
 
-function* deleteRuleGroup(action) {
-    const { group } = action;
-    try {
-        yield call(serviceDeleteRuleGroup, group);
-        yield call(getRuleGroups);
-    } catch (error) {
-        Raven.captureException(error);
-    }
-}
-
-function* watchSaveRuleGroup() {
-    yield takeLatest(types.SAVE_RULE_GROUP, saveRuleGroup);
-}
-
-function* watchDeleteRuleGroup() {
-    yield takeLatest(types.DELETE_RULE_GROUP, deleteRuleGroup);
-}
-
 export default function* groups() {
     yield all([
         takeLatest(types.FETCH_RULE_GROUPS.REQUEST, getRuleGroups),
-        fork(watchSaveRuleGroup),
-        fork(watchDeleteRuleGroup),
+        takeLatest(types.SAVE_RULE_GROUP, saveRuleGroup),
     ]);
 }
