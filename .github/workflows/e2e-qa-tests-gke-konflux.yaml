@@ -35,4 +35,6 @@ jobs:
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
         USE_KONFLUX_IMAGES=true
+        STORAGE_CLASS=faster
+        SCANNER_V4_DB_STORAGE_CLASS=stackrox-gke-ssd
     secrets: inherit
