@@ -7,9 +7,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 make_test_bin() {
-    info "Making test-bin (lightweight: roxctl extracted from image at runtime)"
-
-    (cd ./tools/check-workflow-run && go install .)
+    info "Making test-bin (lightweight: binaries extracted from images or built on demand at runtime)"
 }
 
 make_test_bin "$*"

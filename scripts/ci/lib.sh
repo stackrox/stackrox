@@ -641,7 +641,11 @@ poll_for_system_test_images() {
         local commit_sha="$(get_commit_sha)"
         local build_details="Build results are unknown"
         local build_results
-        if build_results="$(check-workflow-run --workflow=build.yaml --head-SHA="${commit_sha}")"; then
+        if ! command -v check-workflow-run &>/dev/null; then
+            info "Building check-workflow-run on demand"
+            (cd ./tools/check-workflow-run && go install .) || true
+        fi
+        if command -v check-workflow-run &>/dev/null && build_results="$(check-workflow-run --workflow=build.yaml --head-SHA="${commit_sha}")"; then
             build_details="GitHub Actions workflow status for build.yaml:
 $build_results"
         fi
