@@ -6,6 +6,7 @@ const cypressVite = require('cypress-vite');
 // which is not supported in Vite. Instead, we resolve the path to the file using CommonJS require in the cypress config
 // and make the path available at test runtime when injecting the axe core.
 const axeCorePath = require.resolve('axe-core/axe.min.js');
+const { getPublicEnv } = require('./cypress/helpers/getPublicEnv');
 
 /*
  * The helper function intended to provide automatic code completion for configuration in many popular code editors
@@ -16,6 +17,7 @@ const axeCorePath = require.resolve('axe-core/axe.min.js');
  */
 
 module.exports = {
+    allowCypressEnv: false,
     chromeWebSecurity: false, // Browser options
     defaultCommandTimeout: 8000, // Timeouts options
     numTestsKeptInMemory: 0, // Global options
@@ -37,7 +39,11 @@ module.exports = {
         viewportWidth: 1440, // Viewport options
         setupNodeEvents: (on, config) => {
             // eslint-disable-next-line no-param-reassign
-            config.env.AXE_CORE_PATH = axeCorePath;
+            config.expose = {
+                ...config.expose,
+                ...getPublicEnv(config.env),
+                AXE_CORE_PATH: axeCorePath,
+            };
             on('task', {
                 beforeSuite(spec) {
                     // eslint-disable-next-line no-console
