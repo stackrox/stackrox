@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"slices"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -62,7 +63,7 @@ func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	err := store.populateCache()
+	err := store.initializeCache(db)
 	if err != nil {
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
@@ -113,7 +114,7 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	err := store.populateCache()
+	err := store.initializeCache(db)
 	if err != nil {
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
@@ -133,19 +134,37 @@ type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	underlyingStore               Store[T, PT]
 	cache                         map[string]PT
 	cacheLock                     sync.RWMutex
+	mutationGate                  sync.RWMutex
+	trusted                       bool
+	generation                    uint64
+	fullVersion                   uint64
+	registration                  *cacheRegistration
+	observerLock                  sync.Mutex
+	observers                     map[*cacheObserver[PT]]struct{}
+	observerCount                 atomic.Int32
+	removed                       []PT
 }
 
 // CacheEnabled reports whether secondary indexes can use this store's cache mode.
 func (c *cachedStore[T, PT]) CacheEnabled() bool {
-	return true
+	if c.registration != nil && !c.registration.coordinator.isConnected() {
+		return false
+	}
+	return concurrency.WithRLock1(&c.cacheLock, func() bool { return c.trusted })
 }
 
 // Upsert saves the current state of an object in storage.
 func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
+	defer c.beginMutation(ctx)()
 	err := c.underlyingStore.Upsert(ctx, obj)
 	if err != nil {
+		c.mutationFailed()
 		return err
 	}
+	if postgres.HasTxInContext(ctx) {
+		return nil
+	}
+	defer c.signalObservers()
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
@@ -156,10 +175,16 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
+	defer c.beginMutation(ctx)()
 	err := c.underlyingStore.UpsertMany(ctx, objs)
 	if err != nil {
+		c.mutationFailed()
 		return err
 	}
+	if postgres.HasTxInContext(ctx) {
+		return nil
+	}
+	defer c.signalObservers()
 	defer c.setCacheOperationDurationTime(time.Now(), ops.UpdateMany)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
@@ -172,6 +197,11 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // Delete removes the object associated to the specified ID from the store.
 func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
+	if c.registration != nil || !c.useCache(ctx) {
+		_, err := c.deleteByQueryWithIDs(ctx, search.NewQueryBuilder().AddDocIDs(id).ProtoQuery())
+		return err
+	}
+	defer c.beginMutation(ctx)()
 	obj, found := concurrency.WithRLock2[PT, bool](&c.cacheLock, func() (PT, bool) {
 		obj, found := c.cache[id]
 		return obj, found
@@ -192,12 +222,13 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	}
 	err := c.underlyingStore.Delete(ctx, id)
 	if err != nil {
+		c.mutationFailed()
 		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	delete(c.cache, id)
+	c.removeFromCacheNoLock(id)
 	c.setCacheEntriesGauge()
 	return nil
 }
@@ -207,6 +238,11 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	if len(identifiers) == 0 {
 		return nil
 	}
+	if c.registration != nil || !c.useCache(ctx) {
+		_, err := c.deleteByQueryWithIDs(ctx, search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery())
+		return err
+	}
+	defer c.beginMutation(ctx)()
 	objects := make([]PT, 0, len(identifiers))
 	concurrency.WithRLock(&c.cacheLock, func() {
 		for _, identifier := range identifiers {
@@ -226,13 +262,14 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	}
 	err := c.underlyingStore.DeleteMany(ctx, filteredIDs)
 	if err != nil {
+		c.mutationFailed()
 		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	for _, id := range filteredIDs {
-		delete(c.cache, id)
+		c.removeFromCacheNoLock(id)
 	}
 	c.setCacheEntriesGauge()
 	return nil
@@ -252,6 +289,9 @@ func (c *cachedStore[T, PT]) PruneMany(ctx context.Context, identifiers []string
 
 // Exists tells whether the ID exists in the store.
 func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
+	if !c.useCache(ctx) {
+		return c.underlyingStore.Exists(ctx, id)
+	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Exists)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -266,7 +306,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 
 // Count returns the number of objects in the store matching the query.
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if checkScopeQueries(ctx, q) {
+	if c.useCache(ctx) && checkScopeQueries(ctx, q) {
 		return c.countFromCache(ctx)
 	}
 	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Count"}).Inc()
@@ -295,6 +335,9 @@ func (c *cachedStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.
 
 // Get returns the object, if it exists from the store.
 func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+	if !c.useCache(ctx) {
+		return c.underlyingStore.Get(ctx, id)
+	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Get)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -312,6 +355,9 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
+	if !c.useCache(ctx) {
+		return c.underlyingStore.GetMany(ctx, identifiers)
+	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetMany)
 	if len(identifiers) == 0 {
 		return nil, nil, nil
@@ -353,16 +399,31 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 
 // Walk iterates over all the objects in the store and applies the closure.
 func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
-	c.cacheLock.RLock()
-	defer c.cacheLock.RUnlock()
-	return c.walkCacheNoLock(ctx, func(obj PT) error {
-		return fn(obj.CloneVT())
+	if !c.useCache(ctx) {
+		return c.underlyingStore.Walk(ctx, fn)
+	}
+	objects := concurrency.WithRLock1(&c.cacheLock, func() []PT {
+		return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache))
 	})
+	for _, obj := range objects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if c.isReadAllowed(ctx, obj) {
+			if err := fn(obj.CloneVT()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // GetAllForSAC bypasses SAC filtering to build access scopes. Returned objects
 // are not cloned and must not be modified by callers.
-func (c *cachedStore[T, PT]) GetAllForSAC(_ context.Context) ([]PT, error) {
+func (c *cachedStore[T, PT]) GetAllForSAC(ctx context.Context) ([]PT, error) {
+	if !c.useCache(ctx) {
+		return c.underlyingStore.GetAllForSAC(ctx)
+	}
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache)), nil
@@ -409,15 +470,21 @@ func (c *cachedStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1
 
 // deleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
 func (c *cachedStore[T, PT]) deleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	defer c.beginMutation(ctx)()
 	identifiersToRemove, err := c.underlyingStore.DeleteByQueryWithIDs(ctx, query)
 	if err != nil {
+		c.mutationFailed()
 		return nil, err
 	}
+	if postgres.HasTxInContext(ctx) {
+		return identifiersToRemove, nil
+	}
+	defer c.signalObservers()
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	for _, id := range identifiersToRemove {
-		delete(c.cache, id)
+		c.removeFromCacheNoLock(id)
 	}
 	c.setCacheEntriesGauge()
 	return identifiersToRemove, nil
@@ -425,6 +492,9 @@ func (c *cachedStore[T, PT]) deleteByQueryWithIDs(ctx context.Context, query *v1
 
 // GetIDs returns all the IDs for the store.
 func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+	if !c.useCache(ctx) {
+		return c.underlyingStore.GetIDs(ctx)
+	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetAll)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -512,15 +582,7 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 func (c *cachedStore[T, PT]) populateCache() error {
 	timer := prometheus.NewTimer(cachePopulationDuration.WithLabelValues(c.schema.TypeName))
 	defer timer.ObserveDuration()
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
-	c.cache = make(map[string]PT)
-	err := c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
-		c.addToCacheNoLock(obj)
-		return nil
-	})
-	c.setCacheEntriesGauge()
-	return err
+	return c.refreshCache(context.Background(), nil, true)
 }
 
 func (c *cachedStore[T, PT]) setCacheEntriesGauge() {
@@ -528,5 +590,8 @@ func (c *cachedStore[T, PT]) setCacheEntriesGauge() {
 }
 
 func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {
+	if c.registration != nil && !c.trusted {
+		return
+	}
 	c.cache[c.pkGetter(obj)] = obj.CloneVT()
 }

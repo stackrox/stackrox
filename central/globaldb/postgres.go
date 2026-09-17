@@ -141,6 +141,11 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 // InitializePostgresWithPoolSize creates a global database instance with an overridden
 // connection pool size. If maxConns is 0, the default from the DSN is used.
 func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgres.DB {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		return initializePostgres(ctx, maxConns, func(db postgres.DB) postgres.DB {
+			return pgSearch.WithCacheCoordination(ctx, db)
+		})
+	}
 	return initializePostgres(ctx, maxConns, nil)
 }
 
