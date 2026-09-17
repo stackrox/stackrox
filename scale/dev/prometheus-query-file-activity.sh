@@ -95,6 +95,32 @@ mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
 echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
 echo "$mem_result" > "${output_file_prefix}_${container}_mem.txt"
 
+# Collector runs as a DaemonSet (one pod per node) with multiple containers:
+# collector, compliance, node-inventory, and fact (the file-activity monitor).
+# Collect CPU/mem per container, but only if the DaemonSet exists. Container
+# names are discovered from the DaemonSet so new ones (e.g. fact) are picked up
+# automatically. Metrics are summed across pods to report the cluster-wide total
+# per container (collector is spread over every node, like the berserker
+# workload); sum() is a no-op for the single-pod components above.
+if kubectl -n stackrox get daemonset collector > /dev/null 2>&1; then
+  collector_containers="$(kubectl -n stackrox get daemonset collector -o jsonpath='{.spec.template.spec.containers[*].name}')"
+  for container in $collector_containers; do
+    cpu_metric='sum(rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m]))'
+    mem_metric='sum(container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"})'
+    cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
+    mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
+    # Only save a file when the query actually returned data points.
+    if [[ -n "${cpu_result//[[:space:]]/}" ]]; then
+      echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
+    fi
+    if [[ -n "${mem_result//[[:space:]]/}" ]]; then
+      echo "$mem_result" > "${output_file_prefix}_${container}_mem.txt"
+    fi
+  done
+else
+  echo "Collector DaemonSet not found in namespace stackrox; skipping collector metrics."
+fi
+
 # Database table sizes - focus on tables relevant to file activity testing
 # File activity events may trigger alerts, so monitor alerts table
 # Also monitor deployments as file activity is associated with deployments
