@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { createRequire } from 'module';
 import { defineConfig } from 'vite';
 import { randomUUID } from 'crypto';
 
@@ -132,8 +133,12 @@ export default defineConfig(async () => {
             alias: {
                 ...getSrcAliases(),
                 // redoc's prebuilt bundle does require("yaml") without listing yaml.
-                // After dropping the unused 2.x direct dep, the remaining copy is nested 1.10.2.
-                yaml: path.resolve(__dirname, 'node_modules/swagger2openapi/node_modules/yaml'),
+                // Resolve as swagger2openapi would so a later hoist still works.
+                yaml: path.dirname(
+                    createRequire(
+                        path.resolve(__dirname, 'node_modules/swagger2openapi/package.json')
+                    ).resolve('yaml')
+                ),
                 // Mocks for Cypress component tests
                 // For example, the OpenShift Console SDK requires the Console environment to be present,
                 // which is not the case when running Cypress component tests.
