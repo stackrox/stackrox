@@ -1,26 +1,48 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
-# Generate plots for all file activity test results
-# Processes all batch size configurations (10, 50, 100, 250, 500)
+# Generate plots for all file activity test results.
+# Handles both the fake workload (default) and the berserker workload, which use
+# different result-dir prefixes and workload names but the same per-pair plotter.
+# Processes all batch sizes (10, 50, 100, 250, 500).
 
 base_results_dir=${1:-perf}
 num_sensors=${2:-1}
 run_time=${3:-10m}
-
-echo "Generating plots for all file activity test results..."
-echo "Base results dir: ${base_results_dir}"
+workload_type=${4:-fake}   # fake or berserker
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 # Batch sizes to process
 batch_sizes=(10 50 100 250 500)
 
-for batch in "${batch_sizes[@]}"; do
-    workload="file-activity-batch-${batch}"
+# Result-dir prefix differs between the two workloads.
+if [[ "$workload_type" == "berserker" ]]; then
+    dir_prefix="berserker_file_activity_results"
+else
+    dir_prefix="file_activity_results"
+fi
 
-    without_policy_dir="${base_results_dir}/file_activity_results_${num_sensors}_${run_time}_${workload}_policy_false"
-    with_policy_dir="${base_results_dir}/file_activity_results_${num_sensors}_${run_time}_${workload}_policy_true"
+# Map a batch size to its workload name. Berserker names by event rate
+# (batch * 10 events/sec); the fake workload names by batch.
+workload_name_for() {
+    local batch=$1
+    if [[ "$workload_type" == "berserker" ]]; then
+        echo "file-activity-$((batch * 10))"
+    else
+        echo "file-activity-batch-${batch}"
+    fi
+}
+
+echo "Generating plots for all file activity test results..."
+echo "Base results dir: ${base_results_dir}"
+echo "Workload type: ${workload_type}"
+
+for batch in "${batch_sizes[@]}"; do
+    workload="$(workload_name_for "$batch")"
+
+    without_policy_dir="${base_results_dir}/${dir_prefix}_${num_sensors}_${run_time}_${workload}_policy_false"
+    with_policy_dir="${base_results_dir}/${dir_prefix}_${num_sensors}_${run_time}_${workload}_policy_true"
     output_dir="${base_results_dir}/plots_${workload}"
 
     # Check if directories exist
@@ -57,7 +79,8 @@ echo "=========================================="
 echo ""
 echo "Summary of generated plot directories:"
 for batch in "${batch_sizes[@]}"; do
-    output_dir="${base_results_dir}/plots_file-activity-batch-${batch}"
+    workload="$(workload_name_for "$batch")"
+    output_dir="${base_results_dir}/plots_${workload}"
     if [ -d "$output_dir" ]; then
         plot_count=$(find "$output_dir" -name "*.png" | wc -l)
         echo "  ${output_dir}: ${plot_count} plots"
