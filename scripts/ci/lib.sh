@@ -155,18 +155,28 @@ create_exit_trap() {
 ensure_roxctl_from_image() {
     if command -v roxctl &>/dev/null; then
         info "roxctl already available: $(command -v roxctl) version=$(roxctl version 2>/dev/null || echo unknown)"
-        return 0
+    else
+        _extract_roxctl_from_image
     fi
 
+    local upgrader_path="bin/linux_amd64/upgrader"
+    if [[ -x "${upgrader_path}" ]]; then
+        info "upgrader already available: ${upgrader_path}"
+    else
+        _extract_upgrader_from_image
+    fi
+}
+
+_extract_roxctl_from_image() {
     local tag
     tag="$(make --quiet --no-print-directory tag)"
     local roxctl_image="quay.io/stackrox-io/roxctl:${tag}"
 
-    info "Extracting roxctl from ${roxctl_image} (skipping local compilation)"
+    info "Extracting roxctl from ${roxctl_image}"
 
     local id
     if ! id="$(docker create "${roxctl_image}" 2>/dev/null)"; then
-        info "docker create failed — falling back to building roxctl from source"
+        info "docker create failed for roxctl image — falling back to source build"
         make cli_host-arch
         make cli-install
         return $?
@@ -178,6 +188,28 @@ ensure_roxctl_from_image() {
     docker rm "${id}" >/dev/null
     chmod +x "${dest}"
     info "roxctl installed to ${dest} version=$(roxctl version 2>/dev/null || echo unknown)"
+}
+
+_extract_upgrader_from_image() {
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+    local main_image="quay.io/stackrox-io/main:${tag}"
+    local dest="bin/linux_amd64/upgrader"
+
+    info "Extracting upgrader from ${main_image}"
+
+    local id
+    if ! id="$(docker create "${main_image}" 2>/dev/null)"; then
+        info "docker create failed for main image — falling back to source build"
+        make upgrader
+        return $?
+    fi
+
+    mkdir -p "$(dirname "$dest")"
+    docker cp "${id}:/stackrox/bin/sensor-upgrader" "${dest}"
+    docker rm "${id}" >/dev/null
+    chmod +x "${dest}"
+    info "upgrader installed to ${dest}"
 }
 
 setup_deployment_env() {
