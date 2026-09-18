@@ -185,7 +185,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		phonehome.Singleton().Disable()
 	}
 	matcher.Singleton().SetRegexes(regexes)
-	go reprocessor.Singleton().RunReprocessor()
+	go reprocessor.Singleton().RunReprocessor(context.Background())
 	s.aggregator.Reconfigure(customMetricsCfg)
 
 	return req.GetConfig(), nil
@@ -264,7 +264,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 		return nil, err
 	}
 	matcher.Singleton().SetRegexes(regexes)
-	go reprocessor.Singleton().RunReprocessor()
+	go reprocessor.Singleton().RunReprocessor(context.Background())
 	return config, nil
 }
 

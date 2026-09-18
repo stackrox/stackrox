@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"golang.org/x/sync/semaphore"
 )
 
 func TestPlatformReprocessorImpl(t *testing.T) {
@@ -44,14 +43,11 @@ func (s *platformReprocessorImplTestSuite) SetupTest() {
 		alertDatastore:      s.alertDatastore,
 		deploymentDatastore: s.deploymentDatastore,
 		platformMatcher:     s.matcher,
-		stopSignal:          concurrency.NewSignal(),
-		semaphore:           semaphore.NewWeighted(1),
 	}
 }
 
 func (s *platformReprocessorImplTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.reprocessor.stopSignal.Signal()
 }
 
 func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
@@ -61,7 +57,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	s.reprocessor.RunReprocessor()
+	s.reprocessor.RunReprocessor(context.Background())
 
 	deployments := testDeployments()
 
@@ -82,7 +78,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[2]).Return(nil).AnyTimes()
 	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[3]).Return(nil).AnyTimes()
 
-	s.reprocessor.RunReprocessor()
+	s.reprocessor.RunReprocessor(context.Background())
 }
 
 func (s *platformReprocessorImplTestSuite) TestStartAndStop() {

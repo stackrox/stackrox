@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"context"
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -16,10 +17,10 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/set"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -65,19 +66,37 @@ func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deployt
 		deletedDeploymentsCache: deletedDeploymentsCache,
 		processFilter:           filter,
 
-		queuedIndicators:           make(map[string]*storage.ProcessIndicator),
 		deploymentObservationQueue: queue.New(),
-
-		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
-		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
-		baselineFlushTicker:  time.NewTicker(baselineFlushTickerDuration),
 
 		removedOrDisabledPolicies: set.NewStringSet(),
 
 		connectionManager: connectionManager,
 	}
 
-	go m.flushQueuePeriodically()
-	go m.flushBaselineQueuePeriodically()
+	m.indicatorAccumulator = &backgroundworker.BatchAccumulator[*storage.ProcessIndicator]{
+		Name:                "lifecycle-indicator-flush",
+		FlushInterval:       indicatorFlushTickerDuration,
+		EagerFlushRateLimit: rateLimitDuration,
+		Collector: &backgroundworker.MapCollector[string, *storage.ProcessIndicator]{
+			KeyFunc: func(indicator *storage.ProcessIndicator) string { return indicator.GetId() },
+		},
+		Flush: m.flushIndicatorQueue,
+	}
+	m.baselineFlushWorker = &backgroundworker.PeriodicWorker{
+		Name:          "lifecycle-baseline-flush",
+		Interval:      baselineFlushTickerDuration,
+		SkipIfRunning: true,
+		Run: func(_ context.Context) error {
+			m.flushBaselineQueue()
+			return nil
+		},
+	}
+
+	backgroundworker.Global.Register(m.indicatorAccumulator)
+	backgroundworker.Global.Register(m.baselineFlushWorker)
+
+	m.indicatorAccumulator.Start(context.Background())
+	m.baselineFlushWorker.Start(context.Background())
+
 	return m
 }
