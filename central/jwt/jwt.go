@@ -102,15 +102,15 @@ func (v *m2mValidator) exchange(ctx context.Context, iss string, token string) (
 
 	cache, found := v.exchangedTokensCache[iss]
 	if !found {
-		if tokenTTL, err := time.ParseDuration(exchanger.Config().GetTokenExpirationDuration()); err == nil {
-			// TTL for the cached token should be less than the token TTL so that
-			// the cache doen't return expired tokens. Let's not cache tokens with
-			// TTL less than a 1 minute margin.
-			const margin = time.Minute
-			if tokenTTL > margin {
-				cache = expiringcache.NewExpiringCache[string, string](tokenTTL - margin)
-			}
+		tokenTTL := exchanger.GetTokenExpirationDuration()
+		// TTL for the cached token should be less than the token TTL so that
+		// the cache doen't return expired tokens. Let's not cache tokens with
+		// TTL less than a 1 minute margin.
+		const margin = time.Minute
+		if tokenTTL > margin {
+			cache = expiringcache.NewExpiringCache[string, string](tokenTTL - margin)
 		}
+
 		v.exchangedTokensCache[iss] = cache
 	}
 	if cache == nil {

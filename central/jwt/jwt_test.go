@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -64,9 +64,7 @@ func TestM2MValidator(t *testing.T) {
 			},
 			setupExchangerSet: func(mes *mocks.MockTokenExchangerSet) {
 				mockExchanger := mocks.NewMockTokenExchanger(mockCtrl)
-				mockExchanger.EXPECT().Config().Times(1).Return(&storage.AuthMachineToMachineConfig{
-					TokenExpirationDuration: "1h",
-				})
+				mockExchanger.EXPECT().GetTokenExpirationDuration().Times(1).Return(time.Hour)
 				mockExchanger.EXPECT().ExchangeToken(gomock.Any(), tokenWithIssuer("other-issuer")).
 					Return("exchanged-token", nil)
 				mes.EXPECT().GetTokenExchanger("other-issuer").
@@ -86,9 +84,7 @@ func TestM2MValidator(t *testing.T) {
 			token: tokenWithIssuer("failing-issuer"),
 			setupExchangerSet: func(mes *mocks.MockTokenExchangerSet) {
 				mockExchanger := mocks.NewMockTokenExchanger(mockCtrl)
-				mockExchanger.EXPECT().Config().Times(1).Return(&storage.AuthMachineToMachineConfig{
-					TokenExpirationDuration: "1h",
-				})
+				mockExchanger.EXPECT().GetTokenExpirationDuration().Times(1).Return(time.Hour)
 				mockExchanger.EXPECT().ExchangeToken(gomock.Any(), tokenWithIssuer("failing-issuer")).
 					Return("", errTest)
 				mes.EXPECT().GetTokenExchanger("failing-issuer").
@@ -144,10 +140,7 @@ func TestTokenCache(t *testing.T) {
 
 	t.Run("1h expiration", func(t *testing.T) {
 		mockExchanger := mocks.NewMockTokenExchanger(mockCtrl)
-		mockExchanger.EXPECT().Config().Times(1).
-			Return(&storage.AuthMachineToMachineConfig{
-				TokenExpirationDuration: "1h",
-			})
+		mockExchanger.EXPECT().GetTokenExpirationDuration().Times(1).Return(time.Hour)
 
 		mes.EXPECT().GetTokenExchanger("1h-issuer").
 			Times(2).
@@ -169,10 +162,7 @@ func TestTokenCache(t *testing.T) {
 
 	t.Run("1m expiration", func(t *testing.T) {
 		mockExchanger := mocks.NewMockTokenExchanger(mockCtrl)
-		mockExchanger.EXPECT().Config().Times(1).
-			Return(&storage.AuthMachineToMachineConfig{
-				TokenExpirationDuration: "1m",
-			})
+		mockExchanger.EXPECT().GetTokenExpirationDuration().Times(1).Return(time.Minute)
 
 		mes.EXPECT().GetTokenExchanger("1m-issuer").
 			Times(2).
