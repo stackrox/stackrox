@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import Mock
+from os import environ
+from unittest.mock import Mock, patch
 from runners import ClusterTestRunner, ClusterTestSetsRunner, TestSet
 
 
@@ -18,6 +19,20 @@ class TestClusterTestRunner(unittest.TestCase):
         test = Mock()
         ClusterTestRunner(test=test).run()
         test.run.assert_called_once()
+
+    def test_skips_test_in_infra_only_mode(self):
+        test = Mock()
+        pre_test = Mock()
+        post_test = Mock()
+        with patch.dict(environ, {"E2E_INFRA_ONLY": "true"}):
+            ClusterTestRunner(
+                pre_test=pre_test,
+                test=test,
+                post_test=post_test,
+            ).run()
+        pre_test.run.assert_called_once()
+        test.run.assert_not_called()
+        post_test.run.assert_called_once()
 
     def test_runs_post_test(self):
         post_test = Mock()
