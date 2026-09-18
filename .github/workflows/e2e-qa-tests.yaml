@@ -289,7 +289,7 @@ jobs:
         run: qa-tests-backend/scripts/run-part-1.sh
 
       - name: Run Part 1 post-test
-        if: always() && env.KUBECONFIG != ''
+        if: always() && env.KUBECONFIG != '' && env.E2E_INFRA_ONLY != 'true'
         shell: python
         run: |
           import os, sys
