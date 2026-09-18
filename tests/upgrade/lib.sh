@@ -117,7 +117,11 @@ deploy_earlier_postgres_central() {
     # this path on Linux amd64.
     local cli_target="cli_${TEST_HOST_PLATFORM//_/-}"
     info "Building time-travel roxctl target: ${cli_target}"
-    make "${cli_target}"
+    # The host-only target writes bin/<platform>/roxctl but does not install
+    # the command. The upgrade helpers also call roxctl without a path (for
+    # example, the 4.6 database restore), so preserve the old make cli
+    # behavior by installing only this already-built host binary.
+    make "${cli_target}" cli-install
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
