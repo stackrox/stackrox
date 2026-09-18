@@ -2,11 +2,11 @@ package manager
 
 import (
 	"context"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/hash/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -43,6 +43,8 @@ type managerImpl struct {
 
 	dedupersLock sync.RWMutex
 	dedupers     map[string]Deduper
+
+	flushWorker *backgroundworker.PeriodicWorker
 }
 
 func (m *managerImpl) flushHashes(ctx context.Context) {
@@ -81,16 +83,16 @@ func (m *managerImpl) Start(ctx context.Context) {
 		}
 		return
 	}
-	t := time.NewTicker(flushInterval)
-	defer t.Stop()
-	for {
-		select {
-		case <-t.C:
+	m.flushWorker = &backgroundworker.PeriodicWorker{
+		Name:     "hash-deduper-flush",
+		Interval: flushInterval,
+		Run: func(ctx context.Context) error {
 			m.flushHashes(ctx)
-		case <-ctx.Done():
-			return
-		}
+			return nil
+		},
 	}
+	backgroundworker.Global.Register(m.flushWorker)
+	m.flushWorker.Start(ctx)
 }
 
 func (m *managerImpl) getDeduper(clusterID string) (Deduper, bool) {
