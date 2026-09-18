@@ -2,7 +2,9 @@ package connection
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -29,6 +32,9 @@ type workerQueue struct {
 	queues    []*dedupingqueue.DedupingQueue[string]
 	waitGroup sync.WaitGroup
 	sync.WaitGroup
+
+	activeWorkers atomic.Int32
+	statusAdapter *backgroundworker.StatusAdapter
 }
 
 func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
@@ -40,12 +46,43 @@ func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *
 			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
 	}
 
-	return &workerQueue{
+	w := &workerQueue{
 		poolSize:  poolSize,
 		totalSize: totalSize,
 		queues:    queues,
 		injector:  injector,
 	}
+
+	// Register with the background worker registry for debug endpoint
+	// observability. workerQueue does not fit a standard archetype: it is a
+	// sharded pool of per-type consumers with custom retry/backoff logic,
+	// created and torn down per sensor connection. Deregistered in run()
+	// once all shard workers have exited.
+	w.statusAdapter = &backgroundworker.StatusAdapter{
+		WorkerName: fmt.Sprintf("sensor-event-queue-%s-%p", typ, w),
+		WorkerKind: "pipeline",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			depths := make([]int, len(queues))
+			total := 0
+			for i, q := range queues {
+				depths[i] = q.Len()
+				total += depths[i]
+			}
+			return backgroundworker.WorkerStatus{
+				State: "running",
+				Extra: map[string]any{
+					"event_type":        typ,
+					"shard_count":       poolSize,
+					"active_workers":    w.activeWorkers.Load(),
+					"queue_depths":      depths,
+					"queue_depth_total": total,
+				},
+			}
+		},
+	}
+	backgroundworker.Global.Register(w.statusAdapter)
+
+	return w
 }
 
 func (w *workerQueue) indexFromKey(key string) int {
@@ -69,6 +106,9 @@ func (w *workerQueue) push(msg *central.MsgFromSensor) {
 }
 
 func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, handler func(context.Context, *central.MsgFromSensor) error) {
+	w.activeWorkers.Add(1)
+	defer w.activeWorkers.Add(-1)
+
 	queue := w.queues[idx]
 	for msg := queue.PullBlocking(stopSig); msg != nil; msg = queue.PullBlocking(stopSig) {
 		msgFromSensor, ok := msg.(*central.MsgFromSensor)
@@ -108,4 +148,5 @@ func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal,
 	}
 
 	w.waitGroup.Wait()
+	backgroundworker.Global.Deregister(w.statusAdapter)
 }

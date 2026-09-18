@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -38,6 +39,13 @@ type DatastoreBasedIntegrationHealthReporter struct {
 	stopSig              concurrency.Signal
 	latestDBTimestampMap map[string]*time.Time
 	integrationDS        datastore.DataStore
+
+	// statusRequests lets the StatusAdapter's StatusFunc (called from an
+	// arbitrary debug-endpoint goroutine) safely read the size of
+	// latestDBTimestampMap, which is otherwise only ever touched by the
+	// single processIntegrationHealthUpdates goroutine. Message passing is
+	// used instead of a mutex to avoid adding locking to the hot path.
+	statusRequests chan chan int
 }
 
 // New returns a new datastore based integration health reporter
@@ -48,8 +56,36 @@ func New(datastore datastore.DataStore) *DatastoreBasedIntegrationHealthReporter
 		stopSig:              concurrency.NewSignal(),
 		latestDBTimestampMap: make(map[string]*time.Time),
 		integrationDS:        datastore,
+		statusRequests:       make(chan chan int),
 	}
 	go d.processIntegrationHealthUpdates()
+
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "integration-health-reporter",
+		WorkerKind: "consumer",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			extra := map[string]any{
+				"health_updates_queue_len": len(d.healthUpdates),
+				"health_removal_queue_len": len(d.healthRemoval),
+			}
+			respCh := make(chan int, 1)
+			select {
+			case d.statusRequests <- respCh:
+				select {
+				case count := <-respCh:
+					extra["tracked_integrations"] = count
+				case <-time.After(time.Second):
+				}
+			case <-d.stopSig.Done():
+			case <-time.After(time.Second):
+			}
+			return backgroundworker.WorkerStatus{
+				State: "running",
+				Extra: extra,
+			}
+		},
+	})
+
 	return d
 }
 
@@ -144,6 +180,9 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 			}
 		case id := <-d.healthRemoval:
 			delete(d.latestDBTimestampMap, id)
+
+		case respCh := <-d.statusRequests:
+			respCh <- len(d.latestDBTimestampMap)
 
 		case <-d.stopSig.Done():
 			return

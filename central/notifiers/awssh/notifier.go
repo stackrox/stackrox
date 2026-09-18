@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
@@ -188,6 +190,13 @@ type notifier struct {
 	initDoneSig concurrency.Signal
 	// stoppedSig is owned by the notifier, it is triggered when the `run` method is not executing.
 	stoppedSig concurrency.Signal
+
+	// cacheSize mirrors len(cache) so it can be read from the StatusAdapter's
+	// StatusFunc (called from an arbitrary debug-endpoint goroutine) without
+	// racing on the map, which is otherwise only ever touched by run's
+	// single goroutine.
+	cacheSize     atomic.Int64
+	statusAdapter *backgroundworker.StatusAdapter
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
@@ -221,7 +230,7 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		return nil, errors.Wrap(err, "unable to load the aws config")
 	}
 
-	return &notifier{
+	n := &notifier{
 		configuration: configuration,
 		securityHub:   securityhub.NewFromConfig(awsConfig),
 		account:       awssh.GetAccountId(),
@@ -230,7 +239,32 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		alertCh:       make(chan *storage.Alert),
 		initDoneSig:   concurrency.NewSignal(),
 		// stoppedSig intentionally omitted - zero value is "already triggered"
-	}, nil
+	}
+
+	// Register with the background worker registry for debug endpoint
+	// observability. The notifier does not fit a standard archetype: its
+	// event loop juggles AWS API constraints (timestamp dedup, partial batch
+	// results, rate limiting) that the standard archetypes don't model.
+	n.statusAdapter = &backgroundworker.StatusAdapter{
+		WorkerName: "awssh-notifier:" + configuration.descriptor.GetName(),
+		WorkerKind: "notifier",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			state := "running"
+			if n.stoppedSig.IsDone() {
+				state = "stopped"
+			}
+			return backgroundworker.WorkerStatus{
+				State: state,
+				Extra: map[string]any{
+					"queue_depth":      len(n.alertCh),
+					"pending_findings": n.cacheSize.Load(),
+				},
+			}
+		},
+	}
+	backgroundworker.Global.Register(n.statusAdapter)
+
+	return n, nil
 }
 
 func (n *notifier) waitForInitDone() {
@@ -333,6 +367,7 @@ func (n *notifier) processAlert(alert *storage.Alert) {
 		}
 	} else {
 		n.cache[alert.GetId()] = alert
+		n.cacheSize.Add(1)
 	}
 }
 
@@ -388,6 +423,7 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 			logging.Int("successes", len(alertIds)))
 		for id := range alertIds {
 			delete(n.cache, id)
+			n.cacheSize.Add(-1)
 		}
 	}
 
@@ -402,6 +438,9 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 func (n *notifier) Close(_ context.Context) error {
 	if n.canceler != nil {
 		n.canceler()
+	}
+	if n.statusAdapter != nil {
+		backgroundworker.Global.Deregister(n.statusAdapter)
 	}
 	return nil
 }

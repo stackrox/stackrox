@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/filedownloader"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,6 +31,13 @@ var (
 
 	bundleUpdater Stoppable
 	bundleWatcher Stoppable
+
+	// State tracked for the key bundle updater's StatusAdapter (debug endpoint
+	// observability only; the Prometheus metrics above serve monitoring).
+	updaterLastAttemptUnixNano atomic.Int64
+	updaterLastSuccessUnixNano atomic.Int64
+	updaterErrorCount          atomic.Int64
+	updaterLastError           atomic.Pointer[string]
 )
 
 // KeyBundleUpdater returns the key bundle updater for shutdown registration.
@@ -81,12 +90,17 @@ func startKeyBundleUpdater() {
 	u := filedownloader.New(bundleURL, redHatKeyBundlePath, interval,
 		filedownloader.WithOnComplete(func(err error, duration time.Duration) {
 			updaterDownloadDuration.Observe(duration.Seconds())
+			updaterLastAttemptUnixNano.Store(time.Now().UnixNano())
 			if err != nil {
 				log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", bundleURL, err)
 				updaterDownloadsTotal.WithLabelValues("error").Inc()
+				updaterErrorCount.Add(1)
+				errMsg := err.Error()
+				updaterLastError.Store(&errMsg)
 			} else {
 				updaterDownloadsTotal.WithLabelValues("success").Inc()
 				updaterLastSuccessTimestamp.SetToCurrentTime()
+				updaterLastSuccessUnixNano.Store(time.Now().UnixNano())
 			}
 		}),
 	)
@@ -97,6 +111,34 @@ func startKeyBundleUpdater() {
 		return
 	}
 	bundleUpdater = u
+
+	// Register with the background worker registry for debug endpoint
+	// observability. The updater does not fit a standard archetype: it wraps
+	// filedownloader's own periodic-pull loop rather than owning one itself.
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "key-bundle-updater",
+		WorkerKind: "file-watcher",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			extra := map[string]any{
+				"bundle_url":  bundleURL,
+				"interval":    interval.String(),
+				"error_count": updaterErrorCount.Load(),
+			}
+			if last := updaterLastAttemptUnixNano.Load(); last != 0 {
+				extra["last_attempt_time"] = time.Unix(0, last).UTC().Format(time.RFC3339)
+			}
+			if last := updaterLastSuccessUnixNano.Load(); last != 0 {
+				extra["last_success_time"] = time.Unix(0, last).UTC().Format(time.RFC3339)
+			}
+			if errMsg := updaterLastError.Load(); errMsg != nil {
+				extra["last_error"] = *errMsg
+			}
+			return backgroundworker.WorkerStatus{
+				State: "running",
+				Extra: extra,
+			}
+		},
+	})
 }
 
 // Singleton returns the sole instance of the DataStore service.
