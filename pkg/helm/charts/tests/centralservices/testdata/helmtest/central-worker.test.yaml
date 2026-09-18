@@ -8,7 +8,9 @@ tests:
     .serviceaccounts["central-worker"] | assertThat(. != null)
     container(.deployments["central-worker"]; "central-worker") | .command | assertThat(. == ["/stackrox/central-worker"])
     container(.deployments["central-worker"]; "central-worker") | .env[] | select(.name == "ROX_CENTRAL_WORKER_ENABLED") | assertThat(.value == "true")
+    [container(.deployments["central-worker"]; "central-worker") | .env[] | select(.name == "ROX_CENTRAL_WORKER_ENABLED")] | assertThat(length == 1)
     container(.deployments.central; "central") | .env[] | select(.name == "ROX_CENTRAL_WORKER_ENABLED") | assertThat(.value == "true")
+    [container(.deployments.central; "central") | .env[] | select(.name == "ROX_CENTRAL_WORKER_ENABLED")] | assertThat(length == 1)
   tests:
   - name: "with network policies"
     values:
