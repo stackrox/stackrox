@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -179,6 +180,10 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(i
 	return ds.imageV2DataStore.WalkByQuery(ctx, q, func(image *storage.ImageV2) error {
 		return fn(imageUtils.ConvertToV1(image))
 	})
+}
+
+func (ds *datastoreImpl) WalkMetadataByQuery(_ context.Context, _ *v1.Query, _ func(image *storage.Image) error) error {
+	return errors.New("WalkMetadataByQuery is not implemented for mapper datastore")
 }
 
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
