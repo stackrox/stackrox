@@ -84,6 +84,9 @@ jobs:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
       PYTHONUNBUFFERED: "1"
+      # Experimental control mode for measuring CI infrastructure without QA
+      # test execution. It is enabled only by the dedicated PR label.
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
       CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
       CLUSTER_NAME_PREFIX_MAX: "20"
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
@@ -299,12 +302,13 @@ jobs:
 
       - name: Run Part 2 tests
         id: run-part-2
+        if: env.E2E_INFRA_ONLY != 'true'
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}
         run: qa-tests-backend/scripts/run-part-2.sh
 
       - name: Run Part 2 post-test
-        if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''
+        if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != '' && env.E2E_INFRA_ONLY != 'true'
         shell: python
         run: |
           import os, sys
