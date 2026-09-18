@@ -14,7 +14,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	_ "github.com/stackrox/rox/central/notifiers/all"
-	"github.com/stackrox/rox/central/pruning"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -61,9 +60,6 @@ func main() {
 
 	go startMetricsServer()
 
-	pruning.Singleton().Start()
-	log.Infof("Pruning GC started")
-
 	scheduler := vulnReportV2Scheduler.Singleton()
 	scheduler.Start(globaldb.GetPostgres())
 	log.Infof("Vulnerability report scheduler started")
@@ -87,7 +83,6 @@ func main() {
 
 	log.Infof("central-worker shutting down")
 
-	pruning.Singleton().Stop()
 	scheduler.Stop()
 
 	globaldb.Close()
