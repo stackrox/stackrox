@@ -377,10 +377,6 @@ func TestRenderCentralWorkerEnvNotDuplicated(t *testing.T) {
 			"key.pem":                     []byte("CentralKey"),
 			"central-db-cert.pem":         []byte("CentralDBCert"),
 			"central-db-key.pem":          []byte("CentralDBKey"),
-			"scanner-cert.pem":            []byte("ScannerCert"),
-			"scanner-key.pem":             []byte("ScannerKey"),
-			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
-			"scanner-db-key.pem":          []byte("ScannerDBKey"),
 			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
 			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
 			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
@@ -392,8 +388,6 @@ func TestRenderCentralWorkerEnvNotDuplicated(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
