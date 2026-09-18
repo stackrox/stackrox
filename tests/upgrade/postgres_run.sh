@@ -126,6 +126,11 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
+    if is_upgrade_infra_only; then
+        info "Upgrade infra-only mode enabled; skipping Central upgrade validations"
+        return 0
+    fi
+
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
     ########################################################################################

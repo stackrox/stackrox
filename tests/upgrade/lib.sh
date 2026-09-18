@@ -5,6 +5,10 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+is_upgrade_infra_only() {
+    [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]
+}
+
 central_deployment_count() {
     curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
         -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
