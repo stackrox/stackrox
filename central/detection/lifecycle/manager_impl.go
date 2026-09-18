@@ -23,8 +23,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	clusterPkg "github.com/stackrox/rox/pkg/cluster"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
@@ -38,7 +38,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/time/rate"
 )
 
 var (
@@ -73,31 +72,15 @@ type managerImpl struct {
 	deletedDeploymentsCache cache.DeletedDeployments
 	processFilter           filter.Filter
 
-	queuedIndicators           map[string]*storage.ProcessIndicator
 	deploymentObservationQueue queue.DeploymentObservationQueue
 
-	indicatorQueueLock   sync.Mutex
-	flushProcessingLock  concurrency.TransparentMutex
-	indicatorRateLimiter *rate.Limiter
-	indicatorFlushTicker *time.Ticker
-	baselineFlushTicker  *time.Ticker
+	indicatorAccumulator *backgroundworker.BatchAccumulator[*storage.ProcessIndicator]
+	baselineFlushWorker  *backgroundworker.PeriodicWorker
 
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
 
 	connectionManager connection.Manager
-}
-
-func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
-	m.indicatorQueueLock.Lock()
-	defer m.indicatorQueueLock.Unlock()
-	if len(m.queuedIndicators) == 0 {
-		return nil
-	}
-	copiedMap := m.queuedIndicators
-	m.queuedIndicators = make(map[string]*storage.ProcessIndicator)
-
-	return copiedMap
 }
 
 func (m *managerImpl) buildIndicatorFilter() {
@@ -132,20 +115,6 @@ func (m *managerImpl) buildIndicatorFilter() {
 		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
-}
-
-func (m *managerImpl) flushQueuePeriodically() {
-	defer m.indicatorFlushTicker.Stop()
-	for range m.indicatorFlushTicker.C {
-		m.flushIndicatorQueue()
-	}
-}
-
-func (m *managerImpl) flushBaselineQueuePeriodically() {
-	defer m.baselineFlushTicker.Stop()
-	for range m.baselineFlushTicker.C {
-		m.flushBaselineQueue()
-	}
 }
 
 func indicatorToBaselineKey(indicator *storage.ProcessIndicator) processBaselineKey {
@@ -231,25 +200,16 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 	return clusterPkg.GetAutoLockProcessBaselinesEnabled(cluster)
 }
 
-func (m *managerImpl) flushIndicatorQueue() {
-	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
-	// this lock.
-	if !m.flushProcessingLock.MaybeLock() {
-		return
+func (m *managerImpl) flushIndicatorQueue(_ context.Context, items []*storage.ProcessIndicator) error {
+	if len(items) == 0 {
+		return nil
 	}
-	defer m.flushProcessingLock.Unlock()
-
-	copiedQueue := m.copyAndResetIndicatorQueue()
-	if len(copiedQueue) == 0 {
-		return
-	}
-	defer centralMetrics.ModifyProcessQueueLength(-len(copiedQueue))
+	defer centralMetrics.ModifyProcessQueueLength(-len(items))
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "FlushingIndicatorQueue")
 
-	// Map copiedQueue to slice
-	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
-	for _, indicator := range copiedQueue {
+	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(items))
+	for _, indicator := range items {
 		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
@@ -280,16 +240,15 @@ func (m *managerImpl) flushIndicatorQueue() {
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
 	m.buildMapAndCheckBaseline(indicatorSlice)
+	return nil
 }
 
 func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
-	m.indicatorQueueLock.Lock()
-	defer m.indicatorQueueLock.Unlock()
-
-	previousSize := len(m.queuedIndicators)
-	m.queuedIndicators[indicator.GetId()] = indicator
-	if len(m.queuedIndicators) != previousSize {
-		centralMetrics.ModifyProcessQueueLength(1)
+	before := m.indicatorAccumulator.Status().InFlight
+	m.indicatorAccumulator.Add(indicator)
+	after := m.indicatorAccumulator.Status().InFlight
+	if delta := after - before; delta != 0 {
+		centralMetrics.ModifyProcessQueueLength(int(delta))
 	}
 }
 
@@ -431,10 +390,6 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 	m.deploymentObservationQueue.Push(&queue.DeploymentObservation{DeploymentID: indicator.GetDeploymentId(), InObservation: true, ObservationEnd: observationEnd})
 
 	m.addToIndicatorQueue(indicator)
-
-	if m.indicatorRateLimiter.Allow() {
-		go m.flushIndicatorQueue()
-	}
 
 	return nil
 }

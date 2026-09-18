@@ -111,7 +111,6 @@ func (suite *ManagerTestSuite) SetupTest() {
 		clusterDataStore:           suite.cluster,
 		processFilter:              suite.filter,
 		processesDataStore:         suite.indicators,
-		queuedIndicators:           make(map[string]*storage.ProcessIndicator),
 		deletedDeploymentsCache:    cache.DeletedDeploymentsSingleton(),
 	}
 }
@@ -122,7 +121,6 @@ func (suite *ManagerTestSuite) TearDownTest() {
 	// reset the state
 	suite.filter = piFilter.Singleton()
 	suite.manager.processFilter = suite.filter
-	suite.manager.queuedIndicators = make(map[string]*storage.ProcessIndicator)
 	suite.manager.deletedDeploymentsCache = cache.DeletedDeploymentsSingleton()
 }
 
@@ -385,10 +383,6 @@ func (suite *ManagerTestSuite) TestFlushIndicators() {
 	// separate go routine, which makes mock expectation checking complicated
 	// (we have to somehow wait for this routine to end). Thus we test at
 	// flushIndicatorQueue level, and manually prepare the indicator queue.
-	//
-	// TODO: Is it possible to incorporate testing/synctest here on top of testify?
-	suite.manager.queuedIndicators[indicator1.GetId()] = indicator1
-	suite.manager.queuedIndicators[indicator2.GetId()] = indicator2
-
-	suite.manager.flushIndicatorQueue()
+	err := suite.manager.flushIndicatorQueue(suite.T().Context(), []*storage.ProcessIndicator{indicator1, indicator2})
+	suite.NoError(err)
 }

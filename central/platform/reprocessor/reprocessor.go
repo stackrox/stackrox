@@ -1,5 +1,7 @@
 package reprocessor
 
+import "context"
+
 // PlatformReprocessor reprocesses alerts and deployments to mark those that are platform components
 //
 //go:generate mockgen-wrapper
@@ -9,5 +11,5 @@ type PlatformReprocessor interface {
 
 	// Stop PlatformReprocessor
 	Stop()
-	RunReprocessor()
+	RunReprocessor(ctx context.Context)
 }

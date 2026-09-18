@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -12,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/backgroundmigrations"
 	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -50,8 +49,7 @@ const (
 type Runner struct {
 	db             postgres.DB
 	rolloutChecker RolloutChecker
-	stopper        concurrency.Stopper
-	started        atomic.Bool
+	worker         *backgroundworker.RunOnceWorker
 	targetSeqNum   int
 	retryInterval  time.Duration
 	skipMigrations set.IntSet
@@ -59,60 +57,34 @@ type Runner struct {
 
 // NewRunner creates a new Runner.
 func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
-	return &Runner{
+	r := &Runner{
 		db:             db,
 		rolloutChecker: rolloutChecker,
-		stopper:        concurrency.NewStopper(),
 		targetSeqNum:   backgroundmigrations.CurrentBgMigrationSeqNum,
 		retryInterval:  retryInterval,
 		skipMigrations: parseSkipMigrations(),
 	}
+
+	r.worker = &backgroundworker.RunOnceWorker{
+		Name:              "background-migrations",
+		Run:               r.runOnce,
+		RetryInterval:     r.retryInterval,
+		BackoffMultiplier: 1.0,
+		ShouldRetry:       func(error) bool { return true },
+	}
+	backgroundworker.Global.Register(r.worker)
+
+	return r
 }
 
 // Start launches the background migration goroutine.
 func (r *Runner) Start() {
-	if !r.started.CompareAndSwap(false, true) {
-		return
-	}
-
-	go r.run()
+	r.worker.Start(context.Background())
 }
 
 // Stop requests graceful shutdown and waits for the runner to finish.
 func (r *Runner) Stop() {
-	r.stopper.Client().Stop()
-	if r.started.Load() {
-		_ = r.stopper.Client().Stopped().Wait()
-	}
-}
-
-func (r *Runner) run() {
-	defer r.stopper.Flow().ReportStopped()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		select {
-		case <-r.stopper.Flow().StopRequested():
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
-
-	for {
-		err := r.runOnce(ctx)
-		if err == nil {
-			return
-		}
-
-		log.Errorf("background migrations failed, retrying in %v: %v", r.retryInterval, err)
-		select {
-		case <-ctx.Done():
-			log.Infof("background migrations stopped")
-			return
-		case <-time.After(r.retryInterval):
-		}
-	}
+	r.worker.Stop()
 }
 
 func (r *Runner) runOnce(ctx context.Context) error {

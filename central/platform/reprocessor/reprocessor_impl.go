@@ -2,7 +2,6 @@ package reprocessor
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
@@ -12,12 +11,11 @@ import (
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"golang.org/x/sync/semaphore"
 )
 
 const batchSize = 5000
@@ -36,10 +34,7 @@ type platformReprocessorImpl struct {
 	deploymentDatastore deploymentDS.DataStore
 	platformMatcher     platformmatcher.PlatformMatcher
 
-	semaphore  *semaphore.Weighted
-	stopSignal concurrency.Signal
-	// isStarted will make sure only one reprocessing routine runs for an instance of reprocessor
-	isStarted atomic.Bool
+	worker *backgroundworker.RunOnceWorker
 
 	customized bool
 }
@@ -49,40 +44,36 @@ func New(alertDatastore alertDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	platformMatcher platformmatcher.PlatformMatcher) PlatformReprocessor {
 
-	return &platformReprocessorImpl{
+	pr := &platformReprocessorImpl{
 		alertDatastore:      alertDatastore,
 		configDatastore:     configDatastore,
 		deploymentDatastore: deploymentDatastore,
 		platformMatcher:     platformMatcher,
-		semaphore:           semaphore.NewWeighted(1),
-		stopSignal:          concurrency.NewSignal(),
 		customized:          features.CustomizablePlatformComponents.Enabled(),
 	}
+
+	pr.worker = &backgroundworker.RunOnceWorker{
+		Name: "platform-component-reprocessor",
+		Run: func(ctx context.Context) error {
+			pr.RunReprocessor(ctx)
+			return nil
+		},
+		MaxAttempts: 1,
+	}
+	backgroundworker.Global.Register(pr.worker)
+
+	return pr
 }
 
 func (pr *platformReprocessorImpl) Start() {
-	swapped := pr.isStarted.CompareAndSwap(false, true)
-	if !swapped {
-		log.Error("Platform reprocessor was already started")
-		return
-	}
-	go pr.RunReprocessor()
+	pr.worker.Start(context.Background())
 }
 
 func (pr *platformReprocessorImpl) Stop() {
-	if !pr.isStarted.Load() {
-		log.Error("Platform reprocessor not started")
-	}
-	pr.stopSignal.Signal()
+	pr.worker.Stop()
 }
 
-func (pr *platformReprocessorImpl) RunReprocessor() {
-	err := pr.semaphore.Acquire(reprocessorCtx, 1)
-	if err != nil {
-		log.Errorf("Failed to acquire platform reprocessor semaphore: %v", err)
-		return
-	}
-	defer pr.semaphore.Release(1)
+func (pr *platformReprocessorImpl) RunReprocessor(ctx context.Context) {
 	flag := true
 	if pr.customized {
 		config, _, err := pr.configDatastore.GetPlatformComponentConfig(reprocessorCtx)
@@ -92,12 +83,12 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 		flag = config.GetNeedsReevaluation()
 	}
 	if flag {
-		err := pr.reprocessAlerts()
+		err := pr.reprocessAlerts(ctx)
 		if err != nil {
 			log.Errorf("Error reprocessing alerts with platform rules: %v", err)
 		}
 
-		err = pr.reprocessDeployments()
+		err = pr.reprocessDeployments(ctx)
 		if err != nil {
 			log.Errorf("Error reprocessing deployments with platform rules: %v", err)
 		}
@@ -110,7 +101,7 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 	}
 }
 
-func (pr *platformReprocessorImpl) reprocessAlerts() error {
+func (pr *platformReprocessorImpl) reprocessAlerts(ctx context.Context) error {
 	var q *v1.Query
 	if pr.customized {
 		q = search.EmptyQuery()
@@ -123,7 +114,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 
 	var alerts []*storage.Alert
 	for {
-		if pr.stopSignal.IsDone() {
+		if ctx.Err() != nil {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
 		}
@@ -155,7 +146,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 	return nil
 }
 
-func (pr *platformReprocessorImpl) reprocessDeployments() error {
+func (pr *platformReprocessorImpl) reprocessDeployments(ctx context.Context) error {
 	var q *v1.Query
 	if pr.customized {
 		q = search.EmptyQuery()
@@ -167,7 +158,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	}
 
 	for {
-		if pr.stopSignal.IsDone() {
+		if ctx.Err() != nil {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
 		}

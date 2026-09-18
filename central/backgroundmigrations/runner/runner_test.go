@@ -119,22 +119,31 @@ func (s *RunnerTestSuite) newRunner(rolloutChecker RolloutChecker, targetSeqNum 
 	r := NewRunner(s.db, rolloutChecker)
 	r.targetSeqNum = targetSeqNum
 	r.retryInterval = 10 * time.Millisecond
+	r.worker.RetryInterval = r.retryInterval
 	return r
 }
 
-// requireStoppedWithin starts the runner and fails the test if it doesn't stop within the timeout.
+// requireStoppedWithin starts the runner and fails the test if it doesn't complete within the timeout.
 func requireStoppedWithin(t *testing.T, runner *Runner, timeout time.Duration) {
+	t.Helper()
+	runner.Start()
+	require.Eventually(t, func() bool {
+		return runner.worker.Status().State == "completed"
+	}, timeout, 5*time.Millisecond, "runner did not stop within timeout")
+}
+
+// requireStopWithin calls Stop() on the runner and fails the test if it doesn't return within the timeout.
+func requireStopWithin(t *testing.T, runner *Runner, timeout time.Duration, msg string) {
 	t.Helper()
 	done := make(chan struct{})
 	go func() {
-		_ = runner.stopper.Client().Stopped().Wait()
+		runner.Stop()
 		close(done)
 	}()
-	runner.Start()
 	select {
 	case <-done:
 	case <-time.After(timeout):
-		t.Fatal("runner did not stop within timeout")
+		t.Fatal(msg)
 	}
 }
 
@@ -232,18 +241,7 @@ func (s *RunnerTestSuite) TestRetryStopsOnShutdown() {
 	runner.Start()
 
 	time.Sleep(50 * time.Millisecond)
-	runner.Stop()
-
-	done := make(chan struct{})
-	go func() {
-		_ = runner.stopper.Client().Stopped().Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(testTimeout):
-		s.T().Fatal("runner did not stop after Stop() within timeout")
-	}
+	requireStopWithin(s.T(), runner, testTimeout, "runner did not stop after Stop() within timeout")
 }
 
 func (s *RunnerTestSuite) TestMigrationRespectsContext() {
@@ -266,18 +264,7 @@ func (s *RunnerTestSuite) TestStopDuringRolloutRetry() {
 	runner.Start()
 
 	time.Sleep(50 * time.Millisecond)
-	runner.Stop()
-
-	done := make(chan struct{})
-	go func() {
-		_ = runner.stopper.Client().Stopped().Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(testTimeout):
-		s.T().Fatal("runner did not stop after Stop() within timeout")
-	}
+	requireStopWithin(s.T(), runner, testTimeout, "runner did not stop after Stop() within timeout")
 }
 
 func (s *RunnerTestSuite) TestRetriesOnRolloutCheckError() {
@@ -319,18 +306,7 @@ func (s *RunnerTestSuite) TestStopCancelsRunningMigration() {
 		s.T().Fatal("migration did not start within timeout")
 	}
 
-	runner.Stop()
-
-	done := make(chan struct{})
-	go func() {
-		_ = runner.stopper.Client().Stopped().Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(testTimeout):
-		s.T().Fatal("runner did not stop after cancelling migration within timeout")
-	}
+	requireStopWithin(s.T(), runner, testTimeout, "runner did not stop after cancelling migration within timeout")
 }
 
 func (s *RunnerTestSuite) TestOverrideAppliesWithNewTag() {

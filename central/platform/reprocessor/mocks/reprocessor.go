@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -40,15 +41,15 @@ func (m *MockPlatformReprocessor) EXPECT() *MockPlatformReprocessorMockRecorder 
 }
 
 // RunReprocessor mocks base method.
-func (m *MockPlatformReprocessor) RunReprocessor() {
+func (m *MockPlatformReprocessor) RunReprocessor(ctx context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RunReprocessor")
+	m.ctrl.Call(m, "RunReprocessor", ctx)
 }
 
 // RunReprocessor indicates an expected call of RunReprocessor.
-func (mr *MockPlatformReprocessorMockRecorder) RunReprocessor() *gomock.Call {
+func (mr *MockPlatformReprocessorMockRecorder) RunReprocessor(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunReprocessor", reflect.TypeOf((*MockPlatformReprocessor)(nil).RunReprocessor))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunReprocessor", reflect.TypeOf((*MockPlatformReprocessor)(nil).RunReprocessor), ctx)
 }
 
 // Start mocks base method.
