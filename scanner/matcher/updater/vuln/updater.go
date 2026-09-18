@@ -399,7 +399,6 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
 	IsInitialLoad := prevTime.IsZero()
 
-	start := time.Now()
 	zipFile, zipTime, err := u.fetch(ctx, prevTime)
 	if err != nil {
 		return false, err
@@ -457,6 +456,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	loadTimeGauge := metrics.GetVulnDBUpdateDuration()
 
 	for _, bundleF := range bundles {
+		start := time.Now()
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
