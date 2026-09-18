@@ -231,6 +231,12 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 			ref, err = u.store.UpdateVulnerabilitiesIter(ctx, op.Updater, op.Fingerprint, func(yield func(*claircore.Vulnerability, error) bool) {
 				// For each vulnerability in the update operation.
 				it(func(v *claircore.Vulnerability, _ *driver.EnrichmentRecord) bool {
+					// Drop records that are never used for matching (e.g. RPM
+					// "known not affected" assertions) before they reach the
+					// datastore. See [ignoreVulnerability].
+					if ignoreVulnerability(v) {
+						return true
+					}
 					count++
 					// Offer one vulnerability to the datastore iterator.
 					return yield(v, nil)
