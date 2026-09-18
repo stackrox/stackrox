@@ -1918,6 +1918,11 @@ handle_e2e_progress_failures() {
 }
 
 record_upgrade_test_progess() {
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping upgrade progress validation"
+        return 0
+    fi
+
     # Record the progress of the upgrade test. This order is tightly coupled to
     # the order of execution in .openshift-ci/ci_tests.py UpgradeTest and the
     # files listed below. This is essentially a check for the existence of state
