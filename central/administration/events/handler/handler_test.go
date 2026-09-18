@@ -33,8 +33,8 @@ func (s *handlerTestSuite) SetupTest() {
 
 	s.datastore = dsMocks.NewMockDataStore(s.mockCtrl)
 	s.eventStream = stream.GetStreamForTesting(s.T())
-	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
+	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 }
 
 func (s *handlerTestSuite) TearDownTest() {
