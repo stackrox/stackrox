@@ -65,6 +65,10 @@ test_upgrade() {
 
     test_upgrade_path "$log_output_dir"
 
+    if is_upgrade_infra_only; then
+        return 0
+    fi
+
     remove_existing_stackrox_resources
 
     test_not_enough_disk_space "$log_output_dir"
@@ -129,6 +133,11 @@ test_upgrade_path() {
     checkForPostgresAccessScopes
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
+
+    if is_upgrade_infra_only; then
+        info "Upgrade infra-only mode enabled; skipping Postgres upgrade validations"
+        return 0
+    fi
 
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
