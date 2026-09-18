@@ -129,6 +129,11 @@ test_part_1() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping Part 1 QA test execution"
+        return 0
+    fi
+
     rm -f FAIL
     remove_qa_test_results
 
