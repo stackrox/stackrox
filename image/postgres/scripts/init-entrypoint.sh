@@ -169,8 +169,8 @@ else
         fi
 
         # After this point we know there is enough available disk space.
-        OLD_BINARIES="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin"
-        NEW_BINARIES="/usr/bin"
+        OLD_BINARIES="/usr/pgsql-${PG_DATA_VERSION}/bin"
+        NEW_BINARIES="/usr/pgsql-${PG_BINARY_VERSION}/bin"
 
         # Not sure how it works now, but during the upgrade group permissions
         # are rejected.
