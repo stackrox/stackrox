@@ -13,25 +13,6 @@ const networkBaselineBaseUrl = '/v1/networkbaseline';
 const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
 
 /*
- * Applies the given network policy to the specified deployment
- *
- * @returns {Promise<Object, Error>}
- *
- */
-export function applyBaselineNetworkPolicy({ deploymentId, modification }) {
-    return axios
-        .post(`${networkPoliciesBaseUrl}/apply/deployment/${deploymentId}`, {
-            modification,
-        })
-        .then((response) => {
-            return response.data;
-        })
-        .catch((error) => {
-            return error.response.data;
-        });
-}
-
-/*
  * Fetches the generated network policy modification for the specified deployment
  * from its network baseline
  *
@@ -43,37 +24,6 @@ export function fetchBaselineGeneratedNetworkPolicy({ deploymentId, includePorts
         .post(`${networkPoliciesBaseUrl}/generate/baseline/${deploymentId}`, {
             includePorts,
         })
-        .then((response) => {
-            return response.data;
-        });
-}
-
-/*
- * Fetches the diff view of flows between the network policies currently applied to the
- * specified deployment and the baseline of that deployment.
- *
- * @returns {Promise<Object, Error>}
- *
- */
-export function fetchBaselineComparison({ deploymentId }) {
-    return axios
-        .get(`${networkPoliciesBaseUrl}/baselinecomparison/${deploymentId}`)
-        .then((response) => {
-            return response.data;
-        });
-}
-
-// TODO: wire this through redux saga, like the `fetchBaselineComparison` above
-/*
- * Fetches the diff view of flows between the network policies last applied to the
- * specified deployment and the previous state before that application.
- *
- * @returns {Promise<Object, Error>}
- *
- */
-export function fetchUndoComparison({ deploymentId }) {
-    return axios
-        .get(`${networkPoliciesBaseUrl}/undobaselinecomparison/${deploymentId}`)
         .then((response) => {
             return response.data;
         });
@@ -131,70 +81,6 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
     return axios.patch(URL).then((response) => {
         return response.data;
     });
-}
-
-/*
- * Retrieves the last security policy applied for a deployment
- *
- * @param   {string}  deploymentId
- * @returns {Promise<Object, Error>}
- *
- */
-export function getUndoModificationForDeployment(deploymentId) {
-    const url = `${networkPoliciesBaseUrl}/undo/deployment/${deploymentId}`;
-    return axios.get(url).then((response) => {
-        return response.data;
-    });
-}
-
-/**
- * Fetches nodes and links for the network graph.
- * Returns response with nodes and links
- *
- * @returns {Promise<Object, Error>}
- */
-export function fetchNetworkPolicyGraph(
-    clusterId,
-    namespaces,
-    deployments,
-    query,
-    modification,
-    includePorts
-) {
-    const urlParams = query ? { query } : {};
-    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
-    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
-    urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
-    urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
-
-    if (includePorts) {
-        urlParams.includePorts = true;
-    }
-
-    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
-
-    let options;
-    let getGraph = (data) => data;
-    if (modification) {
-        options = {
-            method: 'POST',
-            data: modification,
-            url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`,
-        };
-        getGraph = ({ simulatedGraph }) => simulatedGraph;
-    } else {
-        options = {
-            method: 'GET',
-            url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`,
-        };
-    }
-    options = {
-        ...options,
-        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
-    };
-    return axios(options).then((response) => ({
-        response: getGraph(response.data),
-    }));
 }
 
 /**
@@ -304,33 +190,6 @@ export function fetchNodeUpdates(clusterId) {
 }
 
 /**
- * Fetches the network policies currently applied to a cluster and set of deployments (defined by query).
- *
- * @param {!String} clusterId
- * @param {!Object} query
- * @returns {Promise<Object, Error>}
- */
-export function getActiveNetworkModification(clusterId, deploymentQuery) {
-    let params;
-    if (deploymentQuery) {
-        params = queryString.stringify({ clusterId, deploymentQuery }, { arrayFormat: 'repeat' });
-    } else {
-        params = queryString.stringify({ clusterId });
-    }
-    const options = {
-        method: 'GET',
-        url: `${networkPoliciesBaseUrl}?${params}`,
-    };
-    return axios(options).then((response) => {
-        const policies = response?.data?.networkPolicies;
-        if (policies) {
-            return { applyYaml: policies.map((policy) => policy.yaml).join('\n---\n') };
-        }
-        return null;
-    });
-}
-
-/**
  * Fetches the network policies applied to deployments in the given scope.
  * @param {!String} clusterId The cluster ID.
  * @param {!String} deploymentQuery A search filter string.
@@ -411,25 +270,6 @@ export function notifyNetworkPolicyModification(clusterId, notifierIds, modifica
         method: 'POST',
         data: modification,
         url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?${notifiers}`,
-    };
-    return axios(options).then((response) => ({
-        response: response.data,
-    }));
-}
-
-/**
- * Sends a yaml to the backed for application to a cluster.
- *
- * @param {!String} clusterId
- * @param {!Object} modification
- * @returns {Promise<Object, Error>}
- */
-export function applyNetworkPolicyModification(clusterId, modification) {
-    const options = {
-        method: 'POST',
-        data: modification,
-        url: `${networkPoliciesBaseUrl}/apply/${clusterId}`,
-        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
     };
     return axios(options).then((response) => ({
         response: response.data,
