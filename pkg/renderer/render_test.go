@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -363,13 +364,84 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 	}
 }
 
+// TestRenderCentralWorkerEnvNotDuplicated covers generate omitting
+// ROX_CENTRAL_WORKER_ENABLED from customize.envVars, which would duplicate
+// the chart-owned env when centralWorker.enabled is true.
+func TestRenderCentralWorkerEnvNotDuplicated(t *testing.T) {
+	flavor := testutils.MakeImageFlavorForTest(t)
+	config := Config{
+		SecretsByteMap: map[string][]byte{
+			"ca.pem":                      []byte("CA"),
+			"ca-key.pem":                  []byte("CAKey"),
+			"cert.pem":                    []byte("CentralCert"),
+			"key.pem":                     []byte("CentralKey"),
+			"central-db-cert.pem":         []byte("CentralDBCert"),
+			"central-db-key.pem":          []byte("CentralDBKey"),
+			"scanner-cert.pem":            []byte("ScannerCert"),
+			"scanner-key.pem":             []byte("ScannerKey"),
+			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+			"scanner-db-key.pem":          []byte("ScannerDBKey"),
+			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+			"jwt-key.pem":                 []byte("JWTKey"),
+		},
+		K8sConfig: &K8sConfig{
+			CommonConfig: CommonConfig{
+				MainImage:        flavor.MainImage(),
+				ScannerImage:     flavor.ScannerImage(),
+				ScannerDBImage:   flavor.ScannerDBImage(),
+				ScannerV4Image:   flavor.ScannerV4Image(),
+				ScannerV4DBImage: flavor.ScannerV4DBImage(),
+			},
+			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
+		},
+		Environment: map[string]string{
+			env.CentralWorkerEnabled.EnvVar(): "true",
+			"ROX_CUSTOM_TEST_FLAG":            "true",
+		},
+	}
+
+	files, err := render(config, renderAll, flavor)
+	require.NoError(t, err)
+
+	centralFile := filterNamedFile(files, "central/01-central-13-deployment.yaml")
+	require.NotNil(t, centralFile)
+	central := getCentralDeployment(t, centralFile)
+	assert.LessOrEqual(t, countContainerEnv(central, env.CentralWorkerEnabled.EnvVar()), 1,
+		"chart writes ROX_CENTRAL_WORKER_ENABLED when the worker is enabled; copying it from Environment duplicates the env name")
+	assert.Equal(t, 1, countContainerEnv(central, "ROX_CUSTOM_TEST_FLAG"))
+
+	if workerFile := filterNamedFile(files, "central/03-central-worker-01-deployment.yaml"); workerFile != nil {
+		worker := getCentralDeployment(t, workerFile)
+		assert.Equal(t, 1, countContainerEnv(worker, env.CentralWorkerEnabled.EnvVar()))
+	}
+}
+
 func filterCentralFile(files []*zip.File) *zip.File {
+	return filterNamedFile(files, "central/01-central-13-deployment.yaml")
+}
+
+func filterNamedFile(files []*zip.File, name string) *zip.File {
 	for _, f := range files {
-		if f.Name == "central/01-central-13-deployment.yaml" {
+		if f.Name == name {
 			return f
 		}
 	}
 	return nil
+}
+
+func countContainerEnv(deployment *appsv1.Deployment, name string) int {
+	count := 0
+	for _, e := range deployment.Spec.Template.Spec.Containers[0].Env {
+		if e.Name == name {
+			count++
+		}
+	}
+	return count
 }
 
 func getCentralDeployment(t *testing.T, centralFile *zip.File) *appsv1.Deployment {
