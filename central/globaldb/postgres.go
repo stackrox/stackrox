@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -170,7 +171,7 @@ func InitializePostgresWithPoolSize(ctx context.Context, maxConns int32) postgre
 		if err != nil {
 			log.Warnf("Could not create pg_stat_statements extension.  Statement planning and execution stats may not be tracked: %v", err)
 		}
-		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
+		startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
 	})
 	return postgresDB
@@ -395,23 +396,31 @@ func getMaxConnections(ctx context.Context, db postgres.DB) {
 }
 
 func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig *postgres.Config) {
-	go func() {
-		t := time.NewTicker(1 * time.Hour)
-		defer t.Stop()
-		CollectPostgresIndexStats(ctx, db)
-		for range t.C {
+	indexWorker := &backgroundworker.PeriodicWorker{
+		Name:       "postgres-index-stats",
+		Interval:   1 * time.Hour,
+		RunOnStart: true,
+		Run: func(ctx context.Context) error {
 			CollectPostgresIndexStats(ctx, db)
-		}
-	}()
-
-	t := time.NewTicker(1 * time.Minute)
-	defer t.Stop()
-	for range t.C {
-		_ = CollectPostgresStats(ctx, db)
-		CollectPostgresDatabaseStats(postgresConfig)
-		CollectPostgresConnectionStats(ctx, db)
-		CollectPostgresTupleStats(ctx, db)
+			return nil
+		},
 	}
+	backgroundworker.Global.Register(indexWorker)
+	indexWorker.Start(ctx)
+
+	connWorker := &backgroundworker.PeriodicWorker{
+		Name:     "postgres-connection-stats",
+		Interval: 1 * time.Minute,
+		Run: func(ctx context.Context) error {
+			_ = CollectPostgresStats(ctx, db)
+			CollectPostgresDatabaseStats(postgresConfig)
+			CollectPostgresConnectionStats(ctx, db)
+			CollectPostgresTupleStats(ctx, db)
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(connWorker)
+	connWorker.Start(ctx)
 }
 
 // CollectPostgresIndexStats checks for invalid indexes, exports a Prometheus metric,
