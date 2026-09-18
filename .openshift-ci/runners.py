@@ -4,11 +4,16 @@
 Common test run patterns
 """
 
+import os
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
 from ci_tests import NullTest
 from post_tests import NullPostTest
+
+
+def is_e2e_infra_only():
+    return os.getenv("E2E_INFRA_ONLY", "false").lower() == "true"
 
 
 class TestSet:
@@ -39,13 +44,16 @@ class TestSet:
             raise
 
         exception = None
-        try:
-            log_event("About to run test", self)
-            self._actual_test.run()
-            log_event("test completed", self)
-        except Exception as err:
-            log_event(f"ERROR: test failed [{err}]", self)
-            exception = err
+        if is_e2e_infra_only():
+            log_event("Skipping test body in E2E infra-only mode", self)
+        else:
+            try:
+                log_event("About to run test", self)
+                self._actual_test.run()
+                log_event("test completed", self)
+            except Exception as err:
+                log_event(f"ERROR: test failed [{err}]", self)
+                exception = err
 
         try:
             log_event("About to run post test", self)
