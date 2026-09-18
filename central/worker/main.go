@@ -54,7 +54,6 @@ func main() {
 	log.Infof("DB pool initialized with max_conns=%d", poolVal)
 
 	waitForMigrations(ctx)
-	ensureDBCurrent()
 
 	startHealthServer()
 
@@ -89,6 +88,7 @@ func main() {
 }
 
 func waitForMigrations(ctx context.Context) {
+	versionStore := vStore.NewPostgres(globaldb.GetPostgres())
 	err := retry.WithRetry(func() error {
 		acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, globaldb.GetPostgres(), dblock.MigrationLockID)
 		if err != nil {
@@ -97,10 +97,14 @@ func waitForMigrations(ctx context.Context) {
 		if !acquired {
 			return retry.MakeRetryable(errMigratorRunning)
 		}
-		release()
+		defer release()
+
+		if err := version.Ensure(versionStore); err != nil {
+			return retry.MakeRetryable(err)
+		}
 		return nil
 	}, retry.Tries(30), retry.BetweenAttempts(func(attempt int) {
-		log.Infof("Migrator lock held, waiting for migrations to complete (attempt %d)...", attempt+1)
+		log.Infof("Migrations not yet complete, waiting (attempt %d)...", attempt+1)
 		time.Sleep(10 * time.Second)
 	}))
 	if err != nil {
@@ -114,14 +118,6 @@ var errMigratorRunning = retryableError("migrator is still running")
 type retryableError string
 
 func (e retryableError) Error() string { return string(e) }
-
-func ensureDBCurrent() {
-	versionStore := vStore.NewPostgres(globaldb.GetPostgres())
-	if err := version.Ensure(versionStore); err != nil {
-		log.Fatalf("DB version check failed. Migrations may not be complete: %v", err)
-	}
-	log.Infof("DB version verified")
-}
 
 func startHealthServer() {
 	mux := http.NewServeMux()
