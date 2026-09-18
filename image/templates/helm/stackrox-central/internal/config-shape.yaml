@@ -125,7 +125,7 @@ central:
       none: null # bool
     extraMounts: null # [dict]
 centralWorker:
-  enabled: true # bool
+  enabled: false # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
   hostAliases: null # [dict]

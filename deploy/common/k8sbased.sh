@@ -457,9 +457,9 @@ function launch_central {
         fi
       fi
 
-      if [[ -n "${ROX_CENTRAL_WORKER_ENABLED:-}" ]]; then
+      if [[ "${ROX_CENTRAL_WORKER_ENABLED:-}" == "true" ]]; then
         helm_args+=(
-          --set "centralWorker.enabled=${ROX_CENTRAL_WORKER_ENABLED}"
+          --set centralWorker.enabled=true
         )
       fi
 
