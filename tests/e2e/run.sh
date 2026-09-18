@@ -25,7 +25,29 @@ test_e2e() {
 
     require_environment "KUBECONFIG"
 
-    setup_e2e_environment "$output_dir"
+    export_test_environment
+
+    export SENSOR_HELM_DEPLOY=true
+    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
+    export ROX_NETPOL_FIELDS=true
+
+    test_preamble
+    setup_deployment_env false false
+    remove_existing_stackrox_resources
+    setup_default_TLS_certs
+    info "Creating mocked compliance operator data for compliance v1 tests"
+    "$ROOT/tests/complianceoperator/create.sh"
+    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
+
+    image_prefetcher_prebuilt_await
+
+    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
+    deploy_optional_e2e_components
+    deploy_stackrox
+
+    # Background streamers are not explicitly stopped. They die when the CI
+    # runner terminates, same as the port-forward processes in setup_proxy_tests.
+    start_continuous_log_streaming "$output_dir"
 
     if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
         info "E2E infra-only mode enabled; skipping non-Groovy test execution"
@@ -88,34 +110,6 @@ test_e2e() {
     trap - EXIT
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
-}
-
-setup_e2e_environment() {
-    local output_dir="${1:-/tmp/e2e-test-logs}"
-
-    export_test_environment
-
-    export SENSOR_HELM_DEPLOY=true
-    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    export ROX_NETPOL_FIELDS=true
-
-    test_preamble
-    setup_deployment_env false false
-    remove_existing_stackrox_resources
-    setup_default_TLS_certs
-    info "Creating mocked compliance operator data for compliance v1 tests"
-    "$ROOT/tests/complianceoperator/create.sh"
-    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
-
-    image_prefetcher_prebuilt_await
-
-    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
-    deploy_optional_e2e_components
-    deploy_stackrox
-
-    # Background streamers are not explicitly stopped. They die when the CI
-    # runner terminates, same as the port-forward processes in setup_proxy_tests.
-    start_continuous_log_streaming "$output_dir"
 }
 
 test_preamble() {
