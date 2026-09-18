@@ -52,7 +52,7 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 		return nil, err
 	}
 	claimToRoleMapper := newRoleMapperFromMappings(config.GetMappings(), roleDS)
-	provider := newProviderFromConfigData(config.GetId(), config.GetType().String(), claimToRoleMapper)
+	provider := newProvider(config.GetIssuer(), config.GetType().String(), claimToRoleMapper)
 	roxClaimExtractor := newClaimExtractorForConfigType(config.GetType())
 	issuer, err := issuerFactory.CreateIssuer(provider, tokens.WithTTL(tokenTTL))
 	if err != nil {
@@ -99,7 +99,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 		return "", errox.NoCredentials.New("ID token is invalid").CausedBy(err)
 	}
 
-	log.Debugf("Successfully validated ID token (sub=%q) for config %q", idToken.Subject, m.config.GetId())
+	log.Debugf("Successfully validated ID token (sub=%q) for issuer %q", idToken.Subject, m.config.GetIssuer())
 
 	claims, err := m.roxClaimExtractor.ExtractClaims(idToken)
 	if err != nil {

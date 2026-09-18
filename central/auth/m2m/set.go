@@ -75,13 +75,13 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 		// Need to unregister the source temporarily, otherwise we receive an error on creation that the
 		// source is already registered.
 		if err := t.issuerFactory.UnregisterSource(exchanger.Provider()); err != nil {
-			return pkgErrors.Wrapf(err, "unregistering source for config %s", config.GetId())
+			return pkgErrors.Wrapf(err, "unregistering source for issuer %s", config.GetIssuer())
 		}
 	}
 
 	tokenExchanger, err := t.tokenExchangerFactory(ctx, config, t.roleDS, t.issuerFactory)
 	if err != nil {
-		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
+		return pkgErrors.Wrapf(err, "creating token exchanger for issuer %s", config.GetIssuer())
 	}
 
 	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
