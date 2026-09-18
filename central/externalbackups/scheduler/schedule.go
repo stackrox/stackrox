@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -41,12 +43,40 @@ type scheduler struct {
 func New(reporter integrationhealth.Reporter, backupListener listener.BackupListener) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
-	return &scheduler{
+	s := &scheduler{
 		pluginsToEntryIDs: make(map[string]cron.EntryID),
 		cron:              cronScheduler,
 		reporter:          reporter,
 		backupListener:    backupListener,
 	}
+
+	// Register with the background worker registry for debug endpoint
+	// observability. The scheduler does not fit a standard archetype: it
+	// dynamically adds/removes robfig/cron jobs rather than owning a single
+	// periodic loop.
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "external-backup-scheduler",
+		WorkerKind: "cron-scheduler",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			s.lock.Lock()
+			activeBackups := len(s.pluginsToEntryIDs)
+			s.lock.Unlock()
+
+			extra := map[string]any{
+				"active_backups": activeBackups,
+			}
+			if entries := s.cron.Entries(); len(entries) > 0 && !entries[0].Next.IsZero() {
+				extra["next_run_time"] = entries[0].Next.UTC().Format(time.RFC3339)
+			}
+
+			return backgroundworker.WorkerStatus{
+				State: "running",
+				Extra: extra,
+			}
+		},
+	})
+
+	return s
 }
 
 func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {

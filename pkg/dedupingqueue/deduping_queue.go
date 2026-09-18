@@ -111,6 +111,14 @@ func (q *DedupingQueue[K]) pull() Item[K] {
 	return ret
 }
 
+// Len returns the number of items currently in the queue. Safe to call
+// concurrently; intended for observability (e.g. debug/status endpoints).
+func (q *DedupingQueue[K]) Len() int {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.queue.Len()
+}
+
 // Push adds an item to the queue if the item is not in the queue already
 func (q *DedupingQueue[K]) Push(item Item[K]) {
 	q.lock.Lock()

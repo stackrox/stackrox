@@ -5,9 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
@@ -17,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
@@ -68,7 +67,6 @@ type scheduler struct {
 	// request is enqueued or when a report completes. Reset when no runnable report
 	// is found across any queue.
 	readyForReports concurrency.Signal
-	Schema          *graphql.Schema
 
 	/* Concurrency and synchronization related fields */
 	// isStarted will make sure only one scheduling routine runs for an instance of scheduler
@@ -88,6 +86,13 @@ type scheduler struct {
 	cron                *cron.Cron
 	concurrencySema     *semaphore.Weighted
 	advisoryLockRelease func()
+
+	// State tracked for the StatusAdapter (debug endpoint observability
+	// only). activeReports and lastDispatchUnixNano are only ever written
+	// from the runReports/runSingleReport goroutines, so atomics are
+	// sufficient without extending the locking above.
+	activeReports        atomic.Int64
+	lastDispatchUnixNano atomic.Int64
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
@@ -98,19 +103,14 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 
 	cronScheduler := cron.New()
 	cronScheduler.Start()
-	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
-	if err != nil {
-		panic(err)
-	}
 	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
-		imageReportGenerator, nodeReportGenerator, validator, cronScheduler, ourSchema)
+		imageReportGenerator, nodeReportGenerator, validator, cronScheduler)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	imageReportGenerator reportGen.ReportGenerator, nodeReportGenerator reportGen.ReportGenerator,
-	validator *validation.Validator, cronScheduler *cron.Cron,
-	schema *graphql.Schema) *scheduler {
+	validator *validation.Validator, cronScheduler *cron.Cron) *scheduler {
 
 	imageQueue := reportqueue.New()
 	queues := []queueGeneratorBinding{
@@ -137,11 +137,50 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		nextQueueIdx:           0,
 		queueByType:            queueByType,
 		readyForReports:        concurrency.NewSignal(),
-		Schema:                 schema,
 		stopper:                concurrency.NewStopper(),
 		cron:                   cronScheduler,
 		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
+
+	// Register with the background worker registry for debug endpoint
+	// observability. The scheduler does not fit a standard archetype: it
+	// combines a signal-driven dequeue loop, a cron scheduler, a PostgreSQL
+	// advisory lock for leader election, and missed-schedule recovery.
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "report-scheduler-v2",
+		WorkerKind: "scheduler",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			state := "idle"
+			if s.isStopped.Load() {
+				state = "stopped"
+			} else if s.isStarted.Load() {
+				state = "running"
+			}
+
+			queueDepths := make(map[string]int, len(s.queueByType))
+			total := 0
+			for typ, q := range s.queueByType {
+				depth := q.Len()
+				queueDepths[typ.String()] = depth
+				total += depth
+			}
+
+			extra := map[string]any{
+				"queue_depths":      queueDepths,
+				"queue_depth_total": total,
+				"active_reports":    s.activeReports.Load(),
+			}
+			if last := s.lastDispatchUnixNano.Load(); last != 0 {
+				extra["last_schedule_time"] = time.Unix(0, last).UTC().Format(time.RFC3339)
+			}
+
+			return backgroundworker.WorkerStatus{
+				State: state,
+				Extra: extra,
+			}
+		},
+	})
+
 	return s
 }
 
@@ -216,6 +255,7 @@ func (s *scheduler) runReports() {
 				continue
 			}
 			log.Infof("Executing report '%s' at %v", req.ReportSnapshot.GetName(), time.Now().Format(time.RFC822))
+			s.lastDispatchUnixNano.Store(time.Now().UnixNano())
 			go s.runSingleReport(q, gen, req)
 		}
 	}
@@ -235,6 +275,8 @@ func (s *scheduler) selectNextJobRoundRobin() (*reportGen.ReportRequest, *report
 }
 
 func (s *scheduler) runSingleReport(q *reportqueue.ReportQueue, gen reportGen.ReportGenerator, req *reportGen.ReportRequest) {
+	s.activeReports.Add(1)
+	defer s.activeReports.Add(-1)
 	defer s.readyForReports.Signal()
 	defer s.concurrencySema.Release(1)
 	defer q.MarkReportDoneForConfig(req.ReportSnapshot.GetReportConfigurationId())
@@ -281,6 +323,17 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 		s.cron.Remove(oldEntryID)
 		delete(s.reportConfigToEntryIDs, reportConfigID)
 	}
+}
+
+func (s *scheduler) GetScheduledConfigIDs() []string {
+	s.cronJobsLock.Lock()
+	defer s.cronJobsLock.Unlock()
+
+	ids := make([]string, 0, len(s.reportConfigToEntryIDs))
+	for id := range s.reportConfigToEntryIDs {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 /* Functions to add/remove report jobs from queue */
