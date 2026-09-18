@@ -73,7 +73,7 @@ ci_export() {
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
     elif command -v cci-export >/dev/null; then
-        ensure_writable_bash_env
+        ensure_writable_bash_env || return 1
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
