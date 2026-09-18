@@ -112,7 +112,12 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
+    # The time-travel checkout only needs the host roxctl binary. `make cli`
+    # builds and installs every supported platform, even though CI invokes
+    # this path on Linux amd64.
+    local cli_target="cli_${TEST_HOST_PLATFORM//_/-}"
+    info "Building time-travel roxctl target: ${cli_target}"
+    make "${cli_target}"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
