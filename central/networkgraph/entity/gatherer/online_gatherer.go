@@ -3,13 +3,12 @@ package gatherer
 import (
 	"bytes"
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -44,51 +43,50 @@ var (
 
 type defaultExtSrcsGathererImpl struct {
 	networkEntityDS entityDataStore.EntityDataStore
-	stopSig         concurrency.Signal
 	blobStore       blobstore.Datastore
 	currentChecksum []byte
 	mutex           sync.RWMutex
+	worker          *backgroundworker.PeriodicWorker
 }
 
 // newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
 func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore, blobStore blobstore.Datastore) NetworkGraphDefaultExtSrcsGatherer {
-	return &defaultExtSrcsGathererImpl{
+	g := &defaultExtSrcsGathererImpl{
 		networkEntityDS: networkEntityDS,
 		blobStore:       blobStore,
 	}
+	g.worker = &backgroundworker.PeriodicWorker{
+		Name:       "network-graph-external-sources",
+		RunOnStart: true,
+		OnStart: func(_ context.Context) error {
+			err := g.loadBundledExternalSrcs(g.blobStore, g.networkEntityDS)
+			if err != nil {
+				log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
+			}
+			return err
+		},
+		Run: func(_ context.Context) error {
+			err := g.reconcileDefaultExternalSrcs()
+			if err != nil {
+				log.Errorf("Failed to update default external networks: %v", err)
+			}
+			return err
+		},
+	}
+	backgroundworker.Global.Register(g.worker)
+	return g
 }
 
 func (g *defaultExtSrcsGathererImpl) Start() {
-	go func() {
-		if err := g.loadBundledExternalSrcs(g.blobStore, g.networkEntityDS); err != nil {
-			log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
-		}
-		go g.run()
-	}()
-}
-
-func (g *defaultExtSrcsGathererImpl) run() {
 	// In offline mode, don't try to reconcile.
-	if env.OfflineModeEnv.BooleanSetting() {
-		return
+	if !env.OfflineModeEnv.BooleanSetting() {
+		g.worker.Interval = env.ExtNetworkSrcsGatherInterval.DurationSetting()
 	}
-	ticker := time.NewTicker(env.ExtNetworkSrcsGatherInterval.DurationSetting())
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-g.stopSig.Done():
-			return
-		case <-ticker.C:
-			if err := g.reconcileDefaultExternalSrcs(); err != nil {
-				log.Errorf("Failed to update default external networks: %v", err)
-			}
-		}
-	}
+	g.worker.Start(context.Background())
 }
 
 func (g *defaultExtSrcsGathererImpl) Stop() {
-	g.stopSig.Signal()
+	g.worker.Stop()
 }
 
 func (g *defaultExtSrcsGathererImpl) Update() error {
