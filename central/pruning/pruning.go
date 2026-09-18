@@ -45,10 +45,14 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	pgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -250,6 +254,18 @@ func (g *garbageCollectorImpl) runGC() {
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	lastV1ImagePruneTime = time.Now().Add(-env.V1ImagePruneInterval.DurationSetting())
 	g.pruneBasedOnConfig()
+
+	// DEBUG(ROX prune-RBAC investigation): the store-vs-DB cluster read divergence (and the
+	// RBAC wipe it causes) only manifest on a prune cycle AFTER the secured cluster registers,
+	// which happens a few minutes post-startup. At the default 1h ROX_PRUNE_INTERVAL the first
+	// diagnostic cycle lands ~1h in, so the probe is only captured if the CI job survives that
+	// long — exactly what we cannot rely on. Clamp to a short interval for this debug build so
+	// the divergence is captured within minutes, independent of job duration. An explicit
+	// (smaller) ROX_PRUNE_INTERVAL still wins. Remove after triage.
+	if pruneInterval > 2*time.Minute {
+		log.Warnf("[PruneDebug] clamping prune interval from %s to 2m for debug diagnostics", pruneInterval)
+		pruneInterval = 2 * time.Minute
+	}
 
 	t := time.NewTicker(pruneInterval)
 	for {
@@ -649,6 +665,8 @@ func (g *garbageCollectorImpl) logRBACPruneDebug(clusterIDSet set.FrozenStringSe
 	log.Infof("[PruneDebug] clusterIDSet feeding orphan negation: card=%d ids=%v", clusterIDSet.Cardinality(), clusterIDSet.AsSlice())
 	log.Infof("[PruneDebug] orphan negation query proto: %s", q.String())
 
+	g.logClusterReadDivergenceProbe(cnt)
+
 	// Raw-SQL layer: bypasses the datastore AND the search layer entirely, reading the
 	// physical table via this same worker's pool. Distinguishes "row absent from table"
 	// (DB/connection/txn issue) from "store or search layer can't see the row".
@@ -763,6 +781,55 @@ func (g *garbageCollectorImpl) logRBACPruneDebug(clusterIDSet set.FrozenStringSe
 		}
 		log.Infof("[PruneDebug] role_bindings: total=%d orphanMatched=%d matchedClusterIDs(sample)=%v allClusterIDs(sample)=%v searchErrs=[matched:%v all:%v]",
 			bindingTotal, len(matched), sampleClusterIDs(matchedCIDs), sampleClusterIDs(allCIDs), mErr, aErr)
+	}
+}
+
+// logClusterReadDivergenceProbe pins down WHY the cluster store returns 0 for a row
+// that physically exists (direct SQL count=1) under an all-access context whose SAC
+// filter resolves to a no-op. It partitions the remaining hypotheses by observing,
+// side by side with the real runtime pruningCtx:
+//
+//  1. SAC/scope in the *real* ctx: log the actual SAC filter and scope query the store
+//     would inject. Both must be nil (allow-all) for the counts to reconcile; a non-nil
+//     value means the all-access ctx is not resolving to all-access in the worker.
+//  2. Handle vs code-path: run the exact search-layer code path the store uses
+//     (RunCountRequestForSchema) but against g.postgres explicitly. If this returns the
+//     real count while the store's CountClusters returns 0, the store's captured db
+//     handle differs from g.postgres. If both return 0, the search path itself yields 0.
+//  3. Session/tx identity: whether pruningCtx carries a transaction, and the session
+//     backing g.postgres (db/schema/search_path/pid/txid) — to catch a wrong search_path
+//     or an unexpected snapshot.
+//
+// DEBUG(ROX prune-RBAC investigation): remove after triage.
+func (g *garbageCollectorImpl) logClusterReadDivergenceProbe(storeCount int) {
+	// (1) Does the real pruningCtx resolve to an allow-all SAC filter / no scope for the
+	// Cluster resource? nil in both cases means no WHERE clause is injected.
+	sacQ, sacErr := pgSearch.GetReadSACQuery(pruningCtx, resources.Cluster)
+	log.Infof("[PruneDebug] GetReadSACQuery(pruningCtx, Cluster) nil=%v (nil=>allow-all) q=%s err=%v",
+		sacQ == nil, sacQ.String(), sacErr)
+	scopeQ, scopeErr := scoped.GetQueryForAllScopes(pruningCtx)
+	log.Infof("[PruneDebug] scoped.GetQueryForAllScopes(pruningCtx) nil=%v (nil=>no scope) q=%s err=%v",
+		scopeQ == nil, scopeQ.String(), scopeErr)
+
+	// (3) Does pruningCtx carry a transaction that would divert the store's reads onto a
+	// different (possibly stale) snapshot than g.postgres raw queries?
+	_, hasTx := pgPkg.TxFromContext(pruningCtx)
+	log.Infof("[PruneDebug] pruningCtx carries postgres tx: %v", hasTx)
+
+	// (2) Exact same search-layer code path the store's CountClusters uses, but bound to
+	// g.postgres rather than the store's captured handle. This is the decisive comparison:
+	// same query builder, same ctx, only the db handle differs.
+	searchCount, searchErr := pgSearch.RunCountRequestForSchema(pruningCtx, pgSchema.ClustersSchema, search.EmptyQuery(), g.postgres)
+	log.Infof("[PruneDebug] RunCountRequestForSchema(clusters, g.postgres)=%d err=%v vs store CountClusters=%d (mismatch => store db handle != g.postgres)",
+		searchCount, searchErr, storeCount)
+
+	// (3 cont.) Session identity backing the g.postgres handle used for the raw counts.
+	var sess string
+	if err := g.postgres.QueryRow(pruningCtx,
+		"SELECT format('db=%s schema=%s search_path=%s pid=%s txid=%s', current_database(), current_schema(), current_setting('search_path'), pg_backend_pid()::text, coalesce(txid_current_if_assigned()::text, 'none'))").Scan(&sess); err != nil {
+		log.Warnf("[PruneDebug] session probe (g.postgres) err=%v", err)
+	} else {
+		log.Infof("[PruneDebug] session (g.postgres raw): %s", sess)
 	}
 }
 
