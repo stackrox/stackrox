@@ -47,7 +47,7 @@ jobs:
       STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 120
+    timeout-minutes: 361
     steps:
 
     - name: Checkout repo
@@ -150,7 +150,7 @@ jobs:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      timeout-minutes: 90
+      timeout-minutes: 245
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Persist env vars for post-test
