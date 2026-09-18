@@ -20,6 +20,7 @@ import (
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -90,10 +91,15 @@ type managerImpl struct {
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 
-	metricsTicker  *time.Ticker
-	metricsTickerC <-chan time.Time
-	// maxScansInParallel stores the maximum number of scans running in parallel between the ticks of metricsTicker.
+	// maxScansInParallel stores the maximum number of scans running in parallel between metrics observations.
 	maxScansInParallel atomic.Int32
+
+	// customWG tracks the custom (non-archetype) goroutines: handleReadyScan and handleReadyScanConfig.
+	customWG sync.WaitGroup
+
+	reportsConsumer *backgroundworker.QueueConsumer[*reportRequest]
+	metricsWorker   *backgroundworker.PeriodicWorker
+	group           *backgroundworker.WorkerGroup
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore,
@@ -105,8 +111,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 	bindingsDataStore bindingsDS.DataStore,
 	checkResultDataStore checkResults.DataStore,
 	reportGen reportGen.ComplianceReportGenerator) Manager {
-	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
-	return &managerImpl{
+	m := &managerImpl{
 		scanConfigDataStore:    scanConfigDS,
 		scanDataStore:          scanDataStore,
 		profileDataStore:       profileDataStore,
@@ -126,9 +131,83 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 		readyQueue:             queue.NewQueue[*watcher.ScanWatcherResults](),
 		watchingScanConfigs:    make(map[string]watcher.ScanConfigWatcher),
 		scanConfigReadyQueue:   queue.NewQueue[*watcher.ScanConfigWatcherResults](),
-		metricsTicker:          gmt,
-		metricsTickerC:         gmt.C,
 	}
+
+	m.reportsConsumer = &backgroundworker.QueueConsumer[*reportRequest]{
+		Name:        "compliance-report-manager/reports",
+		Source:      m.reportRequests,
+		Concurrency: maxRequests,
+		Handle: func(_ context.Context, req *reportRequest) error {
+			wasGenerated, err := m.handleReportRequest(req)
+			// If the report was generated or the returned with an error we need to
+			// delete the scan configuration entry from runningReportConfigs
+			if err != nil || wasGenerated {
+				concurrency.WithLock(&m.mu, func() {
+					delete(m.runningReportConfigs, req.scanConfig.GetId())
+				})
+			}
+			if err != nil {
+				log.Errorf("unable to handle the report request: %v", err)
+			}
+			return err
+		},
+	}
+
+	m.metricsWorker = &backgroundworker.PeriodicWorker{
+		Name:     "compliance-report-manager/metrics",
+		Interval: env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting(),
+		Run: func(_ context.Context) error {
+			nRunning := concurrency.WithLock1(&m.watchingScansLock, func() int {
+				return len(m.watchingScans)
+			})
+			numWatchers.Set(float64(nRunning))
+			// Reset the maximum value on tick and set to the current number
+			prevVal := m.maxScansInParallel.Swap(int32(nRunning))
+			log.Debugf("Updating maxScansInParallel from %d to %d (tick)", prevVal, nRunning)
+			if prevVal > 0 {
+				scansRunningInParallel.Observe(float64(prevVal))
+			}
+			return nil
+		},
+	}
+
+	m.group = backgroundworker.NewWorkerGroup(m.reportsConsumer, m.metricsWorker)
+	m.group.Register(backgroundworker.Global)
+
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "compliance-report-manager/ready-scans",
+		WorkerKind: "custom",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			return backgroundworker.WorkerStatus{
+				State:    m.customWorkerState(),
+				InFlight: int64(m.readyQueue.Len()),
+			}
+		},
+	})
+	backgroundworker.Global.Register(&backgroundworker.StatusAdapter{
+		WorkerName: "compliance-report-manager/ready-scan-configs",
+		WorkerKind: "custom",
+		StatusFunc: func() backgroundworker.WorkerStatus {
+			return backgroundworker.WorkerStatus{
+				State:    m.customWorkerState(),
+				InFlight: int64(m.scanConfigReadyQueue.Len()),
+			}
+		},
+	})
+
+	return m
+}
+
+// customWorkerState reports the lifecycle state of the manager's custom (non-archetype) goroutines,
+// for registry/status visibility.
+func (m *managerImpl) customWorkerState() string {
+	if m.isStopped.Load() {
+		return "stopped"
+	}
+	if m.isStarted.Load() {
+		return "running"
+	}
+	return "idle"
 }
 
 func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error {
@@ -171,14 +250,13 @@ func (m *managerImpl) Start() {
 		return
 	}
 	log.Info("Starting compliance report manager")
-	go m.runReports()
+	m.customWG.Add(2)
 	go m.handleReadyScan()
 	go m.handleReadyScanConfig()
-	go m.updateMetrics()
+	m.group.Start(context.Background())
 }
 
 func (m *managerImpl) Stop() {
-	m.metricsTicker.Stop()
 	if !m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
@@ -207,11 +285,9 @@ func (m *managerImpl) Stop() {
 	m.reportGen.Stop()
 
 	m.stopper.Client().Stop()
-	err := m.stopper.Client().Stopped().Wait()
-	if err != nil {
-		logging.Errorf("Error stopping compliance report manager : %v", err)
-	}
+	m.customWG.Wait()
 
+	m.group.Stop()
 }
 
 func (m *managerImpl) generateReportNoLock(req *reportRequest) {
@@ -240,31 +316,6 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
 		log.Errorf("unable to process the report request: %v", err)
-	}
-}
-
-func (m *managerImpl) runReports() {
-	defer m.stopper.Flow().ReportStopped()
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			logging.Info("Signal received to stop compliance report manager")
-			return
-		case req := <-m.reportRequests:
-			go func() {
-				wasGenerated, err := m.handleReportRequest(req)
-				// If the report was generated or the returned with an error we need to
-				// delete the scan configuration entry from runningReportConfigs
-				if err != nil || wasGenerated {
-					concurrency.WithLock(&m.mu, func() {
-						delete(m.runningReportConfigs, req.scanConfig.GetId())
-					})
-				}
-				if err != nil {
-					log.Errorf("unable to handle the report request: %v", err)
-				}
-			}()
-		}
 	}
 }
 
@@ -386,26 +437,6 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	return nil
 }
 
-func (m *managerImpl) updateMetrics() {
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		case <-m.metricsTickerC:
-			nRunning := concurrency.WithLock1(&m.watchingScansLock, func() int {
-				return len(m.watchingScans)
-			})
-			numWatchers.Set(float64(nRunning))
-			// Reset the maximum value on tick and set to the current number
-			prevVal := m.maxScansInParallel.Swap(int32(nRunning))
-			log.Debugf("Updating maxScansInParallel from %d to %d (tick)", prevVal, nRunning)
-			if prevVal > 0 {
-				scansRunningInParallel.Observe(float64(prevVal))
-			}
-		}
-	}
-}
-
 func (m *managerImpl) updateMaxNumScansRunningInParallelNoLock() {
 	newVal := max(m.maxScansInParallel.Load(), int32(len(m.watchingScans)))
 	prevVal := m.maxScansInParallel.Swap(newVal)
@@ -482,6 +513,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 
 // handleReadyScan pulls scans that are ready to be reported
 func (m *managerImpl) handleReadyScan() {
+	defer m.customWG.Done()
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
@@ -603,6 +635,7 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 
 // handleReadyScanConfig pulls scan configs that are ready to be reported
 func (m *managerImpl) handleReadyScanConfig() {
+	defer m.customWG.Done()
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}

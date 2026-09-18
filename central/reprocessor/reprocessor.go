@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -118,39 +119,78 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, imageEnricherV2 imageEnricher.ImageEnricherV2,
+func newLoopWithDuration(connManager connection.Manager, imgEnricher imageEnricher.ImageEnricher, imgEnricherV2 imageEnricher.ImageEnricherV2,
 	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore,
 	imagesV2 imageV2Datastore.DataStore, nodes nodeDatastore.DataStore, risk manager.Manager,
 	watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) *loopImpl {
-	return &loopImpl{
-		enrichAndDetectTickerDuration: enrichAndDetectDuration,
-		deploymentRiskTickerDuration:  deploymentRiskDuration,
-
-		imageEnricher:   imageEnricher,
-		imageEnricherV2: imageEnricherV2,
+	l := &loopImpl{
+		imageEnricher:   imgEnricher,
+		imageEnricherV2: imgEnricherV2,
 		images:          images,
 		imagesV2:        imagesV2,
 		risk:            risk,
 
 		watchedImages: watchedImages,
 
-		deployments:       deployments,
-		deploymentRiskSet: set.NewStringSet(),
+		deployments: deployments,
 
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
 
-		shortCircuitSig:   concurrency.NewSignal(),
-		stopSig:           concurrency.NewSignal(),
-		enrichmentStopped: concurrency.NewSignal(),
-		riskStopped:       concurrency.NewSignal(),
+		stopSig: concurrency.NewSignal(),
 
-		signatureVerificationSig: concurrency.NewSignal(),
+		enrichShortCircuit: backgroundworker.NewSignalChannel(),
+		sigVerifSignal:     backgroundworker.NewSignalChannel(),
 
 		connManager: connManager,
 
 		injectMessageTimeoutDur: env.ReprocessInjectMessageTimeout.DurationSetting(),
 	}
+
+	l.enrichWorker = &backgroundworker.PeriodicWorker{
+		Name:         "reprocessor/enrich",
+		Interval:     enrichAndDetectDuration,
+		RunOnStart:   true,
+		ShortCircuit: l.enrichShortCircuit.C(),
+		OnStart: func(_ context.Context) error {
+			// Call runReprocessing with ForceRefetch on start to ensure that the image metadata reflects any changes
+			// in the proto and to ensure that the images and nodes are pulling new scans on <= the reprocessing interval
+			l.runReprocessing(imageEnricher.ForceRefetch)
+			return nil
+		},
+		Run: func(_ context.Context) error {
+			l.runReprocessing(imageEnricher.ForceRefetchCachedValuesOnly)
+			return nil
+		},
+		OnShortCircuit: func(_ context.Context) error {
+			l.runReprocessing(imageEnricher.UseCachesIfPossible)
+			return nil
+		},
+	}
+
+	l.sigVerifWorker = &backgroundworker.PeriodicWorker{
+		Name:         "reprocessor/signature-verification",
+		ShortCircuit: l.sigVerifSignal.C(),
+		Run: func(_ context.Context) error {
+			l.runSignatureVerificationReprocessing()
+			return nil
+		},
+	}
+
+	l.riskAccumulator = &backgroundworker.BatchAccumulator[string]{
+		Name:          "reprocessor/risk",
+		FlushInterval: deploymentRiskDuration,
+		Collector:     &backgroundworker.SetCollector[string]{},
+		Flush: func(_ context.Context, deploymentIDs []string) error {
+			l.sendDeployments(deploymentIDs)
+			return nil
+		},
+	}
+
+	l.group = backgroundworker.NewWorkerGroup(l.enrichWorker, l.sigVerifWorker, l.riskAccumulator)
+	l.group.Register(backgroundworker.Global)
+
+	return l
 }
 
 // imageReprocessingFunc represents the function used for image reprocessing. This enables us to specifically exclude
@@ -172,9 +212,6 @@ type imageRef struct {
 }
 
 type loopImpl struct {
-	enrichAndDetectTickerDuration time.Duration
-	enrichAndDetectTicker         *time.Ticker
-
 	images          imageDatastore.DataStore
 	imagesV2        imageV2Datastore.DataStore
 	risk            manager.Manager
@@ -183,21 +220,16 @@ type loopImpl struct {
 
 	watchedImages watchedImageDataStore.DataStore
 
-	deployments                  deploymentDatastore.DataStore
-	deploymentRiskSet            set.StringSet
-	deploymentRiskLock           sync.Mutex
-	deploymentRiskTicker         *time.Ticker
-	deploymentRiskTickerDuration time.Duration
+	deployments deploymentDatastore.DataStore
 
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
-	shortCircuitSig   concurrency.Signal
-	stopSig           concurrency.Signal
-	riskStopped       concurrency.Signal
-	enrichmentStopped concurrency.Signal
+	stopSig concurrency.Signal
 
-	signatureVerificationSig  concurrency.Signal
+	enrichShortCircuit *backgroundworker.SignalChannel
+	sigVerifSignal     *backgroundworker.SignalChannel
+
 	firstSignatureIntegration concurrency.Flag
 
 	reprocessingInProgress concurrency.Flag
@@ -205,34 +237,34 @@ type loopImpl struct {
 	connManager connection.Manager
 
 	injectMessageTimeoutDur time.Duration
+
+	enrichWorker    *backgroundworker.PeriodicWorker
+	sigVerifWorker  *backgroundworker.PeriodicWorker
+	riskAccumulator *backgroundworker.BatchAccumulator[string]
+	group           *backgroundworker.WorkerGroup
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
-	l.deploymentRiskLock.Lock()
-	defer l.deploymentRiskLock.Unlock()
-	l.deploymentRiskSet.AddAll(deploymentIDs...)
+	for _, id := range deploymentIDs {
+		l.riskAccumulator.Add(id)
+	}
 }
 
 // Start starts the enrich and detect loop.
 func (l *loopImpl) Start() {
-	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
-	l.deploymentRiskTicker = time.NewTicker(l.deploymentRiskTickerDuration)
-
-	go l.riskLoop()
-	go l.enrichLoop()
+	l.group.Start(context.Background())
 }
 
 // Stop stops the enrich and detect loop.
 func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
-	l.riskStopped.Wait()
-	l.enrichmentStopped.Wait()
+	l.group.Stop()
 }
 
 func (l *loopImpl) ShortCircuit() {
 	// Signal that we should run a short circuited reprocessing. If the signal is already triggered, then the current
 	// signal is effectively deduped
-	l.shortCircuitSig.Signal()
+	l.enrichShortCircuit.Signal()
 }
 
 func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
@@ -240,7 +272,7 @@ func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 	// refetch of signature verification results.
 	// If the signal is already triggered, then the current signal is effectively deduped.
 	l.firstSignatureIntegration.Set(firstIntegration)
-	l.signatureVerificationSig.Signal()
+	l.sigVerifSignal.Signal()
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -944,6 +976,11 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {
+	// The enrichment worker and this signature verification worker run in separate goroutines; guard against
+	// them stepping on each other by sharing the same in-progress flag used by runReprocessing.
+	if l.reprocessingInProgress.TestAndSet(true) {
+		return
+	}
 	defer metrics.SetSignatureVerificationReprocessorDuration(time.Now())
 	l.reprocessWatchedImages()
 	query := imagesWithSignaturesQuery
@@ -960,6 +997,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 			l.forceEnrichImageSignatureVerificationResults, query)
 	}
 	l.firstSignatureIntegration.Set(false)
+	l.reprocessingInProgress.Set(false)
 }
 
 func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Context, _ imageEnricher.EnrichmentContext,
@@ -980,47 +1018,4 @@ func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.Enri
 func (l *loopImpl) enrichImageV2(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
 	return l.imageEnricherV2.EnrichImage(ctx, enrichCtx, image)
-}
-
-func (l *loopImpl) enrichLoop() {
-	defer l.enrichAndDetectTicker.Stop()
-	defer l.enrichmentStopped.Signal()
-
-	// Call runReprocessing with ForceRefetch on start to ensure that the image metadata reflects any changes
-	// in the proto and to ensure that the images and nodes are pulling new scans on <= the reprocessing interval
-	l.runReprocessing(imageEnricher.ForceRefetch)
-	for !l.stopSig.IsDone() {
-		select {
-		case <-l.stopSig.Done():
-			return
-		case <-l.shortCircuitSig.Done():
-			l.shortCircuitSig.Reset()
-			l.runReprocessing(imageEnricher.UseCachesIfPossible)
-		case <-l.signatureVerificationSig.Done():
-			l.signatureVerificationSig.Reset()
-			l.runSignatureVerificationReprocessing()
-		case <-l.enrichAndDetectTicker.C:
-			l.runReprocessing(imageEnricher.ForceRefetchCachedValuesOnly)
-		}
-	}
-}
-
-func (l *loopImpl) riskLoop() {
-	defer l.riskStopped.Signal()
-	defer l.deploymentRiskTicker.Stop()
-
-	for !l.stopSig.IsDone() {
-		select {
-		case <-l.stopSig.Done():
-			return
-		case <-l.deploymentRiskTicker.C:
-			concurrency.WithLock(&l.deploymentRiskLock, func() {
-				if l.deploymentRiskSet.Cardinality() > 0 {
-					// goroutine to ensure this is non-blocking.
-					go l.sendDeployments(l.deploymentRiskSet.AsSlice())
-					l.deploymentRiskSet.Clear()
-				}
-			})
-		}
-	}
 }
