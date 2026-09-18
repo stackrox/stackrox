@@ -150,7 +150,7 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
 		return u.Import(ctx, reader)
 	}
-	u.iterateFunc = jsonblob.Iterate
+	u.iterateFunc = newIterateFunc()
 
 	u.vulnBundleAllowlist = set.NewFrozenSet(opts.VulnBundleAllowlist...)
 
