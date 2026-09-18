@@ -40,6 +40,8 @@ jobs:
       STORAGE: pvc
       STORAGE_CLASS: faster
       PYTHONUNBUFFERED: "1"
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
+      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 60
     steps:
 
@@ -111,7 +113,11 @@ jobs:
         deploy_stackrox
         # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        db_backup_and_restore_test /tmp/db-backup-restore-test
+        if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+          echo "E2E infra-only mode enabled; skipping DB backup/restore test"
+        else
+          db_backup_and_restore_test /tmp/db-backup-restore-test
+        fi
 
     - name: Run post-test
       if: always()

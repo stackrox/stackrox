@@ -13,6 +13,19 @@ from typing import List
 from common import log_print
 
 
+def is_e2e_infra_only():
+    return os.getenv("E2E_INFRA_ONLY", "false").lower() == "true"
+
+
+def skip_infra_only_post_test(post_test_name):
+    if not is_e2e_infra_only():
+        return False
+    log_print(
+        f"E2E infra-only mode enabled; skipping {post_test_name} post-test collection"
+    )
+    return True
+
+
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 30 * 60
@@ -84,6 +97,8 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
         self.dirs_to_store_to_osci_artifacts = []
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -193,6 +208,8 @@ class PostClusterTest(StoreArtifacts):
         self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         if self._collect_collector_metrics:
             self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
@@ -308,6 +325,8 @@ class CheckStackroxLogs(StoreArtifacts):
         self.central_is_responsive = False
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -380,6 +399,8 @@ class FinalPost(StoreArtifacts):
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()

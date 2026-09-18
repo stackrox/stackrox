@@ -49,6 +49,11 @@ test_e2e() {
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
     start_continuous_log_streaming "$output_dir"
 
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping non-Groovy test execution"
+        return 0
+    fi
+
     rm -f FAIL
 
     prepare_for_endpoints_test
