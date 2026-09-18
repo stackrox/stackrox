@@ -35,7 +35,7 @@ import (
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
@@ -128,7 +128,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	nodeCVEStore nodeCVEDS.DataStore,
 	roleStore roleDataStore.DataStore,
 ) GarbageCollector {
-	return &garbageCollectorImpl{
+	g := &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
 		nodes:           nodes,
@@ -146,7 +146,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		k8sRoles:        k8sRoles,
 		k8sRoleBindings: k8sRoleBindings,
 		logimbueStore:   logimbueStore,
-		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
 		reportSnapshot:  reportSnapshotDS,
 		plops:           plops,
@@ -154,6 +153,14 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		nodeCVEStore:    nodeCVEStore,
 		roleStore:       roleStore,
 	}
+	g.worker = &backgroundworker.PeriodicWorker{
+		Name:       "gc-pruning",
+		Interval:   pruneInterval,
+		RunOnStart: true,
+		Run:        g.pruneBasedOnConfig,
+	}
+	backgroundworker.Global.Register(g.worker)
+	return g
 }
 
 type garbageCollectorImpl struct {
@@ -176,7 +183,7 @@ type garbageCollectorImpl struct {
 	k8sRoles        k8sRoleDataStore.DataStore
 	k8sRoleBindings roleBindingDataStore.DataStore
 	logimbueStore   logimbueDataStore.Store
-	stopper         concurrency.Stopper
+	worker          *backgroundworker.PeriodicWorker
 	reportSnapshot  snapshotDS.DataStore
 	plops           plopDataStore.DataStore
 	blobStore       blobDatastore.Datastore
@@ -185,29 +192,35 @@ type garbageCollectorImpl struct {
 }
 
 func (g *garbageCollectorImpl) Start() {
-	go g.runGC()
+	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
+	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
+	g.worker.Start(context.Background())
 }
 
-func (g *garbageCollectorImpl) pruneBasedOnConfig() {
+func (g *garbageCollectorImpl) Stop() {
+	g.worker.Stop()
+}
+
+func (g *garbageCollectorImpl) pruneBasedOnConfig(_ context.Context) error {
 	acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
 	if err != nil {
 		log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
-		return
+		return err
 	}
 	if !acquired {
 		log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
-		return
+		return backgroundworker.ErrSkipped
 	}
 	defer release()
 
 	pvtConfig, err := g.config.GetPrivateConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
-		return
+		return err
 	}
 	if pvtConfig == nil {
 		log.Error("UNEXPECTED: Got nil config")
-		return
+		return errors.New("got nil config")
 	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
 	g.collectImages(pvtConfig)
@@ -231,24 +244,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
-}
-
-func (g *garbageCollectorImpl) runGC() {
-	defer g.stopper.Flow().ReportStopped()
-
-	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
-	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
-	g.pruneBasedOnConfig()
-
-	t := time.NewTicker(pruneInterval)
-	for {
-		select {
-		case <-t.C:
-			g.pruneBasedOnConfig()
-		case <-g.stopper.Flow().StopRequested():
-			return
-		}
-	}
+	return nil
 }
 
 // Remove vulnerability requests that have expired and past the retention period.
@@ -1248,9 +1244,4 @@ func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
 		log.Infof("[Expired objects pruning] Removed %d roles, %d permission sets, %d access scopes",
 			expiredRoleCount, expiredPSCount, expiredASCount)
 	}
-}
-
-func (g *garbageCollectorImpl) Stop() {
-	g.stopper.Client().Stop()
-	_ = g.stopper.Client().Stopped().Wait()
 }

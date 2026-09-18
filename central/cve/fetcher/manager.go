@@ -10,7 +10,8 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/backgroundworker"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
@@ -30,7 +31,8 @@ type OrchestratorIstioCVEManager interface {
 type orchestratorIstioCVEManagerImpl struct {
 	orchestratorCVEMgr *orchestratorCVEManager
 
-	updateSignal    concurrency.Signal
+	worker          *backgroundworker.PeriodicWorker
+	updateSignal    *backgroundworker.SignalChannel
 	lastUpdatedTime time.Time
 }
 
@@ -50,8 +52,18 @@ func NewOrchestratorIstioCVEManagerImpl(
 			creators:                make(map[string]pkgScanners.OrchestratorScannerCreator),
 			scanners:                make(map[string]types.OrchestratorScanner),
 		},
-		updateSignal: concurrency.NewSignal(),
+		updateSignal: backgroundworker.NewSignalChannel(),
 	}
+	m.worker = &backgroundworker.PeriodicWorker{
+		Name:         "orchestrator_cve_fetcher",
+		Interval:     env.OrchestratorVulnScanInterval.DurationSetting(),
+		ShortCircuit: m.updateSignal.C(),
+		Run: func(_ context.Context) error {
+			m.reconcileAllCVEs()
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(m.worker)
 	if !features.LegacyScanner.Enabled() {
 		log.Info("Orchestrator scanning is disabled: no orchestrator scanners are integrated")
 		return m, nil

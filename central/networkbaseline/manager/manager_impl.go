@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backgroundworker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -67,7 +68,7 @@ type manager struct {
 	lock                    sync.Mutex
 
 	deploymentObservationQueue queue.DeploymentObservationQueue
-	baselineFlushTicker        *time.Ticker
+	baselineFlushWorker        *backgroundworker.PeriodicWorker
 }
 
 func getNewObservationPeriodEnd() timestamp.MicroTS {
@@ -815,13 +816,6 @@ func (m *manager) flushBaselineQueue() {
 	}
 }
 
-func (m *manager) flushBaselineQueuePeriodically() {
-	defer m.baselineFlushTicker.Stop()
-	for range m.baselineFlushTicker.C {
-		m.flushBaselineQueue()
-	}
-}
-
 func (m *manager) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {
 	flowStore, err := m.clusterFlows.GetFlowStore(ctx, clusterID)
 	if err != nil {
@@ -1125,15 +1119,23 @@ func New(
 		treeManager:                treeManager,
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
-		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
 		baselinesByDeploymentID:    make(map[string]*networkbaseline.BaselineInfo),
 	}
+	m.baselineFlushWorker = &backgroundworker.PeriodicWorker{
+		Name:     "network-baseline-flush",
+		Interval: baselineFlushTickerDuration,
+		Run: func(_ context.Context) error {
+			m.flushBaselineQueue()
+			return nil
+		},
+	}
+	backgroundworker.Global.Register(m.baselineFlushWorker)
+
 	if err := m.initFromStore(); err != nil {
 		return nil, err
 	}
 
-	// Start the flush baseline process
-	go m.flushBaselineQueuePeriodically()
+	m.baselineFlushWorker.Start(context.Background())
 
 	return m, nil
 }

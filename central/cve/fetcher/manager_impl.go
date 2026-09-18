@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,20 +34,7 @@ func (m *orchestratorIstioCVEManagerImpl) Start() {
 	if !features.LegacyScanner.Enabled() {
 		return
 	}
-	go func() {
-		ticker := time.NewTicker(env.OrchestratorVulnScanInterval.DurationSetting())
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				m.reconcileAllCVEs()
-			case <-m.updateSignal.Done():
-				m.updateSignal.Reset()
-				m.reconcileAllCVEs()
-			}
-		}
-	}()
+	m.worker.Start(context.Background())
 }
 
 func (m *orchestratorIstioCVEManagerImpl) HandleClusterConnection() {
