@@ -156,7 +156,7 @@ jobs:
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Persist env vars for post-test
-      if: always()
+      if: always() && env.E2E_INFRA_ONLY != 'true'
       run: |
         source tests/e2e/lib.sh
         wait_for_api
