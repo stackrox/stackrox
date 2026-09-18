@@ -55,6 +55,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gobwas/glob v0.2.3
+	github.com/goccy/go-json v0.10.6
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/certificate-transparency-go v1.3.3
