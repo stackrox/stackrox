@@ -25,53 +25,12 @@ test_e2e() {
 
     require_environment "KUBECONFIG"
 
-    export_test_environment
+    setup_e2e_environment "$output_dir"
 
-    export SENSOR_HELM_DEPLOY=true
-    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    export ROX_NETPOL_FIELDS=true
-
-    test_preamble
-    setup_deployment_env false false
-    remove_existing_stackrox_resources
-    setup_default_TLS_certs
-    setup_client_TLS_certs
-    info "Creating mocked compliance operator data for compliance v1 tests"
-    "$ROOT/tests/complianceoperator/create.sh"
-    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
-
-    image_prefetcher_prebuilt_await
-
-    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
-    deploy_optional_e2e_components
-
-    # Make sure we use the roxie version pinned in ROXIE_VERSION. Under Prow the test image
-    # ships an older roxie that does not recognize a generic (non-Infra) GKE cluster: it reports
-    # "cluster type: Unknown" and defaults Central exposure to a localhost port-forward instead of
-    # the LoadBalancer. That breaks endpoints_test.go, which dials all of Central's ports at the
-    # API host. The pinned version detects GKE and exposes Central via the LoadBalancer, matching
-    # the GHA runner (which installs the pinned version explicitly).
-    ensure_roxie_on_path
-
-    local roxie_config
-    roxie_config="$(mktemp)"
-    merge_yaml "$roxie_config" <<'EOF'
-central:
-  namespace: stackrox
-  pauseReconciliation: true
-  resourceProfile: ci
-securedCluster:
-  namespace: stackrox
-  pauseReconciliation: true
-  resourceProfile: ci
-EOF
-
-    deploy_stackrox_with_roxie_compat "$roxie_config"
-    rm -f "$roxie_config"
-
-    # Background streamers are not explicitly stopped. They die when the CI
-    # runner terminates, same as the port-forward processes in setup_proxy_tests.
-    start_continuous_log_streaming "$output_dir"
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping non-Groovy test execution"
+        return 0
+    fi
 
     rm -f FAIL
 
@@ -129,6 +88,34 @@ EOF
     trap - EXIT
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
+}
+
+setup_e2e_environment() {
+    local output_dir="${1:-/tmp/e2e-test-logs}"
+
+    export_test_environment
+
+    export SENSOR_HELM_DEPLOY=true
+    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
+    export ROX_NETPOL_FIELDS=true
+
+    test_preamble
+    setup_deployment_env false false
+    remove_existing_stackrox_resources
+    setup_default_TLS_certs
+    info "Creating mocked compliance operator data for compliance v1 tests"
+    "$ROOT/tests/complianceoperator/create.sh"
+    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
+
+    image_prefetcher_prebuilt_await
+
+    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
+    deploy_optional_e2e_components
+    deploy_stackrox
+
+    # Background streamers are not explicitly stopped. They die when the CI
+    # runner terminates, same as the port-forward processes in setup_proxy_tests.
+    start_continuous_log_streaming "$output_dir"
 }
 
 test_preamble() {
