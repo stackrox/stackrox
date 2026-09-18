@@ -29,7 +29,7 @@ func Initialize() func(context.Context) {
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ScannerSubsystem.String(),
 		Name:      "vuln_db_update_duration_seconds",
-		Help:      "Time to query, download, and load a vulnerability database bundle, measured end-to-end from the start of the update cycle",
+		Help:      "Time to load an individual vulnerability database bundle",
 	}, []string{"database", "initial_load"})
 
 	if err := metricsSrv.RegisterAdditionalCollector(vulnDBUpdateDuration); err != nil {
