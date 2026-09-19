@@ -21,6 +21,19 @@ on:
         options:
           - rhel9
           - rhel10
+      agent-type:
+        description: "Agent install method"
+        required: false
+        default: "native"
+        type: choice
+        options:
+          - native
+          - quadlet
+      image-tag:
+        description: "ACS image tag for roxagent (auto-detected from Central if empty)"
+        required: false
+        default: ""
+        type: string
       ssh-public-key:
         description: "Optional SSH public key for human access to VMs"
         required: false
@@ -45,6 +58,8 @@ jobs:
           cluster-name: ${{ inputs.cluster-name }}
           num-vms: ${{ inputs.num-vms }}
           vm-os: ${{ inputs.vm-os }}
+          agent-type: ${{ inputs.agent-type }}
+          image-tag: ${{ inputs.image-tag }}
           ssh-public-key: ${{ inputs.ssh-public-key }}
           infra-token: ${{ secrets.INFRA_TOKEN }}
           quay-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
