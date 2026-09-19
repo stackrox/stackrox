@@ -5,12 +5,15 @@ import services.CloudSourcesService
 import services.DiscoveredClustersService
 import util.Env
 
+import spock.lang.Ignore
 import spock.lang.Tag
 
 class CloudSourcesTest extends BaseSpecification {
 
     static final private String CLOUD_SOURCE_NAME = "testing OCM"
 
+    // TODO(ROX-36772): Re-enable this test when OCM cloud source discovery is stable.
+    @Ignore("ROX-36772: OCM cloud source discovery test is temporarily disabled")
     @Tag("BAT")
     def "Create OCM cloud source and verify discovered clusters exist: #authMethod"() {
         when:

@@ -403,6 +403,9 @@ func runBackupLifecycleTest(
 }
 
 func TestExternalBackup(t *testing.T) {
+	// TODO(ROX-35974): Re-enable this test when external backup connectivity is stable.
+	t.Skip("ROX-35974: external backup test is temporarily disabled")
+
 	if os.Getenv("BYODB_TEST") == "true" {
 		t.Skip("Backup service is not available with external db")
 	}
