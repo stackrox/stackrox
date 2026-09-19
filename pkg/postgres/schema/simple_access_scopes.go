@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { SimpleAccessScopesSchema() })
+}
 
 var (
 	// CreateTableSimpleAccessScopesStmt holds the create statement for table `simple_access_scopes`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// SimpleAccessScopesSchema is the go schema for table `simple_access_scopes`.
-	SimpleAccessScopesSchema = func() *walker.Schema {
+	SimpleAccessScopesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("simple_access_scopes")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

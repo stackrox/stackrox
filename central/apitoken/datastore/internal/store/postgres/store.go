@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.APITokensSchema
+	schema         = pkgSchema.APITokensSchema()
 	targetResource = resources.Integration
 )
 

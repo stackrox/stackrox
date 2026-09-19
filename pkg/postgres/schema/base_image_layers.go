@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { BaseImageLayersSchema() })
+}
 
 var (
 	// CreateTableBaseImageLayersStmt holds the create statement for table `base_image_layers`.
@@ -23,14 +28,14 @@ var (
 	}
 
 	// BaseImageLayersSchema is the go schema for table `base_image_layers`.
-	BaseImageLayersSchema = func() *walker.Schema {
+	BaseImageLayersSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("base_image_layers")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageLayer)(nil)), "base_image_layers")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.BaseImage": BaseImagesSchema,
+			"storage.BaseImage": BaseImagesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -45,7 +50,7 @@ var (
 		RegisterTable(schema, CreateTableBaseImageLayersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGE_LAYERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

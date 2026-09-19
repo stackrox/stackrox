@@ -151,13 +151,13 @@ func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*SearchWrapper{
-			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema().OptionsMap,
 				resolver.ImageComponentV2DataStore),
 			NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
 			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
 			NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
-			NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema().OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }

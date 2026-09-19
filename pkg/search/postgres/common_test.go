@@ -22,11 +22,11 @@ import (
 )
 
 var (
-	deploymentBaseSchema   = schema.DeploymentsSchema
-	imagesSchema           = schema.ImagesSchema
-	alertSchema            = schema.AlertsSchema
-	imageComponentV2Schema = schema.ImageComponentV2Schema
-	imageCVEV2Schema       = schema.ImageCvesV2Schema
+	deploymentBaseSchema   = schema.DeploymentsSchema()
+	imagesSchema           = schema.ImagesSchema()
+	alertSchema            = schema.AlertsSchema()
+	imageComponentV2Schema = schema.ImageComponentV2Schema()
+	imageCVEV2Schema       = schema.ImageCvesV2Schema()
 )
 
 func TestReplaceVars(t *testing.T) {
@@ -924,7 +924,7 @@ func TestDeleteQueries(t *testing.T) {
 			}
 
 			sacCtx := sac.WithAllAccess(ctx)
-			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema, DELETE)
+			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema(), DELETE)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return
@@ -1092,7 +1092,7 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			}
 
 			sacCtx := sac.WithAllAccess(ctx)
-			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema, DELETERETURNINGIDS)
+			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema(), DELETERETURNINGIDS)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return

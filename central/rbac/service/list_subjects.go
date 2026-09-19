@@ -20,7 +20,7 @@ import (
 var (
 	subjectFactory = predicate.NewFactory("subject", (*storage.Subject)(nil))
 	// the prefix sent to factory should exactly match the prefix that was used to create RoleBindings optionMap in RoleBindingsSchema
-	roleBindingPredFactory = predicate.NewFactory(strings.ToLower(schema.RoleBindingsSchema.TypeName), (*storage.K8SRoleBinding)(nil))
+	roleBindingPredFactory = predicate.NewFactory(strings.ToLower(schema.RoleBindingsSchema().TypeName), (*storage.K8SRoleBinding)(nil))
 )
 
 func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.ListSubjectsResponse, error) {
@@ -140,7 +140,7 @@ func NewSubjectSearcher(k8sRoleBindingDatastore datastore.DataStore) *SubjectSea
 
 // Search implements the searcher interface
 func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	roleBindingQuery, _ := search.FilterQueryWithMap(q, schema.RoleBindingsSchema.OptionsMap)
+	roleBindingQuery, _ := search.FilterQueryWithMap(q, schema.RoleBindingsSchema().OptionsMap)
 	roleBindingQuery, _ = search.InverseFilterQueryWithMap(roleBindingQuery, subjectMapping.OptionsMap)
 	roleBindingPred, err := roleBindingPredFactory.GeneratePredicate(roleBindingQuery)
 	if err != nil {
