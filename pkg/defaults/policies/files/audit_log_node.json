@@ -1,0 +1,58 @@
+{
+  "id": "1c396aa7-2291-4829-a89f-a7f0a2e4cbc3",
+  "name": "File activity from container process on audit logs",
+  "description": "",
+  "rationale": "",
+  "remediation": "",
+  "disabled": false,
+  "categories": [
+    "File Activity Monitoring"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    },
+    {
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "File Path",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "/var/log/kube-apiserver/*"
+            },
+            {
+              "value": "/var/log/oauth-apiserver/*"
+            },
+            {
+              "value": "/var/log/openshift-apiserver/*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": false,
+  "mitreVectorsLocked": false,
+  "isDefault": false
+}
