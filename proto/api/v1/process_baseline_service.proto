@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package v1;
 
+import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "storage/process_baseline.proto";
 
@@ -59,6 +60,25 @@ message DeleteProcessBaselinesResponse {
   bool dry_run = 2;
 }
 
+message ProcessBaselineQuery {
+  repeated string cluster_ids = 1;
+  repeated string namespaces = 2;
+  repeated string deployment_ids = 3;
+  repeated string deployment_names = 4;
+  repeated string images = 5;
+  repeated string container_names = 6;
+}
+
+message GetProcessBaselinesBulkRequest {
+  ProcessBaselineQuery query = 1;
+  Pagination pagination = 2;
+}
+
+message GetProcessBaselinesBulkResponse {
+  repeated storage.ProcessBaseline baselines = 1;
+  int32 total_count = 2;
+}
+
 // `ProcessBaselineService` APIs can be used to manage process baselines.
 service ProcessBaselineService {
   // `GetProcessBaselineById` returns the single
@@ -106,5 +126,13 @@ service ProcessBaselineService {
   // `DeleteProcessBaselines` deletes baselines.
   rpc DeleteProcessBaselines(DeleteProcessBaselinesRequest) returns (DeleteProcessBaselinesResponse) {
     option (google.api.http) = {delete: "/v1/processbaselines"};
+  }
+
+  // `GetProcessBaselineBulk` returns process baselines matching the provided query.
+  rpc GetProcessBaselineBulk(GetProcessBaselinesBulkRequest) returns (GetProcessBaselinesBulkResponse) {
+    option (google.api.http) = {
+      post: "/v1/processbaselines/bulk/get"
+      body: "*"
+    };
   }
 }
