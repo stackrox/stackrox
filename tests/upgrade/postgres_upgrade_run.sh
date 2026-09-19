@@ -7,10 +7,9 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.7.2"
-EARLIER_SHA="ef2060ed332c7b8513cb9eb52b9745df9a8285cc"
+EARLIER_TAG="4.10.7"
+EARLIER_SHA="5a4fced5248e20b2af68fe4bc88df95b40323225"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
-PREVIOUS_RELEASES=("4.7.3")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -79,7 +78,7 @@ test_upgrade_path() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.7.2"
+    FORCE_ROLLBACK_VERSION="4.10.7"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -99,7 +98,7 @@ test_upgrade_path() {
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_6_backup
+    restore_backup
     wait_for_api
 
     # Run with some scale to have data populated to migrate
@@ -191,7 +190,7 @@ test_not_enough_disk_space() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.7.2"
+    FORCE_ROLLBACK_VERSION="4.10.7"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -213,7 +212,7 @@ test_not_enough_disk_space() {
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_6_backup
+    restore_backup
     wait_for_api
 
     # Do not apply scaled workload to control disk space, do fallocate instead
