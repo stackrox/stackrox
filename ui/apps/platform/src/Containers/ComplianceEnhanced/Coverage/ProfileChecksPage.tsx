@@ -12,6 +12,7 @@ import { addRegexPrefixToFilters } from 'utils/searchUtils';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import { combineSearchFilterWithScanConfig } from './compliance.coverage.utils';
+import OutdatedDataBanner from './components/OutdatedDataBanner';
 import ProfileChecksTable from './ProfileChecksTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
@@ -58,15 +59,20 @@ function ProfileChecksPage() {
         setPage(1);
     }
 
+    const outdatedClusterCount = profileChecks?.outdatedClusterCount ?? 0;
+
     return (
-        <ProfileChecksTable
-            profileChecksResultsCount={profileChecks?.totalCount ?? 0}
-            profileName={profileName}
-            pagination={pagination}
-            tableState={tableState}
-            getSortParams={getSortParams}
-            onClearFilters={onClearFilters}
-        />
+        <>
+            <OutdatedDataBanner outdatedClusterCount={outdatedClusterCount} />
+            <ProfileChecksTable
+                profileChecksResultsCount={profileChecks?.totalCount ?? 0}
+                profileName={profileName}
+                pagination={pagination}
+                tableState={tableState}
+                getSortParams={getSortParams}
+                onClearFilters={onClearFilters}
+            />
+        </>
     );
 }
 
