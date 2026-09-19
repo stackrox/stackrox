@@ -83,13 +83,6 @@ type ImageFlavor struct {
 	FactImageName string
 	FactImageTag  string
 
-	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
-	ScannerImageTag        string
-	ScannerImageName       string
-	ScannerSlimImageName   string
-	ScannerDBImageName     string
-	ScannerDBSlimImageName string
-
 	// ScannerV4ImageTag is used for all scanner-v4* images (scanner-v4, scanner-v4-db)
 	ScannerV4ImageTag    string
 	ScannerV4ImageName   string
@@ -122,12 +115,6 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		FactRegistry:  "quay.io/rhacs-eng",
 		FactImageName: "fact",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ScannerV4ImageName:   "scanner-v4",
 		ScannerV4DBImageName: "scanner-v4-db",
@@ -162,12 +149,6 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		FactRegistry:  "registry.redhat.io/advanced-cluster-security",
 		FactImageName: "rhacs-fact-rhel9",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "rhacs-scanner-rhel9",
-		ScannerSlimImageName:   "rhacs-scanner-slim-rhel9",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "rhacs-scanner-db-rhel9",
-		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel9",
 
 		ScannerV4ImageName:   "rhacs-scanner-v4-rhel9",
 		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel9",
@@ -211,12 +192,6 @@ func OpenSourceImageFlavor() ImageFlavor {
 		FactRegistry:  "quay.io/stackrox-io",
 		FactImageName: "fact",
 		FactImageTag:  v.FactVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ScannerV4ImageName:   "scanner-v4",
 		ScannerV4DBImageName: "scanner-v4-db",
@@ -309,21 +284,6 @@ func panicImageFlavorEnv(err error) {
 func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
 	overrideImageNoTag := fmt.Sprintf("%s/%s", img.GetRegistry(), img.GetRemote())
 	return f.MainImageNoTag() == overrideImageNoTag
-}
-
-// ScannerImage is the container image reference (full name) for the scanner image.
-func (f *ImageFlavor) ScannerImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerImageName, f.ScannerImageTag)
-}
-
-// ScannerSlimImage is the container image reference (full name) for the scanner-slim image.
-func (f *ImageFlavor) ScannerSlimImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerSlimImageName, f.ScannerImageTag)
-}
-
-// ScannerDBImage is the container image reference (full name) for the scanner-db image.
-func (f *ImageFlavor) ScannerDBImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
 }
 
 // ScannerV4Image is the container image reference (full name) for the scanner-v4 image.
