@@ -2852,6 +2852,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
 			suite.NoError(err)
 			totalPrunedCount += int(prunedCount)
+
+			// Throttle the prune loop. Without a pause this goroutine issues its
+			// SELECT+DELETE queries back-to-back with no gap, keeping Postgres
+			// continuously busy and re-taking datastore mutex.
+			time.Sleep(20 * time.Millisecond)
 		}
 	})
 
