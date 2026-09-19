@@ -101,7 +101,7 @@ func (i *valueStreamIterBase[T]) Done() <-chan struct{} {
 	return i.nextC
 }
 
-func (*valueStreamIterBase[T]) isValueStreamIter(T) {} //nolint:unused // This is required for generic magic
+func (*valueStreamIterBase[T]) isValueStreamIter(T) {}
 
 type valueStreamStrictIter[T any] struct {
 	valueStreamIterBase[T]

@@ -14,7 +14,7 @@ func createTimestampPredicate(fullPath, value string) (internalPredicate, error)
 		return nil, err
 	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
-		instanceTS, ok := instance.Interface().(*protocompat.Timestamp)
+		instanceTS, ok := reflect.TypeAssert[*protocompat.Timestamp](instance)
 
 		if ok && baseMatcher(instanceTS) {
 			return &search.Result{

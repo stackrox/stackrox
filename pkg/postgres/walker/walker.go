@@ -357,7 +357,7 @@ func tableName(parent, child string) string {
 }
 
 func typeIsEnum(typ reflect.Type) bool {
-	enum, ok := reflect.Zero(typ).Interface().(protoreflect.ProtoEnum)
+	enum, ok := reflect.TypeAssert[protoreflect.ProtoEnum](reflect.Zero(typ))
 	if !ok {
 		return false
 	}
