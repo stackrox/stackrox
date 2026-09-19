@@ -44,12 +44,12 @@ ci_export() {
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
     elif command -v cci-export >/dev/null; then
-        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
-        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
-            BASH_ENV=$(mktemp)
-            export BASH_ENV
-        fi
-        cci-export "$env_name" "$env_value"
+        echo "Entered 'cci-export exists' conditional block"
+        command -v cci-export
+        echo "${BASH_ENV:-no BASH_ENV set}"
+        ls -la "${BASH_ENV:-/tmp/}"
+        echo "skipping: cci-export $env_name ${env_value:0:1}.."
+        export "$env_name"="$env_value"
     else
         export "$env_name"="$env_value"
     fi
