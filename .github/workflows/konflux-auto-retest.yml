@@ -7,7 +7,7 @@ on:
 
 jobs:
   retest:
-    uses: stackrox/actions/.github/workflows/periodic-retest-konflux-builds.yml@f4660e8ce6bd7558e782e8e7cd26bad8cfbb6b9f # ratchet:stackrox/actions/.github/workflows/periodic-retest-konflux-builds.yml@v1
+    uses: stackrox/actions/.github/workflows/periodic-retest-konflux-builds.yml@6691d5c300d4af17546145bdbbb9862c53975af4 # ratchet:stackrox/actions/.github/workflows/periodic-retest-konflux-builds.yml@v1
     permissions:
       pull-requests: write
       issues: write
