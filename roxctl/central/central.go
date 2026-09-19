@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/m2m"
 	"github.com/stackrox/rox/roxctl/central/migratetooperator"
 	"github.com/stackrox/rox/roxctl/central/userpki"
+	centralversion "github.com/stackrox/rox/roxctl/central/version"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
@@ -32,6 +33,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		backup.Command(cliEnvironment, new(true)),
 		debug.Command(cliEnvironment),
 		userpki.Command(cliEnvironment),
+		centralversion.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
 		login.Command(cliEnvironment),
