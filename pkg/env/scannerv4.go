@@ -37,6 +37,6 @@ var (
 
 	// ScannerV4MavenSearchURL specifies the URL that Scanner V4 Indexer will use to get additional information about
 	// Java packages. The ROX_SCANNER_V4_MAVEN_SEARCH feature flag must be enabled to have any effect.
-	// Default: https://search.maven.org/solrsearch/select
-	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://search.maven.org/solrsearch/select"))
+	// Default: https://central.sonatype.com/solrsearch/select
+	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://central.sonatype.com/solrsearch/select"))
 )
