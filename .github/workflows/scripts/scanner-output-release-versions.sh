@@ -25,7 +25,7 @@ tag() {
     echo >&2 "WARNING: Version '$ver' is not a tag in the repository"
 
     # Sanity check: Fail open if this doesn't look like a release version.
-    if ! echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<< "$ver"; then
         echo >&2 "ERROR: Version '$ver' is not in X.Y.Z format"
         return 1
     fi
@@ -55,7 +55,7 @@ tag() {
 echo '{"versions": ['
 
 while IFS= read -r version; do
-    echo "$version" | grep -qE '^\s*(#.*|$)' && continue
+    grep -qE '^\s*(#.*|$)' <<< "$version" && continue
     tag_value=$(tag "$version") || continue
     cat <<EOF
   {"tag": "$tag_value", "version": "$version"},
