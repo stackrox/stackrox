@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 func getPoliciesFromFile(file string) (*storage.PolicyList, error) {
@@ -24,7 +25,7 @@ func decompressAndUnmarshalPolicies(data []byte) (*storage.PolicyList, error) {
 	}
 
 	var policyList storage.PolicyList
-	if err := policyList.UnmarshalVTUnsafe(runTimePoliciesData); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&policyList, runTimePoliciesData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling decompressed policies data")
 	}
 	return &policyList, nil
