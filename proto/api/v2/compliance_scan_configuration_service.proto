@@ -212,12 +212,12 @@ service ComplianceScanConfigurationService {
     option (google.api.http) = {delete: "/v2/compliance/scan/configurations/reports/{id}"};
   }
 
-  // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+  // ListComplianceScanConfigProfiles lists the distinct profiles referenced by existing compliance scan configurations
   rpc ListComplianceScanConfigProfiles(RawQuery) returns (ListComplianceScanConfigsProfileResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/configurations/profiles/collection"};
   }
 
-  // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+  // ListComplianceScanConfigClusterProfiles lists the distinct profiles referenced by existing compliance scan configurations for the specified cluster
   rpc ListComplianceScanConfigClusterProfiles(ComplianceConfigClusterProfileRequest) returns (ListComplianceScanConfigsClusterProfileResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/configurations/clusters/{cluster_id}/profiles/collection"};
   }
