@@ -27,7 +27,16 @@ storage type to apiV2 type conversions
 
 const (
 	suiteComplete = "DONE"
+
+	// allNodesRole is the special Compliance Operator value that matches all nodes.
+	allNodesRole = "@all"
 )
+
+// defaultNodeRoles returns the backward-compatible default roles used when
+// the user does not specify any.
+func defaultNodeRoles() []string {
+	return []string{"master", "worker"}
+}
 
 var (
 	v2IntervalTypeToStorage = map[v2.Schedule_IntervalType]storage.Schedule_IntervalType{
@@ -95,6 +104,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
 			Description:  scanConfig.GetDescription(),
+			NodeRoles:    scanConfig.GetNodeRoles(),
 		},
 	}, nil
 }
@@ -173,6 +183,11 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 
 	}
 
+	nodeRoles := scanConfig.GetScanConfig().GetNodeRoles()
+	if len(nodeRoles) == 0 {
+		nodeRoles = defaultNodeRoles()
+	}
+
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     scanConfig.GetId(),
 		ScanConfigName:         scanConfig.GetScanName(),
@@ -186,6 +201,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		Description:            scanConfig.GetScanConfig().GetDescription(),
 		Clusters:               clusters,
 		Notifiers:              notifiers,
+		NodeRoles:              nodeRoles,
 	}
 }
 
@@ -295,6 +311,7 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 			ScanSchedule: convertProtoScheduleToV2(reportData.GetScanConfiguration().GetSchedule()),
 			Description:  reportData.GetScanConfiguration().GetDescription(),
 			Notifiers:    notifiers,
+			NodeRoles:    reportData.GetScanConfiguration().GetNodeRoles(),
 		},
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 
@@ -424,6 +441,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			Profiles:     profiles,
 			Description:  scanConfig.GetDescription(),
 			Notifiers:    notifiers,
+			NodeRoles:    scanConfig.GetNodeRoles(),
 		},
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),
