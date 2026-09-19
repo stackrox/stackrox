@@ -4,15 +4,14 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +32,21 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineScanV2)(nil)), "virtual_machine_scan_v2")
+		schema = &walker.Schema{
+			Table:    "virtual_machine_scan_v2",
+			Type:     "*storage.VirtualMachineScanV2",
+			TypeName: "VirtualMachineScanV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Virtual Machine Scan ID", Enabled: true}},
+			{Schema: schema, Name: "VmV2Id", ProtoBufName: "vm_v2_id", ColumnName: "VmV2Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVmV2Id()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}},
+			{Schema: schema, Name: "ScanOs", ProtoBufName: "scan_os", ColumnName: "ScanOs", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanOs()", false), Search: walker.SearchField{FieldName: "Virtual Machine Scan OS", Enabled: true}},
+			{Schema: schema, Name: "ScanTime", ProtoBufName: "scan_time", ColumnName: "ScanTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTimeTZ, SQLType: "timestamptz", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetScanTime()", false), Options: walker.PostgresOptions{ColumnType: "timestamptz"}, Search: walker.SearchField{FieldName: "Virtual Machine Scan Time", Enabled: true}},
+			{Schema: schema, Name: "TopCvss", ProtoBufName: "top_cvss", ColumnName: "TopCvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetTopCvss()", false), Search: walker.SearchField{FieldName: "Virtual Machine Top CVSS", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("VirtualMachineV2", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.VirtualMachineV2": VirtualMachineV2Schema,
 		}
@@ -41,7 +54,14 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2, "virtualmachinescanv2", (*storage.VirtualMachineScanV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2, map[search.FieldLabel]*search.Field{
+			"Virtual Machine Scan ID":   {FieldPath: "virtualmachinescanv2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2},
+			"Virtual Machine Scan OS":   {FieldPath: "virtualmachinescanv2.scan_os", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2},
+			"Virtual Machine Scan Time": {FieldPath: "virtualmachinescanv2.scan_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2},
+			"Virtual Machine Top CVSS":  {FieldPath: "virtualmachinescanv2.top_cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2},
+		}))
+		enumregistry.AddValues("virtualmachinescanv2.notes", map[string]int32{"OS_UNKNOWN": 1, "OS_UNSUPPORTED": 2, "UNSET": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2,
 			v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2,

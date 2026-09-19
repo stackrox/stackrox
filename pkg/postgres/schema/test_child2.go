@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,21 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestChild2)(nil)), "test_child2")
+		schema = &walker.Schema{
+			Table:    "test_child2",
+			Type:     "*storage.TestChild2",
+			TypeName: "TestChild2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test Child2 ID", Enabled: true}},
+			{Schema: schema, Name: "ParentId", ProtoBufName: "parent_id", ColumnName: "ParentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetParentId()", false)},
+			{Schema: schema, Name: "GrandparentId", ProtoBufName: "grandparent_id", ColumnName: "GrandparentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetGrandparentId()", false)},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Child2 Val", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("TestParent2", "id", false, false, false, false)
+		schema.Fields[2].SetReference("TestGrandparent", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestParent2":     TestParent2Schema,
 			"storage.TestGrandparent": TestGrandparentsSchema,
@@ -37,7 +49,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(104), "testchild2", (*storage.TestChild2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(104), map[search.FieldLabel]*search.Field{
+			"Test Child2 ID":  {FieldPath: "testchild2.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(104)},
+			"Test Child2 Val": {FieldPath: "testchild2.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(104)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestChild2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(104), schema)

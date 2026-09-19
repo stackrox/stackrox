@@ -4,16 +4,15 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +32,26 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanV2)(nil)), "compliance_operator_scan_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_scan_v2",
+			Type:     "*storage.ComplianceOperatorScanV2",
+			TypeName: "ComplianceOperatorScanV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "ScanConfigName", ProtoBufName: "scan_config_name", ColumnName: "ScanConfigName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanConfigName()", false), Search: walker.SearchField{FieldName: "Compliance Scan Config Name", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ProfileRefId", ProtoBufName: "profile_ref_id", ColumnName: "Profile_ProfileRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProfile().GetProfileRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Profile Ref ID", Enabled: true}},
+			{Schema: schema, Name: "Result", ProtoBufName: "result", ColumnName: "Status_Result", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetStatus().GetResult()", false), Search: walker.SearchField{FieldName: "Compliance Scan Result", Enabled: true}},
+			{Schema: schema, Name: "LastExecutedTime", ProtoBufName: "last_executed_time", ColumnName: "LastExecutedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastExecutedTime()", false), Search: walker.SearchField{FieldName: "Compliance Scan Last Executed Time", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "compliance scan last executed time max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ScanName", ProtoBufName: "scan_name", ColumnName: "ScanName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanName()", false), Search: walker.SearchField{FieldName: "Compliance Scan Name", Enabled: true}},
+			{Schema: schema, Name: "ScanRefId", ProtoBufName: "scan_ref_id", ColumnName: "ScanRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Scan Ref ID", Enabled: true}},
+			{Schema: schema, Name: "LastStartedTime", ProtoBufName: "last_started_time", ColumnName: "LastStartedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastStartedTime()", false), Search: walker.SearchField{FieldName: "Compliance Scan Last Started Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("ComplianceOperatorScanConfigurationV2", "scan_config_name", true, false, false, false)
+		schema.Fields[3].SetReference("ComplianceOperatorProfileV2", "profile_ref_id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema,
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
@@ -42,7 +60,19 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN, "complianceoperatorscanv2", (*storage.ComplianceOperatorScanV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                         {FieldPath: "complianceoperatorscanv2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Compliance Scan Config Name":        {FieldPath: "complianceoperatorscanv2.scan_config_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Compliance Scan Last Executed Time": {FieldPath: "complianceoperatorscanv2.last_executed_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Compliance Scan Last Started Time":  {FieldPath: "complianceoperatorscanv2.last_started_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Compliance Scan Name":               {FieldPath: "complianceoperatorscanv2.scan_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Compliance Scan Result":             {FieldPath: "complianceoperatorscanv2.status.result", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Profile Ref ID":                     {FieldPath: "complianceoperatorscanv2.profile.profile_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+			"Scan Ref ID":                        {FieldPath: "complianceoperatorscanv2.scan_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN},
+		}))
+		enumregistry.AddValues("complianceoperatorscanv2.node_selector", map[string]int32{"INFRA": 0, "MASTER": 2, "WORKER": 1})
+		enumregistry.AddValues("complianceoperatorscanv2.scan_type", map[string]int32{"NODE_SCAN": 1, "PLATFORM_SCAN": 2, "UNSET_SCAN_TYPE": 0})
+
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorScanV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN, schema)

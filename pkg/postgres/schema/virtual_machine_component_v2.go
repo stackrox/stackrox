@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,7 +34,23 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineComponentV2)(nil)), "virtual_machine_component_v2")
+		schema = &walker.Schema{
+			Table:    "virtual_machine_component_v2",
+			Type:     "*storage.VirtualMachineComponentV2",
+			TypeName: "VirtualMachineComponentV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Component ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "component count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "VmScanId", ProtoBufName: "vm_scan_id", ColumnName: "VmScanId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVmScanId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Component", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVersion()", false), Search: walker.SearchField{FieldName: "Component Version", Enabled: true}},
+			{Schema: schema, Name: "Source", ProtoBufName: "source", ColumnName: "Source", Type: "storage.SourceType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.SourceType", ObjectGetter: walker.MakeObjectGetter("GetSource()", false), Search: walker.SearchField{FieldName: "Component Source", Enabled: true}},
+			{Schema: schema, Name: "OperatingSystem", ProtoBufName: "operating_system", ColumnName: "OperatingSystem", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetOperatingSystem()", false), Search: walker.SearchField{FieldName: "Operating System", Enabled: true}},
+			{Schema: schema, Name: "TopCvss", ProtoBufName: "top_cvss", ColumnName: "TopCvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetTopCvss()", false), Search: walker.SearchField{FieldName: "Component Top CVSS", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "component top cvss max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("VirtualMachineScanV2", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.VirtualMachineScanV2": VirtualMachineScanV2Schema,
 		}
@@ -42,7 +58,17 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2, "virtualmachinecomponentv2", (*storage.VirtualMachineComponentV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2, map[search.FieldLabel]*search.Field{
+			"Component":          {FieldPath: "virtualmachinecomponentv2.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+			"Component ID":       {FieldPath: "virtualmachinecomponentv2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+			"Component Source":   {FieldPath: "virtualmachinecomponentv2.source", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+			"Component Top CVSS": {FieldPath: "virtualmachinecomponentv2.SetTopCvss.TopCvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+			"Component Version":  {FieldPath: "virtualmachinecomponentv2.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+			"Operating System":   {FieldPath: "virtualmachinecomponentv2.operating_system", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2},
+		}))
+		enumregistry.AddValues("virtualmachinecomponentv2.notes", map[string]int32{"UNSCANNED": 1, "UNSPECIFIED": 0})
+		enumregistry.AddValues("virtualmachinecomponentv2.source", map[string]int32{"DOTNETCORERUNTIME": 5, "GO": 7, "INFRASTRUCTURE": 6, "JAVA": 2, "NODEJS": 4, "OS": 0, "PYTHON": 1, "RUBY": 3})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2,
 			v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2,

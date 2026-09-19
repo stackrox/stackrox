@@ -3,14 +3,13 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -35,8 +34,54 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "role_bindings")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil)))
+		schema = &walker.Schema{
+			Table:    "role_bindings",
+			Type:     "*storage.K8SRoleBinding",
+			TypeName: "K8SRoleBinding",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "role_bindings_subjects",
+			Type:         "*storage.Subject",
+			TypeName:     "Subject",
+			ObjectGetter: "GetSubjects()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "roleBindingID", ProtoBufName: "", ColumnName: "role_bindings_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("roleBindingID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Kind", ProtoBufName: "kind", ColumnName: "Kind", Type: "storage.SubjectKind", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.SubjectKind", ObjectGetter: walker.MakeObjectGetter("GetKind()", false), Search: walker.SearchField{FieldName: "Subject Kind", Enabled: true}},
+			{Schema: child0, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Subject", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Role Binding ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Role Binding", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "ClusterRole", ProtoBufName: "cluster_role", ColumnName: "ClusterRole", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetClusterRole()", false), Search: walker.SearchField{FieldName: "Cluster Role", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Role Binding Label", Enabled: true}},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Search: walker.SearchField{FieldName: "Role Binding Annotation", Enabled: true}},
+			{Schema: schema, Name: "RoleId", ProtoBufName: "role_id", ColumnName: "RoleId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRoleId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Role ID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLEBINDINGS, map[search.FieldLabel]*search.Field{
+			"Cluster":                 {FieldPath: "k8srolebinding.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Cluster ID":              {FieldPath: "k8srolebinding.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Cluster Role":            {FieldPath: "k8srolebinding.cluster_role", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Namespace":               {FieldPath: "k8srolebinding.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Role Binding":            {FieldPath: "k8srolebinding.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Role Binding Annotation": {FieldPath: "k8srolebinding.annotations", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Role Binding ID":         {FieldPath: "k8srolebinding.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Role Binding Label":      {FieldPath: "k8srolebinding.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Role ID":                 {FieldPath: "k8srolebinding.role_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Subject":                 {FieldPath: "k8srolebinding.subjects.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLEBINDINGS},
+			"Subject Kind":            {FieldPath: "k8srolebinding.subjects.kind", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ROLEBINDINGS},
+		}))
+		enumregistry.AddValues("k8srolebinding.subjects.kind", map[string]int32{"GROUP": 3, "SERVICE_ACCOUNT": 1, "UNSET_KIND": 0, "USER": 2})
+
 		schema.ScopingResource = resources.K8sRoleBinding
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)

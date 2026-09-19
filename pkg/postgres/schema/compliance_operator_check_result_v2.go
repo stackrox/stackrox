@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,31 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorCheckResultV2)(nil)), "compliance_operator_check_result_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_check_result_v2",
+			Type:     "*storage.ComplianceOperatorCheckResultV2",
+			TypeName: "ComplianceOperatorCheckResultV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Compliance Check UID", Enabled: true}},
+			{Schema: schema, Name: "CheckId", ProtoBufName: "check_id", ColumnName: "CheckId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCheckId()", false), Search: walker.SearchField{FieldName: "Compliance Check ID", Enabled: true}},
+			{Schema: schema, Name: "CheckName", ProtoBufName: "check_name", ColumnName: "CheckName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCheckName()", false), Search: walker.SearchField{FieldName: "Compliance Check Name", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Status", ProtoBufName: "status", ColumnName: "Status", Type: "storage.ComplianceOperatorCheckResultV2_CheckStatus", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ComplianceOperatorCheckResultV2_CheckStatus", ObjectGetter: walker.MakeObjectGetter("GetStatus()", false), Search: walker.SearchField{FieldName: "Compliance Check Status", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "compliance not applicable count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance manual count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance fail count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance info count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance inconsistent count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance error count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "compliance pass count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "Severity", ProtoBufName: "severity", ColumnName: "Severity", Type: "storage.RuleSeverity", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.RuleSeverity", ObjectGetter: walker.MakeObjectGetter("GetSeverity()", false), Search: walker.SearchField{FieldName: "Compliance Rule Severity", Enabled: true}},
+			{Schema: schema, Name: "CreatedTime", ProtoBufName: "created_time", ColumnName: "CreatedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCreatedTime()", false), Search: walker.SearchField{FieldName: "Compliance Check Result Created Time", Enabled: true}},
+			{Schema: schema, Name: "ScanConfigName", ProtoBufName: "scan_config_name", ColumnName: "ScanConfigName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanConfigName()", false), Search: walker.SearchField{FieldName: "Compliance Scan Config Name", Enabled: true}},
+			{Schema: schema, Name: "Rationale", ProtoBufName: "rationale", ColumnName: "Rationale", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRationale()", false), Search: walker.SearchField{FieldName: "Compliance Check Rationale", Enabled: true}},
+			{Schema: schema, Name: "ScanRefId", ProtoBufName: "scan_ref_id", ColumnName: "ScanRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Scan Ref ID", Enabled: true}},
+			{Schema: schema, Name: "RuleRefId", ProtoBufName: "rule_ref_id", ColumnName: "RuleRefId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRuleRefId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Rule Ref ID", Enabled: true}},
+			{Schema: schema, Name: "LastStartedTime", ProtoBufName: "last_started_time", ColumnName: "LastStartedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastStartedTime()", false), Search: walker.SearchField{FieldName: "Compliance Check Last Started Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[3].SetReference("Cluster", "id", true, false, false, false)
+		schema.Fields[7].SetReference("ComplianceOperatorScanConfigurationV2", "scan_config_name", true, false, false, false)
+		schema.Fields[9].SetReference("ComplianceOperatorScanV2", "scan_ref_id", true, false, false, false)
+		schema.Fields[10].SetReference("ComplianceOperatorRuleV2", "rule_ref_id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":                               ClustersSchema,
 			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
@@ -45,7 +69,23 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, "complianceoperatorcheckresultv2", (*storage.ComplianceOperatorCheckResultV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                           {FieldPath: "complianceoperatorcheckresultv2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check ID":                  {FieldPath: "complianceoperatorcheckresultv2.check_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check Last Started Time":   {FieldPath: "complianceoperatorcheckresultv2.last_started_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check Name":                {FieldPath: "complianceoperatorcheckresultv2.check_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check Rationale":           {FieldPath: "complianceoperatorcheckresultv2.rationale", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check Result Created Time": {FieldPath: "complianceoperatorcheckresultv2.created_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check Status":              {FieldPath: "complianceoperatorcheckresultv2.status", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Check UID":                 {FieldPath: "complianceoperatorcheckresultv2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Rule Severity":             {FieldPath: "complianceoperatorcheckresultv2.severity", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Compliance Scan Config Name":          {FieldPath: "complianceoperatorcheckresultv2.scan_config_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Rule Ref ID":                          {FieldPath: "complianceoperatorcheckresultv2.rule_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+			"Scan Ref ID":                          {FieldPath: "complianceoperatorcheckresultv2.scan_ref_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_CHECK_RESULTS},
+		}))
+		enumregistry.AddValues("complianceoperatorcheckresultv2.severity", map[string]int32{"HIGH_RULE_SEVERITY": 5, "INFO_RULE_SEVERITY": 2, "LOW_RULE_SEVERITY": 3, "MEDIUM_RULE_SEVERITY": 4, "UNKNOWN_RULE_SEVERITY": 1, "UNSET_RULE_SEVERITY": 0})
+		enumregistry.AddValues("complianceoperatorcheckresultv2.status", map[string]int32{"ERROR": 3, "FAIL": 2, "INCONSISTENT": 7, "INFO": 4, "MANUAL": 5, "NOT_APPLICABLE": 6, "PASS": 1, "UNSET": 0})
+
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, schema)
