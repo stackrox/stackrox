@@ -354,13 +354,25 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 			return nil, err
 		}
 
+		// DEBUG(ROX prune-RBAC investigation): the all-access branch (used by pruning)
+		// walks Postgres directly. If it returns 0 here while rows exist, the store/DB
+		// read is the culprit. Remove after triage.
+		if len(clusters) == 0 {
+			log.Warnf("[PruneDebug][GetClusters] ReadAllowed=true (collectClusters/Walk) returned 0 clusters")
+		}
+
 		ds.populateHealthInfos(ctx, clusters...)
 		ds.populateSensorVersionCompatibility(clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
 
-	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+	// DEBUG(ROX prune-RBAC investigation): reaching this branch means the caller's
+	// context lacked all-cluster read access, so results are SAC-scoped and can be
+	// empty for an otherwise-populated table. pruningCtx should never hit this.
+	res, err := ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+	log.Warnf("[PruneDebug][GetClusters] ReadAllowed=false -> SAC-scoped searchRawClusters path taken; returned n=%d err=%v", len(res), err)
+	return res, err
 }
 
 func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
@@ -486,6 +498,11 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return "", err
 	}
+
+	// DEBUG(ROX prune-RBAC investigation): a mid-run re-registration mints a NEW cluster
+	// id, orphaning RBAC stamped with the previous id. Correlate this id against the
+	// cluster set logged by pruning. Remove after triage.
+	log.Warnf("[PruneDebug][AddCluster] registered cluster name=%q NEW id=%q", cluster.GetName(), cluster.GetId())
 
 	trackClusterRegistered(cluster)
 
@@ -657,6 +674,11 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	if err != nil {
 		return err
 	}
+
+	// DEBUG(ROX prune-RBAC investigation): a mid-run cluster removal makes all RBAC
+	// stamped with this id orphaned; a following prune cycle would then delete it.
+	// Remove after triage.
+	log.Warnf("[PruneDebug][RemoveCluster] removing cluster name=%q id=%q", cluster.GetName(), id)
 
 	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
@@ -1356,6 +1378,12 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
+	}
+	// DEBUG(ROX prune-RBAC investigation): the raw Walk count backing GetClusters'
+	// all-access branch. If 0 here while the physical table has rows, the store Walk (or
+	// its context/txn) is the culprit. Remove after triage.
+	if len(clusters) == 0 {
+		log.Warnf("[PruneDebug][collectClusters] clusterStorage.Walk returned 0 clusters")
 	}
 	return clusters, nil
 }
