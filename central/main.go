@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
 	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
+	openshiftAuth "github.com/stackrox/rox/central/auth/openshift"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -601,6 +602,8 @@ func startGRPCServer() {
 	}
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
+
+	openshiftAuth.SeedMetricsAuthProvider(authProviderRegisteringCtx, registry, roleDataStore.Singleton(), groupDataStore.Singleton())
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
