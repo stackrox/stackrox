@@ -24,6 +24,9 @@ message CosignPublicKeyVerification {
   message PublicKey {
     string name = 1;
     string public_key_pem_enc = 2;
+    // Optional trust root for this public key verifier.
+    // When set, supersedes the integration-level transparency log configuration.
+    TrustRoot trust_root = 3;
   }
   repeated PublicKey public_keys = 3;
 }
@@ -55,6 +58,10 @@ message CosignCertificateVerification {
   // certificate timestamp as proof of inclusion into the certificate
   // transparency log.
   CertificateTransparencyLogVerification certificate_transparency_log = 5;
+  // Optional trust root for this certificate verifier.
+  // When set, supersedes the certificate chain, transparency log,
+  // and certificate transparency log configuration.
+  TrustRoot trust_root = 6;
 }
 
 // Validate that the signature certificate contains a signed
@@ -68,6 +75,23 @@ message CertificateTransparencyLogVerification {
   // certificate transparency log. Defaults to the key of the public Sigstore
   // instance if left empty.
   string public_key_pem_enc = 2;
+}
+
+// Trust root configuration for signature verification.
+// Specifies a TUF repository from which the sigstore TrustedRoot is fetched.
+// When set on a verifier, it supersedes other trust configuration such as the
+// certificate chain, Rekor URL, and certificate transparency log settings.
+message TrustRoot {
+  // Base URL of a TUF repository serving sigstore TrustedRoot metadata.
+  // Equivalent to the --mirror flag in `cosign initialize`.
+  // The repository must follow the standard TUF layout (root.json, targets/, etc.).
+  // Example: "https://tuf-repo-cdn.sigstore.dev" (public Sigstore).
+  string tuf_repository_url = 1;
+  // URL to the TUF bootstrap root.json for the repository.
+  // Equivalent to the --root flag in `cosign initialize`.
+  // Defaults to `<tuf_mirror_url>/root.json` when left empty.
+  // Example: "https://tuf-repo-cdn.sigstore.dev/root.json".
+  string tuf_root_url = 2;
 }
 
 // Validate the inclusion of signature signing events into a transparency log.
