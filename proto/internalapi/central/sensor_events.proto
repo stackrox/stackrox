@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central;
 
+import "internalapi/aiworkload/v1/ai_workload.proto";
 import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
@@ -101,6 +102,8 @@ message SensorEvent {
 
     virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35;
     virtualmachine.v1.VirtualMachine virtual_machine = 36;
+
+    aiworkload.v1.AIWorkload ai_workload = 37;
 
     // V2 Compliance
     ComplianceOperatorCheckResultV2 compliance_operator_result_v2 = 27;

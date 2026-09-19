@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+message AIWorkload {
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"AI Workload ID"
+  string namespace = 2; // @gotags: search:"Namespace"
+  string name = 3; // @gotags: search:"AI Workload Name"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
+
+  enum WorkloadType {
+    UNKNOWN = 0;
+    INFERENCE = 1;
+    TRAINING = 2;
+  }
+  WorkloadType workload_type = 6;
+
+  string model_format = 7;
+  string storage_uri = 8;
+  string runtime = 9;
+  string gpu_requests = 10;
+  string cpu_requests = 11;
+  string memory_requests = 12;
+  string deployment_mode = 13;
+  bool auth_enabled = 14;
+
+  google.protobuf.Timestamp last_updated = 15;
+}
