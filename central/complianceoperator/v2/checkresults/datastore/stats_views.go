@@ -45,6 +45,18 @@ type ResourceResultCountByProfile struct {
 	ProfileName        string `db:"compliance_profile_name"`
 }
 
+// ComplianceTrendDataPoint represents a single data point in a compliance trend over time
+type ComplianceTrendDataPoint struct {
+	LastStartedTime    *time.Time `db:"compliance_check_last_started_time"`
+	PassCount          int        `db:"compliance_pass_count"`
+	FailCount          int        `db:"compliance_fail_count"`
+	ErrorCount         int        `db:"compliance_error_count"`
+	InfoCount          int        `db:"compliance_info_count"`
+	ManualCount        int        `db:"compliance_manual_count"`
+	NotApplicableCount int        `db:"compliance_not_applicable_count"`
+	InconsistentCount  int        `db:"compliance_inconsistent_count"`
+}
+
 // ResourceResultsByProfile represents shape of the stats query for compliance operator results
 type ResourceResultsByProfile struct {
 	PassCount          int    `db:"compliance_pass_count"`
