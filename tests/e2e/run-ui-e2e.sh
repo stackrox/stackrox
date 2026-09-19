@@ -67,7 +67,35 @@ test_ui_e2e() {
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
-    deploy_stackrox
+
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
+    if [[ "$use_roxie_deploy" == "true" ]]; then
+        info "Using roxie deployment for UI e2e tests"
+        local config_file; config_file="$(mktemp)"
+        merge_yaml "$config_file" <<EOF
+central:
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+
+        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+            info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        elif pr_has_label test-konflux-images; then
+            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        fi
+
+        deploy_stackrox_with_roxie_compat "$config_file"
+        setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        rm -f "$config_file"
+    else
+        info "Using traditional deployment for UI e2e tests"
+        deploy_stackrox
+    fi
 
     # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
