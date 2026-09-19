@@ -41,6 +41,7 @@ type BaseComplianceScanConfigurationSettings = {
     scanSchedule: Schedule;
     description?: string;
     notifiers: NotifierConfiguration[];
+    nodeRoles?: string[];
 };
 
 export type ComplianceScanConfiguration = {

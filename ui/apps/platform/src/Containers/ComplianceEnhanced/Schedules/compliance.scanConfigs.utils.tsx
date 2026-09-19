@@ -15,6 +15,35 @@ import type {
 } from 'types/schedule.proto';
 import { getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
 
+// Keep in sync with the backend defaults in central/complianceoperator/v2/scanconfigurations/service/convert.go
+// and sensor/kubernetes/complianceoperator/types.go (defaultNodeRoles).
+export const defaultNodeRoles: string[] = ['master', 'worker'];
+
+// Special role that selects every node; mutually exclusive with any other role.
+export const allNodesRole = '@all';
+
+// A concrete node role is 1-39 alphanumeric-or-hyphen characters that start and end
+// with an alphanumeric character. A leading/trailing hyphen would produce an invalid
+// "node-role.kubernetes.io/<role>" label key on the backend, so such a role is
+// rejected here (client-side) as well as server-side, instead of silently producing a
+// scan that matches zero nodes. Keep in sync with nodeRoleRegexp in
+// central/complianceoperator/v2/scanconfigurations/service/service_impl.go.
+export const nodeRoleRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/;
+
+// A single node role is valid when it is either the @all wildcard or matches the regex.
+export function isValidNodeRole(role: string): boolean {
+    return role === allNodesRole || nodeRoleRegex.test(role);
+}
+
+// A node roles array is valid when every entry is a valid role and @all is not
+// combined with any other role.
+export function areNodeRolesValid(roles: string[]): boolean {
+    if (!roles.every(isValidNodeRole)) {
+        return false;
+    }
+    return !(roles.includes(allNodesRole) && roles.length > 1);
+}
+
 export type ScanConfigParameters = {
     name: string;
     description: string;
@@ -22,6 +51,7 @@ export type ScanConfigParameters = {
     time: string;
     daysOfWeek: DayOfWeek[];
     daysOfMonth: DayOfMonth[];
+    nodeRoles: string[];
 };
 
 export type ScanReportConfiguration = {
@@ -137,7 +167,7 @@ export function convertFormikToScanConfig(
     formikValues: ScanConfigFormValues
 ): ComplianceScanConfiguration {
     const { id, parameters, clusters, profiles, report } = formikValues;
-    const { name, description } = parameters;
+    const { name, description, nodeRoles } = parameters;
     const { notifierConfigurations } = report;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
@@ -151,6 +181,7 @@ export function convertFormikToScanConfig(
             profiles,
             scanSchedule,
             notifiers: notifierConfigurations,
+            nodeRoles,
         },
         clusters,
     };
@@ -160,7 +191,7 @@ export function convertScanConfigToFormik(
     existingConfig: ComplianceScanConfigurationStatus
 ): ScanConfigFormValues {
     const { id, scanName, scanConfig, clusterStatus } = existingConfig;
-    const { description = '', notifiers, profiles, scanSchedule } = scanConfig;
+    const { description = '', notifiers, profiles, scanSchedule, nodeRoles } = scanConfig;
 
     const { intervalType, time, daysOfWeek, daysOfMonth } =
         convertScheduleToFormikParameters(scanSchedule);
@@ -174,6 +205,9 @@ export function convertScanConfigToFormik(
             time,
             daysOfWeek,
             daysOfMonth,
+            // Legacy configs stored before node roles were configurable have empty
+            // nodeRoles but actually run master+worker on Sensor; fall back so the UI matches.
+            nodeRoles: nodeRoles && nodeRoles.length > 0 ? nodeRoles : [...defaultNodeRoles],
         },
         clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
         profiles,
