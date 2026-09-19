@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -72,8 +73,42 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
+	wrap.ManagingResource = managingResourceFromOwnerRefs(objMeta.GetOwnerReferences())
 	return wrap.Deployment, nil
 
+}
+
+// managingResourceFromOwnerRefs finds a non-native CRD controller OwnerReference
+// and returns it as a ManagingResource. Returns nil if no such reference exists.
+func managingResourceFromOwnerRefs(refs []metav1.OwnerReference) *storage.ManagingResource {
+	for _, ref := range refs {
+		if IsTrackedOwnerReference(ref) {
+			continue
+		}
+		if ref.Controller == nil || !*ref.Controller {
+			continue
+		}
+		group, version := groupAndVersionFromAPIVersion(ref.APIVersion)
+		return &storage.ManagingResource{
+			Kind:       ref.Kind,
+			ApiGroup:   group,
+			ApiVersion: version,
+			Name:       ref.Name,
+			Uid:        string(ref.UID),
+		}
+	}
+	return nil
+}
+
+// groupAndVersionFromAPIVersion splits a Kubernetes API version string into
+// its group and version components. For core API resources (e.g. "v1"), the
+// group is empty. For grouped resources (e.g. "serving.kserve.io/v1beta1"),
+// the group is "serving.kserve.io" and the version is "v1beta1".
+func groupAndVersionFromAPIVersion(apiVersion string) (group, version string) {
+	if i := strings.LastIndex(apiVersion, "/"); i >= 0 {
+		return apiVersion[:i], apiVersion[i+1:]
+	}
+	return "", apiVersion
 }
 
 func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {

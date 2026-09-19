@@ -12,7 +12,19 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 36
+// ManagingResource identifies a non-native (CRD) Kubernetes resource that
+// manages this deployment via an OwnerReference. This captures the controller
+// OwnerReference that would otherwise be discarded because it points to a
+// custom resource rather than a native Kubernetes type.
+message ManagingResource {
+  string kind = 1; // e.g. "InferenceService", "Application"
+  string api_group = 2; // e.g. "serving.kserve.io", "argoproj.io"
+  string api_version = 3; // e.g. "v1beta1", "v1alpha1"
+  string name = 4; // Name of the managing CR
+  string uid = 5; // Kubernetes UID of the managing CR
+}
+
+// Next available tag: 37
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -51,6 +63,11 @@ message Deployment {
   reserved 30; // was tags
 
   bool platform_component = 35; // @gotags: search:"Platform Component"
+
+  // Non-native (CRD) resource that manages this deployment. Populated when
+  // a deployment's OwnerReference chain includes a CRD controller rather than
+  // (or in addition to) native Kubernetes resource types.
+  ManagingResource managing_resource = 36;
 }
 
 // Next tag: 13
