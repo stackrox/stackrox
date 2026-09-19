@@ -120,6 +120,12 @@ func (s *Server) Stop(ctx context.Context) {
 	}
 }
 
+// RegisterAdditionalCollector registers a new collector with the prometheus registry.
+// This allows consumers to register additional metrics per component or subsystem
+func (s *Server) RegisterAdditionalCollector(metric prometheus.Collector) error {
+	return prometheus.Register(metric)
+}
+
 func metricsEnabled() bool {
 	if !env.MetricsEnabled() {
 		log.Warn("Metrics server is disabled")
