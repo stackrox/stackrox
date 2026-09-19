@@ -8,7 +8,6 @@ import feedback, { selectors as feedbackSelectors } from './feedback';
 import invite, { selectors as inviteSelectors } from './invite';
 import notifications, { selectors as notificationSelectors } from './notifications';
 import roles, { selectors as roleSelectors } from './roles';
-import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
 import serverResponseStatus, {
     selectors as serverResponseStatusSelectors,
 } from './serverResponseStatus';
@@ -27,7 +26,6 @@ const appReducer = combineReducers({
     invite,
     notifications,
     roles,
-    searchAutoComplete,
     serverResponseStatus,
     loading,
     groups,
@@ -52,7 +50,6 @@ const getFeedback = (state) => getApp(state).feedback;
 const getInvite = (state) => getApp(state).invite;
 const getNotifications = (state) => getApp(state).notifications;
 const getRoles = (state) => getApp(state).roles;
-const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
 const getServerResponseStatus = (state) => getApp(state).serverResponseStatus;
 const getLoadingStatus = (state) => getApp(state).loading;
 
@@ -65,7 +62,6 @@ const boundSelectors = {
     ...bindSelectors(getInvite, inviteSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getRoles, roleSelectors),
-    ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getServerResponseStatus, serverResponseStatusSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
 
