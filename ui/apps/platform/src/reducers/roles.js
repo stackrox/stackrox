@@ -62,20 +62,6 @@ const userRolePermissions = (state = null, action) => {
     return state;
 };
 
-const error = (state = null, action) => {
-    switch (action.type) {
-        case types.FETCH_USER_ROLE_PERMISSIONS.REQUEST:
-        case types.FETCH_USER_ROLE_PERMISSIONS.SUCCESS:
-            return null;
-
-        case types.FETCH_USER_ROLE_PERMISSIONS.FAILURE:
-            return action.error;
-
-        default:
-            return state;
-    }
-};
-
 const isLoading = (state = true, action) => {
     // Initialize true for edge case before authSagas call fetchUserRolePermissions action.
     switch (action.type) {
@@ -95,14 +81,12 @@ const reducer = combineReducers({
     roles,
     selectedRole,
     userRolePermissions,
-    error,
     isLoading,
 });
 
 const getRoles = (state) => state.roles;
 const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
-const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 /*
@@ -154,7 +138,6 @@ export const selectors = {
     getRoles,
     getSelectedRole,
     getUserRolePermissions,
-    getUserRolePermissionsError,
     getIsLoadingUserRolePermissions,
 };
 
