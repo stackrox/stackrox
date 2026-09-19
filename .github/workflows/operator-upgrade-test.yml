@@ -1,0 +1,20 @@
+name: "RELEASE: Get operator upgrade test versions"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The ACS version being released.
+        required: true
+        type: string
+
+jobs:
+  get-versions:
+    name: Get operator upgrade test versions
+    runs-on:  ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - run: ./scripts/release-tools/operator-upgrade-test-helper.py ${{ inputs.version }} >> "$GITHUB_STEP_SUMMARY"
