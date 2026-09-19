@@ -47,6 +47,7 @@ var (
 		fieldnames.HostIPC:                        {{required: set.NewStringSet(search.HostIPC.String()), printerFuncKey: printer.HostIPCKey}},
 		fieldnames.HostNetwork:                    {{required: set.NewStringSet(search.HostNetwork.String()), printerFuncKey: printer.HostNetworkKey}},
 		fieldnames.HostPID:                        {{required: set.NewStringSet(search.HostPID.String()), printerFuncKey: printer.HostPIDKey}},
+		fieldnames.ContainerAge:                   {{required: set.NewStringSet(search.ContainerStartTime.String()), printerFuncKey: printer.ContainerAgeKey}},
 		fieldnames.ImageAge:                       {{required: set.NewStringSet(search.ImageCreatedTime.String()), printerFuncKey: printer.ImageAgeKey}},
 		fieldnames.ImageComponent:                 {{required: set.NewStringSet(augmentedobjs.ComponentAndVersionCustomTag), printerFuncKey: printer.ComponentKey}},
 		fieldnames.ImageOS:                        {{required: set.NewStringSet(search.ImageOS.String()), printerFuncKey: printer.ImageOSKey}},
