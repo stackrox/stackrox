@@ -31,8 +31,6 @@ class NodeIndexTest extends BaseSpecification {
         given:
         "Scanner V4 is enabled and the cluster has nodes"
         Assume.assumeTrue("Scanner V4 node indexing is required", scannerV4Enabled)
-        List<Node> nodes = NodeService.getNodes()
-        assert nodes.size() > 0
 
         when:
         "scanner-v4-matcher is ready so index reports can be enriched"
@@ -43,7 +41,7 @@ class NodeIndexTest extends BaseSpecification {
         then:
         "each OpenShift node scan has RPM packages, not only kubelet/kernel/runtime"
         withRetry(12, 30) {
-            nodes = NodeService.getNodes()
+            List<Node> nodes = NodeService.getNodes()
             assert nodes.size() > 0, "Expected to find at least one node"
             nodes.each { node ->
                 assert node.getScan(), "Expected to find a nodeScan on the node"
