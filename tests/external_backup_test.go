@@ -31,11 +31,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	backupRetryTries    = 5
+	backupRetryInterval = 10 * time.Second
+)
+
 type backupTestCase struct {
 	name  string
 	setup func(t *testing.T) (
 		backup *storage.ExternalBackup,
-		countBackups func(ctx context.Context, t *testing.T, prefix string) int,
+		countBackups func(ctx context.Context, t *testing.T, prefix string) (int, error),
 		cleanupBackups func(ctx context.Context, t *testing.T, prefix string),
 	)
 }
@@ -51,7 +56,7 @@ func newObjectPrefix() string {
 }
 
 func newGCSBucketFuncs(t *testing.T, bucket, serviceAccount string) (
-	countFn func(ctx context.Context, t *testing.T, prefix string) int,
+	countFn func(ctx context.Context, t *testing.T, prefix string) (int, error),
 	cleanupFn func(ctx context.Context, t *testing.T, prefix string),
 ) {
 	var opts []option.ClientOption
@@ -62,15 +67,17 @@ func newGCSBucketFuncs(t *testing.T, bucket, serviceAccount string) (
 	require.NoError(t, err)
 
 	bkt := client.Bucket(bucket)
-	countFn = func(ctx context.Context, t *testing.T, prefix string) int {
+	countFn = func(ctx context.Context, _ *testing.T, prefix string) (int, error) {
 		it := bkt.Objects(ctx, &googleStorage.Query{Prefix: prefix})
 		count := 0
 		var iterErr error
 		for _, iterErr = it.Next(); iterErr == nil; _, iterErr = it.Next() {
 			count++
 		}
-		require.Equal(t, iterator.Done, iterErr)
-		return count
+		if iterErr != iterator.Done {
+			return 0, iterErr
+		}
+		return count, nil
 	}
 	cleanupFn = func(ctx context.Context, t *testing.T, prefix string) {
 		it := bkt.Objects(ctx, &googleStorage.Query{Prefix: prefix})
@@ -95,8 +102,9 @@ func gcsTestCases() []backupTestCase {
 	return []backupTestCase{
 		{
 			name: "GCS/service_account_key",
-			setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) int, func(context.Context, *testing.T, string)) {
-				env := testutils.EnvOrFail(t,
+			setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) (int, error), func(context.Context, *testing.T, string)) {
+				env := testutils.EnvOrFail(
+					t,
 					"GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2",
 					"GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2",
 				)
@@ -113,7 +121,7 @@ func gcsTestCases() []backupTestCase {
 		},
 		{
 			name: "GCS/workload_identity",
-			setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) int, func(context.Context, *testing.T, string)) {
+			setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) (int, error), func(context.Context, *testing.T, string)) {
 				env := testutils.EnvOrSkip(t, "GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2", "SETUP_WORKLOAD_IDENTITIES")
 				if env["SETUP_WORKLOAD_IDENTITIES"] != "true" {
 					t.Skip("SETUP_WORKLOAD_IDENTITIES not set to true")
@@ -132,10 +140,11 @@ func gcsTestCases() []backupTestCase {
 }
 
 func newS3BucketFuncs(t *testing.T, endpoint, region, accessKeyID, secretAccessKey, bucket string, pathStyle bool) (
-	countFn func(ctx context.Context, t *testing.T, prefix string) int,
+	countFn func(ctx context.Context, t *testing.T, prefix string) (int, error),
 	cleanupFn func(ctx context.Context, t *testing.T, prefix string),
 ) {
-	cfg, err := awsConfig.LoadDefaultConfig(context.Background(),
+	cfg, err := awsConfig.LoadDefaultConfig(
+		context.Background(),
 		awsConfig.WithRegion(region),
 		awsConfig.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, ""),
@@ -159,13 +168,15 @@ func newS3BucketFuncs(t *testing.T, endpoint, region, accessKeyID, secretAccessK
 	}
 	client := s3.NewFromConfig(cfg, clientOpts...)
 
-	countFn = func(ctx context.Context, t *testing.T, prefix string) int {
+	countFn = func(ctx context.Context, _ *testing.T, prefix string) (int, error) {
 		out, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: aws.String(bucket),
 			Prefix: aws.String(prefix),
 		})
-		require.NoError(t, err)
-		return int(aws.ToInt32(out.KeyCount))
+		if err != nil {
+			return 0, err
+		}
+		return int(aws.ToInt32(out.KeyCount)), nil
 	}
 	cleanupFn = func(ctx context.Context, t *testing.T, prefix string) {
 		out, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -192,7 +203,7 @@ func newAWSS3Setup(name string, makeConfig func(t *testing.T) *storage.S3Config)
 	fullName := "AWS_S3/" + name
 	return backupTestCase{
 		name: fullName,
-		setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) int, func(context.Context, *testing.T, string)) {
+		setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) (int, error), func(context.Context, *testing.T, string)) {
 			config := makeConfig(t)
 			config.ObjectPrefix = newObjectPrefix()
 			countFn, cleanupFn := newS3BucketFuncs(t, "", config.GetRegion(),
@@ -208,7 +219,8 @@ func newAWSS3Setup(name string, makeConfig func(t *testing.T) *storage.S3Config)
 
 func awsS3Config(withEndpoint bool) func(t *testing.T) *storage.S3Config {
 	return func(t *testing.T) *storage.S3Config {
-		env := testutils.EnvOrFail(t,
+		env := testutils.EnvOrFail(
+			t,
 			"AWS_S3_BACKUP_TEST_BUCKET_NAME",
 			"AWS_S3_BACKUP_TEST_BUCKET_REGION",
 			"AWS_ACCESS_KEY_ID",
@@ -238,7 +250,7 @@ func newS3CompatibleSetup(name string, makeConfig func(t *testing.T) *storage.S3
 	fullName := "S3Compatible/" + name
 	return backupTestCase{
 		name: fullName,
-		setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) int, func(context.Context, *testing.T, string)) {
+		setup: func(t *testing.T) (*storage.ExternalBackup, func(context.Context, *testing.T, string) (int, error), func(context.Context, *testing.T, string)) {
 			config := makeConfig(t)
 			config.ObjectPrefix = newObjectPrefix()
 			pathStyle := config.GetUrlStyle() == storage.S3URLStyle_S3_URL_STYLE_PATH
@@ -255,7 +267,8 @@ func newS3CompatibleSetup(name string, makeConfig func(t *testing.T) *storage.S3
 
 func r2Config(withScheme bool, urlStyle storage.S3URLStyle) func(t *testing.T) *storage.S3Compatible {
 	return func(t *testing.T) *storage.S3Compatible {
-		env := testutils.EnvOrFail(t,
+		env := testutils.EnvOrFail(
+			t,
 			"CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID",
 			"CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME",
 			"CLOUDFLARE_R2_BACKUP_TEST_REGION",
@@ -276,7 +289,8 @@ func r2Config(withScheme bool, urlStyle storage.S3URLStyle) func(t *testing.T) *
 
 func odfConfig(withScheme bool) func(t *testing.T) *storage.S3Compatible {
 	return func(t *testing.T) *storage.S3Compatible {
-		env := testutils.EnvOrFail(t,
+		env := testutils.EnvOrFail(
+			t,
 			"ODF_S3_BACKUP_TEST_ENDPOINT",
 			"ODF_S3_BACKUP_TEST_BUCKET_NAME",
 			"ODF_S3_BACKUP_TEST_REGION",
@@ -310,11 +324,40 @@ func s3CompatibleTestCases() []backupTestCase {
 	}
 }
 
+func requireBackupCount(
+	t *testing.T,
+	countBackups func(ctx context.Context, t *testing.T, prefix string) (int, error),
+	prefix string,
+	expected int,
+) error {
+	return retry.WithRetry(
+		func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), backupRetryInterval)
+			defer cancel()
+			n, err := countBackups(ctx, t, prefix)
+			if err != nil {
+				return err
+			}
+			if n != expected {
+				return fmt.Errorf("expected %d backups, got %d", expected, n)
+			}
+			return nil
+		},
+		retry.Tries(backupRetryTries),
+		retry.BetweenAttempts(func(_ int) {
+			time.Sleep(backupRetryInterval)
+		}),
+		retry.OnFailedAttempts(func(err error) {
+			t.Logf("Error verifying backup count: %v", err)
+		}),
+	)
+}
+
 func runBackupLifecycleTest(
 	t *testing.T,
 	service v1.ExternalBackupServiceClient,
 	backup *storage.ExternalBackup,
-	countBackups func(ctx context.Context, t *testing.T, prefix string) int,
+	countBackups func(ctx context.Context, t *testing.T, prefix string) (int, error),
 	cleanupBackups func(ctx context.Context, t *testing.T, prefix string),
 ) {
 	var prefix string
@@ -330,15 +373,16 @@ func runBackupLifecycleTest(
 	t.Logf("Using object prefix: %s", prefix)
 
 	// Retry TestExternalBackup in case Central is not fully ready yet.
-	err := retry.WithRetry(func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_, err := service.TestExternalBackup(ctx, backup)
-		return err
-	},
-		retry.Tries(10),
+	err := retry.WithRetry(
+		func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), backupRetryInterval)
+			defer cancel()
+			_, err := service.TestExternalBackup(ctx, backup)
+			return err
+		},
+		retry.Tries(backupRetryTries),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(10 * time.Second)
+			time.Sleep(backupRetryInterval)
 		}),
 		retry.OnFailedAttempts(func(err error) {
 			t.Logf("Error testing external backup: %v", err)
@@ -364,9 +408,7 @@ func runBackupLifecycleTest(
 		}
 	})
 
-	countCtx, countCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	assert.Equal(t, 0, countBackups(countCtx, t, prefix))
-	countCancel()
+	require.NoError(t, requireBackupCount(t, countBackups, prefix, 0))
 
 	for i := 1; i <= 3; i++ {
 		triggerCtx, triggerCancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -375,31 +417,12 @@ func runBackupLifecycleTest(
 		triggerCancel()
 
 		if i <= 2 {
-			verifyCtx, verifyCancel := context.WithTimeout(context.Background(), 10*time.Second)
-			assert.Equal(t, i, countBackups(verifyCtx, t, prefix))
-			verifyCancel()
+			assert.NoError(t, requireBackupCount(t, countBackups, prefix, i))
 		}
 	}
 
 	// Third backup should prune the first, keeping only BackupsToKeep=2.
-	err = retry.WithRetry(func() error {
-		retryCtx, retryCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer retryCancel()
-		n := countBackups(retryCtx, t, prefix)
-		if n != 2 {
-			return fmt.Errorf("expected 2 backups after pruning, got %d", n)
-		}
-		return nil
-	},
-		retry.Tries(10),
-		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(1 * time.Second)
-		}),
-		retry.OnFailedAttempts(func(err error) {
-			t.Logf("Error waiting for backup pruning: %v", err)
-		}),
-	)
-	require.NoError(t, err)
+	require.NoError(t, requireBackupCount(t, countBackups, prefix, 2))
 }
 
 func TestExternalBackup(t *testing.T) {
