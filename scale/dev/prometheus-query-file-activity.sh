@@ -134,10 +134,17 @@ for table in alerts deployments; do
   echo "$result" > "${output_file_prefix}_${table}_bytes.txt"
 done
 
-# File activity specific metrics from sensor (if available)
-# Note: File activity events are processed in sensor and sent to central
-# We can monitor sensor metrics to see the file activity processing rate
-for metric_name in rox_sensor_file_activity_events_total rox_sensor_file_activity_events_dropped_total; do
+# File activity specific metrics from sensor (if available).
+# File access events flow from the fact container to sensor, which counts them
+# and buffers them for process enrichment. These are the actual metric names the
+# sensor exposes (see sensor/common/detector/metrics/metrics.go and
+# sensor/common/metrics/metrics.go); the earlier names
+# (rox_sensor_file_activity_events_total / _events_dropped_total) never existed,
+# which is why these output files came out empty.
+# - file_access_events_received_total: events received from the fact agent
+# - file_activity_buffer_drops:        events dropped due to buffer limits/expiry
+# - file_activity_buffer_size:         events currently buffered (gauge)
+for metric_name in rox_sensor_file_access_events_received_total rox_sensor_file_activity_buffer_drops rox_sensor_file_activity_buffer_size; do
   metric="${metric_name}"'{namespace=\"stackrox\"}'
   result="$(get_time_series_for_metric "$metric" "$from" "$to")" || true
   if [[ -n "$result" ]]; then
