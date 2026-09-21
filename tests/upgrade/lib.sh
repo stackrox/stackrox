@@ -108,7 +108,11 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
