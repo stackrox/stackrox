@@ -83,6 +83,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             "tunnelfront - Secure Shell Server (sshd) Execution",
             "tunnelfront - Docker CIS 4.7: Alert on Update Instruction",
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
+            // Newer EKS ebs-csi-node DaemonSets use bidirectional mount propagation.
+            "ebs-csi-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
