@@ -218,14 +218,15 @@ func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInt
 	}()
 	t.Cleanup(server.Stop)
 
-	conn, err := grpc.DialContext(context.Background(), "",
-		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
-			return listener.Dial()
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+			return listener.DialContext(ctx)
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
 	)
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
 	return conn
 }
 
