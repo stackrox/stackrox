@@ -80,6 +80,7 @@ class ImageScanningTest extends BaseSpecification {
                     // Alternatively can use quay.io/rhacs-eng/qa:struts-app but that doesn't have as many
                     // dockerfile violations
                     .setImage("quay.io/rhacs-eng/qa:registry-image-0-3")
+                    .setImagePullPolicy("IfNotPresent")
                     .addLabel("app", "quay-image-scanning-test")
                     .addImagePullSecret("quay-image-scanning-test"),
             "gcr": new Deployment()
