@@ -32,7 +32,7 @@ var (
 // computed in this process from the same environment and build type.
 func TestFeatureFlagSettings(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		t.Skip("Skipping on OCP: ci_export uses cci-export which does not set shell variables, causing systemic mismatch between test runner and Central")
+		t.Skip("Skipping on OCP: env vars set by the test runner via ci_export are not reflected in the already-deployed Central, causing a systemic mismatch")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
