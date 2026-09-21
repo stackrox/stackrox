@@ -29,17 +29,26 @@ func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 }
 
 func TestCentralVersionHeader(t *testing.T) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	service := v1.NewMetadataServiceClient(centralgrpc.GRPCConnectionToCentral(t))
 
-	var md metadata.MD
-	resp, err := service.GetMetadata(ctx, &v1.Empty{}, grpc.Header(&md))
+	var metadataMD metadata.MD
+	resp, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{}, grpc.Header(&metadataMD))
 	require.NoError(t, err)
 
-	vals := md.Get(clientconn.CentralVersionHeader)
-	require.Len(t, vals, 1, "expected %s response header", clientconn.CentralVersionHeader)
-	assert.Equal(t, resp.GetVersion(), vals[0])
+	metadataVals := metadataMD.Get(clientconn.CentralVersionHeader)
+	require.Len(t, metadataVals, 1, "expected %s response header from GetMetadata", clientconn.CentralVersionHeader)
+	assert.Equal(t, resp.GetVersion(), metadataVals[0])
+
+	var pingMD metadata.MD
+	_, err = v1.NewPingServiceClient(conn).Ping(ctx, &v1.Empty{}, grpc.Header(&pingMD))
+	require.NoError(t, err)
+
+	pingVals := pingMD.Get(clientconn.CentralVersionHeader)
+	require.Len(t, pingVals, 1, "expected %s response header from Ping", clientconn.CentralVersionHeader)
+	assert.Equal(t, metadataVals[0], pingVals[0], "version header must be consistent across services")
 }
 
 func TestCentralVersionHeader_AbsentForAnonymous(t *testing.T) {
