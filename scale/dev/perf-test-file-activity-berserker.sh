@@ -44,7 +44,12 @@ export SENSOR_HELM_DEPLOY=true
 # Enable File Activity Monitoring (adds the fact container via the Helm chart).
 export SFA_AGENT=true
 
-kubectl delete ns stackrox || true
+# Tear down any previous install with the workflow `teardown` script rather than
+# just deleting the namespace. `kubectl delete ns stackrox` only removes
+# namespaced objects; teardown also removes the cluster-scoped ClusterRoles,
+# ClusterRoleBindings and ValidatingWebhookConfiguration, which otherwise linger
+# and conflict with Helm's server-side apply on the next deploy.
+teardown || true
 
 results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_policy_${test_with_policy}"
 # Start from a clean results dir. rm -rf succeeds even when the dir is absent,
