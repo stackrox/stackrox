@@ -53,9 +53,19 @@ export SFA_AGENT=true
 # the chart. Injected via the deploy script's supported extra-values hook.
 image_registry="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$STACKROX_DIR" default-image-registry)}"
 sensor_helm_values="${DIR}/sensor-image-values.yaml"
+# FACT_PATHS tells the fact (file-activity monitor) container which paths to watch;
+# point it at where berserker writes its files (/tmp/data/**/*). The customize hook
+# keys env vars by container: the "/fact" key under the collector daemonset scopes
+# FACT_PATHS to the fact container only (the "/"-prefixed key is stripped for the
+# other collector-pod containers). See image/templates/helm/shared/templates/_metadata.tpl.
 cat > "$sensor_helm_values" <<EOF
 image:
   registry: ${image_registry}
+customize:
+  collector:
+    envVars:
+      "/fact":
+        FACT_PATHS: "/tmp/data/**/*"
 EOF
 export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="$sensor_helm_values"
 
