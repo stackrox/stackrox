@@ -48,19 +48,6 @@ const (
 	sendNotImplementedLogLimiter = "vm-scraper-send-not-implemented"
 )
 
-// indexPullSkipReason names why tick is not dialing agents. Has is false
-// both before CentralHello and when the hello omitted the capability.
-func indexPullSkipReason(disabled bool) string {
-	switch {
-	case disabled:
-		return "Central ACKed feature disabled"
-	case !centralcaps.Received():
-		return "Central capabilities not received yet"
-	default:
-		return "Central does not advertise VirtualMachinesSupported"
-	}
-}
-
 func getVsockPort() uint32 {
 	return uint32(env.VirtualMachinesVsockPort.IntegerSetting())
 }
@@ -131,8 +118,8 @@ type VMScraper struct {
 	warnMaxBytes          int
 	stopper               concurrency.Stopper
 	started               atomic.Bool
-	// loggedSkip is set after the first skip log for a missing-capability stretch
-	// so a 10s ticker does not repeat it until the capability returns.
+	// loggedSkip is set after the first skip log for a feature-disabled stretch
+	// so a 10s ticker does not repeat it until Central is reachable again.
 	loggedSkip atomic.Bool
 	// indexReportsDisabled is set from a feature-disabled ACK and cleared on
 	// CentralReachable so a later connection can scrape again.
@@ -343,16 +330,16 @@ func (s *VMScraper) run() {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
-	disabled := s.indexReportsDisabled.Load()
-	if disabled || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+	if s.indexReportsDisabled.Load() {
 		if s.loggedSkip.CompareAndSwap(false, true) {
-			log.Infof("VMScraper: skipping pulling index reports from VMs; %s", indexPullSkipReason(disabled))
+			log.Infof("VMScraper: skipping pulling index reports from VMs; Central ACKed feature disabled")
 		}
 		return
 	}
-	if s.loggedSkip.Swap(false) {
-		log.Infof("VMScraper: Central advertises VirtualMachinesSupported; will pull index reports from VMs")
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		return
 	}
+	s.loggedSkip.Store(false)
 
 	tickStart := s.now()
 	reconcile := forceReconcile
