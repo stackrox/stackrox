@@ -298,7 +298,8 @@ deploy_scaled_workload() {
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
 
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+        central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
     helm install -n stackrox --create-namespace \
         stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \

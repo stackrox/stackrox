@@ -316,7 +316,8 @@ deploy_scaled_workload() {
 
     # Make sure no init bundle from previous runs is there
     rm -f /tmp/cluster-init-bundle.yaml
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+        central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
     helm install -n stackrox --create-namespace \
         stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
