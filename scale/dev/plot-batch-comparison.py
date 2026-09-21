@@ -114,6 +114,54 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None, base_time=Non
 
     return max(filtered_values)
 
+def read_counter_rate(file_path, start_offset=60.0, end_offset=None, base_time=None):
+    """
+    Read a cumulative-counter metric file and return its average per-second rate
+    over a time window (e.g. file-access events received per second).
+
+    Counters are monotonically increasing totals, so averaging the raw value is
+    meaningless; the throughput is the counter's increase across the window
+    divided by the elapsed time between the first and last in-window samples.
+
+    Args:
+        file_path: Path to metrics file
+        start_offset: Start time in seconds (to skip initial ramp-up)
+        end_offset: End time in seconds (None = until end)
+        base_time: Optional baseline timestamp in milliseconds (if None, uses first timestamp)
+
+    Returns:
+        Average rate (units/sec) over the window, or None if it can't be computed
+    """
+    # Read sorted, de-duplicated series (drops duplicate-timestamp artifacts)
+    timestamps, values = read_metric_series(file_path)
+
+    if not timestamps or len(timestamps) < 2:
+        return None
+
+    # Convert to relative time in seconds
+    if base_time is None:
+        base_time = timestamps[0]
+    rel_times = [(t - base_time) / 1000.0 for t in timestamps]
+
+    # Filter to time window
+    points = [
+        (t, v) for t, v in zip(rel_times, values)
+        if t >= start_offset and (end_offset is None or t <= end_offset)
+    ]
+    if len(points) < 2:
+        return None
+
+    (t_first, v_first), (t_last, v_last) = points[0], points[-1]
+    if t_last <= t_first:
+        return None
+
+    # Guard against a counter reset within the window (delta would go negative).
+    delta = v_last - v_first
+    if delta < 0:
+        return None
+
+    return delta / (t_last - t_first)
+
 def plot_scaling_comparison(base_dir, output_dir):
     """
     Generate comparison plots across all batch sizes.
@@ -188,6 +236,9 @@ def plot_scaling_comparison(base_dir, output_dir):
         'alerts_count_with': [],
         'alerts_size_without': [],
         'alerts_size_with': [],
+        # Observed file-access event throughput at the sensor (events/sec).
+        'events_received_without': [],
+        'events_received_with': [],
     }
 
     for batch_size in batch_sizes:
@@ -225,12 +276,16 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['alerts_size_without'].append(
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
+            # File-access events are counted on the sensor; use the sensor baseline.
+            metrics['events_received_without'].append(
+                read_counter_rate(os.path.join(without_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
                        'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
                        'collector_cpu_without', 'collector_mem_without',
                        'fact_cpu_without', 'fact_mem_without',
-                       'alerts_count_without', 'alerts_size_without']:
+                       'alerts_count_without', 'alerts_size_without',
+                       'events_received_without']:
                 metrics[key].append(None)
 
         # With policy
@@ -267,12 +322,16 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['alerts_size_with'].append(
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
+            # File-access events are counted on the sensor; use the sensor baseline.
+            metrics['events_received_with'].append(
+                read_counter_rate(os.path.join(with_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
                        'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
                        'collector_cpu_with', 'collector_mem_with',
                        'fact_cpu_with', 'fact_mem_with',
-                       'alerts_count_with', 'alerts_size_with']:
+                       'alerts_count_with', 'alerts_size_with',
+                       'events_received_with']:
                 metrics[key].append(None)
 
     # Plot 1: Central CPU vs Event Rate
@@ -551,6 +610,32 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'fact_mem_vs_rate.png'), dpi=150)
     print(f"Saved: fact_mem_vs_rate.png")
+    plt.close()
+
+    # Plot 14: File-access events received at sensor vs configured Event Rate.
+    # The dashed line is the ideal (observed throughput == configured rate); a
+    # curve that flattens below it means events are being generated or delivered
+    # more slowly than the workload nominally requests.
+    plt.figure(figsize=(12, 7))
+    plt.plot(event_rates, metrics['events_received_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['events_received_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    if event_rates:
+        max_rate = max(event_rates)
+        plt.plot([0, max_rate], [0, max_rate], '--', color='gray', alpha=0.7, label='Ideal (observed = configured)')
+    eq1 = add_trendline(event_rates, metrics['events_received_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['events_received_with'], 'Trend (With Policy)', 'C1')
+    plt.xlabel('Configured File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Observed Events Received at Sensor (events/sec)', fontsize=12)
+    plt.title(f'File-Access Events Received vs Configured Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'events_received_vs_rate.png'), dpi=150)
+    print(f"Saved: events_received_vs_rate.png")
     plt.close()
 
     print(f"\nAll comparison plots saved to {output_dir}")
