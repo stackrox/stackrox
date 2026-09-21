@@ -11,7 +11,7 @@ import (
 )
 
 // CentralVersionServerInterceptor returns a gRPC unary server interceptor that sets the
-// Central version in the response metadata for authenticated requests.
+// Central version in the response header for authenticated requests.
 func CentralVersionServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		setVersionHeader(ctx)

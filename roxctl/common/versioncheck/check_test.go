@@ -23,8 +23,7 @@ func TestCheckAndWarn(t *testing.T) {
 	cases := map[string]struct {
 		localVersion   string
 		centralVersion string
-		expectWarning  bool
-		warnContains   string
+		expectWarning  string
 	}{
 		"same version": {
 			localVersion:   "4.8.0",
@@ -45,14 +44,12 @@ func TestCheckAndWarn(t *testing.T) {
 		"incompatible behind": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.3.0",
-			expectWarning:  true,
-			warnContains:   "too new",
+			expectWarning:  "too new",
 		},
 		"incompatible ahead": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.15.0",
-			expectWarning:  true,
-			warnContains:   "too old",
+			expectWarning:  "too old",
 		},
 		"invalid central version": {
 			localVersion:   "4.8.0",
@@ -71,9 +68,9 @@ func TestCheckAndWarn(t *testing.T) {
 			var buf bytes.Buffer
 			result := checkAndWarn(tc.centralVersion, &buf)
 
-			assert.Equal(t, tc.expectWarning, result, "return value mismatch")
-			if tc.warnContains != "" {
-				assert.Contains(t, buf.String(), tc.warnContains)
+			assert.Equal(t, tc.expectWarning != "", result, "return value mismatch")
+			if tc.expectWarning != "" {
+				assert.Contains(t, buf.String(), tc.expectWarning)
 				assert.Contains(t, buf.String(), "Compatible Centrals:")
 			} else {
 				assert.Empty(t, buf.String())
@@ -86,14 +83,12 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 	cases := map[string]struct {
 		authenticated  bool
 		centralVersion string
-		expectWarning  bool
-		warnContains   string
+		expectWarning  string
 	}{
 		"incompatible version warns": {
 			authenticated:  true,
 			centralVersion: "4.2.0",
-			expectWarning:  true,
-			warnContains:   "too new",
+			expectWarning:  "too new",
 		},
 		"compatible version is silent": {
 			authenticated:  true,
@@ -114,13 +109,15 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 				serverInterceptors = append(serverInterceptors, injectIdentityInterceptor(t))
 			}
 			if tc.centralVersion != "" {
-				serverInterceptors = append(serverInterceptors, fakeVersionHeaderInterceptor(tc.centralVersion))
+				serverInterceptors = append(serverInterceptors, injectVersionHeaderInterceptor(t, tc.centralVersion))
 			} else {
+				// Use the real interceptor: it sets the header to GetMainVersion() (same as local),
+				// so versions match and no warning fires.
 				serverInterceptors = append(serverInterceptors, versionheader.CentralVersionServerInterceptor())
 			}
 
 			var buf bytes.Buffer
-			conn := setupServer(t,
+			conn := setupServerAndClient(t,
 				serverInterceptors,
 				[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
 			)
@@ -129,8 +126,8 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 			_, err := client.GetMetadata(context.Background(), &v1.Empty{})
 			require.NoError(t, err)
 
-			if tc.expectWarning {
-				assert.Contains(t, buf.String(), tc.warnContains)
+			if tc.expectWarning != "" {
+				assert.Contains(t, buf.String(), tc.expectWarning)
 				assert.Contains(t, buf.String(), "Compatible Centrals:")
 			} else {
 				assert.Empty(t, buf.String())
@@ -143,10 +140,10 @@ func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
 
 	var buf bytes.Buffer
-	conn := setupServer(t,
+	conn := setupServerAndClient(t,
 		[]grpc.UnaryServerInterceptor{
 			injectIdentityInterceptor(t),
-			fakeVersionHeaderInterceptor("4.2.0"),
+			injectVersionHeaderInterceptor(t, "4.2.0"),
 		},
 		[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
 	)
@@ -180,10 +177,10 @@ func TestCentralVersionClientInterceptor_DoesNotShadowCallerHeader(t *testing.T)
 	}
 
 	var buf bytes.Buffer
-	conn := setupServer(t,
+	conn := setupServerAndClient(t,
 		[]grpc.UnaryServerInterceptor{
 			injectIdentityInterceptor(t),
-			fakeVersionHeaderInterceptor("4.2.0"),
+			injectVersionHeaderInterceptor(t, "4.2.0"),
 		},
 		// Two client interceptors, both appending their own grpc.Header.
 		[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf), otherClientInterceptor},
@@ -211,7 +208,7 @@ func (f *fakeMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Me
 	return &v1.Metadata{Version: "test"}, nil
 }
 
-func setupServer(t *testing.T, serverInterceptors []grpc.UnaryServerInterceptor, clientInterceptors []grpc.UnaryClientInterceptor) *grpc.ClientConn {
+func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInterceptor, clientInterceptors []grpc.UnaryClientInterceptor) *grpc.ClientConn {
 	listener := bufconn.Listen(1024 * 1024)
 	server := grpc.NewServer(grpc.ChainUnaryInterceptor(serverInterceptors...))
 	v1.RegisterMetadataServiceServer(server, &fakeMetadataServer{})
@@ -219,6 +216,7 @@ func setupServer(t *testing.T, serverInterceptors []grpc.UnaryServerInterceptor,
 	go func() {
 		assert.NoError(t, server.Serve(listener))
 	}()
+	t.Cleanup(server.Stop)
 
 	conn, err := grpc.DialContext(context.Background(), "",
 		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
@@ -228,8 +226,6 @@ func setupServer(t *testing.T, serverInterceptors []grpc.UnaryServerInterceptor,
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
 	)
 	require.NoError(t, err)
-
-	t.Cleanup(server.Stop)
 	return conn
 }
 
@@ -240,9 +236,9 @@ func injectIdentityInterceptor(t testing.TB) grpc.UnaryServerInterceptor {
 	}
 }
 
-func fakeVersionHeaderInterceptor(centralVersion string) grpc.UnaryServerInterceptor {
+func injectVersionHeaderInterceptor(t testing.TB, centralVersion string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		_ = grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion))
+		require.NoError(t, grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion)))
 		return handler(ctx, req)
 	}
 }

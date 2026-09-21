@@ -16,8 +16,8 @@ import (
 )
 
 // CentralVersionClientInterceptor returns a gRPC unary client interceptor that reads
-// the Central version from response metadata and emits a warning if the
-// versions are incompatible. The warning is emitted at most once per
+// the Central version from response header and emits a warning if the
+// versions of Central and roxctl are incompatible. The warning is emitted at most once per
 // interceptor instance.
 func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	var checked atomic.Bool
