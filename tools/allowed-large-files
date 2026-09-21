@@ -75,6 +75,8 @@ scanner/e2etests/testdata/image_tests.json
 scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
+scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip
+scanner/updater/ci/bundles/ci-minimal/vulnerabilities.zip
 scripts/ci/lib.sh
 sensor/common/virtualmachine/vmscraper/scraper_test.go
 sensor/tests/data/policies.json

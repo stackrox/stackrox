@@ -22,7 +22,9 @@ func TestCIMinimalBundle(t *testing.T) {
 	bundlePath := filepath.Join("ci", "bundles", "ci-minimal", "vulnerabilities.zip")
 	r, err := zip.OpenReader(bundlePath)
 	require.NoError(t, err)
-	defer r.Close()
+	t.Cleanup(func() {
+		require.NoError(t, r.Close())
+	})
 
 	seenSources := map[string]bool{}
 	vulns := make(map[string][]vulnRecord)
