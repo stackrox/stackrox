@@ -37,7 +37,9 @@ func TestGitHubCIMinimalBundleAccessible(t *testing.T) {
 
 	resp, err := client.Do(req)
 	require.NoError(t, err, "failed to fetch bundle from GitHub")
-	defer resp.Body.Close()
+	t.Cleanup(func() {
+		assert.NoError(t, resp.Body.Close())
+	})
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 OK status")
 	assert.Equal(t, "application/zip", resp.Header.Get("Content-Type"), "expected application/zip content type")
