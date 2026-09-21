@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type vmCVECoreResponse struct {
@@ -74,6 +75,37 @@ type vmIDResponse struct {
 	VMID string `db:"virtual_machine_id"`
 }
 
+// maxSeverityRow is one CVE (or VM) after MAX(severity) / any-fixable collapse.
+type maxSeverityRow struct {
+	VMID         string `db:"virtual_machine_id"`
+	CVE          string `db:"cve"`
+	MaxSeverity  int32  `db:"severity_max"`
+	FixableCount int    `db:"fixable_count"`
+}
+
+func foldMaxSeverityCounts(rows []maxSeverityRow) *resourceCountByVMCVESeverity {
+	out := &resourceCountByVMCVESeverity{}
+	for _, row := range rows {
+		out.add(row.MaxSeverity, row.FixableCount > 0)
+	}
+	return out
+}
+
+func foldMaxSeverityCountsByVM(rows []maxSeverityRow) []VMSeverityCounts {
+	byVM := make(map[string]*vmSeverityCountsResponse, len(rows))
+	ret := make([]VMSeverityCounts, 0, len(rows))
+	for _, row := range rows {
+		c := byVM[row.VMID]
+		if c == nil {
+			c = &vmSeverityCountsResponse{VMID: row.VMID}
+			byVM[row.VMID] = c
+			ret = append(ret, c)
+		}
+		c.add(row.MaxSeverity, row.FixableCount > 0)
+	}
+	return ret
+}
+
 // resourceCountByVMCVESeverity contains the counts of VMs by CVE severity.
 type resourceCountByVMCVESeverity struct {
 	CriticalSeverityCount         int `db:"critical_severity_count"`
@@ -106,6 +138,36 @@ func (r *resourceCountByVMCVESeverity) GetLowSeverityCount() common.ResourceCoun
 
 func (r *resourceCountByVMCVESeverity) GetUnknownSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{total: r.UnknownSeverityCount, fixable: r.FixableUnknownSeverityCount}
+}
+
+func (r *resourceCountByVMCVESeverity) add(maxSev int32, fixable bool) {
+	switch storage.VulnerabilitySeverity(maxSev) {
+	case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+		r.CriticalSeverityCount++
+		if fixable {
+			r.FixableCriticalSeverityCount++
+		}
+	case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+		r.ImportantSeverityCount++
+		if fixable {
+			r.FixableImportantSeverityCount++
+		}
+	case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+		r.ModerateSeverityCount++
+		if fixable {
+			r.FixableModerateSeverityCount++
+		}
+	case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+		r.LowSeverityCount++
+		if fixable {
+			r.FixableLowSeverityCount++
+		}
+	default:
+		r.UnknownSeverityCount++
+		if fixable {
+			r.FixableUnknownSeverityCount++
+		}
+	}
 }
 
 type resourceCountByFixability struct {
@@ -163,33 +225,13 @@ func (c *cveComponentResponse) GetAdvisoryName() string     { return c.AdvisoryN
 func (c *cveComponentResponse) GetAdvisoryLink() string     { return c.AdvisoryLink }
 
 type vmSeverityCountsResponse struct {
-	VMID                          string `db:"virtual_machine_id"`
-	CriticalSeverityCount         int    `db:"critical_severity_count"`
-	FixableCriticalSeverityCount  int    `db:"fixable_critical_severity_count"`
-	ImportantSeverityCount        int    `db:"important_severity_count"`
-	FixableImportantSeverityCount int    `db:"fixable_important_severity_count"`
-	ModerateSeverityCount         int    `db:"moderate_severity_count"`
-	FixableModerateSeverityCount  int    `db:"fixable_moderate_severity_count"`
-	LowSeverityCount              int    `db:"low_severity_count"`
-	FixableLowSeverityCount       int    `db:"fixable_low_severity_count"`
-	UnknownSeverityCount          int    `db:"unknown_severity_count"`
-	FixableUnknownSeverityCount   int    `db:"fixable_unknown_severity_count"`
+	VMID string `db:"virtual_machine_id"`
+	resourceCountByVMCVESeverity
 }
 
 func (r *vmSeverityCountsResponse) GetVMID() string { return r.VMID }
 func (r *vmSeverityCountsResponse) GetSeverityCounts() common.ResourceCountByCVESeverity {
-	return &resourceCountByVMCVESeverity{
-		CriticalSeverityCount:         r.CriticalSeverityCount,
-		FixableCriticalSeverityCount:  r.FixableCriticalSeverityCount,
-		ImportantSeverityCount:        r.ImportantSeverityCount,
-		FixableImportantSeverityCount: r.FixableImportantSeverityCount,
-		ModerateSeverityCount:         r.ModerateSeverityCount,
-		FixableModerateSeverityCount:  r.FixableModerateSeverityCount,
-		LowSeverityCount:              r.LowSeverityCount,
-		FixableLowSeverityCount:       r.FixableLowSeverityCount,
-		UnknownSeverityCount:          r.UnknownSeverityCount,
-		FixableUnknownSeverityCount:   r.FixableUnknownSeverityCount,
-	}
+	return &r.resourceCountByVMCVESeverity
 }
 
 type affectedVMResponse struct {

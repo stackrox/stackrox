@@ -36,21 +36,11 @@ func (v *vmCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error) {
-	if err := common.ValidateQuery(q); err != nil {
-		return nil, err
-	}
-
-	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
-	defer cancel()
-
-	result, err := pgSearch.RunSelectOneForSchema[resourceCountByVMCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, countOn))
+	rows, err := v.maxSeverityRows(ctx, q, countOn)
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
-		return &resourceCountByVMCVESeverity{}, nil
-	}
-	return result, nil
+	return foldMaxSeverityCounts(rows), nil
 }
 
 func (v *vmCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, error) {
@@ -115,30 +105,49 @@ func (v *vmCVECoreViewImpl) GetVMIDs(ctx context.Context, q *v1.Query) ([]string
 }
 
 func (v *vmCVECoreViewImpl) CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error) {
+	rows, err := v.maxSeverityRows(ctx, q, search.VirtualMachineID, search.CVE)
+	if err != nil {
+		return nil, err
+	}
+	return foldMaxSeverityCountsByVM(rows), nil
+}
+
+// maxSeverityRows is one row per groupBy key at MAX(severity), same grain as
+// GetCVEsForVM / GetAffectedVMs.
+func (v *vmCVECoreViewImpl) maxSeverityRows(ctx context.Context, q *v1.Query, groupBy ...search.FieldLabel) ([]maxSeverityRow, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-
-	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.CVE)
-	cloned.Selects = append([]*v1.QuerySelect{
-		search.NewQuerySelect(search.VirtualMachineID).Proto(),
-	}, cloned.GetSelects()...)
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.VirtualMachineID.String()},
+	cloned := q.CloneVT()
+	cloned.Pagination = nil // totals, not a page of rows
+	fields := make([]string, 0, len(groupBy))
+	selects := make([]*v1.QuerySelect, 0, len(groupBy)+2)
+	for _, field := range groupBy {
+		fields = append(fields, field.String())
+		selects = append(selects, search.NewQuerySelect(field).Proto())
 	}
+	selects = append(selects,
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Count).
+			Filter("fixable_count",
+				search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+	)
+	cloned.Selects = selects
+	cloned.GroupBy = &v1.QueryGroupBy{Fields: fields}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var ret []VMSeverityCounts
-	err := pgSearch.RunSelectRequestForSchemaFn[vmSeverityCountsResponse](queryCtx, v.db, v.schema, cloned, func(r *vmSeverityCountsResponse) error {
-		ret = append(ret, r)
+	var rows []maxSeverityRow
+	err := pgSearch.RunSelectRequestForSchemaFn[maxSeverityRow](queryCtx, v.db, v.schema, cloned, func(r *maxSeverityRow) error {
+		rows = append(rows, *r)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+	return rows, nil
 }
 
 func (v *vmCVECoreViewImpl) CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error) {

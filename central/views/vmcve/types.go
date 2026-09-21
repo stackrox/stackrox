@@ -41,10 +41,14 @@ type CVEComponentCore interface {
 //go:generate mockgen-wrapper
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	// CountBySeverity buckets distinct CVEs (countOn=CVE) or VMs
+	// (countOn=VirtualMachineID) by max severity, matching the sibling table.
 	CountBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 	GetVMIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error)
+	// CountBySeverityPerVM puts each CVE in its max-severity chip so per-VM
+	// totals match distinct ListVMCVEsByVM rows.
 	CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error)
 	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
 	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)

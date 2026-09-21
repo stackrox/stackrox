@@ -9,6 +9,9 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
 
+// WithCountBySeverityAndFixabilityQuery counts distinct countOn values per
+// severity row. One CVE on two packages at two severities increments two
+// buckets, so the totals can exceed the number of distinct IDs.
 func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
