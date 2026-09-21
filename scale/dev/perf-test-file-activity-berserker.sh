@@ -44,6 +44,21 @@ export SENSOR_HELM_DEPLOY=true
 # Enable File Activity Monitoring (adds the fact container via the Helm chart).
 export SFA_AGENT=true
 
+# Point the secured-cluster Helm deploy at the same image registry as the rest of
+# the deployment. The Helm sensor path passes no image overrides, so it uses the
+# chart's baked-in default registry (quay.io/rhacs-eng, from Central's image
+# flavor) and ignores DEFAULT_IMAGE_REGISTRY/MAIN_IMAGE_REPO. That makes sensor,
+# its init containers, collector and fact pull from a repo that may not host them
+# (ImagePullBackOff). image.registry cascades to every secured-cluster image in
+# the chart. Injected via the deploy script's supported extra-values hook.
+image_registry="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$STACKROX_DIR" default-image-registry)}"
+sensor_helm_values="${DIR}/sensor-image-values.yaml"
+cat > "$sensor_helm_values" <<EOF
+image:
+  registry: ${image_registry}
+EOF
+export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="$sensor_helm_values"
+
 # Tear down any previous install with the workflow `teardown` script rather than
 # just deleting the namespace. `kubectl delete ns stackrox` only removes
 # namespaced objects; teardown also removes the cluster-scoped ClusterRoles,
