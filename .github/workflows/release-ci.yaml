@@ -39,19 +39,6 @@ jobs:
             echo "is_release=false" | tee -a "$GITHUB_OUTPUT"
           fi
 
-  check-scanner-version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }}
-      - name: Check scanner version
-        run: |
-          scripts/ci/lib.sh \
-            check_scanner_version
-
   check-collector-version:
     runs-on: ubuntu-latest
     steps:
@@ -79,7 +66,7 @@ jobs:
             check_fact_version
 
   publish-helm-charts:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
+    needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -108,7 +95,7 @@ jobs:
 
   # Publish `roxagent` and `roxctl`.
   publish-cli:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
+    needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -134,7 +121,7 @@ jobs:
             publish_cli "${STACKROX_TAG}"
 
   publish-openapispec:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
+    needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:

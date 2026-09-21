@@ -99,7 +99,7 @@ var (
 	// KnownExploitedVulnerabilities enables support for CISA Known Exploited Vulnerabilities (KEV) data.
 	//
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
-	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
+	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
 
 	// Display Compliance Dashboard (Deprecated) in user interface (not displayed by default starting in 4.11 release).
 	DeprecatedComplianceDashboard = registerFeature("Display Compliance Dashboard (Deprecated) in user interface", "ROX_DEPRECATED_COMPLIANCE_DASHBOARD")
@@ -132,7 +132,7 @@ var (
 	VulnerabilityReportStreamingDownload = registerFeature("Enables streaming downloadable vulnerability reports to blob storage", "ROX_VULNERABILITY_REPORT_STREAMING_DOWNLOAD", enabled)
 
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
-	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
+	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS", enabled)
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
