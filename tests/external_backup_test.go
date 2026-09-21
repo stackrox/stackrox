@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	backupRetryTries    = 5
-	backupRetryInterval = 10 * time.Second
+	backupRetryTries         = 5
+	backupRetryInterval      = 10 * time.Second
+	centralReadinessMaxTries = 10
 )
 
 type backupTestCase struct {
@@ -380,7 +381,7 @@ func runBackupLifecycleTest(
 			_, err := service.TestExternalBackup(ctx, backup)
 			return err
 		},
-		retry.Tries(backupRetryTries),
+		retry.Tries(centralReadinessMaxTries),
 		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(backupRetryInterval)
 		}),
