@@ -104,6 +104,7 @@ jobs:
       ROX_GIT_REF: ${{ inputs.ref }}
       GCS_OBJECT: ${{ inputs.object }}
       STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
     steps:
     - name: Checkout repository (master for local actions)
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -148,6 +149,19 @@ jobs:
         export STACKROX_SCANNER_V4_UPDATER_SOURCES="$UPDATER_SOURCE"
         mkdir -p bundles
         scanner/bin/updater export --manual-url "$MANUAL_URL" bundles
+
+    - name: Verify kernel-free rhel-vex export
+      if: inputs.source == 'rhel-vex'
+      run: |
+        set -euo pipefail
+        zstd -t bundles/rhel-vex.json.zst
+        zstd -dc bundles/rhel-vex.json.zst | jq -n -e '
+          reduce inputs as $row ({records: 0, kernel: 0};
+            if $row.Vuln != null then
+              .records += 1 |
+              if ($row.Vuln.package.name | startswith("kernel")) then .kernel += 1 else . end
+            else . end) |
+          if .records > 0 and .kernel == 0 then . else error("invalid kernel-free export: \(.)") end'
 
     - name: Authenticate with GCS for upload
       if: ${{ !inputs.skip_freshness_check }}
