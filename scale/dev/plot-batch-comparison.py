@@ -13,6 +13,8 @@ import sys
 import os
 import glob
 import re
+import zipfile
+from datetime import datetime
 from plot_utils import (
     determine_baseline_timestamp,
     add_trendline,
@@ -162,6 +164,59 @@ def read_counter_rate(file_path, start_offset=60.0, end_offset=None, base_time=N
 
     return delta / (t_last - t_first)
 
+def read_events_rate_from_bundles(run_dir, metric_name='rox_sensor_file_access_events_received_total'):
+    """
+    Fallback for runs whose Prometheus time-series file is missing/empty, e.g.
+    runs collected before prometheus-query-file-activity.sh was fixed to query
+    the correct sensor metric name (older runs only have empty files for the
+    never-existed names).
+
+    Each run captures two diagnostic bundles (diagnostic_bundle_1 and
+    diagnostic_bundle_2). Each bundle is a StackRox diagnostic zip that contains
+    a point-in-time sensor metrics snapshot at sensor-metrics/remote/metrics.prom.
+    With only two snapshots there is no time series, but the counter's average
+    per-second rate is still recoverable: the increase between the two snapshots
+    divided by the wall-clock gap between them, taken from the zip filenames
+    (stackrox_diagnostic_YYYY_MM_DD_HH_MM_SS.zip).
+
+    Read-only: reads the bundle zips in place and never writes into the run dir.
+
+    Returns the average rate (events/sec), or None if it can't be computed.
+    """
+    samples = []  # (datetime, counter_value)
+    for bundle in ('diagnostic_bundle_1', 'diagnostic_bundle_2'):
+        zips = glob.glob(os.path.join(run_dir, bundle, 'stackrox_diagnostic_*.zip'))
+        if not zips:
+            continue
+        zip_path = sorted(zips)[0]
+        m = re.search(r'stackrox_diagnostic_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2})\.zip',
+                      os.path.basename(zip_path))
+        if not m:
+            continue
+        ts = datetime.strptime(m.group(1), '%Y_%m_%d_%H_%M_%S')
+        value = None
+        try:
+            with zipfile.ZipFile(zip_path) as zf:
+                with zf.open('sensor-metrics/remote/metrics.prom') as fh:
+                    for raw in fh:
+                        line = raw.decode('utf-8', 'replace')
+                        if line.startswith(metric_name + ' '):
+                            value = float(line.split()[1])
+                            break
+        except (KeyError, zipfile.BadZipFile, OSError, ValueError):
+            continue
+        if value is not None:
+            samples.append((ts, value))
+
+    if len(samples) < 2:
+        return None
+    samples.sort(key=lambda s: s[0])
+    (t_first, v_first), (t_last, v_last) = samples[0], samples[-1]
+    elapsed = (t_last - t_first).total_seconds()
+    if elapsed <= 0 or v_last < v_first:
+        return None
+    return (v_last - v_first) / elapsed
+
 def plot_scaling_comparison(base_dir, output_dir):
     """
     Generate comparison plots across all batch sizes.
@@ -277,8 +332,14 @@ def plot_scaling_comparison(base_dir, output_dir):
             metrics['alerts_size_without'].append(
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             # File-access events are counted on the sensor; use the sensor baseline.
-            metrics['events_received_without'].append(
-                read_counter_rate(os.path.join(without_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
+            # Fall back to the diagnostic bundles when the time series is absent
+            # (runs collected before the query script used the correct metric name).
+            events_rate_without = read_counter_rate(
+                os.path.join(without_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'),
+                START_OFFSET, END_OFFSET, sensor_baseline_without)
+            if events_rate_without is None:
+                events_rate_without = read_events_rate_from_bundles(without_dir)
+            metrics['events_received_without'].append(events_rate_without)
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
                        'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
@@ -323,8 +384,14 @@ def plot_scaling_comparison(base_dir, output_dir):
             metrics['alerts_size_with'].append(
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             # File-access events are counted on the sensor; use the sensor baseline.
-            metrics['events_received_with'].append(
-                read_counter_rate(os.path.join(with_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
+            # Fall back to the diagnostic bundles when the time series is absent
+            # (runs collected before the query script used the correct metric name).
+            events_rate_with = read_counter_rate(
+                os.path.join(with_dir, 'metrics_rox_sensor_file_access_events_received_total.txt'),
+                START_OFFSET, END_OFFSET, sensor_baseline_with)
+            if events_rate_with is None:
+                events_rate_with = read_events_rate_from_bundles(with_dir)
+            metrics['events_received_with'].append(events_rate_with)
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
                        'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
@@ -624,6 +691,16 @@ def plot_scaling_comparison(base_dir, output_dir):
         plt.plot([0, max_rate], [0, max_rate], '--', color='gray', alpha=0.7, label='Ideal (observed = configured)')
     eq1 = add_trendline(event_rates, metrics['events_received_without'], 'Trend (Without Policy)', 'C0')
     eq2 = add_trendline(event_rates, metrics['events_received_with'], 'Trend (With Policy)', 'C1')
+    # Scale the y-axis to the observed data (Without/With Policy), not the ideal
+    # line. The observed rate is orders of magnitude below the configured rate,
+    # so letting the ideal line (0..max_rate) drive the y-range flattens the
+    # actual curves onto the x-axis. The ideal line stays drawn as a reference
+    # but runs off the top of the frame.
+    observed = [v for v in metrics['events_received_without'] + metrics['events_received_with'] if v is not None]
+    if observed:
+        y_min, y_max = min(observed), max(observed)
+        pad = (y_max - y_min) * 0.1 or (y_max * 0.1 or 1.0)
+        plt.ylim(max(0.0, y_min - pad), y_max + pad)
     plt.xlabel('Configured File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Observed Events Received at Sensor (events/sec)', fontsize=12)
     plt.title(f'File-Access Events Received vs Configured Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
