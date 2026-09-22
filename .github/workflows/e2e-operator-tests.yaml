@@ -104,6 +104,7 @@ jobs:
         if: inputs.reuse-infra-cluster != ''
         run: |
           echo "CLUSTER_NAME=${{ inputs.reuse-infra-cluster }}" >> "$GITHUB_ENV"
+          echo "IMAGE_PREFETCH_DISABLED=true" >> "$GITHUB_ENV"
 
       - name: Compute cluster name for infra-provisioned cluster
         if: inputs.cluster-provisioning-method == 'infra' && inputs.reuse-infra-cluster == ''
