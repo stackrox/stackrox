@@ -297,6 +297,10 @@ securedCluster:
     clusterName: remote
 EOF
 
+    # Scan every 9-11 minutes during compatibility tests.
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL" "10m"
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL_DEVIATION" "60s"
+
     # Expose plaintext endpoints required by endpoints_test.go.
     set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
 
@@ -749,6 +753,11 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
+    # Scan every 9-11 minutes during operator-deployed e2e tests.
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
+    customize_envVars+=$'\n      value: "10m"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL_DEVIATION'
+    customize_envVars+=$'\n      value: "60s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'

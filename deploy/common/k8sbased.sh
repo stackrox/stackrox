@@ -946,6 +946,12 @@ function launch_sensor {
         )
       fi
 
+      # Scan every 9-11 minutes with Helm deployments.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=10m
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
+      )
+
       if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         helm_args+=(
           --set customize.envVars.ROX_NETFLOW_BATCHING="${ROX_NETFLOW_BATCHING}"
@@ -1091,6 +1097,10 @@ function launch_sensor {
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
         kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
+
+      # Scan every 9-11 minutes with manifest deployments.
+      kubectl -n "${sensor_namespace}" set env ds/collector --containers=compliance \
+        ROX_NODE_SCANNING_INTERVAL=10m ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
     fi
 
     collector_env=()
