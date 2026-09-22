@@ -20,6 +20,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
+
 ## [5.0.0]
 
 
