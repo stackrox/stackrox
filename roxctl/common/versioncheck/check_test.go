@@ -81,22 +81,15 @@ func TestCheckAndWarn(t *testing.T) {
 
 func TestCentralVersionClientInterceptor(t *testing.T) {
 	cases := map[string]struct {
-		authenticated  bool
 		centralVersion string
 		expectWarning  string
 	}{
 		"incompatible version warns": {
-			authenticated:  true,
 			centralVersion: "4.2.0",
 			expectWarning:  "too new",
 		},
 		"compatible version is silent": {
-			authenticated:  true,
-			centralVersion: "",
-		},
-		"anonymous request is silent": {
-			authenticated:  false,
-			centralVersion: "",
+			centralVersion: "4.10.6",
 		},
 	}
 
@@ -104,21 +97,9 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
 
-			var serverInterceptors []grpc.UnaryServerInterceptor
-			if tc.authenticated {
-				serverInterceptors = append(serverInterceptors, injectIdentityInterceptor(t))
-			}
-			if tc.centralVersion != "" {
-				serverInterceptors = append(serverInterceptors, injectVersionHeaderInterceptor(t, tc.centralVersion))
-			} else {
-				// Use the real interceptor: it sets the header to GetMainVersion() (same as local),
-				// so versions match and no warning fires.
-				serverInterceptors = append(serverInterceptors, versionheader.CentralVersionServerInterceptor())
-			}
-
 			var buf bytes.Buffer
 			conn := setupServerAndClient(t,
-				serverInterceptors,
+				[]grpc.UnaryServerInterceptor{injectVersionHeaderInterceptor(t, tc.centralVersion)},
 				[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
 			)
 
@@ -132,6 +113,39 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 			} else {
 				assert.Empty(t, buf.String())
 			}
+		})
+	}
+}
+
+func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T) {
+	cases := map[string]struct {
+		authenticated bool
+	}{
+		"authenticated with matching versions is silent": {authenticated: true},
+		"anonymous is silent":                            {authenticated: false},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.SetMainVersion(t, "4.8.0")
+
+			var serverInterceptors []grpc.UnaryServerInterceptor
+			if tc.authenticated {
+				serverInterceptors = append(serverInterceptors, injectIdentityInterceptor(t))
+			}
+			serverInterceptors = append(serverInterceptors, versionheader.CentralVersionServerInterceptor())
+
+			var buf bytes.Buffer
+			conn := setupServerAndClient(t,
+				serverInterceptors,
+				[]grpc.UnaryClientInterceptor{CentralVersionClientInterceptor(&buf)},
+			)
+
+			client := v1.NewMetadataServiceClient(conn)
+			_, err := client.GetMetadata(context.Background(), &v1.Empty{})
+			require.NoError(t, err)
+
+			assert.Empty(t, buf.String())
 		})
 	}
 }
@@ -192,7 +206,7 @@ func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInt
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
 	)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = conn.Close() })
+	t.Cleanup(func() { assert.NoError(t, conn.Close()) })
 	return conn
 }
 
