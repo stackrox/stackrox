@@ -20,6 +20,7 @@ from plot_utils import (
     add_trendline,
     add_equation_text,
     read_metric_series,
+    write_equation_table,
 )
 
 def extract_batch_size(dirname):
@@ -217,6 +218,48 @@ def read_events_rate_from_bundles(run_dir, metric_name='rox_sensor_file_access_e
         return None
     return (v_last - v_first) / elapsed
 
+def _to_gb(values):
+    """Convert a list of byte values to GB, preserving None entries."""
+    return [v / (1024**3) if v else None for v in values]
+
+
+def _to_mb(values):
+    """Convert a list of byte values to MB, preserving None entries."""
+    return [v / (1024**2) if v else None for v in values]
+
+
+def _finalize_plot(output_dir, filename, title, ylabel, equations, record,
+                   xlabel='File Activity Event Rate (events/sec)', print_suffix=''):
+    """Shared tail for every comparison plot: labels, legend, equation text,
+    equation recording, save, and close."""
+    plt.xlabel(xlabel, fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
+    plt.title(title, fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    add_equation_text(equations)
+    record(os.path.splitext(filename)[0], equations)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, filename), dpi=150)
+    print(f"Saved: {filename}{print_suffix}")
+    plt.close()
+
+
+def _plot_two_series_vs_rate(output_dir, event_rates, filename, title, ylabel,
+                             y_without, y_with, record):
+    """Render the standard Without/With Policy vs event-rate comparison plot,
+    with a trend line and equation per series."""
+    plt.figure(figsize=(12, 7))
+    plt.plot(event_rates, y_without, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, y_with, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    eq1 = add_trendline(event_rates, y_without, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, y_with, 'Trend (With Policy)', 'C1')
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    _finalize_plot(output_dir, filename, title, ylabel, equations, record)
+
+
 def plot_scaling_comparison(base_dir, output_dir):
     """
     Generate comparison plots across all batch sizes.
@@ -226,6 +269,14 @@ def plot_scaling_comparison(base_dir, output_dir):
         output_dir: Output directory for plots
     """
     os.makedirs(output_dir, exist_ok=True)
+
+    # Collect every plot's trend-line equations so they can be written to a
+    # single table (trendline_equations.csv) alongside the plots. record() is
+    # called just before each savefig with that plot's name and equations list.
+    equation_rows = []
+    def record(plot_name, equations):
+        for (series, slope, intercept, _color) in equations:
+            equation_rows.append((plot_name, series, slope, intercept))
 
     # Use consistent time window for all metrics to ensure fair comparison
     # Tests may run for different durations, so we use the same window across all
@@ -401,111 +452,67 @@ def plot_scaling_comparison(base_dir, output_dir):
                        'events_received_with']:
                 metrics[key].append(None)
 
-    # Plot 1: Central CPU vs Event Rate
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['central_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['central_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['central_cpu_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['central_cpu_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title(f'Central CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'central_cpu_vs_rate.png'), dpi=150)
-    print(f"Saved: central_cpu_vs_rate.png")
-    plt.close()
+    # The bulk of the comparison plots share one shape: Without/With Policy
+    # against event rate, with a trend line per series. Describe each as
+    # (filename, title, ylabel, without_values, with_values) and render them in
+    # a loop; the two plots that break the mold (policy CPU overhead and events
+    # received) are handled separately below.
+    standard_plots = [
+        ('central_cpu_vs_rate.png',
+         f'Central CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average CPU Usage (cores)',
+         metrics['central_cpu_without'], metrics['central_cpu_with']),
+        ('central_mem_vs_rate.png',
+         f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Memory Usage (GB)',
+         _to_gb(metrics['central_mem_without']), _to_gb(metrics['central_mem_with'])),
+        ('centraldb_cpu_vs_rate.png',
+         f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average CPU Usage (cores)',
+         metrics['centraldb_cpu_without'], metrics['centraldb_cpu_with']),
+        ('alerts_count_vs_rate.png',
+         f'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})',
+         'Maximum Alert Count',
+         metrics['alerts_count_without'], metrics['alerts_count_with']),
+        ('alerts_size_vs_rate.png',
+         f'Alerts Table Size vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})',
+         'Maximum Table Size (MB)',
+         _to_mb(metrics['alerts_size_without']), _to_mb(metrics['alerts_size_with'])),
+        ('centraldb_mem_vs_rate.png',
+         f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Memory Usage (GB)',
+         _to_gb(metrics['centraldb_mem_without']), _to_gb(metrics['centraldb_mem_with'])),
+        ('sensor_cpu_vs_rate.png',
+         f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average CPU Usage (cores)',
+         metrics['sensor_cpu_without'], metrics['sensor_cpu_with']),
+        ('sensor_mem_vs_rate.png',
+         f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Memory Usage (GB)',
+         _to_gb(metrics['sensor_mem_without']), _to_gb(metrics['sensor_mem_with'])),
+        ('collector_cpu_vs_rate.png',
+         f'Collector CPU Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})',
+         'Average CPU Usage (cores, all pods)',
+         metrics['collector_cpu_without'], metrics['collector_cpu_with']),
+        ('collector_mem_vs_rate.png',
+         f'Collector Memory Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})',
+         'Average Memory Usage (GB, all pods)',
+         _to_gb(metrics['collector_mem_without']), _to_gb(metrics['collector_mem_with'])),
+        ('fact_cpu_vs_rate.png',
+         f'Fact (file-activity monitor) CPU Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})',
+         'Average CPU Usage (cores, all pods)',
+         metrics['fact_cpu_without'], metrics['fact_cpu_with']),
+        ('fact_mem_vs_rate.png',
+         f'Fact (file-activity monitor) Memory Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})',
+         'Average Memory Usage (GB, all pods)',
+         _to_gb(metrics['fact_mem_without']), _to_gb(metrics['fact_mem_with'])),
+    ]
+    for filename, title, ylabel, y_without, y_with in standard_plots:
+        _plot_two_series_vs_rate(output_dir, event_rates, filename, title, ylabel,
+                                 y_without, y_with, record)
 
-    # Plot 2: Central Memory vs Event Rate
-    plt.figure(figsize=(12, 7))
-    mem_without_gb = [m / (1024**3) if m else None for m in metrics['central_mem_without']]
-    mem_with_gb = [m / (1024**3) if m else None for m in metrics['central_mem_with']]
-    plt.plot(event_rates, mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, mem_without_gb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, mem_with_gb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title(f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'central_mem_vs_rate.png'), dpi=150)
-    print(f"Saved: central_mem_vs_rate.png")
-    plt.close()
-
-    # Plot 3: Central-DB CPU vs Event Rate
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['centraldb_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['centraldb_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['centraldb_cpu_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['centraldb_cpu_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title(f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'centraldb_cpu_vs_rate.png'), dpi=150)
-    print(f"Saved: centraldb_cpu_vs_rate.png")
-    plt.close()
-
-    # Plot 4: Alert Count vs Event Rate
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['alerts_count_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['alerts_count_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['alerts_count_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['alerts_count_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Maximum Alert Count', fontsize=12)
-    plt.title(f'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'alerts_count_vs_rate.png'), dpi=150)
-    print(f"Saved: alerts_count_vs_rate.png")
-    plt.close()
-
-    # Plot 5: Alert Table Size vs Event Rate
-    plt.figure(figsize=(12, 7))
-    size_without_mb = [s / (1024**2) if s else None for s in metrics['alerts_size_without']]
-    size_with_mb = [s / (1024**2) if s else None for s in metrics['alerts_size_with']]
-    plt.plot(event_rates, size_without_mb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, size_with_mb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, size_without_mb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, size_with_mb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Maximum Table Size (MB)', fontsize=12)
-    plt.title(f'Alerts Table Size vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'alerts_size_vs_rate.png'), dpi=150)
-    print(f"Saved: alerts_size_vs_rate.png")
-    plt.close()
-
-    # Plot 6: Policy Enforcement CPU Overhead
+    # Policy enforcement CPU overhead: a single derived series (percent increase
+    # in Central CPU when policy is enabled), with a zero reference line.
     plt.figure(figsize=(12, 7))
     cpu_overhead = []
     for without, with_pol in zip(metrics['central_cpu_without'], metrics['central_cpu_with']):
@@ -514,175 +521,20 @@ def plot_scaling_comparison(base_dir, output_dir):
             cpu_overhead.append(overhead)
         else:
             cpu_overhead.append(None)
-
     plt.plot(event_rates, cpu_overhead, 'o-', linewidth=2, markersize=8, color='red', label='CPU Overhead')
     eq1 = add_trendline(event_rates, cpu_overhead, 'Trend', 'red')
     plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('CPU Overhead (%)', fontsize=12)
-    plt.title(f'Policy Enforcement CPU Overhead\n(Central CPU increase when policy enabled, {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
     equations = []
     if eq1: equations.append(('Overhead', eq1[0], eq1[1], 'red'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'policy_cpu_overhead.png'), dpi=150)
-    print(f"Saved: policy_cpu_overhead.png (Central CPU increase when policy is enabled)")
-    plt.close()
+    _finalize_plot(output_dir, 'policy_cpu_overhead.png',
+                   f'Policy Enforcement CPU Overhead\n(Central CPU increase when policy enabled, {TIME_WINDOW_DESC})',
+                   'CPU Overhead (%)', equations, record,
+                   print_suffix=' (Central CPU increase when policy is enabled)')
 
-    # Plot 7: Central-DB Memory vs Event Rate
-    plt.figure(figsize=(12, 7))
-    centraldb_mem_without_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_without']]
-    centraldb_mem_with_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_with']]
-    plt.plot(event_rates, centraldb_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, centraldb_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, centraldb_mem_with_gb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title(f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'centraldb_mem_vs_rate.png'), dpi=150)
-    print(f"Saved: centraldb_mem_vs_rate.png")
-    plt.close()
-
-    # Plot 8: Sensor CPU vs Event Rate
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['sensor_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['sensor_cpu_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['sensor_cpu_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title(f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'sensor_cpu_vs_rate.png'), dpi=150)
-    print(f"Saved: sensor_cpu_vs_rate.png")
-    plt.close()
-
-    # Plot 9: Sensor Memory vs Event Rate
-    plt.figure(figsize=(12, 7))
-    sensor_mem_without_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_without']]
-    sensor_mem_with_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_with']]
-    plt.plot(event_rates, sensor_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, sensor_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, sensor_mem_with_gb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title(f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'sensor_mem_vs_rate.png'), dpi=150)
-    print(f"Saved: sensor_mem_vs_rate.png")
-    plt.close()
-
-    # Plot 10: Collector CPU vs Event Rate (summed across all collector pods)
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['collector_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['collector_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['collector_cpu_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['collector_cpu_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average CPU Usage (cores, all pods)', fontsize=12)
-    plt.title(f'Collector CPU Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'collector_cpu_vs_rate.png'), dpi=150)
-    print(f"Saved: collector_cpu_vs_rate.png")
-    plt.close()
-
-    # Plot 11: Collector Memory vs Event Rate (summed across all collector pods)
-    plt.figure(figsize=(12, 7))
-    collector_mem_without_gb = [m / (1024**3) if m else None for m in metrics['collector_mem_without']]
-    collector_mem_with_gb = [m / (1024**3) if m else None for m in metrics['collector_mem_with']]
-    plt.plot(event_rates, collector_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, collector_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, collector_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, collector_mem_with_gb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average Memory Usage (GB, all pods)', fontsize=12)
-    plt.title(f'Collector Memory Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'collector_mem_vs_rate.png'), dpi=150)
-    print(f"Saved: collector_mem_vs_rate.png")
-    plt.close()
-
-    # Plot 12: Fact CPU vs Event Rate (fact container, summed across all collector pods)
-    plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['fact_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, metrics['fact_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, metrics['fact_cpu_without'], 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, metrics['fact_cpu_with'], 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average CPU Usage (cores, all pods)', fontsize=12)
-    plt.title(f'Fact (file-activity monitor) CPU Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'fact_cpu_vs_rate.png'), dpi=150)
-    print(f"Saved: fact_cpu_vs_rate.png")
-    plt.close()
-
-    # Plot 13: Fact Memory vs Event Rate (fact container, summed across all collector pods)
-    plt.figure(figsize=(12, 7))
-    fact_mem_without_gb = [m / (1024**3) if m else None for m in metrics['fact_mem_without']]
-    fact_mem_with_gb = [m / (1024**3) if m else None for m in metrics['fact_mem_with']]
-    plt.plot(event_rates, fact_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
-    plt.plot(event_rates, fact_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    eq1 = add_trendline(event_rates, fact_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    eq2 = add_trendline(event_rates, fact_mem_with_gb, 'Trend (With Policy)', 'C1')
-    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Average Memory Usage (GB, all pods)', fontsize=12)
-    plt.title(f'Fact (file-activity monitor) Memory Usage vs Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    equations = []
-    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
-    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'fact_mem_vs_rate.png'), dpi=150)
-    print(f"Saved: fact_mem_vs_rate.png")
-    plt.close()
-
-    # Plot 14: File-access events received at sensor vs configured Event Rate.
-    # The dashed line is the ideal (observed throughput == configured rate); a
-    # curve that flattens below it means events are being generated or delivered
-    # more slowly than the workload nominally requests.
+    # File-access events received at sensor vs configured event rate. The dashed
+    # line is the ideal (observed throughput == configured rate); a curve that
+    # flattens below it means events are being generated or delivered more slowly
+    # than the workload nominally requests.
     plt.figure(figsize=(12, 7))
     plt.plot(event_rates, metrics['events_received_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, metrics['events_received_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
@@ -701,19 +553,16 @@ def plot_scaling_comparison(base_dir, output_dir):
         y_min, y_max = min(observed), max(observed)
         pad = (y_max - y_min) * 0.1 or (y_max * 0.1 or 1.0)
         plt.ylim(max(0.0, y_min - pad), y_max + pad)
-    plt.xlabel('Configured File Activity Event Rate (events/sec)', fontsize=12)
-    plt.ylabel('Observed Events Received at Sensor (events/sec)', fontsize=12)
-    plt.title(f'File-Access Events Received vs Configured Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
     equations = []
     if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
     if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
-    add_equation_text(equations)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'events_received_vs_rate.png'), dpi=150)
-    print(f"Saved: events_received_vs_rate.png")
-    plt.close()
+    _finalize_plot(output_dir, 'events_received_vs_rate.png',
+                   f'File-Access Events Received vs Configured Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+                   'Observed Events Received at Sensor (events/sec)', equations, record,
+                   xlabel='Configured File Activity Event Rate (events/sec)')
+
+    # Write every plot's trend-line equations to one table alongside the plots.
+    write_equation_table(os.path.join(output_dir, 'trendline_equations.csv'), equation_rows)
 
     print(f"\nAll comparison plots saved to {output_dir}")
 
