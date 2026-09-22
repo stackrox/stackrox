@@ -191,7 +191,7 @@ echo "Get the diagnostic bundle completed in ${duration} seconds."
 
 if [[ "$test_with_policy" == "true" ]]; then
   start_time=$(date +%s)
-  "${DIR}/CheckDB-file-activity.sh" > "${results_dir}/file_activity_alerts_1.txt"
+  "${DIR}/CheckDB-file-activity.sh" "Berserker File Activity Test Policy" > "${results_dir}/file_activity_alerts_1.txt"
   end_time=$(date +%s)
   duration=$((end_time - start_time))
   echo "Checking the DB for file activity alerts completed in ${duration} seconds."
@@ -208,7 +208,7 @@ echo "Getting the diagnostic bundle completed in ${duration} seconds."
 
 if [[ "$test_with_policy" == "true" ]]; then
   start_time=$(date +%s)
-  "${DIR}/CheckDB-file-activity.sh" > "${results_dir}/file_activity_alerts_2.txt"
+  "${DIR}/CheckDB-file-activity.sh" "Berserker File Activity Test Policy" > "${results_dir}/file_activity_alerts_2.txt"
   end_time=$(date +%s)
   duration=$((end_time - start_time))
   echo "Checking the DB for file activity alerts completed in ${duration} seconds."

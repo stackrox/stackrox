@@ -7,8 +7,12 @@ set -eoux pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 # Create a file activity policy that matches the directories used in fake file activity generation
-# These directories are defined in sensor/kubernetes/fake/fileactivity.go:
+# These directories are defined in sensor/kubernetes/fake/fileactivity.go, which
+# writes regular files one level down (e.g. /etc/ssh/file-<hex>.conf):
 # /etc/security, /etc/pam.d, /etc/ssh, /var/log, /var/run, /tmp, /etc/kubernetes, /etc/cni, /etc/sysconfig, /etc/audit
+# NOTE: the "File Path" policy field matches by doublestar GLOB, not regex
+# (pkg/booleanpolicy/querybuilders valueToPathGlob). A regex-style "/etc/ssh/.*"
+# only matches dot-files, so it never matched the generated files; use "/etc/ssh/**".
 POLICY_JSON='{
   "name": "File Activity Test Policy",
   "description": "Test policy for file activity performance testing - triggers on file access in test directories",
@@ -26,34 +30,34 @@ POLICY_JSON='{
           "fieldName": "File Path",
           "values": [
             {
-              "value": "/etc/security/.*"
+              "value": "/etc/security/**"
             },
             {
-              "value": "/etc/pam.d/.*"
+              "value": "/etc/pam.d/**"
             },
             {
-              "value": "/etc/ssh/.*"
+              "value": "/etc/ssh/**"
             },
             {
-              "value": "/var/log/.*"
+              "value": "/var/log/**"
             },
             {
-              "value": "/var/run/.*"
+              "value": "/var/run/**"
             },
             {
-              "value": "/tmp/.*"
+              "value": "/tmp/**"
             },
             {
-              "value": "/etc/kubernetes/.*"
+              "value": "/etc/kubernetes/**"
             },
             {
-              "value": "/etc/cni/.*"
+              "value": "/etc/cni/**"
             },
             {
-              "value": "/etc/sysconfig/.*"
+              "value": "/etc/sysconfig/**"
             },
             {
-              "value": "/etc/audit/.*"
+              "value": "/etc/audit/**"
             }
           ]
         }

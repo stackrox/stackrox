@@ -7,7 +7,11 @@ set -eoux pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 # Create a file activity policy that matches the directory used by berserker
-# Berserker generates file activity in /tmp/data (defined in berserker workload files)
+# Berserker generates file activity in /tmp/data (defined in berserker workload files),
+# writing regular files one level down (random_path appends a random suffix).
+# NOTE: the "File Path" policy field matches by doublestar GLOB, not regex
+# (pkg/booleanpolicy/querybuilders valueToPathGlob). A regex-style "/tmp/data/.*"
+# only matches dot-files, so it never matched berserker's files; use "/tmp/data/**".
 POLICY_JSON='{
   "name": "Berserker File Activity Test Policy",
   "description": "Test policy for berserker file activity performance testing - triggers on file access in /tmp/data",
@@ -25,7 +29,7 @@ POLICY_JSON='{
           "fieldName": "File Path",
           "values": [
             {
-              "value": "/tmp/data/.*"
+              "value": "/tmp/data/**"
             }
           ]
         }
