@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -205,9 +206,17 @@ func rhelVexOpts() []updates.ManagerOption {
 				ctx = log.With(ctx, "updater", rhelVexUpdaterName)
 
 				// This function gets called for both the Factory and the Updater.
-				// We only need to configure the Factory (which has the CompressedFileTimeout field).
+				ignoreKernel := false
+				if value := os.Getenv("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES"); value != "" {
+					var err error
+					ignoreKernel, err = strconv.ParseBool(value)
+					if err != nil {
+						return fmt.Errorf("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: %w", err)
+					}
+				}
 				switch cfg := i.(type) {
 				case *vex.FactoryConfig:
+					cfg.IgnoreKernelPackages = ignoreKernel
 					// Configure the factory with custom timeout.
 					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
 					if timeout != "" {
@@ -220,7 +229,7 @@ func rhelVexOpts() []updates.ManagerOption {
 						}
 					}
 				case *vex.UpdaterConfig:
-					// Updater config - nothing to configure here.
+					cfg.IgnoreKernelPackages = ignoreKernel
 				default:
 					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
 				}
