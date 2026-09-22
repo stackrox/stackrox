@@ -77,6 +77,7 @@ jobs:
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
       - name: Validate workflow input
+        if: inputs.reuse-infra-cluster != ''
         run: |
           case "${{ inputs.cluster-provisioning-method }}" in
             direct-gke|infra) ;;
