@@ -258,6 +258,12 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 			expectedErrMsg: "must not contain",
 		},
 		{
+			description:    "rejects pattern with non-ASCII whitespace",
+			input:          "1.\u00a0*",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
 			description:    "rejects pattern longer than max tag length",
 			input:          strings.Repeat("a", maxTagPatternLength+1),
 			expectedValid:  false,

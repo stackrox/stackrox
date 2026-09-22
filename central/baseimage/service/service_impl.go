@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"unicode"
 
 	"github.com/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -209,7 +210,7 @@ func isValidTagPattern(tagPattern string) (bool, error) {
 	if len(tagPattern) > maxTagPatternLength {
 		return false, errox.InvalidArgs.Newf("tag pattern is too long: %d characters (max %d)", len(tagPattern), maxTagPatternLength)
 	}
-	if strings.ContainsAny(tagPattern, "/:@ \t\n\r\v\f") {
+	if strings.ContainsAny(tagPattern, "/:@") || strings.ContainsFunc(tagPattern, unicode.IsSpace) {
 		return false, errox.InvalidArgs.Newf("tag pattern '%s' must not contain '/', ':', '@' or whitespace - for a registry with a port, put 'registry:port/repo' in the repository field and only the tag mask (e.g. '1.*') here", tagPattern)
 	}
 	// path.Match validates the pattern and returns an error for malformed input.
