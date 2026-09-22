@@ -13,6 +13,7 @@ import (
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/notifiers"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"go.uber.org/mock/gomock"
 )
 
@@ -36,6 +37,9 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfigurationWithCentralW
 	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).Times(1)
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 
 	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)

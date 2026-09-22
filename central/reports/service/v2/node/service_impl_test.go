@@ -12,6 +12,7 @@ import (
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
+	rolePkg "github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -84,6 +86,9 @@ func (s *NodeReportServiceTestSuite) getContextForUser(user *storage.SlimUser) c
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedClusters: []string{"cluster-1"},
 		},
+	}).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
 	}).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
@@ -154,9 +159,14 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 
-	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
-	mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
-	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{
+		roletest.NewResolvedRole("node-role", map[string]storage.Access{
+			resources.Node.String(): storage.Access_READ_ACCESS,
+		}, accessScope),
+		roletest.NewResolvedRole("image-role", map[string]storage.Access{
+			resources.Image.String(): storage.Access_READ_ACCESS,
+		}, rolePkg.AccessScopeIncludeAll),
+	}).Times(1)
 
 	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
 		Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
@@ -166,6 +176,8 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 			s.Equal(storage.ReportConfiguration_NODE_VULNERABILITY, cfg.GetType())
 			protoassert.Equal(s.T(), creator, cfg.GetCreator())
 			s.NotNil(cfg.GetNodeVulnReportFilters())
+			s.Require().Len(cfg.GetNodeVulnReportFilters().GetAccessScopeRules(), 1)
+			s.Equal([]string{"cluster-1"}, cfg.GetNodeVulnReportFilters().GetAccessScopeRules()[0].GetIncludedClusters())
 			return cfg.GetId(), nil
 		}).Times(1)
 
@@ -482,6 +494,9 @@ func (s *NodeReportServiceTestSuite) TestPostViewBasedNodeReport() {
 	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).AnyTimes()
 	mockRole.EXPECT().GetAccessScope().Return(&storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedClusters: []string{"cluster-1"},
@@ -576,7 +591,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 
 	accessScope := &storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{"cluster-1"},
+			IncludedClusters: []string{"cluster-2"},
 		},
 	}
 
@@ -586,12 +601,15 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
-	mockID.EXPECT().UID().Return(creator.GetId()).AnyTimes()
-	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
+	mockID.EXPECT().UID().Return("updater").AnyTimes()
+	mockID.EXPECT().FullName().Return("updater").AnyTimes()
+	mockID.EXPECT().FriendlyName().Return("updater").AnyTimes()
 
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
 	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
@@ -621,6 +639,9 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 		},
 		Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
 			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
+				AccessScopeRules: []*storage.SimpleAccessScope_Rules{{
+					IncludedClusters: []string{"cluster-1"},
+				}},
 				Query: "Cluster:cluster-1",
 				CvesSince: &storage.NodeVulnerabilityReportFilters_AllVuln{
 					AllVuln: true,
@@ -637,6 +658,8 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 	s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) error {
 			s.Equal("Updated Node Report", cfg.GetName())
+			s.Require().Len(cfg.GetNodeVulnReportFilters().GetAccessScopeRules(), 1)
+			s.Equal([]string{"cluster-1"}, cfg.GetNodeVulnReportFilters().GetAccessScopeRules()[0].GetIncludedClusters())
 			return nil
 		}).Times(1)
 

@@ -112,7 +112,8 @@ func (s *serviceImpl) PostNodeReportConfiguration(ctx context.Context, request *
 		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
 	}
 
-	protoReportConfig, err := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	protoReportConfig, err := s.convertV2ReportConfigurationToProto(request, creator,
+		common.ExtractAccessScopeRulesForResource(creatorID, resources.Node))
 	if err != nil {
 		return nil, errors.Wrap(err, "converting report configuration")
 	}
