@@ -21,13 +21,13 @@ function RepeatScheduleDropdown({
     onBlur,
 }: RepeatScheduleDropdownProps): ReactElement {
     const options = [
-        <SelectOption key="daily" value="DAILY">
+        <SelectOption key="DAILY" value="DAILY">
             Daily
         </SelectOption>,
-        <SelectOption key="weekly" value="WEEKLY">
+        <SelectOption key="WEEKLY" value="WEEKLY">
             Weekly
         </SelectOption>,
-        <SelectOption key="monthly" value="MONTHLY">
+        <SelectOption key="MONTHLY" value="MONTHLY">
             Monthly
         </SelectOption>,
     ];
