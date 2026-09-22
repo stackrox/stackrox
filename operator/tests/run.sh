@@ -32,6 +32,11 @@ _EO_KUTTL_HELP_
 
     image_prefetcher_prebuilt_await
 
+    # Ensure Go module dependencies are available in the cache. In Prow CI, the
+    # module cache is pre-warmed by an earlier binary build step; in GHA there is
+    # no such step, so protogen.mk fails resolving the scanner module.
+    go mod download
+
     info "Deploying operator"
     if [[ $operator_cluster_type == openshift4 ]]; then
         junit_wrap deploy-previous-operator \
