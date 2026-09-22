@@ -30,6 +30,5 @@ jobs:
       tag: ${{ inputs.tag }}
       ci-job-name: gke-nongroovy-e2e-tests-konflux
       extra-env-vars: |
-        USE_ROXIE_DEPLOY=true
         USE_KONFLUX_IMAGES=true
     secrets: inherit
