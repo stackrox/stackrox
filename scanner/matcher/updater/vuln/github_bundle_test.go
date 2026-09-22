@@ -20,7 +20,7 @@ func TestGitHubCIMinimalBundleAccessible(t *testing.T) {
 		t.Skip("skipping network-dependent test in short mode")
 	}
 
-	const githubBundleURL = "https://raw.githubusercontent.com/stackrox/stackrox/563f58c33c6b793caa328e3384d4a5af61710232/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+	const githubBundleURL = "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

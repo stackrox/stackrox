@@ -12,7 +12,7 @@ app:
     # Vulnerability bundle URL
     # Default: Use ci-minimal bundle from GitHub for fast CI testing
     # Override: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip for full bundle
-    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/563f58c33c6b793caa328e3384d4a5af61710232/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
   db:
     name: scanner-v4-db
     image:
