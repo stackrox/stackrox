@@ -8,14 +8,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // This file was copied and fixed
 // https://github.com/driftprogramming/pgxpoolmock/blob/acbdb300842addabf2ff2df80d107592cb9455e1/rows.go
 
 type rowSets struct {
-	sets []*Rows
-	pos  int
+	sets    []*Rows
+	pos     int
+	typeMap *pgtype.Map
 }
 
 func (rs *rowSets) Err() error {
@@ -221,6 +223,10 @@ func (rs *rowSets) Conn() *pgx.Conn {
 	return nil
 }
 
+func (rs *rowSets) TypeMap() *pgtype.Map {
+	return rs.typeMap
+}
+
 func convert(rows ...*Rows) pgx.Rows {
 	defs := 0
 	sets := make([]*Rows, len(rows))
@@ -230,5 +236,5 @@ func convert(rows ...*Rows) pgx.Rows {
 			defs++
 		}
 	}
-	return &rowSets{sets: sets}
+	return &rowSets{sets: sets, typeMap: pgtype.NewMap()}
 }
