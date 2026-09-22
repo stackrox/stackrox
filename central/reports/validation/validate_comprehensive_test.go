@@ -594,7 +594,7 @@ func TestValidateCancelReportRequest(t *testing.T) {
 				snapshotDS.EXPECT().Get(gomock.Any(), "missing-report").Return(nil, false, nil)
 			},
 			expectError: true,
-			errContains: "not found",
+			errContains: "Report snapshot with job ID 'missing-report' does not exist",
 		},
 		"node vulnerability snapshot is rejected": {
 			reportID: "node-job",
