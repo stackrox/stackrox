@@ -162,7 +162,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 
 	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+		Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) (string, error) {
@@ -204,8 +204,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_GetAfterCre
 	requestConfig := s.getValidNodeReportConfig()
 	ctx := s.getContextForUser(creator)
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		Return(requestConfig.GetId(), nil).Times(1)
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), requestConfig.GetId()).
@@ -231,8 +230,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_ValidationE
 		},
 	}
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	_, err := s.service.PostNodeReportConfiguration(ctx, invalidConfig)
 	s.Error(err)
@@ -599,8 +597,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	existingConfig := &storage.ReportConfiguration{
 		Id:      updateConfig.GetId(),
@@ -994,8 +991,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration_NotFound(
 
 	updateConfig := s.getValidNodeReportConfig()
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), updateConfig.GetId()).
 		Return(nil, false, nil).Times(1)
 
@@ -1221,8 +1217,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfigurationWithCentralW
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) (string, error) {
 			return cfg.GetId(), nil
@@ -1254,8 +1249,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfigurationWithCentra
 	updateConfig := s.getValidNodeReportConfig()
 	ctx := s.getContextForUser(creator)
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), updateConfig.GetId()).
 		Return(&storage.ReportConfiguration{
 			Id:      updateConfig.GetId(),
