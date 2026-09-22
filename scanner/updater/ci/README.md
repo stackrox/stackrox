@@ -7,11 +7,13 @@ records: an NVD enrichment is not a matching vulnerability.
 
 The generator retains test CVEs and advisories (including decorated Ubuntu names,
 OSV aliases, and identities in advisory links), the existing Alpine 3.9 package
-selection, and the package identities in `qa-packages.json`. The latter contains Ubuntu binary/source packages and
-Maven packages indexed from the amd64 Struts image
+selection, and the package identities in `qa-packages.json`. The latter contains
+the four Ubuntu packages contributing Struts findings (`curl`, `libexpat1`,
+`openssl`, and source package `expat`) plus the required Maven package
+`org.apache.struts:struts2-core`, indexed from the amd64 Struts image
 `quay.io/rhacs-eng/qa-multi-arch@sha256:4dd78f23f89cc7e6da2efe939b14d8f855adbfa7eb62ffd5d508ec57cdf30873`.
-All records for those identities are retained, so aggregate QA assertions are not reduced to a list of
-named CVEs. Manual records are retained in full. NVD and Red Hat CSAF enrichment
+All records for those identities are retained, so aggregate QA assertions are not
+reduced to a list of named CVEs. Manual records are retained in full. NVD and Red Hat CSAF enrichment
 is selected by the identifiers and advisory links of the retained records.
 RHEL advisory selection is closed over native CVE identities so unaffected
 (`Invert`) ranges are retained even when they do not carry an advisory link.
@@ -82,17 +84,31 @@ the updated inventory through real matching, not only by counting source records
 
 ## Runtime validation and publication
 
-The 2026-09-22 generated bundle was validated before replacing the checked-in
-copies: both reproducible outputs and the native-scan candidate have SHA256
-`cd2db5c4ef0960ee9668f7df91ce54eb2a309b5c11e21f545ef210eee225ca5e` and are
-606 KiB. The isolated matcher imported all 11 sources in 5.221420973 seconds.
-Seven saved image scans completed with 921 (Struts), 19 (Python), 14 (OpenSSL),
-4 (gpgv), 7 (libc), 8 (nginx), and 8 (systemd) vulnerability records. Struts
-had 921 normalized package/vulnerability matches, equal to the unfiltered
-reference set; this includes CVE-2017-5638 on
+The minimized candidate was generated from the same pinned snapshot. Both
+reproducible outputs have SHA256
+`41c160a910cfa9600f9e6e7b69af0e8ba26032f35bd207373ae3206a6577aa35` and contain
+11 feeds with 472 KiB on disk, down from 606 KiB (22% smaller). The compressed
+members contain 481,212 bytes, down from 618,337. The isolated matcher imported
+all 11 sources in 6.291 seconds. Seven saved image scans completed with 202
+(Struts), 19 (Python), 14 (OpenSSL), 4 (gpgv), 7 (libc), 8 (nginx), and 8
+(systemd) vulnerability records. Struts had 202 normalized package/vulnerability
+matches, above the 138-finding assertion and including CVE-2017-5638 on
 `org.apache.struts:struts2-core`. Named QA records and severities were present,
 including Python CVE-2025-11468 (Moderate, CVSS 4.5) and gpgv CVE-2022-3219
 (Low, CVSS 3.3).
+
+| Measure | Previous | Minimized |
+| --- | ---: | ---: |
+| ZIP bytes | 619,535 | 482,410 |
+| Uncompressed member bytes | 618,337 | 481,212 |
+| Native records | 16,560 | 15,287 |
+| Struts normalized matches | 921 | 202 |
+| Isolated matcher import | 5.221 s | 6.291 s |
+
+The unchanged feeds retain their previous record counts. The reduced counts are
+Ubuntu 2,023 to 1,110, OSV 861 to 810, NVD 1,139 to 834, and Red Hat CSAF 330
+to 326. The import timing is not a performance improvement; it is included to
+make the trade-off visible and must be remeasured in CI.
 
 This validates native import and matching only. No backend GraphQL QA or full
 42-image E2E run was performed, and a cold full-feed import was not timed
