@@ -61,14 +61,13 @@ const addValidationSchema = yup.object({
         .string()
         .required('Base image path is required')
         .test(
-            'has-colon',
-            'Base image path must include both repository and tag separated by ":"',
+            'has-tag',
+            'Base image path must include a tag mask after ":" - for a registry with a port use "registry:port/repo:tag" (e.g. "registry:5000/repo:1.*")',
             (value) => {
-                if (!value?.includes(':')) {
+                if (!value) {
                     return false;
                 }
-                const lastColonIndex = value.lastIndexOf(':');
-                const tagPattern = value.substring(lastColonIndex + 1);
+                const { tagPattern } = parseBaseImagePath(value);
                 return tagPattern.length > 0;
             }
         ),
@@ -83,12 +82,21 @@ type EditFormData = yup.InferType<typeof editValidationSchema>;
 
 /**
  * Parses a base image path into repository path and tag pattern.
- * Format: "docker.io/library/ubuntu:22.04" -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
+ * Only a colon in the final path segment separates the tag; a colon before the last
+ * "/" belongs to a registry port. Returns an empty tagPattern when no tag is present.
+ * Examples:
+ *   "docker.io/library/ubuntu:22.04"      -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
+ *   "registry:5000/library/ubuntu:1.*"    -> { repoPath: "registry:5000/library/ubuntu", tagPattern: "1.*" }
+ *   "registry:5000/library/ubuntu"        -> { repoPath: "registry:5000/library/ubuntu", tagPattern: "" }
  */
 export function parseBaseImagePath(path: string): { repoPath: string; tagPattern: string } {
-    const lastColonIndex = path.lastIndexOf(':');
-    const repoPath = path.substring(0, lastColonIndex);
-    const tagPattern = path.substring(lastColonIndex + 1);
+    const lastSlashIndex = path.lastIndexOf('/');
+    const tagColonIndex = path.indexOf(':', lastSlashIndex + 1);
+    if (tagColonIndex === -1) {
+        return { repoPath: path, tagPattern: '' };
+    }
+    const repoPath = path.substring(0, tagColonIndex);
+    const tagPattern = path.substring(tagColonIndex + 1);
     return { repoPath, tagPattern };
 }
 

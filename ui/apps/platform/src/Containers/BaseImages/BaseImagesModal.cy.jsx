@@ -49,9 +49,23 @@ describe('BaseImagesModal', () => {
 
             cy.get('input#baseImagePath').type('ubuntu');
             cy.get('input#baseImagePath').blur();
-            cy.contains(
-                'Base image path must include both repository and tag separated by ":"'
-            ).should('be.visible');
+            cy.contains('Base image path must include a tag mask after ":"').should('be.visible');
+        });
+
+        it('should show error when the mask is placed on the path of a registry with a port', () => {
+            const onClose = cy.stub();
+            const onSuccess = cy.stub();
+
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
+
+            // Registry port colon must not be mistaken for the tag separator.
+            cy.get('input#baseImagePath').type('registry:5000/repo*');
+            cy.get('input#baseImagePath').blur();
+            cy.contains('Base image path must include a tag mask after ":"').should('be.visible');
         });
 
         it('should enable save button when form is valid', () => {
