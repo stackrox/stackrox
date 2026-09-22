@@ -126,6 +126,9 @@ func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructF
 	if !td.IsInputType && protoreflect.IsInternalGeneratorField(sf) {
 		return
 	}
+	if _, ok := sf.Tag.Lookup("protobuf_oneof"); ok {
+		return
+	}
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}

@@ -31,9 +31,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()}}},
 				},
 			},
 			shouldMatch: true,
@@ -43,9 +41,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "nginx.*"},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: "nginx.*"}}},
 				},
 			},
 			shouldMatch: true,
@@ -55,9 +51,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "nginy.*"},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: "nginy.*"}}},
 				},
 			},
 			shouldMatch: false,
@@ -67,9 +61,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "ngin\\K"},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: "ngin\\K"}}},
 				},
 			},
 			shouldMatch: false,
@@ -79,12 +71,8 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
-					},
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()}}},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()}}},
 				},
 			},
 			shouldMatch: true,
@@ -94,9 +82,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()}}},
 				},
 			},
 			shouldMatch: false,
@@ -106,9 +92,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}}}},
 				},
 			},
 			shouldMatch: true,
@@ -118,9 +102,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: uuid.NewV4().String()}},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: uuid.NewV4().String()}}}},
 				},
 			},
 			shouldMatch: false,
@@ -130,9 +112,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
-					},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}}}},
 				},
 			},
 			shouldMatch: false,
@@ -243,7 +223,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 				}
 				assert.True(t, matchesImageExclusion(c.image, c.policy))
 			}
-			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "BLAH"}})
+			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: "BLAH"}}})
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}

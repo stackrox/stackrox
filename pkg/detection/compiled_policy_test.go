@@ -64,7 +64,7 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 		{
 			desc:          "only stackrox ns, but app=stackrox excluded",
 			scopes:        []*storage.Scope{stackRoxNSScope},
-			exclusions:    []*storage.Exclusion{{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}},
+			exclusions:    []*storage.Exclusion{{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}}},
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},
 		},
 		{

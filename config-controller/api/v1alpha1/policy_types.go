@@ -94,9 +94,21 @@ type Exclusion struct {
 	Name       string     `json:"name,omitempty"`
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
+	// ExcludeByType excludes all workloads of the selected Kubernetes kinds.
+	// +optional
+	ExcludeByType *ExcludeByType `json:"excludeByType,omitempty"`
 	// +optional
 	// +kubebuilder:validation:Format="date-time"
 	Expiration string `json:"expiration,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=CRON_JOB;JOB
+type WorkloadType string
+
+type ExcludeByType struct {
+	// Types is the list of Kubernetes workload kinds to exclude.
+	// +kubebuilder:validation:MinItems=1
+	Types []WorkloadType `json:"types"`
 }
 
 type Deployment struct {
@@ -296,14 +308,18 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			protoExclusion.Expiration = protoTS
 		}
 
+		if exclusion.Deployment != (Deployment{}) && exclusion.ExcludeByType != nil {
+			return nil, errors.New("exclusion cannot set both 'deployment' and 'excludeByType'")
+		}
+
 		if exclusion.Deployment != (Deployment{}) {
-			protoExclusion.Deployment = &storage.Exclusion_Deployment{
+			dep := &storage.Exclusion_Deployment{
 				Name: exclusion.Deployment.Name,
 			}
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				protoExclusion.Deployment.Scope = &storage.Scope{
+				dep.Scope = &storage.Scope{
 					Namespace: scope.Namespace,
 				}
 				if scope.Cluster != "" {
@@ -311,31 +327,53 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 					if err != nil {
 						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 					}
-					protoExclusion.Deployment.Scope.Cluster = clusterID
+					dep.Scope.Cluster = clusterID
 				}
 			}
 
 			if scope.Label != (Label{}) {
-				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
+				dep.Scope.Label = &storage.Scope_Label{
 					Key:   scope.Label.Key,
 					Value: scope.Label.Value,
 				}
 			}
 
 			if scope.ClusterLabel != (Label{}) {
-				protoExclusion.Deployment.Scope.ClusterLabel = &storage.Scope_Label{
+				dep.Scope.ClusterLabel = &storage.Scope_Label{
 					Key:   scope.ClusterLabel.Key,
 					Value: scope.ClusterLabel.Value,
 				}
 			}
 
 			if scope.NamespaceLabel != (Label{}) {
-				protoExclusion.Deployment.Scope.NamespaceLabel = &storage.Scope_Label{
+				dep.Scope.NamespaceLabel = &storage.Scope_Label{
 					Key:   scope.NamespaceLabel.Key,
 					Value: scope.NamespaceLabel.Value,
 				}
 			}
 
+			protoExclusion.Matcher = &storage.Exclusion_Deployment_{
+				Deployment: dep,
+			}
+		}
+
+		if exclusion.ExcludeByType != nil {
+			if len(exclusion.ExcludeByType.Types) == 0 {
+				return nil, errors.New("excludeByType must specify at least one workload type")
+			}
+			types := make([]storage.Exclusion_WorkloadType, 0, len(exclusion.ExcludeByType.Types))
+			for _, t := range exclusion.ExcludeByType.Types {
+				val, found := storage.Exclusion_WorkloadType_value[string(t)]
+				if !found || storage.Exclusion_WorkloadType(val) == storage.Exclusion_WORKLOAD_TYPE_UNSPECIFIED {
+					return nil, errors.Errorf("excludeByType contains unknown workload type %q", t)
+				}
+				types = append(types, storage.Exclusion_WorkloadType(val))
+			}
+			protoExclusion.Matcher = &storage.Exclusion_ExcludeByType_{
+				ExcludeByType: &storage.Exclusion_ExcludeByType{
+					Types: types,
+				},
+			}
 		}
 
 		proto.Exclusions = append(proto.Exclusions, &protoExclusion)

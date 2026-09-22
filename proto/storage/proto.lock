@@ -14054,6 +14054,22 @@
                 "integer": 4
               }
             ]
+          },
+          {
+            "name": "Exclusion.WorkloadType",
+            "enum_fields": [
+              {
+                "name": "WORKLOAD_TYPE_UNSPECIFIED"
+              },
+              {
+                "name": "CRON_JOB",
+                "integer": 1
+              },
+              {
+                "name": "JOB",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -14372,11 +14388,6 @@
                 "type": "string"
               },
               {
-                "id": 5,
-                "name": "deployment",
-                "type": "Deployment"
-              },
-              {
                 "id": 7,
                 "name": "image",
                 "type": "Image"
@@ -14385,6 +14396,18 @@
                 "id": 6,
                 "name": "expiration",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "deployment",
+                "type": "Deployment",
+                "oneof_parent": "matcher"
+              },
+              {
+                "id": 8,
+                "name": "exclude_by_type",
+                "type": "ExcludeByType",
+                "oneof_parent": "matcher"
               }
             ],
             "reserved_ids": [
@@ -14423,6 +14446,17 @@
                     "id": 1,
                     "name": "name",
                     "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "ExcludeByType",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "types",
+                    "type": "WorkloadType",
+                    "is_repeated": true
                   }
                 ]
               }
