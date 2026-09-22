@@ -232,11 +232,19 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
+	// Read verifier names before opening the image cursor, which holds a database
+	// connection throughout the walk. Nested lookups can exhaust the pool.
+	verifierNames, err := signatureintegration.GetVerifierNames(ctx, s.signatureIntegrationDataStore)
+	if err != nil {
+		log.Debugf("Failed to get signature integration names for image export: %v", err)
+	}
 	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
 		utils.StripDatasourceNoClone(image.GetScan())
-		signatureintegration.EnrichVerificationResults(ctx,
-			s.signatureIntegrationDataStore, image.GetSignatureVerificationData().GetResults(),
-		)
+		if verifierNames != nil {
+			for _, result := range image.GetSignatureVerificationData().GetResults() {
+				result.VerifierName = verifierNames[result.GetVerifierId()]
+			}
+		}
 		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
 			return err
 		}
