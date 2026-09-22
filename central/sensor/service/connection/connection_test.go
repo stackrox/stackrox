@@ -365,6 +365,92 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersio
 	s.Equal(policyversion.CurrentVersion().String(), policySync.GetPolicies()[0].GetPolicyVersion())
 }
 
+func (s *testSuite) TestGetPolicySyncMsgFromPoliciesStripsExcludeByType() {
+	typeExclusion := &storage.Exclusion{
+		Name: "skip-cronjobs",
+		Matcher: &storage.Exclusion_ExcludeByType_{
+			ExcludeByType: &storage.Exclusion_ExcludeByType{
+				Types: []storage.Exclusion_WorkloadType{storage.Exclusion_CRON_JOB},
+			},
+		},
+	}
+	nameExclusion := &storage.Exclusion{
+		Name: "skip-web",
+		Matcher: &storage.Exclusion_Deployment_{
+			Deployment: &storage.Exclusion_Deployment{Name: "web"},
+		},
+	}
+	imageExclusion := &storage.Exclusion{
+		Name:  "skip-image",
+		Image: &storage.Exclusion_Image{Name: "stackrox.io"},
+	}
+	imageAndTypeExclusion := &storage.Exclusion{
+		Name:  "skip-image-and-jobs",
+		Image: &storage.Exclusion_Image{Name: "example.io"},
+		Matcher: &storage.Exclusion_ExcludeByType_{
+			ExcludeByType: &storage.Exclusion_ExcludeByType{
+				Types: []storage.Exclusion_WorkloadType{storage.Exclusion_JOB},
+			},
+		},
+	}
+	policy := &storage.Policy{
+		Name: "test-policy",
+		Exclusions: []*storage.Exclusion{
+			typeExclusion,
+			nameExclusion,
+			imageExclusion,
+			imageAndTypeExclusion,
+		},
+	}
+
+	s.Run("without capability strips type items and keeps others", func() {
+		original := policy.CloneVT()
+		msg, err := (&sensorConnection{}).getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
+		s.Require().NoError(err)
+
+		synced := msg.GetPolicySync().GetPolicies()
+		s.Require().Len(synced, 1)
+		got := synced[0].GetExclusions()
+		s.Require().Len(got, 3)
+		s.Equal("skip-web", got[0].GetName())
+		s.Equal("web", got[0].GetDeployment().GetName())
+		s.Equal("skip-image", got[1].GetName())
+		s.Equal("stackrox.io", got[1].GetImage().GetName())
+		s.Equal("skip-image-and-jobs", got[2].GetName())
+		s.Equal("example.io", got[2].GetImage().GetName())
+		s.Nil(got[2].GetExcludeByType())
+		protoassert.Equal(s.T(), original, policy)
+	})
+
+	s.Run("with capability keeps type items", func() {
+		conn := &sensorConnection{
+			capabilities: set.NewSet(centralsensor.WorkloadTypeExclusionCap),
+		}
+		msg, err := conn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
+		s.Require().NoError(err)
+
+		got := msg.GetPolicySync().GetPolicies()[0].GetExclusions()
+		s.Require().Len(got, 4)
+		s.NotNil(got[0].GetExcludeByType())
+		s.NotNil(got[3].GetExcludeByType())
+		s.Equal(storage.Exclusion_JOB, got[3].GetExcludeByType().GetTypes()[0])
+	})
+
+	s.Run("later capable sensor still sees original type items", func() {
+		// PreparePoliciesAndBroadcast reuses the same slice across connections.
+		input := []*storage.Policy{policy}
+		_, err := (&sensorConnection{}).getPolicySyncMsgFromPolicies(input)
+		s.Require().NoError(err)
+
+		capable := &sensorConnection{
+			capabilities: set.NewSet(centralsensor.WorkloadTypeExclusionCap),
+		}
+		msg, err := capable.getPolicySyncMsgFromPolicies(input)
+		s.Require().NoError(err)
+		s.NotNil(msg.GetPolicySync().GetPolicies()[0].GetExclusions()[0].GetExcludeByType())
+	})
+}
+
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
