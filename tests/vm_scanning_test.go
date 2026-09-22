@@ -125,6 +125,25 @@ func (s *VMScanningSuite) TestScanPipeline() {
 					"GetVM.guest_os should prefer facts.detectedGuestOS")
 			})
 
+			t.Run("VirtualMachineV2GuestOSSearch", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				detail := s.mustGetVMV2(snapshot.ID)
+				guestOS := detail.GetGuestOs()
+				require.Regexp(t, `^Red Hat Enterprise Linux \d`, guestOS,
+					"guest_os must be versioned so quoted informer search can miss")
+
+				found, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, guestOS)
+				require.NoError(t, err)
+				require.NotNil(t, found, "ListVMs Guest OS:%q should find this VM", guestOS)
+				require.Equal(t, snapshot.ID, found.GetId())
+
+				const informerGuestOS = "Red Hat Enterprise Linux"
+				miss, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, informerGuestOS)
+				require.NoError(t, err)
+				require.Nil(t, miss,
+					"quoted informer Guest OS must not match a versioned guest_os column")
+			})
+
 			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
 				s.skipUnlessV2VMAPI(t)
 				listed := s.mustListV2VMByNamespaceAndName(vm.Namespace, vm.Name)
@@ -150,13 +169,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				}
 
 				distinct := distinctCVEIDs(cves)
-				require.Equal(t, int32(len(distinct)), vmhelpers.VulnCountBySeverityTotal(listed.GetCveSeverityCounts()),
-					"ListVMs.cveSeverityCounts totals must match distinct CVEs from ListVMCVEsByVM")
-
 				summary, err := s.vmV2Client.GetVMVulnSummary(s.ctx, &v2.GetVMVulnSummaryRequest{Id: snapshot.ID})
 				require.NoError(t, err)
-				require.Equal(t, int32(len(distinct)), vmhelpers.VulnCountBySeverityTotal(summary.GetSeverityCounts()),
-					"GetVMVulnSummary severity totals must match distinct CVEs from ListVMCVEsByVM")
+				requireChipsAgree(t, listed.GetCveSeverityCounts(), summary.GetSeverityCounts())
+				requireChipsCoverTable(t, listed.GetCveSeverityCounts(), cves, len(distinct))
 			})
 
 			t.Run("VirtualMachineV2ListVMCVEsByVM", func(t *testing.T) {
@@ -309,6 +325,49 @@ func requireForwardedAgentFacts(t *testing.T, facts map[string]string) {
 		"facts.detectedGuestOS should be the versioned guest OS from roxagent")
 	require.NotEmpty(t, facts[pkgVM.AgentVersionKey],
 		"facts.agentVersion should be the roxagent version from ResponseMeta")
+}
+
+// requireChipsAgree checks ListVMs and GetVMVulnSummary use the same chip grain.
+func requireChipsAgree(t *testing.T, listed, summary *v2.VulnCountBySeverity) {
+	t.Helper()
+	require.Equal(t, listed.GetCritical().GetTotal(), summary.GetCritical().GetTotal(), "critical")
+	require.Equal(t, listed.GetImportant().GetTotal(), summary.GetImportant().GetTotal(), "important")
+	require.Equal(t, listed.GetModerate().GetTotal(), summary.GetModerate().GetTotal(), "moderate")
+	require.Equal(t, listed.GetLow().GetTotal(), summary.GetLow().GetTotal(), "low")
+	require.Equal(t, listed.GetUnknown().GetTotal(), summary.GetUnknown().GetTotal(), "unknown")
+	require.Equal(t, listed.GetCritical().GetFixable(), summary.GetCritical().GetFixable(), "critical fixable")
+	require.Equal(t, listed.GetImportant().GetFixable(), summary.GetImportant().GetFixable(), "important fixable")
+	require.Equal(t, listed.GetModerate().GetFixable(), summary.GetModerate().GetFixable(), "moderate fixable")
+	require.Equal(t, listed.GetLow().GetFixable(), summary.GetLow().GetFixable(), "low fixable")
+	require.Equal(t, listed.GetUnknown().GetFixable(), summary.GetUnknown().GetFixable(), "unknown fixable")
+}
+
+// requireChipsCoverTable allows a CVE in more than one severity chip, matching
+// imageCVECountBySeverity. Each chip still covers table rows at that severity
+// and cannot exceed the distinct CVE count.
+func requireChipsCoverTable(t *testing.T, chips *v2.VulnCountBySeverity, tableRows []*v2.VMCVERow, distinct int) {
+	t.Helper()
+	table := vmhelpers.CountVMCVERowsBySeverity(tableRows)
+	require.GreaterOrEqual(t, vmhelpers.VulnCountBySeverityTotal(chips), int32(distinct),
+		"chip total must cover distinct ListVMCVEsByVM CVE IDs")
+	for _, tc := range []struct {
+		name  string
+		chip  *v2.VulnFixableCount
+		table *v2.VulnFixableCount
+	}{
+		{"critical", chips.GetCritical(), table.GetCritical()},
+		{"important", chips.GetImportant(), table.GetImportant()},
+		{"moderate", chips.GetModerate(), table.GetModerate()},
+		{"low", chips.GetLow(), table.GetLow()},
+		{"unknown", chips.GetUnknown(), table.GetUnknown()},
+	} {
+		require.GreaterOrEqual(t, tc.chip.GetTotal(), tc.table.GetTotal(),
+			"%s chip must cover table rows at that severity", tc.name)
+		require.LessOrEqual(t, tc.chip.GetTotal(), int32(distinct),
+			"%s chip cannot exceed distinct CVE IDs", tc.name)
+		require.LessOrEqual(t, tc.chip.GetFixable(), tc.chip.GetTotal(),
+			"%s fixable cannot exceed that chip total", tc.name)
+	}
 }
 
 func distinctCVEIDs(cves []*v2.VMCVERow) []string {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v91/github"
 )
 
 func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
@@ -17,8 +17,8 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 		return
 	}
 	log.Printf("#%d will be commented with: %s", prNumber, comment)
-	issueComment := &github.IssueComment{
-		Body: &comment,
+	issueComment := github.IssueCommentRequest{
+		Body: comment,
 	}
 	c, _, err := client.Issues.CreateComment(ctx, s, s, prNumber, issueComment)
 	if err != nil {
@@ -135,7 +135,7 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) (map[
 	if err != nil {
 		return nil, err
 	}
-	_, err = client.Do(ctx, statusRequest, &statuses)
+	_, err = client.Do(statusRequest.WithContext(ctx), &statuses)
 	if err != nil {
 		return nil, err
 	}

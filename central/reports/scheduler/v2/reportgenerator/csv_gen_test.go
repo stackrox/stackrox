@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,25 +63,64 @@ func TestFormatCSVRow(t *testing.T) {
 		Link:              "https://nvd.nist.gov/vuln/detail/CVE-2024-1234",
 	}
 
-	row := formatCSVRow(r)
-	assert.Equal(t, len(csvHeader), len(row), "row should have same number of columns as header")
-	assert.Equal(t, "test-cluster", row[0])
-	assert.Equal(t, "test-ns", row[1])
-	assert.Equal(t, "test-deploy", row[2])
-	assert.Equal(t, "CVE-2024-1234", row[6])
-	assert.Equal(t, "true", row[7])
-	assert.Equal(t, "CRITICAL", row[9])
-	assert.Equal(t, "95.000", row[12])
-	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[14])
+	t.Run("KEV disabled", func(t *testing.T) {
+		t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), "false")
+
+		row := formatCSVRow(r)
+		assert.Equal(t, len(formatCol()), len(row), "row should have same number of columns as header")
+		assert.Equal(t, "test-cluster", row[0])
+		assert.Equal(t, "test-ns", row[1])
+		assert.Equal(t, "test-deploy", row[2])
+		assert.Equal(t, "CVE-2024-1234", row[6])
+		assert.Equal(t, "true", row[7])
+		assert.Equal(t, "CRITICAL", row[9])
+		assert.Equal(t, "95.000", row[12])
+		assert.Equal(t, "Not Available", row[14]) // Image Created Date (nil → "Not Available")
+		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[15])
+	})
+
+	t.Run("KEV enabled", func(t *testing.T) {
+		t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), "true")
+
+		// The two KEV columns are inserted after EPSS (index 12), shifting all
+		// trailing columns right by two.
+		row := formatCSVRow(r)
+		assert.Equal(t, len(formatCol()), len(row), "row should have same number of columns as header")
+		assert.Equal(t, "test-cluster", row[0])
+		assert.Equal(t, "95.000", row[12])
+		assert.Equal(t, "Not Available", row[13]) // CISA KEV (nil → "Not Available")
+		assert.Equal(t, "Not Available", row[14]) // Known Ransomware Campaign (nil → "Not Available")
+		assert.Equal(t, "Not Available", row[16]) // Image Created Date (nil → "Not Available")
+		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[17])
+	})
 }
 
 func TestFormatCSVRow_NilFields(t *testing.T) {
 	r := &ImageCVEQueryResponse{}
-	row := formatCSVRow(r)
-	assert.Equal(t, len(csvHeader), len(row))
-	assert.Equal(t, "", row[0])
-	assert.Equal(t, "Not Available", row[12])
-	assert.Equal(t, "Not Available", row[13])
+
+	t.Run("KEV disabled", func(t *testing.T) {
+		t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), "false")
+
+		row := formatCSVRow(r)
+		assert.Equal(t, len(formatCol()), len(row))
+		assert.Equal(t, "", row[0])
+		assert.Equal(t, "Not Available", row[12]) // EPSS Probability Percentage
+		assert.Equal(t, "Not Available", row[13]) // Discovered At
+		assert.Equal(t, "Not Available", row[14]) // Image Created Date
+	})
+
+	t.Run("KEV enabled", func(t *testing.T) {
+		t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), "true")
+
+		row := formatCSVRow(r)
+		assert.Equal(t, len(formatCol()), len(row))
+		assert.Equal(t, "", row[0])
+		assert.Equal(t, "Not Available", row[12]) // EPSS Probability Percentage
+		assert.Equal(t, "Not Available", row[13]) // CISA KEV
+		assert.Equal(t, "Not Available", row[14]) // Known Ransomware Campaign
+		assert.Equal(t, "Not Available", row[15]) // Discovered At
+		assert.Equal(t, "Not Available", row[16]) // Image Created Date
+	})
 }
 
 func TestCsvReportName(t *testing.T) {

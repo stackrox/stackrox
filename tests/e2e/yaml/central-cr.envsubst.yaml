@@ -55,9 +55,9 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          memory: "4Gi"
+          memory: "6Gi"
         limits:
-          memory: "4Gi"
+          memory: "6Gi"
     db:
 $scannerV4DbPersistenceYaml
       resources:

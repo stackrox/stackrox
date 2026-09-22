@@ -21,10 +21,17 @@ const (
 // ListV2VMByNamespaceName returns the first VM matching namespace and name.
 // Returns (nil, nil) when no match is found.
 func ListV2VMByNamespaceName(ctx context.Context, client v2.VirtualMachineV2ServiceClient, namespace, name string) (*v2.VMListItem, error) {
+	return listV2VM(ctx, client, rawListQueryNamespaceAndName(namespace, name))
+}
+
+// ListV2VMByNamespaceNameGuestOS is ListV2VMByNamespaceName plus an exact Guest OS match.
+func ListV2VMByNamespaceNameGuestOS(ctx context.Context, client v2.VirtualMachineV2ServiceClient, namespace, name, guestOS string) (*v2.VMListItem, error) {
+	return listV2VM(ctx, client, rawListQueryNamespaceNameGuestOS(namespace, name, guestOS))
+}
+
+func listV2VM(ctx context.Context, client v2.VirtualMachineV2ServiceClient, query string) (*v2.VMListItem, error) {
 	resp, err := client.ListVMs(ctx, &v2.ListVMsRequest{
-		Query: &v2.RawQuery{
-			Query: rawListQueryNamespaceAndName(namespace, name),
-		},
+		Query: &v2.RawQuery{Query: query},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list vms: %w", err)
@@ -239,6 +246,38 @@ func VulnCountBySeverityTotal(c *v2.VulnCountBySeverity) int32 {
 		n += sev.GetTotal()
 	}
 	return n
+}
+
+// CountVMCVERowsBySeverity counts ListVMCVEsByVM rows by the severity shown on
+// each row (max severity for that CVE).
+func CountVMCVERowsBySeverity(cves []*v2.VMCVERow) *v2.VulnCountBySeverity {
+	out := &v2.VulnCountBySeverity{}
+	for _, row := range cves {
+		b := severityBucket(out, row.GetSeverity())
+		b.Total++
+		if row.GetIsFixable() {
+			b.Fixable++
+		}
+	}
+	return out
+}
+
+func severityBucket(c *v2.VulnCountBySeverity, sev v2.VulnerabilitySeverity) *v2.VulnFixableCount {
+	ptr := &c.Unknown
+	switch sev {
+	case v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+		ptr = &c.Critical
+	case v2.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+		ptr = &c.Important
+	case v2.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+		ptr = &c.Moderate
+	case v2.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+		ptr = &c.Low
+	}
+	if *ptr == nil {
+		*ptr = &v2.VulnFixableCount{}
+	}
+	return *ptr
 }
 
 // WaitForV2ScanMissingComponent polls until packageName is absent from a scan
