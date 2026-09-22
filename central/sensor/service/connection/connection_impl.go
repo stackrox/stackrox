@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/pkg/errors"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -544,6 +545,14 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 		// Otherwise, sensor supports the same version or newer as central
 	}
 
+	// Old Sensors compile an exclude_by_type item as an unconstrained
+	// exclusion (nil name + nil scope matches every workload). Strip those
+	// items when Sensor lacks WorkloadTypeExclusionCap. Sensor forwards this
+	// same list to the admission controller, so AC evaluates the same copy.
+	if !c.HasCapability(centralsensor.WorkloadTypeExclusionCap) {
+		policies = stripExcludeByTypeExclusions(policies)
+	}
+
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_PolicySync{
 			PolicySync: &central.PolicySync{
@@ -551,6 +560,34 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 			},
 		},
 	}, nil
+}
+
+// stripExcludeByTypeExclusions returns a copy of policies with exclude_by_type
+// exclusion items removed. Stored policies are not mutated. An item that also
+// has an image predicate keeps the image arm and drops only the type matcher.
+func stripExcludeByTypeExclusions(policies []*storage.Policy) []*storage.Policy {
+	out := make([]*storage.Policy, 0, len(policies))
+	for _, p := range policies {
+		if !slices.ContainsFunc(p.GetExclusions(), func(e *storage.Exclusion) bool {
+			return e.GetExcludeByType() != nil
+		}) {
+			out = append(out, p)
+			continue
+		}
+		cloned := p.CloneVT()
+		cloned.Exclusions = slices.DeleteFunc(cloned.GetExclusions(), func(e *storage.Exclusion) bool {
+			if e.GetExcludeByType() == nil {
+				return false
+			}
+			if e.GetImage() != nil {
+				e.Matcher = nil
+				return false
+			}
+			return true
+		})
+		out = append(out, cloned)
+	}
+	return out
 }
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
