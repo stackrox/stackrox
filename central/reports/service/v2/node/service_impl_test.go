@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -92,6 +93,18 @@ func (s *NodeReportServiceTestSuite) getContextForUser(user *storage.SlimUser) c
 	}).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
+}
+
+func (s *NodeReportServiceTestSuite) getReaderContextForUser(user *storage.SlimUser) context.Context {
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Node, resources.Cluster),
+	))
+	return authn.ContextWithIdentity(ctx, mockID, s.T())
 }
 
 func (s *NodeReportServiceTestSuite) getValidNodeReportConfig() *apiV2.ReportConfiguration {
@@ -705,8 +718,10 @@ func (s *NodeReportServiceTestSuite) TestGetNodeReportHistory() {
 
 func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus() {
 	reportID := "test-report-id"
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
 	snapshot := &storage.ReportSnapshot{
-		ReportId: reportID,
+		ReportId:  reportID,
+		Requester: creator,
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_GENERATED,
 			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
@@ -717,10 +732,113 @@ func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus() {
 	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportID).
 		Return(snapshot, true, nil).Times(1)
 
-	result, err := s.service.GetNodeReportStatus(s.ctx, &apiV2.ResourceByID{Id: reportID})
+	result, err := s.service.GetNodeReportStatus(s.getContextForUser(creator), &apiV2.ResourceByID{Id: reportID})
 	s.NoError(err)
 	s.NotNil(result.GetStatus())
 	s.Equal(apiV2.ReportStatus_GENERATED, result.GetStatus().GetRunState())
+}
+
+func (s *NodeReportServiceTestSuite) TestReaderCanUseOwnNodeReportJobOperationsWithoutWorkflowAdministration() {
+	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "false")
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getReaderContextForUser(creator)
+	workflowRead := func(ctx context.Context) {
+		allowed, err := workflowSAC.ReadAllowed(ctx)
+		s.Require().NoError(err)
+		s.Require().True(allowed)
+	}
+
+	statusSnapshot := &storage.ReportSnapshot{
+		ReportId:  "status-report-id",
+		Requester: creator,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_GENERATED,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), statusSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return statusSnapshot, true, nil
+		}).Times(1)
+	_, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: statusSnapshot.GetReportId()})
+	s.NoError(err)
+
+	cancelSnapshot := &storage.ReportSnapshot{
+		ReportId:  "cancel-report-id",
+		Requester: creator,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_PREPARING,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), cancelSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return cancelSnapshot, true, nil
+		}).Times(1)
+	s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), cancelSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (bool, error) {
+			allowed, err := workflowSAC.WriteAllowed(ctx)
+			s.Require().NoError(err)
+			s.Require().True(allowed)
+			return true, nil
+		}).Times(1)
+	_, err = s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: cancelSnapshot.GetReportId()})
+	s.NoError(err)
+
+	deleteSnapshot := &storage.ReportSnapshot{
+		ReportId:              "delete-report-id",
+		ReportConfigurationId: "config-id",
+		Requester:             creator,
+		Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_GENERATED,
+			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), deleteSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return deleteSnapshot, true, nil
+		}).Times(1)
+	s.blobStore.EXPECT().Delete(gomock.Any(), common.GetReportBlobPath(
+		deleteSnapshot.GetReportConfigurationId(), deleteSnapshot.GetReportId())).Return(nil).Times(1)
+	_, err = s.service.DeleteNodeReport(ctx, &apiV2.DeleteReportRequest{Id: deleteSnapshot.GetReportId()})
+	s.NoError(err)
+}
+
+func (s *NodeReportServiceTestSuite) TestReaderCannotManageAnotherUsersNodeReportJob() {
+	reader := &storage.SlimUser{Id: "reader", Name: "reader"}
+	owner := &storage.SlimUser{Id: "owner", Name: "owner"}
+	ctx := s.getReaderContextForUser(reader)
+
+	otherUserSnapshot := &storage.ReportSnapshot{
+		ReportId:  "other-user-report-id",
+		Requester: owner,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_PREPARING,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: otherUserSnapshot.GetReportId()})
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err = s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: otherUserSnapshot.GetReportId()})
+	s.Error(err)
+	s.Contains(err.Error(), "Modify(WorkflowAdministration)")
+
+	otherUserSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
+	otherUserSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err = s.service.DeleteNodeReport(ctx, &apiV2.DeleteReportRequest{Id: otherUserSnapshot.GetReportId()})
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *NodeReportServiceTestSuite) TestGetViewBasedNodeReportHistory() {
@@ -1050,13 +1168,15 @@ func (s *NodeReportServiceTestSuite) TestRunNodeReport_NoIdentity() {
 }
 
 func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus_WrongType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
 	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), "report-id").
 		Return(&storage.ReportSnapshot{
-			ReportId: "report-id",
-			Type:     storage.ReportSnapshot_VULNERABILITY,
+			ReportId:  "report-id",
+			Requester: creator,
+			Type:      storage.ReportSnapshot_VULNERABILITY,
 		}, true, nil).Times(1)
 
-	_, err := s.service.GetNodeReportStatus(s.ctx, &apiV2.ResourceByID{Id: "report-id"})
+	_, err := s.service.GetNodeReportStatus(s.getContextForUser(creator), &apiV2.ResourceByID{Id: "report-id"})
 	s.Error(err)
 	s.Contains(err.Error(), "not a node vulnerability report")
 }

@@ -439,12 +439,25 @@ func (s *serviceImpl) GetNodeReportStatus(ctx context.Context, req *apiV2.Resour
 	if req == nil || req.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("empty request or id")
 	}
-	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
+	rep, found, err := s.snapshotDatastore.Get(reportsv2.SnapshotReadContext(ctx), req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !found {
 		return nil, errox.NotFound.CausedByf("report snapshot not found for job id %s", req.GetId())
+	}
+	slimUser, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if slimUser.GetId() != rep.GetRequester().GetId() {
+		allowed, err := workflowSAC.ReadAllowed(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, errox.NotAuthorized.CausedBy("report status can only be viewed by the user who requested the report")
+		}
 	}
 	if rep.GetType() != storage.ReportSnapshot_NODE_VULNERABILITY {
 		return nil, errox.InvalidArgs.CausedByf("report snapshot '%s' is not a node vulnerability report", req.GetId())
@@ -457,7 +470,7 @@ func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceB
 	if req == nil || req.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("empty request or id")
 	}
-	snapshot, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
+	snapshot, found, err := s.snapshotDatastore.Get(reportsv2.SnapshotReadContext(ctx), req.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +502,7 @@ func (s *serviceImpl) CancelNodeReport(ctx context.Context, req *apiV2.ResourceB
 		return &apiV2.Empty{}, nil
 	}
 
-	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
+	cancelled, err := s.scheduler.CancelReportRequest(reportsv2.SnapshotWriteContext(ctx), req.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -504,7 +517,7 @@ func (s *serviceImpl) DeleteNodeReport(ctx context.Context, req *apiV2.DeleteRep
 	if req == nil || req.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("empty request or id")
 	}
-	snapshot, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
+	snapshot, found, err := s.snapshotDatastore.Get(reportsv2.SnapshotReadContext(ctx), req.GetId())
 	if err != nil {
 		return nil, err
 	}
