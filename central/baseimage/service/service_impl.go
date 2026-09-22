@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -189,11 +190,27 @@ func (s *serviceImpl) validateBaseImageRepository(ctx context.Context, repoPath 
 	return nil
 }
 
-// isValidTagPattern checks if the given string is a valid [path.Match] glob pattern.
+// maxTagPatternLength bounds a tag pattern to the maximum length of a container image
+// tag: one leading character plus up to 127 more (see [reference.TagRegexp]).
+const maxTagPatternLength = 128
+
+// isValidTagPattern checks that the given string is a glob pattern that could match a
+// container image tag. Besides validating the [path.Match] glob syntax, it rejects
+// characters that are illegal in a tag ('/', ':', '@', whitespace). Their presence
+// signals that the repository path or a registry port leaked into the tag field -
+// common when the registry includes a port and the user mistypes the input. Such a
+// pattern can never match a real tag, so it is rejected here instead of silently
+// matching nothing.
 func isValidTagPattern(tagPattern string) (bool, error) {
 	// Reject empty tag patterns. Use * to match all tags.
 	if tagPattern == "" {
 		return false, errox.InvalidArgs.New("tag pattern cannot be empty")
+	}
+	if len(tagPattern) > maxTagPatternLength {
+		return false, errox.InvalidArgs.Newf("tag pattern is too long: %d characters (max %d)", len(tagPattern), maxTagPatternLength)
+	}
+	if strings.ContainsAny(tagPattern, "/:@ \t\n\r\v\f") {
+		return false, errox.InvalidArgs.Newf("tag pattern '%s' must not contain '/', ':', '@' or whitespace - for a registry with a port, put 'registry:port/repo' in the repository field and only the tag mask (e.g. '1.*') here", tagPattern)
 	}
 	// path.Match validates the pattern and returns an error for malformed input.
 	_, err := path.Match(tagPattern, "")
