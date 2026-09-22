@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -75,6 +76,11 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	err = printer.Print(obj, &out)
 	require.NoError(t, err)
 
+	// Strict parsing preserves null arrays so validation checks the emitted output.
+	report, err := sarif.FromString(out.String(), sarif.WithStrictValidation())
+	require.NoError(t, err)
+	assert.NoError(t, report.Validate())
+
 	// Since the report contains the version, replace it specifically here.
 	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))
 	require.NoError(t, err)
@@ -97,6 +103,11 @@ func TestSarifPrinter_Print_EmptyViolations(t *testing.T) {
 	printer := NewSarifPrinter(expressions, "docker.io/nginx:1.19", SarifPolicyReport)
 	err = printer.Print(obj, &out)
 	require.NoError(t, err)
+
+	// Strict parsing preserves null arrays so validation checks the emitted output.
+	report, err := sarif.FromString(out.String(), sarif.WithStrictValidation())
+	require.NoError(t, err)
+	assert.NoError(t, report.Validate())
 
 	// Since the report contains the version, replace it specifically here.
 	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))

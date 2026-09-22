@@ -167,12 +167,10 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 		// Reusing the help here, since the help includes remediation information.
 		WithMessage(sarif.NewMessage().WithText(entry.help)).
 		WithLocations([]*sarif.Location{
-			{
-				PhysicalLocation: &sarif.PhysicalLocation{
-					ArtifactLocation: sarif.NewArtifactLocation().WithURI(s.entity),
-					Region:           sarif.NewSimpleRegion(1, 1),
-				},
-			},
+			sarif.NewLocation().WithID(0).WithPhysicalLocation(&sarif.PhysicalLocation{
+				ArtifactLocation: sarif.NewArtifactLocation().WithURI(s.entity),
+				Region:           sarif.NewSimpleRegion(1, 1),
+			}),
 		}))
 }
 

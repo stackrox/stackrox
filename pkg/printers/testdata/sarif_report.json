@@ -25,9 +25,9 @@
           "level": "error",
           "locations": [
             {
-              "annotations": null,
+              "annotations": [],
               "id": 0,
-              "logicalLocations": null,
+              "logicalLocations": [],
               "physicalLocation": {
                 "artifactLocation": {
                   "index": -1,
@@ -40,7 +40,7 @@
                   "startLine": 1
                 }
               },
-              "relationships": null
+              "relationships": []
             }
           ],
           "message": {
@@ -64,9 +64,9 @@
           "level": "note",
           "locations": [
             {
-              "annotations": null,
+              "annotations": [],
               "id": 0,
-              "logicalLocations": null,
+              "logicalLocations": [],
               "physicalLocation": {
                 "artifactLocation": {
                   "index": -1,
@@ -79,7 +79,7 @@
                   "startLine": 1
                 }
               },
-              "relationships": null
+              "relationships": []
             }
           ],
           "message": {
@@ -103,9 +103,9 @@
           "level": "error",
           "locations": [
             {
-              "annotations": null,
+              "annotations": [],
               "id": 0,
-              "logicalLocations": null,
+              "logicalLocations": [],
               "physicalLocation": {
                 "artifactLocation": {
                   "index": -1,
@@ -118,7 +118,7 @@
                   "startLine": 1
                 }
               },
-              "relationships": null
+              "relationships": []
             }
           ],
           "message": {
