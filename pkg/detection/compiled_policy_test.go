@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,6 +94,60 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCompiledPolicyWorkloadTypeExclusion(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.PolicyWorkloadTypeExclusion, true)
+
+	cronJob := newDeployment("CRONJOB")
+	cronJob.Name = "batch-cron"
+	cronJob.Type = kubernetes.CronJob
+	regular := newDeployment("DEPLOYMENT")
+	regular.Name = "web"
+	regular.Type = kubernetes.Deployment
+
+	policy := constructPolicy(nil, []*storage.Exclusion{
+		{
+			Matcher: &storage.Exclusion_ExcludeByType_{
+				ExcludeByType: &storage.Exclusion_ExcludeByType{
+					Types: []storage.Exclusion_WorkloadType{storage.Exclusion_CRON_JOB},
+				},
+			},
+		},
+		{
+			Matcher: &storage.Exclusion_Deployment_{
+				Deployment: &storage.Exclusion_Deployment{Name: regular.GetName()},
+			},
+		},
+	})
+	compiled, err := CompilePolicy(policy, nil, nil)
+	require.NoError(t, err)
+	assert.False(t, compiled.AppliesTo(context.Background(), cronJob))
+	assert.False(t, compiled.AppliesTo(context.Background(), regular))
+
+	other := newDeployment("OTHER")
+	other.Name = "other"
+	other.Type = kubernetes.DaemonSet
+	assert.True(t, compiled.AppliesTo(context.Background(), other))
+}
+
+func TestCompiledPolicyWorkloadTypeExclusionFlagOff(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.PolicyWorkloadTypeExclusion, false)
+
+	cronJob := newDeployment("CRONJOB")
+	cronJob.Type = kubernetes.CronJob
+	policy := constructPolicy(nil, []*storage.Exclusion{
+		{
+			Matcher: &storage.Exclusion_ExcludeByType_{
+				ExcludeByType: &storage.Exclusion_ExcludeByType{
+					Types: []storage.Exclusion_WorkloadType{storage.Exclusion_CRON_JOB},
+				},
+			},
+		},
+	})
+	compiled, err := CompilePolicy(policy, nil, nil)
+	require.NoError(t, err)
+	assert.True(t, compiled.AppliesTo(context.Background(), cronJob))
 }
 
 // TestProcessAndFileAccessMatchers verifies that when a policy contains both Process and FileAccess fields,

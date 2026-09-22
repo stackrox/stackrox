@@ -714,6 +714,83 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	s.NoError(s.validator.validateExclusions(policy))
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateExcludeByType() {
+	typeExclusion := func(types ...storage.Exclusion_WorkloadType) *storage.Exclusion {
+		return &storage.Exclusion{
+			Matcher: &storage.Exclusion_ExcludeByType_{
+				ExcludeByType: &storage.Exclusion_ExcludeByType{Types: types},
+			},
+		}
+	}
+	deployPolicy := func(exclusion *storage.Exclusion) *storage.Policy {
+		return &storage.Policy{
+			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			Exclusions:      []*storage.Exclusion{exclusion},
+		}
+	}
+
+	s.ErrorContains(s.validator.validateExclusions(deployPolicy(typeExclusion(storage.Exclusion_JOB))), "ROX_POLICY_WORKLOAD_TYPE_EXCLUSION")
+
+	testutils.MustUpdateFeature(s.T(), features.PolicyWorkloadTypeExclusion, true)
+
+	for name, tc := range map[string]struct {
+		policy      *storage.Policy
+		errContains string
+	}{
+		"JOB is valid": {
+			policy: deployPolicy(typeExclusion(storage.Exclusion_JOB)),
+		},
+		"CRON_JOB is valid": {
+			policy: deployPolicy(typeExclusion(storage.Exclusion_CRON_JOB)),
+		},
+		"JOB and CRON_JOB are valid": {
+			policy: deployPolicy(typeExclusion(storage.Exclusion_CRON_JOB, storage.Exclusion_JOB)),
+		},
+		"empty type list is rejected": {
+			policy:      deployPolicy(typeExclusion()),
+			errContains: "at least one workload type",
+		},
+		"UNSPECIFIED is rejected": {
+			policy:      deployPolicy(typeExclusion(storage.Exclusion_WORKLOAD_TYPE_UNSPECIFIED)),
+			errContains: "WORKLOAD_TYPE_UNSPECIFIED",
+		},
+		"duplicate types are rejected": {
+			policy:      deployPolicy(typeExclusion(storage.Exclusion_JOB, storage.Exclusion_JOB)),
+			errContains: "duplicate",
+		},
+		"unknown type is rejected": {
+			policy:      deployPolicy(typeExclusion(storage.Exclusion_WorkloadType(99))),
+			errContains: "unknown workload type",
+		},
+		"mixed valid and unknown types are rejected": {
+			policy:      deployPolicy(typeExclusion(storage.Exclusion_JOB, storage.Exclusion_WorkloadType(99))),
+			errContains: "unknown workload type",
+		},
+		"RUNTIME lifecycle is valid": {
+			policy: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				Exclusions:      []*storage.Exclusion{typeExclusion(storage.Exclusion_JOB)},
+			},
+		},
+		"BUILD lifecycle is rejected": {
+			policy: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+				Exclusions:      []*storage.Exclusion{typeExclusion(storage.Exclusion_JOB)},
+			},
+			errContains: "DEPLOY and RUNTIME",
+		},
+	} {
+		s.T().Run(name, func(t *testing.T) {
+			err := s.validator.validateExclusions(tc.policy)
+			if tc.errContains == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.errContains)
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestValidateExclusionRejectsLabels() {
 	for name, tc := range map[string]struct {
 		exclusion   *storage.Exclusion
