@@ -27,9 +27,9 @@ func convert{{.TypeName}}(p *storage.{{.TypeName}}) *{{.TypeName}} {
 
 	return &{{.TypeName}}{
          {{- range .Fields }}
-         {{- $fieldName := printf "p.%s" .Name }}
+         {{- $fieldName := printf "p.Get%s()" .Name }}
          {{- if .IsTimestamp }}
-             {{- $fieldName = printf "timestampToFormatRFC3339(%s)" $fieldName }}
+             {{- $fieldName = printf "timestampToFormatRFC3339(p.Get%s())" .Name }}
          {{- end }}
          {{ .Name }}:
          {{- if .IsStringer -}}
