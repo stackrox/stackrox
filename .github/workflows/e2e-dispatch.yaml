@@ -309,10 +309,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-operator-tests-gke:
-    needs: [ wait-for-images, should-dispatch ]
+    needs: [ should-dispatch ]
     uses: ./.github/workflows/e2e-operator-tests-gke.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
+      tag: "5.1.x-6-g66c0e0644f"
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-operator-tests-gke }}
     secrets: inherit
     concurrency:
