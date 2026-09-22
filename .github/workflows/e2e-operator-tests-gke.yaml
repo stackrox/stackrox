@@ -26,7 +26,7 @@ jobs:
       tag: ${{ inputs.tag }}
       ci-job-name: e2e-operator-tests-gke
       cluster-name-prefix: e2e-oper-tests-gke
-      cluster-provisioning-method: direct-gke
+      cluster-provisioning-method: infra
       reuse-infra-cluster: mc-09-22-mighty-hello-some
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
