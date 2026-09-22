@@ -16,7 +16,6 @@ var (
 type Server interface {
 	RunForever()
 	Stop(context.Context)
-	RegisterAdditionalCollector(collector prometheus.Collector) error
 }
 
 // Initializes metrics server and returns a cleanup function to be deferred from the caller
@@ -32,13 +31,15 @@ func Initialize() func(context.Context) {
 		Help:      "Time to load an individual vulnerability database bundle",
 	}, []string{"database", "initial_load"})
 
-	if err := metricsSrv.RegisterAdditionalCollector(vulnDBUpdateDuration); err != nil {
+	if err := prometheus.Register(vulnDBUpdateDuration); err != nil {
 		slog.Error("failed to register vuln db update duration metric", "reason", err)
 	}
 
 	return metricsSrv.Stop
 }
 
+// GetVulnDBUpdateDuration returns the vuln DB update duration metric collector. If the
+// collector has not been initialized, it returns nil.
 func GetVulnDBUpdateDuration() *prometheus.GaugeVec {
 	return vulnDBUpdateDuration
 }
