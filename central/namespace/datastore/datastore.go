@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
@@ -30,7 +29,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
+	GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 
@@ -66,6 +65,9 @@ type datastoreImpl struct {
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
+	if id == "" {
+		return nil, false, nil
+	}
 	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -103,8 +105,16 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
-	return storagetoeffectiveaccessscope.Namespaces(b.store.GetAllFromCacheForSAC()), nil
+func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error) {
+	var namespaces []effectiveaccessscope.Namespace
+	// Scope construction needs every namespace before it can authorize the request.
+	if err := b.store.Walk(sac.WithAllAccess(ctx), func(namespace *storage.NamespaceMetadata) error {
+		namespaces = append(namespaces, namespace)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return namespaces, nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
@@ -154,6 +164,9 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	if id == "" {
+		return nil
+	}
 	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}
