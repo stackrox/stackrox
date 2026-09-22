@@ -159,7 +159,7 @@ collect_roxagent_journal() {
             echo "guest_user: ${guest_user}"
             echo "--- stderr ---"
             cat "$stderr_file"
-        } > "$out_file"
+        } >> "$out_file"
     fi
     rm -f "$stderr_file"
 }
