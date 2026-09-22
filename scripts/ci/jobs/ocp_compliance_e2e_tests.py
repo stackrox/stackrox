@@ -14,6 +14,7 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["ROX_COMPLIANCE_ENHANCEMENTS"] = "true"
 
 ClusterTestRunner(

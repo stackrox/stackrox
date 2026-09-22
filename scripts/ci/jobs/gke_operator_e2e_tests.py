@@ -11,6 +11,7 @@ from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["KUBERNETES_PROVIDER"] = "gke"
 
 ClusterTestRunner(
     cluster=GKECluster("operator-e2e-test", num_nodes=4),
