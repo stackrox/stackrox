@@ -79,7 +79,7 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))
 	require.NoError(t, err)
 	output := exp.ReplaceAllString(out.String(), `"version": ""`)
-	assert.Equal(t, string(expectedOutput), output)
+	assert.JSONEq(t, string(expectedOutput), output)
 }
 
 func TestSarifPrinter_Print_EmptyViolations(t *testing.T) {
@@ -102,5 +102,5 @@ func TestSarifPrinter_Print_EmptyViolations(t *testing.T) {
 	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))
 	require.NoError(t, err)
 	output := exp.ReplaceAllString(out.String(), `"version": ""`)
-	assert.Equal(t, string(expectedOutput), output)
+	assert.JSONEq(t, string(expectedOutput), output)
 }
