@@ -19,7 +19,7 @@ export function transformInitialValues(
     // TODO-ivan: eventually logic for different auth provider type should live
     // with the form component that renders form for the corresponding auth provider
     // type, probably makes sense to refactor after moving away from redux-form
-    if (initialValues.type === 'oidc' || initialValues.type === 'oidc-with-acm-roles') {
+    if (initialValues.type === 'oidc') {
         const alteredConfig = { ...initialValues.config };
 
         // backend doesn't return the exact value for the client secret for the security reasons,
@@ -73,7 +73,7 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     const newInitialValues: DisplayedAuthProvider = { ...authProvider };
     newInitialValues.uiEndpoint = window.location.host;
     newInitialValues.enabled = true;
-    if (authProvider.type === 'oidc' || authProvider.type === 'oidc-with-acm-roles') {
+    if (authProvider.type === 'oidc') {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         newInitialValues.config = {
@@ -128,7 +128,7 @@ export function transformValuesBeforeSaving(
     | Group[]
     | undefined
 > {
-    if (values.type === 'oidc' || values.type === 'oidc-with-acm-roles') {
+    if (values.type === 'oidc') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
         // if client secret is stored on the backend and user didn't enter any value,

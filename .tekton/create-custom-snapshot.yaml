@@ -75,7 +75,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8fd043b9dd843d627e82237ddafe544a31c05ba4bd9278a7b96f6f2e07e8635a
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:105758f336c7ec5418533edcf70f08d69860d1022f36e34184438e811332a4d0
         - name: kind
           value: task
         resolver: bundles
@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:7b8e25a1b56ca4d00219198f3b5b51a3e1693a5c4f5369c5e190d7d6cb3f980e
           imagePullPolicy: IfNotPresent
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
@@ -201,7 +201,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.6@sha256:1d7ba568ae6e9e26800054f3942779de8abc80ddc48f0e44df6b1c2f098161dc
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.6@sha256:a3678910c2bf9187a66a96066193cb41046fbb7097160bf2be6a374ed5e49d30
         - name: kind
           value: task
         resolver: bundles
@@ -224,7 +224,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8fd043b9dd843d627e82237ddafe544a31c05ba4bd9278a7b96f6f2e07e8635a
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:105758f336c7ec5418533edcf70f08d69860d1022f36e34184438e811332a4d0
         - name: kind
           value: task
         resolver: bundles
@@ -242,7 +242,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8fd043b9dd843d627e82237ddafe544a31c05ba4bd9278a7b96f6f2e07e8635a
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:105758f336c7ec5418533edcf70f08d69860d1022f36e34184438e811332a4d0
         - name: kind
           value: task
         resolver: bundles
@@ -300,26 +300,6 @@ spec:
               "component": "roxctl"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9",
-              "internalRepo": "quay.io/rhacs-eng/release-scanner-db",
-              "component": "scanner-db"
-            },
-            {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9",
-              "internalRepo": "quay.io/rhacs-eng/release-scanner-db-slim",
-              "component": "scanner-db-slim"
-            },
-            {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9",
-              "internalRepo": "quay.io/rhacs-eng/release-scanner",
-              "component": "scanner"
-            },
-            {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9",
-              "internalRepo": "quay.io/rhacs-eng/release-scanner-slim",
-              "component": "scanner-slim"
-            },
-            {
               "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-v4-db",
               "component": "scanner-v4-db"
@@ -335,7 +315,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8fd043b9dd843d627e82237ddafe544a31c05ba4bd9278a7b96f6f2e07e8635a
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:105758f336c7ec5418533edcf70f08d69860d1022f36e34184438e811332a4d0
         - name: kind
           value: task
         resolver: bundles

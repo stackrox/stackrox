@@ -53,8 +53,7 @@ export type AuthProviderType =
     | 'userpki'
     | 'iap'
     | 'openshift'
-    | 'openshift-with-acm-roles'
-    | 'oidc-with-acm-roles';
+    | 'openshift-with-acm-roles';
 
 export type AuthProviderConfig = Record<
     string,

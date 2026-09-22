@@ -190,12 +190,8 @@ jobs:
           rhacs-eng/${{ env.IMAGE_PREFIX }}fact:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}main:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}roxctl:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator-bundle:v${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator:${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
 
