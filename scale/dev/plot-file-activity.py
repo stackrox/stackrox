@@ -14,6 +14,7 @@ from plot_utils import (
     add_trendline,
     add_equation_text,
     read_metric_series,
+    write_equation_table,
 )
 
 # Fit trend lines only over the stable window (skip ramp-up and tail), matching
@@ -126,6 +127,16 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
     if output_file:
         plt.savefig(output_file, dpi=150)
         print(f"Plot saved to {output_file}")
+        # Save the trend-line equations alongside the plots. Keyed by plot name,
+        # so each metric this script plots accumulates into one per-directory
+        # table (trendline_equations.csv) and re-runs update rows in place.
+        plot_name = os.path.splitext(os.path.basename(output_file))[0]
+        rows = [(plot_name, label, slope, intercept)
+                for (label, slope, intercept, _color) in equations]
+        if rows:
+            write_equation_table(
+                os.path.join(os.path.dirname(output_file) or '.', 'trendline_equations.csv'),
+                rows, upsert=True)
     else:
         plt.show()
 

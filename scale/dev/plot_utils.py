@@ -20,6 +20,14 @@ def read_metric_series(file_path):
     at the same timestamp. Those spurious readings are low, so keeping the max
     per timestamp drops them and leaves the real series.
 
+    Negative values are dropped as invalid. Every metric read here (CPU usage,
+    memory, table row counts, table sizes, event counts) is a non-negative
+    physical quantity, so a negative reading is a "no data yet" sentinel (e.g.
+    the table row-count query returns -1 before stats are gathered). Left in, a
+    single -1 at the start of a series both dips the plotted line and skews the
+    linear trend fit (the fit rotates to split the residuals, so the sentinel is
+    never flagged as an outlier).
+
     Returns:
         Tuple of (timestamps, values); empty lists if the file is missing/empty.
     """
@@ -35,6 +43,8 @@ def read_metric_series(file_path):
             try:
                 ts, val = int(parts[0]), float(parts[1])
             except ValueError:
+                continue
+            if val < 0:
                 continue
             if ts not in by_ts or val > by_ts[ts]:
                 by_ts[ts] = val
@@ -196,6 +206,50 @@ def add_trendline(x_data, y_data, label, color, linestyle='--',
     return (coeffs[0], coeffs[1])
 
 
+def format_equation(slope, intercept):
+    """Format a linear trend as 'y = <slope>x + <intercept>' (or '' if undefined)."""
+    if slope is None or intercept is None:
+        return ''
+    sign = '+' if intercept >= 0 else '-'
+    return f"y = {slope:.4e}x {sign} {abs(intercept):.4f}"
+
+
+def write_equation_table(csv_path, rows, upsert=False):
+    """
+    Write trend-line equations to a CSV table (columns:
+    plot, series, slope, intercept, equation).
+
+    Args:
+        csv_path: Output CSV path.
+        rows: Iterable of (plot, series, slope, intercept) tuples.
+        upsert: When True, merge into an existing table keyed by (plot, series),
+            so callers that emit one plot at a time (e.g. plot-file-activity.py,
+            invoked once per metric) accumulate into a single table and re-runs
+            update rows in place. When False, overwrite (for callers that collect
+            every row before writing, e.g. plot-batch-comparison.py).
+    """
+    import csv
+    fieldnames = ['plot', 'series', 'slope', 'intercept', 'equation']
+    merged = {}
+    if upsert and os.path.exists(csv_path):
+        with open(csv_path, newline='') as f:
+            for r in csv.DictReader(f):
+                merged[(r['plot'], r['series'])] = r
+    for plot, series, slope, intercept in rows:
+        merged[(plot, series)] = {
+            'plot': plot,
+            'series': series,
+            'slope': '' if slope is None else f"{slope:.6e}",
+            'intercept': '' if intercept is None else f"{intercept:.6f}",
+            'equation': format_equation(slope, intercept),
+        }
+    with open(csv_path, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for key in sorted(merged):
+            w.writerow(merged[key])
+
+
 def add_equation_text(equations, y_position=0.95):
     """
     Add trend line equations as text on the plot.
@@ -210,9 +264,7 @@ def add_equation_text(equations, y_position=0.95):
     equation_text = []
     for label, slope, intercept, color in equations:
         if slope is not None and intercept is not None:
-            # Format equation: y = mx + b
-            sign = '+' if intercept >= 0 else '-'
-            equation_text.append(f"{label}: y = {slope:.4e}x {sign} {abs(intercept):.4f}")
+            equation_text.append(f"{label}: {format_equation(slope, intercept)}")
 
     if equation_text:
         text_str = '\n'.join(equation_text)
