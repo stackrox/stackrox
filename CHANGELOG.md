@@ -25,6 +25,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 
+- ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
+
 ## [5.0.0]
 
 
