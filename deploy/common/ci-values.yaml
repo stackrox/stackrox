@@ -50,4 +50,4 @@ scannerV4:
 customize:
   scanner-v4-matcher:
     envVars:
-      SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST: "alpine,debian,epss,manual,nvd,rhel-vex,stackrox-rhel-csaf"
+      SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST: "alpine,aws,debian,epss,manual,nvd,oracle,osv,photon,rhel-vex,stackrox-rhel-csaf,ubuntu"
