@@ -20,7 +20,7 @@ func TestGitHubCIMinimalBundleAccessible(t *testing.T) {
 		t.Skip("skipping network-dependent test in short mode")
 	}
 
-	const githubBundleURL = "https://raw.githubusercontent.com/stackrox/stackrox/9a9347931c/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+	const githubBundleURL = "https://raw.githubusercontent.com/stackrox/stackrox/563f58c33c6b793caa328e3384d4a5af61710232/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -44,7 +44,7 @@ func TestGitHubCIMinimalBundleAccessible(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 OK status")
 	assert.Equal(t, "application/zip", resp.Header.Get("Content-Type"), "expected application/zip content type")
 
-	// Verify the response contains data (bundle should be ~18KB)
+	// Verify the response contains data.
 	buffer := make([]byte, 1024)
 	n, err := resp.Body.Read(buffer)
 	require.NoError(t, err, "failed to read response body")
