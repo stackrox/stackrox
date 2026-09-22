@@ -8,21 +8,39 @@ cd "$repo_root"
 
 source_bundle_url="${SOURCE_BUNDLE_URL:-https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip}"
 # Set this when the mutable development URL is pinned to a saved archive.
-source_bundle_sha256=""
+source_bundle_sha256="${SOURCE_BUNDLE_SHA256:-}"
 
 source_members=(
   "alpine.json.zst"
   "debian.json.zst"
+  "ubuntu.json.zst"
+  "osv.json.zst"
+  "manual.json.zst"
+  "rhel-vex.json.zst"
+  "aws.json.zst"
+  "oracle.json.zst"
+  "photon.json.zst"
+  "stackrox-rhel-csaf.json.zst"
   "nvd.json.zst"
 )
 source_selections=(
   alpine
   test-cves
-  all-cves
+  packages
+  packages
+  all
+  test-cves
+  test-cves
+  test-cves
+  test-cves
+  enrichment
+  enrichment
 )
 
+package_selection="${CI_MINIMAL_PACKAGE_SELECTION:-scanner/updater/ci/qa-packages.json}"
+
 test_cve_paths=(
-  "scanner/e2etests/testdata"
+  "scanner/e2etests/testdata/image_tests.json"
   "qa-tests-backend/src/test/groovy"
 )
 
@@ -35,6 +53,15 @@ additional_cves=(
   CVE-2019-9513
   CVE-2019-9516
   CVE-2019-20372
+)
+
+qa_cves=(
+  CVE-2017-5638
+  CVE-2025-15467
+  CVE-2021-33910
+  CVE-2023-4911
+  CVE-2025-11468
+  CVE-2022-3219
 )
 
 alpine_distribution_id="alpine"
@@ -118,8 +145,15 @@ fi
 source_dir="$work_dir/source"
 mkdir -p "$source_dir"
 unzip -tq "$source_zip"
-unzip -q "$source_zip" "${source_members[@]}" -d "$source_dir"
+listing=$(unzip -Z1 "$source_zip")
 for member in "${source_members[@]}"; do
+  # Production archives use bundles/; older snapshots use root members.
+  archive_member=$(printf '%s\n' "$listing" | grep -Ex "(bundles/)?${member//./\\.}" || true)
+  [[ -n "$archive_member" && "$archive_member" != *$'\n'* ]] || {
+    echo "missing or ambiguous source member: $member" >&2
+    exit 1
+  }
+  unzip -p "$source_zip" "$archive_member" > "$source_dir/$member"
   [[ -s "$source_dir/$member" ]] || { echo "missing source member: $member" >&2; exit 1; }
 done
 
@@ -127,7 +161,7 @@ test_cves="$work_dir/test-cves.txt"
 all_cves="$work_dir/all-cves.txt"
 rg_matches="$work_dir/rg-matches.txt"
 set +e
-rg --no-filename -o 'CVE-[0-9]{4}-[0-9]+' "${test_cve_paths[@]}" > "$rg_matches"
+rg --no-filename -o 'CVE-[0-9]{4}-[0-9]+|RH[BS]A-[0-9]{4}:[0-9]+|ALAS[0-9]*-[0-9]{4}-[0-9]+|GO-[0-9]{4}-[0-9]+|GHSA-[a-z0-9-]+' "${test_cve_paths[@]}" > "$rg_matches"
 rg_status=$?
 set -e
 [[ $rg_status -eq 0 || $rg_status -eq 1 ]] || { echo "rg failed: $rg_status" >&2; exit "$rg_status"; }
@@ -136,64 +170,70 @@ cp "$test_cves" "$all_cves"
 printf '%s\n' "${additional_cves[@]}" >> "$all_cves"
 sort -u -o "$all_cves" "$all_cves"
 
-cves_json=$(jq -R -s 'split("\n") | map(select(length > 0)) | if length == 0 then {} else map({(.): true}) | add end' "$all_cves")
 test_cves_json=$(jq -R -s 'split("\n") | map(select(length > 0)) | if length == 0 then {} else map({(.): true}) | add end' "$test_cves")
 packages_json=$(printf '%s\n' "${alpine_packages[@]}" | jq -R -s 'split("\n") | map(select(length > 0)) | map({(.): true}) | add')
+qa_packages_json=$(jq -e 'select((.distributions | type) == "object" and (.repositories | type) == "object")' "$package_selection")
+
+filter_candidates() {
+  local selection=$1 patterns=$2
+  if [[ "$selection" == all ]]; then
+    cat
+  else
+    rg -F -f "$patterns" || [[ $? -eq 1 ]]
+  fi
+}
 
 build_bundle() {
   local bundle_dir=$1
   local output_zip="$bundle_dir/vulnerabilities.zip"
   mkdir -p "$bundle_dir/files"
+  cp "$all_cves" "$bundle_dir/ids.txt"
 
   for index in "${!source_members[@]}"; do
     local archive_member=${source_members[$index]}
     local selection=${source_selections[$index]}
+    echo "Selecting $archive_member ($selection)"
     local input="$source_dir/$archive_member"
-    local output raw filtered
+    local output filtered
     output="$bundle_dir/files/$(basename "$archive_member")"
-    raw="$bundle_dir/$(basename "$archive_member").raw"
     filtered="$bundle_dir/$(basename "$archive_member").filtered"
-    zstd -q -dc "$input" > "$raw"
-    jq -e -c 'select(
-      type == "object" and (.Kind == "vulnerability" or .Kind == "enrichment") and
-      (.Updater | type == "string") and (.Fingerprint | type == "string") and
-      (.Ref | type == "string") and (.Date | type == "string") and
-      ((.Kind == "vulnerability" and (.Vuln | type == "object")) or
-       (.Kind == "enrichment" and (.Enrichment | type == "object") and
-        (.Enrichment.Enrichment | type == "object") and
-        (.Enrichment.Enrichment.id | type == "string"))))' "$raw" > "$bundle_dir/validated.jsonl"
-    [[ -s "$bundle_dir/validated.jsonl" ]] || {
-      echo "source member is empty or has no valid importer records: $archive_member" >&2
-      exit 1
-    }
-    case "$selection" in
-      alpine)
-        jq -c --argjson test_cves "$test_cves_json" --argjson packages "$packages_json" \
-            --arg did "$alpine_distribution_id" --arg version "$alpine_version_id" \
-            'select(.Kind == "vulnerability") | .Vuln as $v | ($v.distribution // {}) as $d | ($v.package // {}) as $p |
-              select(($test_cves[$v.name // ""] // false) or
-                ($d.did == $did and $d.version_id == $version and ($packages[$p.name // ""] // false)))' \
-            "$bundle_dir/validated.jsonl" > "$filtered"
-        ;;
-      test-cves)
-        jq -c --argjson cves "$test_cves_json" \
-          'select(.Kind == "vulnerability") | .Vuln as $v | select($cves[$v.name // ""] // false)' \
-          "$bundle_dir/validated.jsonl" > "$filtered"
-        ;;
-      all-cves)
-        jq -c --argjson cves "$cves_json" \
-          'select(.Kind == "enrichment") | .Enrichment.Enrichment as $en | select($cves[$en.id // ""] // false)' \
-          "$bundle_dir/validated.jsonl" > "$filtered"
-        ;;
-      *)
-        echo "unsupported selection '$selection' for source '$archive_member'" >&2
-        exit 1
-        ;;
-    esac
+    sort -u "$bundle_dir/ids.txt" | jq -Rn '[inputs | {( . ): true}] | add // {}' > "$bundle_dir/ids.json"
+    local patterns="$bundle_dir/candidates.txt"
+    cp "$test_cves" "$patterns"
+    # Aliases store the namespace and the identifier in separate fields.
+    sed 's/^[^-]*-//' "$test_cves" >> "$patterns"
+    if [[ "$selection" == enrichment ]]; then
+      cp "$bundle_dir/ids.txt" "$patterns"
+    elif [[ "$selection" == packages ]]; then
+      jq -nr --argjson packages "$qa_packages_json" \
+        '$packages | (.distributions[], .repositories[]) | keys[] | "\"name\":" + tojson' >> "$patterns"
+    elif [[ "$selection" == alpine ]]; then
+      jq -nr --argjson packages "$packages_json" '$packages | keys[] | "\"name\":" + tojson' >> "$patterns"
+    fi
+    # Validate every record before the conservative text prefilter. Exact
+    # identity/package selection below still decides which records to retain.
+    zstd -q -dc "$input" | jq -c -L scanner/updater/ci 'include "selection"; validate_record' |
+      filter_candidates "$selection" "$patterns" |
+      jq -c -L scanner/updater/ci --arg selection "$selection" \
+      --argjson test_cves "$test_cves_json" --slurpfile ids "$bundle_dir/ids.json" \
+      --argjson packages "$qa_packages_json" --argjson alpine_packages "$packages_json" \
+      --arg did "$alpine_distribution_id" --arg version "$alpine_version_id" \
+      'include "selection"; select_record($selection; $test_cves; $ids[0]; $packages; $alpine_packages; $did; $version)' > "$filtered"
+    if [[ "$archive_member" == rhel-vex.json.zst ]]; then
+      # Advisory-only matches also need CVE records for unaffected ranges.
+      jq -r -L scanner/updater/ci 'include "selection"; vulnerability_ids' "$filtered" |
+        sort -u | jq -Rn '[inputs | {( . ): true}] | add // {}' > "$bundle_dir/rhel-ids.json"
+      zstd -q -dc "$input" | jq -c --slurpfile ids "$bundle_dir/rhel-ids.json" \
+        'select(.Kind == "vulnerability" and ($ids[0][.Vuln.name] // false))' > "$filtered"
+    fi
+    if [[ "$selection" != enrichment ]]; then
+      jq -r -L scanner/updater/ci 'include "selection"; vulnerability_ids' "$filtered" >> "$bundle_dir/ids.txt"
+    fi
     [[ -s "$filtered" ]] || { echo "required selection is empty: $archive_member" >&2; exit 1; }
     ZSTD_CLEVEL=3 zstd -q -3 -T1 -f -o "$output" "$filtered"
     chmod 0644 "$output"
     touch -d '1980-01-01 00:00:00 UTC' "$output"
+    rm -f "$filtered"
   done
 
   (
@@ -244,6 +284,24 @@ validate_bundle() {
       $v.package.name == "nginx" and $v.distribution.did == "alpine" and
       $v.distribution.version_id == "3.9" and ($v.fixed_in_version // "") != "" and
       ([ $nvd[] | select(.Enrichment.Enrichment.id == $v.name) ] | length > 0))' "$alpine_file" >/dev/null
+
+  local matched_ids="$work_dir/matched-ids.txt"
+  : > "$matched_ids"
+  for index in "${!source_members[@]}"; do
+    [[ "${source_selections[$index]}" != enrichment ]] || continue
+    unzip -p "$bundle" "${source_members[$index]}" | zstd -q -dc |
+      jq -r -L scanner/updater/ci 'include "selection"; vulnerability_ids' >> "$matched_ids"
+  done
+  for cve in "${qa_cves[@]}"; do
+    # Fixture tests may supply a different test corpus.
+    if grep -Fxq "$cve" "$test_cves"; then
+      grep -Fxq "$cve" "$matched_ids" || { echo "missing QA vulnerability: $cve" >&2; return 1; }
+      jq -e -s --arg cve "$cve" 'any(.[]; .Enrichment.Enrichment.id == $cve)' "$nvd_file" >/dev/null || {
+        echo "missing QA enrichment: $cve" >&2
+        return 1
+      }
+    fi
+  done
 }
 
 if "$check_reproducible"; then

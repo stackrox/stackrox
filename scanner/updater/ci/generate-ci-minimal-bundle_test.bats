@@ -8,6 +8,8 @@ setup() {
   output_two="$work_dir/two/vulnerabilities.zip"
   mkdir -p "$source_dir" "$work_dir/testdata" "$work_dir/groovy" "$work_dir/one" "$work_dir/two"
   printf '%s\n' 'CVE-2024-0001' > "$work_dir/testdata/cves.txt"
+  printf '%s\n' '{"distributions":{"ubuntu/20.04":{"apt":true}},"repositories":{"maven":{"org.apache.struts:struts2-core":true}}}' > "$work_dir/packages.json"
+  export CI_MINIMAL_PACKAGE_SELECTION="$work_dir/packages.json"
   create_fixture
 }
 
@@ -48,11 +50,73 @@ create_fixture() {
     create_record enrichment CVE-2019-9513 '' '' '' '' '' 4
     create_record enrichment CVE-2019-9516 '' '' '' '' '' 4
     create_record enrichment CVE-2019-20372 '' '' '' '' '' 4
+    create_record enrichment CVE-2017-5638 '' '' '' '' '' 10
+    create_record enrichment CVE-2024-9999 '' '' '' '' '' 4
+    create_record enrichment unused '' '' '' '' '' 4 | jq '.Enrichment = {Tags:null,Enrichment:null}'
   } > "$nvd"
   zstd -q -T1 -f "$alpine" -o "$source_dir/alpine.json.zst"
   zstd -q -T1 -f "$debian" -o "$source_dir/debian.json.zst"
   zstd -q -T1 -f "$nvd" -o "$source_dir/nvd.json.zst"
+  {
+    create_record vulnerability CVE-2024-0001 unrelated ubuntu 22.04 1 |
+      jq '.Vuln.name += " on Ubuntu 22.04 LTS (jammy) - low"'
+    create_record vulnerability CVE-2024-9999 apt ubuntu 20.04 1
+    create_record vulnerability CVE-2024-9998 apt ubuntu 22.04 1
+    create_record vulnerability CVE-2024-00010 unrelated ubuntu 22.04 1
+  } | zstd -q -c > "$source_dir/ubuntu.json.zst"
+  create_record vulnerability GHSA-example org.apache.struts:struts2-core '' '' 2.3.32 |
+    jq '.Vuln |= (del(.distribution) + {repository:{name:"maven"}, Aliases:[{space:"CVE",name:"2017-5638"}]})' |
+    zstd -q -c > "$source_dir/osv.json.zst"
+  {
+    zstd -dcq "$source_dir/osv.json.zst"
+    create_record vulnerability CVE-2024-0001 '' '' '' 1
+  } | zstd -qc > "$work_dir/osv-with-empty-package.json.zst"
+  mv "$work_dir/osv-with-empty-package.json.zst" "$source_dir/osv.json.zst"
+  create_record vulnerability CVE-2024-0001 manual-pkg '' '' 1 |
+    jq '.Vuln |= (del(.distribution) + {repository:{name:"maven"}})' |
+    zstd -q -c > "$source_dir/manual.json.zst"
+  create_record vulnerability CVE-2024-0001 rhel-pkg '' '' 1 |
+    jq '.Vuln |= (del(.distribution) + {repository:{name:"rhel",cpe:"cpe:2.3:o:redhat:enterprise_linux:9"},links:"https://example.test/RHSA-2024:0001"})' |
+    zstd -q -c > "$source_dir/rhel-vex.json.zst"
+  create_record enrichment RHSA-2024:0001 '' '' '' '' '' 8 |
+    jq '.Enrichment.Enrichment |= {name:.id,severity:"Important"}' |
+    zstd -q -c > "$source_dir/stackrox-rhel-csaf.json.zst"
+  create_record vulnerability ALAS2-2024-2442 nss-sysinit amzn 2 1 |
+    zstd -q -c > "$source_dir/aws.json.zst"
+  create_record vulnerability ELSA-2024-0001 libgcrypt ol 8 1 |
+    jq '.Vuln.links = "https://example.test/CVE-2024-0001.html"' |
+    zstd -q -c > "$source_dir/oracle.json.zst"
+  create_record vulnerability 'PHSA-2024:00001 curl Security Update.' curl photon 3.0 1 |
+    jq '.Vuln.links = "https://example.test/detail?vulnId=CVE-2024-0001"' |
+    zstd -q -c > "$source_dir/photon.json.zst"
+  printf '%s\n' 'ALAS2-2024-2442' >> "$work_dir/testdata/cves.txt"
   (cd "$source_dir" && ZIPOPT='' zip -q -X source.zip ./*.json.zst)
+}
+
+@test "advisory identifiers and linked CVEs select native distro records" {
+  run_generator
+  [ "$status" -eq 0 ]
+  for source in aws oracle photon; do
+    unzip -p "$output_one" "$source.json.zst" | zstd -dc > "$work_dir/$source-output.jsonl"
+    jq -e -s 'length > 0 and all(.[]; .Kind == "vulnerability")' "$work_dir/$source-output.jsonl"
+  done
+}
+
+@test "RHEL advisory references select native CVEs and their enrichment" {
+  {
+    create_record vulnerability CVE-2024-7777 rhel-pkg '' '' 1 |
+      jq '.Vuln.links = "https://example.test/RHSA-2024:0001"'
+    create_record vulnerability CVE-2024-7777 rhel-pkg '' '' 2 |
+      jq '.Vuln.Invert = true'
+  } | zstd -q -c > "$source_dir/rhel-vex.json.zst"
+  (cd "$source_dir" && ZIPOPT='' zip -q -X source.zip rhel-vex.json.zst)
+  printf '%s\n' 'RHSA-2024:0001' >> "$work_dir/testdata/cves.txt"
+  run_generator
+  [ "$status" -eq 0 ]
+  unzip -p "$output_one" rhel-vex.json.zst | zstd -dc > "$work_dir/rhel-output.jsonl"
+  jq -e -s 'length == 2 and any(.[]; .Vuln.Invert == true)' "$work_dir/rhel-output.jsonl"
+  unzip -p "$output_one" stackrox-rhel-csaf.json.zst | zstd -dc > "$work_dir/csaf-output.jsonl"
+  jq -e -s 'any(.[]; .Enrichment.Enrichment.name == "RHSA-2024:0001")' "$work_dir/csaf-output.jsonl"
 }
 
 run_generator() {
@@ -64,7 +128,23 @@ run_generator() {
   run env SOURCE_BUNDLE_ZIP="$source_zip" \
     CI_MINIMAL_OUTPUT_PATHS="$output_one:$output_two" \
     CI_MINIMAL_TEST_CVE_PATHS="$work_dir/testdata:$work_dir/groovy" \
+    CI_MINIMAL_PACKAGE_SELECTION="$work_dir/packages.json" \
     "$repo_root/scanner/updater/ci/generate-ci-minimal-bundle.sh" "$@"
+}
+
+@test "QA sources retain package coverage, CVE aliases, and source-specific enrichment" {
+  run_generator
+  [ "$status" -eq 0 ]
+  unzip -p "$output_one" ubuntu.json.zst | zstd -dc > "$work_dir/ubuntu-output.jsonl"
+  jq -e -s 'any(.[]; .Vuln.name == "CVE-2024-9999") and all(.[]; .Vuln.name != "CVE-2024-9998")' "$work_dir/ubuntu-output.jsonl"
+  jq -e -s 'any(.[]; .Vuln.name == "CVE-2024-0001 on Ubuntu 22.04 LTS (jammy) - low") and all(.[]; .Vuln.name != "CVE-2024-00010")' "$work_dir/ubuntu-output.jsonl"
+  unzip -p "$output_one" osv.json.zst | zstd -dc > "$work_dir/osv-output.jsonl"
+  jq -e -s 'all(.[]; .Vuln.package.name != "")' "$work_dir/osv-output.jsonl"
+  jq -e -s 'any(.[]; .Vuln.Aliases[0].name == "2017-5638" and .Vuln.repository.name == "maven" and .Vuln.distribution == null)' "$work_dir/osv-output.jsonl"
+  unzip -p "$output_one" stackrox-rhel-csaf.json.zst | zstd -dc > "$work_dir/csaf-output.jsonl"
+  jq -e -s 'any(.[]; .Enrichment.Enrichment.name == "RHSA-2024:0001")' "$work_dir/csaf-output.jsonl"
+  unzip -p "$output_one" nvd.json.zst | zstd -dc > "$work_dir/nvd-output.jsonl"
+  jq -e -s 'any(.[]; .Enrichment.Enrichment.id == "CVE-2024-9999") and any(.[]; .Enrichment.Enrichment.id == "CVE-2017-5638")' "$work_dir/nvd-output.jsonl"
 }
 
 @test "filters preserve boundaries and validates required coverage" {
@@ -81,7 +161,69 @@ run_generator() {
   unzip -p "$output_one" debian.json.zst | zstd -dc > "$work_dir/output-debian.jsonl"
   [ "$(wc -l < "$work_dir/output-debian.jsonl")" -eq 1 ]
   unzip -p "$output_one" nvd.json.zst | zstd -dc > "$work_dir/output-nvd.jsonl"
-  [ "$(jq -s length "$work_dir/output-nvd.jsonl")" -eq 10 ]
+  [ "$(jq -s length "$work_dir/output-nvd.jsonl")" -eq 12 ]
+}
+
+@test "CVE aliases select records even without a package selector" {
+  printf '%s\n' 'CVE-2017-5638' >> "$work_dir/testdata/cves.txt"
+  printf '%s\n' '{"distributions":{},"repositories":{}}' > "$work_dir/packages.json"
+  run_generator
+  [ "$status" -eq 0 ]
+  unzip -p "$output_one" osv.json.zst | zstd -dc | jq -e 'select(.Vuln.name == "GHSA-example")'
+}
+
+@test "missing QA matching data or enrichment prevents publication" {
+  printf '%s\n' 'CVE-2017-5638' >> "$work_dir/testdata/cves.txt"
+  printf one > "$output_one"
+  printf two > "$output_two"
+  zstd -dcq "$source_dir/osv.json.zst" | jq 'del(.Vuln.Aliases)' | zstd -qc > "$work_dir/osv.json.zst"
+  (cd "$work_dir" && ZIPOPT='' zip -q -X "$source_dir/source.zip" osv.json.zst)
+  run_generator
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'missing QA vulnerability: CVE-2017-5638'* ]]
+  [ "$(cat "$output_one")" = one ]
+  [ "$(cat "$output_two")" = two ]
+
+  create_fixture
+  jq 'select(.Enrichment.Enrichment.id != "CVE-2017-5638")' "$work_dir/nvd.json" | zstd -qc > "$source_dir/nvd.json.zst"
+  (cd "$source_dir" && ZIPOPT='' zip -q -X source.zip nvd.json.zst)
+  run_generator
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'missing QA enrichment: CVE-2017-5638'* ]]
+  [ "$(cat "$output_one")" = one ]
+  [ "$(cat "$output_two")" = two ]
+}
+
+@test "production bundles prefix is supported and ambiguous members fail safely" {
+  mkdir "$work_dir/prefixed"
+  cp -r "$source_dir" "$work_dir/prefixed/bundles"
+  (cd "$work_dir/prefixed" && ZIPOPT='' zip -q -X "$work_dir/prefixed.zip" bundles/*.json.zst)
+  run_generator "$work_dir/prefixed.zip"
+  [ "$status" -eq 0 ]
+  cp "$output_one" "$work_dir/original.zip"
+  (cd "$source_dir" && ZIPOPT='' zip -q -X "$work_dir/prefixed.zip" alpine.json.zst)
+  run_generator "$work_dir/prefixed.zip"
+  [ "$status" -ne 0 ]
+  cmp "$output_one" "$work_dir/original.zip"
+  cmp "$output_two" "$work_dir/original.zip"
+}
+
+@test "invalid envelopes among valid records and checksum mismatches fail before publication" {
+  printf one > "$output_one"
+  printf two > "$output_two"
+  printf '%s\n' '{"Kind":"vulnerability"}' >> "$work_dir/alpine.json"
+  zstd -q -c "$work_dir/alpine.json" > "$source_dir/alpine.json.zst"
+  (cd "$source_dir" && ZIPOPT='' zip -q -X source.zip alpine.json.zst)
+  run_generator
+  [ "$status" -ne 0 ]
+  [ "$(cat "$output_one")" = one ]
+  [ "$(cat "$output_two")" = two ]
+  export SOURCE_BUNDLE_SHA256=invalid
+  run_generator
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'source SHA256 mismatch'* ]]
+  [ "$(cat "$output_one")" = one ]
+  [ "$(cat "$output_two")" = two ]
 }
 
 @test "empty selections, malformed records, missing members, and corrupt zstd fail safely" {
@@ -100,7 +242,7 @@ run_generator() {
 
   printf '{malformed\n' > "$work_dir/alpine.json"
   zstd -q -c "$work_dir/alpine.json" > "$source_dir/alpine.json.zst"
-  (cd "$source_dir" && ZIPOPT='' zip -q -X -f source.zip alpine.json.zst)
+  (cd "$source_dir" && ZIPOPT='' zip -q -X source.zip alpine.json.zst)
   run_generator "$@"
   [ "$status" -ne 0 ]
   cmp "$original_one" "$output_one"
