@@ -33,8 +33,7 @@ func TestDeploymentExclusionToQuery_NoDeploymentExclusions(t *testing.T) {
 func TestDeploymentExclusionToQuery_MalformedDeploymentExclusion(t *testing.T) {
 	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
-			Name:       "myExcludedScope",
-			Deployment: &storage.Exclusion_Deployment{},
+			Name: "myExcludedScope", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{}},
 		},
 	})
 	protoassert.Equal(t, q, search.MatchNoneQuery())
@@ -43,10 +42,9 @@ func TestDeploymentExclusionToQuery_MalformedDeploymentExclusion(t *testing.T) {
 func TestDeploymentExclusionToQuery_NamedDeploymentExclusion(t *testing.T) {
 	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
-			Name: "myExcludedScope",
-			Deployment: &storage.Exclusion_Deployment{
+			Name: "myExcludedScope", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 				Name: "blessed-deployment",
-			},
+			}},
 		},
 	})
 	protoassert.Equal(t, q, search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "blessed-deployment").ProtoQuery())
@@ -55,12 +53,11 @@ func TestDeploymentExclusionToQuery_NamedDeploymentExclusion(t *testing.T) {
 func TestDeploymentExclusionToQuery_ScopedDeploymentExclusion(t *testing.T) {
 	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
-			Name: "myExcludedScope",
-			Deployment: &storage.Exclusion_Deployment{
+			Name: "myExcludedScope", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
 					Cluster: "blessed-cluster-id",
 				},
-			},
+			}},
 		},
 	})
 	protoassert.Equal(t, q, search.NewQueryBuilder().AddExactMatches(search.ClusterID, "blessed-cluster-id").ProtoQuery())

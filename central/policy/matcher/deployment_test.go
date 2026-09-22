@@ -101,12 +101,11 @@ func TestDeploymentWithExclusion(t *testing.T) {
 					},
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
-								Namespace: "ns.*",
-							},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Scope: &storage.Scope{
+							Namespace: "ns.*",
 						},
+					}},
 					},
 				},
 			},
@@ -126,13 +125,12 @@ func TestDeploymentWithExclusion(t *testing.T) {
 					},
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Name: "deployment2",
-							Scope: &storage.Scope{
-								Namespace: "ns.*",
-							},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Name: "deployment2",
+						Scope: &storage.Scope{
+							Namespace: "ns.*",
 						},
+					}},
 					},
 				},
 			},
@@ -151,18 +149,16 @@ func TestDeploymentWithExclusion(t *testing.T) {
 					},
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Name: "deployment2",
-							Scope: &storage.Scope{
-								Namespace: "ns1",
-							},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Name: "deployment2",
+						Scope: &storage.Scope{
+							Namespace: "ns1",
 						},
+					}},
 					},
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Name: "deployment1",
-						},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Name: "deployment1",
+					}},
 					},
 				},
 			},
@@ -181,20 +177,18 @@ func TestDeploymentWithExclusion(t *testing.T) {
 					},
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Name: "deployment2",
-							Scope: &storage.Scope{
-								Namespace: "ns1",
-							},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Name: "deployment2",
+						Scope: &storage.Scope{
+							Namespace: "ns1",
 						},
+					}},
 					},
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
-								Namespace: "ns1",
-							},
+					{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+						Scope: &storage.Scope{
+							Namespace: "ns1",
 						},
+					}},
 					},
 				},
 			},

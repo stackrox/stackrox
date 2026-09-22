@@ -53,19 +53,17 @@ var (
 			},
 			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
 			Exclusions: []*storage.Exclusion{{
-				Name: "Don't alert on kube-system namespace",
-				Deployment: &storage.Exclusion_Deployment{
+				Name: "Don't alert on kube-system namespace", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
 						Namespace: "kube-system",
 					},
-				},
+				}},
 			}, {
-				Name: "Don't alert on istio-system namespace",
-				Deployment: &storage.Exclusion_Deployment{
+				Name: "Don't alert on istio-system namespace", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
 						Namespace: "istio-system",
 					},
-				},
+				}},
 			}},
 			Severity:           storage.Severity_LOW_SEVERITY,
 			SORTName:           "90-Day Image Age",

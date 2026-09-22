@@ -281,6 +281,18 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "ExclusionExcludeByType": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExclusionWorkloadType"
+          }
+        }
+      },
+      "description": "ExcludeByType excludes all workloads of the selected Kubernetes kinds."
+    },
     "ExclusionImage": {
       "type": "object",
       "properties": {
@@ -288,6 +300,16 @@
           "type": "string"
         }
       }
+    },
+    "ExclusionWorkloadType": {
+      "type": "string",
+      "enum": [
+        "WORKLOAD_TYPE_UNSPECIFIED",
+        "CRON_JOB",
+        "JOB"
+      ],
+      "default": "WORKLOAD_TYPE_UNSPECIFIED",
+      "description": "WorkloadType is a Kubernetes workload kind that can be excluded from a policy in bulk."
     },
     "FileAccessFileMetadata": {
       "type": "object",
@@ -1092,15 +1114,18 @@
         "name": {
           "type": "string"
         },
-        "deployment": {
-          "$ref": "#/definitions/storageExclusionDeployment"
-        },
         "image": {
           "$ref": "#/definitions/ExclusionImage"
         },
         "expiration": {
           "type": "string",
           "format": "date-time"
+        },
+        "deployment": {
+          "$ref": "#/definitions/storageExclusionDeployment"
+        },
+        "excludeByType": {
+          "$ref": "#/definitions/ExclusionExcludeByType"
         }
       }
     },
@@ -1314,7 +1339,7 @@
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
           },
-          "description": "Define deployments or images that should be excluded from this policy."
+          "description": "Define deployments, images, or workload types that should be excluded from this policy."
         },
         "scope": {
           "type": "array",

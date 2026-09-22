@@ -614,9 +614,7 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	deployment := &storage.Exclusion_Deployment{
 		Name: "that phat cluster",
 	}
-	deploymentExclusion := &storage.Exclusion{
-		Deployment: deployment,
-	}
+	deploymentExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: deployment}}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_DEPLOY,
@@ -661,14 +659,13 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	err = s.validator.validateExclusions(policy)
 	s.Error(err, "excluded scope requires either container or deployment configuration")
 
-	emptyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key: "",
-				},
+	emptyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key: "",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		Exclusions: []*storage.Exclusion{
@@ -678,15 +675,14 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	err = s.validator.validateExclusions(policy)
 	s.Error(err, "label regex in excluded scope, if not nil, must be non-empty")
 
-	anyKeyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key:   ".*",
-					Value: "",
-				},
+	anyKeyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key:   ".*",
+				Value: "",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
@@ -698,15 +694,14 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	}
 	s.NoError(s.validator.validateExclusions(policy))
 
-	anyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key:   ".*",
-					Value: ".*",
-				},
+	anyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key:   ".*",
+				Value: ".*",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
@@ -726,44 +721,40 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusionRejectsLabels() {
 		errContains string
 	}{
 		"cluster_label on exclusion scope is rejected": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						ClusterLabel: &storage.Scope_Label{Key: "env", Value: "prod"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					ClusterLabel: &storage.Scope_Label{Key: "env", Value: "prod"},
 				},
+			}},
 			},
 			errExpected: true,
 			errContains: "cluster labels",
 		},
 		"namespace_label on exclusion scope is rejected": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "backend"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "backend"},
 				},
+			}},
 			},
 			errExpected: true,
 			errContains: "namespace labels",
 		},
 		"deployment label on exclusion scope is allowed": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Label: &storage.Scope_Label{Key: "app", Value: "nginx"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Label: &storage.Scope_Label{Key: "app", Value: "nginx"},
 				},
+			}},
 			},
 			errExpected: false,
 		},
 		"cluster ID on exclusion scope is allowed": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Cluster: "cluster-1",
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Cluster: "cluster-1",
 				},
+			}},
 			},
 			errExpected: false,
 		},
