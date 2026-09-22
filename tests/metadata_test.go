@@ -42,11 +42,7 @@ func TestCentralVersionHeader(t *testing.T) {
 	require.Len(t, metadataVals, 1, "expected %s response header from GetMetadata", clientconn.CentralVersionHeader)
 	assert.Equal(t, resp.GetVersion(), metadataVals[0])
 
-	var pingMD metadata.MD
-	_, err = v1.NewPingServiceClient(conn).Ping(ctx, &v1.Empty{}, grpc.Header(&pingMD))
-	require.NoError(t, err)
-
-	pingVals := pingMD.Get(clientconn.CentralVersionHeader)
+	pingVals := pingAndGetHeader(t, conn, ctx)
 	require.Len(t, pingVals, 1, "expected %s response header from Ping", clientconn.CentralVersionHeader)
 	assert.Equal(t, metadataVals[0], pingVals[0], "version header must be consistent across services")
 }
@@ -54,14 +50,16 @@ func TestCentralVersionHeader(t *testing.T) {
 func TestCentralVersionHeader_AbsentForAnonymous(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	service := v1.NewPingServiceClient(centralgrpc.UnauthenticatedGRPCConnectionToCentral(t))
 
-	var md metadata.MD
-	_, err := service.Ping(ctx, &v1.Empty{}, grpc.Header(&md))
-	require.NoError(t, err)
-
-	vals := md.Get(clientconn.CentralVersionHeader)
+	vals := pingAndGetHeader(t, centralgrpc.UnauthenticatedGRPCConnectionToCentral(t), ctx)
 	assert.Empty(t, vals, "anonymous requests must not receive %s", clientconn.CentralVersionHeader)
+}
+
+func pingAndGetHeader(t *testing.T, conn *grpc.ClientConn, ctx context.Context) []string {
+	var md metadata.MD
+	_, err := v1.NewPingServiceClient(conn).Ping(ctx, &v1.Empty{}, grpc.Header(&md))
+	require.NoError(t, err)
+	return md.Get(clientconn.CentralVersionHeader)
 }
 
 func TestMetadataIsSetCorrectly(t *testing.T) {
