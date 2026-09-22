@@ -23,10 +23,10 @@ spec:
         resources:
           requests:
             memory: "200Mi"
-            cpu: "15m"
+            cpu: "2"
           limits:
             memory: "200Mi"
-            cpu: "15m"
+            cpu: "2"
         volumeMounts:
         - name: config
           mountPath: "/etc/berserker"
