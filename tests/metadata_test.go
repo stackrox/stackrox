@@ -69,6 +69,11 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 		return
 	}
 
+	if usingKonfluxImages() {
+		t.Skip("Skipping metadata test because Konflux images are built by a separate pipeline")
+		return
+	}
+
 	metadataWithAuth := getMetadata(t, centralgrpc.GRPCConnectionToCentral(t))
 
 	if usingKonfluxImages() {
