@@ -114,5 +114,5 @@ ones; the standalone Scanner E2E chart has no allowlist and imports all members.
 
 Publishing is separate from local generation: publish the validated bundle
 commit first, then update every immutable bundle URL (CI values, Scanner E2E
-values, and the GitHub accessibility test). Verify the remote SHA256 before
+values, installation tests, and the GitHub accessibility test). Verify the remote SHA256 before
 rerunning CI. Until those pins change, CI still downloads the previous bundle.
