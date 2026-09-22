@@ -8,8 +8,7 @@ export type RepeatScheduleDropdownProps = {
     value: string;
     handleSelect: (id: string, selection: string) => void;
     isEditable?: boolean;
-    showNoResultsOption?: boolean;
-    includeDailyOption?: boolean;
+    hasUnsetOption: boolean;
     onBlur?: FocusEventHandler<HTMLDivElement>;
 };
 
@@ -18,18 +17,13 @@ function RepeatScheduleDropdown({
     value,
     handleSelect,
     isEditable = true,
-    showNoResultsOption = false,
-    includeDailyOption = false,
+    hasUnsetOption,
     onBlur,
 }: RepeatScheduleDropdownProps): ReactElement {
-    let options = [
-        ...(includeDailyOption
-            ? [
-                  <SelectOption key="daily" value="DAILY">
-                      Daily
-                  </SelectOption>,
-              ]
-            : []),
+    const options = [
+        <SelectOption key="daily" value="DAILY">
+            Daily
+        </SelectOption>,
         <SelectOption key="weekly" value="WEEKLY">
             Weekly
         </SelectOption>,
@@ -37,14 +31,14 @@ function RepeatScheduleDropdown({
             Monthly
         </SelectOption>,
     ];
-    if (showNoResultsOption) {
-        options = [
-            <SelectOption key="none" value="">
-                None
-            </SelectOption>,
-            ...options,
-        ];
+    if (hasUnsetOption) {
+        options.push(
+            <SelectOption key="UNSET" value="UNSET">
+                Not scheduled
+            </SelectOption>
+        );
     }
+
     return (
         <SelectSingle
             id={fieldId}
