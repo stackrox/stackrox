@@ -21,14 +21,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type datastoreImpl struct {
 	storage            store.Store
 	indicatorDataStore processIndicatorStore.DataStore
-	mutex              sync.RWMutex
 	pool               postgres.DB
 }
 
@@ -268,10 +266,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return err
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	// Update existing PLOP objects while using a lock
 	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
@@ -565,54 +559,71 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
+
 	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 // PruneOrphanedPLOPs prunes old closed PLOPs and those without deployments or pods
 func (ds *datastoreImpl) PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64 {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
-	commandTag, err := ds.pool.Exec(ctx, query)
+
+	var rowsAffected int64
+	err := pgutils.Retry(ctx, func() error {
+		commandTag, err := ds.pool.Exec(ctx, query)
+		if err == nil {
+			rowsAffected = commandTag.RowsAffected()
+		}
+		return err
+	})
 	if err != nil {
 		log.Errorf("failed to prune PLOP: %v", err)
 	}
 
 	// Delete processes listening on ports orphaned due to missing deployments
-	if _, err := ds.pool.Exec(ctx, deleteOrphanedPLOPDeployments); err != nil {
+	err = pgutils.Retry(ctx, func() error {
+		_, err := ds.pool.Exec(ctx, deleteOrphanedPLOPDeployments)
+		return err
+	})
+	if err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
 	}
 
 	// Delete processes listening on ports orphaned due to missing pods.
-	if _, err := ds.pool.Exec(ctx, deleteOrphanedPLOPPodsWithPodUID); err != nil {
+	err = pgutils.Retry(ctx, func() error {
+		_, err := ds.pool.Exec(ctx, deleteOrphanedPLOPPodsWithPodUID)
+		return err
+	})
+	if err != nil {
 		log.Errorf("failed to prune process listening on ports by pods: %v", err)
 	}
 
-	return commandTag.RowsAffected()
+	return rowsAffected
 }
 
 // PruneOrphanedPLOPsByProcessIndicators prunes PLOPs that match process indicators without pods
 func (ds *datastoreImpl) PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration) {
 	// TODO(ROX-22443): Once it is guaranteed that all listening endpoints have PodUIDs, remove this function
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
 
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing deployments
 	query := fmt.Sprintf(deleteOrphanedPLOPDeploymentsAndPI, int(orphanWindow.Minutes()))
-	if _, err := ds.pool.Exec(ctx, query); err != nil {
+	err := pgutils.Retry(ctx, func() error {
+		_, err := ds.pool.Exec(ctx, query)
+		return err
+	})
+	if err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
 	}
 
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing pods.
 	query = fmt.Sprintf(deleteOrphanedPLOPPods, int(orphanWindow.Minutes()))
-	if _, err := ds.pool.Exec(ctx, query); err != nil {
+	err = pgutils.Retry(ctx, func() error {
+		_, err := ds.pool.Exec(ctx, query)
+		return err
+	})
+	if err != nil {
 		log.Errorf("failed to prune process listening on ports by pods: %v", err)
 	}
 }
@@ -662,9 +673,6 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 		return 0, err
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	err = ds.storage.PruneMany(ctx, plopsToDelete)
 	if err != nil {
 		return 0, err
@@ -675,9 +683,6 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 
 // Removes PLOPs without poduids between a range of ids.
 func (ds *datastoreImpl) removePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	query := fmt.Sprintf(deletePLOPsWithoutPoduidInPage, prevId, nextId)
 	commandTag, err := ds.pool.Exec(ctx, query)
 
@@ -704,9 +709,6 @@ func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (
 // Given an id and a limit, returns the id a limit number of rows after the given id. This is useful
 // for efficient pagination.
 func (ds *datastoreImpl) getNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	query := fmt.Sprintf(getLastIdFromPage, prevId, limit)
 	rows, err := ds.pool.Query(ctx, query)
 
