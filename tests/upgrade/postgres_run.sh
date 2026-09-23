@@ -312,6 +312,14 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
