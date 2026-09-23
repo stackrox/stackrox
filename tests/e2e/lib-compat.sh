@@ -153,6 +153,9 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Restarted collectors should index promptly; keep the periodic scan defaults.
+        env_with_default ROX_NODE_SCANNING_MAX_INITIAL_WAIT "1s"
+
         collect_feature_flags
     )
 

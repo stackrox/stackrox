@@ -300,6 +300,9 @@ EOF
     # Expose plaintext endpoints required by endpoints_test.go.
     set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
 
+    # Restarted collectors should index promptly; keep the periodic scan defaults.
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_MAX_INITIAL_WAIT" "1s"
+
     # Speed up baseline generation so TestPod can observe process events within the test window.
     # The default is 1h; tests time out long before baselines would be generated.
     set_custom_env "$config_file" "central" "ROX_BASELINE_GENERATION_DURATION" "1m"
@@ -749,13 +752,10 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
-    # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-    # Matcher-not-ready drops the first index as unretryable; a short interval
-    # covers the next scan without restarting collector.
+    # Start node indexing promptly after the collector restarts in NodeIndexTest.
+    # Leave the periodic scan interval and deviation at their production defaults.
     customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_MAX_INITIAL_WAIT'
     customize_envVars+=$'\n      value: "1s"'
-    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
-    customize_envVars+=$'\n      value: "30s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'

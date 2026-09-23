@@ -940,12 +940,10 @@ function launch_sensor {
         extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
 
-      # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-      # Matcher-not-ready drops the first index as unretryable; a short interval
-      # covers the next scan without restarting collector.
+      # Start node indexing promptly after the collector restarts in NodeIndexTest.
+      # Leave the periodic scan interval and deviation at their production defaults.
       helm_args+=(
         --set customize.envVars.ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
-        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=30s
       )
 
       if [[ -n "$LOGLEVEL" ]]; then
@@ -1079,9 +1077,13 @@ function launch_sensor {
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
-    # Only apply sensor env vars via kubectl for non-Helm deployments.
+    # Only apply sensor and compliance env vars via kubectl for non-Helm deployments.
     # Helm deployments already have these set via customize.envVars.
     if [[ "${SENSOR_HELM_DEPLOY:-}" != "true" ]]; then
+      # Manifest installs need the same initial node-index delay as Helm installs.
+      kubectl -n "${sensor_namespace}" set env ds/collector --containers=compliance \
+        ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
+
       sensor_env=()
 
       if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
