@@ -637,7 +637,9 @@ function launch_central {
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
     # Central-db is waited first because it needs to be online before Central can start.
     rollout_wait_timeout="10m"
-    kubectl -n "${central_namespace}" rollout status deploy/central-db --timeout="${rollout_wait_timeout}"
+    if [[ -z "$EXTERNAL_DB" ]]; then
+        kubectl -n "${central_namespace}" rollout status deploy/central-db --timeout="${rollout_wait_timeout}"
+    fi
     kubectl -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
