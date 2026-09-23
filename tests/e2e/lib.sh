@@ -640,6 +640,16 @@ deploy_central_via_operator() {
     esac
 
     if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${CI:-}" == "true" ]]; then
+            # Keep Operator deployments aligned with Helm by reading the shared CI pin.
+            local scannerV4CiVulnBundleURL
+            scannerV4CiVulnBundleURL="$(yq eval '.scannerV4.matcher.vulnerabilitiesUrl // ""' "$TEST_ROOT/deploy/common/ci-values.yaml")" \
+                || die "Unable to read the CI Scanner V4 vulnerability bundle URL"
+            [[ -n "$scannerV4CiVulnBundleURL" ]] || die "CI Scanner V4 vulnerability bundle URL is empty"
+            customize_envVars+=$'\n'
+            customize_envVars+=$'      - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL'
+            customize_envVars+=$'\n        value: "'"${scannerV4CiVulnBundleURL}"'"'
+        fi
         if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
             customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
             customize_envVars+=$'\n        value: "vulnerability"'
