@@ -32,20 +32,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 1796063
-    checksum: sha256:ce7dd0c79d2d2594f73a4e570fb13378fe961c47bec881f820a1256d42c26b7a
+    size: 1811179
+    checksum: sha256:962886a6fad6c0aa4b55077fb12be5277118bc1a9a413dea853f7221a5aefa0c
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el8.10.0+24361+29e043a0.aarch64.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-private-libs-15.19-1.module+el8.10.0+24831+9c841e4e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 130279
-    checksum: sha256:480df4aaeb5f4d64f04d3fd32c3fe0780f046463b60cd2b6e7af31e669a226ab
+    size: 130559
+    checksum: sha256:8bce5c03473cebd7d313a6d1c428689fae9e59a3fb3d88bc5439d847b0b6f77e
     name: postgresql-private-libs
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-3.12.14-1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 32220
@@ -137,20 +137,20 @@ arches:
     name: chkconfig
     evr: 1.19.2-1.el8
     sourcerpm: chkconfig-1.19.2-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/coreutils-8.30-20.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/coreutils-8.30-21.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 1245424
-    checksum: sha256:c0259c55239e52a8755c17590581f37336c753029a0f74265a1387e454adc071
+    size: 1245480
+    checksum: sha256:3458042161e0dba6996ccef7494c32795bfc073741407dfc80b2a5bfa9d9a8e2
     name: coreutils
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/coreutils-common-8.30-20.el8_10.aarch64.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/coreutils-common-8.30-21.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 2092328
-    checksum: sha256:749c68f0138bcffd72858c79986b510270368ba1a4584ae12797b7ec0bcd8dca
+    size: 2092452
+    checksum: sha256:3066a9850be06f7fcd5c7ed226267b5e7d4d5d0068dd9d622597b2c8ae982a73
     name: coreutils-common
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/cpio-2.12-11.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 266436
@@ -1219,12 +1219,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 45805800
-    checksum: sha256:74fd29938c4cecdc103d990b546488beccfee1990fb94f4a18fc442075d682ce
+    size: 53878736
+    checksum: sha256:4138ea9b1f6012950bc466107b600087a440acb382038da2ef2b4ebc0bc1a761
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 20893288
@@ -1303,12 +1303,12 @@ arches:
     checksum: sha256:7cf522c35fa5a5906c8c793ece9e599e80aba6c37d3f57afbf436c9abb8629c6
     name: chkconfig
     evr: 1.19.2-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/coreutils-8.30-20.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/coreutils-8.30-21.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 5553358
-    checksum: sha256:aef8f105e8892047780fcced168efad3c67bf9cd801d4223a4b599535364c607
+    size: 5555182
+    checksum: sha256:6f65705faef515f987aba5c7817f0886e1d7ecfa794956bb875612bdf65dbd39
     name: coreutils
-    evr: 8.30-20.el8_10
+    evr: 8.30-21.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/cpio-2.12-11.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 1312438
@@ -1916,10 +1916,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/dc161b4122b0af0d01f464b5259ae5c012825106e7d1a2736411e319c8dab3be-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/e300b1c0bcd0744c6cbbc53bc0d6f5bb0dbeada1bd9b04dd0a284c1a773c8f1a-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 840426
-    checksum: sha256:dc161b4122b0af0d01f464b5259ae5c012825106e7d1a2736411e319c8dab3be
+    size: 841679
+    checksum: sha256:e300b1c0bcd0744c6cbbc53bc0d6f5bb0dbeada1bd9b04dd0a284c1a773c8f1a
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-12.el8_10.ppc64le.rpm
@@ -1950,20 +1950,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 1875627
-    checksum: sha256:1686b8a7fd251f4078143ff6c1792bc0fbeb6f81be516ef19ae97758d3eb36e4
+    size: 1891007
+    checksum: sha256:206bf090da2a2eec07fd1017f4b53fac0d7e9bdf5be9663fe8196c38371a7adb
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el8.10.0+24361+29e043a0.ppc64le.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-private-libs-15.19-1.module+el8.10.0+24831+9c841e4e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 152111
-    checksum: sha256:65e19af9cc1aad519f4fc67b36c18be8358bb8e7f9725726a1588c9e00c2bbd6
+    size: 152511
+    checksum: sha256:dcbf05883a0348bfedbc1be617bf62b0b8d371f57e21fa6b6e5783eba9662353
     name: postgresql-private-libs
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-3.12.14-1.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 32416
@@ -2055,20 +2055,20 @@ arches:
     name: chkconfig
     evr: 1.19.2-1.el8
     sourcerpm: chkconfig-1.19.2-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/coreutils-8.30-20.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/coreutils-8.30-21.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 1367792
-    checksum: sha256:5e9786873d367d38255faa5a61d775bb2b48468312e6b169efa14d4f7c0a4f88
+    size: 1368120
+    checksum: sha256:e1ca79a115736d6fac80c59bd2e195e3dd281649217700878efa28d437537988
     name: coreutils
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/coreutils-common-8.30-20.el8_10.ppc64le.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/coreutils-common-8.30-21.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 2092340
-    checksum: sha256:6f1054f262599c1a4da7bf52c8a1a3b0db42ac2bd821b255041ea939ea848a6c
+    size: 2092464
+    checksum: sha256:92634b1da0840c527c71e97d6782b368aa7195c72c4a9ebc820dae38ab965faa
     name: coreutils-common
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/cpio-2.12-11.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 276460
@@ -3144,12 +3144,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 45805800
-    checksum: sha256:74fd29938c4cecdc103d990b546488beccfee1990fb94f4a18fc442075d682ce
+    size: 53878736
+    checksum: sha256:4138ea9b1f6012950bc466107b600087a440acb382038da2ef2b4ebc0bc1a761
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 20893288
@@ -3228,12 +3228,12 @@ arches:
     checksum: sha256:7cf522c35fa5a5906c8c793ece9e599e80aba6c37d3f57afbf436c9abb8629c6
     name: chkconfig
     evr: 1.19.2-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/coreutils-8.30-20.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/coreutils-8.30-21.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 5553358
-    checksum: sha256:aef8f105e8892047780fcced168efad3c67bf9cd801d4223a4b599535364c607
+    size: 5555182
+    checksum: sha256:6f65705faef515f987aba5c7817f0886e1d7ecfa794956bb875612bdf65dbd39
     name: coreutils
-    evr: 8.30-20.el8_10
+    evr: 8.30-21.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/cpio-2.12-11.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 1312438
@@ -3847,10 +3847,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/55fb98796cf4c23d8713e593b99f6876ba46eb852afdef71b5c2fff484d8b619-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/800167bfbafcc5725d7b7a705e08bdde702710103bf7b0d0dbd38576fc154fba-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 834004
-    checksum: sha256:55fb98796cf4c23d8713e593b99f6876ba46eb852afdef71b5c2fff484d8b619
+    size: 835671
+    checksum: sha256:800167bfbafcc5725d7b7a705e08bdde702710103bf7b0d0dbd38576fc154fba
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-12.el8_10.s390x.rpm
@@ -3937,20 +3937,20 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 1780047
-    checksum: sha256:17b48c14918044afd610c576f0a8bf59f34a52b3fb64d66b09030117c6f39f1f
+    size: 1795099
+    checksum: sha256:42c2afd6471302a20b2fd3ee48e9af4de376b5fdb224ff29b13d8f720c8053e0
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el8.10.0+24361+29e043a0.s390x.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-private-libs-15.19-1.module+el8.10.0+24831+9c841e4e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 129579
-    checksum: sha256:f26d12c62fb9099c15ff6660b4cffced4f0e97bb50a2418fc67e6e84ad21d94a
+    size: 129919
+    checksum: sha256:d4f306aa1139c17a4692d18d2808b368646fa6f28d44170a729b2a019672798d
     name: postgresql-private-libs
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-3.12.14-1.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 31964
@@ -4042,20 +4042,20 @@ arches:
     name: chkconfig
     evr: 1.19.2-1.el8
     sourcerpm: chkconfig-1.19.2-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/coreutils-8.30-20.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/coreutils-8.30-21.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 1246548
-    checksum: sha256:deec4ef91d29fd588183d8f5199da0beb1ab42201028e86eb81dacb515048497
+    size: 1245504
+    checksum: sha256:d9fff496a4cb3dbcf3b93987d3a8243e723d40e925e46bde7aec96b895d2d147
     name: coreutils
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/coreutils-common-8.30-20.el8_10.s390x.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/coreutils-common-8.30-21.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 2091736
-    checksum: sha256:208fd0248db64ebdf99c2ec71d7dc0c852e1d9c32b6c7a5ddd83fc60559da2a3
+    size: 2091852
+    checksum: sha256:ef7905367a5bb8df17efe283e2d3cc87186e6798391139b911b3cd4761266d84
     name: coreutils-common
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/cracklib-2.9.6-15.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 95348
@@ -5190,13 +5190,13 @@ arches:
     name: systemd-pam
     evr: 239-82.el8_10.19
     sourcerpm: systemd-239-82.el8_10.19.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/t/tar-1.30-11.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/t/tar-1.30-13.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 852716
-    checksum: sha256:19658f59ed89e790423c0639d1bd39158e7fb20d86aef49765e81878708053ad
+    size: 859508
+    checksum: sha256:2c113650f0993c76ae62c1859f28f8cb859ce4bc665bd818d9143daa4c530d6d
     name: tar
-    evr: 2:1.30-11.el8_10
-    sourcerpm: tar-1.30-11.el8_10.src.rpm
+    evr: 2:1.30-13.el8_10
+    sourcerpm: tar-1.30-13.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/t/trousers-0.3.15-2.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 143856
@@ -5312,12 +5312,12 @@ arches:
     checksum: sha256:dc91b0b1230e700b03f6bf9b67e7e1888a40fb3cba04407be800ebe03b3f6632
     name: perl-libnet
     evr: 3.11-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 45805800
-    checksum: sha256:74fd29938c4cecdc103d990b546488beccfee1990fb94f4a18fc442075d682ce
+    size: 53878736
+    checksum: sha256:4138ea9b1f6012950bc466107b600087a440acb382038da2ef2b4ebc0bc1a761
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 20893288
@@ -5396,12 +5396,12 @@ arches:
     checksum: sha256:7cf522c35fa5a5906c8c793ece9e599e80aba6c37d3f57afbf436c9abb8629c6
     name: chkconfig
     evr: 1.19.2-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/coreutils-8.30-20.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/coreutils-8.30-21.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 5553358
-    checksum: sha256:aef8f105e8892047780fcced168efad3c67bf9cd801d4223a4b599535364c607
+    size: 5555182
+    checksum: sha256:6f65705faef515f987aba5c7817f0886e1d7ecfa794956bb875612bdf65dbd39
     name: coreutils
-    evr: 8.30-20.el8_10
+    evr: 8.30-21.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/cracklib-2.9.6-15.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 6423670
@@ -6098,12 +6098,12 @@ arches:
     checksum: sha256:de52fb27c36d6dfdccdc5ea17af6ae33d05dda050008e303235a4c2b30fb4031
     name: systemd
     evr: 239-82.el8_10.19
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/t/tar-1.30-11.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/t/tar-1.30-13.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 2173356
-    checksum: sha256:eda17923b1ada7f9d5f8a4501929a61e393b66cb0a6ade6ab13d85817d29f779
+    size: 2255612
+    checksum: sha256:6b9511f132b3d691379f8f4df65a84f8a9fa3048bc379c47d2bb291d37927d8b
     name: tar
-    evr: 2:1.30-11.el8_10
+    evr: 2:1.30-13.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/t/texinfo-6.5-7.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 4544531
@@ -6147,10 +6147,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/7cc61fd2c378a75f50adf0bf7aaf8c9025264756fcb3c17f84109dadbe4b1a6b-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/d4fbac518e83035d5097be6cf51e578e4c553fee8f61470e2eaa482fde2374a6-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 837034
-    checksum: sha256:7cc61fd2c378a75f50adf0bf7aaf8c9025264756fcb3c17f84109dadbe4b1a6b
+    size: 838222
+    checksum: sha256:d4fbac518e83035d5097be6cf51e578e4c553fee8f61470e2eaa482fde2374a6
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-12.el8_10.x86_64.rpm
@@ -6181,20 +6181,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 1822735
-    checksum: sha256:a76f12226f7f92651a72b839fbc0ad0703130490b3e6293f1ad187f900e57cef
+    size: 1838047
+    checksum: sha256:1453ca4d51f48a721ff5b0132adf48c1c069ea551d2fb6de67362044dc3ac324
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-private-libs-15.18-1.module+el8.10.0+24361+29e043a0.x86_64.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-private-libs-15.19-1.module+el8.10.0+24831+9c841e4e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 136831
-    checksum: sha256:0a9afdeb4568c4b86a2861e2180354a7284106c4b6f9dfe2225e4e8830a96805
+    size: 137419
+    checksum: sha256:ace55e3d68a179bf072b7e9713f95d0ac4ae68d44ed841693a4ba3c9c7d8d573
     name: postgresql-private-libs
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
-    sourcerpm: postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
+    sourcerpm: postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-3.12.14-1.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 32004
@@ -6286,20 +6286,20 @@ arches:
     name: chkconfig
     evr: 1.19.2-1.el8
     sourcerpm: chkconfig-1.19.2-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/coreutils-8.30-20.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/coreutils-8.30-21.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 1273172
-    checksum: sha256:b7408750a522d756acfcb72c039467a4c151b671b1cad9cf854de4b66e32fc8b
+    size: 1273188
+    checksum: sha256:9721e7657d7147aa8799845240792506cca659db4f5081414254e32325ba6f0b
     name: coreutils
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/coreutils-common-8.30-20.el8_10.x86_64.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/coreutils-common-8.30-21.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 2092356
-    checksum: sha256:f8f10da90d7817d9a00a5e49fa4baf565dfe710abe62b8eccaee34b82c49ebba
+    size: 2092476
+    checksum: sha256:98b62b0ac6557623ee062a3196f1d0757c19375e2ed33b345556f633d51b65a4
     name: coreutils-common
-    evr: 8.30-20.el8_10
-    sourcerpm: coreutils-8.30-20.el8_10.src.rpm
+    evr: 8.30-21.el8_10
+    sourcerpm: coreutils-8.30-21.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/cpio-2.12-11.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 272056
@@ -7368,12 +7368,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/postgresql-15.18-1.module+el8.10.0+24361+29e043a0.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/postgresql-15.19-1.module+el8.10.0+24831+9c841e4e.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 45805800
-    checksum: sha256:74fd29938c4cecdc103d990b546488beccfee1990fb94f4a18fc442075d682ce
+    size: 53878736
+    checksum: sha256:4138ea9b1f6012950bc466107b600087a440acb382038da2ef2b4ebc0bc1a761
     name: postgresql
-    evr: 15.18-1.module+el8.10.0+24361+29e043a0
+    evr: 15.19-1.module+el8.10.0+24831+9c841e4e
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.14-1.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 20893288
@@ -7452,12 +7452,12 @@ arches:
     checksum: sha256:7cf522c35fa5a5906c8c793ece9e599e80aba6c37d3f57afbf436c9abb8629c6
     name: chkconfig
     evr: 1.19.2-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/coreutils-8.30-20.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/coreutils-8.30-21.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 5553358
-    checksum: sha256:aef8f105e8892047780fcced168efad3c67bf9cd801d4223a4b599535364c607
+    size: 5555182
+    checksum: sha256:6f65705faef515f987aba5c7817f0886e1d7ecfa794956bb875612bdf65dbd39
     name: coreutils
-    evr: 8.30-20.el8_10
+    evr: 8.30-21.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/cpio-2.12-11.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 1312438
@@ -8065,7 +8065,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/facf478fbdbfb6f43c442bdea297773b1d2dc9ec964b50e2f4658600e01908d6-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/c76d8bb366ab65d0deb13325dee02722c33daa33b7b591a651557413f8cee75e-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 862573
-    checksum: sha256:facf478fbdbfb6f43c442bdea297773b1d2dc9ec964b50e2f4658600e01908d6
+    size: 864452
+    checksum: sha256:c76d8bb366ab65d0deb13325dee02722c33daa33b7b591a651557413f8cee75e
