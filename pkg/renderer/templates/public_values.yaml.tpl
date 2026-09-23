@@ -17,9 +17,6 @@ env:
 imagePullSecrets:
   useExisting:
   - stackrox
-  {{- if and .K8sConfig.ScannerSecretName (ne .K8sConfig.ScannerSecretName "stackrox") }}
-  - {{ .K8sConfig.ScannerSecretName | quote }}
-  {{- end }}
 
 {{- if .K8sConfig.ImageOverrides.MainRegistry }}
 image:
