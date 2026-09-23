@@ -20,8 +20,8 @@ func TestNewNodeIndexReportRateLimiter_Defaults(t *testing.T) {
 	rl := newNodeIndexReportRateLimiter()
 	require.NotNil(t, rl)
 	assert.Equal(t, "node_index_reports", rl.WorkloadName())
-	assert.Equal(t, 0.1, rl.GlobalRate())
-	assert.Equal(t, 3, rl.BucketCapacity())
+	assert.Equal(t, 0.2, rl.GlobalRate())
+	assert.Equal(t, 50, rl.BucketCapacity())
 }
 
 func TestNewNodeIndexReportRateLimiter_NegativeRateFallsBackToDefault(t *testing.T) {
@@ -29,7 +29,7 @@ func TestNewNodeIndexReportRateLimiter_NegativeRateFallsBackToDefault(t *testing
 
 	rl := newNodeIndexReportRateLimiter()
 	require.NotNil(t, rl)
-	assert.Equal(t, 0.1, rl.GlobalRate())
+	assert.Equal(t, 0.2, rl.GlobalRate())
 }
 
 func TestNewNodeIndexReportRateLimiter_IgnoresNonIndexReports(t *testing.T) {

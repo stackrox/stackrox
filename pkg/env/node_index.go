@@ -27,12 +27,13 @@ var (
 	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
 	// Set to "0" to disable rate limiting (unlimited).
 	//
-	// Default 0.1 is one report every 10 seconds, a conservative starting point for Scanner V4 load.
-	NodeIndexReportRateLimit = RegisterFloatSetting("ROX_NODE_INDEX_REPORT_RATE_LIMIT", 0.1).WithMinimum(0)
+	// Default 0.2 (one report every 5 seconds) stays under the ~1 req/s Scanner V4
+	// matcher budget after VM scanning's 0.3 share.
+	NodeIndexReportRateLimit = RegisterFloatSetting("ROX_NODE_INDEX_REPORT_RATE_LIMIT", 0.2).WithMinimum(0)
 
 	// NodeIndexReportBucketCapacity is the token-bucket capacity for node index report rate limiting.
-	// This is the maximum number of requests that can be accepted in a burst before rate limiting
-	// kicks in. The global capacity is divided equally among connected sensors.
-	// Default: 3 tokens.
-	NodeIndexReportBucketCapacity = RegisterIntegerSetting("ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY", 3).WithMinimum(1)
+	// The global capacity is divided equally among connected sensors.
+	// Default 50 absorbs a typical cluster reconnect wave; a tiny bucket would
+	// leave each sensor with a burst of 1.
+	NodeIndexReportBucketCapacity = RegisterIntegerSetting("ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY", 50).WithMinimum(1)
 )
