@@ -44,6 +44,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
 
       - name: Sync major version bumps to release branches
         env:
@@ -53,4 +54,4 @@ jobs:
           GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
           GIT_AUTHOR_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
-        run: python3 .github/scripts/sync-major-version-bumps.py
+        run: python3 .github/workflows/scripts/sync-major-version-bumps.py
