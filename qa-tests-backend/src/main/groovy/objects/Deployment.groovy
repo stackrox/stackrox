@@ -15,7 +15,7 @@ class Deployment {
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
     String image
     // Optional policy for the main container; takes precedence over the CI Quay policy.
-    String imagePullPolicy
+    String imagePullPolicyOverride
     Map<String, String> labels = [:]
     Map<Integer, String> ports = [:]
     Integer targetport
@@ -106,8 +106,8 @@ class Deployment {
         return this
     }
 
-    Deployment setImagePullPolicy(String policy) {
-        this.imagePullPolicy = policy
+    Deployment setImagePullPolicyOverride(String policy) {
+        this.imagePullPolicyOverride = policy
         return this
     }
 
