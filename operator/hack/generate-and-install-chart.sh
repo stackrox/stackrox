@@ -19,4 +19,7 @@ echo >&2 "Deploying operator version ${version} from a temporary checkout at ${d
 git worktree add "${dir}" "${version}"
 trap 'git worktree remove --force "${dir}"' EXIT
 
+# Warm up go module cache so that transient network failures do not abort controller-gen.
+# TODO: this command can be removed once the version we upgrade from runs go-mod-download internally.
+(cd "${dir}"; go mod download || go mod download || go mod download)
 make -C "${dir}/operator" chart deploy-via-chart VERSION="${version}"
