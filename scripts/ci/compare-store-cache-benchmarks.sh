@@ -167,10 +167,12 @@ if observations["master"] != observations["pr"]:
     raise SystemExit("Master and PR benchmark cases do not match")
 PY
 
-# Avoid unwieldy absolute paths in benchstat's column headings.
+# Group by benchmark metadata only: timestamped application logs also look like
+# configuration lines to benchstat and would split repeated samples into tables.
+# Keep the raw logs intact and avoid absolute paths in the column headings.
 (
     cd "$output_dir"
-    "$benchstat_bin" master.txt pr.txt > comparison.txt
+    "$benchstat_bin" -table goos,goarch,pkg,cpu -ignore .config master.txt pr.txt > comparison.txt
 )
 {
     echo '## Store cache benchmark comparison'
