@@ -112,7 +112,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for command in curl jq rg sha256sum unzip zip zstd; do
+for command in curl grep jq sha256sum unzip zip zstd; do
   command -v "$command" >/dev/null || { echo "required command not found: $command" >&2; exit 1; }
 done
 
@@ -159,13 +159,13 @@ done
 
 test_cves="$work_dir/test-cves.txt"
 all_cves="$work_dir/all-cves.txt"
-rg_matches="$work_dir/rg-matches.txt"
+grep_matches="$work_dir/grep-matches.txt"
 set +e
-rg --no-filename -o 'CVE-[0-9]{4}-[0-9]+|RH[BS]A-[0-9]{4}:[0-9]+|ALAS[0-9]*-[0-9]{4}-[0-9]+|GO-[0-9]{4}-[0-9]+|GHSA-[a-z0-9-]+' "${test_cve_paths[@]}" > "$rg_matches"
-rg_status=$?
+grep -REho 'CVE-[0-9]{4}-[0-9]+|RH[BS]A-[0-9]{4}:[0-9]+|ALAS[0-9]*-[0-9]{4}-[0-9]+|GO-[0-9]{4}-[0-9]+|GHSA-[a-z0-9-]+' "${test_cve_paths[@]}" > "$grep_matches"
+grep_status=$?
 set -e
-[[ $rg_status -eq 0 || $rg_status -eq 1 ]] || { echo "rg failed: $rg_status" >&2; exit "$rg_status"; }
-sort -u "$rg_matches" > "$test_cves"
+[[ $grep_status -eq 0 || $grep_status -eq 1 ]] || { echo "grep failed: $grep_status" >&2; exit "$grep_status"; }
+sort -u "$grep_matches" > "$test_cves"
 cp "$test_cves" "$all_cves"
 printf '%s\n' "${additional_cves[@]}" >> "$all_cves"
 sort -u -o "$all_cves" "$all_cves"
@@ -179,7 +179,7 @@ filter_candidates() {
   if [[ "$selection" == all ]]; then
     cat
   else
-    rg -F -f "$patterns" || [[ $? -eq 1 ]]
+    grep -F -f "$patterns" || [[ $? -eq 1 ]]
   fi
 }
 
@@ -250,23 +250,23 @@ validate_bundle() {
   for required_source in "${source_members[@]}"; do
     required_source=${required_source#*/}
     set +e
-    printf '%s\n' "$listing" | rg -Fx -- "$required_source" >/dev/null
-    local rg_status=$?
+    printf '%s\n' "$listing" | grep -Fx -- "$required_source" >/dev/null
+    local grep_status=$?
     set -e
-    [[ $rg_status -eq 0 ]] || {
+    [[ $grep_status -eq 0 ]] || {
       echo "generated bundle is missing required source: $required_source" >&2
       return 1
     }
   done
   set +e
-  printf '%s\n' "$listing" | rg -q 'synthetic'
+  printf '%s\n' "$listing" | grep -q 'synthetic'
   local synthetic_status=$?
   set -e
   if [[ $synthetic_status -eq 0 ]]; then
     echo "generated bundle contains a synthetic source" >&2
     return 1
   elif [[ $synthetic_status -ne 1 ]]; then
-    echo "rg failed while validating bundle members: $synthetic_status" >&2
+    echo "grep failed while validating bundle members: $synthetic_status" >&2
     return "$synthetic_status"
   fi
 
