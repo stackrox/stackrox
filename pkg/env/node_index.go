@@ -28,7 +28,7 @@ var (
 	// Set to "0" to disable rate limiting (unlimited).
 	//
 	// Default 0.1 is one report every 10 seconds, a conservative starting point for Scanner V4 load.
-	NodeIndexReportRateLimit = RegisterFloatSetting("ROX_NODE_INDEX_REPORT_RATE_LIMIT", 0.1)
+	NodeIndexReportRateLimit = RegisterFloatSetting("ROX_NODE_INDEX_REPORT_RATE_LIMIT", 0.1).WithMinimum(0)
 
 	// NodeIndexReportBucketCapacity is the token-bucket capacity for node index report rate limiting.
 	// This is the maximum number of requests that can be accepted in a burst before rate limiting

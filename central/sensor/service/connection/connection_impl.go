@@ -210,17 +210,16 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.Push(msg)
 }
 
+// sendRateLimitedNACK NACKs VM index reports so the scraper can back off.
+// Node index reports are not NACKed: Sensor routes those ACKs by node name
+// (Compliance hostname), and the event only carries the node ID.
 func (c *sensorConnection) sendRateLimitedNACK(ctx context.Context, msg *central.MsgFromSensor) {
-	if vmReport := msg.GetEvent().GetVirtualMachineIndexReport(); vmReport != nil {
-		resourceID := common.VMIndexACKResourceID(vmReport.GetId(), vmReport.GetIndex().GetVsockCid())
-		common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, centralsensor.SensorACKReasonRateLimited, c)
+	vmReport := msg.GetEvent().GetVirtualMachineIndexReport()
+	if vmReport == nil {
 		return
 	}
-	if msg.GetEvent().GetIndexReport() != nil {
-		// Resource ID is the SensorEvent ID (the node ID). The index-report event
-		// does not carry the node name used as Compliance's Hostname.
-		common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_NODE_INDEX_REPORT, msg.GetEvent().GetId(), centralsensor.SensorACKReasonRateLimited, c)
-	}
+	resourceID := common.VMIndexACKResourceID(vmReport.GetId(), vmReport.GetIndex().GetVsockCid())
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, centralsensor.SensorACKReasonRateLimited, c)
 }
 
 func (c *sensorConnection) emitRateLimitedAdminEvent(clusterID, reason string, msg *central.MsgFromSensor) {
