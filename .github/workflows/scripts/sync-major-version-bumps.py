@@ -208,8 +208,10 @@ def open_pr(sync_branch, base_branch):
 
 
 def configure_git():
-    run(["git", "config", "user.name", "github-actions[bot]"])
-    run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"])
+    name = os.environ.get("GIT_AUTHOR_NAME", "rhacs-bot")
+    email = os.environ.get("GIT_AUTHOR_EMAIL", "rhacs-bot@redhat.com")
+    run(["git", "config", "user.name", name])
+    run(["git", "config", "user.email", email])
 
 
 def reset_worktree():

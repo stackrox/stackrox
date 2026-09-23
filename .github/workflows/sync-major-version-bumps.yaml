@@ -37,6 +37,7 @@ defaults:
 
 jobs:
   sync:
+    if: ${{ github.repository_owner == 'stackrox' }}
     name: Sync version bumps
     runs-on: ubuntu-latest
     steps:
@@ -49,5 +50,7 @@ jobs:
           # For push/schedule triggers, inputs.dry-run is empty string → dry_run=False (create real PRs).
           DRY_RUN: ${{ inputs.dry-run }}
           SUPPORTED_VERSIONS_OVERRIDE: ${{ inputs.supported-versions }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
+          GIT_AUTHOR_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
         run: python3 .github/scripts/sync-major-version-bumps.py
