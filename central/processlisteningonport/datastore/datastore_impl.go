@@ -37,6 +37,9 @@ var (
 
 const (
 	getBatchSize = 1000
+
+	removePLOPsWithoutPodUIDBatchSize = 10000
+	removePLOPsWithoutPodUIDTimeLimit = 20 * time.Minute
 )
 
 func newDatastoreImpl(
@@ -681,75 +684,31 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-// Removes PLOPs without poduids between a range of ids.
-func (ds *datastoreImpl) removePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
-	query := fmt.Sprintf(deletePLOPsWithoutPoduidInPage, prevId, nextId)
-	commandTag, err := ds.pool.Exec(ctx, query)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return commandTag.RowsAffected(), nil
-}
-
-// Given a set of rows with ids, returns the id of the last row. This is useful for pagination.
-func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
-	id := ""
-
-	for rows.Next() {
-		if err := rows.Scan(&id); err != nil {
-			return "", pgutils.ErrNilIfNoRows(err)
-		}
-	}
-
-	return id, rows.Err()
-}
-
-// Given an id and a limit, returns the id a limit number of rows after the given id. This is useful
-// for efficient pagination.
-func (ds *datastoreImpl) getNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
-	query := fmt.Sprintf(getLastIdFromPage, prevId, limit)
-	rows, err := ds.pool.Query(ctx, query)
-
-	if err != nil {
-		// Do not be alarmed if the error is simply NoRows
-		err = pgutils.ErrNilIfNoRows(err)
-		if err != nil {
-			log.Warnf("%s: %s", query, err)
-		}
-		return "", err
-	}
-	defer rows.Close()
-
-	nextId, err := ds.getLastIdFromRows(ctx, rows)
-
-	if err != nil {
-		return "", err
-	}
-
-	return nextId, nil
-}
-
 func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
-	limit := 10000
-	totalRows := int64(0)
+	// Bound the total time spent draining so concurrent writers producing new
+	// null-poduid rows cannot keep the loop running indefinitely.
+	loopCgx, cancel := context.WithTimeout(ctx, removePLOPsWithoutPodUIDTimeLimit)
+	defer cancel()
 
-	prevId := "00000000-0000-0000-0000-000000000000"
+	totalRows := int64(0)
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidBatch, removePLOPsWithoutPodUIDBatchSize)
 	for {
-		nextId, err := ds.getNextPageId(ctx, prevId, limit)
+		commandTag, err := ds.pool.Exec(ctx, query)
 		if err != nil {
 			return totalRows, err
 		}
-		if nextId == "" {
+		nrows := commandTag.RowsAffected()
+		totalRows += nrows
+
+		// A short batch means the null rows are drained.
+		if nrows < int64(removePLOPsWithoutPodUIDBatchSize) {
 			break
 		}
-		nrows, err := ds.removePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
-		if err != nil {
-			return totalRows, err
+
+		if loopCgx.Err() != nil {
+			log.Warn("removing PLOPs without Pod UID did not finish in time")
+			break
 		}
-		totalRows += nrows
-		prevId = nextId
 	}
 
 	return totalRows, nil
