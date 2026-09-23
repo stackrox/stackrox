@@ -229,7 +229,7 @@ type ImageComponentV2 struct {
 	//
 	// Deprecated: Marked as deprecated in storage/image_component.proto.
 	ImageId string `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree,allow-null"` // @gotags: sql:"fk(Image:id),index=btree,allow-null"
-	// / Layer that contains this component
+	/// Layer that contains this component
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
