@@ -1,6 +1,7 @@
 package scannerv4
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -393,14 +394,15 @@ func (s *scannerv4) GetVirtualMachineScan(
 	if indexReport == nil {
 		return nil, errors.New("index report is required for VM scanning")
 	}
+	vmLabel := cmp.Or(vm.GetName(), vm.GetId())
 	vmDigest, err := name.NewDigest(mockVirtualMachineDigest)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse digest for VM %q", vm.GetName())
+		return nil, errors.Wrapf(err, "failed to parse digest for VM %q", vmLabel)
 	}
 
 	vr, err := s.getVulnerabilityReport(vmDigest, indexReport)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get vulnerability report for VM %q", vm.GetName())
+		return nil, errors.Wrapf(err, "failed to get vulnerability report for VM %q", vmLabel)
 	}
 
 	return ToVirtualMachineScan(vr), nil

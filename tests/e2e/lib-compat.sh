@@ -180,6 +180,7 @@ roxie_config_from_environment_compat() {
     handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
     handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
     handle_scanner_v4_vuln_readiness "$config_file"
+    handle_scanner_v4_matcher_resources "$config_file"
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -273,6 +274,20 @@ handle_scanner_v4_vuln_readiness() {
         info "  restricting vuln bundle sources to ${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
         set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
     fi
+}
+
+# handle_scanner_v4_matcher_resources raises the scanner-v4-matcher memory limit
+# for roxie deployments.
+handle_scanner_v4_matcher_resources() {
+    local config_file="$1"
+
+    # Only meaningful when Scanner V4 is enabled.
+    if [[ "${ROX_SCANNER_V4:-true}" == "false" ]]; then
+        return
+    fi
+
+    info "  setting scanner-v4-matcher memory limit to 6Gi"
+    patch_yaml "$config_file" '.central.spec.scannerV4.matcher.resources.limits.memory = "6Gi"'
 }
 
 handle_trusted_ca_file() {
