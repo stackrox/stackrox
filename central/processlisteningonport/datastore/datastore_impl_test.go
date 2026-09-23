@@ -2840,7 +2840,10 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 
 	var wgPrune sync.WaitGroup
 	wgPrune.Go(func() {
-		for {
+		// Using ticket to rate-limit the prune spin-loop.
+		t := time.NewTicker(20 * time.Millisecond)
+		defer t.Stop()
+		for range t.C {
 			mutex.Lock()
 			stop := !running
 			mutex.Unlock()
