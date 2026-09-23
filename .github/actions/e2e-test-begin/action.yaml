@@ -1,0 +1,244 @@
+name: e2e-test-begin
+description: >
+  Provision a cluster and prepare the environment for StackRox e2e tests.
+  Covers input validation, cluster provisioning (direct-gke or infra), CLI
+  installation and pre-test image prefetching. Writes CLUSTER_NAME and
+  KUBECONFIG to $GITHUB_ENV so subsequent workflow steps can consume them.
+  Paired with e2e-test-end, which handles reporting and cluster teardown.
+  Both actions must be used together in the same job.
+# Inputs use description-level "Default: ..." instead of YAML `default:`.
+# When a reusable workflow passes an empty string for an optional input, GHA
+# treats it as "set" and the YAML default never kicks in. Since callers are
+# often multi-layer workflow chains where the middle layer forwards
+# ${{ inputs.x }} verbatim (empty when the leaf omits it), YAML defaults
+# silently break. Instead, the "Apply defaults" step below resolves effective
+# values with `${{ inputs.x || 'fallback' }}` and writes them to GITHUB_ENV.
+inputs:
+  cluster-provisioning-method:
+    description: "Selects cluster provisioning method to use (supported: direct-gke, infra). Default: direct-gke"
+  cluster-name-prefix:
+    description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
+    required: true
+  infra-flavor:
+    description: "Infra cluster flavor, e.g. gke-default, openshift-4. Default: gke-default"
+  infra-args:
+    description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line. Default: nodes=3, machine-type=e2-standard-8"
+  infra-lifespan:
+    description: "Infra cluster lifespan (auto-deleted after expiry). Default: 5h"
+  cluster-wait-timeout-minutes:
+    description: "Timeout for waiting on cluster provisioning (OCP needs longer). Default: 25"
+  gke-machine-type:
+    description: "Machine type for direct-gke provisioned clusters. Default: e2-standard-8"
+  gke-num-nodes:
+    description: "Number of nodes for direct-gke provisioned clusters. Default: 3"
+  gke-spot:
+    description: "Whether to use spot instances for direct-gke provisioned clusters. Default: true"
+  extra-env-vars:
+    description: "Environment variables for this flavor of e2e tests, as multi-line KEY=VALUE pairs. Written to $GITHUB_ENV."
+  artifact-dir:
+    description: "Directory for JUnit reports and other artifacts. Created by this action. Default: ./junit-reports/"
+  install-roxie:
+    description: "Whether to install the roxie CLI. Default: true"
+  infra-token:
+    description: "Token used to authenticate with infra. Required when cluster-provisioning-method is infra."
+  quay-rhacs-eng-ro-username:
+    description: "Read-only quay.io username for quay/rhacs-eng."
+    required: true
+  quay-rhacs-eng-ro-password:
+    description: "Read-only quay.io password for quay/rhacs-eng."
+    required: true
+
+outputs:
+  cluster-name:
+    description: "The name of the provisioned cluster."
+    value: ${{ env.CLUSTER_NAME }}
+runs:
+  using: composite
+  steps:
+    ## Implementation Notes
+    #
+    # (1) Composite action steps do not support timeout-minutes, so the wait
+    # timeout is enforced with the timeout(1) command instead in the steps below.
+    #
+    # (2) Composite actions don't support action-level env, so we write shared
+    # constants to $GITHUB_ENV once and let all subsequent steps inherit them.
+    - name: Apply defaults and set shared environment
+      shell: bash
+      env:
+        INFRA_ARGS_INPUT: ${{ inputs.infra-args }}
+      run: |
+        cat >> "$GITHUB_ENV" <<EOF
+        CLUSTER_PROVISIONING_METHOD=${{ inputs.cluster-provisioning-method || 'direct-gke' }}
+        CLUSTER_NAME_PREFIX=${{ inputs.cluster-name-prefix }}
+        CLUSTER_NAME_PREFIX_MAX=20
+        INFRA_FLAVOR=${{ inputs.infra-flavor || 'gke-default' }}
+        INFRA_LIFESPAN=${{ inputs.infra-lifespan || '5h' }}
+        CLUSTER_WAIT_TIMEOUT_MINUTES=${{ inputs.cluster-wait-timeout-minutes || '25' }}
+        MACHINE_TYPE=${{ inputs.gke-machine-type || 'e2-standard-8' }}
+        NUM_NODES=${{ inputs.gke-num-nodes || '3' }}
+        GKE_SPOT=${{ inputs.gke-spot || 'true' }}
+        ARTIFACT_DIR=${{ inputs.artifact-dir || './junit-reports/' }}
+        INSTALL_ROXIE=${{ inputs.install-roxie || 'true' }}
+        EOF
+
+        {
+          echo "INFRA_ARGS<<EOF"
+          if [[ -n "$INFRA_ARGS_INPUT" ]]; then
+            echo "$INFRA_ARGS_INPUT"
+          else
+            echo "nodes=3"
+            echo "machine-type=e2-standard-8"
+          fi
+          echo "EOF"
+        } >> "$GITHUB_ENV"
+
+    - name: Validate inputs
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        case "$CLUSTER_PROVISIONING_METHOD" in
+          direct-gke|infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra"; exit 1 ;;
+        esac
+
+        if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
+          echo "::error::Input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+          exit 1
+        fi
+
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" && -z "$INFRA_TOKEN" ]]; then
+          echo "::error::Input infra-token is required when cluster-provisioning-method is infra."
+          exit 1
+        fi
+
+    - name: Compute cluster name for infra-provisioned cluster
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      shell: bash
+      # infractl enforces a 28-char limit for cluster names.
+      run: |
+        cluster_name_max=28
+
+        hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
+        hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+        hash="$(echo "$hash_input" | sha256sum)"
+        hash_truncated="${hash:0:$hash_length}"
+
+        cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
+        echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+
+    - name: Prepare infra args
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      id: prepare-infra-args
+      shell: bash
+      run: |
+        args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
+        echo "args=$args" >> "$GITHUB_OUTPUT"
+
+    - name: Trigger cluster creation via infra
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+      with:
+        token: ${{ inputs.infra-token }}
+        flavor: ${{ env.INFRA_FLAVOR }}
+        name: ${{ env.CLUSTER_NAME }}
+        lifespan: ${{ env.INFRA_LIFESPAN }}
+        args: ${{ steps.prepare-infra-args.outputs.args }}
+        wait: false
+
+    - name: Set up GCloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    # In the direct-gke provisioning case, this step also exports CLUSTER_NAME
+    # into the environment (via ci_export writing to $GITHUB_ENV).
+    - name: Create cluster via direct-gke
+      if: env.CLUSTER_PROVISIONING_METHOD == 'direct-gke'
+      shell: bash
+      # Composite action steps do not support timeout-minutes, so the provisioning
+      # timeout is enforced with the timeout(1) command instead.
+      # See https://github.com/actions/runner/issues/1979.
+      run: |
+        timeout -k 30s "${CLUSTER_WAIT_TIMEOUT_MINUTES}m" \
+          scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+
+    - name: Docker login to Quay.io
+      shell: bash
+      env:
+        REGISTRY_USERNAME: ${{ inputs.quay-rhacs-eng-ro-username }}
+        REGISTRY_PASSWORD: ${{ inputs.quay-rhacs-eng-ro-password }}
+      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+    - name: Set flavor-specific env vars
+      shell: bash
+      env:
+        EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+      run: |
+        [[ -z "$EXTRA_ENV_VARS" ]] && exit 0
+        while IFS= read -r line; do
+          if [[ -n "$line" ]]; then
+            echo "$line" >> "$GITHUB_ENV"
+          fi
+        done <<< "$EXTRA_ENV_VARS"
+
+    - name: Install roxctl
+      uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
+      with:
+        roxctl-release: latest
+
+    - name: Retrieving roxie version from repository
+      if: env.INSTALL_ROXIE == 'true'
+      id: roxie-version
+      shell: bash
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      if: env.INSTALL_ROXIE == 'true'
+      uses: stackrox/actions/roxie/install-cli@6691d5c300d4af17546145bdbbb9862c53975af4 # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+
+    - name: Install oc
+      if: startsWith(env.INFRA_FLAVOR, 'openshift')
+      shell: bash
+      run: |
+        curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+          | tar xz -C /usr/local/bin oc
+        oc version --client
+
+    - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+
+    - name: Wait for infra cluster and get kubeconfig
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        timeout -k 30s "${CLUSTER_WAIT_TIMEOUT_MINUTES}m" bash -c '
+          infractl wait "${CLUSTER_NAME}"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+        '
+
+    # gcloud container clusters create is synchronous, so the cluster is
+    # already RUNNING at this point. wait_for_cluster provides additional
+    # guarantees by polling until all kube-system pods are ready.
+    - name: Wait for cluster to stabilize
+      shell: bash
+      # Composite action steps do not support timeout-minutes, so the
+      # stabilization timeout is enforced with the timeout(1) command instead.
+      run: |
+        timeout -k 30s 5m bash -c '
+          kubectl cluster-info
+          kubectl get nodes
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == "direct-gke" ]]; then
+            scripts/ci/gke.sh wait_for_cluster
+          fi
+        '
+
+    - name: Create artifact directory
+      shell: bash
+      run: mkdir -p "$ARTIFACT_DIR"
