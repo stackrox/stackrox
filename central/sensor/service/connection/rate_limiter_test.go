@@ -24,6 +24,14 @@ func TestNewNodeIndexReportRateLimiter_Defaults(t *testing.T) {
 	assert.Equal(t, 3, rl.BucketCapacity())
 }
 
+func TestNewNodeIndexReportRateLimiter_NegativeRateFallsBackToDefault(t *testing.T) {
+	t.Setenv(env.NodeIndexReportRateLimit.EnvVar(), "-1")
+
+	rl := newNodeIndexReportRateLimiter()
+	require.NotNil(t, rl)
+	assert.Equal(t, 0.1, rl.GlobalRate())
+}
+
 func TestNewNodeIndexReportRateLimiter_IgnoresNonIndexReports(t *testing.T) {
 	t.Setenv(env.NodeIndexReportRateLimit.EnvVar(), "1")
 	t.Setenv(env.NodeIndexReportBucketCapacity.EnvVar(), "1")

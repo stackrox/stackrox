@@ -25,6 +25,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 
+- Central rate-limits Scanner V4 node index reports (default 0.1 requests per second, burst 3) to bound matcher load. Tune with `ROX_NODE_INDEX_REPORT_RATE_LIMIT` and `ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY`; set the rate to 0 to disable.
+
 ## [5.0.0]
 
 

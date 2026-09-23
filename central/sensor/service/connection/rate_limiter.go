@@ -14,7 +14,7 @@ type chainedRateLimiter struct {
 	limiters []*rate.Limiter
 }
 
-func (c chainedRateLimiter) TryConsume(clientID string, msg *central.MsgFromSensor) (allowed bool, reason string) {
+func (c chainedRateLimiter) TryConsume(clientID string, msg *central.MsgFromSensor) (bool, string) {
 	for _, l := range c.limiters {
 		if allowed, reason := l.TryConsume(clientID, msg); !allowed {
 			return false, reason

@@ -35,7 +35,7 @@ func (s *recordingAdminStream) Produce(event *events.AdministrationEvent) {
 	s.produced = append(s.produced, event)
 }
 
-func TestMultiplexedPush_RateLimitedNodeIndexReportSendsNACK(t *testing.T) {
+func TestMultiplexedPush_RateLimitedNodeIndexReportDropsWithoutNACK(t *testing.T) {
 	admin := &recordingAdminStream{}
 	conn := newRateLimitedTestConnection(stubRateLimiter{
 		allowed: false,
@@ -44,12 +44,7 @@ func TestMultiplexedPush_RateLimitedNodeIndexReportSendsNACK(t *testing.T) {
 
 	conn.multiplexedPush(t.Context(), nodeIndexMsg("node-abc"), nil)
 
-	nack := receiveSensorACK(t, conn)
-	assert.Equal(t, central.SensorACK_NACK, nack.GetAction())
-	assert.Equal(t, central.SensorACK_NODE_INDEX_REPORT, nack.GetMessageType())
-	assert.Equal(t, "node-abc", nack.GetResourceId())
-	assert.Equal(t, centralsensor.SensorACKReasonRateLimited, nack.GetReason())
-
+	assert.Empty(t, conn.sendC, "node index reports must not receive a rate-limit NACK")
 	require.Len(t, admin.produced, 1)
 	assert.Contains(t, admin.produced[0].Message, "Node index reports")
 	assert.Contains(t, admin.produced[0].Hint, env.NodeIndexReportRateLimit.EnvVar())
