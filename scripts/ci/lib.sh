@@ -754,6 +754,7 @@ image_prefetcher_start_set() {
 
     # daemonset, etc
     local collect_metrics="--collect-metrics"
+    # TODO: Add IPv6 suppor to collect-metrics action in image prefetcher.
     # AWS CLBs don't support IPv6. Skip metrics (which creates a LoadBalancer service)
     # on IPv6-primary clusters. Check env var first, then detect from cluster config.
     if [[ "${NETWORK_STACK:-}" =~ ipv6 ]] || kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
