@@ -4,9 +4,46 @@ Shared utilities for performance test plotting scripts.
 """
 
 import os
+import re
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+# Result dirs are named ..._<num_sensors>_<run_time>_file-activity-... where
+# run_time is like '10m', '20m', '1h', '600s'. This captures that run_time token.
+_RUN_TIME_RE = re.compile(r'_(\d+)([smh])_file-activity')
+_UNIT_SECONDS = {'s': 1, 'm': 60, 'h': 3600}
+
+# Trend fits / averages start after this ramp-up (seconds); the window then runs
+# to the end of the nominal test (see trend_window).
+TREND_START = 60.0
+# Fallback test duration (seconds) when the run_time can't be parsed from a path.
+DEFAULT_RUN_DURATION = 600.0
+
+
+def run_duration_seconds(path, default=DEFAULT_RUN_DURATION):
+    """
+    Parse the nominal test duration (seconds) from a results path.
+
+    Returns `default` when no run_time token is present (e.g. legacy paths).
+    """
+    m = _RUN_TIME_RE.search(path)
+    if not m:
+        return default
+    return int(m.group(1)) * _UNIT_SECONDS[m.group(2)]
+
+
+def trend_window(path, start=TREND_START, default_duration=DEFAULT_RUN_DURATION):
+    """
+    Return the (start, end) seconds over which to fit trends / average metrics.
+
+    The window skips a fixed ramp-up (`start`) and runs to the end of the test:
+    end = start + nominal test duration parsed from `path`. So a 10m test gives
+    60-660s and a 20m test gives 60-1260s, keeping the analysis window matched to
+    however long the test actually ran.
+    """
+    return start, start + run_duration_seconds(path, default_duration)
 
 
 def read_metric_series(file_path):

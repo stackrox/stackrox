@@ -21,6 +21,7 @@ from plot_utils import (
     add_equation_text,
     read_metric_series,
     write_equation_table,
+    trend_window,
 )
 
 def extract_batch_size(dirname):
@@ -278,16 +279,18 @@ def plot_scaling_comparison(base_dir, output_dir):
         for (series, slope, intercept, _color) in equations:
             equation_rows.append((plot_name, series, slope, intercept))
 
-    # Use consistent time window for all metrics to ensure fair comparison
-    # Tests may run for different durations, so we use the same window across all
     START_OFFSET = 60.0   # Skip initial 60s ramp-up
-    END_OFFSET = 660.0    # Measure from 60s to 660s (10 minutes of stable data)
-    TIME_WINDOW_DESC = "60-660s"
 
     # Find all result directories (both fake workload and berserker)
     pattern_fake = os.path.join(base_dir, "file_activity_results_*_policy_*")
     pattern_berserker = os.path.join(base_dir, "berserker_file_activity_results_*_policy_*")
     result_dirs = glob.glob(pattern_fake) + glob.glob(pattern_berserker)
+
+    # Match the analysis window to the test length: [60s, 60s + run duration],
+    # parsed from a result dir name (10m -> 60-660s, 20m -> 60-1260s). All runs
+    # in one base dir share a run_time, so any dir works.
+    END_OFFSET = trend_window(result_dirs[0], start=START_OFFSET)[1] if result_dirs else 660.0
+    TIME_WINDOW_DESC = f"{int(START_OFFSET)}-{int(END_OFFSET)}s"
 
     # Organize by batch size and policy
     data = {}  # {batch_size: {'without': dir, 'with': dir}}

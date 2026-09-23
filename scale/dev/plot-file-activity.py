@@ -15,15 +15,11 @@ from plot_utils import (
     add_equation_text,
     read_metric_series,
     write_equation_table,
+    trend_window,
 )
 
-# Fit trend lines only over the stable window (skip ramp-up and tail), matching
-# the window used by plot-batch-comparison.py.
-TREND_START = 60.0   # seconds
-TREND_END = 660.0    # seconds
 
-
-def window_points(x, y, start=TREND_START, end=TREND_END):
+def window_points(x, y, start, end):
     """Return the (x, y) points whose x (seconds) falls within [start, end]."""
     xw, yw = [], []
     for xi, yi in zip(x, y):
@@ -97,17 +93,23 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
     x1, y1 = read_file(file1, base_time1)
     x2, y2 = read_file(file2, base_time2)
 
+    # Match the trend window to the test length: [60s, 60s + run duration],
+    # parsed from the results dir name (falls back to the metric file's own
+    # directory for legacy invocations without a results_dir).
+    run_ref = results_dir1 or os.path.dirname(file1) or results_dir2 or os.path.dirname(file2)
+    trend_start, trend_end = trend_window(run_ref)
+
     plt.figure(figsize=(12, 7))
 
     eq1 = eq2 = None
     if x1 and y1:
         plt.plot(x1, y1, label=label1, marker='o', markersize=3, linewidth=1.5, color='C0')
-        xw1, yw1 = window_points(x1, y1)
-        eq1 = add_trendline(xw1, yw1, f'Trend ({label1}, {int(TREND_START)}-{int(TREND_END)}s)', 'C0')
+        xw1, yw1 = window_points(x1, y1, trend_start, trend_end)
+        eq1 = add_trendline(xw1, yw1, f'Trend ({label1}, {int(trend_start)}-{int(trend_end)}s)', 'C0')
     if x2 and y2:
         plt.plot(x2, y2, label=label2, marker='x', markersize=3, linewidth=1.5, color='C1')
-        xw2, yw2 = window_points(x2, y2)
-        eq2 = add_trendline(xw2, yw2, f'Trend ({label2}, {int(TREND_START)}-{int(TREND_END)}s)', 'C1')
+        xw2, yw2 = window_points(x2, y2, trend_start, trend_end)
+        eq2 = add_trendline(xw2, yw2, f'Trend ({label2}, {int(trend_start)}-{int(trend_end)}s)', 'C1')
 
     plt.xlabel('Time (seconds)', fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
