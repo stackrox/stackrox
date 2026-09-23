@@ -118,6 +118,8 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 }
 
 func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T) {
+	// When the client is authenticated, CentralVersionServerInterceptor serves the same version so no warning is raised.
+	// When the client is not authenticated, CentralVersionServerInterceptor does not return the header and no warning is raised either.
 	cases := map[string]struct {
 		authenticated bool
 	}{
