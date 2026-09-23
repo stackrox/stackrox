@@ -26,6 +26,7 @@ func TestCIMinimalBundleStruts(t *testing.T) {
 		client.WithMatcherAddress(matcherAddr), client.SkipTLSVerification)
 	require.NoError(t, err)
 
+	// #nosec G101 -- These fields are environment variable names, not credentials.
 	tc := TestCase{TestArgs: TestArgs{
 		Image:    "quay.io/rhacs-eng/qa-multi-arch:struts-app",
 		Username: "QUAY_RHACS_ENG_RO_USERNAME",
