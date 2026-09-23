@@ -325,14 +325,26 @@ def plot_scaling_comparison(base_dir, output_dir):
         'central_cpu_with': [],
         'central_mem_without': [],
         'central_mem_with': [],
+        # Working set (OOM-relevant) and live Go heap, for reasoning about how
+        # much of the memory is real vs. reclaimable (see prometheus-query-file-activity.sh).
+        'central_ws_without': [],
+        'central_ws_with': [],
+        'central_heap_without': [],
+        'central_heap_with': [],
         'centraldb_cpu_without': [],
         'centraldb_cpu_with': [],
         'centraldb_mem_without': [],
         'centraldb_mem_with': [],
+        'centraldb_ws_without': [],
+        'centraldb_ws_with': [],
         'sensor_cpu_without': [],
         'sensor_cpu_with': [],
         'sensor_mem_without': [],
         'sensor_mem_with': [],
+        'sensor_ws_without': [],
+        'sensor_ws_with': [],
+        'sensor_heap_without': [],
+        'sensor_heap_with': [],
         'collector_cpu_without': [],
         'collector_cpu_with': [],
         'collector_mem_without': [],
@@ -365,14 +377,24 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
             metrics['central_mem_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
+            metrics['central_ws_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_central_mem_workingset.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
+            metrics['central_heap_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_central_heap_inuse.txt'), START_OFFSET, END_OFFSET, central_baseline_without))
             metrics['centraldb_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['centraldb_mem_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
+            metrics['centraldb_ws_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem_workingset.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_without))
             metrics['sensor_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
             metrics['sensor_mem_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
+            metrics['sensor_ws_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem_workingset.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
+            metrics['sensor_heap_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_heap_inuse.txt'), START_OFFSET, END_OFFSET, sensor_baseline_without))
             metrics['collector_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_collector_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_without))
             metrics['collector_mem_without'].append(
@@ -395,8 +417,11 @@ def plot_scaling_comparison(base_dir, output_dir):
                 events_rate_without = read_events_rate_from_bundles(without_dir)
             metrics['events_received_without'].append(events_rate_without)
         else:
-            for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
-                       'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
+            for key in ['central_cpu_without', 'central_mem_without',
+                       'central_ws_without', 'central_heap_without', 'centraldb_cpu_without',
+                       'centraldb_mem_without', 'centraldb_ws_without',
+                       'sensor_cpu_without', 'sensor_mem_without',
+                       'sensor_ws_without', 'sensor_heap_without',
                        'collector_cpu_without', 'collector_mem_without',
                        'fact_cpu_without', 'fact_mem_without',
                        'alerts_count_without', 'alerts_size_without',
@@ -417,14 +442,24 @@ def plot_scaling_comparison(base_dir, output_dir):
                 read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
             metrics['central_mem_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
+            metrics['central_ws_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_central_mem_workingset.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
+            metrics['central_heap_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_central_heap_inuse.txt'), START_OFFSET, END_OFFSET, central_baseline_with))
             metrics['centraldb_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['centraldb_mem_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
+            metrics['centraldb_ws_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem_workingset.txt'), START_OFFSET, END_OFFSET, centraldb_baseline_with))
             metrics['sensor_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
             metrics['sensor_mem_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
+            metrics['sensor_ws_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem_workingset.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
+            metrics['sensor_heap_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_heap_inuse.txt'), START_OFFSET, END_OFFSET, sensor_baseline_with))
             metrics['collector_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_collector_cpu.txt'), START_OFFSET, END_OFFSET, collector_baseline_with))
             metrics['collector_mem_with'].append(
@@ -447,8 +482,11 @@ def plot_scaling_comparison(base_dir, output_dir):
                 events_rate_with = read_events_rate_from_bundles(with_dir)
             metrics['events_received_with'].append(events_rate_with)
         else:
-            for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
-                       'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
+            for key in ['central_cpu_with', 'central_mem_with',
+                       'central_ws_with', 'central_heap_with', 'centraldb_cpu_with',
+                       'centraldb_mem_with', 'centraldb_ws_with',
+                       'sensor_cpu_with', 'sensor_mem_with',
+                       'sensor_ws_with', 'sensor_heap_with',
                        'collector_cpu_with', 'collector_mem_with',
                        'fact_cpu_with', 'fact_mem_with',
                        'alerts_count_with', 'alerts_size_with',
@@ -469,6 +507,14 @@ def plot_scaling_comparison(base_dir, output_dir):
          f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
          'Average Memory Usage (GB)',
          _to_gb(metrics['central_mem_without']), _to_gb(metrics['central_mem_with'])),
+        ('central_ws_vs_rate.png',
+         f'Central Working Set Memory vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Working Set (GB)',
+         _to_gb(metrics['central_ws_without']), _to_gb(metrics['central_ws_with'])),
+        ('central_heap_vs_rate.png',
+         f'Central Go Heap In-Use vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Go Heap In-Use (GB)',
+         _to_gb(metrics['central_heap_without']), _to_gb(metrics['central_heap_with'])),
         ('centraldb_cpu_vs_rate.png',
          f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
          'Average CPU Usage (cores)',
@@ -485,6 +531,10 @@ def plot_scaling_comparison(base_dir, output_dir):
          f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
          'Average Memory Usage (GB)',
          _to_gb(metrics['centraldb_mem_without']), _to_gb(metrics['centraldb_mem_with'])),
+        ('centraldb_ws_vs_rate.png',
+         f'Central-DB Working Set Memory vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Working Set (GB)',
+         _to_gb(metrics['centraldb_ws_without']), _to_gb(metrics['centraldb_ws_with'])),
         ('sensor_cpu_vs_rate.png',
          f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
          'Average CPU Usage (cores)',
@@ -493,6 +543,14 @@ def plot_scaling_comparison(base_dir, output_dir):
          f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
          'Average Memory Usage (GB)',
          _to_gb(metrics['sensor_mem_without']), _to_gb(metrics['sensor_mem_with'])),
+        ('sensor_ws_vs_rate.png',
+         f'Sensor Working Set Memory vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Working Set (GB)',
+         _to_gb(metrics['sensor_ws_without']), _to_gb(metrics['sensor_ws_with'])),
+        ('sensor_heap_vs_rate.png',
+         f'Sensor Go Heap In-Use vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})',
+         'Average Go Heap In-Use (GB)',
+         _to_gb(metrics['sensor_heap_without']), _to_gb(metrics['sensor_heap_with'])),
         ('collector_cpu_vs_rate.png',
          f'Collector CPU Usage vs File Activity Event Rate\n(summed across pods, averaged over {TIME_WINDOW_DESC})',
          'Average CPU Usage (cores, all pods)',

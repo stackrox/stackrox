@@ -41,13 +41,25 @@ echo ""
 for container in central central-db sensor collector fact; do
     echo "Plotting ${container} metrics..."
 
-    # Memory usage
+    # Memory usage (container_memory_usage_bytes: cgroup total, incl. reclaimable)
     $python_bin plot-file-activity.py \
         "${without_policy_dir}/metrics_${container}_mem.txt" "Without Policy" \
         "${with_policy_dir}/metrics_${container}_mem.txt" "With Policy" \
         "${container} Memory Usage" "Memory (bytes)" \
         "${without_policy_dir}" "${with_policy_dir}" "${container}" \
         "${output_dir}/${container}_mem_usage.png"
+
+    # Working set memory (usage minus reclaimable cache; the OOM-relevant number).
+    # Only produced for runs scraped after this series was added; skip otherwise.
+    if [[ -f "${without_policy_dir}/metrics_${container}_mem_workingset.txt" || \
+          -f "${with_policy_dir}/metrics_${container}_mem_workingset.txt" ]]; then
+        $python_bin plot-file-activity.py \
+            "${without_policy_dir}/metrics_${container}_mem_workingset.txt" "Without Policy" \
+            "${with_policy_dir}/metrics_${container}_mem_workingset.txt" "With Policy" \
+            "${container} Working Set Memory" "Memory (bytes)" \
+            "${without_policy_dir}" "${with_policy_dir}" "${container}" \
+            "${output_dir}/${container}_mem_workingset.png"
+    fi
 
     # CPU usage
     $python_bin plot-file-activity.py \
@@ -56,6 +68,22 @@ for container in central central-db sensor collector fact; do
         "${container} CPU Usage" "CPU Cores" \
         "${without_policy_dir}" "${with_policy_dir}" "${container}" \
         "${output_dir}/${container}_cpu_usage.png"
+done
+
+# Live Go heap (go_memstats_heap_inuse_bytes), the clearest "real, actively used"
+# memory number. Only the Go services export it (central, sensor); skip when the
+# series is absent (older runs / non-Go components).
+for container in central sensor; do
+    if [[ -f "${without_policy_dir}/metrics_${container}_heap_inuse.txt" || \
+          -f "${with_policy_dir}/metrics_${container}_heap_inuse.txt" ]]; then
+        echo "Plotting ${container} Go heap..."
+        $python_bin plot-file-activity.py \
+            "${without_policy_dir}/metrics_${container}_heap_inuse.txt" "Without Policy" \
+            "${with_policy_dir}/metrics_${container}_heap_inuse.txt" "With Policy" \
+            "${container} Go Heap In-Use" "Memory (bytes)" \
+            "${without_policy_dir}" "${with_policy_dir}" "${container}" \
+            "${output_dir}/${container}_heap_inuse.png"
+    fi
 done
 
 # Database table sizes (only alerts and deployments are relevant for file activity)

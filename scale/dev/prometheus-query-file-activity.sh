@@ -75,14 +75,26 @@ get_time_series_for_metric() {
 
 output_file_prefix=$1
 
-# CPU and memory metrics for Central, Central-DB, and Sensor
+# CPU and memory metrics for Central, Central-DB, and Sensor.
+# Two memory series per container:
+#  - _mem.txt          = container_memory_usage_bytes: cgroup total charge. This
+#                        includes reclaimable page cache and memory the Go runtime
+#                        has freed but not yet returned to the OS, so it overstates
+#                        "real" pressure.
+#  - _mem_workingset   = container_memory_working_set_bytes (usage minus reclaimable
+#                        inactive file cache). This is what Kubernetes uses for
+#                        OOM/limit decisions, i.e. the memory that actually can't be
+#                        reclaimed under pressure.
 for container in central central-db; do
   cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m])'
   mem_metric='container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
+  ws_metric='container_memory_working_set_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
   cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
   mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
+  ws_result="$(get_time_series_for_metric "$ws_metric" "$from" "$to")"
   echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
   echo "$mem_result" > "${output_file_prefix}_${container}_mem.txt"
+  echo "$ws_result" > "${output_file_prefix}_${container}_mem_workingset.txt"
   echo "cpu_result= $cpu_result"
   echo "mem_result= $mem_result"
 done
@@ -90,10 +102,13 @@ done
 container=sensor
 cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m])'
 mem_metric='container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
+ws_metric='container_memory_working_set_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
 cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
 mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
+ws_result="$(get_time_series_for_metric "$ws_metric" "$from" "$to")"
 echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
 echo "$mem_result" > "${output_file_prefix}_${container}_mem.txt"
+echo "$ws_result" > "${output_file_prefix}_${container}_mem_workingset.txt"
 
 # Collector runs as a DaemonSet (one pod per node) with multiple containers:
 # collector, compliance, node-inventory, and fact (the file-activity monitor).
@@ -107,8 +122,10 @@ if kubectl -n stackrox get daemonset collector > /dev/null 2>&1; then
   for container in $collector_containers; do
     cpu_metric='sum(rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m]))'
     mem_metric='sum(container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"})'
+    ws_metric='sum(container_memory_working_set_bytes{namespace=\"stackrox\", container=\"'$container'\"})'
     cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
     mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
+    ws_result="$(get_time_series_for_metric "$ws_metric" "$from" "$to")"
     # Only save a file when the query actually returned data points.
     if [[ -n "${cpu_result//[[:space:]]/}" ]]; then
       echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
@@ -116,10 +133,29 @@ if kubectl -n stackrox get daemonset collector > /dev/null 2>&1; then
     if [[ -n "${mem_result//[[:space:]]/}" ]]; then
       echo "$mem_result" > "${output_file_prefix}_${container}_mem.txt"
     fi
+    if [[ -n "${ws_result//[[:space:]]/}" ]]; then
+      echo "$ws_result" > "${output_file_prefix}_${container}_mem_workingset.txt"
+    fi
   done
 else
   echo "Collector DaemonSet not found in namespace stackrox; skipping collector metrics."
 fi
+
+# Live Go heap (go_memstats_heap_inuse_bytes) for the Go components. This is
+# memory actively held by the Go runtime's heap -- the clearest "real, actively
+# used" number, in contrast to container_memory_usage_bytes (cgroup total, which
+# also counts reclaimable page cache and freed-but-not-returned pages). Only the
+# Go services export it: central-db (Postgres) and collector (C++) do not. These
+# come from the app /metrics endpoint (same scrape as rox_central_*/rox_sensor_*),
+# labeled by pod, so select by pod-name prefix. Guarded write: skip if absent.
+declare -A heap_pod_regex=( [central]='central-.*' [sensor]='sensor-.*' )
+for container in central sensor; do
+  heap_metric='go_memstats_heap_inuse_bytes{namespace=\"stackrox\",pod=~\"'${heap_pod_regex[$container]}'\"}'
+  heap_result="$(get_time_series_for_metric "$heap_metric" "$from" "$to")" || true
+  if [[ -n "${heap_result//[[:space:]]/}" ]]; then
+    echo "$heap_result" > "${output_file_prefix}_${container}_heap_inuse.txt"
+  fi
+done
 
 # Database table sizes - focus on tables relevant to file activity testing
 # File activity events may trigger alerts, so monitor alerts table
