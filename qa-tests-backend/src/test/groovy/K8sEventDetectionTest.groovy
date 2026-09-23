@@ -88,26 +88,14 @@ class K8sEventDetectionTest extends BaseSpecification {
 
     def runExec(List<Deployment> deployments) {
         for (def deployment: deployments) {
-            // EKS API servers intermittently refuse the exec websocket upgrade
-            // ("Exec WebSocket upgrade did not complete" within ~200ms). A refused
-            // upgrade never delivered the command, and this command is read-only,
-            // so retrying the stimulus is safe. The exact violation-count
-            // assertions below would still fail loudly if a failed attempt ever
-            // produced a phantom audit event.
-            withRetry(3, 5) {
-                assert orchestrator.execInContainer(deployment, "ls -l")
-            }
+            assert orchestrator.execInContainer(deployment, "ls -l")
         }
         return true
     }
 
     def runAttach(List<Deployment> deployments) {
         for (def deployment: deployments) {
-            // Same transient websocket-upgrade flake as runExec; attach sends no
-            // command at all, so a retry is unconditionally safe.
-            withRetry(3, 5) {
-                assert orchestrator.attachToContainer(deployment)
-            }
+            assert orchestrator.attachToContainer(deployment)
         }
         return true
     }
