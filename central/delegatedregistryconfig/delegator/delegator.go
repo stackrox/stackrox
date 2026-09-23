@@ -50,7 +50,8 @@ type delegatorImpl struct {
 	// namespaceSACHelper for confirming namespace exists and user has access.
 	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
 
-	// clusterDataStore for resolving cluster names in user-facing messages.
+	// clusterDataStore for resolving cluster names in user-facing messages within
+	// the requester's scope.
 	clusterDataStore clusterDS.DataStore
 
 	// connManager for sending scan requests to secured clusters and ensuring
@@ -84,7 +85,7 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 		return "", true, delegatedregistry.ErrNoClusterSpecified
 	}
 
-	if err := d.ValidateCluster(clusterID); err != nil {
+	if err := d.ValidateCluster(ctx, clusterID); err != nil {
 		return "", true, err
 	}
 
@@ -269,26 +270,27 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 }
 
 // ValidateCluster returns nil if a cluster is a valid target for delegation, otherwise returns an error.
-func (d *delegatorImpl) ValidateCluster(clusterID string) error {
+func (d *delegatorImpl) ValidateCluster(ctx context.Context, clusterID string) error {
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
-		return errors.Errorf("no connection to cluster %q, verify the cluster is healthy and connected", d.clusterName(clusterID))
+		return errors.Errorf("no connection to cluster %q, verify the cluster is healthy and connected", d.clusterName(ctx, clusterID))
 	}
 
 	if !deleConnection.ValidForDelegation(conn) {
-		return errors.Errorf("cluster %q does not support delegated scanning", d.clusterName(clusterID))
+		return errors.Errorf("cluster %q does not support delegated scanning", d.clusterName(ctx, clusterID))
 	}
 
 	return nil
 }
 
 // clusterName resolves a human-readable cluster name for user-facing messages,
-// falling back to the cluster ID when the name cannot be determined.
-func (d *delegatorImpl) clusterName(clusterID string) string {
-	// Delegation targets are admin-configured, so resolving the name for an error
-	// message must not depend on the requesting user's scope. The cluster ID is
-	// already surfaced to the caller today, so its name is not more sensitive.
-	name, exists, err := d.clusterDataStore.GetClusterName(withClusterRead(context.Background()), clusterID)
+// falling back to the cluster ID when the name cannot be resolved within the
+// requester's scope.
+func (d *delegatorImpl) clusterName(ctx context.Context, clusterID string) string {
+	// GetClusterName enforces a cluster-read SAC check against the passed context, so
+	// resolving under the requester's own (non-elevated) context reveals the name only
+	// to callers allowed to view this cluster. Everyone else keeps the opaque ID.
+	name, exists, err := d.clusterDataStore.GetClusterName(ctx, clusterID)
 	if err != nil || !exists {
 		return clusterID
 	}
@@ -307,15 +309,4 @@ func withAdminRead(ctx context.Context) context.Context {
 	)
 
 	return elevatedCtx
-}
-
-// withClusterRead elevates a context to include cluster read access.
-func withClusterRead(ctx context.Context) context.Context {
-	return sac.WithGlobalAccessScopeChecker(
-		ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster),
-		),
-	)
 }
