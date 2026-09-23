@@ -27,3 +27,18 @@ tests:
   expect: |
     .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "64Gi")
     .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.memory == "64Gi")
+- name: "CI policy applies after defaults to every container"
+  values:
+    customize:
+      annotations:
+        ci.stackrox.io/resource-policy: requests
+    centralWorker:
+      enabled: true
+  expect: |
+    .deployments[] | .spec.template.spec | (.containers[], .initContainers[]?) | assertThat(.resources.requests.memory == .resources.limits.memory)
+    .deployments[] | .spec.template.spec | (.containers[], .initContainers[]?) | assertThat(.resources.requests.cpu != null and (.resources.limits | has("cpu") | not))
+    .deployments.central.spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.limits.memory == "1Gi")
+    .deployments["central-db"].spec.template.spec.containers[] | select(.name == "cert-watcher") | assertThat(.resources.limits.memory == "16Mi")
+- name: "production limits are unchanged without CI policy"
+  expect: |
+    .deployments.central.spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "4Gi" and .resources.limits.memory == "8Gi" and .resources.limits.cpu == "4000m")

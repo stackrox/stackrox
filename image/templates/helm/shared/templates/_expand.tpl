@@ -92,5 +92,8 @@
         {{- /* render non-string, non-nil values as YAML */ -}}
         {{- $result = toYaml $spec -}}
     {{- end -}}
+    {{- if and $result (eq (index ($._rox.customize.annotations | default dict) "ci.stackrox.io/resource-policy" | default "") "requests") (or (hasSuffix "resources" $context) (hasSuffix "Resources" $context)) -}}
+        {{- $result = include "srox.ciResources" (list $ (fromYaml $result) $context) -}}
+    {{- end -}}
     {{- $result -}}
 {{- end -}}

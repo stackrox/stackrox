@@ -92,6 +92,16 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# Apply the shared profile and operator overlays before roxie waits for readiness.
+configure_ci_roxie_resources() {
+    local config_file="$1"
+    merge_yaml "$config_file" < "$TEST_ROOT/tests/e2e/yaml/roxie-ci-resources.yaml"
+    local resource_config; resource_config="$(mktemp)"
+    "$TEST_ROOT/deploy/common/ci-resource-policy.sh" --operator < "$config_file" > "$resource_config"
+    cat "$resource_config" > "$config_file"
+    rm -f "$resource_config"
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
@@ -128,6 +138,8 @@ deploy_stackrox_with_roxie() {
     prepare_for_konflux "$config_file"
 
     workaround_label_length_limitation "$config_file"
+
+    configure_ci_roxie_resources "$config_file"
 
     # Print out the config file in use for transparency.
     # This does not contain secrets.
@@ -365,6 +377,8 @@ EOF
 
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD
+
+    configure_ci_roxie_resources "$config_file"
 
     "$roxie" --verbose deploy \
         --single-namespace \
@@ -670,7 +684,7 @@ deploy_central_via_operator() {
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
       scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
-      < "${CENTRAL_YAML_PATH}" | retrying_kubectl apply -n "${central_namespace}" -f -
+      < "${CENTRAL_YAML_PATH}" | "$TEST_ROOT/deploy/common/ci-resource-policy.sh" --operator | retrying_kubectl apply -n "${central_namespace}" -f -
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
 }
@@ -785,7 +799,7 @@ deploy_sensor_via_operator() {
       customize_envVars="$customize_envVars" \
       scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
-      < "${secured_cluster_yaml_path}" | retrying_kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
+      < "${secured_cluster_yaml_path}" | "$TEST_ROOT/deploy/common/ci-resource-policy.sh" --operator | retrying_kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300

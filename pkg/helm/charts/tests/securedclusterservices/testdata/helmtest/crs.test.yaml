@@ -46,6 +46,13 @@ tests:
       - name: "Validating webhooks contain CA"
         expect: |
           .validatingwebhookconfigurations[].webhooks[].clientConfig.caBundle | assertThat(. != null)
+      - name: "CI policy covers the CRS init container"
+        values:
+          customize:
+            annotations:
+              ci.stackrox.io/resource-policy: requests
+        expect: |
+          .deployments.sensor.spec.template.spec.initContainers[] | select(.name == "crs") | assertThat(.resources.requests.memory == "200Mi" and .resources.limits.memory == "200Mi" and .resources.requests.cpu == "400m" and (.resources.limits | has("cpu") | not))
       - name: "and with init bundle causes rendering error"
         set:
           ca.cert: "certificate coming from an init bundle"

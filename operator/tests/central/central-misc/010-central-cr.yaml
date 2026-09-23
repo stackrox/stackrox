@@ -4,25 +4,84 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  overlays:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: central
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:central].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: central-worker
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:central-worker].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: config-controller
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:manager].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: central-db
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:central-db].resources.limits.cpu
+    - path: spec.template.spec.initContainers[name:init-db].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-matcher
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:matcher].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-indexer
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:indexer].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-db
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:db].resources.limits.cpu
+    - path: spec.template.spec.initContainers[name:init-db].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:scanner].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-db
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:db].resources.limits.cpu
+    - path: spec.template.spec.initContainers[name:init-db].resources.limits.cpu
+  customize:
+    annotations:
+      ci.stackrox.io/resource-policy: requests
   imagePullSecrets:
   - name: e2e-test-pull-secret
-  # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
+  # CI memory limits match requests; the policy removes CPU limits.
   central:
     resources:
       requests:
         memory: 1Gi
         cpu: 500m
       limits:
-        memory: 4Gi
-        cpu: 1
+        memory: 1Gi
     db:
       resources:
         requests:
           memory: 1Gi
           cpu: 500m
         limits:
-          memory: 4Gi
-          cpu: 1
+          memory: 1Gi
     telemetry:
       enabled: false
   scannerV4:
@@ -36,8 +95,7 @@ spec:
           cpu: "400m"
           memory: "1500Mi"
         limits:
-          cpu: "1000m"
-          memory: "2Gi"
+          memory: "1500Mi"
     matcher:
       scaling:
         autoScaling: Disabled
@@ -48,13 +106,11 @@ spec:
           cpu: "400m"
           memory: "2Gi"
         limits:
-          cpu: "1000m"
-          memory: "5500Mi"
+          memory: "2Gi"
     db:
       resources:
         requests:
           cpu: "400m"
           memory: "2Gi"
         limits:
-          cpu: "1000m"
-          memory: "2500Mi"
+          memory: "2Gi"

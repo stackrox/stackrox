@@ -59,12 +59,7 @@ spec:
         command:
         - kubernetes-sensor
         resources:
-          requests:
-            memory: "200Mi"
-            cpu: "400m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
+          {{- include "srox.ciResources" (list . (dict "requests" (dict "cpu" "400m" "memory" "200Mi") "limits" (dict "cpu" "1000m" "memory" "1Gi")) "crs.resources") | nindent 10 }}
         args:
         - ensure-service-certificates
         securityContext:

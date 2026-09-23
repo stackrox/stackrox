@@ -30,12 +30,7 @@
   - name: disk
     mountPath: /var/lib/postgresql/data
   resources:
-    requests:
-      cpu: 10m
-      memory: 16Mi
-    limits:
-      cpu: 250m
-      memory: 32Mi
+    {{- include "srox.ciResources" (list $ (dict "requests" (dict "cpu" "10m" "memory" "16Mi") "limits" (dict "cpu" "250m" "memory" "32Mi")) "cert-watcher.resources") | nindent 4 }}
   securityContext:
     allowPrivilegeEscalation: false
     runAsUser: 70

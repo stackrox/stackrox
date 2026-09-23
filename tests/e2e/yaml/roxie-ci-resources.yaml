@@ -1,0 +1,148 @@
+central:
+  spec:
+    central:
+      resources:
+        requests:
+          cpu: 1500m
+          memory: 1Gi
+        limits:
+          memory: 1Gi
+      db:
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 1
+            memory: 1Gi
+    scannerV4:
+      matcher:
+        resources:
+          requests:
+            cpu: 400m
+            memory: 1500Mi
+          limits:
+            memory: 1500Mi
+      indexer:
+        resources:
+          requests:
+            cpu: 400m
+            memory: 512Mi
+          limits:
+            memory: 512Mi
+      db:
+        resources:
+          requests:
+            cpu: 500m
+            memory: 4Gi
+          limits:
+            memory: 4Gi
+    customize:
+      annotations:
+        ci.stackrox.io/resource-policy: requests
+    scanner:
+      analyzer:
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 1500Mi
+          limits:
+            memory: 1500Mi
+      db:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 512Mi
+    centralWorker:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          memory: 1Gi
+    configAsCode:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 64Mi
+securedCluster:
+  spec:
+    sensor:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 500Mi
+        limits:
+          memory: 500Mi
+    admissionControl:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 100Mi
+        limits:
+          memory: 100Mi
+    perNode:
+      collector:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 320Mi
+          limits:
+            memory: 320Mi
+      compliance:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+          limits:
+            memory: 10Mi
+      nodeInventory:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+          limits:
+            memory: 10Mi
+      fileActivityMonitoring:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 320Mi
+          limits:
+            memory: 320Mi
+    customize:
+      annotations:
+        ci.stackrox.io/resource-policy: requests
+    scannerV4:
+      indexer:
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 1500Mi
+          limits:
+            memory: 1500Mi
+      db:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 2Gi
+          limits:
+            memory: 2Gi
+    scanner:
+      analyzer:
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 1500Mi
+          limits:
+            memory: 1500Mi
+      db:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 512Mi

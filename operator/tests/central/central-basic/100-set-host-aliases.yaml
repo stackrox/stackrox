@@ -10,6 +10,9 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  customize:
+    annotations:
+      ci.stackrox.io/resource-policy: requests
   central:
     hostAliases:
       - ip: "127.0.0.1"
@@ -30,8 +33,7 @@ spec:
           cpu: 400m
           memory: 1Gi
         limits:
-          cpu: 1
-          memory: 2Gi
+          memory: 1Gi
     matcher:
       hostAliases:
         - ip: "127.0.0.1"
@@ -44,8 +46,7 @@ spec:
           cpu: 400m
           memory: 1Gi
         limits:
-          cpu: 1
-          memory: 5Gi
+          memory: 1Gi
     db:
       hostAliases:
         - ip: "127.0.0.1"
@@ -55,5 +56,4 @@ spec:
           cpu: 300m
           memory: 500Mi
         limits:
-          cpu: 1000m
-          memory: 1Gi
+          memory: 500Mi

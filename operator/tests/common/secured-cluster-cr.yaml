@@ -3,6 +3,55 @@ kind: SecuredCluster
 metadata:
   name: stackrox-secured-cluster-services
 spec:
+  overlays:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: sensor
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:sensor].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: admission-control
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:admission-control].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: DaemonSet
+    name: collector
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:collector].resources.limits.cpu
+    - path: spec.template.spec.containers[name:compliance].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-indexer
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:indexer].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-db
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:db].resources.limits.cpu
+    - path: spec.template.spec.initContainers[name:init-db].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:scanner].resources.limits.cpu
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-db
+    optional: true
+    patches:
+    - path: spec.template.spec.containers[name:db].resources.limits.cpu
+    - path: spec.template.spec.initContainers[name:init-db].resources.limits.cpu
+  customize:
+    annotations:
+      ci.stackrox.io/resource-policy: requests
   clusterName: testing-cluster
   imagePullSecrets:
   - name: e2e-test-pull-secret
@@ -11,24 +60,34 @@ spec:
       requests:
         memory: 100Mi
         cpu: 100m
+      limits:
+        memory: 100Mi
   sensor:
     resources:
       requests:
         memory: 100Mi
         cpu: 100m
+      limits:
+        memory: 100Mi
   perNode:
     collector:
       resources:
         requests:
           memory: 100Mi
           cpu: 100m
+        limits:
+          memory: 100Mi
     compliance:
       resources:
         requests:
           memory: 100Mi
           cpu: 100m
+        limits:
+          memory: 100Mi
     nodeInventory:
       resources:
         requests:
           memory: 100Mi
           cpu: 100m
+        limits:
+          memory: 100Mi

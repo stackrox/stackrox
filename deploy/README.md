@@ -295,3 +295,33 @@ Most environment variables can be found in [common/env.sh](common/env.sh).
 | `ROX_INIT_BUNDLE_PATH`               | `string`              | Sets a custom init-bundle file path for Sensor.                                                                                                                                                                                                                            |
 | `ROX_CENTRAL_EXTRA_HELM_VALUES_FILE` | `string`              | Adds a custom value file path to the Central Helm chart.                                                                                                                                                                                                                   |
 | `ROX_SENSOR_EXTRA_HELM_VALUES_FILE`  | `string`              | Adds a custom value file path to the Sensor Helm chart.                                                                                                                                                                                                                    |
+
+### CI resource policy
+
+CI caps each component's memory at its existing memory request and removes CPU
+limits while retaining CPU requests. Central uses a 1Gi memory request and limit.
+Memory requests remain explicit so chart defaulting and upgrades cannot restore
+larger requests. These settings are for functional CI; they are not measured
+production sizing recommendations.
+
+The shared Central and secured-cluster profiles are `common/ci-values.yaml` and
+`common/ci-secured-cluster-values.yaml`. Operator test CRs and the roxie profile in
+`tests/e2e/yaml/roxie-ci-resources.yaml` opt in with
+`spec.customize.annotations["ci.stackrox.io/resource-policy"]: requests`.
+For Helm values, the annotation is under `customize.annotations`. Current charts
+apply the policy after resource defaulting, including database init containers,
+cert-watcher sidecars and Sensor's CRS init container. Unmarked deployments keep
+the product defaults.
+
+`common/ci-resource-policy.sh` provides the same policy for generated manifests
+and as a Helm post-renderer, including older charts and the monitoring stack.
+Its `--operator` mode adds CPU-removal overlays for older operator charts; keep
+using those overlays on upgrades because omitting a value can restore a default.
+Historical charts do not understand the annotation, so their memory values must
+be explicitly overridden in the test CR/profile. Historical hard-coded sidecars
+are not covered by the primary-container CPU overlays.
+
+The reduced limits need runtime validation across startup/import, tests and
+upgrades. In particular, the existing Collector compliance and node-inventory
+requests can be only 10Mi. Do not reduce node counts until these limits have
+passed representative CI runs without OOM kills or regressions.

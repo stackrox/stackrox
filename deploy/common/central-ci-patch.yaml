@@ -2,11 +2,11 @@ spec:
   template:
     spec:
       containers:
-      - name: matcher
+      - name: central
         resources:
           requests:
-            cpu: 400m
-            memory: 6Gi
+            cpu: 1500m
+            memory: 1Gi
           limits:
             cpu: null
-            memory: 6Gi
+            memory: 1Gi

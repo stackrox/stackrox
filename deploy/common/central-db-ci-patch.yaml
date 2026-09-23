@@ -5,17 +5,17 @@ spec:
       - name: init-db
         resources:
           requests:
-            cpu: 500m
-            memory: 4Gi
+            cpu: '1'
+            memory: 1Gi
           limits:
             cpu: null
-            memory: 4Gi
+            memory: 1Gi
       containers:
-      - name: db
+      - name: central-db
         resources:
           requests:
-            cpu: 500m
-            memory: 4Gi
+            cpu: '1'
+            memory: 1Gi
           limits:
             cpu: null
-            memory: 4Gi
+            memory: 1Gi

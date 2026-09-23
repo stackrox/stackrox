@@ -5,6 +5,11 @@ metadata:
 spec:
   # Match the values set by deploy/ scripts.
   central:
+    resources:
+      requests:
+        memory: 1Gi
+      limits:
+        memory: 1Gi
     adminPasswordSecret:
       name: central-admin-pass
     defaultTLSSecret:
@@ -26,8 +31,7 @@ spec:
           claimName: central-db
       resources:
         limits:
-          cpu: 8
-          memory: 16Gi
+          memory: 1Gi
         requests:
           cpu: 1
           memory: 1Gi
@@ -37,6 +41,8 @@ ${disableSpecTLS}    - name: additional-ca
 ${disableSpecTLS}      content: |
 $centralAdditionalCAIndented
   customize:
+    annotations:
+      ci.stackrox.io/resource-policy: requests
     envVars:$customize_envVars
   scanner:
     analyzer:

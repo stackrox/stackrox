@@ -1,11 +1,17 @@
-# Change resource overrides for the stackrox-central-services Helm chart in CI.
+# CI resource overrides. The resource-policy annotation removes CPU limits
+# after chart defaulting and keeps memory limits equal to requests.
 
 central:
+  resources:
+    requests:
+      cpu: 1500m
+      memory: 1Gi
+    limits:
+      memory: 1Gi
   db:
     resources:
       limits:
-        cpu: 8
-        memory: 16Gi
+        memory: 1Gi
       requests:
         cpu: 1
         memory: 1Gi
@@ -23,7 +29,7 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
-    # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
+    # Preserve the existing cold-import memory reservation.
     resources:
       requests:
         cpu: "400m"
@@ -37,7 +43,33 @@ scannerV4:
     resources:
       requests:
         cpu: "400m"
+        memory: "512Mi"
+      limits:
+        memory: "512Mi"
   db:
     resources:
       requests:
         cpu: "500m"
+        memory: "4Gi"
+      limits:
+        memory: "4Gi"
+
+centralWorker:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 1Gi
+
+configController:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 64Mi
+
+customize:
+  annotations:
+    ci.stackrox.io/resource-policy: requests

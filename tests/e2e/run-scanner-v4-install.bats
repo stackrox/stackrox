@@ -575,7 +575,7 @@ EOT
     _begin "disabling-central-scanner-v4"
     info "Disabling Scanner V4 for central-services"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
-        --reuse-values --set scannerV4.disable=true
+        --reuse-values --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" --set scannerV4.disable=true
 
     ######################
     _begin "disabling-sensor-scanners"
@@ -663,7 +663,7 @@ EOT
     _begin "disabling-central-scanner-v4"
     info "Disabling Scanner V4 for central-services"
     deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
-        --reuse-values --set scannerV4.disable=true
+        --reuse-values --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" --set scannerV4.disable=true
 
     ######################
     _begin "disabling-sensor-scanners"
@@ -707,8 +707,8 @@ EOT
     verify_deployment_scannerV4_env_var_set "$sensor_namespace" "sensor"
 
     # Deactivate Scanner V4 for both releases.
-    helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" --set scannerV4.disable=true
+    helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" --set scannerV4.disable=true
 
     verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
@@ -747,6 +747,7 @@ EOT
     if [[ -x "${scanner_bundle}/scanner-v4/scripts/setup.sh" ]]; then
         "${scanner_bundle}/scanner-v4/scripts/setup.sh"
     fi
+    "$ROOT/deploy/common/ci-resource-policy.sh" --directory "${scanner_bundle}/scanner-v4"
     "${ORCH_CMD}" </dev/null apply -R -f "${scanner_bundle}/scanner-v4"
 
     verify_scannerV4_deployed
@@ -1233,10 +1234,9 @@ central:
   resources:
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 1Gi
     limits:
-      cpu: 2000m
-      memory: 4Gi
+      memory: 1Gi
   telemetry:
     enabled: false
   exposure:
@@ -1248,8 +1248,7 @@ central:
         cpu: 500m
         memory: 1Gi
       limits:
-        cpu: 2000m
-        memory: 4Gi
+        memory: 1Gi
 
 scanner:
   resources:
@@ -1257,15 +1256,13 @@ scanner:
       cpu: "500m"
       memory: "500Mi"
     limits:
-      cpu: "2000m"
-      memory: "2500Mi"
+      memory: "500Mi"
   dbResources:
     requests:
       cpu: "400m"
       memory: "512Mi"
     limits:
-      cpu: "2000m"
-      memory: "4Gi"
+      memory: "512Mi"
   replicas: 1
   autoscaling:
     disable: true
@@ -1298,6 +1295,7 @@ EOT
     echo "  | $*"
 
     helm -n "${central_namespace}" "${command[@]}" \
+        --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" \
         -f <(echo "$image_overwrites") \
         -f <(echo "$base_helm_values") \
         "$@" \
@@ -1398,15 +1396,13 @@ scanner:
       cpu: "500m"
       memory: "500Mi"
     limits:
-      cpu: "2000m"
-      memory: "2500Mi"
+      memory: "500Mi"
   dbResources:
     requests:
       cpu: "400m"
       memory: "512Mi"
     limits:
-      cpu: "2000m"
-      memory: "4Gi"
+      memory: "512Mi"
   replicas: 1
   autoscaling:
     disable: true
@@ -1458,6 +1454,7 @@ EOT
     echo "  | $*"
 
     helm -n "${sensor_namespace}" "${command[@]}" \
+        --post-renderer "$ROOT/deploy/common/ci-resource-policy.sh" \
         -f <(echo "$image_overwrites") \
         -f <(echo "$base_helm_values") \
         -f <(echo "$init_artifact") \

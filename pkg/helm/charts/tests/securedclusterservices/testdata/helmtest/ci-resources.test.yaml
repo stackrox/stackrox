@@ -1,0 +1,18 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    disable: false
+tests:
+- name: "CI policy covers secured cluster containers and database initialization"
+  values:
+    customize:
+      annotations:
+        ci.stackrox.io/resource-policy: requests
+  expect: |
+    (.deployments[], .daemonsets[]) | .spec.template.spec | (.containers[], .initContainers[]?) | assertThat(.resources.requests.memory == .resources.limits.memory)
+    (.deployments[], .daemonsets[]) | .spec.template.spec | (.containers[], .initContainers[]?) | assertThat(.resources.requests.cpu != null and (.resources.limits | has("cpu") | not))
+    .daemonsets.collector.spec.template.spec.containers[] | select(.name == "compliance") | assertThat(.resources.limits.memory == "10Mi")
+- name: "production sensor limits are unchanged"
+  expect: |
+    .deployments.sensor.spec.template.spec.containers[] | select(.name == "sensor") | assertThat(.resources.requests.memory == "4Gi" and .resources.limits.memory == "8Gi" and .resources.limits.cpu == "4")

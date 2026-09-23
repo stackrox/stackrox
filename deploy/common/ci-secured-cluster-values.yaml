@@ -1,0 +1,59 @@
+# CI requests also serve as memory limits; the policy removes CPU limits.
+sensor:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 500Mi
+    limits:
+      memory: 500Mi
+admissionControl:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      memory: 100Mi
+collector:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 320Mi
+    limits:
+      memory: 320Mi
+  complianceResources:
+    requests:
+      cpu: 10m
+      memory: 10Mi
+    limits:
+      memory: 10Mi
+  nodeScanningResources:
+    requests:
+      cpu: 10m
+      memory: 10Mi
+    limits:
+      memory: 10Mi
+  famResources:
+    requests:
+      cpu: 50m
+      memory: 320Mi
+    limits:
+      memory: 320Mi
+scannerV4:
+  indexer:
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1500Mi
+      limits:
+        memory: 1500Mi
+  db:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 2Gi
+      limits:
+        memory: 2Gi
+
+customize:
+  annotations:
+    ci.stackrox.io/resource-policy: requests

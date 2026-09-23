@@ -8,6 +8,12 @@ function realpath {
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
+# Normalize generated manifests before Kubernetes admission, including init containers.
+function apply_ci_resource_policy {
+    [[ -n "${CI:-}" ]] || return 0
+    "${COMMON_DIR}/ci-resource-policy.sh" --directory "$1"
+}
+
 function launch_service {
     local dir="$1"
     local service="$2"
@@ -44,6 +50,7 @@ function launch_service {
         done
     else
         echo "Deploying $service using manifests..."
+        apply_ci_resource_policy "$dir/$service"
         ${ORCH_CMD} apply -R -f "$dir/$service"
     fi
 }
@@ -326,6 +333,10 @@ function launch_central {
           helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi
 
+        if [[ -n "${CI:-}" ]]; then
+          helm_args+=(--post-renderer "${COMMON_DIR}/ci-resource-policy.sh")
+        fi
+
         helm dependency update "${COMMON_DIR}/../charts/monitoring"
         envsubst < "${COMMON_DIR}/../charts/monitoring/values.yaml" > "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
         helm upgrade -n "${central_namespace}" --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
@@ -508,7 +519,8 @@ function launch_central {
       # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above because Helm will prioritize the last (right-most) file specified.
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
-      elif [[ -n "$CI" ]]; then
+      fi
+      if [[ -n "$CI" ]]; then
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
@@ -521,6 +533,10 @@ function launch_central {
         helm_args+=(
           -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
         )
+      fi
+
+      if [[ -n "${CI:-}" ]]; then
+        helm_args+=(--post-renderer "${COMMON_DIR}/ci-resource-policy.sh")
       fi
 
       helm upgrade --install -n "${central_namespace}" stackrox-central-services "${helm_chart}" \
@@ -556,7 +572,10 @@ function launch_central {
       launch_service "${unzip_dir}" central
       echo
 
-      if [[ "${is_local_dev}" == "true" ]]; then
+      if [[ -n "${CI}" ]]; then
+        ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-ci-patch.yaml")"
+        ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-ci-patch.yaml")"
+      elif [[ "${is_local_dev}" == "true" ]]; then
         ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-local-patch.yaml")"
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
       else
@@ -966,6 +985,10 @@ function launch_sensor {
         )
       fi
 
+      if [[ -n "${CI:-}" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/ci-secured-cluster-values.yaml")
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -1004,6 +1027,10 @@ function launch_sensor {
 
       if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
         extra_helm_config+=(--set "processIndicators.excludeNamespaceFilter=namespace-without-persistence")
+      fi
+
+      if [[ -n "${CI:-}" ]]; then
+        helm_args+=(--post-renderer "${COMMON_DIR}/ci-resource-policy.sh")
       fi
 
       echo "Deploying sensor using Helm..."
@@ -1075,6 +1102,7 @@ function launch_sensor {
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
       fi
 
+      apply_ci_resource_policy "${k8s_dir}/sensor-deploy"
       echo "Deploying sensor using manifests..."
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
@@ -1126,8 +1154,10 @@ function launch_sensor {
         fi
     fi
 
-    # When running CI steps, local installations, or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
-    if [[ -n "${CI}" || "$(local_dev)" == "true" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
+    # CI also caps memory; local development only reduces resource requests.
+    if [[ -n "${CI}" ]]; then
+        ${ORCH_CMD} -n "${sensor_namespace}" patch deploy/sensor --patch "$(cat "${common_dir}/sensor-ci-patch.yaml")"
+    elif [[ "$(local_dev)" == "true" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
         ${ORCH_CMD} -n "${sensor_namespace}" patch deploy/sensor --patch "$(cat "${common_dir}/sensor-local-patch.yaml")"
     fi
 

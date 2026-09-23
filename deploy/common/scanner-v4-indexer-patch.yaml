@@ -5,4 +5,8 @@ spec:
       - name: indexer
         resources:
           requests:
-            cpu: "400m"
+            cpu: 400m
+            memory: 512Mi
+          limits:
+            cpu: null
+            memory: 512Mi

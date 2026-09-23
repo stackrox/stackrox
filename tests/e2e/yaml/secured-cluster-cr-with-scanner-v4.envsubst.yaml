@@ -10,11 +10,15 @@ spec:
       requests:
         memory: "100Mi"
         cpu: "100m"
+      limits:
+        memory: "100Mi"
   sensor:
     resources:
       requests:
         memory: "100Mi"
         cpu: "300m"
+      limits:
+        memory: "100Mi"
   perNode:
     fileActivityMonitoring:
       mode: $fam_mode_setting
@@ -23,16 +27,22 @@ spec:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          memory: "100Mi"
     compliance:
       resources:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          memory: "100Mi"
     nodeInventory:
       resources:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          memory: "100Mi"
   virtualMachines:
     scraper:
       pollInterval: $vm_scraper_poll_interval
@@ -49,16 +59,14 @@ spec:
           memory: 500Mi
           cpu: 500m
         limits:
-          memory: 2500Mi
-          cpu: 1000m
+          memory: 500Mi
     db:
       resources:
         requests:
           cpu: 400m
           memory: 512Mi
         limits:
-          cpu: 1000m
-          memory: 4Gi
+          memory: 512Mi
   scannerV4:
     scannerComponent: AutoSense
     indexer:
@@ -70,8 +78,7 @@ spec:
           cpu: "1000m"
           memory: "1500Mi"
         limits:
-          cpu: "2000m"
-          memory: "2Gi"
+          memory: "1500Mi"
     db:
 $scannerV4DbPersistenceYaml
       resources:
@@ -79,7 +86,8 @@ $scannerV4DbPersistenceYaml
           cpu: "200m"
           memory: "2Gi"
         limits:
-          cpu: "1000m"
-          memory: "2500Mi"
+          memory: "2Gi"
   customize:
+    annotations:
+      ci.stackrox.io/resource-policy: requests
     envVars:$customize_envVars
