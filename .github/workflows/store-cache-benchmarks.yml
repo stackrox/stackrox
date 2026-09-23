@@ -1,0 +1,77 @@
+name: Store cache benchmark comparison
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, labeled, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  compare-store-caches:
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-bench-tests') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ci-bench-tests')
+    # Job-level concurrency prevents unrelated label events from canceling a run.
+    concurrency:
+      group: store-cache-benchmarks-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GOMAXPROCS: '4'
+      CGO_ENABLED: '1'
+      GOEXPERIMENT: cgocheck2
+      POSTGRES_HOST: 127.0.0.1
+      BENCH_OUTPUT_DIR: store-cache-benchmark-results
+    steps:
+    - name: Checkout tested merge
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        ref: ${{ github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Start Postgres
+      run: |
+        PG_VER=$(pg_lsclusters -h | awk '{print $1}')
+        sudo pg_dropcluster --stop "$PG_VER" main
+        sudo mount -t tmpfs -o size=1G tmpfs /var/lib/postgresql
+        sudo pg_createcluster "$PG_VER" main -- --auth=trust
+        sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
+        sudo systemctl start postgresql.service
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done'
+
+    - name: Install benchstat
+      env:
+        GOBIN: ${{ runner.temp }}/benchmark-tools
+      run: |
+        go install golang.org/x/perf/cmd/benchstat@v0.0.0-20260908200009-22c9c6c9d4da
+        echo "$GOBIN" >> "$GITHUB_PATH"
+
+    - name: Compare master and PR on this runner
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        MERGE_SHA: ${{ github.sha }}
+      run: scripts/ci/compare-store-cache-benchmarks.sh "$BASE_SHA" "$MERGE_SHA"
+
+    - name: Publish comparison summary
+      if: always()
+      run: |
+        if [[ -f "$BENCH_OUTPUT_DIR/summary.md" ]]; then
+          cat "$BENCH_OUTPUT_DIR/summary.md" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload benchmark results
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      with:
+        name: store-cache-benchmarks-${{ github.event.pull_request.number }}
+        path: ${{ env.BENCH_OUTPUT_DIR }}
+        if-no-files-found: warn
