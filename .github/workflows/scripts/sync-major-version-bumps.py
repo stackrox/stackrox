@@ -149,11 +149,12 @@ def create_or_update_pr(branch, master_content):
 
 def find_open_pr(head, base):
     result = run(
-        ["gh", "pr", "list", "--head", head, "--base", base,
-         "--state", "open", "--json", "number", "--limit", "1"]
+        ["gh", "api", "repos/{owner}/{repo}/pulls", "--method", "GET",
+         "--raw-field", "state=open", "--raw-field", f"base={base}",
+         "--raw-field", f"head=stackrox:{head}", "--raw-field", "per_page=1"]
     )
     prs = json.loads(result.stdout)
-    return prs[0] if prs else None
+    return {"number": prs[0]["number"]} if prs else None
 
 
 def cleanup_stale_branch(sync_branch):
