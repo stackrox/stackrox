@@ -25,7 +25,7 @@ spec:
             memory: "200Mi"
             cpu: "2"
           limits:
-            memory: "200Mi"
+            memory: "400Mi"
             cpu: "2"
         volumeMounts:
         - name: config
