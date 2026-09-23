@@ -383,7 +383,8 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 	ev := msg.GetEvent()
 	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
 		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
-			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil ||
+			ev.GetAiWorkload() != nil {
 			return false
 		}
 	}

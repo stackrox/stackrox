@@ -109,4 +109,7 @@ const (
 	// VirtualMachineTelemetryCap lets Central distinguish "VM scanning off on
 	// a new Sensor" from "old Sensor that predates VM telemetry fields."
 	VirtualMachineTelemetryCap SensorCapability = "VirtualMachineTelemetry"
+
+	// AIWorkloadsSupported identifies the capability of Central to receive AI workload data from Sensor.
+	AIWorkloadsSupported = "AIWorkloadsSupported"
 )

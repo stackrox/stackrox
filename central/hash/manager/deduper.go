@@ -160,6 +160,10 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	case *central.SensorEvent_VirtualMachine:
 		return false
 
+	// AI Workloads
+	case *central.SensorEvent_AiWorkload:
+		return false
+
 	// Compliance Operator V2
 	case *central.SensorEvent_ComplianceOperatorResultV2,
 		*central.SensorEvent_ComplianceOperatorProfileV2,
