@@ -86,6 +86,28 @@ for container in central sensor; do
     fi
 done
 
+# Restart and OOM counts per component (cumulative counters; the final value is
+# the total). berserker is included so an OOM-killed workload -- which would drag
+# down the observed event rate -- is visible. Series only exist for runs scraped
+# after these were added, and only for components the metric source covers; skip
+# otherwise.
+for container in central central-db sensor collector fact berserker; do
+    for kind in restarts:Restarts ooms:OOM-Kills; do
+        metric="${kind%%:*}"
+        label="${kind##*:}"
+        if [[ -f "${without_policy_dir}/metrics_${container}_${metric}.txt" || \
+              -f "${with_policy_dir}/metrics_${container}_${metric}.txt" ]]; then
+            echo "Plotting ${container} ${label}..."
+            $python_bin plot-file-activity.py \
+                "${without_policy_dir}/metrics_${container}_${metric}.txt" "Without Policy" \
+                "${with_policy_dir}/metrics_${container}_${metric}.txt" "With Policy" \
+                "${container} ${label} (cumulative)" "Count" \
+                "${without_policy_dir}" "${with_policy_dir}" "${container}" \
+                "${output_dir}/${container}_${metric}.png"
+        fi
+    done
+done
+
 # Database table sizes (only alerts and deployments are relevant for file activity)
 # Tables use central-db baseline since they're part of the database
 for table in alerts deployments; do

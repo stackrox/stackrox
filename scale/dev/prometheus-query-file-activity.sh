@@ -157,6 +157,29 @@ for container in central sensor; do
   fi
 done
 
+# Restart and OOM counts per component, including the berserker workload itself
+# (an OOM-killed berserker stops emitting file events, which shows up as a lower
+# observed vs configured event rate). Both are cumulative counters, so the value
+# at the end of the run is the total count.
+#  - restarts: kube_pod_container_status_restarts_total (kube-state-metrics)
+#  - ooms:     container_oom_events_total (cadvisor OOM-kill counter)
+# sum() aggregates across pods for the DaemonSets (collector, fact, berserker)
+# and is a no-op for the single-pod components. Guarded writes: a metric source
+# that isn't scraped in a given cluster just yields no file (OOMs then still
+# surface indirectly as restarts).
+for container in central central-db sensor collector fact berserker; do
+  restarts_metric='sum(kube_pod_container_status_restarts_total{namespace=\"stackrox\",container=\"'$container'\"})'
+  oom_metric='sum(container_oom_events_total{namespace=\"stackrox\",container=\"'$container'\"})'
+  restarts_result="$(get_time_series_for_metric "$restarts_metric" "$from" "$to")" || true
+  oom_result="$(get_time_series_for_metric "$oom_metric" "$from" "$to")" || true
+  if [[ -n "${restarts_result//[[:space:]]/}" ]]; then
+    echo "$restarts_result" > "${output_file_prefix}_${container}_restarts.txt"
+  fi
+  if [[ -n "${oom_result//[[:space:]]/}" ]]; then
+    echo "$oom_result" > "${output_file_prefix}_${container}_ooms.txt"
+  fi
+done
+
 # Database table sizes - focus on tables relevant to file activity testing
 # File activity events may trigger alerts, so monitor alerts table
 # Also monitor deployments as file activity is associated with deployments
