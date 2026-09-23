@@ -100,3 +100,186 @@ EOF
     assert_failure
     assert_output --partial "Unable to read the CI Scanner V4 vulnerability bundle URL"
 }
+
+setup_roxie_deploy_stubs() {
+    export STATE_DEPLOYED="${BATS_TEST_TMPDIR}/deployed"
+    gen_admin_password() { printf 'test-password\n'; }
+    prepare_for_konflux() { :; }
+    workaround_label_length_limitation() { :; }
+    extend_roxie_envrc() { :; }
+    record_build_info() { :; }
+    ci_export() { :; }
+    roxie() {
+        local arg config_file envrc
+        while (($#)); do
+            arg="$1"
+            case "$arg" in
+                --config) config_file="$2"; shift 2 ;;
+                --envrc) envrc="$2"; shift 2 ;;
+                *) shift ;;
+            esac
+        done
+        cp "$config_file" "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+        printf 'export ROX_DUMMY=true\n' > "$envrc"
+    }
+}
+
+@test "Roxie CI entrypoint injects the pinned bundle URL" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_success
+    run yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL") | .value' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+    assert_output "https://example.invalid/ci-minimal.zip"
+    _configure_roxie_ci_vuln_bundle "${BATS_TEST_TMPDIR}/roxie.yaml"
+    _configure_roxie_ci_vuln_bundle "${BATS_TEST_TMPDIR}/roxie.yaml"
+    run yq eval '[.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_output "1"
+}
+
+@test "Roxie preserves explicit valueFrom bundle URL and is idempotent" {
+    export CI=true
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+    customize:
+      envVars:
+        - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL
+          valueFrom:
+            secretKeyRef:
+              name: bundle
+              key: url
+EOF
+    _configure_roxie_ci_vuln_bundle "${BATS_TEST_TMPDIR}/roxie.yaml"
+    _configure_roxie_ci_vuln_bundle "${BATS_TEST_TMPDIR}/roxie.yaml"
+    run yq eval '[.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_output "1"
+    run yq eval '.central.spec.customize.envVars[0].valueFrom.secretKeyRef.name' "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_output "bundle"
+}
+
+@test "Roxie preserves an explicit bundle URL" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+    customize:
+      envVars:
+        - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL
+          value: https://example.invalid/custom.zip
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_success
+    run yq eval '.central.spec.customize.envVars[0].value' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+    assert_output "https://example.invalid/custom.zip"
+}
+
+@test "Roxie non-CI deployment does not add the bundle URL" {
+    setup_roxie_deploy_stubs
+    unset CI
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_success
+    run yq eval '[.central.spec.customize.envVars[]? | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+    assert_output "0"
+}
+
+@test "Roxie skips the bundle when effective Scanner V4 is disabled" {
+    setup_roxie_deploy_stubs
+    export CI=true ROX_SCANNER_V4=true
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Disabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_success
+    run yq eval '[.central.spec.customize.envVars[]? | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+    assert_output "0"
+}
+
+@test "Roxie fails before invoking roxie when the bundle pin is invalid" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    : > "${TEST_ROOT}/deploy/common/ci-values.yaml"
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_failure
+    [ ! -e "${BATS_TEST_TMPDIR}/roxie-config.yaml" ]
+}
+
+@test "Roxie fails before invoking roxie when the bundle pin is null" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    cat > "${TEST_ROOT}/deploy/common/ci-values.yaml" <<'EOF'
+scannerV4:
+  matcher:
+    vulnerabilitiesUrl: null
+EOF
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_failure
+    [ ! -e "${BATS_TEST_TMPDIR}/roxie-config.yaml" ]
+}
+
+@test "Roxie fails before invoking roxie when the bundle values file is unreadable" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    TEST_ROOT="${BATS_TEST_TMPDIR}/missing-repo"
+    cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
+central:
+  spec:
+    scannerV4:
+      scannerComponent: Enabled
+EOF
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_failure
+    [ ! -e "${BATS_TEST_TMPDIR}/roxie-config.yaml" ]
+}
+
+@test "Roxie fails before invoking roxie for malformed config" {
+    setup_roxie_deploy_stubs
+    export CI=true
+    printf 'central: [' > "${BATS_TEST_TMPDIR}/roxie.yaml"
+    run deploy_stackrox_with_roxie "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_failure
+    [ ! -e "${BATS_TEST_TMPDIR}/roxie-config.yaml" ]
+}
+
+@test "Roxie compatibility entrypoint injects the pinned bundle URL" {
+    setup_roxie_deploy_stubs
+    export CI=true MAIN_IMAGE_TAG=test-tag LOAD_BALANCER=route
+    check_for_roxie() { :; }
+    retrying_kubectl() { return 0; }
+    run deploy_stackrox_with_roxie_compat
+    assert_success
+    run yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL") | .value' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
+    assert_output "https://example.invalid/ci-minimal.zip"
+}
