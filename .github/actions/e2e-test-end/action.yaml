@@ -1,0 +1,114 @@
+name: e2e-test-end
+description: >
+  Report StackRox e2e test results and tear down the provisioned cluster.
+  Publishes JUnit test summaries, reports failures to Jira and deletes the
+  cluster. Not intended to be used standalone; requires e2e-test-begin to
+  have run earlier in the same job (it depends on environment variables set
+  by e2e-test-begin, e.g. KUBECONFIG). Invoke with `if: always()` so that
+  reporting and teardown run even when the test steps failed.
+# See e2e-test-begin/action.yaml for why inputs avoid YAML `default:` and
+# defaults are resolved via `${{ inputs.x || 'fallback' }}` in a setup step.
+inputs:
+  cluster-provisioning-method:
+    description: "Selects cluster provisioning method that was used (supported: direct-gke, infra)."
+  artifact-dir:
+    description: "Directory containing JUnit XML reports."
+    required: true
+  jira-user:
+    description: "User used to authenticate with Jira."
+    required: true
+  jira-token:
+    description: "Token used to authenticate with Jira."
+    required: true
+  gcp-account:
+    description: "Account to be used to upload tests data."
+    required: true
+  cluster-name:
+    description: "Name of the provisioned cluster to tear down."
+    required: false
+  infra-token:
+    description: "Token used to authenticate with infra. Required when cluster-provisioning-method is infra."
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+        CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
+      run: |
+        case "$CLUSTER_PROVISIONING_METHOD" in
+          direct-gke|infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra"; exit 1 ;;
+        esac
+
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" && -z "$INFRA_TOKEN" ]]; then
+          echo "::error::Input infra-token is required when cluster-provisioning-method is infra."
+          exit 1
+        fi
+
+    - name: Apply defaults and set shared environment
+      shell: bash
+      run: |
+        cat >> "$GITHUB_ENV" <<EOF
+        CLUSTER_PROVISIONING_METHOD=${{ inputs.cluster-provisioning-method || 'direct-gke' }}
+        CLUSTER_NAME=${{ inputs.cluster-name }}
+        ARTIFACT_DIR=${{ inputs.artifact-dir }}
+        EOF
+
+    - name: Publish summary for failed tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "fail"
+
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ inputs.jira-user }}
+        jira-token: ${{ inputs.jira-token }}
+        gcp-account: ${{ inputs.gcp-account }}
+        directory: ${{ env.ARTIFACT_DIR }}
+
+    # CLUSTER_NAME is set before cluster creation, so it may be non-empty
+    # even when creation ultimately failed. We intentionally attempt teardown
+    # here anyway, just in case a cluster has been provisioned even though
+    # a failure during cluster creation has been surfaced.
+    - name: Delete cluster via direct-gke
+      if: always() && env.CLUSTER_PROVISIONING_METHOD == 'direct-gke'
+      shell: bash
+      continue-on-error: true
+      run: |
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
+          echo "::warning::WARNING: Could not delete the cluster ${CLUSTER_NAME}. See the step logs for details."
+          exit 6
+        fi
+
+    - name: Delete cluster via infra
+      if: always() && env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      shell: bash
+      continue-on-error: true
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        infractl delete "${CLUSTER_NAME}"
