@@ -11,7 +11,6 @@ EARLIER_TAG="4.10.0"
 EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
-SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
 PREVIOUS_RELEASES=("4.10.7" "4.11.3")
 
 # shellcheck source=../../scripts/lib.sh
@@ -77,7 +76,7 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    # To test we remain backwards compatible rollback to 4.6.x
+    # To test we remain backwards compatible rollback to 4.10.x
     FORCE_ROLLBACK_VERSION="${EARLIER_TAG}"
 
     cd "$REPO_FOR_TIME_TRAVEL"
