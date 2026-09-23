@@ -15,8 +15,10 @@ workload_type=${4:-fake}     # fake or berserker
 # different workload-name conventions (see workload_name below).
 if [[ "$workload_type" == "berserker" ]]; then
   perf_test_script="${DIR}/perf-test-file-activity-berserker.sh"
+  results_dir_prefix="berserker_file_activity_results"
 else
   perf_test_script="${DIR}/perf-test-file-activity.sh"
+  results_dir_prefix="file_activity_results"
 fi
 
 # Array of batch sizes to test
@@ -34,6 +36,17 @@ run_batch_test() {
     workload_name="file-activity-$((batch * 10))"
   else
     workload_name="file-activity-batch-${batch}"
+  fi
+
+  # Resume support: skip a case whose results dir already exists, so an
+  # interrupted run can be restarted by re-invoking with the same arguments
+  # (each test takes many minutes). This must mirror the results_dir name the
+  # per-test scripts build (results_dir_prefix differs by workload). Delete a
+  # dir to force its test to re-run; delete a partial dir before resuming.
+  local results_dir="${results_base_dir}/${results_dir_prefix}_${num_sensors}_${run_time}_${workload_name}_policy_${with_policy}"
+  if [[ -d "$results_dir" ]]; then
+    echo "Results dir already exists, skipping: ${results_dir}"
+    return 0
   fi
 
   "$perf_test_script" \
