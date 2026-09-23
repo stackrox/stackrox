@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	centralMetrics "github.com/stackrox/rox/central/metrics"
@@ -31,13 +32,14 @@ var (
 )
 
 // New creates a new delegator.
-func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], scanWaiterManagerV2 waiter.Manager[*storage.ImageV2], namespaceSACHelper sachelper.ClusterNamespaceSacHelper) *delegatorImpl {
+func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], scanWaiterManagerV2 waiter.Manager[*storage.ImageV2], namespaceSACHelper sachelper.ClusterNamespaceSacHelper, clusterDataStore clusterDS.DataStore) *delegatorImpl {
 	return &delegatorImpl{
 		deleRegConfigDS:     deleRegConfigDS,
 		connManager:         connManager,
 		scanWaiterManager:   scanWaiterManager,
 		scanWaiterManagerV2: scanWaiterManagerV2,
 		namespaceSACHelper:  namespaceSACHelper,
+		clusterDataStore:    clusterDataStore,
 	}
 }
 
@@ -47,6 +49,9 @@ type delegatorImpl struct {
 
 	// namespaceSACHelper for confirming namespace exists and user has access.
 	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
+
+	// clusterDataStore for resolving cluster names in user-facing messages.
+	clusterDataStore clusterDS.DataStore
 
 	// connManager for sending scan requests to secured clusters and ensuring
 	// clusters are valid for delegation.
@@ -267,14 +272,28 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 func (d *delegatorImpl) ValidateCluster(clusterID string) error {
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
-		return errors.Errorf("no connection to %q", clusterID)
+		return errors.Errorf("no connection to cluster %q, verify the cluster is healthy and connected", d.clusterName(clusterID))
 	}
 
 	if !deleConnection.ValidForDelegation(conn) {
-		return errors.Errorf("cluster %q does not support delegated scanning", clusterID)
+		return errors.Errorf("cluster %q does not support delegated scanning", d.clusterName(clusterID))
 	}
 
 	return nil
+}
+
+// clusterName resolves a human-readable cluster name for user-facing messages,
+// falling back to the cluster ID when the name cannot be determined.
+func (d *delegatorImpl) clusterName(clusterID string) string {
+	// Delegation targets are admin-configured, so resolving the name for an error
+	// message must not depend on the requesting user's scope. The cluster ID is
+	// already surfaced to the caller today, so its name is not more sensitive.
+	name, exists, err := d.clusterDataStore.GetClusterName(withClusterRead(context.Background()), clusterID)
+	if err != nil || !exists {
+		return clusterID
+	}
+
+	return name
 }
 
 // withAdminRead elevates a context to include admin read access.
@@ -288,4 +307,15 @@ func withAdminRead(ctx context.Context) context.Context {
 	)
 
 	return elevatedCtx
+}
+
+// withClusterRead elevates a context to include cluster read access.
+func withClusterRead(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster),
+		),
+	)
 }

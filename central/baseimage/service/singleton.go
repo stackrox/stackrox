@@ -27,6 +27,7 @@ func initialize() {
 		scanwaiter.Singleton(),
 		scanwaiterv2.Singleton(),
 		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
+		clusterDataStore.Singleton(),
 	)
 
 	as = New(repository.Singleton(), imageintegration.Set(), scanDelegator)
