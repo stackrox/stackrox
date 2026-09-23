@@ -56,26 +56,18 @@ main() {
     for pod in ${pods}; do
         remote="${pod}:${pod_port}"
         metrics_file="${pod}.txt"
-        PID=""
-        trap 'kill -TERM ${PID} 2>/dev/null; wait ${PID} 2>/dev/null' TERM INT
-        max_retries=10
+        nohup kubectl -n "$namespace" port-forward "$pod" "${local_port}:${pod_port}" >/dev/null &
+        PID=$!
+        trap 'kill -TERM ${PID}; wait ${PID}' TERM INT
+        max_retries=5
         retries=1
         until curl --output /dev/null --silent --fail -k "${local}/${metrics_path}"; do
             echo -n '.'
             if ((retries==max_retries)); then
-                kill ${PID} 2>/dev/null
+                kill ${PID}
                 die "failed to collect metrics from $pod after $retries retries"
-            fi
-            ((retries++))
-            # (Re)start the port-forward if its kubectl process is gone, e.g.
-            # after a transient DNS failure reaching the API server. Without
-            # this, every remaining retry is doomed once the forward has died.
-            if [[ -z "${PID}" ]] || ! kill -0 "${PID}" 2>/dev/null; then
-                echo
-                echo "starting port-forwarding for ${pod} (attempt ${retries})"
-                nohup kubectl -n "$namespace" port-forward "$pod" "${local_port}:${pod_port}" \
-                    >"${metrics_dir}/${pod}.portforward.log" 2>&1 &
-                PID=$!
+            else
+                ((retries++))
             fi
             sleep 5
         done
@@ -83,7 +75,7 @@ main() {
         echo "set up port-forwarding from $remote to $local"
         curl --silent --fail -k "${local}/${metrics_path}" > "${metrics_dir}/${metrics_file}"
         echo "finished download ${metrics_file}"
-        kill ${PID} 2>/dev/null
+        kill ${PID}
         echo "finished tear down of port-forwarding from $remote to $local"
     done
 }
