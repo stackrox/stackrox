@@ -1,0 +1,169 @@
+# Practice map for the resolver tests. It shows the shape of a future
+# production map. The resolver itself has no opinions about Sensor or UI.
+# It only applies the rules in this file.
+#
+# Give it the list of files a PR changed. It places every name under jobs
+# into one bucket:
+#   run    - this change needs that job
+#   skip   - every matched area explicitly said to skip that job
+#   unsure - no decision yet, so the job still runs until the map is refined
+#
+# Each pattern is a Python regular expression against the file path.
+# "^ui/" matches ui/src/App.tsx. "\.md$" matches README.md.
+# The longest match wins. A file in sensor/kubernetes/complianceoperator/
+# uses sensor-ocp, and the broader sensor/ rule does not also vote.
+
+version: 1
+
+# The closed list of CI jobs this map may mention.
+# Names match exactly: "build" does not include "build-operator".
+# A name that appears here and in no domain stays unsure.
+jobs:
+  - style
+  - go-unit-tests
+  - build
+  - build-operator
+  - gke-qa-e2e-tests
+  - gke-nongroovy-e2e-tests
+  - gke-ui-e2e-tests
+  - gke-scale-tests
+  - ocp-4-12-qa-e2e-tests
+
+# These run for every change that is not docs-only.
+# A domain that says skip for one of them loses.
+# Example: ui/src/App.tsx still runs style and go-unit-tests.
+code_always_run:
+  - style
+  - go-unit-tests
+
+# Used only when every changed file matches skip_all.
+# Example: README.md plus docs/guide.md runs style and skips the other jobs.
+docs_run:
+  - style
+
+# If the PR carries this label, every job runs. The label wins over the files.
+# Example: a README-only PR with this label still runs the full list.
+run_all_label: ci-run-all-tests
+
+# If any changed file matches, every job runs. Other files in the PR
+# do not narrow that.
+# Example: go.mod together with sensor/common/foo.go runs everything.
+# Example: proto/storage/alert.proto runs everything.
+# third_party/go.mod does not match "^go\.mod$", because ^ means
+# "at the start of the path".
+always_run_all:
+  - "^go\\.mod$"
+  - "^proto/"
+
+# These files are ignored when the PR also changes code.
+# When they are the only files, the PR is docs-only and docs_run applies.
+# Example: README.md is ignored beside sensor/common/foo.go, and the
+# result is the sensor domain.
+# Example: README.md and docs/guide.md alone are docs-only.
+skip_all:
+  - "\\.md$"
+  - "^docs/"
+
+# One area of the tree. paths chooses the files. jobs is that area's vote
+# for each CI job: run, skip, or unsure.
+# A file uses the one domain whose pattern matches the longest prefix.
+# Two files from two domains are combined like this:
+#   any "run" makes the job run
+#   "skip" sticks only when every matched domain says skip
+#   a domain that omits a job counts as unsure, and that blocks a skip
+domains:
+
+  # Example file: ui/src/App.tsx
+  # Runs the UI end-to-end job and the main image build.
+  # build-operator is an explicit skip so the shorter name "build"
+  # cannot pull it in by accident.
+  ui:
+    paths:
+      - "^ui/"
+    jobs:
+      build: run
+      build-operator: skip
+      gke-qa-e2e-tests: skip
+      gke-nongroovy-e2e-tests: skip
+      gke-ui-e2e-tests: run
+      gke-scale-tests: skip
+      ocp-4-12-qa-e2e-tests: skip
+
+  # Example file: sensor/common/foo.go
+  # gke-qa-e2e-tests stays unsure until we know which Groovy tests
+  # actually cover Sensor. Unsure means "keep running it for now".
+  sensor:
+    paths:
+      - "^sensor/"
+    jobs:
+      build: run
+      build-operator: skip
+      gke-qa-e2e-tests: unsure
+      gke-nongroovy-e2e-tests: run
+      gke-ui-e2e-tests: skip
+      gke-scale-tests: skip
+      ocp-4-12-qa-e2e-tests: skip
+
+  # A more specific path than sensor/. extends copies sensor's votes,
+  # then the jobs below replace single votes. Votes this block does not
+  # mention are kept. build still runs. gke-ui-e2e-tests still skips.
+  # Example file: sensor/kubernetes/complianceoperator/foo.go
+  #   ocp-4-12-qa-e2e-tests becomes run (sensor had said skip)
+  #   gke-nongroovy-e2e-tests becomes skip (sensor had said run)
+  # That nongroovy skip is a sample override. It shows a child can
+  # cancel a parent "run". A real map would choose it from how the
+  # code is used.
+  sensor-ocp:
+    extends: sensor
+    paths:
+      - "^sensor/kubernetes/complianceoperator/"
+    jobs:
+      gke-qa-e2e-tests: run
+      gke-nongroovy-e2e-tests: skip
+      ocp-4-12-qa-e2e-tests: run
+
+  # Example file: scanner/matcher/bar.go
+  # gke-scale-tests is left out on purpose. Beside a sensor file, which
+  # says skip for that job, the missing scanner vote turns the result
+  # into unsure. One area's silence is enough to keep the job.
+  scanner:
+    paths:
+      - "^scanner/"
+    jobs:
+      build: run
+      build-operator: skip
+      gke-qa-e2e-tests: unsure
+      gke-nongroovy-e2e-tests: skip
+      gke-ui-e2e-tests: skip
+      ocp-4-12-qa-e2e-tests: skip
+
+  # Example file: tests/e2e/run-scale.sh
+  # The scale job runs. Whether this one-file change needs a fresh
+  # image build is still open, so build stays unsure.
+  scale:
+    paths:
+      - "^tests/e2e/run-scale\\.sh$"
+    jobs:
+      build: unsure
+      build-operator: skip
+      gke-qa-e2e-tests: skip
+      gke-nongroovy-e2e-tests: skip
+      gke-ui-e2e-tests: skip
+      gke-scale-tests: run
+      ocp-4-12-qa-e2e-tests: skip
+
+  # Example file: central/policy/service.go
+  # Only this subdirectory. central/sensorupgrade/ would match nothing
+  # here and would run every job, because an unknown path is unsafe to skip.
+  # gke-qa-e2e-tests stays unsure until policy tests are split more finely.
+  central-policy:
+    paths:
+      - "^central/policy/"
+    jobs:
+      build: run
+      build-operator: skip
+      gke-qa-e2e-tests: unsure
+      gke-nongroovy-e2e-tests: run
+      gke-ui-e2e-tests: skip
+      gke-scale-tests: skip
+      ocp-4-12-qa-e2e-tests: skip

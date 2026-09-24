@@ -1,0 +1,65 @@
+# First production map. Three areas only. Every other path runs all
+# three jobs below, because an unknown file is not safe to skip.
+#
+# Job names are the GitHub Actions job ids:
+#   style-check               make style-slim, in the Style workflow
+#   sensor-integration-tests  make sensor-integration-test, in Unit Tests
+#   go-postgres               Central Postgres tests, in Unit Tests
+#
+# This file does not turn any job off. The shadow workflow prints the
+# split and the rest of CI keeps running as it does today.
+
+version: 1
+
+jobs:
+  - style-check
+  - sensor-integration-tests
+  - go-postgres
+
+# Any code change still runs style. A domain cannot skip it.
+code_always_run:
+  - style-check
+
+# A pull request whose files are all docs runs style and nothing else.
+docs_run:
+  - style-check
+
+run_all_label: ci-run-all-tests
+
+# One of these files means the whole tree may have changed.
+always_run_all:
+  - "^go\\.mod$"
+  - "^go\\.sum$"
+  - "^proto/"
+  - "^generated/"
+
+# Ignored when the pull request also changes code.
+# If they are the only files, docs_run applies.
+# CHANGELOG.md matches "\.md$". "^CHANGELOG" covers a bare CHANGELOG.
+skip_all:
+  - "\\.md$"
+  - "^docs/"
+  - "^CHANGELOG"
+
+domains:
+
+  # Example: sensor/common/foo.go
+  # Run the Sensor integration job. Skip the Central Postgres job.
+  sensor:
+    paths:
+      - "^sensor/"
+    jobs:
+      sensor-integration-tests: run
+      go-postgres: skip
+
+  # Example: central/policy/service.go
+  # The policy package is the sample Central area.
+  # Run the Central Postgres job. Skip the Sensor integration job.
+  # go-postgres is the Central test job that exists today. It is not
+  # a policy-only suite.
+  central-policy:
+    paths:
+      - "^central/policy/"
+    jobs:
+      go-postgres: run
+      sensor-integration-tests: skip

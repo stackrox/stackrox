@@ -1,0 +1,55 @@
+name: Test selection (shadow)
+
+# Prints what ci/test-domains.yaml would run, skip, or leave unsure.
+# Shadow mode does not skip any other job. execute lists every known job.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Install PyYAML
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/selector"
+          "${RUNNER_TEMP}/selector/bin/pip" install 'PyYAML==6.0.3'
+
+      - name: Classify the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -euo pipefail
+          echo "Shadow mode. This job does not skip any other CI job."
+          files="$(mktemp)"
+          if ! gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' > "${files}"; then
+            echo "Could not list changed files. Showing the run-everything result."
+            : > "${files}"
+          elif [[ "$(wc -l < "${files}")" -ge 3000 ]]; then
+            echo "3000 or more changed files. Showing the run-everything result."
+            : > "${files}"
+          fi
+          "${RUNNER_TEMP}/selector/bin/python" ci/exploration/resolver.py \
+            --mapping ci/test-domains.yaml \
+            --labels "${LABELS}" \
+            --format human \
+            - < "${files}"
