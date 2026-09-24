@@ -360,6 +360,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			if tt.setUpMocksAndEnv != nil {
 				tt.setUpMocksAndEnv(t, tt.mocks)
 			}
+			tt.mocks.clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(clusterID)).AnyTimes().Return(true, nil)
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 			pNodeInv := nodeinventory.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 			pNodeIdx := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)

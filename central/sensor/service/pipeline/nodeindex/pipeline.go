@@ -119,6 +119,16 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		len(node.GetScan().GetComponents()), nodeDatastore.NodeString(node))
 	incomingScanTime := node.GetScan().GetScanTime()
 
+	clusterExists, err := p.clusterStore.Exists(ctx, node.GetClusterId())
+	if err != nil {
+		return errors.Wrapf(err, "checking whether cluster %s exists", node.GetClusterId())
+	}
+	if !clusterExists {
+		log.Debugf("Skipping node index report for node %s because cluster %s was deleted",
+			nodeDatastore.NodeString(node), node.GetClusterId())
+		return nil
+	}
+
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
 	if err != nil {
