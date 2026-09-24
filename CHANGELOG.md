@@ -14,6 +14,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [5.0.0]
+
+
+
+### Added Features
+
 - ROX-32148: Virtual machine scanning is now enabled by default. RHEL VMs created with OpenShift Virtualization can be scanned for package vulnerabilities after installing roxagent in the guest.
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
@@ -29,12 +41,14 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Removed Features
 
 - Compliance container no longer collects Scanner V2 node inventories. Node scanning continues via Scanner V4 index reports, as long as Scanner V4 is enabled.
+- ROX-36654: Removed legacy scanner (StackRox Scanner) across all installation methods.
 
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
 - The `priority` field on API responses for deployments, images, nodes, and components is deprecated and will be removed in a future release. Use the `risk_score` field on the same objects instead. Sorting by "Risk Priority" in search queries is also deprecated; sort by "Risk Score" instead. For clusters and namespaces, the `priority` field will be removed and replaced by a `risk_score` field where applicable.
+- ROX-37014: The Images by severity, Nodes by severity, CVEs by severity, and Virtual machines by severity counts—including summary widgets and table columns—are deprecated and will be removed in a future release to improve page performance
 
 ### Technical Changes
 - ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).

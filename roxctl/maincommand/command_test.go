@@ -1,12 +1,17 @@
 package maincommand
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	versiontestutils "github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	cliIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
@@ -140,4 +145,33 @@ func Test_commandTree(t *testing.T) {
 	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
 	assert.NotEmpty(t, commandTreeFilename, result)
 	assert.Equal(t, commandTree, result)
+}
+
+// Deploy scripts and external tooling parse "roxctl version" output expecting
+// a single line containing only the version string. Adding extra lines or
+// content breaks version-match checks and causes deployment failures.
+func TestVersionCommand_TextOutput_SingleVersionLine(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "5.0.0\n", out.String())
+}
+
+func TestVersionCommand_JSONOutput_IncludesCompatibleVersions(t *testing.T) {
+	versiontestutils.SetMainVersion(t, "5.0.0")
+
+	testIO, _, out, _ := cliIO.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	cmd := versionCommand(env)
+	cmd.SetArgs([]string{"--json"})
+	require.NoError(t, cmd.Execute())
+
+	var result roxctlVersionInfo
+	require.NoError(t, json.Unmarshal(out.Bytes(), &result))
+	assert.Equal(t, "5.0.0", result.MainVersion)
+	assert.NotEmpty(t, result.CompatibleCentralVersions)
 }

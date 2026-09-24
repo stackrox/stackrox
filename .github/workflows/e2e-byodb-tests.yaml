@@ -42,10 +42,12 @@ jobs:
       POSTGRES_VERSION: "17"
       LONGTERM_LICENSE: "unused"
       BYODB_TEST: "true"
+      # roxctl helm values pin scannerV4.disable=true unless this is set.
+      ROX_SCANNER_V4: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 150
+    timeout-minutes: 361
     steps:
 
     - name: Checkout repo
@@ -132,13 +134,14 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+        SLACK_FIXABLE_VULNS_CHANNEL: ${{ secrets.SLACK_FIXABLE_VULNS_CHANNEL }}
         SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
         SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
         OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
-      timeout-minutes: 110
+      timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test

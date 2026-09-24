@@ -104,6 +104,27 @@ func TestWaitForV2VMPresentInCentral_UsesListVMs(t *testing.T) {
 	require.Contains(t, sawQuery, `Virtual Machine Name:"vm1"`)
 }
 
+func TestListV2VMByNamespaceNameGuestOS_Query(t *testing.T) {
+	ctx := t.Context()
+	var sawQuery string
+	client := &stubV2Client{
+		listVMsFn: func(_ context.Context, req *v2.ListVMsRequest) (*v2.ListVMsResponse, error) {
+			sawQuery = req.GetQuery().GetQuery()
+			return &v2.ListVMsResponse{
+				Vms: []*v2.VMListItem{
+					{Id: "id-1", Namespace: "ns1", Name: "vm1", GuestOs: "Red Hat Enterprise Linux 8.10"},
+				},
+			}, nil
+		},
+	}
+	vm, err := ListV2VMByNamespaceNameGuestOS(ctx, client, "ns1", "vm1", "Red Hat Enterprise Linux 8.10")
+	require.NoError(t, err)
+	require.Equal(t, "id-1", vm.GetId())
+	require.Contains(t, sawQuery, `Guest OS:"Red Hat Enterprise Linux 8.10"`)
+	require.Contains(t, sawQuery, `Namespace:"ns1"`)
+	require.Contains(t, sawQuery, `Virtual Machine Name:"vm1"`)
+}
+
 func TestWaitForV2VMLatestScan(t *testing.T) {
 	ctx := t.Context()
 	opts := WaitOptions{Timeout: 150 * time.Millisecond, PollInterval: 5 * time.Millisecond}
@@ -315,6 +336,35 @@ func TestVulnCountBySeverityTotal(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.Equal(t, tc.want, VulnCountBySeverityTotal(tc.in))
+		})
+	}
+}
+
+func TestCountVMCVERowsBySeverity(t *testing.T) {
+	tests := map[string]struct {
+		in   []*v2.VMCVERow
+		want *v2.VulnCountBySeverity
+	}{
+		"empty": {in: nil, want: &v2.VulnCountBySeverity{}},
+		"by max severity": {in: []*v2.VMCVERow{
+			{Cve: "CVE-1", Severity: v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, IsFixable: true},
+			{Cve: "CVE-2", Severity: v2.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY},
+			{Cve: "CVE-3", Severity: v2.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY, IsFixable: true},
+		}, want: &v2.VulnCountBySeverity{
+			Critical: &v2.VulnFixableCount{Total: 1, Fixable: 1},
+			Moderate: &v2.VulnFixableCount{Total: 2, Fixable: 1},
+		}},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := CountVMCVERowsBySeverity(tc.in)
+			require.Equal(t, tc.want.GetCritical().GetTotal(), got.GetCritical().GetTotal())
+			require.Equal(t, tc.want.GetCritical().GetFixable(), got.GetCritical().GetFixable())
+			require.Equal(t, tc.want.GetImportant().GetTotal(), got.GetImportant().GetTotal())
+			require.Equal(t, tc.want.GetModerate().GetTotal(), got.GetModerate().GetTotal())
+			require.Equal(t, tc.want.GetModerate().GetFixable(), got.GetModerate().GetFixable())
+			require.Equal(t, tc.want.GetLow().GetTotal(), got.GetLow().GetTotal())
+			require.Equal(t, tc.want.GetUnknown().GetTotal(), got.GetUnknown().GetTotal())
 		})
 	}
 }

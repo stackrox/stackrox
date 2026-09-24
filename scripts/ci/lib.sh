@@ -14,6 +14,35 @@ source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+# ensure_writable_bash_env points BASH_ENV at a temp file when the CI image
+# default (/etc/initial-bash.env) is not readable or writable by the process
+# UID. Child bash then stops erroring on source, and cci-export can persist env.
+ensure_writable_bash_env() {
+    if [[ -z "${BASH_ENV:-}" ]]; then
+        return 0
+    fi
+    if [[ -r "${BASH_ENV}" && -w "${BASH_ENV}" ]]; then
+        return 0
+    fi
+
+    local new_bash_env
+    new_bash_env="$(mktemp)" || return 1
+    if [[ -r "${BASH_ENV}" ]]; then
+        if ! cp "${BASH_ENV}" "${new_bash_env}"; then
+            rm -f "${new_bash_env}"
+            return 1
+        fi
+    fi
+    BASH_ENV="${new_bash_env}"
+    export BASH_ENV
+}
+
+# OpenShift CI cannot read /etc/initial-bash.env (random user). Switch BASH_ENV
+# to a writable file now, before make and status.sh start more bash processes.
+if is_CI; then
+    ensure_writable_bash_env
+fi
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -44,11 +73,7 @@ ci_export() {
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
     elif command -v cci-export >/dev/null; then
-        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
-        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
-            BASH_ENV=$(mktemp)
-            export BASH_ENV
-        fi
+        ensure_writable_bash_env || return 1
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
@@ -554,19 +579,12 @@ push_matching_collector_scanner_images() {
 
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
-    local scanner_version
-    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
     local fact_version
     fact_version="$(make --quiet --no-print-directory fact-tag)"
 
     registry_rw_login "${registry}"
-
-    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}"
-    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}"
-    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}"
-    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}"
 
@@ -1029,8 +1047,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 END
@@ -1059,8 +1075,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
@@ -1075,8 +1089,6 @@ release-main ${operator_controller_tag}
 release-central-db ${operator_controller_tag}
 release-collector ${operator_controller_tag}
 release-fact ${operator_controller_tag}
-release-scanner ${operator_controller_tag}
-release-scanner-db ${operator_controller_tag}
 release-scanner-v4 ${operator_controller_tag}
 release-scanner-v4-db ${operator_controller_tag}
 release-roxctl ${operator_controller_tag}
@@ -1089,8 +1101,6 @@ main ${tag}
 central-db ${tag}
 collector ${tag}
 fact ${tag}
-scanner ${tag}
-scanner-db ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
@@ -1142,13 +1152,6 @@ check_rhacs_eng_image_exists() {
     check=$(curl --location -sS "${extra_args[@]}" "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
-}
-
-check_scanner_version() {
-    if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
-        echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
-        exit 1
-    fi
 }
 
 check_collector_version() {
@@ -1535,6 +1538,8 @@ get_pr_details() {
 
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
+
+    ensure_writable_bash_env
 
     openshift_ci_debug
 

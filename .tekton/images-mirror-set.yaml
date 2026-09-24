@@ -29,18 +29,6 @@ spec:
   - source: registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel9
     mirrors:
     - quay.io/rhacs-eng/release-roxctl
-  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9
-    mirrors:
-    - quay.io/rhacs-eng/release-scanner-db
-  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9
-    mirrors:
-    - quay.io/rhacs-eng/release-scanner-db-slim
-  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9
-    mirrors:
-    - quay.io/rhacs-eng/release-scanner
-  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9
-    mirrors:
-    - quay.io/rhacs-eng/release-scanner-slim
   - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9
     mirrors:
     - quay.io/rhacs-eng/release-scanner-v4-db
