@@ -108,6 +108,34 @@ for container in central central-db sensor collector fact berserker; do
     done
 done
 
+# Event drops along the pipeline (cumulative counters; the curve shows when drops
+# start and the final value is the total). fact stages come from the fact agent's
+# own /metrics (stackrox_fact_*), sensor stages from the sensor detector/buffer.
+# Series only exist for runs scraped after these were added (and, for fact, only
+# when fact monitoring is exposed); skip otherwise.
+#   "<file-suffix>:<component>:<title>"
+for drop in \
+    "fact_bpf_dropped:fact:fact BPF Events Dropped" \
+    "fact_rate_limiter_dropped:fact:fact Rate-Limiter Events Dropped" \
+    "fact_grpc_dropped:fact:fact gRPC Events Dropped" \
+    "rox_sensor_file_activity_buffer_drops:sensor:sensor File-Activity Buffer Drops" \
+    "rox_sensor_detector_file_access_queue_dropped_total:sensor:sensor Detector File-Access Drops"; do
+    suffix="${drop%%:*}"
+    rest="${drop#*:}"
+    comp="${rest%%:*}"
+    title="${rest#*:}"
+    if [[ -f "${without_policy_dir}/metrics_${suffix}.txt" || \
+          -f "${with_policy_dir}/metrics_${suffix}.txt" ]]; then
+        echo "Plotting ${title}..."
+        $python_bin plot-file-activity.py \
+            "${without_policy_dir}/metrics_${suffix}.txt" "Without Policy" \
+            "${with_policy_dir}/metrics_${suffix}.txt" "With Policy" \
+            "${title} (cumulative)" "Events" \
+            "${without_policy_dir}" "${with_policy_dir}" "${comp}" \
+            "${output_dir}/${suffix}.png"
+    fi
+done
+
 # Database table sizes (only alerts and deployments are relevant for file activity)
 # Tables use central-db baseline since they're part of the database
 for table in alerts deployments; do

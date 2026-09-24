@@ -203,13 +203,43 @@ done
 # sensor/common/metrics/metrics.go); the earlier names
 # (rox_sensor_file_activity_events_total / _events_dropped_total) never existed,
 # which is why these output files came out empty.
-# - file_access_events_received_total: events received from the fact agent
-# - file_activity_buffer_drops:        events dropped due to buffer limits/expiry
-# - file_activity_buffer_size:         events currently buffered (gauge)
-for metric_name in rox_sensor_file_access_events_received_total rox_sensor_file_activity_buffer_drops rox_sensor_file_activity_buffer_size; do
+# - file_access_events_received_total:      events received from the fact agent
+# - file_activity_buffer_drops:             events dropped due to buffer limits/expiry
+# - file_activity_buffer_size:              events currently buffered (gauge)
+# - detector_file_access_queue_dropped_total: file accesses dropped because the
+#   sensor detector's queue was full (the "sensor event drops" signal; the counter
+#   climbing means the detector can't keep up with the incoming file-access rate --
+#   see DetectorFileAccessDroppedCount in sensor/common/detector/metrics/metrics.go).
+for metric_name in rox_sensor_file_access_events_received_total rox_sensor_file_activity_buffer_drops rox_sensor_file_activity_buffer_size rox_sensor_detector_file_access_queue_dropped_total; do
   metric="${metric_name}"'{namespace=\"stackrox\"}'
   result="$(get_time_series_for_metric "$metric" "$from" "$to")" || true
   if [[ -n "$result" ]]; then
     echo "$result" > "${output_file_prefix}_${metric_name}.txt"
+  fi
+done
+
+# Event drops in the fact agent itself (the Rust file-activity monitor running as
+# the `fact` container in the collector DaemonSet). fact exposes Prometheus metrics
+# at :9001/metrics with the registry prefix `stackrox_fact` (see the fact repo:
+# fact/src/metrics/exporter.rs Registry::with_prefix, and mod.rs for the counter
+# families). Each counter is a Family labeled `label=Added|Dropped|Ignored|...`
+# (rendered verbatim, capitalized -- prometheus-client derive stringifies the enum
+# variant). We record drops at the three pipeline stages, summed across the per-node
+# collector pods (cluster-wide total, like the collector metrics above):
+#   - bpf_events        Dropped: kernel ring-buffer -> userspace, fact can't drain fast enough
+#   - rate_limiter_events Dropped: shed by FACT_RATE_LIMIT
+#   - output_grpc_events  Dropped: couldn't be sent on to sensor
+# fact is scraped only via the `kubernetes-pods` Prometheus job (there is no Service
+# on port 9001), so these require fact.exposeMonitoring=true; guarded writes skip a
+# stage that returns nothing (metric absent / monitoring not exposed).
+declare -A fact_drop_metric=(
+  [fact_bpf_dropped]='sum(stackrox_fact_bpf_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
+  [fact_rate_limiter_dropped]='sum(stackrox_fact_rate_limiter_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
+  [fact_grpc_dropped]='sum(stackrox_fact_output_grpc_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
+)
+for out_name in "${!fact_drop_metric[@]}"; do
+  result="$(get_time_series_for_metric "${fact_drop_metric[$out_name]}" "$from" "$to")" || true
+  if [[ -n "${result//[[:space:]]/}" ]]; then
+    echo "$result" > "${output_file_prefix}_${out_name}.txt"
   fi
 done
