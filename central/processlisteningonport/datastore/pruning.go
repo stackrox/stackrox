@@ -33,5 +33,9 @@ const (
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
 
 	// Deletes up to a batch of PLOPs that have no poduid.
-	deletePLOPsWithoutPoduidBatch = "DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM listening_endpoints WHERE poduid is null LIMIT %d)"
+	// We are making query more effective by using system column "ctid". In order to use "ctid" safely,
+	// we also need to use "FOR UPDATE" in combination with it to lock rows.
+	// "SKIP LOCKED" is used to avoid potential deadlocks between two concurrent queries.
+	deletePLOPsWithoutPoduidBatch = `DELETE FROM listening_endpoints WHERE ctid IN
+			(SELECT ctid FROM listening_endpoints WHERE poduid is null LIMIT %d FOR UPDATE SKIP LOCKED)`
 )
