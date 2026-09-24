@@ -197,6 +197,14 @@ export function convertFormikToScanConfig(
     };
 }
 
+// Legacy configs stored before node roles were configurable have empty/absent nodeRoles
+// but actually run master+worker on Sensor (and the backend defaults empty to master+worker),
+// so fall back for display. Returns a fresh array for the default so callers never share the
+// mutable defaultNodeRoles reference.
+export function getNodeRolesForDisplay(nodeRoles?: string[]): string[] {
+    return nodeRoles && nodeRoles.length > 0 ? nodeRoles : [...defaultNodeRoles];
+}
+
 export function convertScanConfigToFormik(
     existingConfig: ComplianceScanConfigurationStatus
 ): ScanConfigFormValues {
@@ -215,9 +223,8 @@ export function convertScanConfigToFormik(
             time,
             daysOfWeek,
             daysOfMonth,
-            // Legacy configs stored before node roles were configurable have empty
-            // nodeRoles but actually run master+worker on Sensor; fall back so the UI matches.
-            nodeRoles: nodeRoles && nodeRoles.length > 0 ? nodeRoles : [...defaultNodeRoles],
+            // Fall back to master+worker for legacy configs (see getNodeRolesForDisplay).
+            nodeRoles: getNodeRolesForDisplay(nodeRoles),
         },
         clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
         profiles,

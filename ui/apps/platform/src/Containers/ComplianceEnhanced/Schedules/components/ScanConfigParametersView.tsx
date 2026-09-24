@@ -48,11 +48,15 @@ function ScanConfigParametersView({
                         {formatRecurringSchedule(scanSchedule)}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
-                {nodeRoles && nodeRoles.length > 0 && (
+                {nodeRoles && (
                     <DescriptionListGroup>
                         <DescriptionListTerm>Node roles</DescriptionListTerm>
                         <DescriptionListDescription>
-                            {nodeRoles.join(', ')}
+                            {nodeRoles.length > 0 ? (
+                                nodeRoles.join(', ')
+                            ) : (
+                                <em>Defaults to master and worker</em>
+                            )}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                 )}

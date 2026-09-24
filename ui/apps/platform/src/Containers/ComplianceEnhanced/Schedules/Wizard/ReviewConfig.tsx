@@ -18,6 +18,7 @@ import type { ComplianceIntegration } from 'services/ComplianceIntegrationServic
 import {
     convertFormikParametersToSchedule,
     getBodyDefault,
+    getNodeRolesForDisplay,
     getSubjectDefault,
 } from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
@@ -75,7 +76,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     scanName={formikValues.parameters.name}
                     description={formikValues.parameters.description}
                     scanSchedule={scanSchedule}
-                    nodeRoles={formikValues.parameters.nodeRoles}
+                    nodeRoles={getNodeRolesForDisplay(formikValues.parameters.nodeRoles)}
                 />
                 <Flex direction={{ default: 'column' }}>
                     <Flex spaceItems={{ default: 'spaceItemsSm' }}>
