@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
-	github.com/stackrox/image-prefetcher/deploy v0.5.2
+	github.com/stackrox/image-prefetcher/deploy v0.5.3-0.20260929105703-9aa84deff05a
 	github.com/stackrox/prometheus-metric-parser v0.0.0-20240718111853-be492d554cd5
 )
 
