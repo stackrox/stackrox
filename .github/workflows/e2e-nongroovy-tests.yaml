@@ -48,7 +48,6 @@ jobs:
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
       E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
-      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 361
     steps:
 

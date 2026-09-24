@@ -23,9 +23,10 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
-# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
-# Can be overridden by individual jobs. Setting to "" will load data from all sources.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+# Temporary CI experiment: load only the manual vulnerability bundle in all E2E
+# lanes, independent of the infra-only control. This intentionally overrides
+# any per-job allowlist; matcher vulnerability readiness remains unchanged.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="manual"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
