@@ -36,6 +36,8 @@ export const helperTextForName =
 export const helperTextForNameEdit =
     "Scan config name cannot be changed because it's linked to existing scan results.";
 export const helperTextForTime = 'Select or enter scan time between 00:00 and 23:59 UTC';
+export const helperTextForNodeRoles =
+    'Determines which nodes are scanned for node-type profiles. If left empty, defaults to master and worker. Common roles: master, worker, infra, control-plane. Use @all to scan all nodes.';
 
 const timeRegExp = /\d\d:\d\d/;
 

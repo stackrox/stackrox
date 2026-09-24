@@ -77,11 +77,56 @@ describe(Cypress.spec.relative, () => {
         setup();
 
         cy.findByPlaceholderText(nodeRoleInputPlaceholder).type('infra');
-        cy.get('button[aria-label="Close master"]').click();
+        cy.get('button[aria-label="Remove master"]').click();
 
         // Final state: master removed, worker kept, infra committed on blur.
         cy.findByText('master').should('not.exist');
         cy.findByText('worker').should('exist');
         cy.findByText('infra').should('exist');
+    });
+
+    it('rejects an uppercase role with an inline error and adds no chip', () => {
+        setup();
+
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).type('Infra{Enter}');
+
+        cy.findByText(/is invalid/).should('exist');
+        cy.findByText('Infra').should('not.exist');
+    });
+
+    it('gives feedback and does not duplicate an existing role', () => {
+        setup();
+
+        // defaults render a single master chip
+        cy.findAllByText('master').should('have.length', 1);
+
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).type('master{Enter}');
+
+        cy.findByText(/already in the list/).should('exist');
+        cy.findAllByText('master').should('have.length', 1);
+        // input is cleared after a rejected duplicate
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).should('have.value', '');
+    });
+
+    it('treats whitespace-only input as a no-op and clears the input', () => {
+        setup();
+
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).type('   {Enter}');
+
+        // defaults remain and nothing new was added
+        cy.get('.pf-v6-c-label__content').should('have.length', 2);
+        cy.findByPlaceholderText(nodeRoleInputPlaceholder).should('have.value', '');
+    });
+
+    it('clears all chips when the clear-all button is clicked', () => {
+        setup();
+
+        cy.findByText('master').should('exist');
+        cy.findByText('worker').should('exist');
+
+        cy.get('button[aria-label="Clear all node roles"]').click();
+
+        cy.findByText('master').should('not.exist');
+        cy.findByText('worker').should('not.exist');
     });
 });
