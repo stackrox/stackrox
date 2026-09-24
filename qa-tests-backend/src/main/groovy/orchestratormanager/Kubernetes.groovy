@@ -2450,7 +2450,9 @@ class Kubernetes {
         // Allow override of imagePullPolicy for quay.io images. Typically used
         // to set to Never to help keep the list of quay.io prebuilt images up
         // to date for image-prefetcher. Why not all images? See ROX-25258.
-        if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
+        if (deployment.imagePullPolicyOverride) {
+            container.setImagePullPolicy(deployment.imagePullPolicyOverride)
+        } else if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
             container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
         }
         if (deployment.livenessProbeDefined) {
@@ -2678,8 +2680,11 @@ class Kubernetes {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
         }
-        if (waitForDeletion) {
-            waitForNamespaceDeletion(ns)
+        if (waitForDeletion && !waitForNamespaceDeletion(ns)) {
+            // Fail loudly: a namespace stuck Terminating leaks into later tests
+            // (e.g. NamespaceTest's ACS/orchestrator comparison) instead of being
+            // silently ignored.
+            throw new OrchestratorManagerException("Timed out waiting for namespace ${ns} to be deleted")
         }
     }
 

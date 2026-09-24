@@ -22,7 +22,10 @@ do
     image_list+=("$arch_image")
 done
 
-docker manifest create "$image" "${image_list[@]}"
+# --amend: this script is retried on failure (see push_*_manifest_lists in
+# scripts/ci/lib.sh), and "docker manifest create" errors out if a local
+# manifest list of the same name already exists, which it would on a retry.
+docker manifest create --amend "$image" "${image_list[@]}"
 
 # Try pushing manifest a few times for the case when quay.io has issues
 pushed=0
