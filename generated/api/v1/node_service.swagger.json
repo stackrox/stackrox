@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "NodeService"
+      "name": "NodeService",
+      "description": "storage.Node represents information about a node in the cluster."
     }
   ],
   "consumes": [

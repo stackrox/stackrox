@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "AlertService"
+      "name": "AlertService",
+      "description": "AlertService APIs can be used to manage alerts."
     }
   ],
   "consumes": [
@@ -1518,7 +1519,7 @@
         "NODE"
       ],
       "default": "DEPLOYMENT",
-      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
+      "description": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
     },
     "storageNetworkEntityInfoType": {
       "type": "string",
@@ -1531,7 +1532,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "description": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePolicy": {
       "type": "object",

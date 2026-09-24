@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "FeatureFlagService"
+      "name": "FeatureFlagService",
+      "description": "FeatureFlagService retrieves information about feature flags."
     }
   ],
   "consumes": [
