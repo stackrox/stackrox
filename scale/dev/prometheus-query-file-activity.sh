@@ -146,11 +146,14 @@ fi
 # used" number, in contrast to container_memory_usage_bytes (cgroup total, which
 # also counts reclaimable page cache and freed-but-not-returned pages). Only the
 # Go services export it: central-db (Postgres) and collector (C++) do not. These
-# come from the app /metrics endpoint (same scrape as rox_central_*/rox_sensor_*),
-# labeled by pod, so select by pod-name prefix. Guarded write: skip if absent.
-declare -A heap_pod_regex=( [central]='central-.*' [sensor]='sensor-.*' )
+# come from the app /metrics endpoint (same scrape as rox_central_*/rox_sensor_*).
+# The monitoring Prometheus scrapes that endpoint via its `stackrox` endpoints
+# job, which sets job=<service name> (central/sensor) but NO pod label -- so an
+# earlier pod=~"central-.*" selector matched nothing. Select by job instead; that
+# also avoids double-counting against the separate kubernetes-pods job (which does
+# carry a pod label). Guarded write: skip if absent.
 for container in central sensor; do
-  heap_metric='go_memstats_heap_inuse_bytes{namespace=\"stackrox\",pod=~\"'${heap_pod_regex[$container]}'\"}'
+  heap_metric='go_memstats_heap_inuse_bytes{namespace=\"stackrox\",job=\"'$container'\"}'
   heap_result="$(get_time_series_for_metric "$heap_metric" "$from" "$to")" || true
   if [[ -n "${heap_result//[[:space:]]/}" ]]; then
     echo "$heap_result" > "${output_file_prefix}_${container}_heap_inuse.txt"
