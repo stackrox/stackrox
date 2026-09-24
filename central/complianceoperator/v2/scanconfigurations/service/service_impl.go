@@ -537,7 +537,8 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 }
 
 // validateNodeRoles validates the node roles following the Compliance Operator rules:
-//   - Each role must match ^[a-zA-Z0-9-]{1,39}$ or be "@all"
+//   - Each role must be "@all" or match nodeRoleRegexp: alphanumeric characters and
+//     hyphens, 1-39 characters, starting and ending with an alphanumeric character
 //   - "@all" cannot be mixed with other roles
 //   - Empty list is valid (defaults to ["master", "worker"] during conversion)
 //
@@ -564,7 +565,7 @@ func validateNodeRoles(roles []string) error {
 		}
 		if !nodeRoleRegexp.MatchString(role) {
 			return errors.Wrapf(errox.InvalidArgs,
-				"Node role %q is invalid: must contain only alphanumeric characters and hyphens, 1-39 characters", role)
+				"Node role %q is invalid: must contain only alphanumeric characters and hyphens, 1-39 characters, and start and end with an alphanumeric character", role)
 		}
 	}
 
