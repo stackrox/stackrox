@@ -8,7 +8,6 @@ import type { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
 const clusterInitUrl = '/v1/cluster-init';
-const upgradesUrl = '/v1/sensorupgrades';
 
 export type ClusterLabels = Record<string, string>;
 
@@ -72,13 +71,6 @@ export function fetchClusterWithRetentionInformation(id: string): Promise<Cluste
     return axios.get<ClusterResponse>(`${clustersUrl}/${id}`).then((response) => {
         return response.data;
     });
-}
-
-/**
- * Start a cluster cert rotation.
- */
-export function rotateClusterCerts(id: string): Promise<Empty> {
-    return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
 }
 
 /**
