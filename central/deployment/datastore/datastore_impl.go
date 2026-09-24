@@ -360,10 +360,14 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	// Dedupe repeated Remove calls (pods have many completion states). Only successful
-	// deletes are cached (below), so a cache hit means the deployment is truly gone.
-	if ds.deletedDeploymentCache != nil && ds.deletedDeploymentCache.Contains(id) {
-		return nil
+	// Dedupe the removed deployments. This can happen because Pods have many completion states
+	// and we may receive multiple Remove calls. Marking up front also stops concurrent UpsertFlows
+	// from writing flows for the deployment while it is being removed.
+	if ds.deletedDeploymentCache != nil {
+		if ds.deletedDeploymentCache.Contains(id) {
+			return nil
+		}
+		ds.deletedDeploymentCache.Add(id)
 	}
 	// Though the filter is updated upon pod update,
 	// We still want to ensure it is properly cleared when the deployment is deleted.
@@ -384,36 +388,26 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	// A missing flow store must not block the row delete, else deployments of a deleted
-	// cluster (flow store gone) can never be pruned. Leftover flows are reaped by the
-	// orphaned-flow sweep.
-	if flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID); err != nil {
-		errorList.AddError(err)
-	} else if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
-		errorList.AddError(err)
+	// clusterID is nullable in the DB; guard against an empty value to avoid an error from flow store.
+	if clusterID != "" {
+		// A missing flow store must not block the delete, else deployments of a deleted cluster
+		// could never be pruned.
+		if flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID); err != nil {
+			errorList.AddError(err)
+		} else if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
+			errorList.AddError(err)
+		}
 	}
 
 	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
 	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
-		}
-		return nil
+		return ds.deploymentStore.Delete(ctx, id)
 	})
 	if err != nil {
 		errorList.AddError(err)
 	}
 
-	if err := errorList.ToError(); err != nil {
-		return err
-	}
-
-	// Cache only on full success of this method
-	if ds.deletedDeploymentCache != nil {
-		ds.deletedDeploymentCache.Add(id)
-	}
-
-	return nil
+	return errorList.ToError()
 }
 
 // TODO: ROX-30948 Make this return []*storage.ImageV2

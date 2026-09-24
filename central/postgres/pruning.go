@@ -210,8 +210,13 @@ func GetOrphanedDeploymentIDs(ctx context.Context, pool postgres.DB) ([]Orphaned
 		}
 		return pgx.CollectRows(rows, func(r pgx.CollectableRow) (OrphanedDeployment, error) {
 			var d OrphanedDeployment
-			if err := r.Scan(&d.ID, &d.ClusterID); err != nil {
+			// clusterid is nullable; scan into a pointer so a NULL does not abort the pruning cycle.
+			var clusterID *string
+			if err := r.Scan(&d.ID, &clusterID); err != nil {
 				return OrphanedDeployment{}, errors.Wrap(err, "scanning orphaned deployment")
+			}
+			if clusterID != nil {
+				d.ClusterID = *clusterID
 			}
 			return d, nil
 		})

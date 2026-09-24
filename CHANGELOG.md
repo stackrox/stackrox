@@ -19,6 +19,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 ### Technical Changes
+- ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 
 ## [5.0.0]
 

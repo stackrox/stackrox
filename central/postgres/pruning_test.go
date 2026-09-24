@@ -269,6 +269,32 @@ func (s *PostgresPruningSuite) TestGetOrphanedDeploymentIDs() {
 	s.NotContains(got.AsSlice(), liveDeploymentID)
 }
 
+// A deployment with a NULL clusterid must not abort the sweep; it is orphaned (no matching
+// cluster row) and must be returned with an empty ClusterID.
+func (s *PostgresPruningSuite) TestGetOrphanedDeploymentIDsHandlesNullClusterID() {
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	// Upsert with a non-matching cluster id, then null out the column to mirror the field
+	// scenario where clusterid is NULL (NilOrUUID stores an empty cluster id as NULL).
+	nullClusterDeploymentID := uuid.NewV4().String()
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: nullClusterDeploymentID, ClusterId: fixtureconsts.Cluster1}))
+	_, err = s.testDB.DB.Exec(s.ctx, "UPDATE deployments SET clusterid = NULL WHERE id = $1", nullClusterDeploymentID)
+	s.Require().NoError(err)
+
+	orphaned, err := GetOrphanedDeploymentIDs(s.ctx, s.testDB.DB)
+	s.Require().NoError(err)
+
+	got := set.NewStringSet()
+	for _, d := range orphaned {
+		got.Add(d.ID)
+		if d.ID == nullClusterDeploymentID {
+			s.Empty(d.ClusterID)
+		}
+	}
+	s.Contains(got.AsSlice(), nullClusterDeploymentID)
+}
+
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
 		name              string
