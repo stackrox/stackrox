@@ -71,7 +71,10 @@ describe('ReportJobStatus', () => {
                     reportRequestType: 'ON_DEMAND',
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
-                    errorMsg: 'This is an error message',
+                    // Lower-case first character with upper-case in the remainder, so the
+                    // assertion detects both no capitalization and regression to
+                    // lodash/capitalize (which would lower-case the remainder).
+                    errorMsg: 'scan failed on Cluster "Prod-East"',
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -88,7 +91,7 @@ describe('ReportJobStatus', () => {
         // trigger the hover action
         fireEvent.mouseEnter(statusIconElement);
 
-        const tooltipElement = await screen.findByText('This is an error message');
+        const tooltipElement = await screen.findByText('Scan failed on Cluster "Prod-East"');
 
         expect(tooltipElement).toBeInTheDocument();
 
