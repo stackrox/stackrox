@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,16 +60,16 @@ func getURL(path string) (string, error) {
 	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }
 
-// GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
-func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral()
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
-	}
+// newHTTPTransport builds the HTTP transport used by roxctl to talk to Central.
+// Proxy is set to http.ProxyFromEnvironment so that HTTP(S)_PROXY/NO_PROXY are honored;
+// a hand-built http.Transport otherwise defaults to no proxy (unlike http.DefaultTransport),
+// which made roxctl dial Central directly and time out behind egress proxies (ROX-37149).
+func newHTTPTransport(tlsConf *tls.Config, forceHTTP1 bool) *http.Transport {
 	transport := &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: tlsConf,
 	}
-	if config.ForceHTTP1 {
+	if forceHTTP1 {
 		transport.TLSClientConfig.NextProtos = http1NextProtos
 	} else {
 		// There's no reason to not use HTTP/2, but we don't go out of our way to do so.
@@ -76,6 +77,16 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 			transport.TLSClientConfig.NextProtos = http1NextProtos
 		}
 	}
+	return transport
+}
+
+// GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
+func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
+	tlsConf, err := tlsConfigForCentral()
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
+	}
+	transport := newHTTPTransport(tlsConf, config.ForceHTTP1)
 
 	retryClient := retryablehttp.NewClient()
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
