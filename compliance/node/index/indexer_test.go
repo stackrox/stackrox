@@ -525,6 +525,14 @@ func (s *nodeIndexerSuite) TestMappingFileDownloadFeedsClaircore() {
 	s.True(report.GetSuccess())
 	s.Len(report.GetContents().GetPackages(), 106)
 	s.Len(report.GetContents().GetRepositories(), 2)
+	cpes := make([]string, 0, len(report.GetContents().GetRepositories()))
+	for _, repository := range report.GetContents().GetRepositories() {
+		cpes = append(cpes, repository.GetCpe())
+	}
+	s.ElementsMatch([]string{
+		"cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
+		"cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*",
+	}, cpes)
 	s.Equal(int32(1), hits.Load())
 	s.FileExists(path)
 }
