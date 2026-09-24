@@ -49,7 +49,6 @@ type datastoreMockedTestSuite struct {
 	declarativeCtx context.Context
 
 	mockCtrl *gomock.Controller
-	mockSet  *mocks.MockTokenExchangerSet
 
 	authStore     store.Store
 	authDataStore DataStore
@@ -70,14 +69,17 @@ func (s *datastoreMockedTestSuite) SetupTest() {
 
 	s.roleDataStore = mockRoleDataStore.NewMockDataStore(s.mockCtrl)
 
-	s.mockSet = mocks.NewMockTokenExchangerSet(s.mockCtrl)
-	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
-	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
+	setTokenExchangerSetExpectations(mockSet)
 
 	s.authStore = mockAuthStore.NewMockStore(s.mockCtrl)
-	s.authDataStore = New(s.authStore, s.roleDataStore, s.mockSet)
+	s.authDataStore = New(s.authStore, s.roleDataStore, mockSet)
+}
+
+func setTokenExchangerSetExpectations(set *mocks.MockTokenExchangerSet) {
+	set.EXPECT().UpsertConfigForIssuer(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	set.EXPECT().RemoveConfigForIssuer(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	set.EXPECT().GetTokenExchanger(gomock.Any()).AnyTimes().Return(nil, true)
 }
 
 func (s *datastoreMockedTestSuite) TearDownTest() {

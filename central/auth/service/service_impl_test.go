@@ -67,7 +67,6 @@ type authServiceAccessControlTestSuite struct {
 
 	mockIssuerFactory    *tokensMocks.MockIssuerFactory
 	mockTokenExchanger   *mocks.MockTokenExchanger
-	tokenExchangerSet    m2m.TokenExchangerSet
 	mockExchangerFactory *mockExchangerFactory
 
 	accessCtx context.Context
@@ -115,9 +114,9 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.mockExchangerFactory = &mockExchangerFactory{mockExchanger: s.mockTokenExchanger}
 
-	s.tokenExchangerSet = m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory,
+	tokenExchangerSet := m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory,
 		s.mockExchangerFactory.factory())
-	authDataStore := datastore.New(store, nil, s.tokenExchangerSet)
+	authDataStore := datastore.New(store, nil, tokenExchangerSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
@@ -450,6 +449,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 }
 
 func (s *authServiceAccessControlTestSuite) TestGetConfig() {
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	addConfigResp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -489,6 +489,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfig() {
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
@@ -504,6 +505,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfig() {
 		Issuer:                  "https://stackrox.io",
 	}
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GENERIC)
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
@@ -518,6 +520,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfigWithID() {
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
@@ -534,6 +537,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
 		Issuer:                  "https://stackrox.io",
 	}
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GENERIC)
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
@@ -543,6 +547,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
 }
 
 func (s *authServiceAccessControlTestSuite) TestListConfigs() {
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	config1, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -563,6 +568,7 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 	})
 	s.Require().NoError(err)
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GENERIC)
 	config2, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -591,6 +597,7 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 }
 
 func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GENERIC)
 	config, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -621,8 +628,14 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 	}
 
 	gomock.InOrder(
+		s.mockTokenExchanger.EXPECT().Configs().Times(1).Return([]*storage.AuthMachineToMachineConfig{
+			v1tostorage.AuthM2MConfig(config.GetConfig()),
+		}),
 		s.mockTokenExchanger.EXPECT().Provider().Return(nil).Times(1),
 		s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil).Times(1),
+		s.mockTokenExchanger.EXPECT().GetType().Return(storage.AuthMachineToMachineConfig_GENERIC).Times(1),
+		s.mockTokenExchanger.EXPECT().Provider().Times(1).Return(nil),
+		s.mockIssuerFactory.EXPECT().RegisterSource(gomock.Any()).Times(1).Return(nil),
 	)
 
 	_, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx,
@@ -641,6 +654,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateAddConfig() {
 		TokenExpirationDuration: "1m",
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	_, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
 		Config: newConfig,
 	})
@@ -659,6 +673,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateConfigWithEmptyID() {
 }
 
 func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	config, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -679,6 +694,9 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 	})
 	s.Require().NoError(err)
 
+	s.mockTokenExchanger.EXPECT().Configs().Times(1).Return([]*storage.AuthMachineToMachineConfig{
+		v1tostorage.AuthM2MConfig(config.GetConfig()),
+	})
 	s.mockTokenExchanger.EXPECT().Provider().Return(nil).Times(1)
 	s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil).Times(1)
 
@@ -704,6 +722,7 @@ func (s *authServiceAccessControlTestSuite) TestExchangeToken() {
 	// Sample ID token generated from JWT.io with issuer https://stackrox.io.
 	//#nosec G101 -- This is a static example JWT token for testing purposes.
 	idToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovL3N0YWNrcm94LmlvIn0.-Ii0_J7GeJ9lp7Ja5SFdmk-ub7f7MtEF24Juf0WD5-k"
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GENERIC)
 	_, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -743,19 +762,26 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
 
+	s.expectAddM2MConfig(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS)
 	_, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
 		Config: newConfig,
 	})
 	s.Require().NoError(err)
 
-	s.mockTokenExchanger.EXPECT().Config().Return(v1tostorage.AuthM2MConfig(newConfig)).Times(2)
+	s.mockTokenExchanger.EXPECT().Configs().Return([]*storage.AuthMachineToMachineConfig{v1tostorage.AuthM2MConfig(newConfig)}).Times(1)
 
 	// No error during rollback.
 	gomock.InOrder(
 		s.mockTokenExchanger.EXPECT().Provider().Return(nil),
 		s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil),
+		s.mockTokenExchanger.EXPECT().GetType().Return(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS),
+		s.mockTokenExchanger.EXPECT().Provider().Times(1).Return(nil),
+		s.mockIssuerFactory.EXPECT().RegisterSource(gomock.Any()).Times(1).Return(nil),
 		s.mockTokenExchanger.EXPECT().Provider().Return(nil),
 		s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil),
+		s.mockTokenExchanger.EXPECT().GetType().Return(storage.AuthMachineToMachineConfig_GITHUB_ACTIONS),
+		s.mockTokenExchanger.EXPECT().Provider().Times(1).Return(nil),
+		s.mockIssuerFactory.EXPECT().RegisterSource(gomock.Any()).Times(1).Return(nil),
 	)
 
 	sameConfig := &v1.AuthMachineToMachineConfig{
@@ -801,6 +827,17 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 	}
 }
 
+func (s *authServiceAccessControlTestSuite) expectAddM2MConfig(cfgType storage.AuthMachineToMachineConfig_Type) {
+	provider, err := authproviders.NewProvider(
+		authproviders.WithID(uuid.NewV4().String()),
+		authproviders.WithName("Test Auth Provider"),
+	)
+	s.NoError(err)
+	s.mockTokenExchanger.EXPECT().GetType().Return(cfgType)
+	s.mockTokenExchanger.EXPECT().Provider().Return(provider)
+	s.mockIssuerFactory.EXPECT().RegisterSource(provider).Return(nil)
+}
+
 // Mocks used within tests.
 
 type mockExchangerFactory struct {
@@ -809,8 +846,10 @@ type mockExchangerFactory struct {
 }
 
 func (m *mockExchangerFactory) factory() m2m.TokenExchangerFactory {
-	return func(_ context.Context, config *storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
-		m.currentExchangerConfig = config
+	return func(_ context.Context, configs []*storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
+		if len(configs) > 0 {
+			m.currentExchangerConfig = configs[0]
+		}
 		return m.mockExchanger, nil
 	}
 }
