@@ -12,7 +12,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 36
+// Next available tag: 37
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -42,6 +42,8 @@ message Deployment {
   bool host_pid = 31; // @gotags: policy:"Host PID"
   bool host_ipc = 32; // @gotags: policy:"Host IPC"
   string runtime_class = 34; // @gotags: policy:"Runtime Class"
+  // owner_custom_resource_id is the controlling tracked custom resource UID, if one exists.
+  string owner_custom_resource_id = 36; // @gotags: sql:"fk(CustomResource:id),no-fk-constraint,allow-null,type(uuid),index=btree"
   repeated Toleration tolerations = 22; // @gotags: search:"-"
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 

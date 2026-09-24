@@ -806,6 +806,10 @@
         "runtimeClass": {
           "type": "string"
         },
+        "ownerCustomResourceId": {
+          "type": "string",
+          "description": "owner_custom_resource_id is the controlling tracked custom resource UID, if one exists."
+        },
         "tolerations": {
           "type": "array",
           "items": {
@@ -833,7 +837,7 @@
           "type": "boolean"
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 37"
     },
     "storageEPSS": {
       "type": "object",

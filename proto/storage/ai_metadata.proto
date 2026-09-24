@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// AIMetadata contains queryable AI-specific data extracted from a CustomResource.
+// Its ID is the UID of the corresponding CustomResource.
+message AIMetadata {
+  string id = 1; // @gotags: search:"-" sql:"pk,fk(CustomResource:id),type(uuid)"
+  string model_name = 2; // @gotags: search:"AI Model Name"
+  string model_format = 3; // @gotags: search:"AI Model Format"
+  string serving_runtime = 4;
+  string deployment_mode = 5;
+  string model_uri = 6;
+  string accelerator = 7;
+  int32 minimum_replicas = 8;
+  int32 maximum_replicas = 9;
+
+  enum State {
+    UNKNOWN = 0;
+    PENDING = 1;
+    READY = 2;
+    FAILED = 3;
+  }
+  State state = 10;
+}
