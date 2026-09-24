@@ -133,6 +133,12 @@ jobs:
             wait_for_konflux_images = input.event_name != 'pull_request' or ('konflux-build' in input.pr_labels and any(jobs.values()))
             write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
 
+            # Print a human-readable summary of which jobs will be dispatched.
+            print()
+            width = max(len(name) for name in jobs)
+            for name in sorted(jobs):
+                print(f'{name:<{width}}  {"✓" if jobs[name] else ""}')
+
   wait-for-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
