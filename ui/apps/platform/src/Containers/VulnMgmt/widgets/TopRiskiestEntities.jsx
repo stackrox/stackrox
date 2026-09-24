@@ -20,7 +20,6 @@ import {
     entityNounOrdinaryCasePlural,
     entityNounSentenceCaseSingular,
 } from '../entitiesForVulnerabilityManagement';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
@@ -325,8 +324,7 @@ const processData = (data, entityType, workflowState) => {
 };
 
 const TopRiskiestEntities = ({ entityContext, search, limit }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
+    const isNewImageDataModelEnabled = true;
     const entities = getEntitiesByContext(entityContext);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
