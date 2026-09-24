@@ -125,13 +125,14 @@ def test_unmatched_file_leaves_every_job_unsure(mapping):
     assert result.files[0].explicit_runs == ()
 
 
-def test_one_unmatched_file_discards_a_domain_match(mapping):
+def test_unmatched_file_keeps_a_run_and_blocks_a_skip(mapping):
     result = decide(
         mapping, ["sensor/common/foo.go", "pkg/booleanpolicy/foo.go"]
     )
-    assert result.reason == "unmatched"
+    assert result.reason == "domains"
+    assert result.matched_domains == frozenset({"sensor"})
     assert result.unmatched_files == ("pkg/booleanpolicy/foo.go",)
-    assert_unsure_all(result)
+    assert_split(result, SENSOR_RUN, set(), SENSOR_SKIP | SENSOR_UNSURE)
     by_path = {trace.path: trace for trace in result.files}
     assert "gke-nongroovy-e2e-tests" in by_path["sensor/common/foo.go"].explicit_runs
     assert by_path["pkg/booleanpolicy/foo.go"].explicit_runs == ()
@@ -298,10 +299,14 @@ def test_human_report_puts_the_summary_before_each_file(capsys):
     )
     assert exit_code == 0
     report = capsys.readouterr().out
+    summary, changed = report.split("Changed files", 1)
     assert report.index("Summary") < report.index("Changed files")
-    assert "no rule matches this path" in report
-    assert "explicit runs:" in report
-    assert "gke-nongroovy-e2e-tests" in report
+    assert "A file with no rule blocks a skip" in summary
+    assert "gke-nongroovy-e2e-tests" in summary
+    assert "every known job is unsure" not in summary
+    assert "no rule matches this path" in changed
+    assert "explicit runs:" in changed
+    assert "gke-nongroovy-e2e-tests" in changed
 
 
 def test_cli_shadow_json_lists_three_buckets(capsys):

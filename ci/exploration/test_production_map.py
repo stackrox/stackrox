@@ -50,6 +50,25 @@ def test_central_policy_runs_postgres_tests_and_skips_sensor_integration():
     assert result.files[0].explicit_runs == ("go-postgres",)
 
 
+def test_matched_runs_stay_when_other_files_match_nothing():
+    mapping, result = decide(
+        CI_FILES
+        + [
+            "ci/exploration/samples/docs-note.md",
+            "sensor/test-selection-shadow.txt",
+            "central/policy/test-selection-shadow.txt",
+        ]
+    )
+    assert result.reason == "domains"
+    assert result.matched_domains == frozenset({"sensor", "central-policy"})
+    assert result.run == frozenset(
+        {"style-check", "sensor-integration-tests", "go-postgres"}
+    )
+    assert result.skip == frozenset()
+    assert result.unsure == mapping.jobs - result.run
+    assert result.execute == mapping.jobs
+
+
 def test_ci_only_change_leaves_every_job_unsure_and_runs_them():
     mapping, result = decide(CI_FILES)
     assert result.reason == "unmatched"

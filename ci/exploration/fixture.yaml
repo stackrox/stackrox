@@ -5,8 +5,9 @@
 # Give it the list of files a PR changed. It places every name under jobs
 # into one bucket:
 #   run    - this change needs that job
-#   skip   - every matched area explicitly said to skip that job
+#   skip   - every non-doc file matched a rule and said to skip that job
 #   unsure - no decision yet, so the job still runs until the map is refined
+# A file that matches nothing does not cancel a run. It does block a skip.
 #
 # Each pattern is a Python regular expression against the file path.
 # "^ui/" matches ui/src/App.tsx. "\.md$" matches README.md.
@@ -154,8 +155,9 @@ domains:
 
   # Example file: central/policy/service.go
   # Only this subdirectory. central/sensorupgrade/ matches nothing
-  # here. An unmatched path leaves every known job unsure, and unsure
-  # still runs.
+  # here. A pull request of only that path leaves every job unsure.
+  # The same path next to a sensor file keeps the sensor runs and
+  # blocks the sensor skips.
   # gke-qa-e2e-tests stays unsure until policy tests are split more finely.
   central-policy:
     paths:

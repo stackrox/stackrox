@@ -131,10 +131,11 @@ def resolve(
     """Classify mapping.jobs for this diff.
 
     Precedence: run-all label, missing diff, always_run_all, docs-only,
-    an unmatched file, then per-domain opinions. The longest matching
-    path wins for a file; a shorter parent does not also vote.
-    An unmatched file does not name a test, so every known job is unsure
-    and still executed.
+    then per-domain opinions. The longest matching path wins for a file;
+    a shorter parent does not also vote.
+    A run from any matched file stays. A skip stays only when every
+    non-doc file matched and said skip. A file with no rule leaves
+    that job unsure. When no file matches, every job is unsure.
     """
     files = _dedupe(changed_files) if changed_files else []
     traces = _traces(files, mapping)
@@ -163,7 +164,7 @@ def resolve(
         matched_domains.extend(domain.name for domain in winners)
         per_file.append(_merge_domain_votes(winners, mapping))
 
-    if unmatched:
+    if not per_file:
         return _selection(
             mapping,
             run=frozenset(),
@@ -175,7 +176,11 @@ def resolve(
             files=traces,
         )
 
-    opinions = _merge_vote_dicts(per_file, mapping.jobs)
+    votes = per_file
+    if unmatched:
+        # An unmatched file names no test. Merging that vote keeps a run and blocks a skip.
+        votes = [*per_file, {job: "unsure" for job in mapping.jobs}]
+    opinions = _merge_vote_dicts(votes, mapping.jobs)
     for job in mapping.code_always_run:
         opinions[job] = "run"
 
@@ -198,6 +203,7 @@ def resolve(
         reason="domains",
         shadow=shadow,
         matched_domains=frozenset(matched_domains),
+        unmatched_files=tuple(unmatched),
         files=traces,
     )
 
@@ -509,9 +515,14 @@ def _reason_sentence(selection: Selection) -> str:
         "no-diff": "The diff was missing, so every known job runs.",
         "always-run-all": "A changed file matches a run-everything pattern, so every known job runs.",
         "docs-only": "Every changed file is documentation, so only the docs jobs run.",
-        "unmatched": "A changed file matches no rule. It names no test, so every known job is unsure and all of them run.",
-        "domains": "Each file voted. One run is enough. Skip sticks only when every matched file says skip.",
+        "unmatched": "No changed file matches a rule. None of them names a test, so every known job is unsure and all of them run.",
+        "domains": "Each matched file voted. One run is enough. Skip sticks only when every non-doc file matched and said skip.",
     }
+    if selection.reason == "domains" and selection.unmatched_files:
+        return (
+            "Matched files still name their tests. One run is enough. "
+            "A file with no rule blocks a skip, so that job stays unsure."
+        )
     return sentences.get(selection.reason, selection.reason)
 
 

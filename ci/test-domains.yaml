@@ -1,5 +1,7 @@
-# First production map. Three areas have rules. Every other path matches
-# nothing, so every job below is unsure and still runs.
+# First production map. Three areas have rules. A pull request whose
+# files all match nothing leaves every job unsure, and unsure still runs.
+# A matched file keeps its runs when other files match nothing. Those
+# unmatched files block a skip.
 #
 # The jobs list is the test jobs a pull request can hit: GitHub Actions
 # job ids, then Prow job names. A job that is not listed here cannot
