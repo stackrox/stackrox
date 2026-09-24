@@ -105,7 +105,7 @@ jobs:
             print(f'{k} = {v}')
 
         jobs_registry = [
-            Job(name='e2e-byodb-tests'),
+            Job(name='e2e-byodb-tests', require_pr_label=True),
             Job(name='e2e-db-backup-restore-tests'),
             Job(name='e2e-gke-upgrade-tests'),
             Job(name='e2e-nongroovy-tests'),
