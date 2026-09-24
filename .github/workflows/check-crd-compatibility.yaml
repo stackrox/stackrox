@@ -55,11 +55,6 @@ jobs:
       run: |
         make -C operator bundle-post-process
         released_version="$(make --no-print-directory -C operator replaced-version)"
-        if ! git rev-parse "${released_version}" >/dev/null 2>&1; then
-          echo "Tag ${released_version} does not exist yet, falling back to latest release tag"
-          released_version="$(git tag --list --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.0$' | head -1)"
-          echo "Using ${released_version}"
-        fi
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
     - name: Checkout previous released version

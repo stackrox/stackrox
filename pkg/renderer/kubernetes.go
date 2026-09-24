@@ -55,12 +55,6 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 	if c.K8sConfig.CentralDBImage == "" {
 		c.K8sConfig.CentralDBImage = imageFlavor.CentralDBImage()
 	}
-	if c.K8sConfig.ScannerImage == "" {
-		c.K8sConfig.ScannerImage = imageFlavor.ScannerImage()
-	}
-	if c.K8sConfig.ScannerDBImage == "" {
-		c.K8sConfig.ScannerDBImage = imageFlavor.ScannerDBImage()
-	}
 	if c.K8sConfig.ScannerV4Image == "" {
 		c.K8sConfig.ScannerV4Image = imageFlavor.ScannerV4Image()
 	}
@@ -99,16 +93,6 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		if err != nil {
 			return err
 		}
-	}
-
-	c.K8sConfig.ScannerRegistry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerImage)
-	if err != nil {
-		return err
-	}
-	if c.K8sConfig.Registry != c.K8sConfig.ScannerRegistry {
-		c.K8sConfig.ScannerSecretName = "stackrox-scanner"
-	} else {
-		c.K8sConfig.ScannerSecretName = "stackrox"
 	}
 
 	if mode == renderAll {
