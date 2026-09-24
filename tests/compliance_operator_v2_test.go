@@ -355,10 +355,14 @@ func assertScanSetting(ctx context.Context, t testutils.T, client ctrlClient.Cli
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSetting)
 	require.NoErrorf(t, err, "ScanSetting %s/%s does not exist", namespace, name)
 
-	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
-	require.NoError(t, err)
 	assert.Equal(t, scanConfig.GetScanName(), scanSetting.GetName())
-	assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
+	// Only scheduled scan configs map to a ScanSetting cron; one-time scans (no
+	// ScanSchedule) leave it empty, and ConvertToCronTab rejects an empty schedule.
+	if scanConfig.GetScanConfig().GetScanSchedule() != nil {
+		cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
+		require.NoError(t, err)
+		assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
+	}
 	require.Contains(t, scanSetting.GetLabels(), "app.kubernetes.io/name")
 	assert.Equal(t, scanSetting.GetLabels()["app.kubernetes.io/name"], "stackrox")
 	require.Contains(t, scanSetting.GetAnnotations(), "owner")
