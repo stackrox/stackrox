@@ -130,8 +130,10 @@ spec:
     - name: rpms-signature-scan
       computeResources:
         limits:
+          cpu: 500m
           memory: 512Mi
         requests:
+          cpu: 500m
           memory: 512Mi
 
   taskRunTemplate:
