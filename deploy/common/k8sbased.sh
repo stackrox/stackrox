@@ -940,19 +940,17 @@ function launch_sensor {
         extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
 
-      # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-      # Matcher-not-ready drops the first index as unretryable; a short interval
-      # covers the next scan without restarting collector.
-      helm_args+=(
-        --set customize.envVars.ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
-        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=30s
-      )
-
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
+
+      # Scan every 9-11 minutes with Helm deployments.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=10m
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
+      )
 
       if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         helm_args+=(
@@ -1099,6 +1097,10 @@ function launch_sensor {
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
         kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
+
+      # Scan every 9-11 minutes with manifest deployments.
+      kubectl -n "${sensor_namespace}" set env ds/collector --containers=compliance \
+        ROX_NODE_SCANNING_INTERVAL=10m ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
     fi
 
     collector_env=()
