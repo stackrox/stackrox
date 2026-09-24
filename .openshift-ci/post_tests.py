@@ -250,7 +250,7 @@ class PostClusterTest(StoreArtifacts):
         )
         self.data_to_store.append(self.VM_GUEST_LOG_DIR)
         self.run_with_best_effort(
-            ["scripts/ci/collect-vm-guest-logs.sh", "--cleanup-only"],
+            ["scripts/ci/delete-vm-ns.sh"],
             timeout=60,
         )
 

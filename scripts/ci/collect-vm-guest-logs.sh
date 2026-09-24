@@ -7,7 +7,6 @@ set -euo pipefail
 #
 # Usage:
 #   collect-vm-guest-logs.sh <output-dir>
-#   collect-vm-guest-logs.sh --cleanup-only
 #
 # Environment:
 #   VM_SCAN_NAMESPACE_PREFIX  default: vm-scan-e2e
@@ -23,7 +22,6 @@ source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 usage() {
     echo "./scripts/ci/collect-vm-guest-logs.sh <output-dir>"
-    echo "./scripts/ci/collect-vm-guest-logs.sh --cleanup-only"
 }
 
 vm_scan_e2e_dir() {
@@ -70,24 +68,6 @@ resolve_ssh_identity() {
         return 0
     fi
     return 1
-}
-
-list_vm_scan_namespaces() {
-    local prefix="${VM_SCAN_NAMESPACE_PREFIX:-vm-scan-e2e}"
-    local out err
-    out="$(mktemp)"
-    err="$(mktemp)"
-    if ! kubectl --request-timeout=30s get ns \
-        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
-        > "$out" 2>"$err"; then
-        info "kubectl get ns failed: $(<"$err")" >&2
-        rm -f "$out" "$err"
-        return 1
-    fi
-    rm -f "$err"
-    grep -E "^${prefix}(-|$)" "$out" || true
-    rm -f "$out"
-    return 0
 }
 
 # list_vm_scan_vmis prints "namespace name" lines for VMIs in vm-scan-e2e namespaces.
@@ -164,24 +144,6 @@ collect_roxagent_journal() {
     rm -f "$stderr_file"
 }
 
-delete_vm_scan_namespaces() {
-    local ns ns_list
-    info ">>> Cleaning up VM scan e2e namespaces <<<"
-    ns_list="$(mktemp)"
-    if ! list_vm_scan_namespaces > "$ns_list"; then
-        info "Skipping namespace delete: kubectl get ns failed"
-        rm -f "$ns_list"
-        return 0
-    fi
-    while IFS= read -r ns; do
-        [[ -z "$ns" ]] && continue
-        info "Deleting namespace ${ns}"
-        kubectl delete namespace "$ns" --wait=false --request-timeout=60s </dev/null 2>&1 || \
-            info "Namespace delete for ${ns} failed or already removed"
-    done < "$ns_list"
-    rm -f "$ns_list"
-}
-
 collect_journals() {
     local output_dir="$1"
     local guest_user="${VM_GUEST_USER:-cloud-user}"
@@ -237,11 +199,6 @@ main() {
     if [[ $# -lt 1 ]]; then
         usage
         exit 1
-    fi
-
-    if [[ "$1" == "--cleanup-only" ]]; then
-        delete_vm_scan_namespaces
-        exit 0
     fi
 
     local output_dir="$1"
