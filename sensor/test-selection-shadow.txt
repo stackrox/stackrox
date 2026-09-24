@@ -1,0 +1,2 @@
+The shadow test-selection map treats every file under sensor/ as a Sensor change.
+This file is only here so that rule has a changed path to report.
