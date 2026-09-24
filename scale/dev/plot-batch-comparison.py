@@ -240,6 +240,7 @@ def _finalize_plot(output_dir, filename, title, ylabel, equations, record,
     plt.grid(True, alpha=0.3)
     add_equation_text(equations)
     record(os.path.splitext(filename)[0], equations)
+    plt.ylim(bottom=0)  # Anchor the y-axis at 0 so magnitudes are comparable across plots
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, filename), dpi=150)
     print(f"Saved: {filename}{print_suffix}")

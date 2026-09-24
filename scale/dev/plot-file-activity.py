@@ -124,6 +124,7 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
         equations.append((label2, eq2[0], eq2[1], 'C1'))
     add_equation_text(equations)
 
+    plt.ylim(bottom=0)  # Anchor the y-axis at 0 so magnitudes are comparable across plots
     plt.tight_layout()
 
     if output_file:
