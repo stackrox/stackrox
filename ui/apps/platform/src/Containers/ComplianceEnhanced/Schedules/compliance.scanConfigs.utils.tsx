@@ -22,26 +22,36 @@ export const defaultNodeRoles: string[] = ['master', 'worker'];
 // Special role that selects every node; mutually exclusive with any other role.
 export const allNodesRole = '@all';
 
-// A concrete node role is 1-39 alphanumeric-or-hyphen characters that start and end
-// with an alphanumeric character. A leading/trailing hyphen would produce an invalid
-// "node-role.kubernetes.io/<role>" label key on the backend, so such a role is
-// rejected here (client-side) as well as server-side, instead of silently producing a
-// scan that matches zero nodes. Keep in sync with nodeRoleRegexp in
+// A concrete node role is 1-39 lowercase alphanumeric-or-hyphen characters, starting and
+// ending with an alphanumeric character. The UI is intentionally stricter than the backend
+// nodeRoleRegexp (which allows [A-Za-z0-9]): the Compliance Operator uses the role verbatim
+// as a case-sensitive "node-role.kubernetes.io/<role>" label key AND as part of an RFC1123
+// (lowercase) object name, so an uppercase role is accepted by the API but then hard-fails at
+// the operator. Keep in sync with nodeRoleRegexp in
 // central/complianceoperator/v2/scanconfigurations/service/service_impl.go.
-export const nodeRoleRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/;
+export const nodeRoleRegex = /^[a-z0-9]([a-z0-9-]{0,37}[a-z0-9])?$/;
+
+// Shared validation-rule message for a single node role. Used by both the input-time feedback
+// in ScanConfigOptions and the submit-time yup rule so the wording comes from one source.
+export const nodeRoleValidationMessage =
+    'Use 1-39 lowercase alphanumeric characters and hyphens, starting and ending with a letter or number, or @all.';
 
 // A single node role is valid when it is either the @all wildcard or matches the regex.
 export function isValidNodeRole(role: string): boolean {
     return role === allNodesRole || nodeRoleRegex.test(role);
 }
 
-// A node roles array is valid when every entry is a valid role and @all is not
-// combined with any other role.
+// A node roles array is valid when every entry is a valid role, @all is not combined with any
+// other role, and there are no duplicate roles (the backend rejects duplicates with a 400).
 export function areNodeRolesValid(roles: string[]): boolean {
     if (!roles.every(isValidNodeRole)) {
         return false;
     }
-    return !(roles.includes(allNodesRole) && roles.length > 1);
+    if (roles.includes(allNodesRole) && roles.length > 1) {
+        return false;
+    }
+    // Reject duplicates, mirroring the backend which returns 400 for repeated roles.
+    return new Set(roles).size === roles.length;
 }
 
 export type ScanConfigParameters = {

@@ -210,6 +210,11 @@ describe('compliance.scanConfigs.utils', () => {
             expect(isValidNodeRole('infra-')).toBe(false);
             expect(isValidNodeRole('-')).toBe(false);
         });
+
+        it('rejects uppercase roles (operator uses the role as a case-sensitive label key)', () => {
+            expect(isValidNodeRole('Master')).toBe(false);
+            expect(isValidNodeRole('Infra')).toBe(false);
+        });
     });
 
     describe('areNodeRolesValid', () => {
@@ -227,6 +232,10 @@ describe('compliance.scanConfigs.utils', () => {
 
         it('rejects @all combined with any other role', () => {
             expect(areNodeRolesValid(['@all', 'infra'])).toBe(false);
+        });
+
+        it('rejects duplicate roles (backend returns 400 for repeated roles)', () => {
+            expect(areNodeRolesValid(['infra', 'infra'])).toBe(false);
         });
     });
 });
