@@ -26,12 +26,13 @@ def main(argv=None):
     infra_only = os.getenv("E2E_INFRA_ONLY", "false").lower() == "true"
     attributes = {"infra_only": str(infra_only).lower()}
     if infra_only:
-        record_skipped(
-            "test-execution",
-            args.name,
-            reason="e2e-infra-only",
-            attributes=attributes,
-        )
+        for phase in ("test-execution", "post-test-collection"):
+            record_skipped(
+                phase,
+                args.name,
+                reason="e2e-infra-only",
+                attributes=attributes,
+            )
 
     try:
         with timed_span(args.phase, args.name, attributes=attributes):
