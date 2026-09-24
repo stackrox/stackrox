@@ -153,8 +153,9 @@ domains:
       ocp-4-12-qa-e2e-tests: skip
 
   # Example file: central/policy/service.go
-  # Only this subdirectory. central/sensorupgrade/ would match nothing
-  # here and would run every job, because an unknown path is unsafe to skip.
+  # Only this subdirectory. central/sensorupgrade/ matches nothing
+  # here. An unmatched path leaves every known job unsure, and unsure
+  # still runs.
   # gke-qa-e2e-tests stays unsure until policy tests are split more finely.
   central-policy:
     paths:

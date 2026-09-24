@@ -1,20 +1,71 @@
-# First production map. Three areas only. Every other path runs all
-# three jobs below, because an unknown file is not safe to skip.
+# First production map. Three areas have rules. Every other path matches
+# nothing, so every job below is unsure and still runs.
 #
-# Job names are the GitHub Actions job ids:
-#   style-check               make style-slim, in the Style workflow
-#   sensor-integration-tests  make sensor-integration-test, in Unit Tests
-#   go-postgres               Central Postgres tests, in Unit Tests
-#
-# This file does not turn any job off. The shadow workflow prints the
-# split and the rest of CI keeps running as it does today.
+# The jobs list is the test jobs a pull request can hit: GitHub Actions
+# job ids, then Prow job names. A job that is not listed here cannot
+# appear in the shadow report.
 
 version: 1
 
 jobs:
+  # GitHub Actions
   - style-check
-  - sensor-integration-tests
+  - misc-checks
+  - golangci-lint
+  - check-generated-files
+  - github-actions-lint
+  - github-actions-shellcheck
+  - openshift-ci-lint
+  - check-dependent-images-exist
+  - check-crd-compatibility
+  - go
   - go-postgres
+  - go-bench
+  - ui
+  - ui-component
+  - local-roxctl-tests
+  - shell-unit-tests
+  - openshift-ci-unit-tests
+  - sensor-integration-tests
+  - db-integration-tests
+  - scanner-ft-images
+  - scanner-ft-run
+  - e2e-byodb-tests
+  - e2e-db-backup-restore-tests
+  - e2e-gke-upgrade-tests
+  - e2e-nongroovy-tests
+  - e2e-qa-tests-gke
+  - e2e-qa-tests-gke-konflux
+  - e2e-qa-tests-ocp-4-22
+  - e2e-test-on-kind
+  # Prow
+  - aks-qa-e2e-tests
+  - aro-qa-e2e-tests
+  - eks-qa-e2e-tests
+  - gke-external-pg-17-qa-e2e-tests
+  - gke-nongroovy-compatibility-tests
+  - gke-nongroovy-e2e-tests
+  - gke-operator-e2e-tests
+  - gke-qa-e2e-tests
+  - gke-race-condition-qa-e2e-tests
+  - gke-scale-tests
+  - gke-scanner-v4-install-tests
+  - gke-ui-e2e-tests
+  - gke-version-compatibility-tests
+  - ibmcloudz-qa-e2e-tests
+  - ocp-compliance-e2e-tests
+  - ocp-nongroovy-e2e-tests
+  - ocp-operator-e2e-tests
+  - ocp-perf-scale-tests
+  - ocp-qa-e2e-tests
+  - ocp-scanner-v4-install-tests
+  - ocp-ui-e2e-tests
+  - ocp-vm-scanning-e2e-tests
+  - osd-aws-qa-e2e-tests
+  - osd-gcp-qa-e2e-tests
+  - powervs-qa-e2e-tests
+  - rosa-qa-e2e-tests
+  - ui-component-tests
 
 # Any code change still runs style. A domain cannot skip it.
 code_always_run:
@@ -45,6 +96,7 @@ domains:
 
   # Example: sensor/common/foo.go
   # Run the Sensor integration job. Skip the Central Postgres job.
+  # Every other job stays unsure.
   sensor:
     paths:
       - "^sensor/"
@@ -56,7 +108,7 @@ domains:
   # The policy package is the sample Central area.
   # Run the Central Postgres job. Skip the Sensor integration job.
   # go-postgres is the Central test job that exists today. It is not
-  # a policy-only suite.
+  # a policy-only suite. Every other job stays unsure.
   central-policy:
     paths:
       - "^central/policy/"

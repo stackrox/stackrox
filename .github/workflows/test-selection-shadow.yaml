@@ -10,13 +10,15 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+      - labeled
+      - unlabeled
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +41,6 @@ jobs:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
           set -euo pipefail
-          echo "Shadow mode. This job does not skip any other CI job."
           files="$(mktemp)"
           if ! gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' > "${files}"; then
             echo "Could not list changed files. Showing the run-everything result."

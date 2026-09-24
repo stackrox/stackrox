@@ -62,6 +62,12 @@ def assert_run_all(result):
     assert result.execute == JOBS
 
 
+def assert_unsure_all(result):
+    assert_split(result, set(), set(), JOBS)
+    assert result.matched_domains == frozenset()
+    assert result.execute == JOBS
+
+
 def test_fixture_uses_ten_path_patterns(mapping):
     patterns = list(mapping.always_run_all_patterns)
     patterns.extend(mapping.skip_all_patterns)
@@ -110,11 +116,13 @@ def test_docs_mixed_with_code_use_the_code_domain(mapping):
     assert_split(result, SENSOR_RUN, SENSOR_SKIP, SENSOR_UNSURE)
 
 
-def test_unmatched_file_runs_every_job(mapping):
+def test_unmatched_file_leaves_every_job_unsure(mapping):
     result = decide(mapping, ["pkg/booleanpolicy/foo.go"])
     assert result.reason == "unmatched"
     assert result.unmatched_files == ("pkg/booleanpolicy/foo.go",)
-    assert_run_all(result)
+    assert_unsure_all(result)
+    assert result.files[0].kind == "unmatched"
+    assert result.files[0].explicit_runs == ()
 
 
 def test_one_unmatched_file_discards_a_domain_match(mapping):
@@ -123,7 +131,10 @@ def test_one_unmatched_file_discards_a_domain_match(mapping):
     )
     assert result.reason == "unmatched"
     assert result.unmatched_files == ("pkg/booleanpolicy/foo.go",)
-    assert_run_all(result)
+    assert_unsure_all(result)
+    by_path = {trace.path: trace for trace in result.files}
+    assert "gke-nongroovy-e2e-tests" in by_path["sensor/common/foo.go"].explicit_runs
+    assert by_path["pkg/booleanpolicy/foo.go"].explicit_runs == ()
 
 
 def test_longer_prefix_overrides_parent_instead_of_union(mapping):
@@ -272,6 +283,25 @@ def test_rejects_an_unknown_parent_domain():
     }
     with pytest.raises(ValueError, match="missing"):
         parse_mapping(data)
+
+
+def test_human_report_puts_the_summary_before_each_file(capsys):
+    exit_code = main(
+        [
+            "--mapping",
+            str(FIXTURE),
+            "--format",
+            "human",
+            "sensor/common/foo.go",
+            "pkg/booleanpolicy/foo.go",
+        ]
+    )
+    assert exit_code == 0
+    report = capsys.readouterr().out
+    assert report.index("Summary") < report.index("Changed files")
+    assert "no rule matches this path" in report
+    assert "explicit runs:" in report
+    assert "gke-nongroovy-e2e-tests" in report
 
 
 def test_cli_shadow_json_lists_three_buckets(capsys):

@@ -46,6 +46,16 @@ class Mapping:
 
 
 @dataclass(frozen=True)
+class FileTrace:
+    """One changed file and the jobs its own rule explicitly runs."""
+
+    path: str
+    kind: str
+    domain: str
+    explicit_runs: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Selection:
     run: frozenset[str]
     skip: frozenset[str]
@@ -55,6 +65,7 @@ class Selection:
     matched_domains: frozenset[str]
     unmatched_files: tuple[str, ...]
     shadow: bool
+    files: tuple[FileTrace, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -66,6 +77,15 @@ class Selection:
             "execute": sorted(self.execute),
             "matched_domains": sorted(self.matched_domains),
             "unmatched_files": list(self.unmatched_files),
+            "files": [
+                {
+                    "path": trace.path,
+                    "kind": trace.kind,
+                    "domain": trace.domain,
+                    "explicit_runs": list(trace.explicit_runs),
+                }
+                for trace in self.files
+            ],
         }
 
 
@@ -113,20 +133,24 @@ def resolve(
     Precedence: run-all label, missing diff, always_run_all, docs-only,
     an unmatched file, then per-domain opinions. The longest matching
     path wins for a file; a shorter parent does not also vote.
+    An unmatched file does not name a test, so every known job is unsure
+    and still executed.
     """
-    if mapping.run_all_label in (labels or []):
-        return _everything(mapping, reason="label", shadow=shadow)
+    files = _dedupe(changed_files) if changed_files else []
+    traces = _traces(files, mapping)
 
-    if not changed_files:
+    if mapping.run_all_label in (labels or []):
+        return _everything(mapping, reason="label", shadow=shadow, files=traces)
+
+    if not files:
         return _everything(mapping, reason="no-diff", shadow=shadow)
 
-    files = _dedupe(changed_files)
     if any(_matches(path, mapping.always_run_all) for path in files):
-        return _everything(mapping, reason="always-run-all", shadow=shadow)
+        return _everything(mapping, reason="always-run-all", shadow=shadow, files=traces)
 
     significant = [path for path in files if not _matches(path, mapping.skip_all)]
     if not significant:
-        return _docs_only(mapping, shadow=shadow)
+        return _docs_only(mapping, shadow=shadow, files=traces)
 
     per_file: list[dict[str, str]] = []
     matched_domains: list[str] = []
@@ -140,11 +164,15 @@ def resolve(
         per_file.append(_merge_domain_votes(winners, mapping))
 
     if unmatched:
-        return _everything(
+        return _selection(
             mapping,
+            run=frozenset(),
+            skip=frozenset(),
+            unsure=mapping.jobs,
             reason="unmatched",
             shadow=shadow,
-            unmatched=tuple(unmatched),
+            unmatched_files=tuple(unmatched),
+            files=traces,
         )
 
     opinions = _merge_vote_dicts(per_file, mapping.jobs)
@@ -170,6 +198,7 @@ def resolve(
         reason="domains",
         shadow=shadow,
         matched_domains=frozenset(matched_domains),
+        files=traces,
     )
 
 
@@ -209,6 +238,7 @@ def _everything(
     *,
     reason: str,
     shadow: bool,
+    files: tuple[FileTrace, ...] = (),
     unmatched: tuple[str, ...] = (),
 ) -> Selection:
     return _selection(
@@ -219,10 +249,16 @@ def _everything(
         reason=reason,
         shadow=shadow,
         unmatched_files=unmatched,
+        files=files,
     )
 
 
-def _docs_only(mapping: Mapping, *, shadow: bool) -> Selection:
+def _docs_only(
+    mapping: Mapping,
+    *,
+    shadow: bool,
+    files: tuple[FileTrace, ...],
+) -> Selection:
     return _selection(
         mapping,
         run=mapping.docs_run,
@@ -230,6 +266,7 @@ def _docs_only(mapping: Mapping, *, shadow: bool) -> Selection:
         unsure=frozenset(),
         reason="docs-only",
         shadow=shadow,
+        files=files,
     )
 
 
@@ -243,6 +280,7 @@ def _selection(
     shadow: bool,
     matched_domains: frozenset[str] = frozenset(),
     unmatched_files: tuple[str, ...] = (),
+    files: tuple[FileTrace, ...] = (),
 ) -> Selection:
     # Shadow mode records the split and still runs every known job.
     execute = mapping.jobs if shadow else run | unsure
@@ -255,7 +293,26 @@ def _selection(
         matched_domains=matched_domains,
         unmatched_files=unmatched_files,
         shadow=shadow,
+        files=files,
     )
+
+
+def _traces(files: list[str], mapping: Mapping) -> tuple[FileTrace, ...]:
+    return tuple(_trace(path, mapping) for path in files)
+
+
+def _trace(path: str, mapping: Mapping) -> FileTrace:
+    if _matches(path, mapping.always_run_all):
+        return FileTrace(path, "always-run-all", "", tuple(sorted(mapping.jobs)))
+    if _matches(path, mapping.skip_all):
+        return FileTrace(path, "docs", "", ())
+    winners = _winning_domains(path, mapping)
+    if not winners:
+        return FileTrace(path, "unmatched", "", ())
+    votes = _merge_domain_votes(winners, mapping)
+    explicit = tuple(sorted(job for job, opinion in votes.items() if opinion == "run"))
+    domain = ",".join(sorted(winner.name for winner in winners))
+    return FileTrace(path, "domain", domain, explicit)
 
 
 def _winning_domains(path: str, mapping: Mapping) -> list[Domain]:
@@ -417,25 +474,75 @@ def _compile(pattern: str, where: str) -> re.Pattern[str]:
 
 
 def _print_human(selection: Selection) -> None:
-    payload = selection.to_dict()
-    for key in (
-        "shadow",
-        "reason",
-        "run",
-        "skip",
-        "unsure",
-        "execute",
-        "matched_domains",
-        "unmatched_files",
-    ):
-        value = payload[key]
-        if isinstance(value, list):
-            rendered = ", ".join(value) if value else "-"
-        elif isinstance(value, bool):
-            rendered = "true" if value else "false"
-        else:
-            rendered = str(value)
-        print(f"{key}: {rendered}")
+    if selection.shadow:
+        print("Shadow mode. This report does not skip any other CI job.")
+        print("Unsure jobs still run. Skip is only a prediction.")
+    else:
+        print("Enforce mode. Execute is run plus unsure. Skip is dropped.")
+    print()
+    print("Summary")
+    print(f"  reason: {selection.reason}")
+    print(f"  {_reason_sentence(selection)}")
+    explicit = {job for trace in selection.files for job in trace.explicit_runs}
+    noted = sorted(selection.run - explicit) if selection.reason == "domains" else []
+    _print_bucket("run", selection.run, note_jobs=noted)
+    _print_bucket("skip", selection.skip)
+    _print_bucket("unsure", selection.unsure)
+    if selection.shadow:
+        print("  execute: every job above (shadow mode runs run, skip, and unsure)")
+    else:
+        _print_bucket("execute", selection.execute)
+    print()
+    print("Changed files")
+    if not selection.files:
+        print("  (no file list)")
+        return
+    for trace in selection.files:
+        print(f"  {trace.path}")
+        print(f"    {_trace_sentence(trace)}")
+        _print_bucket("explicit runs", trace.explicit_runs, indent="    ")
+
+
+def _reason_sentence(selection: Selection) -> str:
+    sentences = {
+        "label": "The ci-run-all-tests label is set, so every known job runs.",
+        "no-diff": "The diff was missing, so every known job runs.",
+        "always-run-all": "A changed file matches a run-everything pattern, so every known job runs.",
+        "docs-only": "Every changed file is documentation, so only the docs jobs run.",
+        "unmatched": "A changed file matches no rule. It names no test, so every known job is unsure and all of them run.",
+        "domains": "Each file voted. One run is enough. Skip sticks only when every matched file says skip.",
+    }
+    return sentences.get(selection.reason, selection.reason)
+
+
+def _trace_sentence(trace: FileTrace) -> str:
+    if trace.kind == "docs":
+        return "documentation or changelog; ignored when other files change code"
+    if trace.kind == "unmatched":
+        return "no rule matches this path"
+    if trace.kind == "always-run-all":
+        return "matches a run-everything pattern"
+    if trace.domain:
+        return f"domain {trace.domain}"
+    return trace.kind
+
+
+def _print_bucket(
+    label: str,
+    jobs: frozenset[str] | tuple[str, ...],
+    *,
+    note_jobs: list[str] | None = None,
+    indent: str = "  ",
+) -> None:
+    names = list(jobs) if isinstance(jobs, tuple) else sorted(jobs)
+    notes = set(note_jobs or [])
+    print(f"{indent}{label}:")
+    if not names:
+        print(f"{indent}  -")
+        return
+    for name in names:
+        suffix = " (every code change)" if name in notes else ""
+        print(f"{indent}  {name}{suffix}")
 
 
 if __name__ == "__main__":
