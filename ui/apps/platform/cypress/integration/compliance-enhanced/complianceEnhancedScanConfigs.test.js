@@ -122,7 +122,7 @@ describe('Compliance Schedules', () => {
         // Node roles: defaults to master + worker; add a custom role and remove worker
         cy.get('input[placeholder="Type a role and press Enter to add"]').type('infra{enter}');
         cy.get('.pf-v6-c-label__content:contains("infra")');
-        cy.get('.pf-v6-c-label:contains("worker") button[aria-label="Close worker"]').click();
+        cy.get('.pf-v6-c-label:contains("worker") button[aria-label="Remove worker"]').click();
         cy.get('.pf-v6-c-label__content:contains("worker")').should('not.exist');
 
         navigateWizardNext();
