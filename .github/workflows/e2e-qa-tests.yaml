@@ -87,7 +87,6 @@ jobs:
       # Experimental control mode for measuring CI infrastructure without QA
       # test execution. It is enabled only by the dedicated PR label.
       E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
-      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
       CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
       CLUSTER_NAME_PREFIX_MAX: "20"
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
@@ -178,14 +177,12 @@ jobs:
           EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
         run: |
           label_e2e_infra_only="$E2E_INFRA_ONLY"
-          label_scanner_v4_vuln_readiness="$SCANNER_V4_VULN_READINESS"
           while IFS= read -r line; do
             if [[ -n "$line" ]]; then
               echo "$line" >> "$GITHUB_ENV"
             fi
           done <<< "$EXTRA_ENV_VARS"
           echo "E2E_INFRA_ONLY=${label_e2e_infra_only}" >> "$GITHUB_ENV"
-          echo "SCANNER_V4_VULN_READINESS=${label_scanner_v4_vuln_readiness}" >> "$GITHUB_ENV"
 
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1

@@ -43,7 +43,6 @@ jobs:
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
       E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
-      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -196,7 +195,6 @@ jobs:
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
       E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
-      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -348,7 +346,6 @@ jobs:
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
       E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
-      SCANNER_V4_VULN_READINESS: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 60 # Keep in sync with cluster's lifespan
     steps:
 

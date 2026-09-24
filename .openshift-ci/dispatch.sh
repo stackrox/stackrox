@@ -41,7 +41,6 @@ create_exit_trap
 if pr_has_label "e2e-infra-only"; then
     info "E2E infra-only mode enabled; Prow will provision infrastructure without running test bodies"
     export E2E_INFRA_ONLY=true
-    export SCANNER_V4_VULN_READINESS=false
 fi
 
 # Enable Scanner V4 by default for all e2e jobs. openshift/release currently
