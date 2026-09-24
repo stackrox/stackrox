@@ -11,6 +11,18 @@ import subprocess
 from typing import List
 
 from common import log_print
+from e2e_timing import timed_span
+
+
+def _timing_name_and_attributes(args: List[str]):
+    """Describe a post-test command without exposing its full arguments."""
+    command = os.path.basename(args[0]) if args else "unknown-command"
+    attributes = {}
+    if command in {"lib.sh", "store-artifacts.sh"} and len(args) > 1:
+        command = f"{command}:{args[1]}"
+    elif command == "collect-service-logs.sh" and len(args) > 1:
+        attributes["namespace"] = args[1]
+    return command, attributes
 
 
 def is_e2e_infra_only():
@@ -65,11 +77,17 @@ class RunWithBestEffortMixin:
         log_print(f"Running post command: {args}")
         runs_ok = False
         try:
-            subprocess.run(
-                args,
-                check=True,
-                timeout=timeout,
-            )
+            timing_name, timing_attributes = _timing_name_and_attributes(args)
+            with timed_span(
+                phase="post-test-collection",
+                name=timing_name,
+                attributes=timing_attributes,
+            ):
+                subprocess.run(
+                    args,
+                    check=True,
+                    timeout=timeout,
+                )
             runs_ok = True
         except Exception as err:
             log_print(f"Exception raised in {args}, {err}")
