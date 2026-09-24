@@ -466,7 +466,9 @@ func (s *nodeIndexerSuite) TestMappingFileDownloadInvalidSkipsHost() {
 		s.NoError(err)
 	}))
 	s.T().Cleanup(server.Close)
-	s.enableMappingFileDownload()
+	path := s.enableMappingFileDownload()
+	previous := []byte(`{"data":{"keep":{"cpes":["cpe:/o:keep"]}}}`)
+	s.Require().NoError(os.WriteFile(path, previous, 0600))
 
 	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = filepath.Join(s.T().TempDir(), "missing-host")
@@ -477,6 +479,9 @@ func (s *nodeIndexerSuite) TestMappingFileDownloadInvalidSkipsHost() {
 	s.Nil(report)
 	s.ErrorContains(err, "validating repo-to-CPE mapping")
 	s.NotErrorIs(err, os.ErrNotExist)
+	got, readErr := os.ReadFile(path)
+	s.Require().NoError(readErr)
+	s.Equal(previous, got)
 }
 
 func (s *nodeIndexerSuite) TestMappingFileDownloadRequiresURL() {

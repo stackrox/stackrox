@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -14,12 +15,15 @@ import (
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 )
 
-// DownloadOnce ignores the interval; New still requires one, and the
-// downloader clamps anything under five minutes.
-const mappingDownloadInterval = time.Hour
-
 const (
-	// Four attempts (initial plus three retries). WaitMin 5s doubles up to
+	// mappingDownloadInterval is unused by DownloadOnce. New still requires
+	// one, and the downloader clamps anything under five minutes.
+	mappingDownloadInterval = time.Hour
+	// mappingDownloadStagingSuffix keeps the download off the destination
+	// until validation passes, so a bad body cannot replace a good file.
+	mappingDownloadStagingSuffix = ".download"
+
+	// Six attempts (initial plus five retries). WaitMin 5s doubles up to
 	// WaitMax and still finishes inside mappingDownloadTimeout.
 	mappingDownloadRetryMax     = 5
 	mappingDownloadRetryWaitMin = 5 * time.Second
@@ -43,11 +47,13 @@ func (l *localNodeIndexer) mappingConfig(ctx context.Context) (NodeIndexerConfig
 	}
 
 	path := env.NodeIndexMappingFile.Setting()
+	// Join(path, suffix) would treat ".download" as a child directory.
+	stagingPath := filepath.Join(filepath.Dir(path), filepath.Base(path)+mappingDownloadStagingSuffix)
 	client, err := mappingDownloadClient(cfg)
 	if err != nil {
 		return cfg, err
 	}
-	downloader := filedownloader.New(cfg.Repo2CPEMappingURL, path, mappingDownloadInterval,
+	downloader := filedownloader.New(cfg.Repo2CPEMappingURL, stagingPath, mappingDownloadInterval,
 		filedownloader.WithHTTPClient(client),
 		filedownloader.WithRequestTimeout(mappingDownloadTimeout),
 		filedownloader.WithMaxSize(cpemapping.MaxMappingBytes),
@@ -55,12 +61,15 @@ func (l *localNodeIndexer) mappingConfig(ctx context.Context) (NodeIndexerConfig
 	if err := downloader.DownloadOnce(ctx); err != nil {
 		return cfg, errors.Wrap(err, "downloading repo-to-CPE mapping")
 	}
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(stagingPath)
 	if err != nil {
 		return cfg, errors.Wrap(err, "reading downloaded repo-to-CPE mapping")
 	}
 	if err := cpemapping.ValidateMapping(content); err != nil {
 		return cfg, errors.Wrap(err, "validating repo-to-CPE mapping")
+	}
+	if err := filedownloader.AtomicWriteFile(path, content); err != nil {
+		return cfg, errors.Wrap(err, "publishing repo-to-CPE mapping")
 	}
 	cfg.Repo2CPEMappingURL = ""
 	cfg.Repo2CPEMappingFile = path
