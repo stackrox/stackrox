@@ -170,7 +170,8 @@ class TestTimedCommand(unittest.TestCase):
         events = events_from_output(output)
         self.assertEqual("skipped", events[0]["event"])
         self.assertEqual("test-execution", events[0]["phase"])
-        self.assertEqual(["start", "end"], [e["event"] for e in events[1:]])
+        self.assertEqual("post-test-collection", events[1]["phase"])
+        self.assertEqual(["skipped", "skipped", "start", "end"], [e["event"] for e in events])
         self.assertTrue(all(event["attributes"]["infra_only"] == "true" for event in events))
 
 
