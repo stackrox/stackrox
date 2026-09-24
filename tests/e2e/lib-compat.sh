@@ -153,6 +153,10 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Scan every 9-11 minutes in roxie-deployed QA tests, including GHA.
+        env_with_default ROX_NODE_SCANNING_INTERVAL "10m"
+        env_with_default ROX_NODE_SCANNING_INTERVAL_DEVIATION "60s"
+
         collect_feature_flags
     )
 
