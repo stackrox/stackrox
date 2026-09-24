@@ -36,6 +36,7 @@ const (
 	informerNetworkPolicies               = "NetworkPolicies"
 	informerNodes                         = "Nodes"
 	informerPodCache                      = "PodCache"
+	informerPolicyReports                 = "PolicyReports"
 	informerPods                          = "Pods"
 	informerReplicaSets                   = "ReplicaSets"
 	informerReplicationControllers        = "ReplicationControllers"
