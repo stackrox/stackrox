@@ -54,6 +54,12 @@ jobs:
         input__pr_number: ${{ github.event.pull_request.number }}
       run: python3 ci/select/e2e_dispatch.py
 
+            # Print a human-readable summary of which jobs will be dispatched.
+            print()
+            width = max(len(name) for name in jobs)
+            for name in sorted(jobs):
+                print(f'{name:<{width}}  {"✓" if jobs[name] else ""}')
+
   wait-for-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
