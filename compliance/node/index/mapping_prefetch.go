@@ -71,6 +71,7 @@ func (l *localNodeIndexer) mappingConfig(ctx context.Context) (NodeIndexerConfig
 	if err := filedownloader.AtomicWriteFile(path, content); err != nil {
 		return cfg, errors.Wrap(err, "publishing repo-to-CPE mapping")
 	}
+	log.Infof("Downloaded repo-to-CPE mapping from %q to %q (%d bytes)", cfg.Repo2CPEMappingURL, path, len(content))
 	cfg.Repo2CPEMappingURL = ""
 	cfg.Repo2CPEMappingFile = path
 	return cfg, nil
