@@ -360,13 +360,10 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	// Dedupe the removed deployments. This can happen because Pods have many completion states
-	// and we may receive multiple Remove calls
-	if ds.deletedDeploymentCache != nil {
-		if ds.deletedDeploymentCache.Contains(id) {
-			return nil
-		}
-		ds.deletedDeploymentCache.Add(id)
+	// Dedupe repeated Remove calls (pods have many completion states). Only successful
+	// deletes are cached (below), so a cache hit means the deployment is truly gone.
+	if ds.deletedDeploymentCache != nil && ds.deletedDeploymentCache.Contains(id) {
+		return nil
 	}
 	// Though the filter is updated upon pod update,
 	// We still want to ensure it is properly cleared when the deployment is deleted.
@@ -387,18 +384,17 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
-	if err != nil {
+	// A missing flow store must not block the row delete, else deployments of a deleted
+	// cluster (flow store gone) can never be pruned. Leftover flows are reaped by the
+	// orphaned-flow sweep.
+	if flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID); err != nil {
 		errorList.AddError(err)
-		return errorList.ToError()
-	}
-
-	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
+	} else if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
 	}
 
 	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
 			return err
 		}
@@ -408,7 +404,16 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	return errorList.ToError()
+	if err := errorList.ToError(); err != nil {
+		return err
+	}
+
+	// Cache only on full success of this method
+	if ds.deletedDeploymentCache != nil {
+		ds.deletedDeploymentCache.Add(id)
+	}
+
+	return nil
 }
 
 // TODO: ROX-30948 Make this return []*storage.ImageV2

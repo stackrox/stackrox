@@ -2,10 +2,14 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/stackrox/rox/central/deployment/cache"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	flowMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -96,6 +101,58 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.Equal(int64(1), deploymentRanker.GetRankForID("2"))
 	suite.Equal(int64(2), deploymentRanker.GetRankForID("1"))
 	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
+}
+
+// Regression: a failed flow store lookup must not block the row delete, else
+// deployments of an already-deleted cluster could never be pruned.
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeploymentDeletesRowWhenFlowStoreLookupFails() {
+	baselines := baselineMocks.NewMockDataStore(suite.mockCtrl)
+	flows := flowMocks.NewMockClusterDataStore(suite.mockCtrl)
+
+	ds := newDatastoreImpl(suite.storage, nil, nil, baselines, flows, suite.riskStore, nil, suite.filter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), suite.matcher)
+
+	const clusterID = "c1"
+	const deploymentID = "d1"
+
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, gomock.Any()).Return(nil)
+	baselines.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	flows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(nil, errors.New("flow store gone"))
+	// The deployment row must still be deleted despite the flow-store failure.
+	suite.storage.EXPECT().Delete(gomock.Any(), deploymentID).Return(nil)
+
+	err := ds.RemoveDeployment(suite.ctx, clusterID, deploymentID)
+	suite.Require().Error(err)
+	suite.ErrorContains(err, "flow store gone")
+}
+
+// A failed delete must not put the deployment into the dedupe cache and short-circuit a
+// later retry into a false success.
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeploymentRetriesAfterFailure() {
+	baselines := baselineMocks.NewMockDataStore(suite.mockCtrl)
+	flows := flowMocks.NewMockClusterDataStore(suite.mockCtrl)
+	flowStore := flowMocks.NewMockFlowDataStore(suite.mockCtrl)
+
+	ds := newDatastoreImpl(suite.storage, nil, nil, baselines, flows, suite.riskStore,
+		cache.DeletedDeploymentsSingleton(), suite.filter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), suite.matcher)
+
+	const clusterID = "c1"
+	deploymentID := uuid.NewV4().String()
+
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, gomock.Any()).Return(nil).Times(2)
+	baselines.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil).Times(2)
+	flows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(flowStore, nil).Times(2)
+	flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), deploymentID).Return(nil).Times(2)
+
+	gomock.InOrder(
+		suite.storage.EXPECT().Delete(gomock.Any(), deploymentID).Return(errors.New("boom")),
+		suite.storage.EXPECT().Delete(gomock.Any(), deploymentID).Return(nil),
+	)
+
+	suite.Require().Error(ds.RemoveDeployment(suite.ctx, clusterID, deploymentID))
+	// Second attempt must actually retry the delete rather than short-circuit.
+	suite.Require().NoError(ds.RemoveDeployment(suite.ctx, clusterID, deploymentID))
 }
 
 func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *v1.Query, fn func(group *storage.Deployment) error) error {

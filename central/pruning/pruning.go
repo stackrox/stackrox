@@ -515,6 +515,30 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 	}
 }
 
+// Remove deployments whose cluster has been deleted: fire-and-forget cluster-deletion cleanup can orphan them. No orphan window needed - cluster deletion is a hard delete that
+// never re-adopts its deployments.
+func (g *garbageCollectorImpl) removeOrphanedDeployments() {
+	defer metrics.SetPruningDuration(time.Now(), "Deployments")
+	deploymentsToRemove, err := postgres.GetOrphanedDeploymentIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned deployments: %v", err)
+		return
+	}
+
+	if len(deploymentsToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned deployments...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned deployments (from formerly deleted clusters). Deleting...",
+		len(deploymentsToRemove))
+
+	for _, d := range deploymentsToRemove {
+		if err := g.deployments.RemoveDeployment(pruningCtx, d.ClusterID, d.ID); err != nil {
+			log.Errorf("Failed to remove deployment with id %s: %v", d.ID, err)
+		}
+	}
+}
+
 // Remove nodes where the cluster has been deleted.
 func (g *garbageCollectorImpl) removeOrphanedNodes() {
 	defer metrics.SetPruningDuration(time.Now(), "Nodes")
@@ -587,6 +611,10 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 		clusterIDs = append(clusterIDs, c.GetId())
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
+
+	// Before the deploymentSet snapshot and alert/process/risk sweeps so they observe the
+	// deletions this cycle. Child rows (deployments_containers, etc.) cascade.
+	g.removeOrphanedDeployments()
 
 	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
 	if err != nil {

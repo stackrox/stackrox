@@ -29,6 +29,9 @@ const (
 	getAllOrphanedNodes = `SELECT id FROM nodes WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
+	getAllOrphanedDeployments = `SELECT id, clusterid FROM deployments WHERE NOT EXISTS
+		(SELECT 1 FROM clusters WHERE deployments.clusterid = clusters.Id)`
+
 	getOrphanedProcessesByDeployment = `SELECT id FROM process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
@@ -186,6 +189,32 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 		defer cancel()
 
 		return getOrphanedIDs(ctx, pool, getAllOrphanedNodes)
+	})
+}
+
+// OrphanedDeployment holds a deployment id with its clusterid
+type OrphanedDeployment struct {
+	ID        string
+	ClusterID string
+}
+
+// GetOrphanedDeploymentIDs returns the deployments that have a cluster that has been removed.
+func GetOrphanedDeploymentIDs(ctx context.Context, pool postgres.DB) ([]OrphanedDeployment, error) {
+	return pgutils.Retry2(ctx, func() ([]OrphanedDeployment, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
+		defer cancel()
+
+		rows, err := pool.Query(ctx, getAllOrphanedDeployments)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get orphaned deployments")
+		}
+		return pgx.CollectRows(rows, func(r pgx.CollectableRow) (OrphanedDeployment, error) {
+			var d OrphanedDeployment
+			if err := r.Scan(&d.ID, &d.ClusterID); err != nil {
+				return OrphanedDeployment{}, errors.Wrap(err, "scanning orphaned deployment")
+			}
+			return d, nil
+		})
 	})
 }
 
