@@ -1273,6 +1273,10 @@ func TestComplianceV2NodeRoles(t *testing.T) {
 		status, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
 		require.NoError(t, err)
 		assert.Equal(t, []string{"@all"}, status.GetScanConfig().GetNodeRoles())
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, req)
+		}, defaultTimeout, defaultInterval)
 	})
 
 	t.Run("reject @all mixed", func(t *testing.T) {
