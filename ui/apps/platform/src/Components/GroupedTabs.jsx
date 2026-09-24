@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom-v5-compat';
-import upperFirst from 'lodash/upperFirst';
+
+import { capitalizeFirst } from 'utils/textUtils';
 
 const GroupedTab = ({ text, index, active, to }) => (
     <li
@@ -10,7 +11,7 @@ const GroupedTab = ({ text, index, active, to }) => (
     >
         <Link to={to} data-testid="tab" className={`w-full no-underline ${active && 'active'}`}>
             <div className="cursor-pointer text-base-600 p-3 flex justify-center">
-                {upperFirst(text)}
+                {capitalizeFirst(text)}
             </div>
         </Link>
     </li>

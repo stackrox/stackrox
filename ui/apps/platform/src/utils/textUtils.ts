@@ -16,6 +16,20 @@ export function pluralizeHas(len) {
     return len === 1 ? 'has' : 'have';
 }
 
+/**
+ * Uppercases the first character of a string, leaving the remainder verbatim.
+ * Unlike lodash `capitalize`, it does not lower-case the rest, so names, quotes,
+ * and acronyms in the remainder are preserved (e.g. the cluster name in
+ * "no connection to cluster ..."). A nullish or empty input yields an empty
+ * string, matching lodash `upperFirst`.
+ */
+export function capitalizeFirst(str: string | null | undefined): string {
+    if (!str) {
+        return '';
+    }
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export function dedupeDelimitedString(value: string, delimiter = ','): string[] {
     return Array.from(new Set(value.split(delimiter).map((v) => v.trim())));
 }

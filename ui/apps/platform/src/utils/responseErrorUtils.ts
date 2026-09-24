@@ -1,6 +1,7 @@
 import type { AxiosError } from 'axios';
 import { ApolloError } from '@apollo/client';
-import upperFirst from 'lodash/upperFirst';
+
+import { capitalizeFirst } from './textUtils';
 
 function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     return (
@@ -25,15 +26,16 @@ const commonStatusCodeNameMap = {
  * return the error message for display.
  *
  * Backend errors follow Go conventions (lower-case first letter); capitalize the
- * first character for display. upperFirst (not capitalize) preserves the rest of
- * the message verbatim, e.g. names and quotes in "no connection to cluster ...".
+ * first character for display. capitalizeFirst (not lodash capitalize) preserves
+ * the rest of the message verbatim, e.g. names and quotes in "no connection to
+ * cluster ...".
  *
  * For classifying an error by matching case-sensitive patterns against its text,
  * use getRawAxiosErrorMessage instead, so the capitalization does not defeat a
  * pattern anchored on a lower-case leading word.
  */
 export function getAxiosErrorMessage(error: unknown): string {
-    return upperFirst(getRawAxiosErrorMessage(error));
+    return capitalizeFirst(getRawAxiosErrorMessage(error));
 }
 
 /*

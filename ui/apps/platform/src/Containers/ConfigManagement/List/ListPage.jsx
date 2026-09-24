@@ -1,7 +1,6 @@
 import { useCallback, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
-import upperFirst from 'lodash/upperFirst';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
@@ -20,6 +19,7 @@ import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
+import { capitalizeFirst } from 'utils/textUtils';
 import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
@@ -56,7 +56,7 @@ const ListPage = () => {
         navigate(urlBuilder.url());
     }
 
-    const header = upperFirst(pluralize(entityLabels[pageEntityListType]));
+    const header = capitalizeFirst(pluralize(entityLabels[pageEntityListType]));
     return (
         <workflowStateContext.Provider value={pageState}>
             <PageHeader
