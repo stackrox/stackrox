@@ -10,12 +10,14 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
 )
@@ -426,6 +428,100 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 		}
 	}
 	s.True(hasRHCOS, "Expected rhcos package in report")
+}
+
+func (s *nodeIndexerSuite) enableMappingFileDownload() string {
+	s.T().Helper()
+	path := filepath.Join(s.T().TempDir(), "repo-to-cpe.json")
+	s.T().Setenv(env.NodeIndexMappingFileDownload.EnvVar(), "true")
+	s.T().Setenv(env.NodeIndexMappingFile.EnvVar(), path)
+	return path
+}
+
+func (s *nodeIndexerSuite) TestMappingFileDownloadFailureSkipsHost() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	s.T().Cleanup(server.Close)
+	s.enableMappingFileDownload()
+
+	cfg := DefaultNodeIndexerConfig()
+	cfg.HostPath = filepath.Join(s.T().TempDir(), "missing-host")
+	cfg.Repo2CPEMappingURL = server.URL
+	cfg.Client = server.Client()
+
+	// Backoff is several seconds; cancel during the first retry so the test
+	// still observes a failed download without waiting out the full timeout.
+	ctx, cancel := context.WithTimeout(s.T().Context(), 1500*time.Millisecond)
+	defer cancel()
+	report, err := NewNodeIndexer(cfg).IndexNode(ctx)
+	s.Nil(report)
+	s.ErrorContains(err, "downloading repo-to-CPE mapping")
+	s.NotErrorIs(err, os.ErrNotExist)
+}
+
+func (s *nodeIndexerSuite) TestMappingFileDownloadInvalidSkipsHost() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, err := w.Write([]byte("not-json"))
+		s.NoError(err)
+	}))
+	s.T().Cleanup(server.Close)
+	s.enableMappingFileDownload()
+
+	cfg := DefaultNodeIndexerConfig()
+	cfg.HostPath = filepath.Join(s.T().TempDir(), "missing-host")
+	cfg.Repo2CPEMappingURL = server.URL
+	cfg.Client = server.Client()
+
+	report, err := NewNodeIndexer(cfg).IndexNode(s.T().Context())
+	s.Nil(report)
+	s.ErrorContains(err, "validating repo-to-CPE mapping")
+	s.NotErrorIs(err, os.ErrNotExist)
+}
+
+func (s *nodeIndexerSuite) TestMappingFileDownloadRequiresURL() {
+	s.T().Setenv(env.NodeIndexMappingFileDownload.EnvVar(), "true")
+	cfg := NodeIndexerConfig{HostPath: filepath.Join(s.T().TempDir(), "missing-host")}
+
+	report, err := NewNodeIndexer(cfg).IndexNode(s.T().Context())
+	s.Nil(report)
+	s.ErrorContains(err, "repo-to-CPE mapping URL is empty")
+	s.NotErrorIs(err, os.ErrNotExist)
+}
+
+func (s *nodeIndexerSuite) TestMappingFileDownloadFeedsClaircore() {
+	mappingData := `{
+	"data": {
+		"rhocp-4.16-for-rhel-9-x86_64-rpms": {
+			"cpes": ["cpe:/a:redhat:openshift:4.16::el9"]
+		},
+		"rhel-9-for-x86_64-baseos-eus-rpms__9_DOT_4": {
+			"cpes": ["cpe:/o:redhat:rhel_eus:9.4::baseos"]
+		}
+	}
+}`
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		_, err := w.Write([]byte(mappingData))
+		s.NoError(err)
+	}))
+	s.T().Cleanup(server.Close)
+	path := s.enableMappingFileDownload()
+
+	cfg := DefaultNodeIndexerConfig()
+	cfg.HostPath = "testdata"
+	cfg.Repo2CPEMappingURL = server.URL
+	cfg.Client = server.Client()
+	cfg.PackageDBFilter = rhcosPackageDBs
+
+	report, err := NewNodeIndexer(cfg).IndexNode(s.T().Context())
+	s.Require().NoError(err)
+	s.True(report.GetSuccess())
+	s.Len(report.GetContents().GetPackages(), 106)
+	s.Len(report.GetContents().GetRepositories(), 2)
+	s.Equal(int32(1), hits.Load())
+	s.FileExists(path)
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
