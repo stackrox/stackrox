@@ -67,6 +67,31 @@ test_upgrade() {
     test_upgrade_paths "$log_output_dir"
 }
 
+remove_snapshot_cluster_auth_configs() {
+    # Central recreates this config for its own cluster on startup. Keeping the
+    # snapshot cluster's issuer would make restores depend on that cluster.
+    local generated_config_ids_query='
+        .configs[]?
+        | select(.type == "KUBE_SERVICE_ACCOUNT")
+        | select(.mappings == [{
+            "key": "sub",
+            "valueExpression": "system:serviceaccount:stackrox:config-controller",
+            "role": "Configuration Controller"
+        }])
+        | .id
+    '
+    local config_ids config_id
+    config_ids="$(roxcurl /v1/auth/m2m --fail --silent --show-error | jq -r "$generated_config_ids_query")"
+    while IFS= read -r config_id; do
+        [[ -n "$config_id" ]] || continue
+        info "Removing generated cluster authentication config $config_id before snapshot"
+        roxcurl "/v1/auth/m2m/$config_id" --request DELETE --fail --silent --show-error > /dev/null
+    done <<< "$config_ids"
+
+    config_ids="$(roxcurl /v1/auth/m2m --fail --silent --show-error | jq -r "$generated_config_ids_query")"
+    [[ -z "$config_ids" ]] || die "Generated cluster authentication configs remain; refusing to create snapshot"
+}
+
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
@@ -182,6 +207,15 @@ test_upgrade_paths() {
       wait_for_api
       wait_for_central_db
 
+      case "$str" in
+        4.6.*|4.7.*|4.8.*|4.9.*)
+          info "Skipping snapshot for $str"
+          continue
+          ;;
+      esac
+
+      # Each release restart can recreate its cluster-specific authentication.
+      remove_snapshot_cluster_auth_configs
       roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
               central backup --output "postgres_db_${str}.sql.zip"
 
