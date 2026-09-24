@@ -121,6 +121,14 @@ spec:
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: rpms-signature-scan
+    stepSpecs:
+    - name: rpms-signature-scan
+      computeResources:
+        limits:
+          memory: 512Mi
+        requests:
+          memory: 512Mi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle-5-0
