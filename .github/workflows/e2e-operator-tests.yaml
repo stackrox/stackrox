@@ -102,6 +102,7 @@ jobs:
           infra-token: ${{ secrets.INFRA_TOKEN }}
           quay-rhacs-eng-ro-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-rhacs-eng-ro-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          install-roxie: false # This test suite deliberately does not deploy ACS using roxie.
 
       - name: Run pre-test
         shell: python
