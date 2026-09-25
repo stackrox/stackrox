@@ -145,6 +145,30 @@ def _render_test_event(event: dict, action: str) -> None:
         sys.stdout.write(f"?\t{package}\t[no test files]\n")
 
 
+def _handle_event(
+    event: dict,
+    active: Dict[SpanKey, List[ActiveSpan]],
+    timing_enabled: bool,
+) -> None:
+    action = event.get("Action", "")
+    if action in {"output", "build-output", "build-fail"}:
+        sys.stdout.write(event.get("Output", ""))
+    elif action == "start" and not event.get("Test"):
+        if timing_enabled:
+            _start_span(event, active)
+    elif action == "run" and event.get("Test"):
+        if timing_enabled:
+            _start_span(event, active)
+        _render_test_event(event, action)
+    elif action in {"pause", "cont"}:
+        _render_test_event(event, action)
+    elif action in {"pass", "fail", "skip"}:
+        if timing_enabled:
+            _finish_span(event, action, active)
+        _render_test_event(event, action)
+    sys.stdout.flush()
+
+
 def process_events(lines: Iterable[str]) -> None:
     """Stream readable Go test output and timing sentinels without buffering."""
     active: Dict[SpanKey, List[ActiveSpan]] = {}
@@ -163,25 +187,7 @@ def process_events(lines: Iterable[str]) -> None:
             sys.stdout.flush()
             continue
 
-        action = event.get("Action", "")
-        if action == "output" or action == "build-output":
-            sys.stdout.write(event.get("Output", ""))
-        elif action == "start" and not event.get("Test"):
-            if timing_enabled:
-                _start_span(event, active)
-        elif action == "run" and event.get("Test"):
-            if timing_enabled:
-                _start_span(event, active)
-            _render_test_event(event, action)
-        elif action in {"pause", "cont"}:
-            _render_test_event(event, action)
-        elif action in {"pass", "fail", "skip"}:
-            if timing_enabled:
-                _finish_span(event, action, active)
-            _render_test_event(event, action)
-        elif action == "build-fail":
-            sys.stdout.write(event.get("Output", ""))
-        sys.stdout.flush()
+        _handle_event(event, active, timing_enabled)
 
     # If the test command exits or is terminated with unfinished tests, close
     # those intervals as interrupted rather than leaving dangling start events.
