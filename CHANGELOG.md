@@ -20,6 +20,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- Central rate-limits Scanner V4 node index reports (default 0.2 requests per second, burst 50) to bound matcher load. Tune with `ROX_NODE_INDEX_REPORT_RATE_LIMIT` and `ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY`; set the rate to 0 to disable.
+
 ## [5.0.0]
 
 

@@ -179,17 +179,14 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	allowed, reason := c.rl.TryConsume(c.clusterID, msg)
 	if !allowed {
 		logging.GetRateLimitedLogger().WarnL(
-			"vm_index_reports_rate_limiter",
+			rateLimitLogKey(msg),
 			"Request is rate-limited for cluster %s and event type %s. Reason: %s",
 			c.clusterID,
 			event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
 			reason,
 		)
-		c.emitRateLimitedAdminEvent(c.clusterID, reason)
-		if vmReport := msg.GetEvent().GetVirtualMachineIndexReport(); vmReport != nil {
-			resourceID := common.VMIndexACKResourceID(vmReport.GetId(), vmReport.GetIndex().GetVsockCid())
-			common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, centralsensor.SensorACKReasonRateLimited, c)
-		}
+		c.emitRateLimitedAdminEvent(c.clusterID, reason, msg)
+		c.sendRateLimitedNACK(ctx, msg)
 		return
 	}
 
@@ -213,7 +210,19 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.Push(msg)
 }
 
-func (c *sensorConnection) emitRateLimitedAdminEvent(clusterID, reason string) {
+// sendRateLimitedNACK NACKs VM index reports so the scraper can back off.
+// Node index reports are not NACKed: Sensor routes those ACKs by node name
+// (Compliance hostname), and the event only carries the node ID.
+func (c *sensorConnection) sendRateLimitedNACK(ctx context.Context, msg *central.MsgFromSensor) {
+	vmReport := msg.GetEvent().GetVirtualMachineIndexReport()
+	if vmReport == nil {
+		return
+	}
+	resourceID := common.VMIndexACKResourceID(vmReport.GetId(), vmReport.GetIndex().GetVsockCid())
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, centralsensor.SensorACKReasonRateLimited, c)
+}
+
+func (c *sensorConnection) emitRateLimitedAdminEvent(clusterID, reason string, msg *central.MsgFromSensor) {
 	if c.adminEventsStream == nil {
 		return
 	}
@@ -222,20 +231,46 @@ func (c *sensorConnection) emitRateLimitedAdminEvent(clusterID, reason string) {
 		return
 	}
 
+	var message, hint string
+	switch {
+	case msg.GetEvent().GetVirtualMachineIndexReport() != nil:
+		message = fmt.Sprintf("VM index reports from cluster %s are being rate limited: %s", clusterID, reason)
+		hint = fmt.Sprintf("VM index reports are being rate limited to avoid overwhelming the system. "+
+			"Consider either: (1) scaling up the Scanner V4 deployments and increasing values of %s or %s, "+
+			"or (2) reducing the index-report frequency in roxagents running in the Virtual Machines.",
+			env.VMIndexReportRateLimit.EnvVar(),
+			env.VMIndexReportBucketCapacity.EnvVar())
+	case msg.GetEvent().GetIndexReport() != nil:
+		message = fmt.Sprintf("Node index reports from cluster %s are being rate limited: %s", clusterID, reason)
+		hint = fmt.Sprintf("Node index reports are being rate limited to avoid overwhelming the system. "+
+			"Consider either: (1) scaling up the Scanner V4 deployments and increasing values of %s or %s, "+
+			"or (2) reducing node-index frequency.",
+			env.NodeIndexReportRateLimit.EnvVar(),
+			env.NodeIndexReportBucketCapacity.EnvVar())
+	default:
+		return
+	}
+
 	c.adminEventsStream.Produce(&events.AdministrationEvent{
 		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
 		Domain:       events.DefaultDomain,
-		Message:      fmt.Sprintf("VM index reports from cluster %s are being rate limited: %s", clusterID, reason),
+		Message:      message,
 		ResourceType: adminResources.Cluster,
 		ResourceID:   clusterID,
-		Hint: fmt.Sprintf("VM index reports are being rate limited to avoid overwhelming the system. "+
-			"Consider either: (1) scaling up the Scanner V4 deployments and increasing values of %s or %s, "+
-			"or (2) reducing the index-report frequency in roxagents running in the Virtual Machines.",
-			env.VMIndexReportRateLimit.EnvVar(),
-			env.VMIndexReportBucketCapacity.EnvVar(),
-		),
+		Hint:         hint,
 	})
+}
+
+func rateLimitLogKey(msg *central.MsgFromSensor) string {
+	switch {
+	case msg.GetEvent().GetVirtualMachineIndexReport() != nil:
+		return "vm_index_reports_rate_limiter"
+	case msg.GetEvent().GetIndexReport() != nil:
+		return "node_index_reports_rate_limiter"
+	default:
+		return "sensor_event_rate_limiter"
+	}
 }
 
 func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
