@@ -7,15 +7,35 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/dispatcher-plan.yaml
+
   scanner-ft-images:
     name: Wait for images
-    if: >
-      github.event_name != 'pull_request'
-      || contains(github.event.pull_request.labels.*.name, 'scanner-functional-tests')
+    needs: plan
+    if: >-
+      always() && !cancelled() && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && (
+          github.event_name != 'pull_request'
+          || contains(github.event.pull_request.labels.*.name, 'scanner-functional-tests')
+        )
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['scanner-ft-images']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     steps:
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Checkout repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
@@ -36,6 +56,15 @@ jobs:
     name: Deploy and run
     needs:
       - scanner-ft-images
+      - plan
+    if: >-
+      always() && !cancelled() && (
+        needs.scanner-ft-images.result == 'success' && (
+          (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce'))
+          || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['scanner-ft-run']
+        )
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     env:
       SCANNER_E2E_QUAY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -44,6 +73,10 @@ jobs:
       SCANNER_E2E_REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
       SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
     steps:
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:

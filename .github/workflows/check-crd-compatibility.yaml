@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -20,15 +22,31 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  plan:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/dispatcher-plan.yaml
+
   check-crd-compatibility:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, plan]
+    if: >-
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && !needs.detect-changes.outputs.ui_only
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['check-crd-compatibility']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
+    - name: Fail closed when the dispatcher plan did not succeed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
     - name: Checkout stackrox/stackrox
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:

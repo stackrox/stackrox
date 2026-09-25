@@ -12,18 +12,36 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  plan:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/dispatcher-plan.yaml
+
   db-integration-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, plan]
+    if: >-
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && !needs.detect-changes.outputs.ui_only
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['db-integration-tests']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
     steps:
+    - name: Fail closed when the dispatcher plan did not succeed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
