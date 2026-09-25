@@ -130,6 +130,9 @@ deploy_earlier_postgres_central() {
     # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
     # produces a value shared with Helm --set and later restore/auth.
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    if is_GITHUB_ACTIONS; then
+        echo "::add-mask::$ROX_ADMIN_PASSWORD"
+    fi
     export ROX_ADMIN_PASSWORD
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
