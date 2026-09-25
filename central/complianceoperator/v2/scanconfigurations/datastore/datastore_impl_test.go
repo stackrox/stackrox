@@ -579,6 +579,51 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanReq
 	s.Require().False(afterEdit.GetLastUpdatedTime().AsTime().Before(updated.GetLastUpdatedTime().AsTime()))
 }
 
+// TestRemoveClusterPreservesLastScanRequestedTime guards the delete-cluster writer against the
+// same blob clobber UpsertScanConfiguration handles: RemoveClusterFromScanConfig reads the config
+// OUTSIDE the keyed mutex, then deleteClusterFromScanConfigWithLock upserts that (possibly stale)
+// blob back under the lock. A concurrent "Scan now" stamped in between must not be dropped.
+func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterPreservesLastScanRequestedTime() {
+	// The preserve-on-delete path only runs with the flag on; enable it here.
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	configID := uuid.NewV4().String()
+	scanConfig := s.getTestRec(mockScanName) // two clusters: clusterID1, clusterID2
+	scanConfig.Id = configID
+
+	ctx := s.testContexts[unrestrictedReadWriteCtx]
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, scanConfig))
+	defer func() {
+		_, err := s.dataStore.DeleteScanConfiguration(ctx, configID)
+		s.Require().NoError(err)
+	}()
+
+	// Stamp an on-demand "Scan now" time in the store.
+	requested := protocompat.TimestampNow()
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, requested))
+
+	// Model the race: deleteClusterFromScanConfigWithLock receives a config object read BEFORE the
+	// stamp (last_scan_requested_time nil), as RemoveClusterFromScanConfig reads outside the keyed
+	// lock. Removing an unrelated cluster must not clobber the stored stamp.
+	stale := s.getTestRec(mockScanName)
+	stale.Id = configID
+	s.Require().Nil(stale.GetLastScanRequestedTime())
+
+	impl, ok := s.dataStore.(*datastoreImpl)
+	s.Require().True(ok)
+	s.Require().NoError(impl.deleteClusterFromScanConfigWithLock(ctx, s.clusterID2, stale))
+
+	afterDelete, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	// The removed cluster is gone...
+	s.Require().Len(afterDelete.GetClusters(), 1)
+	s.Require().Equal(s.clusterID1, afterDelete.GetClusters()[0].GetClusterId())
+	// ...and the on-demand time survived the delete (would be nil without the re-read fix).
+	s.Require().NotNil(afterDelete.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(afterDelete.GetLastScanRequestedTime().AsTime()))
+}
+
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	testCases := []struct {
 		desc        string
