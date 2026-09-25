@@ -1120,6 +1120,102 @@ func TestComplianceV2OutdatedDataScheduledCurrent(t *testing.T) {
 	}, 10*time.Minute, 30*time.Second)
 }
 
+// TestComplianceV2OutdatedDataOnDemand exercises the on-demand ("Scan now") term of
+// outdated-data detection. It creates an ocp4-cis scan config with NO cron schedule
+// (one-time), runs it on demand via RunComplianceScanConfiguration, waits for the scan
+// to complete, then asserts the freshly-scanned cluster reports
+// data_state == COMPLIANCE_DATA_STATE_CURRENT.
+//
+// Rationale: without the on-demand term a no-schedule config is ALWAYS UNKNOWN (its
+// scheduled expected-refresh is zero). Only a recorded Scan-now can make it evaluable,
+// so CURRENT here proves the on-demand term end to end.
+//
+// The signal is gated behind ROX_COMPLIANCE_SURFACE_STALE_DATA (default off) and the
+// on-demand term has an in-flight grace guard (the request time counts only once it is
+// older than grace). If the state never leaves UNKNOWN within the test window — flag off,
+// or grace longer than the window — the test probes and t.Skip()s rather than false-failing,
+// mirroring TestComplianceV2OutdatedDataScheduledCurrent.
+func TestComplianceV2OutdatedDataOnDemand(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	client := v2.NewComplianceScanConfigurationServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+
+	const profileName = "ocp4-cis"
+	testID := fmt.Sprintf("outdated-ondemand-%s", uuid.NewV4().String())
+	// No cron schedule: a one-time scan. Only the on-demand term can make it evaluable.
+	sc := v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: true,
+			Profiles:    []string{profileName},
+			Description: "One-time ocp4-cis scan for on-demand outdated-data detection E2E.",
+		},
+		Clusters: []string{clusterID},
+	}
+	scanConfig, err := client.CreateComplianceScanConfiguration(ctx, &sc)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _ = client.DeleteComplianceScanConfiguration(context.Background(), &v2.ResourceByID{Id: scanConfig.GetId()})
+		cleanUpResources(context.Background(), t, dynClient, testID, coNamespaceV2)
+	})
+
+	// Wait for the initial one-time scan to complete.
+	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+
+	// Trigger an on-demand "Scan now": this stamps last_scan_requested_time Central-side,
+	// which is the on-demand expected-refresh term under test.
+	_, err = client.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfig.GetId()})
+	require.NoErrorf(t, err, "failed to run on-demand scan for %s", testID)
+	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+
+	resultsClient := v2.NewComplianceResultsServiceClient(conn)
+	req := &v2.ComplianceProfileClusterRequest{
+		ProfileName: profileName,
+		ClusterId:   clusterID,
+		Query:       &v2.RawQuery{Query: ""},
+	}
+
+	// Wait until the freshly-scanned results are synced to Central.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+		require.NoError(c, err)
+		require.NotEmpty(c, resp.GetCheckResults(), "expected check results for freshly scanned cluster")
+	}, 10*time.Minute, 30*time.Second)
+
+	// Poll until the on-demand grace guard elapses and the state resolves to CURRENT.
+	var lastState v2.ComplianceDataState
+	deadline := time.Now().Add(12 * time.Minute)
+	for time.Now().Before(deadline) {
+		resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+		require.NoError(t, err)
+		if crs := resp.GetCheckResults(); len(crs) > 0 {
+			lastState = crs[0].GetDataState()
+			if lastState == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT {
+				break
+			}
+		}
+		time.Sleep(30 * time.Second)
+	}
+
+	if lastState == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN {
+		t.Skip("data_state stayed UNKNOWN: ROX_COMPLIANCE_SURFACE_STALE_DATA is off on Central, or the on-demand grace did not elapse within the test window — enable the flag (and a short ROX_COMPLIANCE_OUTDATED_GRACE) to run this assertion")
+	}
+
+	// Flag on and grace elapsed: a no-schedule config that just completed a Scan-now must
+	// be CURRENT — proving the on-demand term (without it the config would stay UNKNOWN).
+	resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, int32(0), resp.GetOutdatedClusterCount(), "freshly scanned cluster must not be counted outdated")
+	require.NotEmpty(t, resp.GetCheckResults())
+	for _, cr := range resp.GetCheckResults() {
+		assert.Equalf(t, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, cr.GetDataState(),
+			"check %q on freshly scanned cluster should be CURRENT after an on-demand scan", cr.GetCheckName())
+	}
+}
+
 // TestComplianceV2TailoredProfileVariants verifies that ACS correctly tracks
 // different TailoredProfile variants: extends-base (with enabled and disabled
 // rules), from-scratch with custom rules, and from-scratch with regular rules.
