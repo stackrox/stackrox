@@ -286,7 +286,7 @@ func (s *policyValidator) validateExclusions(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *storage.Exclusion) error {
-	if exclusion.GetDeployment() == nil && exclusion.GetImage() == nil {
+	if exclusion.GetDeployment() == nil && exclusion.GetImage() == nil && exclusion.GetExcludeByType() == nil {
 		return errors.New("all excluded scopes must have some criteria to match on")
 	}
 	if exclusion.GetDeployment() != nil {
@@ -297,12 +297,43 @@ func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *s
 			return err
 		}
 	}
+	if exclusion.GetExcludeByType() != nil {
+		if !features.PolicyWorkloadTypeExclusion.Enabled() {
+			return errors.New("exclude_by_type requires feature flag ROX_POLICY_WORKLOAD_TYPE_EXCLUSION to be enabled")
+		}
+		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
+			return errors.New("excluding by workload type is only valid during the DEPLOY and RUNTIME lifecycles")
+		}
+		if err := validateExcludeByType(exclusion.GetExcludeByType()); err != nil {
+			return err
+		}
+	}
 	if exclusion.GetImage() != nil {
 		if !policies.AppliesAtBuildTime(policy) {
 			return errors.New("excluding an image is only valid during the BUILD lifecycle")
 		}
 		if exclusion.GetImage().GetName() == "" {
 			return errors.New("image excluded scope must have nonempty name")
+		}
+	}
+	return nil
+}
+
+func validateExcludeByType(excludeByType *storage.Exclusion_ExcludeByType) error {
+	types := excludeByType.GetTypes()
+	if len(types) == 0 {
+		return errors.New("exclude_by_type must specify at least one workload type")
+	}
+	seen := set.NewSet[storage.Exclusion_WorkloadType]()
+	for _, t := range types {
+		if t == storage.Exclusion_WORKLOAD_TYPE_UNSPECIFIED {
+			return errors.New("exclude_by_type cannot include WORKLOAD_TYPE_UNSPECIFIED")
+		}
+		if t != storage.Exclusion_CRON_JOB && t != storage.Exclusion_JOB {
+			return errors.Errorf("exclude_by_type contains unknown workload type %s", t)
+		}
+		if !seen.Add(t) {
+			return errors.New("exclude_by_type contains duplicate workload types")
 		}
 	}
 	return nil
