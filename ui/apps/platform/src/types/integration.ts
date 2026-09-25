@@ -43,7 +43,6 @@ export type ImageIntegrationType =
     | 'azure'
     | 'clair'
     | 'clairV4'
-    | 'clairify'
     | 'docker'
     | 'ecr'
     | 'ghcr'

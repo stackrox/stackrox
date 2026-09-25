@@ -25,7 +25,6 @@ const imageMap = {
     [entityTypes.CVE]: cve,
     [entityTypes.IMAGE_CVE]: cve,
     [entityTypes.NODE_CVE]: cve,
-    [entityTypes.CLUSTER_CVE]: cve,
     [entityTypes.NAMESPACE]: namespace,
     [entityTypes.NODE]: node,
     [entityTypes.POLICY]: policy,

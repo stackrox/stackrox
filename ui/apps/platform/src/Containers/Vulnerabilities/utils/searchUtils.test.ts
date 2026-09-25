@@ -2,7 +2,6 @@ import {
     getAppliedSeverities,
     getHiddenSeverities,
     getNodeEntityPagePath,
-    getPlatformEntityPagePath,
     getWorkloadEntityPagePath,
     normalizeSearchFilterKeys,
     parseQuerySearchFilter,
@@ -182,34 +181,6 @@ describe('getWorkloadEntityPagePath', () => {
             })
         ).toEqual(
             `deployments/deployment-123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
-        );
-    });
-});
-
-const platformUrlBase = '/main/vulnerabilities/platform-cves';
-
-describe('getPlatformEntityPagePath', () => {
-    it('should return the correct path for CVE entity', () => {
-        expect(getPlatformEntityPagePath('CVE', 'CVE-123-456')).toEqual(
-            `${platformUrlBase}/cves/CVE-123-456`
-        );
-
-        expect(
-            getPlatformEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['Critical'] } })
-        ).toEqual(`${platformUrlBase}/cves/CVE-123-456?s[Severity][0]=Critical`);
-    });
-
-    it('should return the correct path for Cluster entity', () => {
-        expect(getPlatformEntityPagePath('Cluster', 'cluster-123-456')).toEqual(
-            `${platformUrlBase}/clusters/cluster-123-456`
-        );
-
-        expect(
-            getPlatformEntityPagePath('Cluster', 'cluster-123-456', {
-                s: { Severity: ['Critical'], Namespace: ['stackrox'] },
-            })
-        ).toEqual(
-            `${platformUrlBase}/clusters/cluster-123-456?s[Severity][0]=Critical&s[Namespace][0]=stackrox`
         );
     });
 });
