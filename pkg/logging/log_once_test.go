@@ -56,22 +56,22 @@ func (s *logOnceTestSuite) TestLogOncePerKeyf() {
 }
 
 func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
-	testCount := maxLogOnceMemory * 2
+	testCount := logOnceDefaultMaxMemory * 2
 	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	s.mockLogger.EXPECT().Warnf("maxLogOnceMemory=%d limit reached", maxLogOnceMemory).MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Warnf("maxLogOnceMemory=%d limit reached", logOnceDefaultMaxMemory).MinTimes(1).MaxTimes(1)
 	for i := range testCount {
-		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(i)) //nolint:govet
+		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(int(i))) //nolint:govet
 	}
 
-	s.Equal(int64(maxLogOnceMemory), logOnceMemoryUsed.Load())
+	s.Equal(logOnceDefaultMaxMemory, logOnceMemoryUsed.Load())
 
-	countInMap := 0
+	var countInMap int32 = 0
 	logOnceSeen.Range(func(_ any, _ any) bool {
 		countInMap++
 		return true
 	})
 
-	s.Equal(maxLogOnceMemory, countInMap)
+	s.Equal(logOnceDefaultMaxMemory, countInMap)
 }
 
 func clearMemory() {

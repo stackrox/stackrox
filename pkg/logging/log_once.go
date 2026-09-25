@@ -1,25 +1,54 @@
 package logging
 
 import (
+	"strconv"
 	"sync/atomic"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
 )
 
-// maxLogOnceMemory sets the maximum number of unique entries to track.
-// When the use exceeds this amount, some previously logOnceSeen entries will be randomly dropped and so subsequent
-// calls to LogOnce* will result in previously seen messages again appearing in the log.
-// If we see a warning in the logs (ref logOnceLimitNotified) that we reached this limit, we should check our use of
-// LogOncef / LogOncePerKeyf and remove any cases when the same line sends varying templates, or bump the limit if
-// there are no such cases.
-const maxLogOnceMemory = 10_000
-
 var (
 	logOnceSeen          sync.Map
-	logOnceMemoryUsed    atomic.Int64
+	logOnceMemoryUsed    atomic.Int32
 	logOnceLimitNotified atomic.Bool
+
+	// logOnceMaxMemory sets the maximum number of unique entries to track.
+	// When the use exceeds this amount, some previously logOnceSeen entries will be randomly dropped and so subsequent
+	// calls to LogOnce* will result in previously seen messages again appearing in the log.
+	// If we see a warning in the logs (ref logOnceLimitNotified) that we reached this limit, we should check our use of
+	// LogOncef / LogOncePerKeyf and remove any cases when the same line sends varying templates, or bump the limit if
+	// there are no such cases.
+	logOnceMaxMemory int32
+
+	// logOnceMaxMemorySetting defines environment variable for users to be able to override the default
+	// logOnceMaxMemory value.
+	logOnceMaxMemorySetting = env.RegisterSetting(logOnceMaxMemoryVarName)
 )
+
+const (
+	logOnceDefaultMaxMemory int32 = 10_000
+	logOnceMaxMemoryVarName       = "ROX_MAX_LOG_ONCE_MEMORY"
+)
+
+func init() {
+	// Read and parse environment variable only once, otherwise it's going to be done on every call adding overhead.
+	logOnceMaxMemory = getLogOnceMaxMemory()
+}
+
+func getLogOnceMaxMemory() int32 {
+	envValue := logOnceMaxMemorySetting.Setting()
+	if envValue == "" {
+		return logOnceDefaultMaxMemory
+	}
+	v, err := strconv.ParseInt(envValue, 10, 32)
+	if err != nil || v <= 0 {
+		// Not sure if we should try log here.
+		return logOnceDefaultMaxMemory
+	}
+	return int32(v)
+}
 
 // LogOncef logs a message only once per template string (before formatting message).
 //
@@ -55,9 +84,9 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 	if !seen {
 		logger.Logf(level, template, args...)
 
-		if logOnceMemoryUsed.Add(1) > maxLogOnceMemory {
+		if logOnceMemoryUsed.Add(1) > logOnceMaxMemory {
 			if !logOnceLimitNotified.Swap(true) {
-				logger.Warnf("maxLogOnceMemory=%d limit reached", maxLogOnceMemory)
+				logger.Warnf("maxLogOnceMemory=%d limit reached", logOnceMaxMemory)
 			}
 			logOnceSeen.Range(func(randomKey, _ any) bool {
 				if randomKey == fullKey {
