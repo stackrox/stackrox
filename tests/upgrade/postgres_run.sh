@@ -76,9 +76,6 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    # To test we remain backwards compatible rollback to 4.10.x
-    FORCE_ROLLBACK_VERSION="${EARLIER_TAG}"
-
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
@@ -260,7 +257,7 @@ test_upgrade_paths() {
 }
 
 force_rollback_to_previous_postgres() {
-    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+    info "Forcing a rollback to ${EARLIER_TAG}"
 
     local upgradeStatus
     upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
@@ -270,7 +267,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
     local config_patch
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
@@ -284,7 +281,7 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
     # Do not rollback central-db image, since downgrade from PG15 to PG13 is
     # not possible.

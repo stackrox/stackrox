@@ -7,8 +7,8 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.10.7"
-EARLIER_SHA="5a4fced5248e20b2af68fe4bc88df95b40323225"
+EARLIER_TAG="4.10.0"
+EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 
 # shellcheck source=../../scripts/lib.sh
@@ -77,8 +77,6 @@ test_upgrade_path() {
     fi
 
     local log_output_dir="$1"
-
-    FORCE_ROLLBACK_VERSION="4.10.7"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -190,8 +188,6 @@ test_not_enough_disk_space() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.10.7"
-
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
@@ -276,7 +272,7 @@ test_not_enough_disk_space() {
 }
 
 force_rollback_to_previous_postgres() {
-    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+    info "Forcing a rollback to ${EARLIER_TAG}"
 
     local upgradeStatus
     upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
@@ -286,7 +282,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
     local config_patch
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
@@ -300,7 +296,7 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
     # Do not rollback central-db image, since downgrade from PG15 to PG13 is
     # not possible.
@@ -331,6 +327,14 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
