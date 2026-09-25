@@ -61,8 +61,8 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
+        MACHINE_TYPE: e2-standard-4
+        NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
