@@ -216,10 +216,10 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	c.Require().NoError(err)
 
 	output := stdout.String()
-	c.Assert().Contains(output, "Central version:             5.0.2")
-	c.Assert().Contains(output, "roxctl version:              5.0.0")
-	c.Assert().Contains(output, "Compatibility:               Matched")
-	c.Assert().Contains(output, "  Compatible Central versions:")
+	c.Assert().Contains(output, "Central version:                   5.0.2")
+	c.Assert().Contains(output, "roxctl version:                    5.0.0")
+	c.Assert().Contains(output, "Compatibility:                     Matched")
+	c.Assert().Contains(output, "Compatible Central versions:")
 	c.Assert().Contains(output, "  roxctl version is matched with Central.")
 }
 
@@ -238,7 +238,7 @@ func TestDisplayName(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, displayName(tt.c))
+			assert.Equal(t, tt.want, tt.c.DisplayName())
 		})
 	}
 }

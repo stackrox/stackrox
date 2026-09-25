@@ -129,18 +129,18 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 		RoxctlVersion:             roxctlVersion,
 		CentralVersion:            centralVersion,
 		CompatibleCentralVersions: compatStrs,
-		Compatibility:             compatibilityToString(compat),
+		Compatibility:             compat.String(),
 		Guidance:                  guidance(compat),
 		compatibility:             compat,
 	}, nil
 }
 
 func (cmd *centralVersionCommand) printText(r *versionResult) {
-	const labelFmt = "%-29s%s"
+	const labelFmt = "%-35s%s"
 	cmd.env.Logger().PrintfLn(labelFmt, "Central version:", r.CentralVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "roxctl version:", r.RoxctlVersion)
-	cmd.env.Logger().PrintfLn("  Compatible Central versions: %s", strings.Join(r.CompatibleCentralVersions, ", "))
-	cmd.env.Logger().PrintfLn(labelFmt, "Compatibility:", displayName(r.compatibility))
+	cmd.env.Logger().PrintfLn(labelFmt, "  Compatible Central versions:", strings.Join(r.CompatibleCentralVersions, ", "))
+	cmd.env.Logger().PrintfLn(labelFmt, "Compatibility:", r.compatibility.DisplayName())
 	for line := range strings.SplitSeq(r.Guidance, "\n") {
 		cmd.env.Logger().PrintfLn("  %s", line)
 	}
@@ -152,59 +152,23 @@ func (cmd *centralVersionCommand) printJSON(r *versionResult) error {
 	return errors.Wrap(enc.Encode(r), "encoding version information as JSON")
 }
 
-func displayName(c versioncompatibility.Compatibility) string {
-	switch c {
-	case versioncompatibility.Matched:
-		return "Matched"
-	case versioncompatibility.CompatibleBehind:
-		return "Compatible (Behind)"
-	case versioncompatibility.CompatibleAhead:
-		return "Compatible (Ahead)"
-	case versioncompatibility.IncompatibleBehind:
-		return "Incompatible (Behind)"
-	case versioncompatibility.IncompatibleAhead:
-		return "Incompatible (Ahead)"
-	default:
-		return "Unknown"
-	}
-}
-
-func compatibilityToString(c versioncompatibility.Compatibility) string {
-	switch c {
-	case versioncompatibility.Unknown:
-		return "UNKNOWN"
-	case versioncompatibility.Matched:
-		return "MATCHED"
-	case versioncompatibility.CompatibleBehind:
-		return "COMPATIBLE_BEHIND"
-	case versioncompatibility.CompatibleAhead:
-		return "COMPATIBLE_AHEAD"
-	case versioncompatibility.IncompatibleBehind:
-		return "INCOMPATIBLE_BEHIND"
-	case versioncompatibility.IncompatibleAhead:
-		return "INCOMPATIBLE_AHEAD"
-	default:
-		return "UNKNOWN"
-	}
-}
-
 func guidance(c versioncompatibility.Compatibility) string {
 	switch c {
 	case versioncompatibility.Matched:
 		return "roxctl version is matched with Central."
 	case versioncompatibility.CompatibleAhead:
 		return "Central version is compatible with roxctl but is ahead of roxctl.\n" +
-			"No immediate action is required. Upgrade roxctl to match Central for optimal functionality."
+			"No immediate action is required. Use newer roxctl version to match Central for optimal functionality."
 	case versioncompatibility.CompatibleBehind:
 		return "Central version is compatible with roxctl but is behind roxctl.\n" +
 			"No immediate action is required. It is recommended to plan a Central upgrade. " +
-			"If you prefer not to upgrade Central, suggest downgrading roxctl to match Central as the alternative option."
+			"If you prefer not to upgrade Central, consider using an older roxctl version to match Central."
 	case versioncompatibility.IncompatibleAhead:
-		return "Central version is outside the compatible version range and is ahead roxctl.\n" +
-			"Upgrade roxctl to match Central, or at minimum to within the compatible version range."
+		return "Central version is outside the compatible version range and is ahead of roxctl.\n" +
+			"Use newer roxctl version to match Central, or at minimum to within the compatible version range."
 	case versioncompatibility.IncompatibleBehind:
 		return "Central version is outside the compatible version range and is behind roxctl.\n" +
-			"Plan a Central upgrade or downgrade roxctl to be within the compatible version range."
+			"Plan a Central upgrade or use older roxctl version to be within the compatible version range."
 	default:
 		return ""
 	}

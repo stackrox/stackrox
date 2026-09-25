@@ -74,6 +74,44 @@ func ClassifyVersion(remote productstreams.XYVersion) (Compatibility, error) {
 	return classify(self, versions, remote), nil
 }
 
+// String returns the upper-case snake_case name of the compatibility level
+// (e.g. "MATCHED", "COMPATIBLE_BEHIND"). Unknown values return "UNKNOWN".
+func (c Compatibility) String() string {
+	switch c {
+	case Matched:
+		return "MATCHED"
+	case CompatibleBehind:
+		return "COMPATIBLE_BEHIND"
+	case CompatibleAhead:
+		return "COMPATIBLE_AHEAD"
+	case IncompatibleBehind:
+		return "INCOMPATIBLE_BEHIND"
+	case IncompatibleAhead:
+		return "INCOMPATIBLE_AHEAD"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// DisplayName returns a human-friendly label for the compatibility level
+// (e.g. "Matched", "Compatible (Behind)").
+func (c Compatibility) DisplayName() string {
+	switch c {
+	case Matched:
+		return "Matched"
+	case CompatibleBehind:
+		return "Compatible (Behind)"
+	case CompatibleAhead:
+		return "Compatible (Ahead)"
+	case IncompatibleBehind:
+		return "Incompatible (Behind)"
+	case IncompatibleAhead:
+		return "Incompatible (Ahead)"
+	default:
+		return "Unknown"
+	}
+}
+
 func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {
 	cmp := self.Compare(remote)
 	// Remote is compatible if it falls within the bounds of the compatible
