@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator metadata.
@@ -31,6 +32,11 @@ type DataStore interface {
 
 	// UpsertScanConfiguration adds or updates the scan configuration
 	UpsertScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error
+
+	// UpdateScanConfigLastScanRequestedTime records an on-demand "Scan now" time on the
+	// scan configuration. Unlike UpsertScanConfiguration it does NOT bump last_updated_time,
+	// since triggering a rescan is not a configuration edit.
+	UpdateScanConfigLastScanRequestedTime(ctx context.Context, id string, requestedTime *protocompat.Timestamp) error
 
 	// DeleteScanConfiguration deletes the scan configuration specified by id
 	DeleteScanConfiguration(ctx context.Context, id string) (string, error)
