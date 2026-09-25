@@ -47,9 +47,11 @@ class TestTimedSpan(unittest.TestCase):
         events = events_from_output(output)
         self.assertEqual(["start", "end"], [event["event"] for event in events])
         self.assertEqual(events[0]["span_id"], events[1]["span_id"])
+        self.assertIn("timestamp", events[0])
+        self.assertIn("timestamp", events[1])
         self.assertEqual("gha:12345:2:unit-test-lane", events[0]["run_id"])
         self.assertEqual("unit-test-lane", events[0]["lane_id"])
-        self.assertGreaterEqual(events[1]["duration_ms"], 0)
+        self.assertNotIn("duration_ms", events[1])
         self.assertEqual("success", events[1]["outcome"])
 
     def test_exception_is_recorded_and_re_raised(self):
@@ -72,7 +74,7 @@ class TestTimedSpan(unittest.TestCase):
 
         self.assertEqual("timeout", events_from_output(output)[-1]["outcome"])
 
-    def test_skipped_work_has_a_marker_instead_of_a_zero_duration_span(self):
+    def test_skipped_work_has_a_marker_without_an_execution_interval(self):
         output = io.StringIO()
         with redirect_stdout(output):
             record_skipped("test-execution", "qa-part-1", "e2e-infra-only")
@@ -119,9 +121,29 @@ class TestTimedSpan(unittest.TestCase):
         ):
             self.assertFalse(is_enabled())
 
+    def test_propagated_timing_identity_survives_a_container_boundary(self):
+        output = io.StringIO()
+        with patch.dict(
+            os.environ,
+            {
+                "E2E_TIMING_ENABLED": "true",
+                "E2E_TIMING_PROVIDER": "github-actions",
+                "E2E_TIMING_RUN_ID": "gha:12345:2:gke-qa-e2e-tests",
+                "E2E_TIMING_LANE_ID": "gha.qa.gke",
+            },
+            clear=True,
+        ), redirect_stdout(output):
+            with timed_span("test-case", "container-child"):
+                pass
+
+        event = events_from_output(output)[0]
+        self.assertEqual("github-actions", event["provider"])
+        self.assertEqual("gha:12345:2:gke-qa-e2e-tests", event["run_id"])
+        self.assertEqual("gha.qa.gke", event["lane_id"])
+
 
 class TestTimedCommand(unittest.TestCase):
-    def test_records_command_duration_and_returns_command_status(self):
+    def test_records_command_span_and_returns_command_status(self):
         output = io.StringIO()
         with patch.dict(
             os.environ,
@@ -223,7 +245,7 @@ class TestPostTestTiming(unittest.TestCase):
         stage_events = [event for event in events if event["phase"] == "post-test-stage"]
         self.assertEqual(["start", "end"], [event["event"] for event in stage_events])
         self.assertEqual("post-cluster-test", stage_events[0]["name"])
-        self.assertGreaterEqual(stage_events[-1]["duration_ms"], 0)
+        self.assertIn("timestamp", stage_events[-1])
 
     def test_final_post_emits_aggregate_stage_span(self):
         output = io.StringIO()
@@ -239,7 +261,7 @@ class TestPostTestTiming(unittest.TestCase):
         stage_events = [event for event in events if event["phase"] == "post-test-stage"]
         self.assertEqual(["start", "end"], [event["event"] for event in stage_events])
         self.assertEqual("final-post", stage_events[0]["name"])
-        self.assertGreaterEqual(stage_events[-1]["duration_ms"], 0)
+        self.assertIn("timestamp", stage_events[-1])
 
     def test_best_effort_command_emits_safe_operation_name(self):
         output = io.StringIO()

@@ -76,7 +76,8 @@ class TestGoTestTiming(unittest.TestCase):
         self.assertEqual("gha:123:1:go-tests", test_events[0]["run_id"])
         self.assertEqual("gha.e2e.nongroovy.gke", test_events[0]["lane_id"])
         self.assertEqual("2026-09-25T12:00:01Z", test_events[0]["timestamp"])
-        self.assertEqual(1250, test_events[1]["duration_ms"])
+        self.assertEqual("2026-09-25T12:00:02Z", test_events[1]["timestamp"])
+        self.assertNotIn("duration_ms", test_events[1])
         self.assertEqual("success", test_events[1]["outcome"])
         self.assertEqual(["start", "end"], [event["event"] for event in package_events])
         self.assertIn("=== RUN   TestAPI", output.getvalue())
@@ -139,7 +140,7 @@ class TestGoTestTiming(unittest.TestCase):
 
         self.assertEqual(line, output.getvalue())
 
-    def test_cached_result_is_a_marker_not_a_zero_duration_span(self):
+    def test_cached_result_is_marked_without_an_execution_interval(self):
         output = io.StringIO()
         with redirect_stdout(output):
             process_events([go_event("pass", Elapsed=0.1)])

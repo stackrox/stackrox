@@ -96,12 +96,7 @@ dependencies {
     implementation(projects.annotations)
 }
 
-private data class ActiveTestTiming(
-    val spanId: String,
-    val startedAtNanos: Long,
-)
-
-private val activeTestTimings = ConcurrentHashMap<String, ConcurrentLinkedDeque<ActiveTestTiming>>()
+private val activeTestTimings = ConcurrentHashMap<String, ConcurrentLinkedDeque<String>>()
 
 private fun e2eTimingEnabled(): Boolean =
     System.getenv("E2E_TIMING_ENABLED")?.lowercase() in setOf("1", "true", "yes", "on")
@@ -113,7 +108,6 @@ private fun emitTestTimingEvent(
     event: String,
     timestamp: String,
     attributes: Map<String, String>,
-    durationMs: Long? = null,
     outcome: String? = null,
     reason: String? = null,
 ) {
@@ -133,9 +127,6 @@ private fun emitTestTimingEvent(
         "timestamp" to timestamp,
         "attributes" to attributes,
     )
-    if (durationMs != null) {
-        record["duration_ms"] = durationMs.coerceAtLeast(0)
-    }
     if (outcome != null) {
         record["outcome"] = outcome
     }
@@ -208,18 +199,15 @@ tasks.withType<Test>().configureEach {
             }
             val attributes = testTimingAttributes(timingTaskName, test) +
                 ("gradle_task_path" to timingTaskPath)
-            val timing = ActiveTestTiming(
-                spanId = "test-case:${UUID.randomUUID()}",
-                startedAtNanos = System.nanoTime(),
-            )
+            val spanId = "test-case:${UUID.randomUUID()}"
             val timings = activeTestTimings.computeIfAbsent(testTimingKey(timingTaskPath, test)) {
                 ConcurrentLinkedDeque()
             }
-            timings.addLast(timing)
+            timings.addLast(spanId)
             emitTestTimingEvent(
                 phase = "test-case",
                 name = "groovy:$timingTaskName:${test.className ?: "unknown-class"}::${test.name}",
-                spanId = timing.spanId,
+                spanId = spanId,
                 event = "start",
                 timestamp = Instant.now().toString(),
                 attributes = attributes,
@@ -232,7 +220,7 @@ tasks.withType<Test>().configureEach {
             }
             val key = testTimingKey(timingTaskPath, test)
             val timings = activeTestTimings[key]
-            val timing = timings?.pollLast()
+            val spanId = timings?.pollLast()
             if (timings != null && timings.isEmpty()) {
                 activeTestTimings.remove(key, timings)
             }
@@ -245,7 +233,7 @@ tasks.withType<Test>().configureEach {
                 else -> "skipped"
             }
             val name = "groovy:$timingTaskName:${test.className ?: "unknown-class"}::${test.name}"
-            if (timing == null) {
+            if (spanId == null) {
                 // A filtered/skipped test has no start event; don't fabricate a zero-length span.
                 emitTestTimingEvent(
                     phase = "test-case",
@@ -262,11 +250,10 @@ tasks.withType<Test>().configureEach {
             emitTestTimingEvent(
                 phase = "test-case",
                 name = name,
-                spanId = timing.spanId,
+                spanId = spanId,
                 event = "end",
                 timestamp = Instant.now().toString(),
                 attributes = attributes,
-                durationMs = (System.nanoTime() - timing.startedAtNanos) / 1_000_000,
                 outcome = outcome,
             )
         }
