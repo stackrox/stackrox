@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -355,6 +356,55 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 			}
 		})
 	}
+}
+
+// TestGetComplianceOverallClusterStats_Outdated exercises the populate-to-OUTDATED
+// path in computeClusterDataStates for the stats service. The other overall/cluster
+// stats tests stub MinLastStartedTimeByConfigCluster as (nil, nil), so the OUTDATED
+// rollup is never asserted there. Here a MIN(last_started_time) far older than the
+// reference for a DAILY-scheduled config must roll the cluster up to OUTDATED and
+// contribute 1 to outdated_cluster_count.
+func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallClusterStats_Outdated() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+	results := []*datastore.ResultStatusCountByCluster{
+		convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1, &scan1Time),
+	}
+	s.resultDatastore.EXPECT().CountByField(gomock.Any(), search.EmptyQuery(), search.ClusterID)
+	s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+	s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).
+		Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
+
+	// A MIN far in the past against a DAILY schedule ⇒ OUTDATED.
+	ancient := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(
+		[]*datastore.MinLastStartedTimeByConfigCluster{
+			{ScanConfigName: "scanConfig1", ClusterID: fixtureconsts.Cluster1, MinLastStarted: &ancient},
+		}, nil,
+	).Times(1)
+	s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+		[]*storage.ComplianceOperatorScanConfigurationV2{{
+			ScanConfigName: "scanConfig1",
+			Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+		}}, nil,
+	).Times(1)
+
+	resp, err := s.service.GetComplianceOverallClusterStats(s.ctx, &apiV2.RawQuery{Query: ""})
+	s.Require().NoError(err)
+	s.Assert().Equal(int32(1), resp.GetOutdatedClusterCount(), "outdated cluster must be counted")
+	s.Require().NotEmpty(resp.GetScanStats())
+
+	var found bool
+	for _, stat := range resp.GetScanStats() {
+		if stat.GetCluster().GetClusterId() == fixtureconsts.Cluster1 {
+			found = true
+			s.Assert().Equal(apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED, stat.GetDataState(),
+				"cluster with an ancient MIN(last_started) against a DAILY schedule must be OUTDATED")
+		}
+	}
+	s.Assert().True(found, "expected overall stats for cluster1")
 }
 
 func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats() {
