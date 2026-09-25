@@ -2,21 +2,22 @@
 
 set -euo pipefail
 
-# delete-vm-ns.sh deletes VM-scanning e2e namespaces. Best-effort: exits 0
-# when kubectl cannot list namespaces or a delete fails.
-#
-# Usage:
-#   delete-vm-ns.sh
-#
-# Environment:
-#   VM_SCAN_NAMESPACE_PREFIX  default: vm-scan-e2e
-
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 usage() {
-    echo "./scripts/ci/delete-vm-ns.sh"
+    cat <<EOF
+$0 deletes VM-scanning e2e namespaces. Best-effort: exits 0
+when kubectl cannot list namespaces or a delete fails.
+
+Usage:
+    $0
+    $0 -h|--help
+
+Environment:
+    VM_SCAN_NAMESPACE_PREFIX  default: vm-scan-e2e
+EOF
 }
 
 delete_vm_scan_namespaces() {
@@ -38,13 +39,20 @@ delete_vm_scan_namespaces() {
 }
 
 main() {
+    case "${1:-}" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        "")
+            ;;
+        *)
+            usage >&2
+            exit 1
+            ;;
+    esac
+
     cd "$SCRIPTS_ROOT"
-
-    if [[ $# -ne 0 ]]; then
-        usage
-        exit 1
-    fi
-
     delete_vm_scan_namespaces
     exit 0
 }
