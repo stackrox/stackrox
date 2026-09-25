@@ -109,6 +109,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) SetupSuite() {
 		s.T().Skip("Skip test when compliance enhancements are disabled")
 		s.T().SkipNow()
 	}
+	// Exercise the outdated-data code paths (feature-flag gated, default off).
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
 
 	s.ctx = sac.WithAllAccess(context.Background())
 }
@@ -164,6 +166,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -207,6 +210,65 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 	}
 }
 
+// TestGetComplianceClusterScanStats_UnresolvableConfigFlagOff verifies that with
+// ROX_COMPLIANCE_SURFACE_STALE_DATA disabled, an unresolvable scan config keeps the
+// pre-feature behavior: the endpoint returns a hard error. The strict gomock
+// controller also fails if the outdated-detection MIN query runs.
+func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanStats_UnresolvableConfigFlagOff() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "false")
+
+	expectedQ := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+		search.EmptyQuery(),
+	)
+	expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+	results := []*datastore.ResourceResultCountByClusterScan{
+		convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
+	}
+	s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+	s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(nil, errors.New("boom")).Times(1)
+
+	resp, err := s.service.GetComplianceClusterScanStats(s.ctx, &apiV2.ComplianceScanClusterRequest{
+		ClusterId: fixtureconsts.Cluster1,
+		Query:     &apiV2.RawQuery{Query: ""},
+	})
+	s.Require().Error(err)
+	s.Require().Nil(resp)
+}
+
+// TestGetComplianceClusterScanStats_UnresolvableConfigFlagOn verifies that with
+// ROX_COMPLIANCE_SURFACE_STALE_DATA enabled, an unresolvable scan config no longer
+// fails the endpoint: it is treated as a warning and its data_state resolves to
+// UNKNOWN. No MIN query runs because no config loaded successfully.
+func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanStats_UnresolvableConfigFlagOn() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	expectedQ := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+		search.EmptyQuery(),
+	)
+	countQuery := expectedQ.CloneVT()
+	expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+	results := []*datastore.ResourceResultCountByClusterScan{
+		convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
+	}
+	s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+	s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(nil, errors.New("boom")).Times(1)
+	s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName).Times(1)
+
+	resp, err := s.service.GetComplianceClusterScanStats(s.ctx, &apiV2.ComplianceScanClusterRequest{
+		ClusterId: fixtureconsts.Cluster1,
+		Query:     &apiV2.RawQuery{Query: ""},
+	})
+	s.Require().NoError(err)
+	s.Require().NotEmpty(resp.GetScanStats())
+	for _, stat := range resp.GetScanStats() {
+		s.Assert().Equal(apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, stat.GetScanStats().GetDataState())
+	}
+}
+
 func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallClusterStats() {
 	testCases := []struct {
 		desc         string
@@ -238,6 +300,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -333,6 +396,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -766,7 +830,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				Query:       &apiV2.RawQuery{Query: ""},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, 0),
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").
@@ -791,7 +855,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, 0),
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 				expectedQ = search.ConjunctionQuery(
