@@ -59,7 +59,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
+        NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -210,7 +210,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
+        NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -360,7 +360,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
+        NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
