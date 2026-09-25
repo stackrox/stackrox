@@ -10,16 +10,19 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/versioncheck"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -47,41 +50,50 @@ func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Me
 	return &v1.Metadata{Version: m.version}, nil
 }
 
-func (c *centralVersionTestSuite) createGRPCMockService(server *mockMetadataServer) (*grpc.ClientConn, func()) {
+func (c *centralVersionTestSuite) createGRPCMockService(server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(injectVersionHeader(server.version)))
 	v1.RegisterMetadataServiceServer(srv, server)
 
 	go func() {
 		utils.IgnoreError(func() error { return srv.Serve(listener) })
 	}()
 
+	var interceptorOutput bytes.Buffer
 	conn, err := grpc.DialContext(context.Background(), "",
 		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
 			return listener.Dial()
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(versioncheck.CentralVersionClientInterceptor(&interceptorOutput)),
 	)
 	c.Require().NoError(err)
 
-	return conn, func() {
+	return conn, &interceptorOutput, func() {
 		utils.IgnoreError(listener.Close)
 		srv.Stop()
 	}
 }
 
-func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr *bytes.Buffer, cleanup func()) {
+func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer, cleanup func()) {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
-	conn, closeFunc := c.createGRPCMockService(server)
+	conn, interceptorOut, closeFunc := c.createGRPCMockService(server)
 	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
 	cmd = &centralVersionCommand{
 		env:          env,
 		timeout:      5 * time.Second,
 		retryTimeout: 5 * time.Second,
 	}
-	return cmd, out, errOut, closeFunc
+	return cmd, out, errOut, interceptorOut, closeFunc
+}
+
+func injectVersionHeader(centralVersion string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		_ = grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion))
+		return handler(ctx, req)
+	}
 }
 
 func (c *centralVersionTestSuite) TestCompatibilityStates() {
@@ -121,12 +133,13 @@ func (c *centralVersionTestSuite) TestCompatibilityStates() {
 
 	for name, tt := range tests {
 		c.Run(name, func() {
-			cmd, stdout, _, cleanup := c.setupCommand(&mockMetadataServer{version: tt.centralVersion})
+			cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{version: tt.centralVersion})
 			defer cleanup()
 
 			err := cmd.run(false)
 
 			c.Assert().NoError(err)
+			c.Assert().Empty(interceptorOutput.String(), "version check interceptor warning should be suppressed")
 
 			output := stdout.String()
 			c.Assert().Contains(output, "Central version:")
@@ -146,7 +159,7 @@ func (c *centralVersionTestSuite) TestCompatibilityStates() {
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsAuthError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, cleanup := c.setupCommand(&mockMetadataServer{version: ""})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: ""})
 	defer cleanup()
 
 	err := cmd.run(false)
@@ -159,7 +172,7 @@ func (c *centralVersionTestSuite) TestEmptyVersionReturnsAuthError() {
 func (c *centralVersionTestSuite) TestJSONOutput() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
 	defer cleanup()
 
 	err := cmd.run(true)
@@ -178,12 +191,13 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.6.0"})
+	cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{version: "5.6.0"})
 	defer cleanup()
 
 	err := cmd.run(true)
 
 	c.Assert().NoError(err)
+	c.Assert().Empty(interceptorOutput.String(), "version check interceptor warning should be suppressed")
 
 	var result versionResult
 	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
@@ -195,7 +209,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
 	defer cleanup()
 
 	err := cmd.run(false)
