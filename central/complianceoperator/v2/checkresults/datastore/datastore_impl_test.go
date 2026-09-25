@@ -870,6 +870,43 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMinLastStartedTimeByCheckC
 	s.Require().True(tOld.Equal(*got[key{testconsts.Cluster2, "check-a"}]))
 }
 
+// TestMinLastStartedTimeAggregatesSac verifies both freshness aggregates honor
+// SAC cluster scoping: a caller scoped to cluster 2 must not see cluster 1's
+// rows in either aggregate. Mirrors the cluster-scoped pattern in
+// TestResultsStatsSac. Writes use the global write context; only the aggregate
+// READ is performed under the cluster-scoped context.
+func (s *complianceCheckResultDataStoreTestSuite) TestMinLastStartedTimeAggregatesSac() {
+	ts, err := protocompat.ConvertTimeToTimestampOrError(time.Date(2026, 9, 1, 2, 0, 0, 0, time.UTC))
+	s.Require().NoError(err)
+
+	// One result per cluster (both scanConfig1 / test-check via getTestRec).
+	recC1 := getTestRec(testconsts.Cluster1)
+	recC1.LastStartedTime = ts
+	recC2 := getTestRec(testconsts.Cluster2)
+	recC2.LastStartedTime = ts
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, recC1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, recC2))
+
+	// Read under a context scoped to cluster 2 only.
+	scopedCtx := s.testContexts[testutils.Cluster2ReadWriteCtx]
+
+	configResults, err := s.dataStore.MinLastStartedTimeByConfigCluster(scopedCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().NotEmpty(configResults, "cluster-2-scoped caller should still see cluster 2 rows")
+	for _, r := range configResults {
+		s.Require().Equal(testconsts.Cluster2, r.ClusterID,
+			"config/cluster aggregate must not leak rows outside the caller's SAC scope")
+	}
+
+	checkResults, err := s.dataStore.MinLastStartedTimeByCheckCluster(scopedCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().NotEmpty(checkResults, "cluster-2-scoped caller should still see cluster 2 rows")
+	for _, r := range checkResults {
+		s.Require().Equal(testconsts.Cluster2, r.ClusterID,
+			"check/cluster aggregate must not leak rows outside the caller's SAC scope")
+	}
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCluster() {
 	s.setupTestData()
 	testCases := []struct {

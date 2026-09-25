@@ -73,6 +73,28 @@ func TestFindPreviousFireTime(t *testing.T) {
 	}
 }
 
+func TestFindPreviousFireTime_NeverFiring(t *testing.T) {
+	// "0 0 31 2 *" is Feb 31, which never exists in any year. robfig/cron.v2
+	// returns the zero time from Next() once its ~5-year search is exhausted.
+	// Without the IsZero guard the loop would feed the zero time back into
+	// Next() and spin forever; assert it returns zero promptly instead.
+	sched, err := cron.Parse("TZ=UTC 0 0 31 2 *")
+	require.NoError(t, err)
+
+	before := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	done := make(chan time.Time, 1)
+	go func() {
+		done <- FindPreviousFireTime(sched, before)
+	}()
+
+	select {
+	case got := <-done:
+		assert.True(t, got.IsZero(), "expected zero time for never-firing schedule, got %v", got)
+	case <-time.After(10 * time.Second):
+		t.Fatal("FindPreviousFireTime hung on a never-firing schedule (missing zero-time guard)")
+	}
+}
+
 func TestResolveCheck(t *testing.T) {
 	// Daily at 02:00 UTC. Now = 2026-09-02 15:00 UTC.
 	// grace = 85min (45+40). now-grace = 14:35. referenceFire = 02:00 today.
@@ -151,7 +173,7 @@ func TestResolveCheck(t *testing.T) {
 			assessmentTime: new(time.Date(2026, 9, 2, 1, 58, 30, 0, time.UTC)),
 			want:           Current,
 		},
-		"just outside skew: 3min before reference → OUTDATED": {
+		"just outside skew: 4min before reference → OUTDATED": {
 			configName:     "daily-scan",
 			assessmentTime: new(time.Date(2026, 9, 2, 1, 56, 0, 0, time.UTC)),
 			want:           Outdated,
