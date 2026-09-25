@@ -680,6 +680,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataState": {
+          "$ref": "#/definitions/v2ComplianceDataState",
+          "description": "Rolled-up freshness across all clusters reporting this check: OUTDATED if\nany contributing cluster has stale data (OUTDATED > CURRENT > UNKNOWN)."
         }
       },
       "title": "Group the number of occurrences by status"
@@ -733,6 +737,9 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataState": {
+          "$ref": "#/definitions/v2ComplianceDataState"
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
@@ -759,6 +766,16 @@
           "type": "string"
         }
       }
+    },
+    "v2ComplianceDataState": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_DATA_STATE_UNKNOWN",
+        "COMPLIANCE_DATA_STATE_CURRENT",
+        "COMPLIANCE_DATA_STATE_OUTDATED"
+      ],
+      "default": "COMPLIANCE_DATA_STATE_UNKNOWN",
+      "description": "ComplianceDataState indicates whether compliance data is current relative to\nthe scan configuration's schedule.\n\n - COMPLIANCE_DATA_STATE_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_DATA_STATE_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_DATA_STATE_OUTDATED: Data predates the most recent expected scan cycle."
     },
     "v2ComplianceProfileScanStats": {
       "type": "object",
@@ -819,6 +836,9 @@
         },
         "scanConfigId": {
           "type": "string"
+        },
+        "dataState": {
+          "$ref": "#/definitions/v2ComplianceDataState"
         }
       },
       "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
@@ -836,6 +856,11 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with OUTDATED data in the current filtered scope\n(computed over the unpaginated result set). Non-zero signals the UI\nto show an outdated-data banner."
         }
       },
       "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
@@ -896,6 +921,11 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "outdatedClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with OUTDATED data in the current filtered scope\n(computed over the unpaginated result set). Non-zero signals the UI\nto show an outdated-data banner."
         }
       },
       "title": "ListComplianceProfileResults provides scan stats overview based on profile"
