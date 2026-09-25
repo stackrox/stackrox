@@ -36,7 +36,6 @@ import { snoozeDurations, durations } from 'constants/timeWindows';
 import {
     IMAGE_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
-    CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveType from 'Components/CveType';
@@ -64,7 +63,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         entityTypes.CVE, // TODO: remove this type after it's removed from workflow
         entityTypes.IMAGE_CVE,
         entityTypes.NODE_CVE,
-        entityTypes.CLUSTER_CVE,
     ].includes(currentEntityType);
     const inFindingsSection = !isCveType;
 
@@ -329,18 +327,6 @@ const VulnMgmtCves = ({
             `;
             break;
         }
-        case entityTypes.CLUSTER_CVE: {
-            cveQuery = gql`
-                query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-                    results: clusterVulnerabilities(query: $query, pagination: $pagination) {
-                        ...clusterCVEFields
-                    }
-                    count: clusterVulnerabilityCount(query: $query)
-                }
-                ${CLUSTER_CVE_LIST_FRAGMENT}
-            `;
-            break;
-        }
         case entityTypes.IMAGE_CVE:
         default: {
             cveQuery = gql`
@@ -389,8 +375,6 @@ const VulnMgmtCves = ({
 
         if (entityType === resourceTypes.NODE_CVE) {
             type = 'NODE';
-        } else if (entityType === resourceTypes.CLUSTER_CVE) {
-            type = 'PLATFORM';
         } else {
             // The entity type is IMAGE_CVE or something unexpected, so we don't want to track it
             return;

@@ -47,7 +47,6 @@ import {
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
@@ -253,12 +252,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/node-cves': {
         component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
         path: vulnerabilitiesNodeCvesPath,
-    },
-    'vulnerabilities/platform-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
-        ),
-        path: vulnerabilitiesPlatformCvesPath,
     },
     'vulnerabilities/user-workloads': {
         component: makeVulnMgmtUserWorkloadView('user-workloads'),

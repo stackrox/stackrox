@@ -7,7 +7,6 @@ import Loader from 'Components/Loader';
 import fixableVulnTypeContext from 'Containers/VulnMgmt/fixableVulnTypeContext';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import {
-    CLUSTER_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     IMAGE_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -47,12 +46,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, id, 
     let queryCVEFieldsName = 'imageCVEFields';
     let queryFragment = IMAGE_CVE_LIST_FRAGMENT;
 
-    if (vulnType === entityTypes.CLUSTER_CVE) {
-        queryVulnCounterFieldName = 'clusterVulnerabilityCounter';
-        queryVulnsFieldName = 'clusterVulnerabilities';
-        queryCVEFieldsName = 'clusterCVEFields';
-        queryFragment = CLUSTER_CVE_LIST_FRAGMENT;
-    } else if (vulnType === entityTypes.NODE_CVE) {
+    if (vulnType === entityTypes.NODE_CVE) {
         queryVulnCounterFieldName = 'nodeVulnerabilityCounter';
         queryVulnsFieldName = 'nodeVulnerabilities';
         queryCVEFieldsName = 'nodeCVEFields';
