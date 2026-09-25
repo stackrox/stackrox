@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
@@ -67,6 +68,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupSuite() {
 		s.T().Skip("Skip test when compliance enhancements are disabled")
 		s.T().SkipNow()
 	}
+	// Exercise the outdated-data code paths (feature-flag gated, default off).
+	// Individual flag-off cases override this via t.Setenv.
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
 
 	s.ctx = sac.WithAllAccess(context.Background())
 }
@@ -244,6 +248,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Return(
+					&storage.ComplianceOperatorScanConfigurationV2{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}, nil,
+				).AnyTimes()
 			},
 		},
 		{
@@ -406,7 +416,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				Query:       &apiV2.RawQuery{Query: ""},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, 0),
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery(),
@@ -421,6 +431,8 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Per-check freshness: a fresh MIN(last_started) against a DAILY schedule ⇒ CURRENT.
+				s.setupCheckDataStateMocks(countQuery, new(time.Now().UTC()))
 			},
 		},
 		{
@@ -430,7 +442,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, 0),
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 				expectedQ = search.ConjunctionQuery(
@@ -447,6 +459,33 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.setupCheckDataStateMocks(countQuery, new(time.Now().UTC()))
+			},
+		},
+		{
+			desc: "Outdated check data",
+			query: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "ocp4-cis",
+				Query:       &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr:  nil,
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED, 1),
+			setMocks: func() {
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				countQuery := expectedQ.CloneVT()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultsByProfile{
+					convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4-cis"),
+				}
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
+				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// A years-old MIN(last_started) predates the last DAILY fire ⇒ OUTDATED.
+				s.setupCheckDataStateMocks(countQuery, new(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)))
 			},
 		},
 		{
@@ -477,12 +516,79 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 	}
 }
 
+// TestGetComplianceProfileResults_FlagOff verifies that with
+// ROX_COMPLIANCE_SURFACE_STALE_DATA disabled the outdated-data fields stay at their
+// zero values (UNKNOWN / 0) and none of the outdated-detection datastore queries
+// (MinLastStartedTime* / GetScanConfigurationByName) run — i.e. behavior is
+// identical to before the feature. The strict gomock controller fails the test
+// if any of those calls happen, since no expectations are registered for them.
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults_FlagOff() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "false")
+
+	expectedQ := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery(),
+		search.EmptyQuery(),
+	)
+	countQuery := expectedQ.CloneVT()
+	expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+	results := []*datastore.ResourceResultsByProfile{
+		convertUtils.GetComplianceStorageProfileResults(s.T(), "ocp4-cis"),
+	}
+	s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorCheckName).Return(1, nil).Times(1)
+	s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+	s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+
+	resp, err := s.service.GetComplianceProfileResults(s.ctx, &apiV2.ComplianceProfileResultsRequest{
+		ProfileName: "ocp4-cis",
+		Query:       &apiV2.RawQuery{Query: ""},
+	})
+	s.Require().NoError(err)
+	// Fields are byte-for-byte the pre-feature zero values.
+	expected := convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, 0)
+	protoassert.Equal(s.T(), expected, resp)
+}
+
 func getExpectedControlResults() []*ruleDS.ControlResult {
 	return []*ruleDS.ControlResult{
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.2.2"},
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.3.3"},
 		{RuleName: "rule-name", Standard: "OCP-CIS", Control: "1.4.4"},
 	}
+}
+
+// setupCheckDataStateMocks wires the per-check freshness aggregate, the
+// per-(config,cluster) aggregate that gates the banner, and the config load used
+// by GetComplianceProfileResults. minLastStarted drives the resolved state
+// against a DAILY schedule (recent ⇒ CURRENT, ancient ⇒ OUTDATED). Both compute
+// helpers now share a single resolver, and configs are loaded in one bulk
+// GetScanConfigurations query ⇒ Times(1).
+func (s *ComplianceResultsServiceTestSuite) setupCheckDataStateMocks(countQuery *v1.Query, minLastStarted *time.Time) {
+	s.resultDatastore.EXPECT().MinLastStartedTimeByCheckCluster(gomock.Any(), countQuery).Return(
+		[]*datastore.MinLastStartedTimeByCheckCluster{
+			{
+				ScanConfigName: "scanConfig1",
+				ClusterID:      fixtureconsts.Cluster1,
+				CheckName:      "check-name",
+				MinLastStarted: minLastStarted,
+			},
+		}, nil,
+	).Times(1)
+	s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
+		[]*datastore.MinLastStartedTimeByConfigCluster{
+			{
+				ScanConfigName: "scanConfig1",
+				ClusterID:      fixtureconsts.Cluster1,
+				MinLastStarted: minLastStarted,
+			},
+		}, nil,
+	).Times(1)
+	s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+		[]*storage.ComplianceOperatorScanConfigurationV2{{
+			ScanConfigName: "scanConfig1",
+			Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+		}}, nil,
+	).Times(1)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult() {
@@ -532,6 +638,19 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+					[]*storage.ComplianceOperatorScanConfigurationV2{{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}}, nil,
+				).AnyTimes()
+				// Banner count over the profile+check-scoped countQuery: a fresh
+				// MIN(last_started) against DAILY ⇒ CURRENT ⇒ count 0.
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
+					[]*datastore.MinLastStartedTimeByConfigCluster{
+						{ScanConfigName: "scanConfig1", ClusterID: fixtureconsts.Cluster1, MinLastStarted: new(time.Now().UTC())},
+					}, nil,
+				).Times(1)
 			},
 		},
 		{
@@ -574,6 +693,20 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the returned results' configs in a
+				// single bulk query.
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+					[]*storage.ComplianceOperatorScanConfigurationV2{{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}}, nil,
+				).AnyTimes()
+				// Banner count over the profile+check-scoped countQuery ⇒ CURRENT ⇒ count 0.
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
+					[]*datastore.MinLastStartedTimeByConfigCluster{
+						{ScanConfigName: "scanConfig1", ClusterID: fixtureconsts.Cluster1, MinLastStarted: new(time.Now().UTC())},
+					}, nil,
+				).Times(1)
 			},
 		},
 		{
@@ -631,11 +764,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 			},
 			expectedErr: nil,
 			expectedResp: &apiV2.ListComplianceCheckResultResponse{
-				CheckResults: convertUtils.GetConvertedCheckResult(s.T()),
-				ProfileName:  "ocp4-cis",
-				ClusterId:    testconsts.Cluster1,
-				TotalCount:   7,
-				LastScanTime: scan1.GetLastExecutedTime(),
+				CheckResults:         convertUtils.GetConvertedCheckResult(s.T()),
+				ProfileName:          "ocp4-cis",
+				ClusterId:            testconsts.Cluster1,
+				TotalCount:           7,
+				LastScanTime:         scan1.GetLastExecutedTime(),
+				OutdatedClusterCount: 1,
 			},
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -658,6 +792,22 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+
+				// Single-cluster inline note: an ancient MIN(last_started) against a
+				// DAILY schedule ⇒ OUTDATED ⇒ count 1.
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
+					[]*datastore.MinLastStartedTimeByConfigCluster{
+						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))},
+					}, nil,
+				).Times(1)
+				// Loaded twice (each a single bulk query): once by the outdated-count
+				// helper, once by the per-check "Data status" column resolver.
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+					[]*storage.ComplianceOperatorScanConfigurationV2{{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}}, nil,
+				).Times(2)
 			},
 		},
 		{
@@ -697,6 +847,21 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+
+				// Fresh MIN(last_started) against DAILY ⇒ CURRENT ⇒ count 0.
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
+					[]*datastore.MinLastStartedTimeByConfigCluster{
+						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Now().UTC())},
+					}, nil,
+				).Times(1)
+				// Loaded twice (each a single bulk query): once by the outdated-count
+				// helper, once by the per-check "Data status" column resolver.
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
+					[]*storage.ComplianceOperatorScanConfigurationV2{{
+						ScanConfigName: "scanConfig1",
+						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
+					}}, nil,
+				).Times(2)
 			},
 		},
 		{
@@ -775,6 +940,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the returned results' configs in a
+				// single bulk query.
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -808,6 +976,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				s.profilsDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanRef, "test-ref").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Outdated-detection resolver loads the returned results' configs in a
+				// single bulk query.
+				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
