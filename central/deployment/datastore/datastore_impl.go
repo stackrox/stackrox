@@ -361,7 +361,8 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return sac.ErrResourceAccessDenied
 	}
 	// Dedupe the removed deployments. This can happen because Pods have many completion states
-	// and we may receive multiple Remove calls
+	// and we may receive multiple Remove calls. Marking up front also stops concurrent UpsertFlows
+	// from writing flows for the deployment while it is being removed.
 	if ds.deletedDeploymentCache != nil {
 		if ds.deletedDeploymentCache.Contains(id) {
 			return nil
@@ -387,22 +388,20 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
-	if err != nil {
-		errorList.AddError(err)
-		return errorList.ToError()
-	}
-
-	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
-		errorList.AddError(err)
+	// clusterID is nullable in the DB; guard against an empty value to avoid an error from flow store.
+	if clusterID != "" {
+		// A missing flow store must not block the delete, else deployments of a deleted cluster
+		// could never be pruned.
+		if flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID); err != nil {
+			errorList.AddError(err)
+		} else if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
+			errorList.AddError(err)
+		}
 	}
 
 	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
-		}
-		return nil
+	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
+		return ds.deploymentStore.Delete(ctx, id)
 	})
 	if err != nil {
 		errorList.AddError(err)

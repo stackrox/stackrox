@@ -233,6 +233,68 @@ func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
 	s.Equal(len(idsToPrune), cluster2PodCount)
 }
 
+func (s *PostgresPruningSuite) TestGetOrphanedDeploymentIDs() {
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	clusterDS, err := clusterStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	liveClusterID, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanDeploymentCluster", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Require().NoError(err)
+
+	// Deployment tied to a live cluster - never orphaned.
+	liveDeploymentID := uuid.NewV4().String()
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: liveDeploymentID, ClusterId: liveClusterID}))
+
+	// Deployments whose clusterid has no matching cluster row - orphaned. This mirrors
+	// the field scenario where a cluster is hard-deleted but its deployments survive.
+	orphanClusterID := fixtureconsts.Cluster1
+	orphanedIDs := set.NewStringSet()
+	for range 3 {
+		id := uuid.NewV4().String()
+		orphanedIDs.Add(id)
+		s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: id, ClusterId: orphanClusterID}))
+	}
+
+	orphaned, err := GetOrphanedDeploymentIDs(s.ctx, s.testDB.DB)
+	s.Require().NoError(err)
+
+	got := set.NewStringSet()
+	for _, d := range orphaned {
+		got.Add(d.ID)
+		s.Equal(orphanClusterID, d.ClusterID)
+	}
+	s.Equal(orphanedIDs, got)
+	s.NotContains(got.AsSlice(), liveDeploymentID)
+}
+
+// A deployment with a NULL clusterid must not abort the sweep; it is orphaned (no matching
+// cluster row) and must be returned with an empty ClusterID.
+func (s *PostgresPruningSuite) TestGetOrphanedDeploymentIDsHandlesNullClusterID() {
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	// Upsert with a non-matching cluster id, then null out the collumn, to verify
+	// the pruning works in the unlikely case deployments without clusterid made it to the DB
+	nullClusterDeploymentID := uuid.NewV4().String()
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: nullClusterDeploymentID, ClusterId: fixtureconsts.Cluster1}))
+	_, err = s.testDB.DB.Exec(s.ctx, "UPDATE deployments SET clusterid = NULL WHERE id = $1", nullClusterDeploymentID)
+	s.Require().NoError(err)
+
+	orphaned, err := GetOrphanedDeploymentIDs(s.ctx, s.testDB.DB)
+	s.Require().NoError(err)
+
+	got := set.NewStringSet()
+	for _, d := range orphaned {
+		got.Add(d.ID)
+		if d.ID == nullClusterDeploymentID {
+			s.Empty(d.ClusterID)
+		}
+	}
+	s.Contains(got.AsSlice(), nullClusterDeploymentID)
+}
+
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
 		name              string
