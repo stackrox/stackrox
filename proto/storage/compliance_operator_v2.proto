@@ -109,7 +109,7 @@ message RuleControls {
   string control = 3; // @gotags: search:"Compliance Control,hidden"
 }
 
-// Next Tag: 19
+// Next Tag: 20
 message ComplianceOperatorScanConfigurationV2 {
   string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
@@ -148,6 +148,11 @@ message ComplianceOperatorScanConfigurationV2 {
   }
   repeated Cluster clusters = 16;
   repeated NotifierConfiguration notifiers = 17;
+  // last_scan_requested_time records when a user last triggered an on-demand
+  // "Scan now" (ProcessRescanRequest). Used by outdated-data detection as the
+  // on-demand expected-refresh term. Stored in the serialized blob only (no
+  // column, no search tag); unset until the first on-demand rescan.
+  google.protobuf.Timestamp last_scan_requested_time = 19;
 }
 
 // Next Tag: 7
