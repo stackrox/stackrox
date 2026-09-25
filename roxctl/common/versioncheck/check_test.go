@@ -81,15 +81,22 @@ func TestCheckAndWarn(t *testing.T) {
 
 func TestCentralVersionClientInterceptor(t *testing.T) {
 	cases := map[string]struct {
+		ctx            context.Context
 		centralVersion string
 		expectWarning  string
 	}{
 		"incompatible version warns": {
+			ctx:            context.Background(),
 			centralVersion: "4.2.0",
 			expectWarning:  "too new",
 		},
 		"compatible version is silent": {
+			ctx:            context.Background(),
 			centralVersion: "4.10.6",
+		},
+		"incompatible version does not warn if suppressed": {
+			ctx:            ContextWithVersionCheckerSuppressor(context.Background(), true),
+			centralVersion: "4.2.0",
 		},
 	}
 
@@ -104,7 +111,7 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 			)
 
 			client := v1.NewMetadataServiceClient(conn)
-			_, err := client.GetMetadata(context.Background(), &v1.Empty{})
+			_, err := client.GetMetadata(tc.ctx, &v1.Empty{})
 			require.NoError(t, err)
 
 			if tc.expectWarning != "" {
