@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
+	compliancedata "github.com/stackrox/rox/central/complianceoperator/v2/compliancedata"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	ruleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
@@ -20,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -249,14 +252,42 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 	}
 
 	// Need to look up the scan config IDs to return with the results.
+	// outdatedEnabled captures the flag once so the error semantics below and the
+	// data-state computation stay consistent within this call.
+	outdatedEnabled := features.ComplianceSurfaceStaleData.Enabled()
 	scanConfigToIDs := make(map[string]string, len(scanResults))
+	var loadedConfigs []*storage.ComplianceOperatorScanConfigurationV2
 	for _, result := range scanResults {
 		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
 			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
 			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
+				// With the flag off keep the original hard error so behavior is
+				// unchanged. With the flag on a missing config must not fail the
+				// endpoint: its data_state simply resolves to UNKNOWN.
+				if !outdatedEnabled {
+					return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
+				}
+				log.Warnf("compliance: cannot resolve scan config %q: %v", result.ScanConfigName, err)
+				scanConfigToIDs[result.ScanConfigName] = "" // unresolvable; data_state → UNKNOWN
+				continue
 			}
 			scanConfigToIDs[result.ScanConfigName] = config.GetId()
+			loadedConfigs = append(loadedConfigs, config)
+		}
+	}
+
+	// Compute data state per scan config (feature-flag gated; flag off ⇒ empty
+	// map ⇒ UNKNOWN and no extra datastore query).
+	configDataStates := make(map[string]v2.ComplianceDataState, len(scanConfigToIDs))
+	if outdatedEnabled && len(loadedConfigs) > 0 {
+		minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, parsedQuery)
+		if err == nil {
+			resolver := compliancedata.NewConfigResolver(loadedConfigs, time.Now().UTC())
+			for _, mt := range minTimes {
+				configDataStates[mt.ScanConfigName] = resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted).ToProto()
+			}
+		} else {
+			log.Warnf("compliance outdated: failed to get min times for cluster scan stats: %v", err)
 		}
 	}
 
@@ -266,7 +297,7 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 	}
 
 	return &v2.ListComplianceClusterScanStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs),
+		ScanStats:  storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs, configDataStates),
 		TotalCount: int32(count),
 	}, nil
 }
@@ -305,9 +336,29 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 		clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
 	}
 
+	// Outdated-data detection is feature-flag gated; with the flag off the fields
+	// stay UNKNOWN / 0 and no extra datastore query runs (prior behavior).
+	var clusterDataStates map[string]v2.ComplianceDataState
+	var outdatedCount int32
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		// Use countQuery (unpaginated) for the banner signal, so the count covers the
+		// full filtered scope, not just the current page.
+		clusterDataStates, err = s.computeClusterDataStates(ctx, countQuery)
+		if err != nil {
+			log.Warnf("compliance outdated: failed to compute cluster data states: %v", err)
+			clusterDataStates = make(map[string]v2.ComplianceDataState)
+		}
+		for _, state := range clusterDataStates {
+			if state == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED {
+				outdatedCount++
+			}
+		}
+	}
+
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
-		TotalCount: int32(count),
+		ScanStats:            storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, clusterDataStates),
+		TotalCount:           int32(count),
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -367,9 +418,29 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		}
 	}
 
+	// Outdated-data detection is feature-flag gated; with the flag off the fields
+	// stay UNKNOWN / 0 and no extra datastore query runs (prior behavior).
+	var clusterDataStates map[string]v2.ComplianceDataState
+	var outdatedCount int32
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		// Use countQuery (unpaginated) for the banner signal, so the count covers the
+		// full filtered scope, not just the current page.
+		clusterDataStates, err = s.computeClusterDataStates(ctx, countQuery)
+		if err != nil {
+			log.Warnf("compliance outdated: failed to compute cluster data states: %v", err)
+			clusterDataStates = make(map[string]v2.ComplianceDataState)
+		}
+		for _, state := range clusterDataStates {
+			if state == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED {
+				outdatedCount++
+			}
+		}
+	}
+
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
-		TotalCount: int32(count),
+		ScanStats:            storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors, clusterDataStates),
+		TotalCount:           int32(count),
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -416,8 +487,47 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 	}
 
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
+		// Single-check stats view (not the Checks tab); no per-check freshness rollup here.
+		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls, nil),
 		ProfileName:    request.GetProfileName(),
 		TotalCount:     int32(1),
 	}, nil
+}
+
+// computeClusterDataStates returns a map cluster_id → rolled-up freshness state
+// over the (scan_config_name, cluster_id) MIN(last_started_time) aggregate.
+func (s *serviceImpl) computeClusterDataStates(ctx context.Context, query *v1.Query) (map[string]v2.ComplianceDataState, error) {
+	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	configNames := make(map[string]struct{})
+	for _, mt := range minTimes {
+		configNames[mt.ScanConfigName] = struct{}{}
+	}
+
+	var configs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, err := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if err != nil {
+			log.Warnf("compliance outdated: cannot load config %q: %v", name, err)
+			continue
+		}
+		configs = append(configs, cfg)
+	}
+
+	resolver := compliancedata.NewConfigResolver(configs, time.Now().UTC())
+
+	perClusterStates := make(map[string][]compliancedata.State)
+	for _, mt := range minTimes {
+		state := resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted)
+		perClusterStates[mt.ClusterID] = append(perClusterStates[mt.ClusterID], state)
+	}
+
+	result := make(map[string]v2.ComplianceDataState, len(perClusterStates))
+	for clusterID, states := range perClusterStates {
+		result[clusterID] = compliancedata.RollupState(states...).ToProto()
+	}
+	return result, nil
 }
