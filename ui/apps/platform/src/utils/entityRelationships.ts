@@ -43,7 +43,6 @@ export function getConfigurationManagementEntityTypes(
 const vulnerabilityManagementEntityTypes = [
     'IMAGE_CVE',
     'NODE_CVE',
-    'CLUSTER_CVE',
     'CLUSTER',
     'NAMESPACE',
     'DEPLOYMENT',
@@ -56,16 +55,17 @@ const vulnerabilityManagementEntityTypes = [
 export type VulnerabilityManagementEntityType = (typeof vulnerabilityManagementEntityTypes)[number];
 
 export function getVulnerabilityManagementEntityTypes(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isFeatureFlagEnabled?: IsFeatureFlagEnabled
 ): VulnerabilityManagementEntityType[] {
+    /*
     if (isFeatureFlagEnabled) {
         return vulnerabilityManagementEntityTypes.filter((entityType) => {
-            if (entityType === 'CLUSTER_CVE' && !isFeatureFlagEnabled('ROX_LEGACY_SCANNER')) {
-                return false;
-            }
+            // TODO add feature flag dependency if needed
             return true;
         });
     }
+        */
 
     return [...vulnerabilityManagementEntityTypes];
 }
@@ -104,7 +104,6 @@ export const entityGroupMap: Record<EntityType, EntityGroup> = {
     POLICY: 'SECURITY',
     NODE_CVE: 'SECURITY',
     IMAGE_CVE: 'SECURITY',
-    CLUSTER_CVE: 'SECURITY',
 };
 
 type EntityRelationshipData = {
@@ -119,7 +118,7 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
     CLUSTER: {
         children: ['NODE', 'NAMESPACE', 'ROLE'],
         parents: [],
-        matches: ['CLUSTER_CVE'],
+        matches: [],
         // extendedMatches: [entityTypes.POLICY]
     },
     NODE: {
@@ -166,12 +165,6 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
         parents: [],
         matches: ['NODE_COMPONENT'],
         extendedMatches: ['NODE'],
-    },
-    CLUSTER_CVE: {
-        children: [],
-        parents: [],
-        matches: [],
-        extendedMatches: ['CLUSTER'],
     },
     POLICY: {
         children: [],

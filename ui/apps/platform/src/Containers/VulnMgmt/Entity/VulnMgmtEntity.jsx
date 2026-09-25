@@ -18,7 +18,6 @@ const entityComponentMap = {
     [entityTypes.IMAGE_COMPONENT]: VulnMgmtEntityImageComponent,
     [entityTypes.IMAGE_CVE]: VulnMgmtEntityCve,
     [entityTypes.NODE_CVE]: VulnMgmtEntityCve,
-    [entityTypes.CLUSTER_CVE]: VulnMgmtEntityCve,
     [entityTypes.CLUSTER]: VulnMgmtEntityCluster,
     [entityTypes.NAMESPACE]: VulnMgmtEntityNamespace,
     [entityTypes.NODE]: VulnMgmtEntityNode,
