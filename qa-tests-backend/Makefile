@@ -10,6 +10,18 @@ ifdef FAIL_FAST
 GRADLE_TEST_ARGS = --fail-fast
 endif
 
+# Keep one sentinel per Gradle Test task; the Gradle daemon is reused between
+# invocations, while the output distinguishes parallel, REST, and bounce work.
+define run_timed_gradle_tasks
+@set -e; \
+for gradle_task in $(1); do \
+	$(TIMED_RUNNER) \
+		--phase test-execution \
+		--name "qa-gradle-$$gradle_task" \
+		-- env TEST_TARGET="$@" ./gradlew "$$gradle_task" $(GRADLE_TEST_ARGS); \
+done
+endef
+
 ###########
 ## Style ##
 ###########
@@ -62,18 +74,12 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(TIMED_RUNNER) \
-		--phase test-execution \
-		--name qa-$@ \
-		-- env TEST_TARGET="$@" ./gradlew testParallel testRest $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testParallel testRest)
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(TIMED_RUNNER) \
-		--phase test-execution \
-		--name qa-$@ \
-		-- env TEST_TARGET="$@" ./gradlew testParallelBAT testBAT $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testParallelBAT testBAT)
 
 .PHONY: smoke-test
 smoke-test: compile
@@ -118,10 +124,7 @@ graphql-test: compile
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(TIMED_RUNNER) \
-		--phase test-execution \
-		--name qa-$@ \
-		-- env TEST_TARGET="$@" ./gradlew testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testSensorBounce testSensorBounceNext)
 
 .PHONY: pz-test
 pz-test: compile

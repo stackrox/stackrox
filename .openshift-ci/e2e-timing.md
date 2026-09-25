@@ -10,7 +10,7 @@ lanes. Set `E2E_TIMING_ENABLED` explicitly to override that default.
 | --- | --- | --- |
 | `test-lane-command` | The outer QA Part 1, QA Part 2, or non-Groovy script invocation | Inclusive lane-command time. It includes script setup and other work outside the narrower spans. |
 | `test-build` | QA backend scanner-proto copy/generation and Gradle `assemble testClasses` prerequisites | Runner/build preparation, separate from the Gradle test-task span. |
-| `test-execution` | QA BAT/full/sensor-bounce Gradle task groups; non-Groovy roxctl scripts, Bats, API, proxy, destructive, and external-backup suites | Suite-level duration, not per Groovy spec or Go test function. A suite invocation can include test-framework startup or compilation performed by that command. |
+| `test-execution` | One event per QA Gradle test task (`testParallel`, `testRest`, `testParallelBAT`, `testBAT`, `testSensorBounce`, `testSensorBounceNext`); non-Groovy roxctl scripts, Bats, API, proxy, destructive, and external-backup suites | QA events separate the sequential Gradle task invocations, while each task can contain many Groovy specs. Durations include the Gradle invocation overhead and do not replace per-spec JUnit timings. |
 | `post-test-stage` | A whole `PostClusterTest` or `FinalPost` run | Aggregate collection/processing time. Child collection commands are also emitted separately. |
 | `post-test-collection` | Individual collection, artifact, or result-staging operations | Per-operation duration; includes command-level events from `RunWithBestEffortMixin` and named non-Groovy result/log collection calls. |
 
@@ -29,7 +29,8 @@ lanes. Set `E2E_TIMING_ENABLED` explicitly to override that default.
 
 - GHA provisioning before the outer command, and workflow steps outside the
   instrumented command/post-test helpers, are not covered by these spans.
-- QA and Go suites are measured as task groups, not individual tests. Detailed
-  per-test attribution requires consuming Gradle/JUnit and Go test reports.
+- QA Groovy tests are measured per Gradle task, not individual specs. Detailed
+  per-spec attribution still requires consuming Gradle/JUnit reports. Go suites
+  are measured as command groups, not individual test functions.
 - The rest of the GHA/Prow test matrix is not enabled by this MVP; missing
   events there mean “not instrumented,” not zero time.
