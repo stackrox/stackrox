@@ -38,6 +38,7 @@ def test_sensor_change_runs_sensor_integration_and_skips_central_postgres():
     assert result.skip == frozenset({"go-postgres"})
     assert result.unsure == mapping.jobs - result.run - result.skip
     assert result.files[0].explicit_runs == ("sensor-integration-tests",)
+    assert result.files[0].explicit_skips == ("go-postgres",)
 
 
 def test_central_policy_runs_postgres_tests_and_skips_sensor_integration():
@@ -48,6 +49,7 @@ def test_central_policy_runs_postgres_tests_and_skips_sensor_integration():
     assert result.skip == frozenset({"sensor-integration-tests"})
     assert result.unsure == mapping.jobs - result.run - result.skip
     assert result.files[0].explicit_runs == ("go-postgres",)
+    assert result.files[0].explicit_skips == ("sensor-integration-tests",)
 
 
 def test_matched_runs_stay_when_other_files_match_nothing():

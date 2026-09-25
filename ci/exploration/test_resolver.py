@@ -135,6 +135,7 @@ def test_unmatched_file_keeps_a_run_and_blocks_a_skip(mapping):
     assert_split(result, SENSOR_RUN, set(), SENSOR_SKIP | SENSOR_UNSURE)
     by_path = {trace.path: trace for trace in result.files}
     assert "gke-nongroovy-e2e-tests" in by_path["sensor/common/foo.go"].explicit_runs
+    assert "gke-ui-e2e-tests" in by_path["sensor/common/foo.go"].explicit_skips
     assert by_path["pkg/booleanpolicy/foo.go"].explicit_runs == ()
 
 

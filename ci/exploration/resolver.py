@@ -47,12 +47,13 @@ class Mapping:
 
 @dataclass(frozen=True)
 class FileTrace:
-    """One changed file and the jobs its own rule explicitly runs."""
+    """One changed file and the jobs its own rule explicitly runs or skips."""
 
     path: str
     kind: str
     domain: str
     explicit_runs: tuple[str, ...]
+    explicit_skips: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,7 @@ class Selection:
                     "kind": trace.kind,
                     "domain": trace.domain,
                     "explicit_runs": list(trace.explicit_runs),
+                    "explicit_skips": list(trace.explicit_skips),
                 }
                 for trace in self.files
             ],
@@ -316,9 +318,14 @@ def _trace(path: str, mapping: Mapping) -> FileTrace:
     if not winners:
         return FileTrace(path, "unmatched", "", ())
     votes = _merge_domain_votes(winners, mapping)
-    explicit = tuple(sorted(job for job, opinion in votes.items() if opinion == "run"))
+    explicit_runs = tuple(
+        sorted(job for job, opinion in votes.items() if opinion == "run")
+    )
+    explicit_skips = tuple(
+        sorted(job for job, opinion in votes.items() if opinion == "skip")
+    )
     domain = ",".join(sorted(winner.name for winner in winners))
-    return FileTrace(path, "domain", domain, explicit)
+    return FileTrace(path, "domain", domain, explicit_runs, explicit_skips)
 
 
 def _winning_domains(path: str, mapping: Mapping) -> list[Domain]:
