@@ -556,12 +556,12 @@ type ComplianceOperatorProfileV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The primary key is name-profile_version as that is guaranteed unique in the operator and how
 	// the profile is referenced in scans and settings
-	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
-	ProfileId      string                                   `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
-	Name           string                                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
+	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                                                 // @gotags: sql:"pk"
+	ProfileId      string                                   `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                     // @gotags: search:"Compliance Profile ID,hidden"
+	Name           string                                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                              // @gotags: search:"Compliance Profile Name,hidden"
 	ProfileVersion string                                   `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
-	ProductType    string                                   `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
-	Standard       string                                   `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
+	ProductType    string                                   `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`     // @gotags: search:"Compliance Profile Product Type,hidden"
+	Standard       string                                   `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                          // @gotags: search:"Compliance Standard,hidden"
 	Labels         map[string]string                        `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Annotations    map[string]string                        `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Description    string                                   `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
@@ -569,8 +569,8 @@ type ComplianceOperatorProfileV2 struct {
 	Product        string                                   `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
 	Title          string                                   `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string                                 `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
-	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                 // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"`                                                      // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                      // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"`                                                       // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty" search:"Compliance Profile Operator Kind,hidden"` // @gotags: search:"Compliance Profile Operator Kind,hidden"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -723,8 +723,8 @@ type ComplianceOperatorRuleV2 struct {
 	state         protoimpl.MessageState                `protogen:"open.v1"`
 	Id            string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	RuleId        string                                `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                    // @gotags: search:"Compliance Rule Name,hidden"
-	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`            // @gotags: search:"Compliance Rule Type,hidden"
+	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                        // @gotags: search:"Compliance Rule Name,hidden"
+	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`                // @gotags: search:"Compliance Rule Type,hidden"
 	Severity      RuleSeverity                          `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"` // @gotags: search:"Compliance Rule Severity,hidden"
 	Labels        map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Annotations   map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -734,8 +734,8 @@ type ComplianceOperatorRuleV2 struct {
 	Fixes         []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
 	Warning       string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
 	Controls      []*RuleControls                       `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
-	ClusterId     string                                `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`   // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	RuleRefId     string                                `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+	ClusterId     string                                `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	RuleRefId     string                                `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"`                              // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
 	ParentRule    string                                `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
 	Instructions  string                                `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	OperatorKind  ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,18,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
@@ -962,10 +962,10 @@ func (x *RuleControls) GetControl() string {
 	return ""
 }
 
-// Next Tag: 19
+// Next Tag: 20
 type ComplianceOperatorScanConfigurationV2 struct {
 	state                  protoimpl.MessageState                               `protogen:"open.v1"`
-	Id                     string                                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"`                                                 // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
+	Id                     string                                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"`                                     // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
 	ScanConfigName         string                                               `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"unique"` // @gotags: search:"Compliance Scan Config Name" sql:"unique"
 	AutoApplyRemediations  bool                                                 `protobuf:"varint,3,opt,name=auto_apply_remediations,json=autoApplyRemediations,proto3" json:"auto_apply_remediations,omitempty"`
 	AutoUpdateRemediations bool                                                 `protobuf:"varint,4,opt,name=auto_update_remediations,json=autoUpdateRemediations,proto3" json:"auto_update_remediations,omitempty"`
@@ -985,12 +985,17 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	CreatedTime     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	LastUpdatedTime *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
 	// Most recent user to update the scan configurations
-	ModifiedBy    *SlimUser                                        `protobuf:"bytes,14,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
-	Description   string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
-	Clusters      []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
-	Notifiers     []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ModifiedBy  *SlimUser                                        `protobuf:"bytes,14,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	Description string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
+	Clusters    []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	Notifiers   []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	// last_scan_requested_time records when a user last triggered an on-demand
+	// "Scan now" (ProcessRescanRequest). Used by outdated-data detection as the
+	// on-demand expected-refresh term. Stored in the serialized blob only (no
+	// column, no search tag); unset until the first on-demand rescan.
+	LastScanRequestedTime *timestamppb.Timestamp `protobuf:"bytes,19,opt,name=last_scan_requested_time,json=lastScanRequestedTime,proto3" json:"last_scan_requested_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanConfigurationV2) Reset() {
@@ -1149,13 +1154,20 @@ func (x *ComplianceOperatorScanConfigurationV2) GetNotifiers() []*NotifierConfig
 	return nil
 }
 
+func (x *ComplianceOperatorScanConfigurationV2) GetLastScanRequestedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastScanRequestedTime
+	}
+	return nil
+}
+
 // Next Tag: 7
 // Cluster and an error if necessary to handle cases where the scan configuration is
 // unable to be applied to a cluster for whatever reason.
 type ComplianceOperatorClusterScanConfigStatus struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                           // @gotags: sql:"pk,type(uuid)"
-	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	Id              string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                                                                // @gotags: sql:"pk,type(uuid)"
+	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                         // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	ScanConfigId    string                 `protobuf:"bytes,2,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
 	Errors          []string               `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
 	LastUpdatedTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty" search:"Compliance Scan Config Last Updated Time,hidden"` // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
@@ -1337,11 +1349,11 @@ func (x *ComplianceOperatorBenchmarkV2) GetProfiles() []*ComplianceOperatorBench
 // as the rules can change without impacting the historical result.
 type ComplianceOperatorCheckResultV2 struct {
 	state          protoimpl.MessageState                      `protogen:"open.v1"`
-	Id             string                                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Check UID,hidden" sql:"pk"`                                                                   // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
-	CheckId        string                                      `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty" search:"Compliance Check ID,hidden"`                                          // @gotags: search:"Compliance Check ID,hidden"
-	CheckName      string                                      `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty" search:"Compliance Check Name,hidden"`                                    // @gotags: search:"Compliance Check Name,hidden"
-	ClusterId      string                                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                    // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	Status         ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResultV2_CheckStatus" json:"status,omitempty" search:"Compliance Check Status,hidden"` // @gotags: search:"Compliance Check Status,hidden"
+	Id             string                                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Check UID,hidden" sql:"pk"`                                                              // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
+	CheckId        string                                      `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty" search:"Compliance Check ID,hidden"`                                               // @gotags: search:"Compliance Check ID,hidden"
+	CheckName      string                                      `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty" search:"Compliance Check Name,hidden"`                                       // @gotags: search:"Compliance Check Name,hidden"
+	ClusterId      string                                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	Status         ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResultV2_CheckStatus" json:"status,omitempty" search:"Compliance Check Status,hidden"`  // @gotags: search:"Compliance Check Status,hidden"
 	Severity       RuleSeverity                                `protobuf:"varint,6,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"`                            // @gotags: search:"Compliance Rule Severity,hidden"
 	Description    string                                      `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
 	Instructions   string                                      `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`
@@ -1353,9 +1365,9 @@ type ComplianceOperatorCheckResultV2 struct {
 	ScanName       string                                      `protobuf:"bytes,14,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	ClusterName    string                                      `protobuf:"bytes,15,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	ScanConfigName string                                      `protobuf:"bytes,16,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	Rationale      string                                      `protobuf:"bytes,17,opt,name=rationale,proto3" json:"rationale,omitempty" search:"Compliance Check Rationale,hidden"`                                   // @gotags: search:"Compliance Check Rationale,hidden"
-	ScanRefId      string                                      `protobuf:"bytes,18,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
-	RuleRefId      string                                      `protobuf:"bytes,19,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
+	Rationale      string                                      `protobuf:"bytes,17,opt,name=rationale,proto3" json:"rationale,omitempty" search:"Compliance Check Rationale,hidden"`                                                                                                               // @gotags: search:"Compliance Check Rationale,hidden"
+	ScanRefId      string                                      `protobuf:"bytes,18,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"`                                // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
+	RuleRefId      string                                      `protobuf:"bytes,19,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"`                                // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
 	// last_started_time is the last time the Scan resource was triggered
 	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Check Last Started Time,hidden"` // @gotags: search:"Compliance Check Last Started Time,hidden"
 	unknownFields   protoimpl.UnknownFields
@@ -1598,9 +1610,9 @@ func (x *ScanStatus) GetWarnings() string {
 // Scan object per cluster
 type ComplianceOperatorScanV2 struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                                                                                                                               // @gotags: sql:"pk"
 	ScanConfigName   string                 `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	ClusterId        string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ClusterId        string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                                             // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	Errors           string                 `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
 	Profile          *ProfileShim           `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
 	Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -1610,7 +1622,7 @@ type ComplianceOperatorScanV2 struct {
 	Status           *ScanStatus            `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedTime      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	LastExecutedTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-	ScanName         string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"
+	ScanName         string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                                         // @gotags: search:"Compliance Scan Name,hidden"
 	Warnings         string                 `protobuf:"bytes,14,opt,name=warnings,proto3" json:"warnings,omitempty"`
 	ProductType      string                 `protobuf:"bytes,15,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
 	ScanRefId        string                 `protobuf:"bytes,16,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
@@ -1773,8 +1785,8 @@ func (x *ComplianceOperatorScanV2) GetLastStartedTime() *timestamppb.Timestamp {
 // Next Tag: 9
 type ComplianceOperatorScanSettingBindingV2 struct {
 	state           protoimpl.MessageState    `protogen:"open.v1"`
-	Id              string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                // @gotags: sql:"pk,id"
-	Name            string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Scan Setting Binding Name"`                            // @gotags: search:"Compliance Scan Setting Binding Name"
+	Id              string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                                // @gotags: sql:"pk,id"
+	Name            string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Scan Setting Binding Name"`                                                          // @gotags: search:"Compliance Scan Setting Binding Name"
 	ClusterId       string                    `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	ProfileNames    []string                  `protobuf:"bytes,4,rep,name=profile_names,json=profileNames,proto3" json:"profile_names,omitempty"`
 	ScanSettingName string                    `protobuf:"bytes,5,opt,name=scan_setting_name,json=scanSettingName,proto3" json:"scan_setting_name,omitempty" search:"Compliance Scan Config Name"` // @gotags: search:"Compliance Scan Config Name"
@@ -2023,8 +2035,8 @@ func (x *ComplianceOperatorStatus) GetConditions() []*ComplianceOperatorConditio
 // ComplianceOperatorSuiteV2 represents scan status
 type ComplianceOperatorSuiteV2 struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
-	Id            string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                // @gotags: sql:"pk,id,type(uuid)"
-	Name          string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Suite Name,hidden"`                            // @gotags: search:"Compliance Suite Name,hidden"
+	Id            string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                     // @gotags: sql:"pk,id,type(uuid)"
+	Name          string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Suite Name,hidden"`                                                                  // @gotags: search:"Compliance Suite Name,hidden"
 	ClusterId     string                    `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	Status        *ComplianceOperatorStatus `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2092,8 +2104,8 @@ func (x *ComplianceOperatorSuiteV2) GetStatus() *ComplianceOperatorStatus {
 // Next Tag: 9
 type ComplianceOperatorRemediationV2 struct {
 	state                     protoimpl.MessageState `protogen:"open.v1"`
-	Id                        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                    // @gotags: sql:"pk,id,type(uuid)"
-	Name                      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Remediation Name,hidden"`                                                                                // @gotags: search:"Compliance Remediation Name,hidden"
+	Id                        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                                   // @gotags: sql:"pk,id,type(uuid)"
+	Name                      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Remediation Name,hidden"`                                                                          // @gotags: search:"Compliance Remediation Name,hidden"
 	ComplianceCheckResultName string                 `protobuf:"bytes,3,opt,name=compliance_check_result_name,json=complianceCheckResultName,proto3" json:"compliance_check_result_name,omitempty" search:"Compliance Check Name,hidden"` // @gotags: search:"Compliance Check Name,hidden"
 	// apply is used by the compliance operator to apply a remediation
 	Apply bool `protobuf:"varint,4,opt,name=apply,proto3" json:"apply,omitempty"`
@@ -2199,9 +2211,9 @@ func (x *ComplianceOperatorRemediationV2) GetClusterId() string {
 // Next Tag: 9
 type ComplianceOperatorReportSnapshotV2 struct {
 	state               protoimpl.MessageState                              `protogen:"open.v1"`
-	ReportId            string                                              `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
+	ReportId            string                                              `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                                                                                   // @gotags: sql:"pk,id,type(uuid)"
 	ScanConfigurationId string                                              `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
-	Name                string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
+	Name                string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                                                                                  // @gotags: search:"Compliance Report Name"
 	Description         string                                              `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	ReportStatus        *ComplianceOperatorReportStatus                     `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
 	User                *SlimUser                                           `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
@@ -2370,10 +2382,10 @@ func (x *ComplianceOperatorReportData) GetLastExecutedTime() *timestamppb.Timest
 type ComplianceOperatorReportStatus struct {
 	state                    protoimpl.MessageState                            `protogen:"open.v1"`
 	RunState                 ComplianceOperatorReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ComplianceOperatorReportStatus_RunState" json:"run_state,omitempty" search:"Compliance Report State"` // @gotags: search:"Compliance Report State"
-	StartedAt                *timestamppb.Timestamp                            `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty" search:"Compliance Report Started Time"`                                                    // @gotags: search:"Compliance Report Started Time"
-	CompletedAt              *timestamppb.Timestamp                            `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Compliance Report Completed Time"`                                              // @gotags: search:"Compliance Report Completed Time"
+	StartedAt                *timestamppb.Timestamp                            `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty" search:"Compliance Report Started Time"`                                             // @gotags: search:"Compliance Report Started Time"
+	CompletedAt              *timestamppb.Timestamp                            `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Compliance Report Completed Time"`                                     // @gotags: search:"Compliance Report Completed Time"
 	ErrorMsg                 string                                            `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
-	ReportRequestType        ComplianceOperatorReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ComplianceOperatorReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Compliance Report Request Type"`                               // @gotags: search:"Compliance Report Request Type"
+	ReportRequestType        ComplianceOperatorReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ComplianceOperatorReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Compliance Report Request Type"`                                      // @gotags: search:"Compliance Report Request Type"
 	ReportNotificationMethod ComplianceOperatorReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ComplianceOperatorReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Compliance Report Notification Method"` // @gotags: search:"Compliance Report Notification Method"
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
@@ -2744,7 +2756,7 @@ func (x *ComplianceOperatorBenchmarkV2_Profile) GetProfileVersion() string {
 
 type ComplianceOperatorReportSnapshotV2_Scan struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ScanRefId       string                 `protobuf:"bytes,1,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"`                   // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
+	ScanRefId       string                 `protobuf:"bytes,1,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"`                                               // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
 	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"` // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -3089,7 +3101,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\fRuleControls\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x1e\n" +
 	"\bcontrols\x18\x02 \x03(\tB\x02\x18\x01R\bcontrols\x12\x18\n" +
-	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xaa\v\n" +
+	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xff\v\n" +
 	"%ComplianceOperatorScanConfigurationV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x10scan_config_name\x18\x02 \x01(\tR\x0escanConfigName\x126\n" +
@@ -3111,7 +3123,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"modifiedBy\x12 \n" +
 	"\vdescription\x18\x0f \x01(\tR\vdescription\x12R\n" +
 	"\bclusters\x18\x10 \x03(\v26.storage.ComplianceOperatorScanConfigurationV2.ClusterR\bclusters\x12<\n" +
-	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x1a9\n" +
+	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x12S\n" +
+	"\x18last_scan_requested_time\x18\x13 \x01(\v2\x1a.google.protobuf.TimestampR\x15lastScanRequestedTime\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -3433,51 +3446,52 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	51, // 18: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
 	37, // 19: storage.ComplianceOperatorScanConfigurationV2.clusters:type_name -> storage.ComplianceOperatorScanConfigurationV2.Cluster
 	52, // 20: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
-	50, // 21: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
-	38, // 22: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
-	5,  // 23: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
-	2,  // 24: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
-	39, // 25: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
-	40, // 26: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	50, // 27: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 28: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
-	9,  // 29: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
-	41, // 30: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
-	42, // 31: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
-	1,  // 32: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
-	0,  // 33: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
-	17, // 34: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
-	50, // 35: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 36: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
-	50, // 37: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
-	43, // 38: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	44, // 39: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	21, // 40: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
-	50, // 41: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	20, // 42: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
-	21, // 43: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
-	26, // 44: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
-	51, // 45: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
-	45, // 46: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
-	25, // 47: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
-	46, // 48: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
-	13, // 49: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
-	48, // 50: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
-	50, // 51: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
-	6,  // 52: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
-	50, // 53: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
-	50, // 54: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	8,  // 55: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
-	7,  // 56: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
-	3,  // 57: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
-	50, // 58: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
-	50, // 59: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
-	47, // 60: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
-	61, // [61:61] is the sub-list for method output_type
-	61, // [61:61] is the sub-list for method input_type
-	61, // [61:61] is the sub-list for extension type_name
-	61, // [61:61] is the sub-list for extension extendee
-	0,  // [0:61] is the sub-list for field type_name
+	50, // 21: storage.ComplianceOperatorScanConfigurationV2.last_scan_requested_time:type_name -> google.protobuf.Timestamp
+	50, // 22: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
+	38, // 23: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
+	5,  // 24: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
+	2,  // 25: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
+	39, // 26: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
+	40, // 27: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	50, // 28: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	50, // 29: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
+	9,  // 30: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
+	41, // 31: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
+	42, // 32: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
+	1,  // 33: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
+	0,  // 34: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
+	17, // 35: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
+	50, // 36: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
+	50, // 37: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
+	50, // 38: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
+	43, // 39: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	44, // 40: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	21, // 41: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
+	50, // 42: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	20, // 43: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
+	21, // 44: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
+	26, // 45: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
+	51, // 46: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
+	45, // 47: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
+	25, // 48: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
+	46, // 49: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	13, // 50: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
+	48, // 51: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
+	50, // 52: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
+	6,  // 53: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
+	50, // 54: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
+	50, // 55: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	8,  // 56: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
+	7,  // 57: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
+	3,  // 58: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
+	50, // 59: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
+	50, // 60: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
+	47, // 61: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
+	62, // [62:62] is the sub-list for method output_type
+	62, // [62:62] is the sub-list for method input_type
+	62, // [62:62] is the sub-list for extension type_name
+	62, // [62:62] is the sub-list for extension extendee
+	0,  // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_storage_compliance_operator_v2_proto_init() }
