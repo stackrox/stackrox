@@ -85,7 +85,6 @@ disable=raw-checker-failed,
         missing-function-docstring,
         missing-module-docstring,
         missing-class-docstring,
-        no-self-use,
         broad-except,
         too-few-public-methods
 

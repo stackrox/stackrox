@@ -120,6 +120,8 @@ def child_timing_environment() -> Optional[Dict[str, str]]:
     return environment
 
 
+# Keep one explicit argument per stable timing-event field.
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 def emit_span_event(
     phase: str,
     name: str,
