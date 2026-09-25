@@ -132,10 +132,10 @@ guest_ssh() {
         < /dev/null
 }
 
-# append_rhel8_container_journal adds container stdout that RHEL 8 Podman
-# does not file on roxagent.service. Those entries are tagged systemd-roxagent.
-# Lines already present in the unit journal are skipped.
-append_rhel8_container_journal() {
+# collect_roxagent_container_journal writes container stdout that RHEL 8
+# Podman does not file on roxagent.service. Those entries are tagged
+# systemd-roxagent.
+collect_roxagent_container_journal() {
     local virtctl_bin="$1"
     local identity="$2"
     local guest_user="$3"
@@ -143,20 +143,26 @@ append_rhel8_container_journal() {
     local vmi="$5"
     local out_file="$6"
     local ssh_timeout="$7"
-    local extra merged
+    local stderr_file
 
-    extra="$(mktemp)"
-    merged="$(mktemp)"
-    if guest_ssh "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$ssh_timeout" \
+    stderr_file="$(mktemp)"
+    if ! guest_ssh "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$ssh_timeout" \
         "sudo journalctl -b --no-pager -o short-iso -t systemd-roxagent || true; sudo journalctl -b --no-pager -o short-iso CONTAINER_NAME=systemd-roxagent || true" \
-        >"$extra" 2>/dev/null; then
-        awk 'NR==FNR { seen[$0]=1; next } !seen[$0] && $0 !~ /^-- / { seen[$0]=1; print }' \
-            "$out_file" "$extra" >"$merged"
-        cat "$merged" >>"$out_file"
+        > "$out_file" 2>"$stderr_file"; then
+        {
+            echo "roxagent container journal collection failed for ${ns}/${vmi}"
+            echo "virtctl: ${virtctl_bin}"
+            echo "guest_user: ${guest_user}"
+            echo "--- stderr ---"
+            cat "$stderr_file"
+        } >> "$out_file"
     fi
-    rm -f "$extra" "$merged"
+    rm -f "$stderr_file"
 }
 
+# collect_roxagent_journal is enough on RHEL 9 and 10, where Podman files
+# container stdout on roxagent.service. On RHEL 8 that stdout is missing
+# here, so the container journal is collected separately.
 collect_roxagent_journal() {
     local virtctl_bin="$1"
     local identity="$2"
@@ -164,6 +170,7 @@ collect_roxagent_journal() {
     local ns="$4"
     local vmi="$5"
     local out_file="$6"
+    local container_file="$7"
     local ssh_timeout="${VM_GUEST_JOURNAL_TIMEOUT:-90}"
 
     local stderr_file
@@ -183,7 +190,7 @@ collect_roxagent_journal() {
         return 0
     fi
     rm -f "$stderr_file"
-    append_rhel8_container_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" "$ssh_timeout" || true
+    collect_roxagent_container_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$container_file" "$ssh_timeout" || true
 }
 
 collect_journals() {
@@ -195,7 +202,7 @@ collect_journals() {
 
     if [[ -n "$virtctl_bin" && -n "$identity" ]]; then
         info ">>> Collecting roxagent journals into ${output_dir} <<<"
-        local vmi_count=0 ns vmi out_file vmi_list list_err
+        local vmi_count=0 ns vmi out_file container_file vmi_list list_err
         vmi_list="$(mktemp)"
         list_err="$(mktemp)"
         if ! list_vm_scan_vmis > "$vmi_list" 2>"$list_err"; then
@@ -212,8 +219,9 @@ collect_journals() {
             [[ -z "$ns" || -z "$vmi" ]] && continue
             vmi_count=$((vmi_count + 1))
             out_file="${output_dir}/${ns}_${vmi}_roxagent.journal.log"
-            info "Collecting roxagent journal for ${ns}/${vmi} -> ${out_file}"
-            collect_roxagent_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" || true
+            container_file="${output_dir}/${ns}_${vmi}_roxagent.container.journal.log"
+            info "Collecting roxagent journals for ${ns}/${vmi} -> ${out_file} ${container_file}"
+            collect_roxagent_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" "$container_file" || true
         done < "$vmi_list"
         rm -f "$vmi_list"
 
