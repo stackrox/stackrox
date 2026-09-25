@@ -27,7 +27,7 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 		// Response headers are populated after the RPC completes.
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if vals := md.Get(clientconn.CentralVersionHeader); len(vals) > 0 {
-			if !checked.Swap(true) {
+			if !checked.Swap(true) && !ShouldSuppressVersionChecker(ctx) {
 				checkAndWarn(vals[0], w)
 			}
 		}

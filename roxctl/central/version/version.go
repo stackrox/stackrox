@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/common/versioncheck"
 )
 
 type centralVersionCommand struct {
@@ -89,7 +90,7 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
+	ctx, cancel := context.WithTimeout(versioncheck.ContextWithVersionCheckerSuppressor(context.Background(), true), cmd.timeout)
 	defer cancel()
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
