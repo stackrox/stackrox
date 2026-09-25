@@ -257,19 +257,23 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		// Per-check freshness rollup for the Checks tab. Computed over countQuery
 		// (unpaginated, profile-scoped) so a check's state reflects every reporting
 		// cluster, not just the current page. Best-effort: on error the column is blank.
-		checkDataStates, err = s.computeCheckDataStates(ctx, countQuery)
+		// The resolver built here is reused for the banner count below so the scan
+		// configs are loaded once per request rather than once per helper.
+		var resolver *compliancedata.ConfigResolver
+		checkDataStates, resolver, err = s.computeCheckDataStates(ctx, countQuery)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute per-check data states: %v", err)
+			log.Warnf("compliance outdated: failed to compute per-check data states: %v; per-check column degrades to UNKNOWN", err)
 			checkDataStates = make(map[string]v2.ComplianceDataState)
+			resolver = nil
 		}
 
 		// Scope-level outdated-cluster count for the banner. Cluster-scoped signal
 		// (grouped by config,cluster), NOT the per-check aggregate above; over the
-		// unpaginated, profile-scoped countQuery. Best-effort: on error the banner
-		// is hidden.
-		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery)
+		// unpaginated, profile-scoped countQuery. Reuses the resolver above.
+		// Best-effort: on error the banner is hidden.
+		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, resolver)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
 			outdatedCount = 0
 		}
 	}
@@ -286,10 +290,16 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 // mirroring computeClusterDataStates in the stats service but grouped by
 // (scan_config_name, cluster_id, check_name) so a stale sibling check in the
 // same cluster does not drag a current check to OUTDATED.
-func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Query) (map[string]v2.ComplianceDataState, error) {
+//
+// It also returns the resolver it built so a caller running both freshness
+// helpers for the same request (GetComplianceProfileResults) can pass it into
+// computeOutdatedClusterCount and avoid a second config load. The two helpers
+// cover the same (countQuery) scope, so their scan-config-name sets — and thus
+// the resolver — are identical.
+func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Query) (map[string]v2.ComplianceDataState, *compliancedata.ConfigResolver, error) {
 	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByCheckCluster(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	configNames := make(map[string]struct{})
@@ -308,24 +318,30 @@ func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Quer
 	for checkName, states := range perCheckStates {
 		result[checkName] = compliancedata.RollupState(states...).ToProto()
 	}
-	return result, nil
+	return result, resolver, nil
 }
 
 // computeOutdatedClusterCount returns the number of clusters with OUTDATED data
 // in the query's scope, rolled up per cluster over the (scan_config_name,
 // cluster_id) MIN aggregate. Used to gate the outdated-data banner across the
 // Coverage views. For a single-cluster-scoped query this returns 0 or 1.
-func (s *serviceImpl) computeOutdatedClusterCount(ctx context.Context, query *v1.Query) (int32, error) {
+//
+// resolver may be a resolver already built for this request (see
+// computeCheckDataStates); when nil, one scoped to this query's configs is built
+// here. Reusing it avoids a redundant scan-config load per request.
+func (s *serviceImpl) computeOutdatedClusterCount(ctx context.Context, query *v1.Query, resolver *compliancedata.ConfigResolver) (int32, error) {
 	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, query)
 	if err != nil {
 		return 0, err
 	}
 
-	configNames := make(map[string]struct{})
-	for _, mt := range minTimes {
-		configNames[mt.ScanConfigName] = struct{}{}
+	if resolver == nil {
+		configNames := make(map[string]struct{})
+		for _, mt := range minTimes {
+			configNames[mt.ScanConfigName] = struct{}{}
+		}
+		resolver = s.buildConfigResolver(ctx, configNames)
 	}
-	resolver := s.buildConfigResolver(ctx, configNames)
 
 	perClusterStates := make(map[string][]compliancedata.State)
 	for _, mt := range minTimes {
@@ -342,22 +358,33 @@ func (s *serviceImpl) computeOutdatedClusterCount(ctx context.Context, query *v1
 	return outdated, nil
 }
 
-// buildConfigResolver loads the named scan configs (best-effort; unloadable
-// configs are skipped and resolve to UNKNOWN) and returns a resolver anchored
-// at the current time.
+// buildConfigResolver loads the named scan configs in a SINGLE datastore query
+// (OR-ing the names) instead of a per-name point read, and returns a resolver
+// anchored at the current time. Best-effort: on a load error, or for names the
+// query does not return, the affected configs resolve to UNKNOWN rather than
+// failing the page.
 func (s *serviceImpl) buildConfigResolver(ctx context.Context, configNames map[string]struct{}) *compliancedata.ConfigResolver {
-	var configs []*storage.ComplianceOperatorScanConfigurationV2
-	for name := range configNames {
-		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
-		if cfgErr != nil || cfg == nil {
-			if cfgErr != nil {
-				log.Warnf("compliance outdated: cannot load config %q: %v", name, cfgErr)
-			}
-			continue
-		}
-		configs = append(configs, cfg)
+	now := time.Now().UTC()
+	if len(configNames) == 0 {
+		return compliancedata.NewConfigResolver(nil, now)
 	}
-	return compliancedata.NewConfigResolver(configs, time.Now().UTC())
+
+	names := make([]string, 0, len(configNames))
+	for name := range configNames {
+		names = append(names, name)
+	}
+
+	// One query for all names; NewConfigResolver indexes the returned configs by
+	// name, and any missing name naturally resolves to UNKNOWN.
+	configs, err := s.scanConfigDS.GetScanConfigurations(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, names...).ProtoQuery())
+	if err != nil {
+		// Best-effort observability: this degrades the affected results to
+		// UNKNOWN (silently dropping any OUTDATED signal), so log it with the
+		// config names for diagnosis.
+		log.Warnf("compliance outdated: cannot load scan configs %v: %v; affected results degrade to UNKNOWN", names, err)
+	}
+	return compliancedata.NewConfigResolver(configs, now)
 }
 
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result
@@ -448,9 +475,9 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 
 		// Scope-level outdated-cluster count for the banner, over the unpaginated,
 		// profile+check-scoped countQuery. Best-effort: on error the banner is hidden.
-		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery)
+		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, nil)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
 			outdatedCount = 0
 		}
 	}
@@ -536,9 +563,9 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	if features.ComplianceSurfaceStaleData.Enabled() {
 		// Single-cluster outdated signal for the inline note, over the unpaginated,
 		// profile+cluster-scoped countQuery (0 or 1). Best-effort: on error hidden.
-		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery)
+		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, nil)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
 			outdatedCount = 0
 		}
 

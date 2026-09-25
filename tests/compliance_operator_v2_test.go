@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1028,19 +1030,42 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 }
 
+// complianceStaleDataFeatureEnabled reports whether Central has the
+// ROX_COMPLIANCE_SURFACE_STALE_DATA feature flag enabled, by querying the
+// feature-flag service. Outdated-data e2e tests (this one and PR-2's, which is
+// stacked on this branch) use it to skip cheaply when the flag is off, before
+// creating any scan configs.
+func complianceStaleDataFeatureEnabled(t *testing.T, conn *grpc.ClientConn) bool {
+	resp, err := v1.NewFeatureFlagServiceClient(conn).GetFeatureFlags(context.Background(), &v1.Empty{})
+	require.NoError(t, err)
+	for _, f := range resp.GetFeatureFlags() {
+		if f.GetEnvVar() == features.ComplianceSurfaceStaleData.EnvVar() {
+			return f.GetEnabled()
+		}
+	}
+	return false
+}
+
 // TestComplianceV2OutdatedDataScheduledCurrent creates a scheduled ocp4-cis scan,
 // runs it to completion, then asserts the freshly-scanned cluster reports
 // data_state == COMPLIANCE_DATA_STATE_CURRENT and outdated_cluster_count == 0.
 //
-// The outdated-data signal is gated behind ROX_COMPLIANCE_SURFACE_STALE_DATA (default
-// off). When Central does not have the flag enabled the fields stay UNKNOWN, so
-// the test probes once and t.Skip()s (rather than false-failing) in that case;
-// when the flag is on it performs the real assertion.
+// The outdated-data signal is gated behind ROX_COMPLIANCE_SURFACE_STALE_DATA
+// (default off). The test probes the flag first and skips cheaply (before
+// creating any scan config) when it is off. When the flag is on it performs the
+// real assertion and does NOT skip on UNKNOWN — a persistent UNKNOWN then is a
+// genuine failure.
 func TestComplianceV2OutdatedDataScheduledCurrent(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	dynClient := createDynamicClient(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	// Cheap flag probe before doing any real work.
+	if !complianceStaleDataFeatureEnabled(t, conn) {
+		t.Skip("ROX_COMPLIANCE_SURFACE_STALE_DATA not enabled on Central; skipping outdated-data assertion")
+	}
+
+	dynClient := createDynamicClient(t)
 	client := v2.NewComplianceScanConfigurationServiceClient(conn)
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
@@ -1071,36 +1096,28 @@ func TestComplianceV2OutdatedDataScheduledCurrent(t *testing.T) {
 	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 
 	resultsClient := v2.NewComplianceResultsServiceClient(conn)
+	// Scope the query to THIS test's scan config: sibling tests run in parallel and
+	// create their own ocp4-cis configs on the same cluster, which would otherwise
+	// contaminate the profile+cluster result set and the outdated count.
 	req := &v2.ComplianceProfileClusterRequest{
 		ProfileName: profileName,
 		ClusterId:   clusterID,
-		Query:       &v2.RawQuery{Query: ""},
+		Query:       &v2.RawQuery{Query: "Compliance Scan Config Name:" + testID},
 	}
 
-	// Wait until the freshly-scanned results are synced to Central, then capture
-	// the per-check data_state to decide skip-vs-assert.
-	var probeState v2.ComplianceDataState
+	// Flag is on: wait for the freshly-scanned results to sync, then require CURRENT
+	// everywhere with no outdated clusters. A persistent UNKNOWN fails when the
+	// timeout is hit (not skipped).
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
 		require.NoError(c, err)
 		require.NotEmpty(c, resp.GetCheckResults(), "expected check results for freshly scanned cluster")
-		probeState = resp.GetCheckResults()[0].GetDataState()
+		assert.Equal(c, int32(0), resp.GetOutdatedClusterCount(), "freshly scanned cluster must not be counted outdated")
+		for _, cr := range resp.GetCheckResults() {
+			assert.Equalf(c, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, cr.GetDataState(),
+				"check %q on freshly scanned cluster should be CURRENT", cr.GetCheckName())
+		}
 	}, 10*time.Minute, 30*time.Second)
-
-	if probeState == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN {
-		t.Skip("ROX_COMPLIANCE_SURFACE_STALE_DATA not enabled on Central; data_state stays UNKNOWN — enable the flag to run this assertion")
-	}
-
-	// Flag is on: a just-completed scheduled scan must be CURRENT everywhere and
-	// contribute nothing to the outdated-cluster count.
-	resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
-	require.NoError(t, err)
-	assert.Equal(t, int32(0), resp.GetOutdatedClusterCount(), "freshly scanned cluster must not be counted outdated")
-	require.NotEmpty(t, resp.GetCheckResults())
-	for _, cr := range resp.GetCheckResults() {
-		assert.Equalf(t, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, cr.GetDataState(),
-			"check %q on freshly scanned cluster should be CURRENT", cr.GetCheckName())
-	}
 }
 
 // TestComplianceV2TailoredProfileVariants verifies that ACS correctly tracks
