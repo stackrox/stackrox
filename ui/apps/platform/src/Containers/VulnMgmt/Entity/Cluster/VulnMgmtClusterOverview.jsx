@@ -8,7 +8,6 @@ import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
-import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from '../WorkflowEntityPage';
 
@@ -36,7 +35,6 @@ const emptyCluster = {
 
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
-    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
@@ -142,18 +140,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     id={safeData?.id}
                                 />
                             </Tab>
-                            {isLegacyScannerEnabled && (
-                                <Tab title="Fixable Platform CVEs">
-                                    <TableWidgetFixableCves
-                                        workflowState={workflowState}
-                                        entityContext={entityContext}
-                                        entityType={entityTypes.CLUSTER}
-                                        vulnType={entityTypes.CLUSTER_CVE}
-                                        name={safeData?.name}
-                                        id={safeData?.id}
-                                    />
-                                </Tab>
-                            )}
                         </BinderTabs>
                     </div>
                 </CollapsibleSection>

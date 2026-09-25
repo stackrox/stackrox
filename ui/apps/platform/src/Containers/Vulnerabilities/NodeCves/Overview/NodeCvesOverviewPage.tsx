@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
-    Alert,
     DropdownItem,
     Flex,
     FlexItem,
@@ -18,11 +17,9 @@ import {
     updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
-import useMetadata from 'hooks/useMetadata';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -34,7 +31,6 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import { runNodeViewBasedReport } from 'services/NodeReportsService';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { vulnerabilityNodeViewBasedJobsPath } from 'routePaths';
 
@@ -70,10 +66,6 @@ function NodeCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showScannerV4NodeScannerInfoAlert =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED') &&
-        isFeatureFlagEnabled('ROX_LEGACY_SCANNER');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -96,7 +88,6 @@ function NodeCvesOverviewPage() {
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
-    const { version } = useMetadata();
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -208,30 +199,6 @@ function NodeCvesOverviewPage() {
                     </Flex>
                 </Flex>
             </PageSection>
-            {showScannerV4NodeScannerInfoAlert && (
-                <PageSection>
-                    <Alert
-                        isInline
-                        variant="info"
-                        title="Results may include Node CVEs obtained from Scanner V4"
-                        component="p"
-                    >
-                        <ExternalLink>
-                            <a
-                                href={getVersionedDocs(
-                                    version,
-                                    'operating/managing-vulnerabilities#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Read more about the differences between the node scanning results
-                                obtained with the StackRox Scanner and Scanner V4.
-                            </a>
-                        </ExternalLink>
-                    </Alert>
-                </PageSection>
-            )}
             <PageSection type="tabs">
                 <SelectExclusiveSingleTabs
                     attribute={attributeForSnoozed}

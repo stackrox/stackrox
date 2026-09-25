@@ -13,7 +13,6 @@ import ArtifactoryIntegrationForm from './Forms/ArtifactoryIntegrationForm';
 import AzureIntegrationForm from './Forms/AzureIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
 import ClairV4IntegrationForm from './Forms/ClairV4IntegrationForm';
-import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
 import GhcrIntegrationForm from './Forms/GhcrIntegrationForm';
@@ -85,7 +84,6 @@ const ComponentFormMap = {
         azure: AzureIntegrationForm,
         clair: ClairIntegrationForm,
         clairV4: ClairV4IntegrationForm,
-        clairify: ClairifyIntegrationForm,
         docker: DockerIntegrationForm,
         ecr: EcrIntegrationForm,
         ghcr: GhcrIntegrationForm,

@@ -79,19 +79,11 @@ export const nodeEntityTabValues = ['CVE', 'Node'] as const;
 
 export type NodeEntityTab = (typeof nodeEntityTabValues)[number];
 
-export const platformEntityTabValues = ['CVE', 'Cluster'] as const;
-
-export type PlatformEntityTab = (typeof platformEntityTabValues)[number];
-
 export const virtualMachineEntityTabValues = ['CVE', 'VirtualMachine'] as const;
 
 export type VirtualMachineEntityTab = (typeof virtualMachineEntityTabValues)[number];
 
-export type EntityTab =
-    | WorkloadEntityTab
-    | NodeEntityTab
-    | PlatformEntityTab
-    | VirtualMachineEntityTab;
+export type EntityTab = WorkloadEntityTab | NodeEntityTab | VirtualMachineEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 

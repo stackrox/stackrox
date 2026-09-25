@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
-import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 
@@ -19,7 +18,6 @@ function Banners(): ReactElement {
     const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
     const showCertGenerateAction = centralCanUpdateCert && hasAdministrationWritePermission;
 
-    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const isScannerV4Enabled = useIsScannerV4Enabled();
 
     return (
@@ -32,12 +30,6 @@ function Banners(): ReactElement {
                 component="CENTRAL_DB"
                 showCertGenerateAction={showCertGenerateAction}
             />
-            {isLegacyScannerEnabled && (
-                <CredentialExpiryBanner
-                    component="SCANNER"
-                    showCertGenerateAction={showCertGenerateAction}
-                />
-            )}
             {isScannerV4Enabled && (
                 <CredentialExpiryBanner
                     component="SCANNER_V4"
