@@ -143,16 +143,97 @@ private fun emitTestTimingEvent(
     }
 }
 
-private fun testTimingKey(taskPath: String, descriptor: TestDescriptor): String =
-    "$taskPath\u0000${descriptor.className ?: "unknown-class"}\u0000${descriptor.name}"
+private fun testTimingKey(phase: String, taskPath: String, descriptor: TestDescriptor): String =
+    "$phase\u0000$taskPath\u0000${descriptor.className ?: "unknown-class"}\u0000${descriptor.name}"
 
-private fun testTimingAttributes(taskName: String, descriptor: TestDescriptor): Map<String, String> =
-    mapOf(
-        "framework" to "spock",
-        "gradle_task" to taskName,
-        "test_class" to (descriptor.className ?: "unknown-class"),
-        "test_name" to descriptor.name,
+private fun testTimingName(phase: String, taskName: String, descriptor: TestDescriptor): String {
+    val name = "groovy:$taskName:${descriptor.className ?: "unknown-class"}"
+    return if (phase == "test-case") "$name::${descriptor.name}" else name
+}
+
+private fun testTimingAttributes(
+    phase: String,
+    taskName: String,
+    taskPath: String,
+    descriptor: TestDescriptor,
+): Map<String, String> = mapOf(
+    "framework" to "spock",
+    "gradle_task" to taskName,
+    "gradle_task_path" to taskPath,
+    "test_class" to (descriptor.className ?: "unknown-class"),
+) + if (phase == "test-case") mapOf("test_name" to descriptor.name) else emptyMap()
+
+private fun startTestTiming(
+    phase: String,
+    taskName: String,
+    taskPath: String,
+    descriptor: TestDescriptor,
+) {
+    if (!e2eTimingEnabled()) {
+        return
+    }
+    val spanId = "$phase:${UUID.randomUUID()}"
+    activeTestTimings.computeIfAbsent(testTimingKey(phase, taskPath, descriptor)) {
+        ConcurrentLinkedDeque()
+    }.addLast(spanId)
+    emitTestTimingEvent(
+        phase = phase,
+        name = testTimingName(phase, taskName, descriptor),
+        spanId = spanId,
+        event = "start",
+        timestamp = Instant.now().toString(),
+        attributes = testTimingAttributes(phase, taskName, taskPath, descriptor),
     )
+}
+
+private fun finishTestTiming(
+    phase: String,
+    taskName: String,
+    taskPath: String,
+    descriptor: TestDescriptor,
+    result: TestResult,
+) {
+    if (!e2eTimingEnabled()) {
+        return
+    }
+    val key = testTimingKey(phase, taskPath, descriptor)
+    val timings = activeTestTimings[key]
+    val spanId = timings?.pollLast()
+    if (timings != null && timings.isEmpty()) {
+        activeTestTimings.remove(key, timings)
+    }
+
+    val attributes = testTimingAttributes(phase, taskName, taskPath, descriptor)
+    val name = testTimingName(phase, taskName, descriptor)
+    if (spanId == null) {
+        // A filtered/skipped test has no start event; don't fabricate a zero-length span.
+        emitTestTimingEvent(
+            phase = phase,
+            name = name,
+            spanId = "$phase:${UUID.randomUUID()}",
+            event = "skipped",
+            timestamp = Instant.now().toString(),
+            attributes = attributes,
+            reason = "gradle-result-without-start-event",
+        )
+        return
+    }
+
+    val outcome = when (result.resultType.name) {
+        "SUCCESS" -> "success"
+        "FAILURE" -> "failure"
+        else -> "skipped"
+    }
+    emitTestTimingEvent(
+        phase = phase,
+        name = name,
+        spanId = spanId,
+        event = "end",
+        timestamp = Instant.now().toString(),
+        attributes = attributes,
+        outcome = outcome,
+    )
+}
 
 tasks.withType<GroovyCompile>().configureEach {
     groovyOptions.forkOptions.memoryMaximumSize = "4g"
@@ -194,71 +275,25 @@ tasks.withType<Test>().configureEach {
     // zero tests execute. This is different case than NO-SOURCE handled below with afterTask hook.
     addTestListener(object : TestListener {
         override fun beforeTest(test: TestDescriptor) {
-            if (!e2eTimingEnabled()) {
-                return
-            }
-            val attributes = testTimingAttributes(timingTaskName, test) +
-                ("gradle_task_path" to timingTaskPath)
-            val spanId = "test-case:${UUID.randomUUID()}"
-            val timings = activeTestTimings.computeIfAbsent(testTimingKey(timingTaskPath, test)) {
-                ConcurrentLinkedDeque()
-            }
-            timings.addLast(spanId)
-            emitTestTimingEvent(
-                phase = "test-case",
-                name = "groovy:$timingTaskName:${test.className ?: "unknown-class"}::${test.name}",
-                spanId = spanId,
-                event = "start",
-                timestamp = Instant.now().toString(),
-                attributes = attributes,
-            )
+            startTestTiming("test-case", timingTaskName, timingTaskPath, test)
         }
 
         override fun afterTest(test: TestDescriptor, result: TestResult) {
-            if (!e2eTimingEnabled()) {
-                return
-            }
-            val key = testTimingKey(timingTaskPath, test)
-            val timings = activeTestTimings[key]
-            val spanId = timings?.pollLast()
-            if (timings != null && timings.isEmpty()) {
-                activeTestTimings.remove(key, timings)
-            }
+            finishTestTiming("test-case", timingTaskName, timingTaskPath, test, result)
+        }
 
-            val attributes = testTimingAttributes(timingTaskName, test) +
-                ("gradle_task_path" to timingTaskPath)
-            val outcome = when (result.resultType.name) {
-                "SUCCESS" -> "success"
-                "FAILURE" -> "failure"
-                else -> "skipped"
+        override fun beforeSuite(suite: TestDescriptor) {
+            // Gradle also reports task and worker suites; only class suites add
+            // fixture/setup time that is outside the individual test-case spans.
+            if (suite.isComposite && suite.className != null) {
+                startTestTiming("test-suite", timingTaskName, timingTaskPath, suite)
             }
-            val name = "groovy:$timingTaskName:${test.className ?: "unknown-class"}::${test.name}"
-            if (spanId == null) {
-                // A filtered/skipped test has no start event; don't fabricate a zero-length span.
-                emitTestTimingEvent(
-                    phase = "test-case",
-                    name = name,
-                    spanId = "test-case:${UUID.randomUUID()}",
-                    event = "skipped",
-                    timestamp = Instant.now().toString(),
-                    attributes = attributes,
-                    reason = "gradle-result-without-start-event",
-                )
-                return
-            }
-
-            emitTestTimingEvent(
-                phase = "test-case",
-                name = name,
-                spanId = spanId,
-                event = "end",
-                timestamp = Instant.now().toString(),
-                attributes = attributes,
-                outcome = outcome,
-            )
         }
 
         override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+            if (suite.isComposite && suite.className != null) {
+                finishTestTiming("test-suite", timingTaskName, timingTaskPath, suite, result)
+            }
             if (suite.parent == null && result.testCount == 0L) {
                 throw GradleException(
                     "No tests were executed in task '${name}'. " +
