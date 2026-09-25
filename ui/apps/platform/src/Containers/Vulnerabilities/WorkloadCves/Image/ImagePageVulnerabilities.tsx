@@ -50,10 +50,7 @@ import {
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
-import {
-    imageMetadataContextFragment,
-    imageV2MetadataContextFragment,
-} from '../Tables/table.utils';
+import { imageV2MetadataContextFragment } from '../Tables/table.utils';
 import type { ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
@@ -70,29 +67,6 @@ import {
 } from '../../searchFilterConfig';
 import BaseImageAssessmentCard from '../components/BaseImageAssessmentCard';
 import type { BaseImage } from '../components/ImageDetailBadges';
-
-export const imageVulnerabilitiesQuery = gql`
-    ${imageMetadataContextFragment}
-    ${resourceCountByCveSeverityAndStatusFragment}
-    ${imageVulnerabilitiesFragment}
-    query getCVEsForImage(
-        $id: ID!
-        $query: String!
-        $pagination: Pagination!
-        $statusesForExceptionCount: [String!]
-    ) {
-        image(id: $id) {
-            ...ImageMetadataContext
-            imageVulnerabilityCount(query: $query)
-            imageCVECountBySeverity(query: $query) {
-                ...ResourceCountsByCVESeverityAndStatus
-            }
-            imageVulnerabilities(query: $query, pagination: $pagination) {
-                ...ImageVulnerabilityFields
-            }
-        }
-    }
-`;
 
 export const imageV2VulnerabilitiesQuery = gql`
     ${imageV2MetadataContextFragment}
