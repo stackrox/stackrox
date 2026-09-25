@@ -44,7 +44,7 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     done
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:8381addcd57c52b55f65c8402e331c2d6e7c9895a0f5575d03336cfc02e785fd as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:510a73eeff392500e22eadf976686dbd16c27eaa1a8808f8f51b29fec950f68c as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
