@@ -559,6 +559,25 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanReq
 	// ...and last_updated_time is preserved: a rescan is not a configuration edit.
 	s.Require().True(originalUpdated.AsTime().Equal(updated.GetLastUpdatedTime().AsTime()))
 
+	// A later "Scan now" advances the stamp forward (normal forward-advance case).
+	later := protocompat.GetProtoTimestampFromSeconds(requested.GetSeconds() + 60)
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, later))
+	afterLater, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().True(later.AsTime().Equal(afterLater.GetLastScanRequestedTime().AsTime()))
+
+	// An EARLIER "Scan now" must NOT regress the stamp. Two concurrent rescans can reach the
+	// keyed lock in an order that inverts their captured timestamps; the write is monotonic so
+	// an older stamp never overwrites a newer one (which would keep stale checks CURRENT longer).
+	earlier := protocompat.GetProtoTimestampFromSeconds(requested.GetSeconds() - 60)
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, earlier))
+	afterEarlier, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	// The stored value remains the LATER timestamp (no regression).
+	s.Require().True(later.AsTime().Equal(afterEarlier.GetLastScanRequestedTime().AsTime()))
+
 	// Simulate an unrelated config edit: a fresh object that cannot carry the blob-only
 	// last_scan_requested_time. UpsertScanConfiguration must preserve it atomically under
 	// the lock (so a concurrent "Scan now" is not clobbered) while bumping last_updated_time.
@@ -572,9 +591,9 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanReq
 	s.Require().NoError(err)
 	s.Require().True(found)
 	s.Require().Equal("edited description", afterEdit.GetDescription())
-	// The on-demand time survived the edit...
+	// The on-demand time (the latest stamp) survived the edit...
 	s.Require().NotNil(afterEdit.GetLastScanRequestedTime())
-	s.Require().True(requested.AsTime().Equal(afterEdit.GetLastScanRequestedTime().AsTime()))
+	s.Require().True(later.AsTime().Equal(afterEdit.GetLastScanRequestedTime().AsTime()))
 	// ...and last_updated_time advanced (an edit bumps it, unlike a rescan).
 	s.Require().False(afterEdit.GetLastUpdatedTime().AsTime().Before(updated.GetLastUpdatedTime().AsTime()))
 }
