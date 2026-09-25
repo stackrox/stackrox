@@ -29,7 +29,7 @@ defaults:
 jobs:
   gke-byodb-qa-e2e-tests:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}

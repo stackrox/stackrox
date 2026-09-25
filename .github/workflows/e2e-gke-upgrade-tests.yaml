@@ -31,7 +31,7 @@ jobs:
   # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -183,7 +183,7 @@ jobs:
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -333,7 +333,7 @@ jobs:
   # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
