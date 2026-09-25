@@ -162,6 +162,34 @@ describe('Compliance Schedules', () => {
         });
     });
 
+    it('should block wizard Next when an uncommitted node role draft is invalid', () => {
+        const scheduleName = 'invalid-node-role-draft';
+
+        visitComplianceEnhancedScanConfigs();
+
+        interceptAndMockComplianceIntegrations(() => {
+            cy.get('a:contains("Create scan schedule")').eq(0).click();
+        });
+
+        cy.get(`h1:contains("Create scan schedule")`);
+
+        // Fill step 1 with otherwise-valid values so the only thing blocking Next is the draft.
+        getInputByLabel('Name').clear().type(scheduleName);
+        getInputByLabel('Frequency').click();
+        getSelectOption('Daily').click();
+        cy.get('input[aria-label="Time picker"]').click();
+        cy.get('ul[role="menu"] button:contains("00:30")').click();
+
+        // Type an invalid role WITHOUT committing it (no Enter). Clicking Next blurs the input,
+        // which records the inline error but must not advance the wizard.
+        cy.get('input[placeholder="Type a role and press Enter to add"]').type('Bad!');
+        navigateWizardNext();
+
+        // Wizard must NOT advance: the step-1-only node-roles input and the inline error remain.
+        cy.get('input[placeholder="Type a role and press Enter to add"]').should('be.visible');
+        cy.contains('is invalid').should('exist');
+    });
+
     it('should send @all node role, replacing default roles, when creating a scan config', () => {
         const scheduleName = 'all-nodes-scan';
         const scheduleDescription = 'Scan every node role.';

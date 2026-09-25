@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent, ReactElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent, KeyboardEvent, MutableRefObject, ReactElement } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 import {
@@ -49,12 +49,43 @@ import {
 
 import './ScanConfigOptions.css';
 
-function ScanConfigOptions(): ReactElement {
+type ScanConfigOptionsProps = {
+    // Optional so existing component tests can mount this without wiring a parent ref. When
+    // provided (by ScanConfigWizardForm), the uncommitted draft input is mirrored into it so the
+    // wizard footer's synchronous validate() can block Next on an invalid draft.
+    nodeRoleDraftRef?: MutableRefObject<string>;
+};
+
+function ScanConfigOptions({ nodeRoleDraftRef }: ScanConfigOptionsProps): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     const { pageAction } = usePageAction<PageActions>();
     const isEditAction = pageAction === 'edit';
     const [nodeRoleInput, setNodeRoleInput] = useState('');
     const [nodeRoleInputError, setNodeRoleInputError] = useState('');
+
+    // Update the draft input and imperatively mirror it into the parent-provided ref. The ref
+    // must be written here (not during render) because the wizard footer's validate() reads it
+    // synchronously in the same click as this input's blur-commit, before React re-renders.
+    // Guarded because the prop is optional (component tests mount without it).
+    function setNodeRoleDraft(value: string) {
+        setNodeRoleInput(value);
+        if (nodeRoleDraftRef) {
+            // eslint-disable-next-line no-param-reassign -- mutating a caller-owned ref's .current is its intended contract
+            nodeRoleDraftRef.current = value;
+        }
+    }
+
+    // The draft is local to this (unmount-per-step) component, so clear the mirrored ref on
+    // unmount; otherwise a stale non-empty draft left when jumping away via the wizard nav would
+    // silently block Next after returning to this step.
+    useEffect(() => {
+        return () => {
+            if (nodeRoleDraftRef) {
+                // eslint-disable-next-line no-param-reassign -- mutating a caller-owned ref's .current is its intended contract
+                nodeRoleDraftRef.current = '';
+            }
+        };
+    }, [nodeRoleDraftRef]);
 
     // Keep a ref to the latest node roles so that handlers reading them (addNodeRole,
     // removeNodeRole) always derive from current state rather than a stale render closure.
@@ -78,7 +109,7 @@ function ScanConfigOptions(): ReactElement {
         const trimmed = role.trim();
         if (!trimmed) {
             // Whitespace-only or empty: discard the draft input and clear any stale error.
-            setNodeRoleInput('');
+            setNodeRoleDraft('');
             setNodeRoleInputError('');
             return;
         }
@@ -89,11 +120,11 @@ function ScanConfigOptions(): ReactElement {
         if (nodeRolesRef.current.includes(trimmed)) {
             // Duplicate: give feedback instead of silently swallowing (backend rejects dupes).
             setNodeRoleInputError(`"${trimmed}" is already in the list.`);
-            setNodeRoleInput('');
+            setNodeRoleDraft('');
             return;
         }
         setNodeRoleInputError('');
-        setNodeRoleInput('');
+        setNodeRoleDraft('');
         updateNodeRoles((currentRoles) => {
             if (trimmed === allNodesRole) {
                 return [allNodesRole];
@@ -110,7 +141,7 @@ function ScanConfigOptions(): ReactElement {
     }
 
     function clearNodeRoles() {
-        setNodeRoleInput('');
+        setNodeRoleDraft('');
         setNodeRoleInputError('');
         updateNodeRoles(() => []);
     }
@@ -348,7 +379,7 @@ function ScanConfigOptions(): ReactElement {
                                             placeholder="Type a role and press Enter to add"
                                             value={nodeRoleInput}
                                             onChange={(_event, value) => {
-                                                setNodeRoleInput(value);
+                                                setNodeRoleDraft(value);
                                                 if (nodeRoleInputError) {
                                                     setNodeRoleInputError('');
                                                 }
