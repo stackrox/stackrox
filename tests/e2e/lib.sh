@@ -422,6 +422,7 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
+    ci_export ROX_COMPLIANCE_SURFACE_STALE_DATA "${ROX_COMPLIANCE_SURFACE_STALE_DATA:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
@@ -582,6 +583,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SURFACE_STALE_DATA'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"

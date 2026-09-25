@@ -3,6 +3,7 @@
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_CISA_KEV'
+    | 'ROX_COMPLIANCE_SURFACE_STALE_DATA'
     | 'ROX_CVE_FIX_TIMESTAMP'
     | 'ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
     | 'ROX_EVALUATION_FILTER'
