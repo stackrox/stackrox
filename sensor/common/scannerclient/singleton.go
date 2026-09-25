@@ -12,6 +12,7 @@ import (
 var (
 	scannerClient      ScannerClient
 	scannerClientMutex sync.Mutex
+	loggedNoCentralV4  bool
 
 	isScannerV4Enabled = features.ScannerV4.Enabled()
 )
@@ -43,7 +44,10 @@ func GRPCClientSingleton() ScannerClient {
 		return nil
 	}
 	if !centralcaps.Has(centralsensor.ScannerV4Supported) {
-		log.Warn("Local image scanning is enabled but Central does not support Scanner V4; no local scanner will be used")
+		if !loggedNoCentralV4 {
+			log.Info("Local image scanning is enabled but Central does not support Scanner V4; no local scanner will be used")
+			loggedNoCentralV4 = true
+		}
 		return nil
 	}
 
@@ -61,6 +65,7 @@ func resetGRPCClient() {
 	scannerClientMutex.Lock()
 	defer scannerClientMutex.Unlock()
 
+	loggedNoCentralV4 = false
 	if scannerClient == nil {
 		return
 	}
