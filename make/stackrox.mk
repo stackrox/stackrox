@@ -55,7 +55,7 @@ $(GO_JUNIT_REPORT_BIN):
 .PHONY: report
 report: $(GO_JUNIT_REPORT_BIN)
 	@echo "+ $@"
-	@cat test.log | go-junit-report > report.xml
+	@sed '/^e2e_timing /d' test.log | go-junit-report > report.xml
 	@mkdir -p $(JUNIT_OUT)
 	@cp test.log report.xml $(JUNIT_OUT)
 	@echo
