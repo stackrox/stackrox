@@ -105,6 +105,58 @@ run_with_timeout() {
     fi
 }
 
+guest_ssh() {
+    local virtctl_bin="$1"
+    local identity="$2"
+    local guest_user="$3"
+    local ns="$4"
+    local vmi="$5"
+    local ssh_timeout="$6"
+    local remote_cmd="$7"
+
+    # virtctl ssh reads stdin (OpenSSH without -n) and would consume the VMI
+    # list from the caller's while-read loop.
+    run_with_timeout "$ssh_timeout" \
+        "${virtctl_bin}" ssh \
+        --namespace "$ns" \
+        --identity-file "$identity" \
+        --local-ssh-opts="-n" \
+        --local-ssh-opts="-o StrictHostKeyChecking=no" \
+        --local-ssh-opts="-o IdentitiesOnly=yes" \
+        --local-ssh-opts="-o UserKnownHostsFile=/dev/null" \
+        --local-ssh-opts="-o BatchMode=yes" \
+        --local-ssh-opts="-o ConnectTimeout=30" \
+        --username "$guest_user" \
+        "vmi/${vmi}" \
+        --command "$remote_cmd" \
+        < /dev/null
+}
+
+# append_rhel8_container_journal adds container stdout that RHEL 8 Podman
+# does not file on roxagent.service. Those entries are tagged systemd-roxagent.
+# Lines already present in the unit journal are skipped.
+append_rhel8_container_journal() {
+    local virtctl_bin="$1"
+    local identity="$2"
+    local guest_user="$3"
+    local ns="$4"
+    local vmi="$5"
+    local out_file="$6"
+    local ssh_timeout="$7"
+    local extra merged
+
+    extra="$(mktemp)"
+    merged="$(mktemp)"
+    if guest_ssh "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$ssh_timeout" \
+        "sudo journalctl -b --no-pager -o short-iso -t systemd-roxagent || true; sudo journalctl -b --no-pager -o short-iso CONTAINER_NAME=systemd-roxagent || true" \
+        >"$extra" 2>/dev/null; then
+        awk 'NR==FNR { seen[$0]=1; next } !seen[$0] && $0 !~ /^-- / { seen[$0]=1; print }' \
+            "$out_file" "$extra" >"$merged"
+        cat "$merged" >>"$out_file"
+    fi
+    rm -f "$extra" "$merged"
+}
+
 collect_roxagent_journal() {
     local virtctl_bin="$1"
     local identity="$2"
@@ -117,22 +169,9 @@ collect_roxagent_journal() {
     local stderr_file
     stderr_file="$(mktemp)"
 
-    # virtctl ssh reads stdin (OpenSSH without -n) and would consume the VMI
-    # list from the caller's while-read loop.
-    if ! run_with_timeout "$ssh_timeout" \
-        "${virtctl_bin}" ssh \
-        --namespace "$ns" \
-        --identity-file "$identity" \
-        --local-ssh-opts="-n" \
-        --local-ssh-opts="-o StrictHostKeyChecking=no" \
-        --local-ssh-opts="-o IdentitiesOnly=yes" \
-        --local-ssh-opts="-o UserKnownHostsFile=/dev/null" \
-        --local-ssh-opts="-o BatchMode=yes" \
-        --local-ssh-opts="-o ConnectTimeout=30" \
-        --username "$guest_user" \
-        "vmi/${vmi}" \
-        --command "sudo journalctl -u roxagent.service -u roxagent-serve.service -b --no-pager -o short-iso" \
-        < /dev/null > "$out_file" 2>"$stderr_file"; then
+    if ! guest_ssh "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$ssh_timeout" \
+        "sudo journalctl -u roxagent.service -u roxagent-serve.service -b --no-pager -o short-iso" \
+        > "$out_file" 2>"$stderr_file"; then
         {
             echo "roxagent journal collection failed for ${ns}/${vmi}"
             echo "virtctl: ${virtctl_bin}"
@@ -140,8 +179,11 @@ collect_roxagent_journal() {
             echo "--- stderr ---"
             cat "$stderr_file"
         } >> "$out_file"
+        rm -f "$stderr_file"
+        return 0
     fi
     rm -f "$stderr_file"
+    append_rhel8_container_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" "$ssh_timeout" || true
 }
 
 collect_journals() {
