@@ -228,19 +228,23 @@ class PostClusterTest(StoreArtifacts):
     def run(self, test_outputs=None):
         if skip_infra_only_post_test(self.__class__.__name__):
             return
-        if self._collect_collector_metrics:
-            self.collect_collector_metrics()
-        if self.collect_central_artifacts and self.wait_for_central_api():
-            self.get_central_debug_dump()
-            self.process_central_metrics()
-            self.get_central_diagnostics()
-            self.grab_central_data()
-        if self._collect_service_logs:
-            self.collect_service_logs()
-        if self._check_stackrox_logs:
-            self.check_stackrox_logs()
-        self.store_artifacts(test_outputs)
-        self.handle_run_failure()
+        stage_name = "post-cluster-test"
+        if self.artifact_destination_prefix:
+            stage_name += f"-{self.artifact_destination_prefix}"
+        with timed_span(phase="post-test-stage", name=stage_name):
+            if self._collect_collector_metrics:
+                self.collect_collector_metrics()
+            if self.collect_central_artifacts and self.wait_for_central_api():
+                self.get_central_debug_dump()
+                self.process_central_metrics()
+                self.get_central_diagnostics()
+                self.grab_central_data()
+            if self._collect_service_logs:
+                self.collect_service_logs()
+            if self._check_stackrox_logs:
+                self.check_stackrox_logs()
+            self.store_artifacts(test_outputs)
+            self.handle_run_failure()
 
     def wait_for_central_api(self):
         return self.run_with_best_effort(
@@ -419,13 +423,14 @@ class FinalPost(StoreArtifacts):
     def run(self, test_outputs=None):
         if skip_infra_only_post_test(self.__class__.__name__):
             return
-        self.store_artifacts()
-        self.fixup_artifacts_content_type()
-        self.make_artifacts_help()
-        self.surface_spec_logs()
-        self.handle_run_failure()
-        if self._handle_e2e_progress_failures:
-            self.handle_e2e_progress_failures()
+        with timed_span(phase="post-test-stage", name="final-post"):
+            self.store_artifacts()
+            self.fixup_artifacts_content_type()
+            self.make_artifacts_help()
+            self.surface_spec_logs()
+            self.handle_run_failure()
+            if self._handle_e2e_progress_failures:
+                self.handle_e2e_progress_failures()
 
     def fixup_artifacts_content_type(self):
         self.run_with_best_effort(

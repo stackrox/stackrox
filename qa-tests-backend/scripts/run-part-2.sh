@@ -25,7 +25,11 @@ run_tests_part_2() {
 
     make -C qa-tests-backend sensor-bounce-test || touch FAIL
 
-    store_qa_test_results "part-2-tests"
+    python3 "$ROOT/.openshift-ci/run_timed.py" \
+        --phase post-test-collection \
+        --name store-qa-test-results-part-2 \
+        -- bash "$ROOT/.openshift-ci/run_timed_function.sh" \
+        "$ROOT/qa-tests-backend/scripts/run-part-2.sh" store_qa_test_results "part-2-tests"
     [[ ! -f FAIL ]] || die "Part 2 tests failed"
 }
 

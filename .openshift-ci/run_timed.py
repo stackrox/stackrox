@@ -25,7 +25,7 @@ def main(argv=None):
 
     infra_only = os.getenv("E2E_INFRA_ONLY", "false").lower() == "true"
     attributes = {"infra_only": str(infra_only).lower()}
-    if infra_only:
+    if infra_only and args.phase == "test-lane-command":
         for phase in ("test-execution", "post-test-collection"):
             record_skipped(
                 phase,
