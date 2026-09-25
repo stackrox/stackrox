@@ -1040,7 +1040,19 @@ populate_stackrox_image_list() {
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests|e2e-operator-tests*)
-            cat >> "${image_list}" << END
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-operator ${operator_controller_tag}
+release-operator-bundle ${operator_metadata_tag}
+release-main ${operator_controller_tag}
+release-central-db ${operator_controller_tag}
+release-collector ${operator_controller_tag}
+release-fact ${operator_controller_tag}
+release-scanner-v4 ${operator_controller_tag}
+release-scanner-v4-db ${operator_controller_tag}
+END
+            else
+                cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}
@@ -1050,6 +1062,7 @@ collector ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 END
+            fi
             ;;
         *-race-condition-qa-e2e-tests)
             local base_tag="${tag%-rcd}"
