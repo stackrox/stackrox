@@ -210,7 +210,7 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	if !features.ScannerV4.Enabled() {
 		return &storage.ScannerHealthInfo{
 			StatusErrors: []string{
-				"local image scanning is enabled but Scanner V4 is not enabled; local image " +
+				"local image scanning is enabled but Scanner V4 is not enabled in secured cluster; local image " +
 					"scanning requires Scanner V4",
 			},
 		}
@@ -218,7 +218,7 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	if !centralcaps.Has(centralsensor.ScannerV4Supported) {
 		return &storage.ScannerHealthInfo{
 			StatusErrors: []string{
-				"local image scanning and Scanner V4 are enabled, but Central is not reporting " +
+				"local image scanning and Scanner V4 are enabled in secured cluster, but Central is not reporting " +
 					"support for Scanner V4; enable Scanner V4 in Central to enable local image scanning",
 			},
 		}
