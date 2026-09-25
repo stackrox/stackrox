@@ -12,22 +12,24 @@ lanes. Set `E2E_TIMING_ENABLED` explicitly to override that default.
 | `test-build` | QA backend scanner-proto copy/generation and Gradle `assemble testClasses` prerequisites | Runner/build preparation, separate from the Gradle test-task span. |
 | `test-execution` | One event per QA Gradle test task (`testParallel`, `testRest`, `testParallelBAT`, `testBAT`, `testSensorBounce`, `testSensorBounceNext`); non-Groovy roxctl scripts, Bats, API, proxy, destructive, and external-backup suites | Inclusive command/task timing, including its runner overhead. It is a parent/context span, not a per-test measurement. |
 | `test-case` | Individual Groovy/Spock cases and Go test functions/subtests | Case-level execution intervals. Groovy names include the Gradle task and spec class; Go names include the package and hierarchical test name. Concurrent cases may overlap. |
-| `test-suite` | A Go package test process | Package-level interval, containing its Go test-case intervals. A cached result is a `skipped` marker, not a fabricated zero-duration span. |
+| `test-suite` | A Go package test process | Package-level interval, containing its Go test-case intervals. A cached result is a `skipped` marker, not an executed test interval. |
 | `post-test-stage` | A whole `PostClusterTest` or `FinalPost` run | Aggregate collection/processing time. Child collection commands are also emitted separately. |
 | `post-test-collection` | Individual collection, artifact, or result-staging operations | Per-operation duration; includes command-level events from `RunWithBestEffortMixin` and named non-Groovy result/log collection calls. |
 
 ## Reading the data
 
-- A span has matching `start` and `end` events with the same `span_id`; the end
-  event carries `duration_ms` and `outcome`.
+- A span has matching `start` and `end` events with the same `span_id`. Both
+  carry UTC timestamps; consumers derive elapsed time from `end - start`. The
+  end event carries the outcome. Keeping timestamps as the sole time source
+  avoids storing a second, potentially inconsistent duration value.
 - `test-case` spans are nested in their enclosing task/lane spans. Go case spans
   may also be nested in a `test-suite` package span. These are inclusive intervals;
   overlapping or nested durations must not be added together.
 - Infra-only mode emits explicit `skipped` markers for test execution and
-  post-test collection. A skipped marker is not a zero-duration measurement.
+  post-test collection. A skipped marker is not a measured interval.
 - `post-test-stage` spans contain `post-test-collection` child spans. Do not add
-  parent and child durations together.
-- Different lanes run concurrently. Their wall-clock durations are not
+  parent and child elapsed times together.
+- Different lanes run concurrently. Their elapsed times are not
   additive when estimating end-to-end PR turnaround.
 
 ## Current limits

@@ -6,7 +6,6 @@ import contextlib
 import json
 import os
 import subprocess
-import time
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Iterator, Optional, Tuple
@@ -50,6 +49,13 @@ def _provider_and_run_id() -> Tuple[str, str]:
             )
         )
         return "openshift-ci", run_id
+
+    explicit_provider = os.getenv("E2E_TIMING_PROVIDER")
+    if explicit_provider:
+        return (
+            explicit_provider,
+            explicit_run_id or f"{explicit_provider}:{os.getpid()}",
+        )
 
     return "local", explicit_run_id or f"local:{os.getpid()}"
 
@@ -108,7 +114,7 @@ def child_timing_environment() -> Optional[Dict[str, str]]:
     provider, run_id = _provider_and_run_id()
     environment = os.environ.copy()
     environment["E2E_TIMING_ENABLED"] = "true"
-    environment.setdefault("E2E_TIMING_PROVIDER", provider)
+    environment["E2E_TIMING_PROVIDER"] = provider
     environment.setdefault("E2E_TIMING_RUN_ID", run_id)
     environment.setdefault("E2E_TIMING_LANE_ID", _lane_id())
     return environment
@@ -121,7 +127,6 @@ def emit_span_event(
     event_name: str,
     timestamp: str,
     attributes: Optional[Dict[str, str]] = None,
-    duration_ms: Optional[int] = None,
     outcome: Optional[str] = None,
 ) -> None:
     """Emit one half of a span using a timestamp supplied by a test framework."""
@@ -136,11 +141,8 @@ def emit_span_event(
             "timestamp": timestamp,
         }
     )
-    if event_name == "end":
-        if duration_ms is not None:
-            event["duration_ms"] = max(0, duration_ms)
-        if outcome:
-            event["outcome"] = outcome
+    if event_name == "end" and outcome:
+        event["outcome"] = outcome
     _write_event(event)
 
 
@@ -170,7 +172,6 @@ def timed_span(
         return
 
     base_event = _base_event(phase, name, attributes)
-    start_time = time.perf_counter_ns()
     _write_event({**base_event, "event": "start", "timestamp": _timestamp()})
     outcome = "success"
     reason = None
@@ -186,12 +187,10 @@ def timed_span(
         reason = type(err).__name__
         raise
     finally:
-        end_time = time.perf_counter_ns()
         end_event: Dict[str, object] = {
             **base_event,
             "event": "end",
             "timestamp": _timestamp(),
-            "duration_ms": max(0, (end_time - start_time) // 1_000_000),
             "outcome": outcome,
         }
         if reason:

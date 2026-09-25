@@ -4,7 +4,6 @@
 
 import json
 import sys
-import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -19,8 +18,6 @@ class ActiveSpan:
     phase: str
     name: str
     attributes: Dict[str, str]
-    start_timestamp: str
-    start_time_ns: int
 
 
 SpanKey = Tuple[str, str, str]
@@ -75,8 +72,6 @@ def _start_span(event: dict, active: Dict[SpanKey, List[ActiveSpan]]) -> None:
         phase=phase,
         name=name,
         attributes=attributes,
-        start_timestamp=_timestamp(event),
-        start_time_ns=time.perf_counter_ns(),
     )
     active.setdefault(_key(phase, package, test), []).append(span)
     emit_span_event(
@@ -84,7 +79,7 @@ def _start_span(event: dict, active: Dict[SpanKey, List[ActiveSpan]]) -> None:
         span.name,
         span.span_id,
         "start",
-        span.start_timestamp,
+        _timestamp(event),
         attributes=span.attributes,
     )
 
@@ -99,8 +94,8 @@ def _finish_span(
     phase, name, attributes = _span_details(package, test)
     spans = active.get(_key(phase, package, test), [])
     if not spans:
-        # A cached Go test has a result but no `run` event. Record that distinctly
-        # instead of inventing a zero-duration test span.
+        # A cached Go test has a result but no `run` event. Mark it distinctly
+        # rather than presenting it as an executed test interval.
         if action in {"pass", "skip"}:
             reason = (
                 "go-test-result-without-run-event"
@@ -114,12 +109,6 @@ def _finish_span(
     if not spans:
         active.pop(_key(phase, package, test), None)
 
-    elapsed_seconds = event.get("Elapsed", 0.0)
-    try:
-        duration_ms = max(0, round(float(elapsed_seconds) * 1000))
-    except (TypeError, ValueError):
-        duration_ms = max(0, (time.perf_counter_ns() - span.start_time_ns) // 1_000_000)
-
     outcome = {"pass": "success", "fail": "failure", "skip": "skipped"}[action]
     emit_span_event(
         span.phase,
@@ -128,7 +117,6 @@ def _finish_span(
         "end",
         _timestamp(event),
         attributes=span.attributes,
-        duration_ms=duration_ms,
         outcome=outcome,
     )
 
@@ -199,9 +187,6 @@ def process_events(lines: Iterable[str]) -> None:
     # those intervals as interrupted rather than leaving dangling start events.
     for spans in active.values():
         for span in spans:
-            duration_ms = max(
-                0, (time.perf_counter_ns() - span.start_time_ns) // 1_000_000
-            )
             emit_span_event(
                 span.phase,
                 span.name,
@@ -211,7 +196,6 @@ def process_events(lines: Iterable[str]) -> None:
                 .isoformat(timespec="milliseconds")
                 .replace("+00:00", "Z"),
                 attributes=span.attributes,
-                duration_ms=duration_ms,
                 outcome="interrupted",
             )
 
