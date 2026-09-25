@@ -108,7 +108,8 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error) {
 	var namespaces []effectiveaccessscope.Namespace
 	// Scope construction needs every namespace before it can authorize the request.
-	if err := b.store.Walk(sac.WithAllAccess(ctx), func(namespace *storage.NamespaceMetadata) error {
+	// A direct query avoids cursor overhead while collecting the full inventory.
+	if err := b.store.GetByQueryFn(sac.WithAllAccess(ctx), search.EmptyQuery(), func(namespace *storage.NamespaceMetadata) error {
 		namespaces = append(namespaces, namespace)
 		return nil
 	}); err != nil {

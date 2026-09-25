@@ -365,7 +365,8 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
 	var clusters []effectiveaccessscope.Cluster
 	// Scope construction needs every cluster before it can authorize the request.
-	if err := ds.clusterStorage.Walk(sac.WithAllAccess(ctx), func(cluster *storage.Cluster) error {
+	// A direct query avoids cursor overhead while collecting the full inventory.
+	if err := ds.clusterStorage.GetByQueryFn(sac.WithAllAccess(ctx), pkgSearch.EmptyQuery(), func(cluster *storage.Cluster) error {
 		clusters = append(clusters, cluster)
 		return nil
 	}); err != nil {

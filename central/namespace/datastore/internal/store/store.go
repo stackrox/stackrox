@@ -19,4 +19,5 @@ type Store interface {
 	Upsert(context.Context, *storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
 	GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.NamespaceMetadata) error) error
 }
