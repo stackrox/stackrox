@@ -149,11 +149,17 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	// which was read earlier without the lock) prevents a concurrent rescan stamp from being
 	// clobbered by an unrelated config edit. Elevated read: internal field carry-over, not
 	// user-facing data. Missing row (create) leaves the caller's value (nil) untouched.
-	// Feature-flag gated: with the flag off this extra read does not run, keeping the write
-	// path byte-for-byte identical to master.
+	// A read ERROR must NOT be ignored: the Postgres upsert replaces the whole serialized
+	// blob, so silently proceeding on error would erase a stored request time. Fail before
+	// the upsert instead. Feature-flag gated: with the flag off this extra read does not run,
+	// keeping the write path byte-for-byte identical to master.
 	if features.ComplianceSurfaceStaleData.Enabled() {
 		elevatedReadCtx := sac.WithAllAccess(context.Background())
-		if existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId()); err == nil && found {
+		existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to preserve last scan requested time for configuration id %q", scanConfig.GetId())
+		}
+		if found {
 			scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
 		}
 	}
@@ -294,6 +300,23 @@ func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_
 func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context, clusterID string, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
+
+	// scanConfig was read by RemoveClusterFromScanConfig OUTSIDE this lock, so a concurrent
+	// "Scan now" may have stamped last_scan_requested_time in between. Re-read the stored value
+	// under the lock and carry it forward (same pattern as UpsertScanConfiguration) so the
+	// upsert below — which replaces the whole serialized blob — does not clobber it. A read
+	// error must fail before the upsert rather than erase the stored time. Feature-flag gated:
+	// with the flag off this extra read does not run, keeping the write path identical to master.
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		elevatedReadCtx := sac.WithAllAccess(context.Background())
+		existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to preserve last scan requested time for configuration id %q", scanConfig.GetId())
+		}
+		if found {
+			scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
+		}
+	}
 
 	clusters := scanConfig.GetClusters()
 	filterFunction := func(cluster *storage.ComplianceOperatorScanConfigurationV2_Cluster) bool {
