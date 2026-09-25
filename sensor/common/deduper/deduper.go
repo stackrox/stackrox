@@ -80,11 +80,12 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		ResourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		priorLen := len(d.lastSent)
+		_, previouslySent := d.lastSent[key]
 		delete(d.lastSent, key)
-		// Do not send a remove message for something that has not been seen before
-		// This also effectively dedupes REMOVE actions
-		if priorLen == len(d.lastSent) {
+		// Runtime alerts bypass lastSent, so alert removals must reach Central
+		// even if no deploy-time result has been sent yet. Other resource
+		// removals can be dropped if the resource was never sent or already removed.
+		if !previouslySent && event.GetAlertResults() == nil {
 			return nil
 		}
 		if err := d.stream.Send(msg); err != nil {
