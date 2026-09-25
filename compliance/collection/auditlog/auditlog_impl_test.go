@@ -161,10 +161,16 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchRe
 		"networkpolicies":            "this-net-pol",
 		"securitycontextconstraints": "s-c-c",
 		"egressfirewalls":            "wall-that-fire",
+		"events":                     "my-event",
 	}
 	var expectedEvents []auditEvent
 	for r, n := range validResources {
-		line, expectedEvent := s.fakeAuditLogLine("create", r, n, "stackrox")
+		// "events" only allows DELETE through; all other resources use "create"
+		verb := "create"
+		if r == "events" {
+			verb = "delete"
+		}
+		line, expectedEvent := s.fakeAuditLogLine(verb, r, n, "stackrox")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
 		s.NoError(f.Sync())
@@ -271,6 +277,42 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNot
 		event := s.getSentEvent(sender.sentC)
 		s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
 	}
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlyForwardsDeleteVerbForEventsResource() {
+	tempDir := s.T().TempDir()
+	logPath := filepath.Join(tempDir, "testaudit_filter_events_verb.log")
+
+	sender, reader := s.getMocks(logPath)
+
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	s.NoError(err)
+	defer s.cleanupFile(f, logPath)
+
+	// All verbs except DELETE should be filtered out for "events"
+	deniedVerbs := []string{"GET", "WATCH", "LIST", "CREATE", "UPDATE", "PATCH"}
+	for _, verb := range deniedVerbs {
+		line, _ := s.fakeAuditLogLineWithStage(verb, "events", "my-event", "default", time.Now().Format(time.RFC3339Nano), "ResponseComplete")
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+	}
+
+	// Only DELETE on "events" should pass through
+	line, expectedEvent := s.fakeAuditLogLineWithStage("DELETE", "events", "my-event", "default", time.Now().Format(time.RFC3339Nano), "ResponseComplete")
+	_, err = f.Write([]byte(line))
+	s.NoError(err)
+	s.NoError(f.Sync())
+
+	started, err := reader.StartReader(context.Background())
+	s.True(started)
+	s.NoError(err)
+	defer reader.StopReader()
+
+	time.Sleep(1 * time.Second)
+
+	event := s.getSentEvent(sender.sentC)
+	s.Equal(expectedEvent, *event)
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBeParsed() {
