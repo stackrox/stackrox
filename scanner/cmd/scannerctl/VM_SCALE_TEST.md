@@ -107,11 +107,18 @@ kubectl delete pod loadtest -n stackrox
 | `--requests` | 100 | Total requests (ignored if `--duration` set) |
 | `--workers` | 15 | Number of parallel workers |
 | `--packages` | 2000 | Packages per VM index report |
-| `--repos` | 10 | Repositories per report |
-| `--rate` | 0 | Target req/s (0 = unlimited) |
+| `--rate` | 0 | Target req/s (0 = unlimited). The first request is sent immediately; later requests wait |
 | `--duration` | 0 | Run duration (0 = use `--requests`) |
-| `--direct-pod-ips` | false | **Required for load distribution** - resolves DNS and connects directly to pod IPs |
+| `--direct-pod-ips` | false | Resolve service DNS and give each worker its own pod address |
 | `--verbose` | false | Print each request result |
+| `--vuln-data` | "" | Learned vulnerability counts from `vm-learn` |
+| `--target-vulns` | 0 | Add vulnerable packages until this count is reached, then fill with zero-vuln packages. Requires `--vuln-data` |
+| `--zero-vulns` | false | Use only packages with zero vulnerabilities. Requires `--vuln-data` |
+| `--vulnerable-only` | false | Use only packages that have vulnerabilities. Requires `--vuln-data` |
+
+`--zero-vulns`, `--vulnerable-only`, and `--target-vulns` are mutually exclusive. If the learned file does not contain enough matching packages for `--packages`, the command exits with an error instead of sending a smaller report.
+
+Repository count is not a flag. Reports use the three RHEL repositories in the fixture.
 
 ## Important Notes
 
@@ -120,9 +127,13 @@ kubectl delete pod loadtest -n stackrox
 The `--direct-pod-ips` flag is **required** for proper load distribution across multiple matcher pods. Without it, gRPC's round-robin load balancing doesn't work correctly with headless services, and all requests go to a single pod.
 
 With `--direct-pod-ips`:
-1. DNS is resolved to get all pod IPs
+1. DNS is resolved to get all pod IPs. This only lists pods when the Service is headless. A single ClusterIP is logged and load stays on one address.
 2. Workers are assigned to pods round-robin
 3. Each worker connects directly to its assigned pod
+
+Direct pod connections keep the TLS settings from the root command. `--direct-pod-ips` does not turn verification off. Certificate checks use `--matcher-server-name` (or the default matcher DNS name), not the pod IP, so verification can succeed against a pod address when that name is on the certificate. Pass `--insecure-skip-tls-verify` when you do not want that check. The examples in this guide pass that flag.
+
+Ctrl-C cancels the command. In-flight matcher calls abort, and no further requests are queued.
 
 ### Worker Calculation
 

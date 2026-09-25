@@ -44,6 +44,45 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 	}
 }
 
+func TestNewGeneratorWithPackageIndices(t *testing.T) {
+	tests := map[string]struct {
+		indices []int
+		want    int
+		wantErr string
+	}{
+		"should include the requested packages": {
+			indices: []int{0, 2, 4},
+			want:    3,
+		},
+		"should allow an empty index list": {
+			indices: nil,
+			want:    0,
+		},
+		"should reject a negative index": {
+			indices: []int{0, -1},
+			wantErr: "package index -1 out of range [0,",
+		},
+		"should reject an index past the fixture": {
+			indices: []int{len(PackagesData)},
+			wantErr: "out of range [0,",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			gen, err := NewGeneratorWithPackageIndices(tt.indices)
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, gen.NumPackages())
+			assert.Equal(t, len(repoToCPEMapping), gen.NumRepositories())
+		})
+	}
+}
+
 func TestNewGeneratorWithSeed_ShouldReturnErrorOnNegativePackages(t *testing.T) {
 	_, err := NewGeneratorWithSeed(-1, 42)
 	assert.EqualError(t, err, "numPackages must be non-negative, got -1")

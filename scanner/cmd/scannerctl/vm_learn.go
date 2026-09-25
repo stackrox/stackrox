@@ -78,18 +78,24 @@ Example:
 	verbose := flags.Bool("verbose", false, "Print progress for each package")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		matcherAddr, _ := cmd.Flags().GetString("matcher-address")
+		matcherAddr, err := cmd.Flags().GetString("matcher-address")
+		if err != nil {
+			return fmt.Errorf("getting matcher-address: %w", err)
+		}
 
 		log.Printf("Learning vulnerability data for %d packages...", len(vmindexreport.PackagesData))
 		log.Printf("This may take a few minutes.")
 
-		// Create scanner client
 		scanner, err := factory.Create(ctx)
 		if err != nil {
 			return fmt.Errorf("creating scanner client: %w", err)
 		}
+		defer func() {
+			if err := scanner.Close(); err != nil {
+				log.Printf("closing scanner client: %v", err)
+			}
+		}()
 
-		// Parse digest once
 		digest, err := name.NewDigest(vmindexreport.MockDigestWithRegistry)
 		if err != nil {
 			return fmt.Errorf("parsing digest: %w", err)
@@ -102,17 +108,34 @@ Example:
 			Packages:    make([]PackageVulnData, 0, len(vmindexreport.PackagesData)),
 		}
 
-		// Query each package individually
+		var failed int
 		for i, pkg := range vmindexreport.PackagesData {
-			// Generate index report with just this one package
-			gen := vmindexreport.NewGeneratorWithPackageIndices([]int{i})
+			if err := ctx.Err(); err != nil {
+				if saveErr := SaveLearnedData(*outputFile, learned); saveErr != nil {
+					return fmt.Errorf("learning interrupted: %w (also failed to save partial data: %v)", err, saveErr)
+				}
+				return fmt.Errorf("learning interrupted after %d packages; partial data saved to %s: %w", len(learned.Packages), *outputFile, err)
+			}
+
+			gen, err := vmindexreport.NewGeneratorWithPackageIndices([]int{i})
+			if err != nil {
+				log.Printf("[%d/%d] %s: ERROR - %v", i+1, len(vmindexreport.PackagesData), pkg.Name, err)
+				failed++
+				learned.Packages = append(learned.Packages, PackageVulnData{
+					Index:   i,
+					Name:    pkg.Name,
+					Version: pkg.Version,
+					Repo:    pkg.Repo,
+					Vulns:   -1,
+				})
+				continue
+			}
 			indexReport := gen.GenerateV4IndexReport()
 
-			// Query scanner
 			vulnReport, err := scanner.GetVulnerabilities(ctx, digest, indexReport.GetContents())
 			if err != nil {
 				log.Printf("[%d/%d] %s: ERROR - %v", i+1, len(vmindexreport.PackagesData), pkg.Name, err)
-				// Store with -1 vulns to indicate error
+				failed++
 				learned.Packages = append(learned.Packages, PackageVulnData{
 					Index:   i,
 					Name:    pkg.Name,
@@ -143,9 +166,11 @@ Example:
 			}
 		}
 
-		// Save results
 		if err := SaveLearnedData(*outputFile, learned); err != nil {
 			return fmt.Errorf("saving learned data: %w", err)
+		}
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("learning interrupted after %d packages; partial data saved to %s: %w", len(learned.Packages), *outputFile, err)
 		}
 
 		// Print summary
@@ -163,8 +188,12 @@ Example:
 		log.Printf("Total packages: %d", len(learned.Packages))
 		log.Printf("Packages with vulnerabilities: %d", withVulns)
 		log.Printf("Packages without vulnerabilities: %d", withoutVulns)
+		log.Printf("Package queries failed: %d", failed)
 		log.Printf("Total vulnerabilities: %d", totalVulns)
 		log.Printf("Data saved to: %s", *outputFile)
+		if failed > 0 {
+			return fmt.Errorf("%d/%d package queries failed; partial data saved to %s", failed, len(learned.Packages), *outputFile)
+		}
 
 		return nil
 	}
