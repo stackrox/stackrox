@@ -3,28 +3,43 @@
 
 set -euo pipefail
 
-# Tests upgrade to Postgres.
+# Tests PostgreSQL major-version upgrades.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 EARLIER_TAG="4.10.0"
 EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
-CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
-# shellcheck source=../../scripts/ci/lib.sh
-source "$TEST_ROOT/scripts/ci/lib.sh"
-# shellcheck source=../../scripts/ci/sensor-wait.sh
-source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
-# shellcheck source=../../scripts/setup-certs.sh
-source "$TEST_ROOT/tests/scripts/setup-certs.sh"
-# shellcheck source=../../tests/e2e/lib.sh
-source "$TEST_ROOT/tests/e2e/lib.sh"
-# shellcheck source=../../tests/upgrade/lib.sh
-source "$TEST_ROOT/tests/upgrade/lib.sh"
-# shellcheck source=../../tests/upgrade/validation.sh
-source "$TEST_ROOT/tests/upgrade/validation.sh"
+
+postgres_major_version() {
+    # Current images use ARG PG_VERSION; older releases put the major directly in FROM.
+    local version
+    version="$(sed -n \
+        -e 's/^[[:space:]]*ARG[[:space:]]\{1,\}PG_VERSION=\([0-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([0-9][0-9]*\)-.*$/\1/p')"
+    # Missing or ambiguous versions must fail the check, not silently skip coverage.
+    [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
+    echo "$version"
+}
+
+check_postgres_upgrade() {
+    local earlier_version current_version
+    earlier_version="$(git -C "$TEST_ROOT" show "$EARLIER_SHA:image/postgres/Dockerfile" | postgres_major_version)" || \
+        die "Cannot determine PostgreSQL major version for $EARLIER_TAG ($EARLIER_SHA)"
+    current_version="$(postgres_major_version < "$TEST_ROOT/image/postgres/Dockerfile")" || \
+        die "Cannot determine PostgreSQL major version for the current checkout"
+
+    POSTGRES_UPGRADE_REQUIRED=false
+    if (( current_version > earlier_version )); then
+        POSTGRES_UPGRADE_REQUIRED=true
+        POSTGRES_UPGRADE_REASON="Running PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version."
+    else
+        POSTGRES_UPGRADE_REASON="Skipping PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version. No major-version upgrade."
+    fi
+    info "$POSTGRES_UPGRADE_REASON"
+}
 
 test_upgrade() {
     info "Starting postgres upgrade test"
@@ -348,5 +363,30 @@ deploy_scaled_workload() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_upgrade "$*"
+    check_postgres_upgrade
+    if [[ "${1:-}" == "--check" ]]; then
+        # CI checks eligibility before provisioning a cluster or running pre/post-test hooks.
+        if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            echo "required=$POSTGRES_UPGRADE_REQUIRED" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            echo "$POSTGRES_UPGRADE_REASON" >> "$GITHUB_STEP_SUMMARY"
+        fi
+    elif [[ "$POSTGRES_UPGRADE_REQUIRED" == true ]]; then
+        CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        # Load deployment helpers only when the suite will actually run.
+        # shellcheck source=../../scripts/ci/lib.sh
+        source "$TEST_ROOT/scripts/ci/lib.sh"
+        # shellcheck source=../../scripts/ci/sensor-wait.sh
+        source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+        # shellcheck source=../../scripts/setup-certs.sh
+        source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+        # shellcheck source=../../tests/e2e/lib.sh
+        source "$TEST_ROOT/tests/e2e/lib.sh"
+        # shellcheck source=../../tests/upgrade/lib.sh
+        source "$TEST_ROOT/tests/upgrade/lib.sh"
+        # shellcheck source=../../tests/upgrade/validation.sh
+        source "$TEST_ROOT/tests/upgrade/validation.sh"
+        test_upgrade "$@"
+    fi
 fi
