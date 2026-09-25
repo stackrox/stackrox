@@ -121,6 +121,16 @@ func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInf
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
 
+	// A non-nil ScannerHealthInfo means local image scanning is enabled on the secured
+	// cluster. If Sensor could not gather scanner health it reports the reason(s) via
+	// StatusErrors and leaves the pod counts unset, e.g. a misconfiguration (local scanning
+	// enabled but Scanner V4 is not) or a missing scanner deployment. Reporting UNHEALTHY
+	// distinguishes this "enabled but broken" state from the "not installed" case above and
+	// surfaces the problem to the user.
+	if len(localScannerHealthInfo.GetStatusErrors()) > 0 {
+		return storage.ClusterHealthStatus_UNHEALTHY
+	}
+
 	desiredPods := localScannerHealthInfo.GetTotalDesiredAnalyzerPods()
 	readyPods := localScannerHealthInfo.GetTotalReadyAnalyzerPods()
 
