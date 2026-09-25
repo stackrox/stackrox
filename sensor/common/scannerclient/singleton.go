@@ -12,12 +12,14 @@ import (
 var (
 	scannerClient      ScannerClient
 	scannerClientMutex sync.Mutex
+	loggedNoCentralV4  bool
 
 	isScannerV4Enabled = features.ScannerV4.Enabled()
 )
 
 // GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
-// Only one ScannerClient per Sensor is required.
+// Only one ScannerClient per Sensor is required. A nil client may
+// be returned.
 func GRPCClientSingleton() ScannerClient {
 	scannerClientMutex.Lock()
 	defer scannerClientMutex.Unlock()
@@ -31,14 +33,27 @@ func GRPCClientSingleton() ScannerClient {
 			env.LocalImageScanningEnabled.EnvVar())
 		return nil
 	}
-	var err error
-	if isScannerV4Enabled && centralcaps.Has(centralsensor.ScannerV4Supported) {
-		log.Info("Creating Scanner V4 client")
-		scannerClient, err = dialV4()
-	} else {
-		log.Info("Creating Scanner V2 client")
-		scannerClient, err = dialV2()
+
+	// Scanner V4 is the only local scanner Sensor connects to. Using it requires
+	// both Scanner V4 to be installed locally and Central to advertise support
+	// for Scanner V4.
+	// When either is missing there is no local scanner to talk to, so we return a nil
+	// client.
+	if !isScannerV4Enabled {
+		log.Warn("Local image scanning is enabled but Scanner V4 is disabled in Sensor; no local scanner will be used")
+		return nil
 	}
+	if !centralcaps.Has(centralsensor.ScannerV4Supported) {
+		if !loggedNoCentralV4 {
+			log.Info("Local image scanning is enabled but Central does not support Scanner V4; no local scanner will be used")
+			loggedNoCentralV4 = true
+		}
+		return nil
+	}
+
+	log.Info("Creating Scanner V4 client")
+	var err error
+	scannerClient, err = dialV4()
 	utils.Should(err)
 
 	return scannerClient
@@ -50,6 +65,7 @@ func resetGRPCClient() {
 	scannerClientMutex.Lock()
 	defer scannerClientMutex.Unlock()
 
+	loggedNoCentralV4 = false
 	if scannerClient == nil {
 		return
 	}
