@@ -178,7 +178,9 @@ func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scan
 // configuration. It re-reads the config under the keyed mutex (minimizing clobber vs a
 // concurrent edit) and writes via the store directly, deliberately NOT going through
 // upsertNoLockScanConfiguration so last_updated_time is preserved: triggering a rescan is
-// not a configuration edit.
+// not a configuration edit. The write is monotonic: it only ever advances
+// last_scan_requested_time, never regresses it, so out-of-order concurrent rescans converge
+// on the latest requested time.
 func (ds *datastoreImpl) UpdateScanConfigLastScanRequestedTime(ctx context.Context, id string, requestedTime *protocompat.Timestamp) error {
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
@@ -189,6 +191,18 @@ func (ds *datastoreImpl) UpdateScanConfigLastScanRequestedTime(ctx context.Conte
 	}
 	if !found {
 		return errors.Errorf("Unable to find scan configuration id %q", id)
+	}
+
+	// Advance last_scan_requested_time monotonically only. Two concurrent rescans may acquire
+	// the keyed lock in any order relative to the moment each captured its timestamp, so an
+	// older stamp could otherwise overwrite a newer one — the unsafe direction, letting stale
+	// checks resolve CURRENT slightly longer. Comparing the incoming time against the stored
+	// value (read under the lock) and keeping the later one makes concurrent rescans converge
+	// on the LATEST requested time regardless of lock-acquisition order. Addresses a CodeRabbit
+	// review finding.
+	if protocompat.CompareTimestamps(scanConfig.GetLastScanRequestedTime(), requestedTime) >= 0 {
+		// Stored value is already at or after the requested time; keep it, nothing to write.
+		return nil
 	}
 
 	scanConfig.LastScanRequestedTime = requestedTime
