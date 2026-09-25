@@ -267,12 +267,18 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 				if !outdatedEnabled {
 					return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
 				}
-				log.Warnf("compliance: cannot resolve scan config %q: %v", result.ScanConfigName, err)
+				log.Warnf("compliance outdated: cannot resolve scan config %q: %v; its data_state degrades to UNKNOWN", result.ScanConfigName, err)
 				scanConfigToIDs[result.ScanConfigName] = "" // unresolvable; data_state → UNKNOWN
 				continue
 			}
+			// GetScanConfigurationByName returns (nil, nil) for a not-found config.
+			// GetId() is nil-safe (""), preserving the pre-feature scanConfigToIDs
+			// behavior, but a nil config must not enter the resolver's config list
+			// (matches the checkresults service's cfg == nil guard).
 			scanConfigToIDs[result.ScanConfigName] = config.GetId()
-			loadedConfigs = append(loadedConfigs, config)
+			if config != nil {
+				loadedConfigs = append(loadedConfigs, config)
+			}
 		}
 	}
 
@@ -280,14 +286,17 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 	// map ⇒ UNKNOWN and no extra datastore query).
 	configDataStates := make(map[string]v2.ComplianceDataState, len(scanConfigToIDs))
 	if outdatedEnabled && len(loadedConfigs) > 0 {
-		minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, parsedQuery)
+		// Use countQuery (unpaginated) for consistency with the sibling MIN sites;
+		// the datastore strips pagination from aggregates so this is not a
+		// correctness change, only consistency.
+		minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, countQuery)
 		if err == nil {
 			resolver := compliancedata.NewConfigResolver(loadedConfigs, time.Now().UTC())
 			for _, mt := range minTimes {
 				configDataStates[mt.ScanConfigName] = resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted).ToProto()
 			}
 		} else {
-			log.Warnf("compliance outdated: failed to get min times for cluster scan stats: %v", err)
+			log.Warnf("compliance outdated: failed to get min times for cluster scan stats: %v; all data_states degrade to UNKNOWN", err)
 		}
 	}
 
@@ -345,7 +354,7 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 		// full filtered scope, not just the current page.
 		clusterDataStates, err = s.computeClusterDataStates(ctx, countQuery)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute cluster data states: %v", err)
+			log.Warnf("compliance outdated: failed to compute cluster data states: %v; outdated banner hidden", err)
 			clusterDataStates = make(map[string]v2.ComplianceDataState)
 		}
 		for _, state := range clusterDataStates {
@@ -427,7 +436,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		// full filtered scope, not just the current page.
 		clusterDataStates, err = s.computeClusterDataStates(ctx, countQuery)
 		if err != nil {
-			log.Warnf("compliance outdated: failed to compute cluster data states: %v", err)
+			log.Warnf("compliance outdated: failed to compute cluster data states: %v; outdated banner hidden", err)
 			clusterDataStates = make(map[string]v2.ComplianceDataState)
 		}
 		for _, state := range clusterDataStates {
@@ -506,18 +515,7 @@ func (s *serviceImpl) computeClusterDataStates(ctx context.Context, query *v1.Qu
 	for _, mt := range minTimes {
 		configNames[mt.ScanConfigName] = struct{}{}
 	}
-
-	var configs []*storage.ComplianceOperatorScanConfigurationV2
-	for name := range configNames {
-		cfg, err := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
-		if err != nil {
-			log.Warnf("compliance outdated: cannot load config %q: %v", name, err)
-			continue
-		}
-		configs = append(configs, cfg)
-	}
-
-	resolver := compliancedata.NewConfigResolver(configs, time.Now().UTC())
+	resolver := s.buildConfigResolver(ctx, configNames)
 
 	perClusterStates := make(map[string][]compliancedata.State)
 	for _, mt := range minTimes {
@@ -530,4 +528,31 @@ func (s *serviceImpl) computeClusterDataStates(ctx context.Context, query *v1.Qu
 		result[clusterID] = compliancedata.RollupState(states...).ToProto()
 	}
 	return result, nil
+}
+
+// buildConfigResolver loads the named scan configs in a SINGLE datastore query
+// (OR-ing the names) instead of a per-name point read, and returns a resolver
+// anchored at the current time. Mirrors the checkresults service helper.
+// Best-effort: on a load error, or for names the query does not return, the
+// affected configs resolve to UNKNOWN rather than failing the page.
+func (s *serviceImpl) buildConfigResolver(ctx context.Context, configNames map[string]struct{}) *compliancedata.ConfigResolver {
+	now := time.Now().UTC()
+	if len(configNames) == 0 {
+		return compliancedata.NewConfigResolver(nil, now)
+	}
+
+	names := make([]string, 0, len(configNames))
+	for name := range configNames {
+		names = append(names, name)
+	}
+
+	configs, err := s.scanConfigDS.GetScanConfigurations(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, names...).ProtoQuery())
+	if err != nil {
+		// Best-effort observability: this degrades the affected clusters to
+		// UNKNOWN (silently dropping any OUTDATED signal), so log it with the
+		// config names for diagnosis.
+		log.Warnf("compliance outdated: cannot load scan configs %v: %v; affected clusters degrade to UNKNOWN", names, err)
+	}
+	return compliancedata.NewConfigResolver(configs, now)
 }
