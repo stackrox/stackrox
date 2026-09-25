@@ -1,7 +1,8 @@
-"""Turn resolver opinions into GitHub Actions start, stop, or default.
+"""Turn resolver opinions into GitHub Actions start, stop, or not start.
 
-Shadow mode only prints the plan. Other workflows keep their own triggers.
-The label ci-dispatcher-enforce is the switch for the jobs in this workflow.
+Only opinion run starts a job. Skip and unsure do not. Shadow mode only
+prints the plan. The label ci-dispatcher-enforce applies it to the
+example jobs in the shadow workflow.
 """
 
 from __future__ import annotations
@@ -37,11 +38,8 @@ class JobPlan:
 
     @property
     def would_run(self) -> bool:
-        if self.action == "start":
-            return True
-        if self.action == "stop":
-            return False
-        return self.default_starts
+        # Unsure does not run. Only an explicit run starts the job.
+        return self.action == "start"
 
 
 def load_defaults(path: str | Path) -> dict[str, dict[str, str]]:
@@ -104,18 +102,15 @@ def format_plan(plans: tuple[JobPlan, ...], *, shadow: bool, title: str) -> str:
         lines.append("Shadow. Other GitHub workflows still start themselves.")
         lines.append(f"The switch is the pull request label {ENFORCE_LABEL}.")
         lines.append("Prow jobs keep their own config. This plan is GitHub Actions only.")
+        lines.append("An unsure job is not started.")
     else:
         lines.append("Enforce. This dispatcher is the starter for these GitHub Actions jobs.")
-        lines.append("An unsure job runs only when the recorded old trigger would have started it.")
+        lines.append("Only a job whose opinion is run is started. Unsure does not run.")
     lines.append("")
     lines.append(title)
     _bucket(lines, "dispatcher would start:", [item for item in plans if item.action == "start"])
     _bucket(lines, "dispatcher would stop:", [item for item in plans if item.action == "stop"])
-    lines.append("  leave to the old trigger:")
-    would = [item for item in plans if item.action == "default" and item.default_starts]
-    stay = [item for item in plans if item.action == "default" and not item.default_starts]
-    _bucket(lines, "would start:", would, indent="    ")
-    _bucket(lines, "would stay off:", stay, indent="    ")
+    _bucket(lines, "dispatcher would not start:", [item for item in plans if item.action == "default"])
     return "\n".join(lines) + "\n"
 
 

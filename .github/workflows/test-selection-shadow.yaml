@@ -152,7 +152,7 @@ jobs:
         run: |
           echo "Example file sensor/common/foo.go, job e2e-qa-tests-gke, action ${ACTION}."
           if [[ "${ENFORCE}" == "true" ]]; then
-            echo "Enforce is on. The dispatcher started this job because the old trigger would have."
+            echo "Enforce is on. The dispatcher started this job."
           else
-            echo "Shadow. e2e-dispatch still decides e2e-qa-tests-gke on its own."
+            echo "Shadow. The dispatcher would not start this job. e2e-dispatch still decides it."
           fi

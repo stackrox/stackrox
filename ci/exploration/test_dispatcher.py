@@ -62,7 +62,7 @@ def test_skip_stops_a_job_the_old_trigger_would_start():
     assert go_postgres.would_run is False
 
 
-def test_unsure_leaves_the_old_trigger_alone():
+def test_unsure_does_not_run():
     defaults = load_defaults(DEFAULTS)
     selection = resolve(["sensor/common/foo.go"], load_mapping(MAPPING))
     draft = PullRequest(draft=True, fork=False, labels=frozenset(), files=("sensor/common/foo.go",))
@@ -70,7 +70,7 @@ def test_unsure_leaves_the_old_trigger_alone():
     by_job = {item.job: item for item in plan}
     assert by_job["go"].action == "default"
     assert by_job["go"].default_starts is True
-    assert by_job["go"].would_run is True
+    assert by_job["go"].would_run is False
     assert by_job["e2e-byodb-tests"].action == "default"
     assert by_job["e2e-byodb-tests"].default_starts is False
     assert by_job["e2e-byodb-tests"].would_run is False
@@ -137,8 +137,10 @@ def test_plan_text_names_start_stop_and_default():
     assert "dispatcher would start:" in text
     assert "sensor-integration-tests" in text
     assert "dispatcher would stop:" in text
+    assert "dispatcher would not start:" in text
     stop_at = text.index("dispatcher would stop:")
-    leave_at = text.index("leave to the old trigger:")
+    leave_at = text.index("dispatcher would not start:")
     assert "go-postgres" in text[stop_at:leave_at]
+    assert "e2e-qa-tests-gke" in text[leave_at:]
     assert "Shadow" in text
     assert "ci-dispatcher-enforce" in text
