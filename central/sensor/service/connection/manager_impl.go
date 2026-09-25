@@ -32,8 +32,6 @@ import (
 
 const (
 	clusterCheckinInterval = 30 * time.Second
-
-	connectionTerminationTimeout = 5 * time.Second
 )
 
 var (
@@ -267,9 +265,7 @@ func (m *manager) CloseConnection(clusterID string) {
 
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
-		if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
-			utils.Should(errors.Errorf("connection to sensor from cluster %s not terminated after %v", clusterID, connectionTerminationTimeout))
-		}
+		_ = conn.Stopped().Wait()
 	}
 
 	ctx := sac.WithAllAccess(context.Background())

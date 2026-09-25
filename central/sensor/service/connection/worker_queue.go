@@ -69,6 +69,8 @@ func (w *workerQueue) push(msg *central.MsgFromSensor) {
 }
 
 func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, handler func(context.Context, *central.MsgFromSensor) error) {
+	defer w.waitGroup.Done()
+
 	queue := w.queues[idx]
 	for msg := queue.PullBlocking(stopSig); msg != nil; msg = queue.PullBlocking(stopSig) {
 		msgFromSensor, ok := msg.(*central.MsgFromSensor)
@@ -98,14 +100,15 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 			deduper.RemoveMessage(msgFromSensor)
 		}
 	}
-	w.waitGroup.Add(-1)
 }
 
-func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, handler func(context.Context, *central.MsgFromSensor) error) {
+func (w *workerQueue) start(ctx context.Context, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, handler func(context.Context, *central.MsgFromSensor) error) {
 	w.waitGroup.Add(w.totalSize)
 	for i := 0; i < w.totalSize; i++ {
 		go w.runWorker(ctx, i, stopSig, deduper, handler)
 	}
+}
 
+func (w *workerQueue) wait() {
 	w.waitGroup.Wait()
 }

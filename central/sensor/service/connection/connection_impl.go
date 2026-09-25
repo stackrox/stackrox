@@ -283,6 +283,7 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqu
 			log.Errorf("panic in handle message: %v", err)
 		}
 	}
+	c.sensorEventHandler.wait()
 	c.eventPipeline.OnFinish(c.clusterID)
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
 }

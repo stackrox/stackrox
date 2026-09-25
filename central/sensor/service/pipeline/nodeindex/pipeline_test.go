@@ -75,7 +75,6 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 			node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
 
 			ctrl := gomock.NewController(t)
-			clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
 			nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 			riskManager := riskManagerMocks.NewMockManager(ctrl)
 			enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
@@ -88,7 +87,6 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 						n.Scan = &storage.NodeScan{ScanTime: protocompat.ConvertTimeToTimestampOrNil(&processed)}
 						return nil
 					}),
-				clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(node.GetClusterId())).Times(1).Return(true, nil),
 				// Upsert rewrites node.Scan in place to whatever was persisted (mimics isUpdated()).
 				riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).
 					DoAndReturn(func(n *storage.Node) error {
@@ -98,7 +96,6 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 			)
 
 			p := &pipelineImpl{
-				clusterStore:  clusterStore,
 				nodeDatastore: nodeDatastore,
 				riskManager:   riskManager,
 				enricher:      enricher,
@@ -162,7 +159,6 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq("1")).Times(2).Return(&node, true, nil)
-	clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(node.GetClusterId())).Times(2).Return(true, nil)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(2).Return(nil)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
@@ -187,33 +183,6 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	}
 }
 
-func TestPipelineSkipsUpsertForDeletedCluster(t *testing.T) {
-	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
-	t.Setenv(features.ScannerV4.EnvVar(), "true")
-
-	ctrl := gomock.NewController(t)
-	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
-	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
-	riskManager := riskManagerMocks.NewMockManager(ctrl)
-	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
-	node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
-
-	gomock.InOrder(
-		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Return(node, true, nil),
-		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Return(nil),
-		clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(node.GetClusterId())).Return(false, nil),
-	)
-
-	p := &pipelineImpl{
-		clusterStore:  clusterStore,
-		nodeDatastore: nodeDatastore,
-		riskManager:   riskManager,
-		enricher:      enricher,
-	}
-
-	assert.NoError(t, p.Run(t.Context(), node.GetClusterId(), createMsg(mockIndexReport), nil))
-}
-
 func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
@@ -234,7 +203,6 @@ func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 	gomock.InOrder(
 		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
 		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil),
-		clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(node.GetClusterId())).Times(1).Return(true, nil),
 		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 	)
 
@@ -291,7 +259,6 @@ func TestPipelineSkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 	gomock.InOrder(
 		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
 		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil),
-		clusterStore.EXPECT().Exists(gomock.Any(), gomock.Eq(node.GetClusterId())).Times(1).Return(true, nil),
 		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 	)
 

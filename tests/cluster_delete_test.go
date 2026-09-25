@@ -32,6 +32,14 @@ func (a *allCounts) AllZero() bool {
 	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.DeploymentCount, a.SecretCount)
 }
 
+func (a *allCounts) Less(other *allCounts) bool {
+	return a.PodCount < other.PodCount ||
+		a.ClusterCount < other.ClusterCount ||
+		a.NodeCount < other.NodeCount ||
+		a.DeploymentCount < other.DeploymentCount ||
+		a.SecretCount < other.SecretCount
+}
+
 type summaryCountsResp struct {
 	ClusterCount, NodeCount, ViolationCount, DeploymentCount, SecretCount int
 }
@@ -105,11 +113,7 @@ func TestClusterDeletion(t *testing.T) {
 			t.Logf("deployment count is still not zero: %d", counts.DeploymentCount)
 		}
 
-		if counts.PodCount < previous.PodCount ||
-			counts.ClusterCount < previous.ClusterCount ||
-			counts.NodeCount < previous.NodeCount ||
-			counts.DeploymentCount < previous.DeploymentCount ||
-			counts.SecretCount < previous.SecretCount {
+		if counts.Less(&previous) {
 			noChangeCount = 0
 		} else {
 			noChangeCount++
