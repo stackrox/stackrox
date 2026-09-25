@@ -98,6 +98,16 @@ func NewConfigResolver(configs []*storage.ComplianceOperatorScanConfigurationV2,
 // scheduledRefresh returns the most recent scheduled fire at least `g` in the
 // past (in-flight guard), or zero for a config with no usable cron schedule
 // (unset interval or one-time scan).
+//
+// KNOWN LIMITATION (deferred, ROX-35712 FU: schedule-activation lower bound):
+// This applies the CURRENT schedule to check timestamps that may predate a
+// schedule change. Right after a schedule is edited, data collected under the
+// OLD schedule can be transiently flagged OUTDATED until the first fire under
+// the new schedule. A correct fix needs a dedicated PERSISTED
+// schedule-activation timestamp to lower-bound the reference fire;
+// last_updated_time is unsafe because unrelated upserts bump it. Deferred
+// because the failure mode is false-OUTDATED (safe direction) and the feature
+// is flag-gated.
 func scheduledRefresh(cfg *storage.ComplianceOperatorScanConfigurationV2, now time.Time, g time.Duration) time.Time {
 	sched := cfg.GetSchedule()
 	if sched == nil || sched.GetIntervalType() == storage.Schedule_UNSET || cfg.GetOneTimeScan() {
@@ -153,6 +163,13 @@ func FindPreviousFireTime(cronSchedule cron.Schedule, before time.Time) time.Tim
 	var previousFire time.Time
 	for {
 		next := cronSchedule.Next(candidate)
+		// robfig/cron.v2 returns the zero time when a syntactically-valid
+		// schedule has no matching date within its ~5-year search limit
+		// (e.g. "0 0 31 2 *"). Guard against feeding it back in, which would
+		// loop forever. This restores the "returns zero time if no fire" contract.
+		if next.IsZero() {
+			break
+		}
 		if next.After(before) {
 			break
 		}
