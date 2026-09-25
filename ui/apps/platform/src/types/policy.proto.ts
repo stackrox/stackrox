@@ -52,6 +52,7 @@ export type BasePolicy = {
 export type ClientPolicy = {
     excludedImageNames: string[]; // For internal use only.
     excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
+    excludedWorkloadTypes: PolicyWorkloadType[]; // For internal use only.
     serverPolicySections: PolicySection[]; // For internal use only.
     policySections: ClientPolicySection[]; // value strings converted into objects
 } & BasePolicy;
@@ -60,11 +61,23 @@ export type Policy = {
     policySections: PolicySection[]; // values are strings
 } & BasePolicy;
 
-export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
+export const policyWorkloadTypes = ['CRON_JOB', 'JOB'] as const;
+export type PolicyWorkloadType = (typeof policyWorkloadTypes)[number];
+
+export const policyWorkloadTypeLabels: Record<PolicyWorkloadType, string> = {
+    CRON_JOB: 'CronJobs',
+    JOB: 'Jobs',
+};
+
+export type PolicyExclusion =
+    | PolicyDeploymentExclusion
+    | PolicyImageExclusion
+    | PolicyExcludeByTypeExclusion;
 
 export type PolicyDeploymentExclusion = {
     deployment: PolicyExcludedDeployment;
     image: null;
+    excludeByType?: null;
 } & PolicyBaseExclusion;
 
 export type PolicyExcludedDeployment = {
@@ -77,7 +90,22 @@ export type PolicyImageExclusion = {
     image: {
         name: string;
     };
+    excludeByType?: {
+        types: PolicyWorkloadType[];
+    } | null;
 } & PolicyBaseExclusion;
+
+export type PolicyExcludeByTypeExclusion = {
+    deployment: null;
+    image: null;
+    excludeByType: {
+        types: PolicyWorkloadType[];
+    };
+} & PolicyBaseExclusion;
+
+export function isPolicyWorkloadType(value: string): value is PolicyWorkloadType {
+    return (policyWorkloadTypes as readonly string[]).includes(value);
+}
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
 // TODO These are undefined at runtime - make optional here?

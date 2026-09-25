@@ -97,6 +97,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
         // Do not validate the following, because changed values are on other steps.
         setFieldValue('excludedImageNames', [], false);
+        setFieldValue('excludedWorkloadTypes', [], false);
         values.scope.forEach(({ label, ...rest }, idx) => {
             if (label) {
                 setFieldValue(`scope[${idx}]`, { ...rest }, false);
@@ -130,6 +131,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             scope: [],
             excludedImageNames: [],
             excludedDeploymentScopes: [],
+            excludedWorkloadTypes: [],
             enforcementActions: [],
         });
     }

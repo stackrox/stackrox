@@ -47,7 +47,7 @@ function PolicyScopeCardLegacy({
     }));
 
     // Note! Currently this filtering is only relevant to the exclusion scope, therefore accesses `value.scope` instead of `value`.
-    // If at some point the inclusion scope gains a deployment filter, this will need to be updated.
+    // If at some point the inclusion scope gains a workload filter, this will need to be updated.
     const selectedNamespaceValue = scope?.namespace;
     const deploymentSearchFilter: SearchFilter = {
         'Cluster ID': scope?.cluster ? [scope.cluster] : undefined,
@@ -158,14 +158,14 @@ function PolicyScopeCardLegacy({
                         </FlexItem>
                         {type === 'exclusion' && (
                             <FlexItem>
-                                <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
+                                <FormGroup label="Workload" fieldId={`${name}-deployment`}>
                                     <AutocompleteSelect
                                         searchCategory="DEPLOYMENTS"
                                         searchTerm="Deployment"
                                         value={value.name || ''}
                                         onChange={handleChangeDeployment}
                                         onSearch={handleChangeDeployment}
-                                        textLabel="Select a deployment"
+                                        textLabel="Select a workload"
                                         searchFilter={deploymentSearchFilter}
                                         isDisabled={hasAuditLogEventSource}
                                     />
@@ -173,7 +173,7 @@ function PolicyScopeCardLegacy({
                             </FlexItem>
                         )}
                         <FlexItem>
-                            <FormGroup label="Deployment label" fieldId={`${name}-label`}>
+                            <FormGroup label="Workload label" fieldId={`${name}-label`}>
                                 <Flex
                                     direction={{ default: 'row' }}
                                     flexWrap={{ default: 'nowrap' }}

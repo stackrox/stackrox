@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 
+import { policyWorkloadTypes } from 'types/policy.proto';
 import type { ClientPolicy } from 'types/policy.proto';
 
 import {
@@ -248,6 +249,15 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
         )
         .required(),
     excludedImageNames: yup.array().of(yup.string().trim().required()).required(),
+    excludedWorkloadTypes: yup
+        .array()
+        .of(
+            yup
+                .string()
+                .oneOf([...policyWorkloadTypes])
+                .required()
+        )
+        .optional(),
 });
 
 export const validationSchemaStep5 = yup.object().shape({
