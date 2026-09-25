@@ -9,9 +9,9 @@ cancel an active run through Actions if needed. Unrelated label changes do not
 restart or cancel the comparison. The normal one-iteration `go-bench` check is
 unchanged.
 
-The comparison builds the pinned master commit and the PR merge commit on one
-runner, then measures ten alternating rounds with the same Go toolchain,
-PostgreSQL instance, and benchmark definitions. It covers cluster/namespace
+The comparison builds the master parent of the tested PR merge and the merge
+itself on one runner, then measures ten alternating rounds with the same Go
+toolchain, PostgreSQL instance, and benchmark definitions. It covers cluster/namespace
 authorization loading, deployment/pod reads, image export, and report queries.
 Each process seeds fresh test data; generated IDs can differ. Stateful process
 baseline evaluation and full report delivery are outside this comparison.
@@ -19,7 +19,8 @@ baseline evaluation and full report delivery are outside this comparison.
 Results appear in the job summary and the `store-cache-benchmarks-<PR number>`
 artifact, including raw observations, build logs, environment details, and
 `benchstat` timing/allocation comparisons. Performance differences do not fail
-the job; benchmark errors do.
+the job; benchmark errors do. Failed runs also upload PostgreSQL server logs and
+database/resource state to help diagnose timeouts.
 
 For a local run against a dedicated PostgreSQL server, install the pinned
 `benchstat` version from the workflow, then run:

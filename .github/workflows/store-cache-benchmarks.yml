@@ -57,9 +57,24 @@ jobs:
 
     - name: Compare master and PR on this runner
       env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
         MERGE_SHA: ${{ github.sha }}
-      run: scripts/ci/compare-store-cache-benchmarks.sh "$BASE_SHA" "$MERGE_SHA"
+      # The event's base SHA can lag behind the master revision in this merge.
+      run: scripts/ci/compare-store-cache-benchmarks.sh "${MERGE_SHA}^1" "$MERGE_SHA"
+
+    - name: Capture PostgreSQL diagnostics
+      if: failure()
+      continue-on-error: true
+      timeout-minutes: 1
+      run: |
+        mkdir -p "$BENCH_OUTPUT_DIR"
+        {
+          pg_lsclusters
+          df -h /var/lib/postgresql
+          free -m
+          psql -X -U postgres -d postgres -c \
+            'SELECT datname, pid, state, wait_event_type, wait_event, query FROM pg_stat_activity'
+        } > "$BENCH_OUTPUT_DIR/postgres-state.txt" 2>&1 || true
+        sudo cat /var/log/postgresql/postgresql-*-main.log | tee "$BENCH_OUTPUT_DIR/postgres-server.log" >/dev/null
 
     - name: Publish comparison summary
       if: always()

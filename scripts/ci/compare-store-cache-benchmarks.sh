@@ -118,12 +118,18 @@ done
 
 run_benchmark() {
     local variant=$1 package=$2 selector=$3 destination=$4 duration=$5
+    local status=0
     (
-        cd "$work_dir/$variant/$package"
+        cd "$work_dir/$variant/$package" || exit 1
         "$work_dir/bin/$variant/${package//\//_}.test" \
             -test.run='^$' -test.bench="$selector" -test.benchtime="$duration" \
             -test.benchmem -test.count=1 -test.timeout=10m
-    ) >> "$destination" 2>&1
+    ) >> "$destination" 2>&1 || status=$?
+    if ((status != 0)); then
+        echo "Benchmark failed: $variant $package (exit $status); recent output:" >&2
+        tail -n 80 "$destination" >&2
+        return "$status"
+    fi
 }
 
 for specification in "${benchmarks[@]}"; do
