@@ -25,6 +25,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- ROX-34167: Compliance scan configurations now let you choose which node roles a node-type scan targets (for example `master`, `worker`, `infra`, `control-plane`, or `@all` for every node). Previously node scans were hardcoded to `master` and `worker`; existing configurations continue to default to `master` and `worker`.
 
 ### Removed Features
 
