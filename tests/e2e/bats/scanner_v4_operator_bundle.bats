@@ -9,7 +9,10 @@ setup() {
     cat > "${TEST_ROOT}/deploy/common/ci-values.yaml" <<'EOF'
 scannerV4:
   matcher:
-    vulnerabilitiesUrl: https://example.invalid/ci-minimal.zip
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_VULNERABILITIES_URL: https://example.invalid/ci-minimal.zip
 EOF
     printf 'key' > "${BATS_TEST_TMPDIR}/tls.key"
     printf 'cert' > "${BATS_TEST_TMPDIR}/tls.crt"
@@ -48,9 +51,27 @@ run_operator_deploy() {
     assert_line "https://example.invalid/ci-minimal.zip"
 }
 
+@test "Operator repeated invocation renders exactly one bundle URL" {
+    export CI=true
+    run run_operator_deploy
+    assert_success
+    run run_operator_deploy
+    assert_success
+    run yq eval 'select(.kind == "Central") | [.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/central.yaml"
+    assert_line "1"
+}
+
+@test "shared CI values expose the pinned matcher URL at the customization path" {
+    TEST_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../.." && pwd)"
+    run _scanner_v4_ci_vuln_bundle_url
+    assert_success
+    assert_output "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+}
+
 @test "disabled Scanner V4 does not render the bundle URL" {
     export CI=true
     export ROX_SCANNER_V4=false
+    : > "${TEST_ROOT}/deploy/common/ci-values.yaml"
     run run_operator_deploy
     assert_success
     run yq eval 'select(.kind == "Central") | [.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/central.yaml"
@@ -59,6 +80,7 @@ run_operator_deploy() {
 
 @test "non-CI Operator deployment does not render the bundle URL" {
     unset CI
+    : > "${TEST_ROOT}/deploy/common/ci-values.yaml"
     run run_operator_deploy
     assert_success
     run yq eval 'select(.kind == "Central") | [.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/central.yaml"
@@ -84,9 +106,10 @@ run_operator_deploy() {
 @test "CI deployment fails when the bundle URL is null" {
     export CI=true
     cat > "${TEST_ROOT}/deploy/common/ci-values.yaml" <<'EOF'
-scannerV4:
-  matcher:
-    vulnerabilitiesUrl: null
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_VULNERABILITIES_URL: null
 EOF
     run run_operator_deploy
     assert_failure
@@ -145,6 +168,7 @@ EOF
 
 @test "Roxie preserves explicit valueFrom bundle URL and is idempotent" {
     export CI=true
+    TEST_ROOT="${BATS_TEST_TMPDIR}/missing-repo"
     cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
 central:
   spec:
@@ -169,6 +193,7 @@ EOF
 @test "Roxie preserves an explicit bundle URL" {
     setup_roxie_deploy_stubs
     export CI=true
+    TEST_ROOT="${BATS_TEST_TMPDIR}/missing-repo"
     cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
 central:
   spec:
@@ -234,9 +259,10 @@ EOF
     setup_roxie_deploy_stubs
     export CI=true
     cat > "${TEST_ROOT}/deploy/common/ci-values.yaml" <<'EOF'
-scannerV4:
-  matcher:
-    vulnerabilitiesUrl: null
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_VULNERABILITIES_URL: null
 EOF
     cat > "${BATS_TEST_TMPDIR}/roxie.yaml" <<'EOF'
 central:

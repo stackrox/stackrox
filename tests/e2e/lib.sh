@@ -126,7 +126,7 @@ ensure_roxie_on_path() {
 
 _scanner_v4_ci_vuln_bundle_url() {
     local scanner_v4_ci_vuln_bundle_url
-    scanner_v4_ci_vuln_bundle_url="$(yq eval '.scannerV4.matcher.vulnerabilitiesUrl // ""' "$TEST_ROOT/deploy/common/ci-values.yaml")" \
+    scanner_v4_ci_vuln_bundle_url="$(yq eval '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL // ""' "$TEST_ROOT/deploy/common/ci-values.yaml")" \
         || die "Unable to read the CI Scanner V4 vulnerability bundle URL"
     [[ -n "$scanner_v4_ci_vuln_bundle_url" ]] || die "CI Scanner V4 vulnerability bundle URL is empty"
     printf '%s\n' "$scanner_v4_ci_vuln_bundle_url"
