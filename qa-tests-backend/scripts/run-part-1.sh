@@ -158,7 +158,11 @@ test_part_1() {
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
     cleanup_workload_identities
-    store_qa_test_results "part-1-tests"
+    python3 "$ROOT/.openshift-ci/run_timed.py" \
+        --phase post-test-collection \
+        --name store-qa-test-results-part-1 \
+        -- bash "$ROOT/.openshift-ci/run_timed_function.sh" \
+        "$ROOT/qa-tests-backend/scripts/run-part-1.sh" store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
 }
 

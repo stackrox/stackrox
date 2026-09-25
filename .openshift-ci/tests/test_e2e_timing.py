@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from unittest.mock import patch
 
 from e2e_timing import is_enabled, record_skipped, timed_span
-from post_tests import RunWithBestEffortMixin
+from post_tests import FinalPost, PostClusterTest, RunWithBestEffortMixin
 from run_timed import main as run_timed_main
 
 
@@ -174,8 +174,63 @@ class TestTimedCommand(unittest.TestCase):
         self.assertEqual(["skipped", "skipped", "start", "end"], [e["event"] for e in events])
         self.assertTrue(all(event["attributes"]["infra_only"] == "true" for event in events))
 
+    def test_infra_only_build_span_does_not_claim_test_phases_were_skipped(self):
+        output = io.StringIO()
+        with patch.dict(
+            os.environ,
+            {"E2E_TIMING_ENABLED": "true", "E2E_INFRA_ONLY": "true"},
+            clear=True,
+        ), patch(
+            "run_timed.subprocess.run",
+            return_value=subprocess.CompletedProcess(["true"], 0),
+        ), redirect_stdout(output):
+            status = run_timed_main(
+                ["--phase", "test-build", "--name", "qa-backend-compile", "--", "true"]
+            )
+
+        self.assertEqual(0, status)
+        events = events_from_output(output)
+        self.assertEqual(["start", "end"], [event["event"] for event in events])
+        self.assertTrue(all(event["phase"] == "test-build" for event in events))
+
 
 class TestPostTestTiming(unittest.TestCase):
+    def test_post_cluster_collection_emits_aggregate_stage_span(self):
+        output = io.StringIO()
+        post = PostClusterTest(
+            collect_collector_metrics=False,
+            collect_central_artifacts=False,
+            collect_service_logs=False,
+        )
+        with patch.dict(
+            os.environ,
+            {"E2E_TIMING_ENABLED": "true", "GITHUB_ACTIONS": "true"},
+            clear=True,
+        ), redirect_stdout(output):
+            post.run()
+
+        events = events_from_output(output)
+        stage_events = [event for event in events if event["phase"] == "post-test-stage"]
+        self.assertEqual(["start", "end"], [event["event"] for event in stage_events])
+        self.assertEqual("post-cluster-test", stage_events[0]["name"])
+        self.assertGreaterEqual(stage_events[-1]["duration_ms"], 0)
+
+    def test_final_post_emits_aggregate_stage_span(self):
+        output = io.StringIO()
+        post = FinalPost(handle_e2e_progress_failures=False)
+        with patch.dict(
+            os.environ,
+            {"E2E_TIMING_ENABLED": "true", "GITHUB_ACTIONS": "true"},
+            clear=True,
+        ), patch.object(post, "run_with_best_effort", return_value=True), redirect_stdout(output):
+            post.run()
+
+        events = events_from_output(output)
+        stage_events = [event for event in events if event["phase"] == "post-test-stage"]
+        self.assertEqual(["start", "end"], [event["event"] for event in stage_events])
+        self.assertEqual("final-post", stage_events[0]["name"])
+        self.assertGreaterEqual(stage_events[-1]["duration_ms"], 0)
+
     def test_best_effort_command_emits_safe_operation_name(self):
         output = io.StringIO()
         test_runner = RunWithBestEffortMixin()

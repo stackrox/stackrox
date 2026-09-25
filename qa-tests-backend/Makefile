@@ -3,6 +3,7 @@ all: style test
 
 GRADLE = TEST_TARGET="$@" ./gradlew
 GRADLE_TEST_ARGS =
+TIMED_RUNNER = python3 ../.openshift-ci/run_timed.py
 # Stop testing after the first test failure by defining FAIL_FAST. (Can be
 # achieved on a PR with a ci-fail-fast label)
 ifdef FAIL_FAST
@@ -25,7 +26,10 @@ style: compile
 .PHONY: compile
 compile: build/generated
 	@echo "+ $@"
-	@$(GRADLE) assemble testClasses
+	@$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-compile \
+		-- env TEST_TARGET="$@" ./gradlew assemble testClasses
 
 .PHONY: style-fix
 style-fix:
@@ -37,12 +41,18 @@ proto-generated-srcs: build/generated
 
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
-	$(GRADLE) generateProto generateTestProto
+	$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-generate-protos \
+		-- env TEST_TARGET="$@" ./gradlew generateProto generateTestProto
 
 src/main/proto/scanner: ../go.mod
 	@echo "+ copy scanner protos"
 	-rm -rf src/main/proto/scanner
-	@scripts/copy_scanner_protos.sh
+	@$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-copy-protos \
+		-- scripts/copy_scanner_protos.sh
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
@@ -52,12 +62,18 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) testParallel testRest $(GRADLE_TEST_ARGS)
+	$(TIMED_RUNNER) \
+		--phase test-execution \
+		--name qa-$@ \
+		-- env TEST_TARGET="$@" ./gradlew testParallel testRest $(GRADLE_TEST_ARGS)
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) testParallelBAT testBAT $(GRADLE_TEST_ARGS)
+	$(TIMED_RUNNER) \
+		--phase test-execution \
+		--name qa-$@ \
+		-- env TEST_TARGET="$@" ./gradlew testParallelBAT testBAT $(GRADLE_TEST_ARGS)
 
 .PHONY: smoke-test
 smoke-test: compile
@@ -102,7 +118,10 @@ graphql-test: compile
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
+	$(TIMED_RUNNER) \
+		--phase test-execution \
+		--name qa-$@ \
+		-- env TEST_TARGET="$@" ./gradlew testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
 
 .PHONY: pz-test
 pz-test: compile
