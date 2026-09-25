@@ -10,20 +10,56 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	service := v1.NewMetadataServiceClient(conn)
-	metadata, err := service.GetMetadata(ctx, &v1.Empty{})
+	resp, err := service.GetMetadata(ctx, &v1.Empty{})
 	require.NoError(t, err)
-	return metadata
+	return resp
+}
+
+func TestCentralVersionHeader(t *testing.T) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var metadataMD metadata.MD
+	resp, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{}, grpc.Header(&metadataMD))
+	require.NoError(t, err)
+
+	metadataVals := metadataMD.Get(clientconn.CentralVersionHeader)
+	require.Len(t, metadataVals, 1, "expected %s response header from GetMetadata", clientconn.CentralVersionHeader)
+	assert.Equal(t, resp.GetVersion(), metadataVals[0])
+
+	pingVals := pingAndGetHeader(t, conn, ctx)
+	require.Len(t, pingVals, 1, "expected %s response header from Ping", clientconn.CentralVersionHeader)
+	assert.Equal(t, metadataVals[0], pingVals[0], "version header must be consistent across services")
+}
+
+func TestCentralVersionHeader_AbsentForAnonymous(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	vals := pingAndGetHeader(t, centralgrpc.UnauthenticatedGRPCConnectionToCentral(t), ctx)
+	assert.Empty(t, vals, "anonymous requests must not receive %s", clientconn.CentralVersionHeader)
+}
+
+func pingAndGetHeader(t *testing.T, conn *grpc.ClientConn, ctx context.Context) []string {
+	var md metadata.MD
+	_, err := v1.NewPingServiceClient(conn).Ping(ctx, &v1.Empty{}, grpc.Header(&md))
+	require.NoError(t, err)
+	return md.Get(clientconn.CentralVersionHeader)
 }
 
 func TestMetadataIsSetCorrectly(t *testing.T) {
