@@ -1,0 +1,81 @@
+# Whether each GitHub Actions job would start on a pull request today,
+# before this dispatcher is the only starter.
+#
+# when:
+#   always   - every pull request
+#   not-ui   - every pull request that is not only ui/
+#   ready    - not a draft, not a fork, and not only ui/
+#   label    - the pull request has this label, and it is not a fork
+#   path     - a changed file matches path; an empty file list counts as a match
+#   konflux  - label e2e-qa-tests-gke-konflux, or konflux-build on a ready pull request
+
+jobs:
+  style-check:
+    when: always
+  misc-checks:
+    when: always
+  check-generated-files:
+    when: not-ui
+  golangci-lint:
+    when: not-ui
+  check-dependent-images-exist:
+    when: not-ui
+  github-actions-lint:
+    when: path
+    path: '^\.github/'
+  github-actions-shellcheck:
+    when: path
+    path: '^\.github/'
+  openshift-ci-lint:
+    when: path
+    path: '^\.openshift-ci/'
+  check-crd-compatibility:
+    when: not-ui
+  go:
+    when: always
+  go-postgres:
+    when: always
+  go-bench:
+    when: not-ui
+  ui:
+    when: path
+    path: '^ui/|^\.github/actions/cache-ui-dependencies/'
+  ui-component:
+    when: path
+    path: '^ui/|^\.github/actions/cache-ui-dependencies/'
+  local-roxctl-tests:
+    when: not-ui
+  shell-unit-tests:
+    when: not-ui
+  openshift-ci-unit-tests:
+    when: not-ui
+  sensor-integration-tests:
+    when: not-ui
+  db-integration-tests:
+    when: not-ui
+  scanner-ft-images:
+    when: label
+    label: scanner-functional-tests
+  scanner-ft-run:
+    when: label
+    label: scanner-functional-tests
+  e2e-byodb-tests:
+    when: ready
+  e2e-db-backup-restore-tests:
+    when: ready
+  e2e-gke-upgrade-tests:
+    when: ready
+  e2e-nongroovy-tests:
+    when: ready
+  e2e-qa-tests-gke:
+    when: label
+    label: e2e-qa-tests-gke
+  e2e-qa-tests-gke-konflux:
+    when: konflux
+  e2e-qa-tests-ocp-4-22:
+    when: label
+    label: e2e-qa-tests-ocp-4-22
+  e2e-test-on-kind:
+    when: path
+    path: '^central/notifiers/email/|^central/notifiers/acscsemail/|^central/auth/m2m/|^\.github/workflows/emailsender-central-compatibility\.yaml$'
+    skip_fork: true

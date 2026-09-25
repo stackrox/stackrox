@@ -1,7 +1,9 @@
 name: Test selection (shadow)
 
-# Prints what ci/test-domains.yaml would run, skip, or leave unsure.
-# Shadow mode does not skip any other job. execute lists every known job.
+# Prints the GitHub Actions dispatcher plan.
+# Shadow is the default: other workflows still start themselves.
+# The label ci-dispatcher-enforce applies the plan to the three example
+# jobs in this workflow only.
 
 on:
   pull_request:
@@ -22,8 +24,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  shadow:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      enforce: ${{ steps.out.outputs.enforce }}
+      go_postgres_action: ${{ steps.out.outputs.go_postgres_action }}
+      go_postgres_run: ${{ steps.out.outputs.go_postgres_run }}
+      sensor_action: ${{ steps.out.outputs.sensor_action }}
+      sensor_run: ${{ steps.out.outputs.sensor_run }}
+      e2e_action: ${{ steps.out.outputs.e2e_action }}
+      e2e_run: ${{ steps.out.outputs.e2e_run }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -33,14 +43,24 @@ jobs:
           python3 -m venv "${RUNNER_TEMP}/selector"
           "${RUNNER_TEMP}/selector/bin/pip" install 'PyYAML==6.0.3'
 
-      - name: Classify the pull request
+      - name: Plan GitHub Actions jobs
+        id: out
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
+          ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
         run: |
           set -euo pipefail
+          py="${RUNNER_TEMP}/selector/bin/python"
+          flags=()
+          if [[ "${DRAFT}" == "true" ]]; then flags+=(--draft); fi
+          if [[ "${FORK}" == "true" ]]; then flags+=(--fork); fi
+          if [[ "${ENFORCE}" == "true" ]]; then flags+=(--enforce); fi
+
           files="$(mktemp)"
           if ! gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' > "${files}"; then
             echo "Could not list changed files. Showing the run-everything result."
@@ -49,8 +69,90 @@ jobs:
             echo "3000 or more changed files. Showing the run-everything result."
             : > "${files}"
           fi
-          "${RUNNER_TEMP}/selector/bin/python" ci/exploration/resolver.py \
-            --mapping ci/test-domains.yaml \
-            --labels "${LABELS}" \
-            --format human \
-            - < "${files}"
+
+          common=(
+            "${py}" ci/exploration/dispatcher.py
+            --mapping ci/test-domains.yaml
+            --defaults ci/exploration/gha_defaults.yaml
+            --labels "${LABELS}"
+            "${flags[@]}"
+          )
+
+          "${common[@]}" --title "This pull request" - < "${files}"
+          echo
+          echo "The example below is not this pull request. The three jobs after this one follow the example."
+          echo
+          "${common[@]}" --title "Example: sensor/common/foo.go" sensor/common/foo.go
+          "${common[@]}" --format json sensor/common/foo.go > "${RUNNER_TEMP}/example.json"
+
+          python3 - << 'PY'
+          import json
+          import os
+
+          jobs = {item["job"]: item for item in json.load(open(os.environ["RUNNER_TEMP"] + "/example.json"))["jobs"]}
+
+          def put(key, value):
+              with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+                  handle.write(f"{key}={value}\n")
+
+          put("enforce", os.environ["ENFORCE"])
+          for key, name in (
+              ("go_postgres", "go-postgres"),
+              ("sensor", "sensor-integration-tests"),
+              ("e2e", "e2e-qa-tests-gke"),
+          ):
+              item = jobs[name]
+              put(f"{key}_action", item["action"])
+              put(f"{key}_run", str(item["would_run"]).lower())
+          PY
+
+  example-go-postgres:
+    needs: plan
+    if: needs.plan.outputs.enforce != 'true' || needs.plan.outputs.go_postgres_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply the example plan
+        env:
+          ACTION: ${{ needs.plan.outputs.go_postgres_action }}
+          ENFORCE: ${{ needs.plan.outputs.enforce }}
+        run: |
+          echo "Example file sensor/common/foo.go, job go-postgres, action ${ACTION}."
+          if [[ "${ENFORCE}" == "true" ]]; then
+            echo "Enforce is on. The dispatcher started this job."
+          else
+            echo "Shadow. Unit Tests still starts go-postgres on its own."
+          fi
+
+  example-sensor-integration-tests:
+    needs: plan
+    if: needs.plan.outputs.enforce != 'true' || needs.plan.outputs.sensor_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply the example plan
+        env:
+          ACTION: ${{ needs.plan.outputs.sensor_action }}
+          ENFORCE: ${{ needs.plan.outputs.enforce }}
+        run: |
+          echo "Example file sensor/common/foo.go, job sensor-integration-tests, action ${ACTION}."
+          if [[ "${ENFORCE}" == "true" ]]; then
+            echo "Enforce is on. The dispatcher started this job."
+          else
+            echo "Shadow. Unit Tests still starts sensor-integration-tests on its own."
+          fi
+
+  example-e2e-qa-tests-gke:
+    needs: plan
+    if: needs.plan.outputs.enforce != 'true' || needs.plan.outputs.e2e_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply the example plan
+        env:
+          ACTION: ${{ needs.plan.outputs.e2e_action }}
+          ENFORCE: ${{ needs.plan.outputs.enforce }}
+        run: |
+          echo "Example file sensor/common/foo.go, job e2e-qa-tests-gke, action ${ACTION}."
+          if [[ "${ENFORCE}" == "true" ]]; then
+            echo "Enforce is on. The dispatcher started this job because the old trigger would have."
+          else
+            echo "Shadow. e2e-dispatch still decides e2e-qa-tests-gke on its own."
+          fi
