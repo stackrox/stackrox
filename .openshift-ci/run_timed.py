@@ -7,7 +7,7 @@ import os
 import subprocess
 import sys
 
-from e2e_timing import record_skipped, timed_span
+from e2e_timing import child_timing_environment, record_skipped, timed_span
 
 
 def main(argv=None):
@@ -36,7 +36,11 @@ def main(argv=None):
 
     try:
         with timed_span(args.phase, args.name, attributes=attributes):
-            subprocess.run(command, check=True)
+            subprocess.run(
+                command,
+                check=True,
+                env=child_timing_environment(),
+            )
     except subprocess.CalledProcessError as err:
         return err.returncode if err.returncode >= 0 else 128 - err.returncode
     except KeyboardInterrupt:

@@ -137,6 +137,29 @@ function go_run() (
 
 function go_test() (
   unset GOOS
+
+  if [[ "${E2E_TIMING_ENABLED:-false}" == "true" ]]; then
+    local go_test_args=()
+    local arg
+    local -a pipeline_status
+    for arg in "$@"; do
+      # -json enables the structured test event stream; the adapter restores
+      # the usual verbose output while emitting the normalized timing records.
+      [[ "$arg" == "-v" ]] || go_test_args+=("$arg")
+    done
+
+    if invoke_go test -json "${go_test_args[@]}" 2>&1 \
+      | python3 "${SCRIPT_DIR}/../.openshift-ci/go_test_timing.py"; then
+      pipeline_status=("${PIPESTATUS[@]}")
+    else
+      pipeline_status=("${PIPESTATUS[@]}")
+    fi
+
+    # The timing adapter is best effort: preserve the go test status, but don't
+    # fail the suite if only the adapter exits unsuccessfully.
+    return "${pipeline_status[0]}"
+  fi
+
   invoke_go test "$@"
 )
 

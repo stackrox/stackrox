@@ -100,6 +100,50 @@ def _write_event(event: Dict[str, object]) -> None:
         pass
 
 
+def child_timing_environment() -> Optional[Dict[str, str]]:
+    """Propagate the resolved timing identity to instrumented child processes."""
+    if not is_enabled():
+        return None
+
+    provider, run_id = _provider_and_run_id()
+    environment = os.environ.copy()
+    environment["E2E_TIMING_ENABLED"] = "true"
+    environment.setdefault("E2E_TIMING_PROVIDER", provider)
+    environment.setdefault("E2E_TIMING_RUN_ID", run_id)
+    environment.setdefault("E2E_TIMING_LANE_ID", _lane_id())
+    return environment
+
+
+def emit_span_event(
+    phase: str,
+    name: str,
+    span_id: str,
+    event_name: str,
+    timestamp: str,
+    attributes: Optional[Dict[str, str]] = None,
+    duration_ms: Optional[int] = None,
+    outcome: Optional[str] = None,
+) -> None:
+    """Emit one half of a span using a timestamp supplied by a test framework."""
+    if not is_enabled() or event_name not in {"start", "end"}:
+        return
+
+    event = _base_event(phase, name, attributes)
+    event.update(
+        {
+            "span_id": span_id,
+            "event": event_name,
+            "timestamp": timestamp,
+        }
+    )
+    if event_name == "end":
+        if duration_ms is not None:
+            event["duration_ms"] = max(0, duration_ms)
+        if outcome:
+            event["outcome"] = outcome
+    _write_event(event)
+
+
 def record_skipped(
     phase: str,
     name: str,

@@ -136,7 +136,15 @@ class TestTimedCommand(unittest.TestCase):
             )
 
         self.assertEqual(7, status)
-        run_command.assert_called_once_with(["true"], check=True)
+        run_command.assert_called_once()
+        self.assertEqual(["true"], run_command.call_args.args[0])
+        self.assertTrue(run_command.call_args.kwargs["check"])
+        self.assertEqual(
+            "local",
+            run_command.call_args.kwargs["env"]["E2E_TIMING_PROVIDER"],
+        )
+        self.assertEqual("true", run_command.call_args.kwargs["env"]["E2E_TIMING_ENABLED"])
+        self.assertEqual("unknown-lane", run_command.call_args.kwargs["env"]["E2E_TIMING_LANE_ID"])
         events = events_from_output(output)
         self.assertEqual(["start", "end"], [e["event"] for e in events])
         self.assertEqual("failure", events[-1]["outcome"])
@@ -161,12 +169,14 @@ class TestTimedCommand(unittest.TestCase):
         ), patch(
             "run_timed.subprocess.run",
             return_value=subprocess.CompletedProcess(["true"], 0),
-        ), redirect_stdout(output):
+        ) as run_command, redirect_stdout(output):
             status = run_timed_main(
                 ["--phase", "test-lane-command", "--name", "qa-part-1", "--", "true"]
             )
 
         self.assertEqual(0, status)
+        run_command.assert_called_once()
+        self.assertEqual("true", run_command.call_args.kwargs["env"]["E2E_TIMING_ENABLED"])
         events = events_from_output(output)
         self.assertEqual("skipped", events[0]["event"])
         self.assertEqual("test-execution", events[0]["phase"])
