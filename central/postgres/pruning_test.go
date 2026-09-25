@@ -275,8 +275,8 @@ func (s *PostgresPruningSuite) TestGetOrphanedDeploymentIDsHandlesNullClusterID(
 	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 
-	// Upsert with a non-matching cluster id, then null out the column to mirror the field
-	// scenario where clusterid is NULL (NilOrUUID stores an empty cluster id as NULL).
+	// Upsert with a non-matching cluster id, then null out the collumn, to verify
+	// the pruning works in the unlikely case deployments without clusterid made it to the DB
 	nullClusterDeploymentID := uuid.NewV4().String()
 	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: nullClusterDeploymentID, ClusterId: fixtureconsts.Cluster1}))
 	_, err = s.testDB.DB.Exec(s.ctx, "UPDATE deployments SET clusterid = NULL WHERE id = $1", nullClusterDeploymentID)
