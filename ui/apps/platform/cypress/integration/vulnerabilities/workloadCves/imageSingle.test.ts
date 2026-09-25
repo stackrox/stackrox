@@ -49,20 +49,11 @@ describe('Workload CVE Image Single page', () => {
     // see: https://issues.redhat.com/browse/ROX-24254
     //      https://github.com/stackrox/stackrox/pull/6156
     it('should display nested component data correctly when processed via apollo client', () => {
-        const isFlattenImageData = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA');
-        const imageRootKey = isFlattenImageData ? 'imageV2' : 'image';
-
         const opname = 'getCVEsForImage';
 
         const imageData = {
-            id: isFlattenImageData
-                ? '4c657931-d333-5cb8-8f0d-7e3836525ec7'
-                : 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
-            ...(isFlattenImageData
-                ? {
-                      digest: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
-                  }
-                : {}),
+            id: '4c657931-d333-5cb8-8f0d-7e3836525ec7',
+            digest: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
             name: {
                 registry: 'quay.io',
                 remote: 'openshift-release-dev/ocp-v4.0-art-dev',
@@ -82,7 +73,7 @@ describe('Workload CVE Image Single page', () => {
                 },
                 __typename: 'ImageMetadata',
             },
-            __typename: isFlattenImageData ? 'ImageV2' : 'Image',
+            __typename: 'ImageV2',
             imageCVECountBySeverity: {
                 unknown: {
                     total: 0,
@@ -182,7 +173,7 @@ describe('Workload CVE Image Single page', () => {
 
         const body = {
             data: {
-                [imageRootKey]: imageData,
+                imageV2: imageData,
             },
         };
 
