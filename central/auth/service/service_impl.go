@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -272,6 +273,17 @@ func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
 		return fmt.Errorf("%w: %w: type %s was used, but an issuer other than %s was used: %q",
 			errox.InvalidArgs, errInvalidIssuer, config.GetType(), githubActionsIssuer,
 			config.GetIssuer())
+	}
+	// For SPIFFE types, the issuer must be the SPIRE OIDC Discovery Provider HTTPS URL.
+	if config.GetType() == v1.AuthMachineToMachineConfig_SPIFFE {
+		if config.GetIssuer() == "" {
+			return fmt.Errorf("%w: %w: SPIFFE type requires the SPIRE OIDC Discovery Provider URL as issuer",
+				errox.InvalidArgs, errInvalidIssuer)
+		}
+		if strings.HasPrefix(config.GetIssuer(), "spiffe://") {
+			return fmt.Errorf("%w: %w: use the SPIRE OIDC Discovery Provider HTTPS URL, not the spiffe:// trust domain URI",
+				errox.InvalidArgs, errInvalidIssuer)
+		}
 	}
 
 	if config.GetIssuer() != "" {
