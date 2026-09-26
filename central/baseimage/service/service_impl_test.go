@@ -233,6 +233,42 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 			expectedValid:  true,
 			expectedErrMsg: "",
 		},
+		{
+			description:    "rejects pattern with slash (repo path leaked into tag field)",
+			input:          "5000/library/ubuntu*",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
+			description:    "rejects pattern with colon (registry port leaked into tag field)",
+			input:          "5000:latest",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
+			description:    "rejects pattern with digest separator",
+			input:          "sha256@abc",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
+			description:    "rejects pattern with whitespace",
+			input:          "1. *",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
+			description:    "rejects pattern with non-ASCII whitespace",
+			input:          "1.\u00a0*",
+			expectedValid:  false,
+			expectedErrMsg: "must not contain",
+		},
+		{
+			description:    "rejects pattern longer than max tag length",
+			input:          strings.Repeat("a", maxTagPatternLength+1),
+			expectedValid:  false,
+			expectedErrMsg: "too long",
+		},
 	}
 
 	for _, tt := range tests {

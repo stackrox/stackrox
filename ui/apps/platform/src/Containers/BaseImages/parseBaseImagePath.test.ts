@@ -29,4 +29,31 @@ describe('parseBaseImagePath', () => {
             tagPattern: '1.*',
         });
     });
+
+    it('should keep the tag mask separate for a registry with a port', () => {
+        const result = parseBaseImagePath('registry:5000/library/ubuntu:1.*');
+
+        expect(result).toEqual({
+            repoPath: 'registry:5000/library/ubuntu',
+            tagPattern: '1.*',
+        });
+    });
+
+    it('should return an empty tag when a registry with a port has no tag', () => {
+        const result = parseBaseImagePath('registry:5000/library/ubuntu');
+
+        expect(result).toEqual({
+            repoPath: 'registry:5000/library/ubuntu',
+            tagPattern: '',
+        });
+    });
+
+    it('should return an empty tag when the mask is placed on the path instead of the tag', () => {
+        const result = parseBaseImagePath('registry:5000/library/ubuntu*');
+
+        expect(result).toEqual({
+            repoPath: 'registry:5000/library/ubuntu*',
+            tagPattern: '',
+        });
+    });
 });
