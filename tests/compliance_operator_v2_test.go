@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sync"
@@ -354,14 +355,24 @@ func assertScanSetting(ctx context.Context, t testutils.T, client ctrlClient.Cli
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSetting)
 	require.NoErrorf(t, err, "ScanSetting %s/%s does not exist", namespace, name)
 
-	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
-	require.NoError(t, err)
 	assert.Equal(t, scanConfig.GetScanName(), scanSetting.GetName())
-	assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
+	// Only scheduled scan configs map to a ScanSetting cron; one-time scans (no
+	// ScanSchedule) leave it empty, and ConvertToCronTab rejects an empty schedule.
+	if scanConfig.GetScanConfig().GetScanSchedule() != nil {
+		cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
+		require.NoError(t, err)
+		assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
+	}
 	require.Contains(t, scanSetting.GetLabels(), "app.kubernetes.io/name")
 	assert.Equal(t, scanSetting.GetLabels()["app.kubernetes.io/name"], "stackrox")
 	require.Contains(t, scanSetting.GetAnnotations(), "owner")
 	assert.Equal(t, scanSetting.GetAnnotations()["owner"], "stackrox")
+
+	expectedRoles := scanConfig.GetScanConfig().GetNodeRoles()
+	if len(expectedRoles) == 0 {
+		expectedRoles = complianceoperator.DefaultNodeRoles()
+	}
+	assert.ElementsMatch(t, expectedRoles, scanSetting.Roles)
 }
 
 func assertScanSettingBinding(ctx context.Context, t testutils.T, client ctrlClient.Client,
@@ -1177,5 +1188,163 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, resp.GetName())
 		assert.Equal(t, v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED, resp.GetOperatorKind())
+	})
+}
+
+func TestComplianceV2NodeRoles(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0)
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	t.Run("custom roles", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-custom-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"ocp4-cis-node"},
+				NodeRoles:   []string{"infra"},
+			},
+		}
+		resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+			cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+		})
+
+		status, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"infra"}, status.GetScanConfig().GetNodeRoles())
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, req)
+		}, defaultTimeout, defaultInterval)
+	})
+
+	t.Run("default roles", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-default-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"ocp4-cis-node-1-9"},
+			},
+		}
+		resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+			cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+		})
+
+		status, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
+		require.NoError(t, err)
+		assert.ElementsMatch(t, complianceoperator.DefaultNodeRoles(), status.GetScanConfig().GetNodeRoles())
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, req)
+		}, defaultTimeout, defaultInterval)
+	})
+
+	t.Run("@all role", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-all-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"ocp4-cis-node-2-0"},
+				NodeRoles:   []string{"@all"},
+			},
+		}
+		resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+			cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+		})
+
+		status, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"@all"}, status.GetScanConfig().GetNodeRoles())
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, req)
+		}, defaultTimeout, defaultInterval)
+	})
+
+	t.Run("reject @all mixed", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-mixed-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"ocp4-cis-node"},
+				NodeRoles:   []string{"@all", "worker"},
+			},
+		}
+		_, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "InvalidArgument")
+	})
+
+	t.Run("reject invalid role", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-invalid-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"ocp4-cis-node"},
+				NodeRoles:   []string{"inv@lid"},
+			},
+		}
+		_, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "InvalidArgument")
+	})
+
+	t.Run("update roles", func(t *testing.T) {
+		testID := fmt.Sprintf("node-roles-update-%s", uuid.NewV4().String())
+		req := &v2.ComplianceScanConfiguration{
+			ScanName: testID,
+			Clusters: []string{clusterID},
+			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+				OneTimeScan: true,
+				Profiles:    []string{"rhcos4-e8"},
+				NodeRoles:   []string{"worker"},
+			},
+		}
+		resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+			cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+		})
+
+		updateReq := req.CloneVT()
+		updateReq.Id = resp.GetId()
+		updateReq.ScanConfig.NodeRoles = []string{"master", "infra"}
+		_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, updateReq)
+		require.NoError(t, err)
+
+		status, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
+		require.NoError(t, err)
+		assert.ElementsMatch(t, []string{"master", "infra"}, status.GetScanConfig().GetNodeRoles())
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, updateReq)
+		}, defaultTimeout, defaultInterval)
 	})
 }
