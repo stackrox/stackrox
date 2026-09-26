@@ -148,6 +148,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 }
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.Empty, error) {
+	if request.GetType() == apiV2.ReportConfiguration_NODE_VULNERABILITY {
+		return nil, errox.InvalidArgs.New("node vulnerability reports must be updated via the node report service")
+	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
