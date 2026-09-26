@@ -350,8 +350,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				Name: "secretenv",
 				Config: &storage.ContainerConfig{
 					Env: []*storage.ContainerConfig_EnvironmentConfig{
-						{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
+						{Key: "THIS_IS_SECRET", Value: "SomethingLikeBase64String=", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
 						{Key: "HOME", Value: "/home/stackrox"},
+					},
+				}},
+			{
+				Name: "nonsecretenv",
+				Config: &storage.ContainerConfig{
+					Env: []*storage.ContainerConfig_EnvironmentConfig{
+						{Key: "NON_SECRET_VAR", Value: "SomethingLikeBase64String=", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
+						{Key: "PATH_KEY", Value: "/var/auth.keys/1A/authkeyabcd", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
 					},
 				}},
 		},
@@ -963,7 +971,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				secretEnvDep.GetId(): {
 					{
-						Message: "Environment variable 'THIS_IS_SECRET_VAR' is present in container 'secretenv'",
+						Message: "Environment variable 'THIS_IS_SECRET' is present in container 'secretenv'",
 					},
 				},
 			},
