@@ -694,7 +694,7 @@ _image_prefetcher_prebuilt_start() {
         image_prefetcher_start_set compatibility
         _set_quay_pull_policy
         ;;
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|e2e-operator-tests*)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
         ;;
@@ -729,7 +729,7 @@ _image_prefetcher_system_start() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
+    *-operator-e2e-tests|e2e-operator-tests*|*ocp*qa-e2e-tests*)
         image_prefetcher_start_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -856,7 +856,7 @@ _image_prefetcher_prebuilt_await() {
     *compatibility-tests)
         image_prefetcher_await_set compatibility
         ;;
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|e2e-operator-tests*)
         image_prefetcher_await_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
         ;;
@@ -870,7 +870,7 @@ _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
+    *-operator-e2e-tests|e2e-operator-tests*|*ocp*qa-e2e-tests*)
         image_prefetcher_await_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -1039,8 +1039,20 @@ populate_stackrox_image_list() {
 
     # Require images based on the job
     case "$CI_JOB_NAME" in
-        *-operator-e2e-tests)
-            cat >> "${image_list}" << END
+        *-operator-e2e-tests|e2e-operator-tests*)
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-operator ${operator_controller_tag}
+release-operator-bundle ${operator_metadata_tag}
+release-main ${operator_controller_tag}
+release-central-db ${operator_controller_tag}
+release-collector ${operator_controller_tag}
+release-fact ${operator_controller_tag}
+release-scanner-v4 ${operator_controller_tag}
+release-scanner-v4-db ${operator_controller_tag}
+END
+            else
+                cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}
@@ -1050,6 +1062,7 @@ collector ${tag}
 scanner-v4 ${tag}
 scanner-v4-db ${tag}
 END
+            fi
             ;;
         *-race-condition-qa-e2e-tests)
             local base_tag="${tag%-rcd}"

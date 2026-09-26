@@ -449,11 +449,38 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 	set -x ;\
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
+CHART_DIR ?= ./dist/chart
+
+KONFLUX_HELM_ARGS :=
+ifeq ($(USE_KONFLUX_IMAGES),true)
+KONFLUX_HELM_ARGS += --set manager.image.repository=quay.io/rhacs-eng/release-operator
+KONFLUX_HELM_ARGS += --set 'manager.imagePullSecrets[0].name=stackrox'
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_MAIN=quay.io/rhacs-eng/release-main:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER=quay.io/rhacs-eng/release-scanner:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_SLIM=quay.io/rhacs-eng/release-scanner:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_DB=quay.io/rhacs-eng/release-scanner-db:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_DB_SLIM=quay.io/rhacs-eng/release-scanner-db:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_COLLECTOR=quay.io/rhacs-eng/release-collector:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_FACT=quay.io/rhacs-eng/release-fact:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_ROXCTL=quay.io/rhacs-eng/release-roxctl:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_CENTRAL_DB=quay.io/rhacs-eng/release-central-db:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4_DB=quay.io/rhacs-eng/release-scanner-v4-db:$(VERSION)
+KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4=quay.io/rhacs-eng/release-scanner-v4:$(VERSION)
+endif
+
 .PHONY: deploy-via-chart
-deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
+deploy-via-chart: ensure-pull-secrets ## Deploy current version of operator via helm chart produced by the chart target.
 	helm upgrade --install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
-		rhacs-operator ./dist/chart
+		$(KONFLUX_HELM_ARGS) \
+		rhacs-operator $(CHART_DIR)
+
+.PHONY: ensure-pull-secrets
+ensure-pull-secrets: ## Set up required image pull secrets on cluster for deploying Konflux images
+ifeq ($(USE_KONFLUX_IMAGES),true)
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | $(PROJECT_DIR)/hack/retry-kubectl.sh -n "$(TEST_NAMESPACE)" apply -f -
+endif
+
 
 .PHONY: deploy-previous-via-chart
 deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using helm chart.

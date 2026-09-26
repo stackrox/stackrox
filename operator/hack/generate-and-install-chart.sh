@@ -22,4 +22,8 @@ trap 'git worktree remove --force "${dir}"' EXIT
 # Warm up go module cache so that transient network failures do not abort controller-gen.
 # TODO: this command can be removed once the version we upgrade from runs go-mod-download internally.
 (cd "${dir}"; go mod download || go mod download || go mod download)
-make -C "${dir}/operator" chart deploy-via-chart VERSION="${version}"
+make -C "${dir}/operator" chart VERSION="${version}"
+
+# Deploy chart using *this* branch's Makefile, because an older version of the deploy
+# instructions might not support all features we need (specifically deploying Konflux images).
+make -C "$(dirname "$0")/.." deploy-via-chart CHART_DIR="${dir}/operator/dist/chart" VERSION="${version}"
