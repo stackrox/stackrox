@@ -23,6 +23,8 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    # Use the repaired ci-minimal bundle from GitHub for fast CI testing.
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
     # 4Gi aims at covering the rhel-vex cold-import peak that OOMs at the original 3Gi Helm default.
     resources:
       requests:
@@ -41,3 +43,10 @@ scannerV4:
     resources:
       requests:
         cpu: "500m"
+
+# Import the distro bundles used by the CI image-scanning tests. NVD is
+# enrichment data and cannot produce image vulnerabilities by itself.
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST: "alpine,aws,debian,epss,manual,nvd,oracle,osv,photon,rhel-vex,stackrox-rhel-csaf,ubuntu"

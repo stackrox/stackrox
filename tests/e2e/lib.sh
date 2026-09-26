@@ -92,6 +92,37 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+_scanner_v4_ci_vuln_bundle_url() {
+    local scanner_v4_ci_vuln_bundle_url
+    scanner_v4_ci_vuln_bundle_url="$(yq eval '.scannerV4.matcher.vulnerabilitiesUrl // ""' "$TEST_ROOT/deploy/common/ci-values.yaml")" \
+        || die "Unable to read the CI Scanner V4 vulnerability bundle URL"
+    [[ -n "$scanner_v4_ci_vuln_bundle_url" ]] || die "CI Scanner V4 vulnerability bundle URL is empty"
+    printf '%s\n' "$scanner_v4_ci_vuln_bundle_url"
+}
+
+_configure_roxie_ci_vuln_bundle() {
+    local config_file="$1"
+    [[ "${CI:-}" == "true" ]] || return 0
+
+    local scanner_v4_component
+    if ! scanner_v4_component="$(yq eval '.central.spec.scannerV4.scannerComponent // ""' "$config_file")"; then
+        return 1
+    fi
+    [[ "$scanner_v4_component" != "Disabled" ]] || return 0
+
+    local env_var_count
+    if ! env_var_count="$(yq eval '[((.central.spec.customize.envVars // [])[]) | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "$config_file")"; then
+        return 1
+    fi
+    [[ "$env_var_count" == "0" ]] || return 0
+
+    local scanner_v4_ci_vuln_bundle_url
+    if ! scanner_v4_ci_vuln_bundle_url="$(_scanner_v4_ci_vuln_bundle_url)"; then
+        return 1
+    fi
+    set_custom_env "$config_file" central SCANNER_V4_MATCHER_VULNERABILITIES_URL "$scanner_v4_ci_vuln_bundle_url"
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
@@ -128,6 +159,10 @@ deploy_stackrox_with_roxie() {
     prepare_for_konflux "$config_file"
 
     workaround_label_length_limitation "$config_file"
+
+    if ! _configure_roxie_ci_vuln_bundle "$config_file"; then
+        return 1
+    fi
 
     # Print out the config file in use for transparency.
     # This does not contain secrets.
@@ -647,6 +682,16 @@ deploy_central_via_operator() {
     esac
 
     if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${CI:-}" == "true" ]]; then
+            # Keep Operator deployments aligned with Helm by reading the shared CI pin.
+            local scannerV4CiVulnBundleURL
+            if ! scannerV4CiVulnBundleURL="$(_scanner_v4_ci_vuln_bundle_url)"; then
+                return 1
+            fi
+            customize_envVars+=$'\n'
+            customize_envVars+=$'      - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL'
+            customize_envVars+=$'\n        value: "'"${scannerV4CiVulnBundleURL}"'"'
+        fi
         if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
             customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
             customize_envVars+=$'\n        value: "vulnerability"'

@@ -1,0 +1,15 @@
+{
+  "distributions": {
+    "ubuntu/20.04": {
+      "curl": true,
+      "expat": true,
+      "libexpat1": true,
+      "openssl": true
+    }
+  },
+  "repositories": {
+    "maven": {
+      "org.apache.struts:struts2-core": true
+    }
+  }
+}

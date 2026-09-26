@@ -1279,6 +1279,7 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 
 allowNonstandardNamespace: true
 EOT
@@ -1420,6 +1421,7 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
   db:
     persistence:
       none: true
