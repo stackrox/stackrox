@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -22,13 +24,31 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  # The label ci-dispatcher-enforce makes the jobs below follow the plan.
+  # Without the label, each job keeps its own start rule.
+  plan:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/dispatcher-plan.yaml
+
   check-generated-files:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, plan]
+    if: >-
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && !needs.detect-changes.outputs.ui_only
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['check-generated-files']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
+    - name: Fail closed when the dispatcher plan did not succeed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -52,10 +72,21 @@ jobs:
       run: scripts/ci/jobs/check-generated.sh
 
   misc-checks:
+    needs: plan
+    if: >-
+      always() && !cancelled() && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce'))
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['misc-checks']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
+    - name: Fail closed when the dispatcher plan did not succeed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -97,8 +128,19 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    needs: plan
+    if: >-
+      always() && !cancelled() && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce'))
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['style-check']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     steps:
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
@@ -156,11 +198,20 @@ jobs:
         run: make style-slim
 
   golangci-lint:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, plan]
+    if: >-
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && !needs.detect-changes.outputs.ui_only
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['golangci-lint']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
+    - name: Fail closed when the dispatcher plan did not succeed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
@@ -203,13 +254,22 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-dependent-images-exist:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, plan]
+    if: >-
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && !needs.detect-changes.outputs.ui_only
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['check-dependent-images-exist']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     # This job ensures that COLLECTOR_VERSION or FACT_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
     runs-on: ubuntu-latest
     steps:
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Checkout repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
@@ -249,38 +309,64 @@ jobs:
             rhacs-eng/release-fact:${{ env.fact_tag }}-fast
 
   github-actions-lint:
-    needs: detect-changes
+    needs: [detect-changes, plan]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.github/')
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && (
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '^.github/')
+        )
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['github-actions-lint']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Check workflow files
         run: make github-actions-lint
 
   github-actions-shellcheck:
-    needs: detect-changes
+    needs: [detect-changes, plan]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.github/')
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && (
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '^.github/')
+        )
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['github-actions-shellcheck']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
+
       - name: Check scripts with shellcheck
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
-    needs: detect-changes
+    needs: [detect-changes, plan]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
+      always() && !cancelled() && needs.detect-changes.result == 'success' && (
+        (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) && (
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
+        )
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.jobs)['openshift-ci-lint']
+        || github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -292,6 +378,10 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Fail closed when the dispatcher plan did not succeed
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && needs.plan.result != 'success'
+        run: echo "The dispatcher plan did not succeed, so this job is not running its tests." && exit 1
 
       - name: Install Python linters
         run: python3 -m pip install -r .openshift-ci/dev-requirements.txt

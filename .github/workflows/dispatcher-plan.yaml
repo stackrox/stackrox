@@ -1,0 +1,86 @@
+name: Dispatcher plan
+
+# Called by the test workflows. Prints the plan and returns, for each
+# GitHub Actions job, whether the dispatcher would start it.
+# The label ci-dispatcher-enforce is what makes a caller obey that answer.
+# Without the label the caller keeps starting jobs the way it does today.
+
+on:
+  workflow_call:
+    outputs:
+      enforce:
+        description: true when the pull request has ci-dispatcher-enforce
+        value: ${{ jobs.plan.outputs.enforce }}
+      jobs:
+        description: JSON object of job id to whether the dispatcher would start it
+        value: ${{ jobs.plan.outputs.jobs }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      enforce: ${{ steps.out.outputs.enforce }}
+      jobs: ${{ steps.out.outputs.jobs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Install PyYAML
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/selector"
+          "${RUNNER_TEMP}/selector/bin/pip" install 'PyYAML==6.0.3'
+
+      - name: Plan GitHub Actions jobs
+        id: out
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
+          ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        run: |
+          set -euo pipefail
+          py="${RUNNER_TEMP}/selector/bin/python"
+          flags=()
+          if [[ "${DRAFT}" == "true" ]]; then flags+=(--draft); fi
+          if [[ "${FORK}" == "true" ]]; then flags+=(--fork); fi
+          if [[ "${ENFORCE}" == "true" ]]; then flags+=(--enforce); fi
+
+          files="$(mktemp)"
+          if ! gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' > "${files}"; then
+            echo "Could not list changed files. Showing the run-everything result."
+            : > "${files}"
+          elif [[ "$(wc -l < "${files}")" -ge 3000 ]]; then
+            echo "3000 or more changed files. Showing the run-everything result."
+            : > "${files}"
+          fi
+
+          common=(
+            "${py}" ci/exploration/dispatcher.py
+            --mapping ci/test-domains.yaml
+            --defaults ci/exploration/gha_defaults.yaml
+            --labels "${LABELS}"
+            "${flags[@]}"
+          )
+
+          "${common[@]}" --title "This pull request" - < "${files}"
+          "${common[@]}" --format json - < "${files}" > "${RUNNER_TEMP}/plan.json"
+
+          python3 - << 'PY'
+          import json
+          import os
+
+          plan = json.load(open(os.environ["RUNNER_TEMP"] + "/plan.json"))
+          selected = {item["job"]: bool(item["would_run"]) for item in plan["jobs"]}
+          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+              handle.write(f"enforce={os.environ['ENFORCE']}\n")
+              handle.write("jobs<<EOF\n")
+              json.dump(selected, handle, separators=(",", ":"))
+              handle.write("\nEOF\n")
+          PY

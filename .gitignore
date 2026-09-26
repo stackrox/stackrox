@@ -13,6 +13,8 @@ monitoring/grafana/rawcaptures
 # Test output
 /junit-reports/
 *.test
+__pycache__/
+*.pyc
 
 # Makefile cruft
 deps

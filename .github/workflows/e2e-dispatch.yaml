@@ -13,6 +13,8 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+    - labeled
+    - unlabeled
 
 permissions:
   contents: read
@@ -26,10 +28,19 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  plan:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/dispatcher-plan.yaml
+
   # Determines whether we should dispatch jobs that call real E2E workflows.
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
+  # ci-dispatcher-enforce replaces that decision with the dispatcher plan.
   should-dispatch:
-    needs: [ detect-changes ]
+    needs: [ detect-changes, plan ]
+    if: always() && !cancelled() && needs.detect-changes.result == 'success'
     runs-on: ubuntu-slim
     outputs:
       wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
@@ -48,6 +59,9 @@ jobs:
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
         input__repo: ${{ github.repository }}
         input__pr_number: ${{ github.event.pull_request.number }}
+        input__enforce: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        input__plan_result: ${{ needs.plan.result }}
+        input__plan_jobs: ${{ needs.plan.outputs.jobs }}
       run: |
         import json
         import os
@@ -64,6 +78,13 @@ jobs:
             def should_run(self, input):
                 if input.is_fork == 'true':
                     return False
+
+                # The label makes the dispatcher the only starter for these jobs.
+                if input.enforce == 'true':
+                    if input.plan_result != 'success':
+                        raise SystemExit('dispatcher plan did not succeed')
+                    selected = json.loads(input.plan_jobs or '{}')
+                    return bool(selected.get(self.name, False))
 
                 if input.event_name != 'pull_request':
                     return True
