@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-matcher
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  podSelector:
+    matchLabels:
+      app: scanner-v4-matcher
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 8443
+      protocol: TCP
+  policyTypes:
+  - Ingress
