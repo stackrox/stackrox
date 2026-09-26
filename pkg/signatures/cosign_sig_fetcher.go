@@ -121,12 +121,12 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	if tagErr == nil {
 		allPayloads = append(allPayloads, tagPayloads...)
 	} else {
-		log.Warnf("Tag-based discovery failed for %q: %v", fullImageName, tagErr)
+		log.Debugf("Tag-based discovery failed for %q: %v", fullImageName, tagErr)
 	}
 	if referrerErr == nil {
 		allPayloads = append(allPayloads, referrerPayloads...)
 	} else {
-		log.Warnf("Referrer-based discovery failed for %q: %v", fullImageName, referrerErr)
+		log.Debugf("Referrer-based discovery failed for %q: %v", fullImageName, referrerErr)
 	}
 
 	// Return an error only when both discovery paths failed.
