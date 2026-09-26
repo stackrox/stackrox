@@ -1,35 +1,158 @@
-import type { FormEvent, ReactElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent, KeyboardEvent, MutableRefObject, ReactElement } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 import {
+    Button,
     Divider,
     Flex,
     FlexItem,
     Form,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Label,
+    LabelGroup,
     PageSection,
     Stack,
     StackItem,
     TextArea,
     TextInput,
+    TextInputGroup,
+    TextInputGroupMain,
+    TextInputGroupUtilities,
     TimePicker,
     Title,
 } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
+import get from 'lodash/get';
 
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
 import usePageAction from 'hooks/usePageAction';
+import {
+    allNodesRole,
+    isValidNodeRole,
+    nodeRoleValidationMessage,
+} from '../compliance.scanConfigs.utils';
 import type { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
-import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './useFormikScanConfig';
+import {
+    helperTextForName,
+    helperTextForNameEdit,
+    helperTextForNodeRoles,
+    helperTextForTime,
+} from './useFormikScanConfig';
 
 import './ScanConfigOptions.css';
 
-function ScanConfigOptions(): ReactElement {
+type ScanConfigOptionsProps = {
+    // Optional so existing component tests can mount this without wiring a parent ref. When
+    // provided (by ScanConfigWizardForm), the uncommitted draft input is mirrored into it so the
+    // wizard footer's synchronous validate() can block Next on an invalid draft.
+    nodeRoleDraftRef?: MutableRefObject<string>;
+};
+
+function ScanConfigOptions({ nodeRoleDraftRef }: ScanConfigOptionsProps): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     const { pageAction } = usePageAction<PageActions>();
     const isEditAction = pageAction === 'edit';
+    const [nodeRoleInput, setNodeRoleInput] = useState('');
+    const [nodeRoleInputError, setNodeRoleInputError] = useState('');
+
+    // Update the draft input and imperatively mirror it into the parent-provided ref. The ref
+    // must be written here (not during render) because the wizard footer's validate() reads it
+    // synchronously in the same click as this input's blur-commit, before React re-renders.
+    // Guarded because the prop is optional (component tests mount without it).
+    function setNodeRoleDraft(value: string) {
+        setNodeRoleInput(value);
+        if (nodeRoleDraftRef) {
+            // eslint-disable-next-line no-param-reassign -- mutating a caller-owned ref's .current is its intended contract
+            nodeRoleDraftRef.current = value;
+        }
+    }
+
+    // The draft is local to this (unmount-per-step) component, so clear the mirrored ref on
+    // unmount; otherwise a stale non-empty draft left when jumping away via the wizard nav would
+    // silently block Next after returning to this step.
+    useEffect(() => {
+        return () => {
+            if (nodeRoleDraftRef) {
+                // eslint-disable-next-line no-param-reassign -- mutating a caller-owned ref's .current is its intended contract
+                nodeRoleDraftRef.current = '';
+            }
+        };
+    }, [nodeRoleDraftRef]);
+
+    // Keep a ref to the latest node roles so that handlers reading them (addNodeRole,
+    // removeNodeRole) always derive from current state rather than a stale render closure.
+    // Without this, a blur-commit (addNodeRole) followed by a chip-remove click
+    // (removeNodeRole) in the same tick clobbers the just-added role, because the click
+    // handler was created on a render before the blur updated formik state, and formik's
+    // setFieldValue is async so it has not re-rendered yet. Composing updates through the
+    // ref makes back-to-back updates in the same tick see each other's result.
+    const nodeRolesRef = useRef(formik.values.parameters.nodeRoles);
+    // Sync from formik on each render so external value changes (e.g. loading an
+    // existing config) are reflected.
+    nodeRolesRef.current = formik.values.parameters.nodeRoles;
+
+    function updateNodeRoles(updater: (currentRoles: string[]) => string[]) {
+        const newRoles = updater(nodeRolesRef.current);
+        nodeRolesRef.current = newRoles;
+        formik.setFieldValue('parameters.nodeRoles', newRoles);
+    }
+
+    function addNodeRole(role: string) {
+        const trimmed = role.trim();
+        if (!trimmed) {
+            // Whitespace-only or empty: discard the draft input and clear any stale error.
+            setNodeRoleDraft('');
+            setNodeRoleInputError('');
+            return;
+        }
+        if (!isValidNodeRole(trimmed)) {
+            setNodeRoleInputError(`"${trimmed}" is invalid. ${nodeRoleValidationMessage}`);
+            return;
+        }
+        if (nodeRolesRef.current.includes(trimmed)) {
+            // Duplicate: give feedback instead of silently swallowing (backend rejects dupes).
+            setNodeRoleInputError(`"${trimmed}" is already in the list.`);
+            setNodeRoleDraft('');
+            return;
+        }
+        setNodeRoleInputError('');
+        setNodeRoleDraft('');
+        updateNodeRoles((currentRoles) => {
+            if (trimmed === allNodesRole) {
+                return [allNodesRole];
+            }
+            if (currentRoles.includes(allNodesRole)) {
+                return [trimmed];
+            }
+            return [...currentRoles, trimmed];
+        });
+    }
+
+    function removeNodeRole(role: string) {
+        updateNodeRoles((currentRoles) => currentRoles.filter((r) => r !== role));
+    }
+
+    function clearNodeRoles() {
+        setNodeRoleDraft('');
+        setNodeRoleInputError('');
+        updateNodeRoles(() => []);
+    }
+
+    function handleNodeRoleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            addNodeRole(nodeRoleInput);
+        }
+    }
 
     function handleSelectChange(id: string, value: string): void {
         formik.setFieldValue('parameters.daysOfWeek', []);
@@ -44,6 +167,13 @@ function ScanConfigOptions(): ReactElement {
     function onScheduledDaysChange(id: string, selection: string[]) {
         formik.setFieldValue(id, selection, true);
     }
+
+    // Combine the two error sources for the single node-roles helper slot: the uncommitted
+    // draft-input error takes precedence, otherwise fall back to the committed (submit-time)
+    // yup error, which is only ever a string for this field.
+    const committedError = get(formik.errors, 'parameters.nodeRoles');
+    const displayError =
+        nodeRoleInputError || (typeof committedError === 'string' ? committedError : undefined);
 
     return (
         <>
@@ -221,6 +351,80 @@ function ScanConfigOptions(): ReactElement {
                                         </FormLabelGroup>
                                     </FlexItem>
                                 </Flex>
+                            </FlexItem>
+                        </Flex>
+                    </StackItem>
+                    <StackItem>
+                        <Divider component="div" />
+                    </StackItem>
+                    <StackItem>
+                        <Flex direction={{ default: 'column' }}>
+                            <FlexItem>
+                                <Title headingLevel="h3">Node roles</Title>
+                            </FlexItem>
+                            <FlexItem>
+                                {/*
+                                    Unlike the sibling fields (which use FormLabelGroup), this field
+                                    has an uncommitted draft-input sub-state, so it uses a plain
+                                    FormGroup with a single combined helper slot: draft-input error,
+                                    else the committed (submit-time) error, else the help text. This
+                                    mirrors the chip-input pattern in DiagnosticBundleForm and avoids
+                                    rendering two competing FormHelperText elements.
+                                */}
+                                <FormGroup label="Roles" fieldId="parameters.nodeRoles">
+                                    <TextInputGroup>
+                                        <TextInputGroupMain
+                                            inputId="parameters.nodeRoles"
+                                            aria-label="Roles"
+                                            placeholder="Type a role and press Enter to add"
+                                            value={nodeRoleInput}
+                                            onChange={(_event, value) => {
+                                                setNodeRoleDraft(value);
+                                                if (nodeRoleInputError) {
+                                                    setNodeRoleInputError('');
+                                                }
+                                            }}
+                                            onKeyDown={handleNodeRoleKeyDown}
+                                            onBlur={() => addNodeRole(nodeRoleInput)}
+                                        >
+                                            <LabelGroup>
+                                                {formik.values.parameters.nodeRoles.map((role) => (
+                                                    <Label
+                                                        key={role}
+                                                        variant="outline"
+                                                        onClose={(event) => {
+                                                            event.stopPropagation();
+                                                            removeNodeRole(role);
+                                                        }}
+                                                        closeBtnAriaLabel={`Remove ${role}`}
+                                                    >
+                                                        {role}
+                                                    </Label>
+                                                ))}
+                                            </LabelGroup>
+                                        </TextInputGroupMain>
+                                        <TextInputGroupUtilities>
+                                            {(formik.values.parameters.nodeRoles.length > 0 ||
+                                                nodeRoleInput) && (
+                                                <Button
+                                                    icon={<TimesIcon />}
+                                                    variant="plain"
+                                                    onClick={clearNodeRoles}
+                                                    aria-label="Clear all node roles"
+                                                />
+                                            )}
+                                        </TextInputGroupUtilities>
+                                    </TextInputGroup>
+                                    <FormHelperText>
+                                        <HelperText isLiveRegion>
+                                            <HelperTextItem
+                                                variant={displayError ? 'error' : 'default'}
+                                            >
+                                                {displayError || helperTextForNodeRoles}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
+                                </FormGroup>
                             </FlexItem>
                         </Flex>
                     </StackItem>

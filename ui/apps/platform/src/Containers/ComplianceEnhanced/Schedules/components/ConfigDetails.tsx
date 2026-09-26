@@ -13,6 +13,7 @@ import NotifierConfigurationView from 'Components/NotifierConfiguration/Notifier
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import {
     getBodyDefault,
+    getNodeRolesForDisplay,
     getSubjectDefault,
     getTimeWithHourMinuteFromISO8601,
 } from '../compliance.scanConfigs.utils';
@@ -46,6 +47,9 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
     }
 
     if (scanConfig) {
+        // Fall back to master+worker for legacy configs so the detail view matches the edit
+        // view and backend defaulting (see getNodeRolesForDisplay).
+        const nodeRolesForDisplay = getNodeRolesForDisplay(scanConfig.scanConfig.nodeRoles);
         return (
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                 <ScanConfigParametersView
@@ -53,6 +57,7 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     scanName={scanConfig.scanName}
                     description={scanConfig.scanConfig.description}
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
+                    nodeRoles={nodeRolesForDisplay}
                 >
                     <DescriptionListGroup>
                         <DescriptionListTerm>Last scanned</DescriptionListTerm>
