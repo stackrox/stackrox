@@ -247,6 +247,31 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestConvertV2ScanConfigToStorageOneTimeScan() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	testCases := map[string]struct {
+		oneTimeScan bool
+	}{
+		"oneTimeScan true is persisted": {
+			oneTimeScan: true,
+		},
+		"oneTimeScan false is persisted": {
+			oneTimeScan: false,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.T().Run(name, func(t *testing.T) {
+			request := getTestAPIRec()
+			request.ScanConfig.OneTimeScan = tc.oneTimeScan
+
+			storageConfig := convertV2ScanConfigToStorage(allAccessContext, request)
+			s.Require().Equal(tc.oneTimeScan, storageConfig.GetOneTimeScan())
+		})
+	}
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
