@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { Divider, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import {
+    Divider,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -14,6 +20,7 @@ import { CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import { getStatusCounts, getTimeDifferenceAsPhrase } from './compliance.coverage.utils';
 import ComplianceProgressBar from './components/ComplianceProgressBar';
+import DataStateLabel from './components/DataStateLabel';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -80,6 +87,7 @@ function ProfileClustersTable({
                                 Cluster
                             </Th>
                             <Th modifier="fitContent">Last scanned</Th>
+                            <Th modifier="fitContent">Data status</Th>
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -98,7 +106,7 @@ function ProfileClustersTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={8}
                         errorProps={{
                             title: 'There was an error loading profile clusters',
                         }}
@@ -146,6 +154,11 @@ function ProfileClustersTable({
                                             </Td>
                                             <Td dataLabel="Last scanned" modifier="fitContent">
                                                 {lastScanTimeAsPhrase}
+                                            </Td>
+                                            <Td dataLabel="Data status" modifier="fitContent">
+                                                <DataStateLabel
+                                                    dataState={clusterInfo.dataState}
+                                                />
                                             </Td>
                                             <Td dataLabel="Pass status" modifier="fitContent">
                                                 <StatusCountIcon
