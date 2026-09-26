@@ -23,6 +23,9 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
+# Leave guests up so post-test can collect roxagent journals, then
+# delete-vm-ns.sh deletes the test namespaces.
+os.environ["VM_SCAN_SKIP_CLEANUP"] = "true"
 # Selectively enable vulnerability bundles to prevent timeouts of matcher not being ready in 40 minutes.
 # The rhel-vex bundle alone has ~3M records and can take >30 min to import.
 # Drops alpine, aws, debian, oracle, osv, photon, suse, ubuntu (unused for RHEL guests).
@@ -36,10 +39,10 @@ os.environ["VM_IMAGES"] = ",".join([
 
 
 class VMScanningPostTest(PostClusterTest):
-    """Extends standard post-test with CNV namespace logs."""
+    """Extends standard post-test with CNV namespace logs and guest roxagent journals."""
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(collect_vm_guest_logs=True, **kwargs)
         self.k8s_namespaces.extend([
             "openshift-cnv",
         ])
