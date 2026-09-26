@@ -78,6 +78,10 @@ func stripTypePrefix(s string) string {
 }
 
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
+	if s.stopSig.IsDone() {
+		return
+	}
+
 	event := msg.GetEvent()
 	if event == nil {
 		log.Errorf("Received unknown msg from cluster %s (%s) of type %T. May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), msg.GetMsg(), s.sensorVersion, version.GetMainVersion())
@@ -159,13 +163,32 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	})
 	if queue == nil {
 		concurrency.WithLock(&s.workerQueuesMutex, func() {
+			if s.stopSig.IsDone() {
+				return
+			}
 			queue = s.workerQueues[workerType]
 			if queue == nil {
 				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
+				queue.start(ctx, s.stopSig, s.deduper, s.handleMessages)
 				s.workerQueues[workerType] = queue
-				go queue.run(ctx, s.stopSig, s.deduper, s.handleMessages)
 			}
 		})
 	}
+	if queue == nil {
+		return
+	}
 	queue.push(msg)
+}
+
+func (s *sensorEventHandler) wait() {
+	queues := concurrency.WithRLock1(&s.workerQueuesMutex, func() []*workerQueue {
+		queues := make([]*workerQueue, 0, len(s.workerQueues))
+		for _, queue := range s.workerQueues {
+			queues = append(queues, queue)
+		}
+		return queues
+	})
+	for _, queue := range queues {
+		queue.wait()
+	}
 }

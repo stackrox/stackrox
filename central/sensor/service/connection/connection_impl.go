@@ -68,6 +68,7 @@ type sensorConnection struct {
 
 	queues      map[string]*dedupingqueue.DedupingQueue[string]
 	queuesMutex sync.Mutex
+	queuesWG    sync.WaitGroup
 
 	eventPipeline pipeline.ClusterPipeline
 
@@ -170,6 +171,10 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // invocation of `multiplexedPush` with a previously seen (from the perspective of the caller)
 // event type.
 func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor, queues map[string]*dedupingqueue.DedupingQueue[string]) {
+	if c.stopSig.IsDone() {
+		return
+	}
+
 	if msg.GetMsg() == nil {
 		// This is likely because sensor is a newer version than central and is sending a message that this central doesn't know about
 		// This is already logged, so it's fine to just ignore it for now
@@ -197,15 +202,22 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue := queues[typ]
 	if queue == nil {
 		concurrency.WithLock(&c.queuesMutex, func() {
+			if c.stopSig.IsDone() {
+				return
+			}
 			queue = c.queues[typ]
 			if queue == nil {
 				queue = dedupingqueue.NewDedupingQueue[string](
 					dedupingqueue.WithQueueName[string](stripTypePrefix(typ)),
 					dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
+				c.queuesWG.Add(1)
 				go c.handleMessages(ctx, queue)
 				c.queues[typ] = queue
 			}
 		})
+		if queue == nil {
+			return
+		}
 		if queues != nil {
 			queues[typ] = queue
 		}
@@ -267,6 +279,8 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 }
 
 func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqueue.DedupingQueue[string]) {
+	defer c.queuesWG.Done()
+
 	for msg := queue.PullBlocking(&c.stopSig); msg != nil; msg = queue.PullBlocking(&c.stopSig) {
 		msgFromSensor, ok := msg.(*central.MsgFromSensor)
 		if !ok {
@@ -283,7 +297,16 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqu
 			log.Errorf("panic in handle message: %v", err)
 		}
 	}
-	c.eventPipeline.OnFinish(c.clusterID)
+}
+
+func (c *sensorConnection) finish() {
+	c.queuesWG.Wait()
+	if c.sensorEventHandler != nil {
+		c.sensorEventHandler.wait()
+	}
+	if c.eventPipeline != nil {
+		c.eventPipeline.OnFinish(c.clusterID)
+	}
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
 }
 
@@ -755,6 +778,8 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 }
 
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
+	defer c.finish()
+
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
 	if err != nil {
