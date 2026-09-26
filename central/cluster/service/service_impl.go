@@ -85,7 +85,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // PostCluster creates a new cluster.
 func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new cluster")
+		return nil, errox.InvalidArgs.New("Id field should be empty when posting a new cluster")
 	}
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 // PutCluster updates an existing cluster.
 func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
+		return nil, errox.InvalidArgs.New("Id must be provided")
 	}
 	err := s.datastore.UpdateCluster(ctx, request)
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) 
 // GetCluster returns the specified cluster.
 func (s *serviceImpl) GetCluster(ctx context.Context, request *v1.ResourceByID) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
+		return nil, errox.InvalidArgs.New("Id must be provided")
 	}
 	return s.getCluster(ctx, request.GetId())
 }
@@ -121,7 +121,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, errors.Errorf("Could not get cluster: %s", err)
 	}
 	if !ok {
-		return nil, errors.Wrap(errox.NotFound, "Not found")
+		return nil, errox.NotFound.New("Not found")
 	}
 
 	clusterRetentionInfo, err := s.getClusterRetentionInfo(ctx, cluster)
@@ -190,7 +190,7 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	fullQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
+		return nil, errox.InvalidArgs.CausedByf("invalid query %q: %v", req.GetQuery(), err)
 	}
 
 	// Split the query: dbQuery contains everything the DB can filter on;
@@ -207,7 +207,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	if skewQuery != nil {
 		pred, err := clusterPredicateFactory.GeneratePredicate(skewQuery)
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "building predicate for version compatibility filter %q: %v", req.GetQuery(), err)
+			return nil, errox.InvalidArgs.CausedByf("building predicate for version compatibility filter %q: %v", req.GetQuery(), err)
 		}
 		var filtered []*storage.Cluster
 		for _, cluster := range clusters {
@@ -263,7 +263,7 @@ func (s *serviceImpl) getClusterIDToRetentionInfoMap(
 // DeleteCluster removes a cluster
 func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Request must have a id")
+		return nil, errox.InvalidArgs.New("Request must have a id")
 	}
 	if err := s.datastore.RemoveCluster(ctx, request.GetId(), nil); err != nil {
 		return nil, err

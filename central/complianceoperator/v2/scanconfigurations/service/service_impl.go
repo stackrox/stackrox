@@ -118,16 +118,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+		return nil, errox.InvalidArgs.New("Scan configuration name is required")
 	}
 
 	if slices.Contains(reservedConfigNames, strings.ToLower(req.GetScanName())) {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q cannot be used as it is reserved by the Compliance Operator", req.GetScanName())
+		return nil, errox.InvalidArgs.Newf("Scan configuration name %q cannot be used as it is reserved by the Compliance Operator", req.GetScanName())
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())
 	if !validName {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
+		return nil, errox.InvalidArgs.Newf("Scan configuration name %q is not a valid name", req.GetScanName())
 	}
 
 	if err := validateScanConfiguration(req); err != nil {
@@ -148,7 +148,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 
 func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required")
+		return nil, errox.InvalidArgs.New("Scan configuration ID is required")
 	}
 
 	if err := validateScanConfiguration(req); err != nil {
@@ -169,7 +169,7 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 
 func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")
+		return nil, errox.InvalidArgs.New("Scan configuration ID is required for deletion")
 	}
 	// Snapshots get deleted with the ScanConfiguration we need to delete the BlobData before
 	query := search.NewQueryBuilder().
@@ -188,7 +188,7 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 		).ProtoQuery()
 	snapshots, err := s.snapshotDS.SearchSnapshots(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvariantViolation, "Unable to find the Report Snapshots asociated with the scan config")
+		return nil, errox.InvariantViolation.New("Unable to find the Report Snapshots asociated with the scan config")
 	}
 	blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -198,7 +198,7 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 	for _, snapshot := range snapshots {
 		blobName := common.GetComplianceReportBlobPath(req.GetId(), snapshot.GetReportId())
 		if err := s.blobDS.Delete(blobCtx, blobName); err != nil {
-			return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the report asociated with the scan config")
+			return nil, errox.InvariantViolation.New("Unable to delete the report asociated with the scan config")
 		}
 	}
 
@@ -214,7 +214,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// To get total count, need the parsed query without the paging.
@@ -225,17 +225,17 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 
 	scanConfigs, err := s.scanConfigDS.GetScanConfigurations(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve scan configurations for query %v", query)
 	}
 
 	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
+		return nil, errox.InvalidArgs.New("failed to convert compliance scan configurations.")
 	}
 
 	scanConfigCount, err := s.scanConfigDS.CountScanConfigurations(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
+		return nil, errox.NotFound.New(err.Error())
 	}
 
 	return &v2.ListComplianceScanConfigurationsResponse{
@@ -246,7 +246,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 
 func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceScanConfigurationStatus, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required for retrieval")
+		return nil, errox.InvalidArgs.New("Scan configuration name is required for retrieval")
 	}
 
 	scanConfig, found, err := s.scanConfigDS.GetScanConfiguration(ctx, req.GetId())
@@ -262,7 +262,7 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 
 func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, request *v2.ResourceByID) (*v2.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to rerun a scan")
+		return nil, errox.InvalidArgs.New("Scan configuration ID is required to rerun a scan")
 	}
 
 	err := s.manager.ProcessRescanRequest(ctx, request.GetId())
@@ -271,14 +271,14 @@ func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, reques
 
 func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunReportRequest) (*v2.ComplianceRunReportResponse, error) {
 	if !features.ComplianceReporting.Enabled() {
-		return nil, errors.Wrap(errox.NotImplemented, "Not implemented")
+		return nil, errox.NotImplemented.New("Not implemented")
 	}
 	requesterID := authn.IdentityFromContextOrNil(ctx)
 	if requesterID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 	if request.GetScanConfigId() == "" && features.ScanScheduleReportJobs.Enabled() {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to run an a report")
+		return nil, errox.InvalidArgs.New("Scan configuration ID is required to run an a report")
 	}
 
 	scanConfig, found, err := s.scanConfigDS.GetScanConfiguration(ctx, request.GetScanConfigId())
@@ -312,14 +312,14 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
-		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+		return nil, errox.NotImplemented.Newf("%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
 	}
 	if request == nil || request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+		return nil, errox.InvalidArgs.New("Empty request or id")
 	}
 	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(
@@ -345,11 +345,11 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.Complian
 
 func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
-		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+		return nil, errox.NotImplemented.Newf("%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
 	}
 
 	if request == nil || request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+		return nil, errox.InvalidArgs.New("Empty request or id")
 	}
 
 	slimUser := authn.UserFromContext(ctx)
@@ -359,7 +359,7 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 
 	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
@@ -388,11 +388,11 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 
 func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
-		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+		return nil, errox.NotImplemented.Newf("%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
 	}
 
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report Snapshot ID is required for deletion")
+		return nil, errox.InvalidArgs.New("Report Snapshot ID is required for deletion")
 	}
 
 	slimUser := authn.UserFromContext(ctx)
@@ -405,7 +405,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*
 		return nil, errors.Wrapf(err, "Unable to retrieve Report Snapshot %s", req.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Unable to find the Report Snapshots %s", req.GetId())
+		return nil, errox.NotFound.Newf("Unable to find the Report Snapshots %s", req.GetId())
 	}
 
 	if slimUser.GetId() != snapshot.GetUser().GetId() {
@@ -414,13 +414,13 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*
 
 	status := snapshot.GetReportStatus()
 	if status.GetReportNotificationMethod() != storage.ComplianceOperatorReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.InvalidArgs, "The Report %s is not downloadable and cannot be deleted", req.GetId())
+		return nil, errox.InvalidArgs.Newf("The Report %s is not downloadable and cannot be deleted", req.GetId())
 	}
 	switch status.GetRunState() {
 	case storage.ComplianceOperatorReportStatus_FAILURE:
-		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s has failed and no downloadable report was generated", req.GetId())
+		return nil, errox.InvalidArgs.Newf("The Report Snapshot %s has failed and no downloadable report was generated", req.GetId())
 	case storage.ComplianceOperatorReportStatus_WAITING, storage.ComplianceOperatorReportStatus_PREPARING:
-		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s is still running", req.GetId())
+		return nil, errox.InvalidArgs.Newf("The Report Snapshot %s is still running", req.GetId())
 	}
 
 	blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), req.GetId())
@@ -432,7 +432,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*
 	)
 	if err = s.blobDS.Delete(ctx, blobName); err != nil {
 		log.Errorf("Unable to delete the downloadable report: %v", err)
-		return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the downloadable report")
+		return nil, errox.InvariantViolation.New("Unable to delete the downloadable report")
 	}
 
 	return &v2.Empty{}, nil
@@ -442,7 +442,7 @@ func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, quer
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// To get total count, need the parsed query without the paging.
@@ -464,21 +464,21 @@ func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, quer
 
 func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Context, request *v2.ComplianceConfigClusterProfileRequest) (*v2.ListComplianceScanConfigsClusterProfileResponse, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
+		return nil, errox.InvalidArgs.New("cluster is required")
 	}
 
 	clusterName, found, err := s.clusterDS.GetClusterName(ctx, request.GetClusterId())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Error retrieving cluster %q:%v", request.GetClusterId(), err)
+		return nil, errox.InvalidArgs.CausedByf("Error retrieving cluster %q:%v", request.GetClusterId(), err)
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to find cluster %q", request.GetClusterId())
+		return nil, errox.InvalidArgs.Newf("Unable to find cluster %q", request.GetClusterId())
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the cluster ids as an exact match
@@ -508,15 +508,15 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	if len(req.GetClusters()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "At least one cluster is required for a scan configuration")
+		return errox.InvalidArgs.New("At least one cluster is required for a scan configuration")
 	}
 
 	if req.GetScanConfig() == nil {
-		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil.")
+		return errox.InvalidArgs.New("The scan configuration is nil.")
 	}
 
 	if len(req.GetScanConfig().GetProfiles()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "At least one profile is required for a scan configuration")
+		return errox.InvalidArgs.New("At least one profile is required for a scan configuration")
 	}
 
 	return nil
@@ -541,7 +541,7 @@ func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.Com
 func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQuery *v1.Query) ([]*v2.ComplianceProfileSummary, int, error) {
 	profileNames, err := s.scanConfigDS.GetProfilesNames(ctx, query)
 	if err != nil {
-		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+		return nil, 0, errox.InvalidArgs.Newf("Unable to retrieve scan configurations for query %v", query)
 	}
 	if len(profileNames) == 0 {
 		return nil, 0, nil
@@ -551,7 +551,7 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
 	profiles, err := s.profileDS.SearchProfiles(ctx, profileQuery)
 	if err != nil {
-		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", profileQuery)
+		return nil, 0, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles for %v", profileQuery)
 	}
 
 	// Get the benchmarks
@@ -562,7 +562,7 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 
 	profileCounts, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
 	if err != nil {
-		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
+		return nil, 0, errox.NotFound.New(err.Error())
 	}
 
 	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCounts), nil

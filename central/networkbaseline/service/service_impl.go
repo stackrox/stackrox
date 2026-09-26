@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
@@ -158,7 +157,7 @@ func (s *serviceImpl) GetNetworkBaseline(
 	request *v1.ResourceByID,
 ) (*storage.NetworkBaseline, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Deployment id for the network baseline must be provided")
+		return nil, errox.InvalidArgs.New("Deployment id for the network baseline must be provided")
 	}
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetId())
 	if err != nil {
@@ -187,7 +186,7 @@ func (s *serviceImpl) createBaseline(ctx context.Context, deploymentID string) (
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Network baseline for deployment id %q does not exist", deploymentID)
+		return nil, errox.NotFound.Newf("Network baseline for deployment id %q does not exist", deploymentID)
 	}
 
 	return baseline, nil

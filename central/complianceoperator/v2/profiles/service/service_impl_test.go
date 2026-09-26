@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -93,7 +92,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 		{
 			desc:         "Empty query",
 			query:        &apiV2.ProfilesForClusterRequest{},
-			expectedErr:  errors.Wrap(errox.InvalidArgs, "cluster is required"),
+			expectedErr:  errox.InvalidArgs.New("cluster is required"),
 			expectedResp: []*apiV2.ComplianceProfile(nil),
 			found:        true,
 			setMocks: func() {
@@ -150,7 +149,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 		{
 			desc:         "Empty query",
 			query:        &apiV2.ClustersProfileSummaryRequest{},
-			expectedErr:  errors.Wrap(errox.InvalidArgs, "cluster is required"),
+			expectedErr:  errox.InvalidArgs.New("cluster is required"),
 			expectedResp: []*apiV2.ComplianceProfileSummary(nil),
 			found:        true,
 			setMocks: func() {

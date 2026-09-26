@@ -55,12 +55,12 @@ func (s *mitreAttackStoreImpl) GetAll() []*storage.MitreAttackVector {
 
 func (s *mitreAttackStoreImpl) Get(id string) (*storage.MitreAttackVector, error) {
 	if id == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "MITRE ATT&CK tactic ID must be provided")
+		return nil, errox.InvalidArgs.New("MITRE ATT&CK tactic ID must be provided")
 	}
 
 	v := s.mitreAttackVectors[id]
 	if v == nil {
-		return nil, errors.Wrapf(errox.NotFound, "MITRE ATT&CK vector for tactic %q not found. Please check the tactic ID and retry.", id)
+		return nil, errox.NotFound.Newf("MITRE ATT&CK vector for tactic %q not found. Please check the tactic ID and retry.", id)
 	}
 	return v, nil
 }

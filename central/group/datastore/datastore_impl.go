@@ -520,7 +520,7 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 		return nil, errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
-		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
+		utils.Should(errox.InvalidArgs.Newf("unknown mutability mode given: %q",
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
 	return nil, errox.InvalidArgs.Newf("group %q is immutable", id)
@@ -528,7 +528,7 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 
 func verifyGroupOrigin(ctx context.Context, group *storage.Group) error {
 	if !declarativeconfig.CanModifyResource(ctx, group.GetProps()) {
-		return errors.Wrapf(errox.NotAuthorized, "group %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.Newf("group %q's origin is %s, cannot be modified or deleted with the current permission",
 			group.GetProps().GetId(), group.GetProps().GetTraits().GetOrigin())
 	}
 	return nil

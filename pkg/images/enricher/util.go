@@ -19,11 +19,11 @@ import (
 // EnrichImageByName takes an image name, and returns the corresponding enriched image.
 func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCtx EnrichmentContext, name string) (*storage.Image, error) {
 	if name == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "image name must be specified")
+		return nil, errox.InvalidArgs.New("image name must be specified")
 	}
 	containerImage, err := utils.GenerateImageFromString(name)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	img := types.ToImage(containerImage)
 
@@ -42,11 +42,11 @@ func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCt
 // EnrichImageV2ByName takes an image name, and returns the corresponding enriched image.
 func EnrichImageV2ByName(ctx context.Context, enricher ImageEnricherV2, enrichmentCtx EnrichmentContext, name string) (*storage.ImageV2, error) {
 	if name == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "image name must be specified")
+		return nil, errox.InvalidArgs.New("image name must be specified")
 	}
 	containerImage, err := utils.GenerateImageFromString(name)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	img := types.ToImageV2(containerImage)
 

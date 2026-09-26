@@ -93,13 +93,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetComplianceProfileStats lists current scan stats grouped by the specified profile
 func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceProfileScanStatsResponse, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match
@@ -126,7 +126,7 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// To get total count, need the parsed query without the paging.
@@ -145,21 +145,21 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 // GetComplianceProfilesClusterStats lists current scan stats grouped by profile
 func (s *serviceImpl) GetComplianceProfilesClusterStats(ctx context.Context, request *v2.ComplianceScanClusterRequest) (*v2.ListComplianceClusterProfileStatsResponse, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID is required")
+		return nil, errox.InvalidArgs.New("Cluster ID is required")
 	}
 
 	clusterName, found, err := s.clusterDS.GetClusterName(ctx, request.GetClusterId())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable retrieve cluster %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable retrieve cluster %v", err)
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Cluster %q does not exist", request.GetClusterId())
+		return nil, errox.InvalidArgs.Newf("Cluster %q does not exist", request.GetClusterId())
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the cluster id as an exact match
@@ -191,7 +191,7 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorProfileName)
 	if err != nil {
-		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", countQuery)
+		return nil, 0, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for request %v", countQuery)
 	}
 	profileMap := map[string]*storage.ComplianceOperatorProfileV2{}
 	profileBenchmarksMap := map[string][]*storage.ComplianceOperatorBenchmarkV2{}
@@ -223,13 +223,13 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 // GetComplianceClusterScanStats lists current scan stats for a cluster for each scan configuration
 func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request *v2.ComplianceScanClusterRequest) (*v2.ListComplianceClusterScanStatsResponse, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID is required")
+		return nil, errox.InvalidArgs.New("Cluster ID is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the cluster id as an exact match
@@ -245,7 +245,7 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 
 	scanResults, err := s.complianceResultsDS.ComplianceCheckResultStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	// Need to look up the scan config IDs to return with the results.
@@ -262,7 +262,7 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorScanConfigName)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for request %v", request)
 	}
 
 	return &v2.ListComplianceClusterScanStatsResponse{
@@ -276,7 +276,7 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// To get total count, need the parsed query without the paging.
@@ -287,12 +287,12 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for query %v", query)
 	}
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for query %v", query)
 	}
 
 	// Lookup the integrations to get the status
@@ -314,13 +314,13 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 // GetComplianceClusterStats lists current scan stats grouped by cluster
 func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceClusterOverallStatsResponse, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	if request.GetProfileName() != "" {
@@ -339,12 +339,12 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ClusterID)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for query %v", request)
 	}
 
 	// Lookup the integrations to get the status
@@ -376,17 +376,17 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 // GetComplianceProfileCheckStats lists current scan stats grouped by the specified profile and compliance check
 func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceProfileResults, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	if request.GetCheckName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Compliance check name is required")
+		return nil, errox.InvalidArgs.New("Compliance check name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -103,7 +102,7 @@ func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.
 		return nil, err
 	}
 	if config == nil {
-		return nil, errors.Wrap(errox.NotFound, "couldn't find sensor upgrade config")
+		return nil, errox.NotFound.New("couldn't find sensor upgrade config")
 	}
 	return s.wrapToggleResponse(config), nil
 }
@@ -121,11 +120,11 @@ func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoU
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
+		return nil, errox.InvalidArgs.New("need to specify a config")
 	}
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
-		return nil, errors.Wrap(errox.InvalidArgs, "secured cluster auto-upgrade is not supported")
+		return nil, errox.InvalidArgs.New("secured cluster auto-upgrade is not supported")
 	}
 
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
@@ -137,7 +136,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 
 func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
+		return nil, errox.InvalidArgs.New("no cluster ID specified")
 	}
 
 	err := s.manager.TriggerUpgrade(ctx, req.GetId())
@@ -148,7 +147,7 @@ func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID
 }
 func (s *service) TriggerSensorCertRotation(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
+		return nil, errox.InvalidArgs.New("no cluster ID specified")
 	}
 
 	err := s.manager.TriggerCertRotation(ctx, req.GetId())

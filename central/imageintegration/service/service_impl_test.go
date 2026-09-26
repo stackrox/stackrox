@@ -188,7 +188,7 @@ func TestValidateIntegration(t *testing.T) {
 
 	_, err := s.TestUpdatedImageIntegration(testCtx, request)
 	assert.Error(t, err)
-	assert.EqualError(t, err, errors.Wrap(errox.InvalidArgs, "the request doesn't have a valid integration config type").Error())
+	assert.EqualError(t, err, errox.InvalidArgs.New("the request doesn't have a valid integration config type").Error())
 
 	dockerConfig := &storage.DockerConfig{
 		Endpoint: "endpoint",

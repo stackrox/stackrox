@@ -6,7 +6,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
@@ -70,7 +69,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 ) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
@@ -82,7 +81,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	// Begin a transaction
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
-		return errors.Wrap(errox.ServerError, "failed to begin transaction")
+		return errox.ServerError.New("failed to begin transaction")
 	}
 	var committed bool
 	defer func() {
@@ -96,7 +95,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 
 	imageCache, err := lru.New[string, *storage.Image](cacheSize)
 	if err != nil {
-		return errors.Wrap(errox.ServerError, err.Error())
+		return errox.ServerError.New(err.Error())
 	}
 
 	err = s.deployments.WalkByQuery(txCtx, parsedQuery, func(d *storage.Deployment) error {

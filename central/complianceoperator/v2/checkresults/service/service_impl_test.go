@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -180,7 +179,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 		{
 			desc:        "Query with non-existent field",
 			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			expectedErr: errox.InvalidArgs.Newf("Unable to retrieve compliance scan results for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
 			found:       false,
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery()
@@ -249,7 +248,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 		{
 			desc:        "Query with non-existent record",
 			query:       &apiV2.ResourceByID{Id: uuid.NewDummy().String()},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "compliance check result with id %q does not exist", uuid.NewDummy().String()),
+			expectedErr: errox.InvalidArgs.Newf("compliance check result with id %q does not exist", uuid.NewDummy().String()),
 			found:       false,
 			setMocks: func() {
 				s.resultDatastore.EXPECT().GetComplianceCheckResult(gomock.Any(), uuid.NewDummy().String()).Return(nil, false, nil).Times(1)
@@ -367,7 +366,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			query: &apiV2.ComplianceScanResultsRequest{
 				Query: &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Scan configuration name is required"),
+			expectedErr: errox.InvalidArgs.New("Scan configuration name is required"),
 			found:       false,
 			setMocks:    func() {},
 		},
@@ -455,7 +454,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 			},
 		},
@@ -582,7 +581,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 			},
 		},
@@ -592,7 +591,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ProfileName: "ocp4-cis",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Compliance check name is required"),
+			expectedErr: errox.InvalidArgs.New("Compliance check name is required"),
 			setMocks: func() {
 			},
 		},
@@ -705,7 +704,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + testconsts.Cluster1},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			setMocks: func() {
 			},
 		},
@@ -715,7 +714,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ProfileName: "ocp4-cis",
 				Query:       &apiV2.RawQuery{Query: "Compliance Operator Check Name:" + "check-name"},
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Cluster ID is required"),
+			expectedErr: errox.InvalidArgs.New("Cluster ID is required"),
 			setMocks: func() {
 			},
 		},
@@ -816,7 +815,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 				ProfileName: "ocp-4",
 				CheckName:   "check1",
 			},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "compliance check result with id %q does not exist", uuid.NewDummy().String()),
+			expectedErr: errox.InvalidArgs.Newf("compliance check result with id %q does not exist", uuid.NewDummy().String()),
 			found:       false,
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -833,7 +832,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 			query: &apiV2.ComplianceCheckDetailRequest{
 				CheckName: "check1",
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errox.InvalidArgs.New("Profile name is required"),
 			found:       false,
 			setMocks: func() {
 			},
@@ -843,7 +842,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckDetails
 			query: &apiV2.ComplianceCheckDetailRequest{
 				ProfileName: "profile-name",
 			},
-			expectedErr: errors.Wrap(errox.InvalidArgs, "Check name is required"),
+			expectedErr: errox.InvalidArgs.New("Check name is required"),
 			found:       false,
 			setMocks: func() {
 			},
