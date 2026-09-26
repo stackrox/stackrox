@@ -30,4 +30,5 @@ jobs:
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
+        SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST=alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu
     secrets: inherit
