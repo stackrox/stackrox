@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockGetter implements Getter for testing.
@@ -21,6 +22,47 @@ func (m *mockGetter) GetSignatureIntegration(_ context.Context, id string) (*sto
 	}
 	integration, found := m.integrations[id]
 	return integration, found, nil
+}
+
+func (m *mockGetter) GetAllSignatureIntegrations(_ context.Context) ([]*storage.SignatureIntegration, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	integrations := make([]*storage.SignatureIntegration, 0, len(m.integrations))
+	for id, integration := range m.integrations {
+		integration = integration.CloneVT()
+		integration.Id = id
+		integrations = append(integrations, integration)
+	}
+	return integrations, nil
+}
+
+func TestGetVerifierNames(t *testing.T) {
+	for name, getter := range map[string]*mockGetter{
+		"known integrations": {
+			integrations: map[string]*storage.SignatureIntegration{
+				"id-1": {Name: "integration-1"},
+				"id-2": {Name: "integration-2"},
+			},
+		},
+		"no integrations": {},
+		"read error":      {err: errors.New("datastore error")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			names, err := GetVerifierNames(context.Background(), getter)
+			if getter.err != nil {
+				require.ErrorIs(t, err, getter.err)
+				assert.Nil(t, names)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, names)
+			assert.Len(t, names, len(getter.integrations))
+			for id, integration := range getter.integrations {
+				assert.Equal(t, integration.GetName(), names[id])
+			}
+		})
+	}
 }
 
 func TestGetVerifierName(t *testing.T) {
