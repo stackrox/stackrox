@@ -318,12 +318,11 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 			},
 		},
 		Exclusions: []*storage.Exclusion{
-			{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Cluster: clusterName,
-					},
+			{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Cluster: clusterName,
 				},
+			}},
 			},
 		},
 		Notifiers: []string{notifierName},
@@ -369,12 +368,11 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 			},
 		},
 		Exclusions: []*storage.Exclusion{
-			{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Cluster: clusterID,
-					},
+			{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Cluster: clusterID,
 				},
+			}},
 			},
 		},
 		Notifiers:  []string{notifierName},

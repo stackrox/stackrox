@@ -23,11 +23,11 @@ func convertScope(p *storage.Scope) *Scope {
 	}
 
 	return &Scope{
-		Cluster:        p.Cluster,
-		Namespace:      p.Namespace,
-		Label:          p.Label,
-		ClusterLabel:   p.ClusterLabel,
-		NamespaceLabel: p.NamespaceLabel,
+		Cluster:        p.GetCluster(),
+		Namespace:      p.GetNamespace(),
+		Label:          p.GetLabel(),
+		ClusterLabel:   p.GetClusterLabel(),
+		NamespaceLabel: p.GetNamespaceLabel(),
 	}
 }
 
@@ -44,17 +44,34 @@ func convertExclusion_Deployment(p *storage.Exclusion_Deployment) *Exclusion_Dep
 	}
 
 	return &Exclusion_Deployment{
-		Name:  p.Name,
-		Scope: convertScope(p.Scope),
+		Name:  p.GetName(),
+		Scope: convertScope(p.GetScope()),
+	}
+}
+
+// Exclusion_ExcludeByType represents storage.Exclusion_ExcludeByType in the Custom Resource.
+type Exclusion_ExcludeByType struct {
+	Types []string `yaml:",omitempty"`
+}
+
+// convertExclusion_ExcludeByType Converts storage.Exclusion_ExcludeByType to *Exclusion_ExcludeByType
+func convertExclusion_ExcludeByType(p *storage.Exclusion_ExcludeByType) *Exclusion_ExcludeByType {
+	if p == nil {
+		return nil
+	}
+
+	return &Exclusion_ExcludeByType{
+		Types: sliceutils.StringSlice(p.GetTypes()...),
 	}
 }
 
 // Exclusion represents storage.Exclusion in the Custom Resource.
 type Exclusion struct {
-	Name       string                   `yaml:",omitempty"`
-	Deployment *Exclusion_Deployment    `yaml:",omitempty"`
-	Image      *storage.Exclusion_Image `yaml:",omitempty"`
-	Expiration string                   `yaml:",omitempty"`
+	Name          string                   `yaml:",omitempty"`
+	Image         *storage.Exclusion_Image `yaml:",omitempty"`
+	Expiration    string                   `yaml:",omitempty"`
+	Deployment    *Exclusion_Deployment    `yaml:",omitempty"`
+	ExcludeByType *Exclusion_ExcludeByType `yaml:"excludeByType,omitempty"`
 }
 
 // convertExclusion Converts storage.Exclusion to *Exclusion
@@ -64,10 +81,11 @@ func convertExclusion(p *storage.Exclusion) *Exclusion {
 	}
 
 	return &Exclusion{
-		Name:       p.Name,
-		Deployment: convertExclusion_Deployment(p.Deployment),
-		Image:      p.Image,
-		Expiration: timestampToFormatRFC3339(p.Expiration),
+		Name:          p.GetName(),
+		Image:         p.GetImage(),
+		Expiration:    timestampToFormatRFC3339(p.GetExpiration()),
+		Deployment:    convertExclusion_Deployment(p.GetDeployment()),
+		ExcludeByType: convertExclusion_ExcludeByType(p.GetExcludeByType()),
 	}
 }
 
@@ -86,10 +104,10 @@ func convertPolicyGroup(p *storage.PolicyGroup) *PolicyGroup {
 	}
 
 	return &PolicyGroup{
-		FieldName:       p.FieldName,
-		BooleanOperator: p.BooleanOperator.String(),
-		Negate:          p.Negate,
-		Values:          p.Values,
+		FieldName:       p.GetFieldName(),
+		BooleanOperator: p.GetBooleanOperator().String(),
+		Negate:          p.GetNegate(),
+		Values:          p.GetValues(),
 	}
 }
 
@@ -106,8 +124,8 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 	}
 
 	return &PolicySection{
-		SectionName:  p.SectionName,
-		PolicyGroups: sliceutils.ConvertSlice(p.PolicyGroups, convertPolicyGroup),
+		SectionName:  p.GetSectionName(),
+		PolicyGroups: sliceutils.ConvertSlice(p.GetPolicyGroups(), convertPolicyGroup),
 	}
 }
 
@@ -141,25 +159,25 @@ func convertPolicy(p *storage.Policy) *Policy {
 	}
 
 	return &Policy{
-		Name:               p.Name,
-		Description:        p.Description,
-		Rationale:          p.Rationale,
-		Remediation:        p.Remediation,
-		Disabled:           p.Disabled,
-		Categories:         p.Categories,
-		LifecycleStages:    sliceutils.StringSlice(p.LifecycleStages...),
-		EventSource:        p.EventSource.String(),
-		Exclusions:         sliceutils.ConvertSlice(p.Exclusions, convertExclusion),
-		Scope:              sliceutils.ConvertSlice(p.Scope, convertScope),
-		Severity:           p.Severity.String(),
-		EnforcementActions: sliceutils.StringSlice(p.EnforcementActions...),
-		Notifiers:          p.Notifiers,
-		PolicySections:     sliceutils.ConvertSlice(p.PolicySections, convertPolicySection),
-		MitreAttackVectors: p.MitreAttackVectors,
-		CriteriaLocked:     p.CriteriaLocked,
-		MitreVectorsLocked: p.MitreVectorsLocked,
-		IsDefault:          p.IsDefault,
-		EvaluationFilter:   p.EvaluationFilter,
+		Name:               p.GetName(),
+		Description:        p.GetDescription(),
+		Rationale:          p.GetRationale(),
+		Remediation:        p.GetRemediation(),
+		Disabled:           p.GetDisabled(),
+		Categories:         p.GetCategories(),
+		LifecycleStages:    sliceutils.StringSlice(p.GetLifecycleStages()...),
+		EventSource:        p.GetEventSource().String(),
+		Exclusions:         sliceutils.ConvertSlice(p.GetExclusions(), convertExclusion),
+		Scope:              sliceutils.ConvertSlice(p.GetScope(), convertScope),
+		Severity:           p.GetSeverity().String(),
+		EnforcementActions: sliceutils.StringSlice(p.GetEnforcementActions()...),
+		Notifiers:          p.GetNotifiers(),
+		PolicySections:     sliceutils.ConvertSlice(p.GetPolicySections(), convertPolicySection),
+		MitreAttackVectors: p.GetMitreAttackVectors(),
+		CriteriaLocked:     p.GetCriteriaLocked(),
+		MitreVectorsLocked: p.GetMitreVectorsLocked(),
+		IsDefault:          p.GetIsDefault(),
+		EvaluationFilter:   p.GetEvaluationFilter(),
 	}
 }
 
