@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -37,7 +35,39 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.BaseImage)(nil)), "base_images")
+		schema = &walker.Schema{
+			Table:    "base_images",
+			Type:     "*storage.BaseImage",
+			TypeName: "BaseImage",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "base_images_layers",
+			Type:         "*storage.BaseImageLayer",
+			TypeName:     "BaseImageLayer",
+			ObjectGetter: "GetLayers()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "baseImageID", ProtoBufName: "", ColumnName: "base_images_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("baseImageID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "LayerDigest", ProtoBufName: "layer_digest", ColumnName: "LayerDigest", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetLayerDigest()", false), Search: walker.SearchField{FieldName: "Base Image Layer Digest", Enabled: true}},
+			{Schema: child0, Name: "Index", ProtoBufName: "index", ColumnName: "Index", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetIndex()", false), Search: walker.SearchField{FieldName: "Base Image Index", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Base Image Id", Enabled: true}},
+			{Schema: schema, Name: "BaseImageRepositoryId", ProtoBufName: "base_image_repository_id", ColumnName: "BaseImageRepositoryId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetBaseImageRepositoryId()", false)},
+			{Schema: schema, Name: "Repository", ProtoBufName: "repository", ColumnName: "Repository", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRepository()", false), Search: walker.SearchField{FieldName: "Base Image Repository", Enabled: true}},
+			{Schema: schema, Name: "Tag", ProtoBufName: "tag", ColumnName: "Tag", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetTag()", false), Search: walker.SearchField{FieldName: "Base Image Tag", Enabled: true}},
+			{Schema: schema, Name: "ManifestDigest", ProtoBufName: "manifest_digest", ColumnName: "ManifestDigest", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetManifestDigest()", false), Search: walker.SearchField{FieldName: "Base Image Manifest Digest", Enabled: true}},
+			{Schema: schema, Name: "DiscoveredAt", ProtoBufName: "discovered_at", ColumnName: "DiscoveredAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetDiscoveredAt()", false), Search: walker.SearchField{FieldName: "Base Image Discovered At", Enabled: true}},
+			{Schema: schema, Name: "Active", ProtoBufName: "active", ColumnName: "Active", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetActive()", false), Search: walker.SearchField{FieldName: "Base Image Active", Enabled: true}},
+			{Schema: schema, Name: "FirstLayerDigest", ProtoBufName: "first_layer_digest", ColumnName: "FirstLayerDigest", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetFirstLayerDigest()", false), Search: walker.SearchField{FieldName: "Base Image First Layer Digest", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("BaseImageRepository", "id", false, false, false, true)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
 			"storage.Image":               ImagesSchema,
@@ -47,7 +77,17 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_BASE_IMAGES, "baseimage", (*storage.BaseImage)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BASE_IMAGES, map[search.FieldLabel]*search.Field{
+			"Base Image Active":             {FieldPath: "baseimage.active", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Discovered At":      {FieldPath: "baseimage.discovered_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image First Layer Digest": {FieldPath: "baseimage.first_layer_digest", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Id":                 {FieldPath: "baseimage.id", Type: v1.SearchDataType_SEARCH_STRING, Store: true, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Index":              {FieldPath: "baseimage.layers.index", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Layer Digest":       {FieldPath: "baseimage.layers.layer_digest", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Manifest Digest":    {FieldPath: "baseimage.manifest_digest", Type: v1.SearchDataType_SEARCH_STRING, Store: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Repository":         {FieldPath: "baseimage.repository", Type: v1.SearchDataType_SEARCH_STRING, Store: true, Category: v1.SearchCategory_BASE_IMAGES},
+			"Base Image Tag":                {FieldPath: "baseimage.tag", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_BASE_IMAGES},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_BASE_IMAGES,
 			v1.SearchCategory_IMAGES,
