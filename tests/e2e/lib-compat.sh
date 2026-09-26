@@ -180,6 +180,9 @@ roxie_config_from_environment_compat() {
         fi
     )
 
+    info "Configuring storage classes..."
+    handle_storage_classes "$config_file"
+
     info "Configuring scanner V4..."
     handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
     handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
@@ -227,6 +230,28 @@ handle_pod_security_policies() {
     fi
     export POD_SECURITY_POLICIES="false"
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
+}
+
+handle_storage_classes() {
+    local config_file="$1"
+    local storage_class="${STORAGE_CLASS:-}"
+    local scanner_v4_db_storage_class="${SCANNER_V4_DB_STORAGE_CLASS:-}"
+
+    if [[ "$storage_class" == "faster" || "$scanner_v4_db_storage_class" == "faster" ]]; then
+        info "  applying SSD StorageClass manifest"
+        retrying_kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml" </dev/null
+    fi
+
+    if [[ -n "$storage_class" ]]; then
+        info "  central DB storageClassName=${storage_class}"
+        patch_yaml "$config_file" ".central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = \"${storage_class}\""
+    fi
+
+    if [[ -n "$scanner_v4_db_storage_class" ]]; then
+        info "  scanner V4 DB storageClassName=${scanner_v4_db_storage_class}"
+        patch_yaml "$config_file" ".central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+        patch_yaml "$config_file" ".securedCluster.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+    fi
 }
 
 # handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is
