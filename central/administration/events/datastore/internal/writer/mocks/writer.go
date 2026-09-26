@@ -41,6 +41,18 @@ func (m *MockWriter) EXPECT() *MockWriterMockRecorder {
 	return m.recorder
 }
 
+// DropForResource mocks base method.
+func (m *MockWriter) DropForResource(resourceID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DropForResource", resourceID)
+}
+
+// DropForResource indicates an expected call of DropForResource.
+func (mr *MockWriterMockRecorder) DropForResource(resourceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DropForResource", reflect.TypeOf((*MockWriter)(nil).DropForResource), resourceID)
+}
+
 // Flush mocks base method.
 func (m *MockWriter) Flush(ctx context.Context) error {
 	m.ctrl.T.Helper()
