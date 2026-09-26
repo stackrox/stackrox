@@ -1,4 +1,4 @@
-name: "Add VMs to ACS Cluster"
+name: "Ensure VMs on ACS Cluster"
 description: "Install OpenShift Virtualization, deploy VMs, and install roxagent on an Infra-managed cluster"
 
 inputs:
@@ -6,11 +6,11 @@ inputs:
     description: "Infra cluster name (from `infractl list`)"
     required: true
   num-vms:
-    description: "Number of VMs to deploy"
+    description: "Desired count of {os}-1..N. Existing VMs are reused."
     required: false
     default: "1"
   vm-os:
-    description: "VM OS: rhel9 or rhel10"
+    description: "VM OS: rhel8, rhel9, or rhel10"
     required: false
     default: "rhel9"
   ssh-public-key:
