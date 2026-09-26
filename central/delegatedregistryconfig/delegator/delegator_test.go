@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
 	sacHelperMocks "github.com/stackrox/rox/central/role/sachelper/mocks"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -51,7 +52,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr = connMocks.NewMockManager(ctrl)
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-		d = New(deleClusterDS, connMgr, waiterMgr, nil, nil)
+		clusterDS := clusterDSMocks.NewMockDataStore(ctrl)
+		clusterDS.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("fake-cluster-name", true, nil).AnyTimes()
+		d = New(deleClusterDS, connMgr, waiterMgr, nil, nil, clusterDS)
 	}
 
 	t.Run("error get config", func(t *testing.T) {
@@ -111,7 +114,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
-		assert.ErrorContains(t, err, "no connection")
+		assert.ErrorContains(t, err, "no connection to cluster")
 	})
 
 	t.Run("all def cluster id conn no cap", func(t *testing.T) {
@@ -263,7 +266,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		d = New(deleClusterDS, connMgr, waiterMgr, nil, namespaceSACHelper)
+		d = New(deleClusterDS, connMgr, waiterMgr, nil, namespaceSACHelper, nil)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {
@@ -357,7 +360,7 @@ func TestDelegateScanImageV2(t *testing.T) {
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		d = New(deleClusterDS, connMgr, nil, waiterMgr, namespaceSACHelper)
+		d = New(deleClusterDS, connMgr, nil, waiterMgr, namespaceSACHelper, nil)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {
@@ -440,7 +443,7 @@ func TestInferNamespace(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
-		d = New(nil, nil, nil, nil, namespaceSACHelper)
+		d = New(nil, nil, nil, nil, namespaceSACHelper, nil)
 	}
 
 	t.Run("no namespace on error", func(t *testing.T) {

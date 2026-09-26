@@ -32,6 +32,7 @@ func Singleton() Watcher {
 			scanwaiter.Singleton(),
 			scanwaiterv2.Singleton(),
 			sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
+			clusterDataStore.Singleton(),
 		)
 
 		watcher = New(
