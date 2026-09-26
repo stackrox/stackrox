@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	schema = pkgSchema.VirtualMachineV2Schema
+	schema = pkgSchema.VirtualMachineV2Schema()
 )
 
 // New returns a new Store instance using the provided sql instance.

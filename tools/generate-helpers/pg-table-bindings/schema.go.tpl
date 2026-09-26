@@ -20,6 +20,7 @@ import (
     "github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres/mapping"
+    pkgsync "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -55,7 +56,7 @@ var (
     {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton "Obj" .Obj }}
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
-    {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
+    {{template "schemaVar" .Schema.Table}} = pkgsync.OnceValue(func() *walker.Schema {
         {{- if .RegisterSchema }}
         schema := GetSchemaForTable("{{.Schema.Table}}")
         if schema != nil {
@@ -69,7 +70,7 @@ var (
         {{- if gt (len .References) 0 }}
 		referencedSchemas := map[string]*walker.Schema{
 		{{- range $ref := .References }}
-		    "{{ $ref.TypeName }}": {{ template "schemaVar" $ref.Table }},
+		    "{{ $ref.TypeName }}": {{ template "schemaVar" $ref.Table }}(),
 		{{- end }}
 		}
 
@@ -96,8 +97,12 @@ var (
             {{- end}}
         {{- end}}
         return schema
-    }()
+    })
 )
+
+func init() {
+    registerLazySchema(func() { {{template "schemaVar" .Schema.Table}}() })
+}
 
 {{- define "createGormModel" }}
 {{- $obj := .Obj }}

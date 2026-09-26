@@ -258,6 +258,24 @@ jobs:
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
+  init-heap-check:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Check init() heap allocation
+      run: scripts/ci/check-init-heap.sh
+
   ui:
     needs: detect-changes
     if: >-
@@ -570,6 +588,7 @@ jobs:
       - go
       - go-bench
       - go-postgres
+      - init-heap-check
       - local-roxctl-tests
       - openshift-ci-unit-tests
       - sensor-integration-tests

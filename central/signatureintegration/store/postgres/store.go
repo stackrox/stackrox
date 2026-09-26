@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SignatureIntegrationsSchema
+	schema         = pkgSchema.SignatureIntegrationsSchema()
 	targetResource = resources.Integration
 )
 

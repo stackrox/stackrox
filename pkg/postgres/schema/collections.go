@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { CollectionsSchema() })
+}
 
 var (
 	// CreateTableCollectionsStmt holds the create statement for table `collections`.
@@ -27,7 +32,7 @@ var (
 	}
 
 	// CollectionsSchema is the go schema for table `collections`.
-	CollectionsSchema = func() *walker.Schema {
+	CollectionsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("collections")
 		if schema != nil {
 			return schema
@@ -38,7 +43,7 @@ var (
 		RegisterTable(schema, CreateTableCollectionsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (
