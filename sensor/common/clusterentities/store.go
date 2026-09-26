@@ -367,12 +367,12 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 		}
 	}
 
-	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
-	// whether a given IP is used by other endpoints.
-	e.endpointsStore.Apply(updates, incremental)
-	e.podIPsStore.Apply(updates, incremental)
+	epChanged := e.endpointsStore.Apply(updates, incremental)
+	ipChanged := e.podIPsStore.Apply(updates, incremental)
 
-	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
+	if epChanged || ipChanged {
+		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
+	}
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
 	if e.callbackChannel != nil && len(callbacks) > 0 {
@@ -382,32 +382,7 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 
 // currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
 func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
-	s := set.NewSet[net.IPAddress]()
-	concurrency.WithRLock(&e.endpointsStore.mutex, func() {
-		for endpoint := range e.endpointsStore.endpointMap {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-		for endpoint := range e.endpointsStore.historicalEndpoints {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-	})
-	concurrency.WithRLock(&e.podIPsStore.mutex, func() {
-		for address := range e.podIPsStore.ipMap {
-			if address.IsPublic() {
-				s.Add(address)
-			}
-		}
-		for address := range e.podIPsStore.historicalIPs {
-			if address.IsPublic() {
-				s.Add(address)
-			}
-		}
-	})
-	return s
+	return e.endpointsStore.PublicIPs().Union(e.podIPsStore.PublicIPs())
 }
 
 var slowRecordTickLogThreshold = env.ClusterEntitiesSlowRecordTickLogThreshold.DurationSetting()
