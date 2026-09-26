@@ -126,6 +126,11 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
+    if is_upgrade_infra_only; then
+        info "Upgrade infra-only mode enabled; skipping Central upgrade validations"
+        return 0
+    fi
+
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
     ########################################################################################
@@ -292,6 +297,10 @@ force_rollback_to_previous_postgres() {
 
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
+    local wait_iterations=150
+    if is_upgrade_infra_only; then
+        wait_iterations=0
+    fi
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
@@ -313,14 +322,16 @@ deploy_scaled_workload() {
     ./scale/launch_workload.sh scale-test
     wait_for_api
 
-    info "Sleep for a bit to let the scale build"
-    # shellcheck disable=SC2034
-    for i in $(seq 1 150); do
-        echo -n .
-        sleep 5
-    done
-
-    info "Done with our nap for scaling"
+    if (( wait_iterations > 0 )); then
+        info "Sleep for a bit to let the scale build (${wait_iterations} x 5s)"
+        for ((i = 0; i < wait_iterations; i++)); do
+            echo -n .
+            sleep 5
+        done
+        info "Done with our nap for scaling"
+    else
+        info "E2E infra-only mode enabled; skipping the scale-build wait"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

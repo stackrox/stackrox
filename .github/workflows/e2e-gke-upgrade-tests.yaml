@@ -42,6 +42,7 @@ jobs:
       SCANNER_V4_DB_STORAGE_CLASS: faster
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -193,6 +194,7 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -343,6 +345,7 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 60 # Keep in sync with cluster's lifespan
     steps:
 

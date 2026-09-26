@@ -5,6 +5,10 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+is_upgrade_infra_only() {
+    [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]
+}
+
 central_deployment_count() {
     curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
         -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
@@ -108,7 +112,16 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
+    # The time-travel checkout only needs the host roxctl binary. `make cli`
+    # builds and installs every supported platform, even though CI invokes
+    # this path on Linux amd64.
+    local cli_target="cli_${TEST_HOST_PLATFORM//_/-}"
+    info "Building time-travel roxctl target: ${cli_target}"
+    # The host-only target writes bin/<platform>/roxctl but does not install
+    # the command. The upgrade helpers also call roxctl without a path (for
+    # example, the 4.6 database restore), so preserve the old make cli
+    # behavior by installing only this already-built host binary.
+    make "${cli_target}" cli-install
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
@@ -117,6 +130,9 @@ deploy_earlier_postgres_central() {
     # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
     # produces a value shared with Helm --set and later restore/auth.
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    if is_GITHUB_ACTIONS; then
+        echo "::add-mask::$ROX_ADMIN_PASSWORD"
+    fi
     export ROX_ADMIN_PASSWORD
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 

@@ -3,11 +3,24 @@ all: style test
 
 GRADLE = TEST_TARGET="$@" ./gradlew
 GRADLE_TEST_ARGS =
+TIMED_RUNNER = python3 ../.openshift-ci/run_timed.py
 # Stop testing after the first test failure by defining FAIL_FAST. (Can be
 # achieved on a PR with a ci-fail-fast label)
 ifdef FAIL_FAST
 GRADLE_TEST_ARGS = --fail-fast
 endif
+
+# Keep one sentinel per Gradle Test task; the Gradle daemon is reused between
+# invocations, while the output distinguishes parallel, REST, and bounce work.
+define run_timed_gradle_tasks
+@set -e; \
+for gradle_task in $(1); do \
+	$(TIMED_RUNNER) \
+		--phase test-execution \
+		--name "qa-gradle-$$gradle_task" \
+		-- env TEST_TARGET="$@" ./gradlew "$$gradle_task" $(GRADLE_TEST_ARGS); \
+done
+endef
 
 ###########
 ## Style ##
@@ -25,7 +38,10 @@ style: compile
 .PHONY: compile
 compile: build/generated
 	@echo "+ $@"
-	@$(GRADLE) assemble testClasses
+	@$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-compile \
+		-- env TEST_TARGET="$@" ./gradlew assemble testClasses
 
 .PHONY: style-fix
 style-fix:
@@ -37,12 +53,18 @@ proto-generated-srcs: build/generated
 
 build/generated: src/main/proto/scanner
 	@echo "+ $@"
-	$(GRADLE) generateProto generateTestProto
+	$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-generate-protos \
+		-- env TEST_TARGET="$@" ./gradlew generateProto generateTestProto
 
 src/main/proto/scanner: ../go.mod
 	@echo "+ copy scanner protos"
 	-rm -rf src/main/proto/scanner
-	@scripts/copy_scanner_protos.sh
+	@$(TIMED_RUNNER) \
+		--phase test-build \
+		--name qa-backend-copy-protos \
+		-- scripts/copy_scanner_protos.sh
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
@@ -52,12 +74,12 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) testParallel testRest $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testParallel testRest)
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) testParallelBAT testBAT $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testParallelBAT testBAT)
 
 .PHONY: smoke-test
 smoke-test: compile
@@ -102,7 +124,7 @@ graphql-test: compile
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
+	$(call run_timed_gradle_tasks,testSensorBounce testSensorBounceNext)
 
 .PHONY: pz-test
 pz-test: compile

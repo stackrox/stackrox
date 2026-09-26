@@ -11,6 +11,31 @@ import subprocess
 from typing import List
 
 from common import log_print
+from e2e_timing import timed_span
+
+
+def _timing_name_and_attributes(args: List[str]):
+    """Describe a post-test command without exposing its full arguments."""
+    command = os.path.basename(args[0]) if args else "unknown-command"
+    attributes = {}
+    if command in {"lib.sh", "store-artifacts.sh"} and len(args) > 1:
+        command = f"{command}:{args[1]}"
+    elif command == "collect-service-logs.sh" and len(args) > 1:
+        attributes["namespace"] = args[1]
+    return command, attributes
+
+
+def is_e2e_infra_only():
+    return os.getenv("E2E_INFRA_ONLY", "false").lower() == "true"
+
+
+def skip_infra_only_post_test(post_test_name):
+    if not is_e2e_infra_only():
+        return False
+    log_print(
+        f"E2E infra-only mode enabled; skipping {post_test_name} post-test collection"
+    )
+    return True
 
 
 class PostTestsConstants:
@@ -52,11 +77,17 @@ class RunWithBestEffortMixin:
         log_print(f"Running post command: {args}")
         runs_ok = False
         try:
-            subprocess.run(
-                args,
-                check=True,
-                timeout=timeout,
-            )
+            timing_name, timing_attributes = _timing_name_and_attributes(args)
+            with timed_span(
+                phase="post-test-collection",
+                name=timing_name,
+                attributes=timing_attributes,
+            ):
+                subprocess.run(
+                    args,
+                    check=True,
+                    timeout=timeout,
+                )
             runs_ok = True
         except Exception as err:
             log_print(f"Exception raised in {args}, {err}")
@@ -84,6 +115,8 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
         self.dirs_to_store_to_osci_artifacts = []
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -193,19 +226,25 @@ class PostClusterTest(StoreArtifacts):
         self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
-        if self._collect_collector_metrics:
-            self.collect_collector_metrics()
-        if self.collect_central_artifacts and self.wait_for_central_api():
-            self.get_central_debug_dump()
-            self.process_central_metrics()
-            self.get_central_diagnostics()
-            self.grab_central_data()
-        if self._collect_service_logs:
-            self.collect_service_logs()
-        if self._check_stackrox_logs:
-            self.check_stackrox_logs()
-        self.store_artifacts(test_outputs)
-        self.handle_run_failure()
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
+        stage_name = "post-cluster-test"
+        if self.artifact_destination_prefix:
+            stage_name += f"-{self.artifact_destination_prefix}"
+        with timed_span(phase="post-test-stage", name=stage_name):
+            if self._collect_collector_metrics:
+                self.collect_collector_metrics()
+            if self.collect_central_artifacts and self.wait_for_central_api():
+                self.get_central_debug_dump()
+                self.process_central_metrics()
+                self.get_central_diagnostics()
+                self.grab_central_data()
+            if self._collect_service_logs:
+                self.collect_service_logs()
+            if self._check_stackrox_logs:
+                self.check_stackrox_logs()
+            self.store_artifacts(test_outputs)
+            self.handle_run_failure()
 
     def wait_for_central_api(self):
         return self.run_with_best_effort(
@@ -308,6 +347,8 @@ class CheckStackroxLogs(StoreArtifacts):
         self.central_is_responsive = False
 
     def run(self, test_outputs=None):
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -380,13 +421,16 @@ class FinalPost(StoreArtifacts):
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
     def run(self, test_outputs=None):
-        self.store_artifacts()
-        self.fixup_artifacts_content_type()
-        self.make_artifacts_help()
-        self.surface_spec_logs()
-        self.handle_run_failure()
-        if self._handle_e2e_progress_failures:
-            self.handle_e2e_progress_failures()
+        if skip_infra_only_post_test(self.__class__.__name__):
+            return
+        with timed_span(phase="post-test-stage", name="final-post"):
+            self.store_artifacts()
+            self.fixup_artifacts_content_type()
+            self.make_artifacts_help()
+            self.surface_spec_logs()
+            self.handle_run_failure()
+            if self._handle_e2e_progress_failures:
+                self.handle_e2e_progress_failures()
 
     def fixup_artifacts_content_type(self):
         self.run_with_best_effort(

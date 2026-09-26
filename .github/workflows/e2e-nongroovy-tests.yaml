@@ -47,6 +47,7 @@ jobs:
       STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
+      E2E_INFRA_ONLY: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e-infra-only') }}
     timeout-minutes: 361
     steps:
 
@@ -151,10 +152,14 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       timeout-minutes: 245
-      run: tests/e2e/run.sh /tmp/e2e-test-logs
+      run: |
+        python3 .openshift-ci/run_timed.py \
+          --phase test-lane-command \
+          --name non-groovy \
+          -- tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Persist env vars for post-test
-      if: always()
+      if: always() && env.E2E_INFRA_ONLY != 'true'
       run: |
         source tests/e2e/lib.sh
         wait_for_api
