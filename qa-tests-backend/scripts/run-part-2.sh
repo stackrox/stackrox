@@ -33,4 +33,6 @@ run_tests_part_2() {
     [[ ! -f FAIL ]] || die "Part 2 tests failed"
 }
 
-run_tests_part_2
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    run_tests_part_2
+fi
