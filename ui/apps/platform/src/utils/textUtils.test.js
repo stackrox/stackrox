@@ -1,4 +1,4 @@
-import { dedupeDelimitedString, pluralizeHas, truncate } from './textUtils';
+import { capitalizeFirst, dedupeDelimitedString, pluralizeHas, truncate } from './textUtils';
 
 describe('truncate pipe', () => {
     it('should return the same string if shorter than length', () => {
@@ -37,6 +37,28 @@ describe('pluralizeHas', () => {
     it('should pluralize to "have" when length is 0 or > 1', () => {
         expect(pluralizeHas(0)).toEqual('have');
         expect(pluralizeHas(10)).toEqual('have');
+    });
+});
+
+describe('capitalizeFirst', () => {
+    it('should upper-case the first character', () => {
+        expect(capitalizeFirst('no connection to cluster')).toEqual('No connection to cluster');
+    });
+
+    // The remainder must be preserved verbatim (unlike lodash `capitalize`), so
+    // names, quotes, and acronyms keep their casing.
+    it('should preserve the casing of the remainder', () => {
+        expect(capitalizeFirst('scan failed on Cluster "Prod-East" (OCP)')).toEqual(
+            'Scan failed on Cluster "Prod-East" (OCP)'
+        );
+    });
+
+    it('should leave an already-capitalized string unchanged', () => {
+        expect(capitalizeFirst('Already capitalized')).toEqual('Already capitalized');
+    });
+
+    it('should return an empty string unchanged', () => {
+        expect(capitalizeFirst('')).toEqual('');
     });
 });
 

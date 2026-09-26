@@ -1,18 +1,18 @@
 import PropTypes from 'prop-types';
-import upperFirst from 'lodash/upperFirst';
 
 import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
 import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
+import { capitalizeFirst } from 'utils/textUtils';
 
 const EntityPageHeader = ({ entityType, entityId }) => {
     const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     const { entityName } = useEntityName(entityType, safeEntityId);
 
     const header = entityName || '-';
-    const subHeader = upperFirst(entityLabels[entityType]);
+    const subHeader = capitalizeFirst(entityLabels[entityType]);
 
     return (
         <PageHeader

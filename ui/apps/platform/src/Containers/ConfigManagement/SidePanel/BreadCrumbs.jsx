@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
 import { Link, useLocation } from 'react-router-dom-v5-compat';
 
@@ -9,6 +8,7 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
+import { capitalizeFirst } from 'utils/textUtils';
 
 import BackButton from './BackButton';
 
@@ -99,7 +99,7 @@ const BreadCrumbLinks = (props) => {
     const breadCrumbLinks = breadCrumbStates.map((state, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
-        const name = state.type === 'entity list' ? upperFirst(state.name) : state.name;
+        const name = state.type === 'entity list' ? capitalizeFirst(state.name) : state.name;
         const content = link ? (
             <Link
                 className="text-primary-700 underline truncate font-700"
@@ -116,7 +116,7 @@ const BreadCrumbLinks = (props) => {
         if (!state) {
             return null;
         }
-        const entityTypeLabel = upperFirst(state.type);
+        const entityTypeLabel = capitalizeFirst(state.type);
         return (
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
                 <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">

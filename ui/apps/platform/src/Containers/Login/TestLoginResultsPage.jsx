@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import upperFirst from 'lodash/upperFirst';
 import { Alert } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
+import { capitalizeFirst } from 'utils/textUtils';
 
 function closeThisWindow() {
     window.close();
@@ -16,7 +16,7 @@ function getMessage(response) {
     if (response?.error || !response?.userAttributes || !response?.roles) {
         const body = (
             <div className={messageClass}>
-                <p> {upperFirst(response?.error) || 'An unrecognized error occurred.'}</p>
+                <p> {capitalizeFirst(response?.error) || 'An unrecognized error occurred.'}</p>
                 {response?.error_description && <p>{response.error_description}</p>}
             </div>
         );
