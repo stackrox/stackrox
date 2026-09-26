@@ -23,10 +23,9 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
-# Temporary CI experiment: load only the manual vulnerability bundle in all E2E
-# lanes, independent of the infra-only control. This intentionally overrides
-# any per-job allowlist; matcher vulnerability readiness remains unchanged.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="manual"
+# Temporary CI experiment: default E2E runs to the manual vulnerability bundle.
+# Jobs that exercise vulnerability-backed behavior can override this allowlist.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-manual}"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
