@@ -23,9 +23,8 @@ type PackageFixture struct {
 	Repo    string // Repository ID (e.g., "rhel-9-for-x86_64-baseos-rpms")
 }
 
-// packagesFixture contains real package data from a RHEL 9 system.
-// This data is used to generate realistic VM index reports.
-var packagesFixture = []PackageFixture{
+// PackagesData is real RHEL 9 package metadata used to generate VM index reports.
+var PackagesData = []PackageFixture{
 	{"389-ds-base", "2.7.0-7.el9_7", "rhel-9-for-x86_64-appstream-rpms"},
 	{"389-ds-base-libs", "2.7.0-7.el9_7", "rhel-9-for-x86_64-appstream-rpms"},
 	{"389-ds-base-snmp", "2.7.0-7.el9_7", "rhel-9-for-x86_64-appstream-rpms"},
