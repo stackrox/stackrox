@@ -135,7 +135,7 @@ jobs:
   wait-for-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
       IMAGE_PREFIX: ""
@@ -198,7 +198,7 @@ jobs:
   wait-for-konflux-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
       IMAGE_PREFIX: "release-"

@@ -43,7 +43,7 @@ on:
 jobs:
   parse-versions:
     if: github.repository_owner == 'stackrox' && github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
@@ -102,7 +102,7 @@ jobs:
 
   prepare-environment:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
@@ -187,7 +187,7 @@ jobs:
     needs:
     - parse-versions
     - prepare-environment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
@@ -340,7 +340,7 @@ jobs:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
@@ -430,7 +430,7 @@ jobs:
     needs:
     - build-and-run
     if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -510,7 +510,7 @@ jobs:
     needs:
     - build-and-run
     - upload-definitions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
     permissions:
       checks: read
