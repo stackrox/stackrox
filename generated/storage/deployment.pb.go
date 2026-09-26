@@ -286,7 +286,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 36
+// Next available tag: 37
 type Deployment struct {
 	state                         protoimpl.MessageState `protogen:"open.v1"`
 	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
@@ -315,13 +315,15 @@ type Deployment struct {
 	HostPid                       bool                   `protobuf:"varint,31,opt,name=host_pid,json=hostPid,proto3" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                    // @gotags: policy:"Host PID"
 	HostIpc                       bool                   `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc,proto3" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                    // @gotags: policy:"Host IPC"
 	RuntimeClass                  string                 `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass,proto3" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                      // @gotags: policy:"Runtime Class"
-	Tolerations                   []*Toleration          `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
-	Ports                         []*PortConfig          `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
-	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
-	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// owner_custom_resource_id is the controlling tracked custom resource UID, if one exists.
+	OwnerCustomResourceId string        `protobuf:"bytes,36,opt,name=owner_custom_resource_id,json=ownerCustomResourceId,proto3" json:"owner_custom_resource_id,omitempty" sql:"fk(CustomResource:id),no-fk-constraint,allow-null,type(uuid),index=btree"` // @gotags: sql:"fk(CustomResource:id),no-fk-constraint,allow-null,type(uuid),index=btree"
+	Tolerations           []*Toleration `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                      // @gotags: search:"-"
+	Ports                 []*PortConfig `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                  // @gotags: policy:"Ports"
+	StateTimestamp        int64         `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                         // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
+	RiskScore             float32       `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                       // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
+	PlatformComponent     bool          `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                // @gotags: search:"Platform Component"
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
@@ -532,6 +534,13 @@ func (x *Deployment) GetHostIpc() bool {
 func (x *Deployment) GetRuntimeClass() string {
 	if x != nil {
 		return x.RuntimeClass
+	}
+	return ""
+}
+
+func (x *Deployment) GetOwnerCustomResourceId() string {
+	if x != nil {
+		return x.OwnerCustomResourceId
 	}
 	return ""
 }
@@ -2064,7 +2073,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xf6\v\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xaf\f\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2097,7 +2106,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\fhost_network\x18\x15 \x01(\bR\vhostNetwork\x12\x19\n" +
 	"\bhost_pid\x18\x1f \x01(\bR\ahostPid\x12\x19\n" +
 	"\bhost_ipc\x18  \x01(\bR\ahostIpc\x12#\n" +
-	"\rruntime_class\x18\" \x01(\tR\fruntimeClass\x125\n" +
+	"\rruntime_class\x18\" \x01(\tR\fruntimeClass\x127\n" +
+	"\x18owner_custom_resource_id\x18$ \x01(\tR\x15ownerCustomResourceId\x125\n" +
 	"\vtolerations\x18\x16 \x03(\v2\x13.storage.TolerationR\vtolerations\x12)\n" +
 	"\x05ports\x18\x18 \x03(\v2\x13.storage.PortConfigR\x05ports\x12'\n" +
 	"\x0fstate_timestamp\x18\x1b \x01(\x03R\x0estateTimestamp\x12\x1d\n" +

@@ -54,6 +54,7 @@ var (
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
+			{Name: "deployments_ownercustomresourceid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_ownercustomresourceid ON deployments USING btree (ownercustomresourceid)"},
 			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)"},
 			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)"},
 		},
@@ -67,6 +68,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
+			"storage.CustomResource":    CustomResourcesSchema,
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
 			"storage.ImageV2":           ImagesV2Schema,
@@ -130,6 +132,7 @@ type Deployments struct {
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
+	OwnerCustomResourceID         string                  `gorm:"column:ownercustomresourceid;type:uuid"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
