@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/common"
@@ -13,6 +12,7 @@ import (
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
+	rolePkg "github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,11 +25,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/notifiers"
 	postgresMocks "github.com/stackrox/rox/pkg/postgres/mocks"
-	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -88,8 +88,23 @@ func (s *NodeReportServiceTestSuite) getContextForUser(user *storage.SlimUser) c
 			IncludedClusters: []string{"cluster-1"},
 		},
 	}).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
+}
+
+func (s *NodeReportServiceTestSuite) getReaderContextForUser(user *storage.SlimUser) context.Context {
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Node, resources.Cluster),
+	))
+	return authn.ContextWithIdentity(ctx, mockID, s.T())
 }
 
 func (s *NodeReportServiceTestSuite) getValidNodeReportConfig() *apiV2.ReportConfiguration {
@@ -157,18 +172,25 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 
-	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
-	mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
-	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{
+		roletest.NewResolvedRole("node-role", map[string]storage.Access{
+			resources.Node.String(): storage.Access_READ_ACCESS,
+		}, accessScope),
+		roletest.NewResolvedRole("image-role", map[string]storage.Access{
+			resources.Image.String(): storage.Access_READ_ACCESS,
+		}, rolePkg.AccessScopeIncludeAll),
+	}).Times(1)
 
 	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+		Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) (string, error) {
 			s.Equal(storage.ReportConfiguration_NODE_VULNERABILITY, cfg.GetType())
 			protoassert.Equal(s.T(), creator, cfg.GetCreator())
 			s.NotNil(cfg.GetNodeVulnReportFilters())
+			s.Require().Len(cfg.GetNodeVulnReportFilters().GetAccessScopeRules(), 1)
+			s.Equal([]string{"cluster-1"}, cfg.GetNodeVulnReportFilters().GetAccessScopeRules()[0].GetIncludedClusters())
 			return cfg.GetId(), nil
 		}).Times(1)
 
@@ -204,8 +226,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_GetAfterCre
 	requestConfig := s.getValidNodeReportConfig()
 	ctx := s.getContextForUser(creator)
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		Return(requestConfig.GetId(), nil).Times(1)
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), requestConfig.GetId()).
@@ -231,8 +252,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration_ValidationE
 		},
 	}
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	_, err := s.service.PostNodeReportConfiguration(ctx, invalidConfig)
 	s.Error(err)
@@ -487,6 +507,9 @@ func (s *NodeReportServiceTestSuite) TestPostViewBasedNodeReport() {
 	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).AnyTimes()
 	mockRole.EXPECT().GetAccessScope().Return(&storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedClusters: []string{"cluster-1"},
@@ -581,7 +604,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 
 	accessScope := &storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{"cluster-1"},
+			IncludedClusters: []string{"cluster-2"},
 		},
 	}
 
@@ -591,16 +614,18 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
-	mockID.EXPECT().UID().Return(creator.GetId()).AnyTimes()
-	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
+	mockID.EXPECT().UID().Return("updater").AnyTimes()
+	mockID.EXPECT().FullName().Return("updater").AnyTimes()
+	mockID.EXPECT().FriendlyName().Return("updater").AnyTimes()
 
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockRole.EXPECT().GetPermissions().Return(map[string]storage.Access{
+		resources.Node.String(): storage.Access_READ_ACCESS,
+	}).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 
 	existingConfig := &storage.ReportConfiguration{
 		Id:      updateConfig.GetId(),
@@ -627,6 +652,9 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 		},
 		Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
 			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
+				AccessScopeRules: []*storage.SimpleAccessScope_Rules{{
+					IncludedClusters: []string{"cluster-1"},
+				}},
 				Query: "Cluster:cluster-1",
 				CvesSince: &storage.NodeVulnerabilityReportFilters_AllVuln{
 					AllVuln: true,
@@ -643,6 +671,8 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration() {
 	s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) error {
 			s.Equal("Updated Node Report", cfg.GetName())
+			s.Require().Len(cfg.GetNodeVulnReportFilters().GetAccessScopeRules(), 1)
+			s.Equal([]string{"cluster-1"}, cfg.GetNodeVulnReportFilters().GetAccessScopeRules()[0].GetIncludedClusters())
 			return nil
 		}).Times(1)
 
@@ -688,8 +718,10 @@ func (s *NodeReportServiceTestSuite) TestGetNodeReportHistory() {
 
 func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus() {
 	reportID := "test-report-id"
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
 	snapshot := &storage.ReportSnapshot{
-		ReportId: reportID,
+		ReportId:  reportID,
+		Requester: creator,
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_GENERATED,
 			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
@@ -700,10 +732,113 @@ func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus() {
 	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportID).
 		Return(snapshot, true, nil).Times(1)
 
-	result, err := s.service.GetNodeReportStatus(s.ctx, &apiV2.ResourceByID{Id: reportID})
+	result, err := s.service.GetNodeReportStatus(s.getContextForUser(creator), &apiV2.ResourceByID{Id: reportID})
 	s.NoError(err)
 	s.NotNil(result.GetStatus())
 	s.Equal(apiV2.ReportStatus_GENERATED, result.GetStatus().GetRunState())
+}
+
+func (s *NodeReportServiceTestSuite) TestReaderCanUseOwnNodeReportJobOperationsWithoutWorkflowAdministration() {
+	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "false")
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getReaderContextForUser(creator)
+	workflowRead := func(ctx context.Context) {
+		allowed, err := workflowSAC.ReadAllowed(ctx)
+		s.Require().NoError(err)
+		s.Require().True(allowed)
+	}
+
+	statusSnapshot := &storage.ReportSnapshot{
+		ReportId:  "status-report-id",
+		Requester: creator,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_GENERATED,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), statusSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return statusSnapshot, true, nil
+		}).Times(1)
+	_, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: statusSnapshot.GetReportId()})
+	s.NoError(err)
+
+	cancelSnapshot := &storage.ReportSnapshot{
+		ReportId:  "cancel-report-id",
+		Requester: creator,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_PREPARING,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), cancelSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return cancelSnapshot, true, nil
+		}).Times(1)
+	s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), cancelSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (bool, error) {
+			allowed, err := workflowSAC.WriteAllowed(ctx)
+			s.Require().NoError(err)
+			s.Require().True(allowed)
+			return true, nil
+		}).Times(1)
+	_, err = s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: cancelSnapshot.GetReportId()})
+	s.NoError(err)
+
+	deleteSnapshot := &storage.ReportSnapshot{
+		ReportId:              "delete-report-id",
+		ReportConfigurationId: "config-id",
+		Requester:             creator,
+		Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_GENERATED,
+			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), deleteSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			workflowRead(ctx)
+			return deleteSnapshot, true, nil
+		}).Times(1)
+	s.blobStore.EXPECT().Delete(gomock.Any(), common.GetReportBlobPath(
+		deleteSnapshot.GetReportConfigurationId(), deleteSnapshot.GetReportId())).Return(nil).Times(1)
+	_, err = s.service.DeleteNodeReport(ctx, &apiV2.DeleteReportRequest{Id: deleteSnapshot.GetReportId()})
+	s.NoError(err)
+}
+
+func (s *NodeReportServiceTestSuite) TestReaderCannotManageAnotherUsersNodeReportJob() {
+	reader := &storage.SlimUser{Id: "reader", Name: "reader"}
+	owner := &storage.SlimUser{Id: "owner", Name: "owner"}
+	ctx := s.getReaderContextForUser(reader)
+
+	otherUserSnapshot := &storage.ReportSnapshot{
+		ReportId:  "other-user-report-id",
+		Requester: owner,
+		Type:      storage.ReportSnapshot_NODE_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState: storage.ReportStatus_PREPARING,
+		},
+	}
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err := s.service.GetNodeReportStatus(ctx, &apiV2.ResourceByID{Id: otherUserSnapshot.GetReportId()})
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err = s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: otherUserSnapshot.GetReportId()})
+	s.Error(err)
+	s.Contains(err.Error(), "Modify(WorkflowAdministration)")
+
+	otherUserSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
+	otherUserSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), otherUserSnapshot.GetReportId()).
+		Return(otherUserSnapshot, true, nil).Times(1)
+	_, err = s.service.DeleteNodeReport(ctx, &apiV2.DeleteReportRequest{Id: otherUserSnapshot.GetReportId()})
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *NodeReportServiceTestSuite) TestGetViewBasedNodeReportHistory() {
@@ -994,8 +1129,7 @@ func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfiguration_NotFound(
 
 	updateConfig := s.getValidNodeReportConfig()
 
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").Return(&storage.Notifier{Id: "email-notifier-id", Type: notifiers.EmailType}, true, nil).Times(1)
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), updateConfig.GetId()).
 		Return(nil, false, nil).Times(1)
 
@@ -1034,13 +1168,15 @@ func (s *NodeReportServiceTestSuite) TestRunNodeReport_NoIdentity() {
 }
 
 func (s *NodeReportServiceTestSuite) TestGetNodeReportStatus_WrongType() {
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
 	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), "report-id").
 		Return(&storage.ReportSnapshot{
-			ReportId: "report-id",
-			Type:     storage.ReportSnapshot_VULNERABILITY,
+			ReportId:  "report-id",
+			Requester: creator,
+			Type:      storage.ReportSnapshot_VULNERABILITY,
 		}, true, nil).Times(1)
 
-	_, err := s.service.GetNodeReportStatus(s.ctx, &apiV2.ResourceByID{Id: "report-id"})
+	_, err := s.service.GetNodeReportStatus(s.getContextForUser(creator), &apiV2.ResourceByID{Id: "report-id"})
 	s.Error(err)
 	s.Contains(err.Error(), "not a node vulnerability report")
 }
@@ -1197,200 +1333,4 @@ func (s *NodeReportServiceTestSuite) TestAuthzPermissions() {
 			assert.Error(t, err, "should be denied with insufficient permissions")
 		})
 	}
-}
-
-func (s *NodeReportServiceTestSuite) expectNotify(ctx context.Context, channel, payload string) {
-	s.db.EXPECT().Exec(ctx, "SELECT pg_notify($1, $2)", channel, payload).
-		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
-}
-
-func (s *NodeReportServiceTestSuite) TestPostNodeReportConfigurationWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	creator := &storage.SlimUser{Id: "uid", Name: "name"}
-	accessScope := &storage.SimpleAccessScope{
-		Rules: &storage.SimpleAccessScope_Rules{IncludedClusters: []string{"cluster-1"}},
-	}
-	requestConfig := s.getValidNodeReportConfig()
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
-	mockID.EXPECT().UID().Return(creator.GetId()).AnyTimes()
-	mockID.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
-	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
-	mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
-	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
-
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
-	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) (string, error) {
-			return cfg.GetId(), nil
-		}).Times(1)
-	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), requestConfig.GetId()).
-		Return(&storage.ReportConfiguration{
-			Id:      requestConfig.GetId(),
-			Name:    requestConfig.GetName(),
-			Type:    storage.ReportConfiguration_NODE_VULNERABILITY,
-			Creator: creator,
-			Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
-				NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
-					Query:     "Cluster:cluster-1",
-					CvesSince: &storage.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
-				},
-			},
-		}, true, nil).Times(1)
-	s.expectNotify(ctx, pgNotify.ReportConfigChanged, requestConfig.GetId())
-
-	result, err := s.service.PostNodeReportConfiguration(ctx, requestConfig)
-	s.NoError(err)
-	s.Equal(requestConfig.GetId(), result.GetId())
-}
-
-func (s *NodeReportServiceTestSuite) TestUpdateNodeReportConfigurationWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	creator := &storage.SlimUser{Id: "uid", Name: "name"}
-	updateConfig := s.getValidNodeReportConfig()
-	ctx := s.getContextForUser(creator)
-
-	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), "email-notifier-id").
-		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
-	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), updateConfig.GetId()).
-		Return(&storage.ReportConfiguration{
-			Id:      updateConfig.GetId(),
-			Name:    "Old Name",
-			Type:    storage.ReportConfiguration_NODE_VULNERABILITY,
-			Creator: creator,
-			Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
-				NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
-					Query:     "Cluster:cluster-1",
-					CvesSince: &storage.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
-				},
-			},
-		}, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{}, nil).Times(1)
-	s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	s.expectNotify(ctx, pgNotify.ReportConfigChanged, updateConfig.GetId())
-
-	_, err := s.service.UpdateNodeReportConfiguration(ctx, updateConfig)
-	s.NoError(err)
-}
-
-func (s *NodeReportServiceTestSuite) TestDeleteNodeReportConfigurationWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "test-id").
-		Return(&storage.ReportConfiguration{
-			Id:   "test-id",
-			Type: storage.ReportConfiguration_NODE_VULNERABILITY,
-		}, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{}, nil).Times(1)
-	s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(gomock.Any(), "test-id").
-		Return(nil).Times(1)
-	s.expectNotify(s.ctx, pgNotify.ReportConfigChanged, "test-id")
-
-	_, err := s.service.DeleteNodeReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: "test-id"})
-	s.NoError(err)
-}
-
-func (s *NodeReportServiceTestSuite) TestRunNodeReportWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	creator := &storage.SlimUser{Id: "uid", Name: "name"}
-	ctx := s.getContextForUser(creator)
-	configID := "test-config-id"
-	protoReportConfig := &storage.ReportConfiguration{
-		Id:      configID,
-		Name:    "test node report",
-		Type:    storage.ReportConfiguration_NODE_VULNERABILITY,
-		Creator: creator,
-		ResourceScope: &storage.ResourceScope{
-			ScopeReference: &storage.ResourceScope_EntityScope{
-				EntityScope: &storage.EntityScope{
-					Rules: []*storage.EntityScopeRule{
-						{
-							Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
-							Field:  storage.EntityField_FIELD_ID,
-							Values: []*storage.RuleValue{{Value: "cluster-1", MatchType: storage.MatchType_EXACT}},
-						},
-					},
-				},
-			},
-		},
-		Filter: &storage.ReportConfiguration_NodeVulnReportFilters{
-			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
-				Query:     "Cluster:cluster-1",
-				CvesSince: &storage.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
-			},
-		},
-	}
-
-	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), configID).
-		Return(protoReportConfig, true, nil).AnyTimes()
-	s.notifierDataStore.EXPECT().GetManyNotifiers(gomock.Any(), gomock.Any()).
-		Return(nil, nil).AnyTimes()
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
-		Return([]*storage.ReportSnapshot{}, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().AddReportSnapshot(gomock.Any(), gomock.Any()).
-		Return("on-demand-report-id", nil).Times(1)
-	s.db.EXPECT().Exec(gomock.Any(), "SELECT pg_notify($1, $2)", pgNotify.ReportRequestSubmitted, "on-demand-report-id").
-		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
-
-	result, err := s.service.RunNodeReport(ctx, &apiV2.RunReportRequest{
-		ReportConfigId:           configID,
-		ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
-	})
-	s.NoError(err)
-	s.Equal("on-demand-report-id", result.GetReportId())
-}
-
-func (s *NodeReportServiceTestSuite) TestPostViewBasedNodeReportWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	creator := &storage.SlimUser{Id: "uid", Name: "name"}
-	ctx := s.getContextForUser(creator)
-	req := &apiV2.ReportRequestViewBased{
-		Type: apiV2.ReportRequestViewBased_NODE_VULNERABILITY,
-		Filter: &apiV2.ReportRequestViewBased_NodeVulnReportFilters{
-			NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
-				Query:     "Cluster:cluster-1",
-				CvesSince: &apiV2.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
-			},
-		},
-	}
-
-	s.reportSnapshotDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).
-		Return(0, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().AddReportSnapshot(gomock.Any(), gomock.Any()).
-		Return("view-based-report-id", nil).Times(1)
-	s.db.EXPECT().Exec(gomock.Any(), "SELECT pg_notify($1, $2)", pgNotify.ReportRequestSubmitted, "view-based-report-id").
-		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
-
-	result, err := s.service.PostViewBasedNodeReport(ctx, req)
-	s.NoError(err)
-	s.Equal("view-based-report-id", result.GetReportID())
-}
-
-func (s *NodeReportServiceTestSuite) TestCancelNodeReportWithCentralWorker() {
-	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
-
-	reportID := "test-report-id"
-	creator := &storage.SlimUser{Id: "uid", Name: "name"}
-	ctx := s.getContextForUser(creator)
-	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportID).
-		Return(&storage.ReportSnapshot{
-			ReportId:  reportID,
-			Requester: creator,
-			ReportStatus: &storage.ReportStatus{
-				RunState: storage.ReportStatus_PREPARING,
-			},
-			Type: storage.ReportSnapshot_NODE_VULNERABILITY,
-		}, true, nil).Times(1)
-	s.expectNotify(ctx, pgNotify.ReportRequestCancelled, reportID)
-
-	_, err := s.service.CancelNodeReport(ctx, &apiV2.ResourceByID{Id: reportID})
-	s.NoError(err)
 }

@@ -12,7 +12,9 @@ import (
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -196,6 +198,80 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 
 func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query) {
 	protoassert.Equal(t, expected, actual)
+}
+
+func TestExtractAccessScopeRulesForResource(t *testing.T) {
+	nodeRead := map[string]storage.Access{resources.Node.String(): storage.Access_READ_ACCESS}
+	imageRead := map[string]storage.Access{resources.Image.String(): storage.Access_READ_ACCESS}
+	nodeScope := func(cluster string) *storage.SimpleAccessScope {
+		return &storage.SimpleAccessScope{Rules: &storage.SimpleAccessScope_Rules{IncludedClusters: []string{cluster}}}
+	}
+
+	testCases := map[string]struct {
+		roles     []permissions.ResolvedRole
+		expectedQ *v1.Query
+		assertQ   func(t testing.TB, expected, actual *v1.Query)
+	}{
+		"unrelated unrestricted role does not broaden node scope": {
+			roles: []permissions.ResolvedRole{
+				roletest.NewResolvedRole("node", nodeRead, nodeScope(clusters[0].GetName())),
+				roletest.NewResolvedRole("image", imageRead, rolePkg.AccessScopeIncludeAll),
+			},
+			expectedQ: search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].GetId()).ProtoQuery(),
+			assertQ:   assertByDirectComparison,
+		},
+		"relevant role scopes are unioned": {
+			roles: []permissions.ResolvedRole{
+				roletest.NewResolvedRole("node-a", nodeRead, nodeScope(clusters[0].GetName())),
+				roletest.NewResolvedRole("node-b", nodeRead, nodeScope(clusters[1].GetName())),
+			},
+			expectedQ: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].GetId()).ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].GetId()).ProtoQuery(),
+			),
+			assertQ: func(t testing.TB, expected, actual *v1.Query) {
+				protoassert.ElementsMatch(t,
+					expected.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries(),
+					actual.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries())
+			},
+		},
+		"unrelated unrestricted role does not override relevant deny all": {
+			roles: []permissions.ResolvedRole{
+				roletest.NewResolvedRole("node", nodeRead, rolePkg.AccessScopeExcludeAll),
+				roletest.NewResolvedRole("image", imageRead, rolePkg.AccessScopeIncludeAll),
+			},
+			expectedQ: getMatchNoneQuery(),
+			assertQ:   assertByDirectComparison,
+		},
+		"relevant unrestricted role includes all": {
+			roles: []permissions.ResolvedRole{
+				roletest.NewResolvedRole("node", nodeRead, rolePkg.AccessScopeIncludeAll),
+				roletest.NewResolvedRole("image", imageRead, nodeScope(clusters[1].GetName())),
+			},
+			expectedQ: search.EmptyQuery(),
+			assertQ:   assertByDirectComparison,
+		},
+		"without a relevant role access is denied": {
+			roles: []permissions.ResolvedRole{
+				roletest.NewResolvedRole("image", imageRead, rolePkg.AccessScopeIncludeAll),
+			},
+			expectedQ: getMatchNoneQuery(),
+			assertQ:   assertByDirectComparison,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			identity := mockIdentity.NewMockIdentity(ctrl)
+			identity.EXPECT().Roles().Return(tc.roles).Times(1)
+
+			rules := ExtractAccessScopeRulesForResource(identity, resources.Node)
+			actual, err := BuildClusterOnlyAccessScopeQuery(rules, clusters, namespaces)
+			assert.NoError(t, err)
+			tc.assertQ(t, tc.expectedQ, actual)
+		})
+	}
 }
 
 func TestBuildClusterOnlyAccessScopeQuery(t *testing.T) {
