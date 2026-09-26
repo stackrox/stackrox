@@ -1147,7 +1147,7 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 		}
 
 		msg := new(T)
-		if errUnmarshal := PT(msg).UnmarshalVTUnsafe(data); errUnmarshal != nil {
+		if errUnmarshal := pgutils.UnmarshalVTMessage(PT(msg), data); errUnmarshal != nil {
 			return errUnmarshal
 		}
 		return callback(msg)

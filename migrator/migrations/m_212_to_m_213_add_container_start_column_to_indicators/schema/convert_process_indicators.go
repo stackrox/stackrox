@@ -3,6 +3,7 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
@@ -35,7 +36,7 @@ func ConvertProcessIndicatorFromProto(obj *storage.ProcessIndicator) (*ProcessIn
 // ConvertProcessIndicatorToProto converts Gorm model `ProcessIndicators` to its protobuf type object
 func ConvertProcessIndicatorToProto(m *ProcessIndicators) (*storage.ProcessIndicator, error) {
 	var msg storage.ProcessIndicator
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&msg, m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil
