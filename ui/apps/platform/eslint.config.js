@@ -1139,7 +1139,6 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace
-            'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
             'src/Containers/MainPage/AuthenticatedRoutes.tsx', // replace
             'src/Containers/MainPage/Header/CLIDownloadMenu.tsx', // replace
             'src/Containers/MainPage/Header/UserMenu.tsx', // replace
@@ -1159,6 +1158,69 @@ module.exports = [
         rules: {
             'limited/no-non-deprecated-connect': 'error',
             'limited/no-non-deprecated-reselect': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        // Delete line whenever you upgrade deprecated Modal element in the file.
+        ignores: [
+            'src/Components/EmailNotifier/EmailNotifierModal.tsx',
+            'src/Components/EmailTemplate/EmailTemplateModal.tsx',
+            'src/Components/PatternFly/ConfirmationModal/ConfirmationModal.tsx',
+            'src/Components/PatternFly/DeleteModal.tsx',
+            'src/Components/ReportJob/PartialReportModal.tsx',
+            'src/Components/KeyValueListModal.tsx',
+            'src/Containers/AccessControl/AccessScopes/AccessScopesList.tsx',
+            'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx',
+            'src/Containers/AccessControl/PermissionSets/PermissionSetsList.tsx',
+            'src/Containers/AccessControl/Roles/RolesList.tsx',
+            'src/Containers/Clusters/ClusterRegistrationSecrets/RevokeClusterRegistrationSecretModal.tsx',
+            'src/Containers/Clusters/ClusterRegistrationSecrets/SecureClusterModal.tsx',
+            'src/Containers/Clusters/InitBundles/RevokeBundleModal.tsx',
+            'src/Containers/Collections/CollectionsFormModal.tsx',
+            'src/Containers/Compliance/Dashboard/ManageStandardsError.tsx',
+            'src/Containers/Compliance/Dashboard/ManageStandardsModal.tsx',
+            'src/Containers/ComplianceEnhanced/Schedules/Wizard/ScanConfigWizardForm.tsx',
+            'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx',
+            'src/Containers/NetworkGraph/components/CIDRFormModal.tsx',
+            'src/Containers/NetworkGraph/simulation/CompareYAMLModal.tsx',
+            'src/Containers/NetworkGraph/simulation/DeploymentScopeModal.tsx',
+            'src/Containers/NetworkGraph/simulation/NotifyYAMLModal.tsx',
+            'src/Containers/Policies/Modal/ImportPolicyJSONModal.tsx',
+            'src/Containers/Policies/Modal/ImportPolicyJSONModalError.tsx',
+            'src/Containers/Policies/Modal/ImportPolicyJSONSuccess.tsx',
+            'src/Containers/Policies/Modal/ImportPolicyJSONUpload.tsx',
+            'src/Containers/Policies/Wizard/Step3/PolicyCriteriaModal.tsx',
+            'src/Containers/Policies/Wizard/Step3/TableModal.tsx',
+            'src/Containers/PolicyCategories/CreatePolicyCategoryModal.tsx',
+            'src/Containers/PolicyCategories/DeletePolicyCategoryModal.tsx',
+            'src/Containers/SystemConfig/Details/components/CustomPlatformComponentsCard.tsx',
+            'src/Containers/SystemConfig/Details/components/RedHatLayeredProductsCard.tsx',
+            'src/Containers/SystemConfig/Form/PlatformComponentsConfigForm.tsx',
+            'src/Containers/SystemHealth/DiagnosticBundle/GenerateDiagnosticBundle.tsx',
+            'src/Containers/SystemHealth/UsageStatistics/ShowAdministrationUsage.tsx',
+            'src/Containers/Violations/Details/NetworkPolicies/NetworkPolicyModal.tsx',
+            'src/Containers/Violations/Modals/ExcludeConfirmation.tsx',
+            'src/Containers/Violations/Modals/ResolveConfirmation.tsx',
+            'src/Containers/Vulnerabilities/components/ExceptionRequestModal/CompletedExceptionRequestModal.tsx',
+            'src/Containers/Vulnerabilities/components/ExceptionRequestModal/ExceptionRequestModal.tsx',
+            'src/Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal.tsx',
+            'src/Containers/Vulnerabilities/components/CreateViewBasedReportModal.tsx',
+            'src/Containers/Vulnerabilities/components/GenerateSbomModal.tsx',
+            'src/Containers/Vulnerabilities/ExceptionManagement/components/ExceptionRequestTableCells.tsx',
+            'src/Containers/Vulnerabilities/ExceptionManagement/components/RequestApprovalButtonModal.tsx',
+            'src/Containers/Vulnerabilities/ExceptionManagement/components/RequestCancelButtonModal.tsx',
+            'src/Containers/Vulnerabilities/ExceptionManagement/components/RequestDenialButtonModal.tsx',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/VulnReports/ViewBasedReportsTable.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/components/DefaultFilterModal.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/WatchedImages/UnwatchImageModal.tsx',
+            'src/Containers/Vulnerabilities/WorkloadCves/WatchedImages/WatchedImagesModal.tsx',
+        ],
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-patternfly-react-core-deprecated': 'error',
         },
     },
     {

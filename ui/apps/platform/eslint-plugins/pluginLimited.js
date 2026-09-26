@@ -536,6 +536,29 @@ const rules = {
             };
         },
     },
+    'no-patternfly-react-core-deprecated': {
+        // Forbid deprecated PatternFly elements.
+        // See ignores array in eslint.config.js file.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid deprecated PatternFly elements',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === '@patternfly/react-core/deprecated') {
+                        context.report({
+                            node,
+                            message: 'Use non-deprecated PatternFly elements',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
