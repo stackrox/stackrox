@@ -19,6 +19,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 ### Technical Changes
+- ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 
