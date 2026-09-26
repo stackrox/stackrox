@@ -36,6 +36,11 @@ deploymentWorkload:
     containerWorkload:
       # Select a random image to run in the pod, if `numImages` > 0, only use the first `numImages` from the random list
       numImages: 0
+      # When true, uses ImageCopies list instead of ImageNames. Each deployment creates TWO deployments:
+      # one with the _orig image and one with the matching _copy image (same digest, different tag).
+      # This effectively doubles the number of deployments (e.g., numDeployments: 1500 creates 3000 deployments).
+      # Useful for testing image model scenarios where images share the same digest.
+      useImageCopies: false
     processWorkload:
       # For each pod, every time this interval is reached, run a new random process in the pod...
       processInterval: 30s
