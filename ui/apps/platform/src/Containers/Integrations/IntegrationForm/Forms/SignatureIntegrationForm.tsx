@@ -28,6 +28,7 @@ import type {
     CosignPublicKey,
     SignatureIntegration,
     TransparencyLogVerification,
+    TrustRoot,
 } from 'types/signatureIntegration.proto';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
@@ -37,6 +38,11 @@ import FormLabelGroup from '../FormLabelGroup';
 import type { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
 
+const trustRootSchema = yup.object().nullable().shape({
+    tufRepositoryUrl: yup.string().trim(),
+    tufRootUrl: yup.string().trim(),
+});
+
 const validationSchema = yup.object().shape({
     id: yup.string().trim(),
     name: yup.string().trim().required('Integration name is required'),
@@ -45,6 +51,7 @@ const validationSchema = yup.object().shape({
             yup.object().shape({
                 name: yup.string().trim().required('Name is required'),
                 publicKeyPemEnc: yup.string().required('Public key value is required'),
+                trustRoot: trustRootSchema,
             })
         ),
     }),
@@ -61,6 +68,7 @@ const validationSchema = yup.object().shape({
                 enabled: yup.boolean(),
                 publicKeyPemEnc: yup.string().trim(),
             }),
+            trustRoot: trustRootSchema,
         })
     ),
     transparencyLog: yup.object().shape({
@@ -88,6 +96,11 @@ const defaultValues: SignatureIntegration = {
 };
 
 // Default values for newly created integrations.
+const defaultValuesOfTrustRoot: TrustRoot = {
+    tufRepositoryUrl: '',
+    tufRootUrl: '',
+};
+
 const defaultValuesOfCosignCertificateVerification: CosignCertificateVerification = {
     certificateChainPemEnc: '',
     certificatePemEnc: '',
@@ -97,11 +110,13 @@ const defaultValuesOfCosignCertificateVerification: CosignCertificateVerificatio
         enabled: true,
         publicKeyPemEnc: '',
     },
+    trustRoot: structuredClone(defaultValuesOfTrustRoot),
 };
 
 const defaultValuesOfCosignPublicKeys: CosignPublicKey = {
     name: '',
     publicKeyPemEnc: '',
+    trustRoot: structuredClone(defaultValuesOfTrustRoot),
 };
 
 function getKeyOfTextArea(hasBeenExpanded: boolean) {
@@ -123,6 +138,12 @@ function SignatureIntegrationForm({
         formInitialValues.cosignCertificates.forEach((item, index) => {
             formInitialValues.cosignCertificates[index].certificateTransparencyLog =
                 item.certificateTransparencyLog ?? structuredClone(backwardsCompatibleCtlogValues);
+            formInitialValues.cosignCertificates[index].trustRoot =
+                item.trustRoot ?? structuredClone(defaultValuesOfTrustRoot);
+        });
+        formInitialValues.cosign.publicKeys.forEach((item, index) => {
+            formInitialValues.cosign.publicKeys[index].trustRoot =
+                item.trustRoot ?? structuredClone(defaultValuesOfTrustRoot);
         });
 
         const backwardsCompatibleTlogValues: TransparencyLogVerification = {
@@ -174,7 +195,7 @@ function SignatureIntegrationForm({
     const [isExpandedCosignCertificates, setIsExpandedCosignCertificates] = useState(false);
     const [hasBeenExpandedCosignCertificates, setHasBeenExpandedCosignCertificates] =
         useState(false);
-    const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(true);
+    const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(false);
 
     function onTogglePublicKeys(_: MouseEvent, isExpanded: boolean) {
         setIsExpandedPublicKeys(isExpanded);
@@ -360,6 +381,74 @@ function SignatureIntegrationForm({
                                                                             placeholder={
                                                                                 '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
                                                                             }
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        label="TUF mirror URL"
+                                                                        fieldId={`cosign.publicKeys[${index}].trustRoot.tufRepositoryUrl`}
+                                                                        helperText="Base URL of a TUF repository (equivalent to cosign initialize --mirror)."
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <TextInput
+                                                                            type="text"
+                                                                            id={`cosign.publicKeys[${index}].trustRoot.tufRepositoryUrl`}
+                                                                            value={
+                                                                                values.cosign
+                                                                                    .publicKeys[
+                                                                                    index
+                                                                                ]?.trustRoot
+                                                                                    ?.tufRepositoryUrl ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={!isEditable}
+                                                                            placeholder="https://tuf-repo-cdn.sigstore.dev"
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        label="TUF root URL"
+                                                                        fieldId={`cosign.publicKeys[${index}].trustRoot.tufRootUrl`}
+                                                                        helperText="URL to the TUF bootstrap root.json (equivalent to cosign initialize --root). Defaults to <mirror URL>/root.json."
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <TextInput
+                                                                            type="text"
+                                                                            id={`cosign.publicKeys[${index}].trustRoot.tufRootUrl`}
+                                                                            value={
+                                                                                values.cosign
+                                                                                    .publicKeys[
+                                                                                    index
+                                                                                ]?.trustRoot
+                                                                                    ?.tufRootUrl ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={!isEditable}
+                                                                            placeholder="https://tuf-repo-cdn.sigstore.dev/root.json"
                                                                         />
                                                                     </FormLabelGroup>
                                                                 </FlexItem>
@@ -791,6 +880,74 @@ function SignatureIntegrationForm({
                                                                             placeholder={
                                                                                 '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
                                                                             }
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        label="TUF mirror URL"
+                                                                        fieldId={`cosignCertificates[${index}].trustRoot.tufRepositoryUrl`}
+                                                                        helperText="Base URL of a TUF repository (equivalent to cosign initialize --mirror)."
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <TextInput
+                                                                            type="text"
+                                                                            id={`cosignCertificates[${index}].trustRoot.tufRepositoryUrl`}
+                                                                            value={
+                                                                                values
+                                                                                    .cosignCertificates[
+                                                                                    index
+                                                                                ]?.trustRoot
+                                                                                    ?.tufRepositoryUrl ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={!isEditable}
+                                                                            placeholder="https://tuf-repo-cdn.sigstore.dev"
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        label="TUF root URL"
+                                                                        fieldId={`cosignCertificates[${index}].trustRoot.tufRootUrl`}
+                                                                        helperText="URL to the TUF bootstrap root.json (equivalent to cosign initialize --root). Defaults to <mirror URL>/root.json."
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <TextInput
+                                                                            type="text"
+                                                                            id={`cosignCertificates[${index}].trustRoot.tufRootUrl`}
+                                                                            value={
+                                                                                values
+                                                                                    .cosignCertificates[
+                                                                                    index
+                                                                                ]?.trustRoot
+                                                                                    ?.tufRootUrl ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={!isEditable}
+                                                                            placeholder="https://tuf-repo-cdn.sigstore.dev/root.json"
                                                                         />
                                                                     </FormLabelGroup>
                                                                 </FlexItem>
