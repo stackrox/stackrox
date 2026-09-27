@@ -122,6 +122,65 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 	suite.Assert().True(getRegistriesTriggered, "get registry was not triggered")
 }
 
+// TestScannerClientCapturedOnce is a regression guard for a TOCTOU nil-client
+// dereference: the scanner client singleton must be consulted once per
+// enrichment and the client captured at the nil-check must be the one handed to
+// the scan. Otherwise a concurrent reset of the singleton (e.g. on Central
+// reconnect) could return non-nil at the check but nil at the scan, panicking
+// when a method is invoked on the nil client.
+func (suite *scanTestSuite) TestScannerClientCapturedOnce() {
+	fakeRegStore := &fakeRegistryStore{}
+	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+
+	// Returns a valid client on the first call, then nil, simulating a
+	// concurrent singleton reset occurring mid-enrichment.
+	capturedClient := &emptyClient{}
+	singletonCalls := 0
+	singleton := func() scannerclient.ScannerClient {
+		singletonCalls++
+		if singletonCalls == 1 {
+			return capturedClient
+		}
+		return nil
+	}
+
+	var scannedWithClient scannerclient.ScannerClient
+	recordingScan := func(_ context.Context, _ *storage.Image,
+		reg registryTypes.ImageRegistry, client scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
+		scannedWithClient = client
+		return successfulScan(context.Background(), nil, reg, client)
+	}
+
+	scan := LocalScan{
+		scanImg:                  recordingScan,
+		fetchSignaturesWithRetry: successfulFetchSignatures,
+		getPullSecretRegistries: func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error) {
+			return []registryTypes.ImageRegistry{&fakeRegistry{fail: false}}, nil
+		},
+		getGlobalRegistries: func(*storage.ImageName) ([]registryTypes.ImageRegistry, error) {
+			return []registryTypes.ImageRegistry{&fakeRegistry{fail: false}}, nil
+		},
+		scannerClientSingleton: singleton,
+		scanSemaphore:          semaphore.NewWeighted(10),
+		getCentralRegistries:   fakeRegStore.GetMatchingCentralRegistryIntegrations,
+		mirrorStore:            mirrorStore,
+		maxSemaphoreWaitTime:   defaultMaxSemaphoreWaitTime,
+	}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	imageServiceClient := suite.createMockImageServiceClient(types.ToImage(containerImg), false)
+	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
+
+	// Must not panic even though the singleton starts returning nil after the check.
+	_, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, genScanReq(containerImg, "fake-namespace", "", false))
+	suite.Require().NoError(err, "unexpected error when enriching image")
+
+	suite.Assert().Equal(1, singletonCalls, "scanner client singleton should be consulted exactly once")
+	suite.Assert().Same(capturedClient, scannedWithClient, "scan should use the client captured at the nil-check")
+}
+
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
