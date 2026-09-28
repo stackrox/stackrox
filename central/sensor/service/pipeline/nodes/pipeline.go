@@ -103,7 +103,6 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// ROX-22002: Remove invalid null characters in annotations
 	stringutils.SanitizeMapValues(node.GetAnnotations())
-
 	if enricher.SupportsNodeScanning(node) {
 		// If supports node scanning, this pipeline should only update the node's
 		// metadata. We call upsert without scan. Upsert will read scan information from
