@@ -162,16 +162,17 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 	}
 	rule.WithProperties(properties)
 
-	run.AddResult(sarif.NewRuleResult(entry.ruleID).
+	run.CreateResultForRule(entry.ruleID).
 		WithLevel(toSarifLevel(entry.severity)).
 		// Reusing the help here, since the help includes remediation information.
 		WithMessage(sarif.NewMessage().WithText(entry.help)).
 		WithLocations([]*sarif.Location{
-			sarif.NewLocation().WithID(0).WithPhysicalLocation(&sarif.PhysicalLocation{
-				ArtifactLocation: sarif.NewArtifactLocation().WithURI(s.entity),
-				Region:           sarif.NewSimpleRegion(1, 1),
-			}),
-		}))
+			sarif.NewLocationWithPhysicalLocation(
+				sarif.NewPhysicalLocation().
+					WithArtifactLocation(sarif.NewArtifactLocation().WithURI(s.entity)).
+					WithRegion(sarif.NewSimpleRegion(1, 1)),
+			),
+		})
 }
 
 func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {

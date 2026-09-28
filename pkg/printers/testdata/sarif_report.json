@@ -119,7 +119,7 @@
           "stacks": [],
           "taxa": [],
           "ruleId": "first-violation",
-          "ruleIndex": -1,
+          "ruleIndex": 0,
           "level": "error",
           "message": {
             "arguments": [],
@@ -128,7 +128,7 @@
           "locations": [
             {
               "annotations": [],
-              "id": 0,
+              "id": -1,
               "logicalLocations": [],
               "relationships": [],
               "physicalLocation": {
@@ -158,7 +158,7 @@
           "stacks": [],
           "taxa": [],
           "ruleId": "second-violation",
-          "ruleIndex": -1,
+          "ruleIndex": 1,
           "level": "note",
           "message": {
             "arguments": [],
@@ -167,7 +167,7 @@
           "locations": [
             {
               "annotations": [],
-              "id": 0,
+              "id": -1,
               "logicalLocations": [],
               "relationships": [],
               "physicalLocation": {
@@ -197,7 +197,7 @@
           "stacks": [],
           "taxa": [],
           "ruleId": "third-violation",
-          "ruleIndex": -1,
+          "ruleIndex": 2,
           "level": "error",
           "message": {
             "arguments": [],
@@ -206,7 +206,7 @@
           "locations": [
             {
               "annotations": [],
-              "id": 0,
+              "id": -1,
               "logicalLocations": [],
               "relationships": [],
               "physicalLocation": {
