@@ -17,8 +17,8 @@ postgres_major_version() {
     # Current images use ARG PG_VERSION; older releases put the major directly in FROM.
     local version
     version="$(sed -n \
-        -e 's/^[[:space:]]*ARG[[:space:]]\{1,\}PG_VERSION=\([0-9][0-9]*\)[[:space:]]*$/\1/p' \
-        -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([0-9][0-9]*\)-.*$/\1/p')"
+        -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([1-9][0-9]*\)-.*$/\1/p')"
     # Missing or ambiguous versions must fail the check, not silently skip coverage.
     [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
     echo "$version"
