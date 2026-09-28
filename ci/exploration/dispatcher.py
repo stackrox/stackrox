@@ -1,8 +1,8 @@
 """Turn resolver opinions into GitHub Actions start, stop, or not start.
 
 Only opinion run starts a job. Skip and unsure do not. The plan names the
-changed files behind each opinion. A default line is the trigger recorded
-for that job.
+rules that decided each job. A default line is the trigger recorded for
+that job.
 """
 
 from __future__ import annotations
@@ -154,8 +154,12 @@ def format_summary(
     return _render_markdown(shadow, title, sections)
 
 
-def github_commands(plans: tuple[JobPlan, ...]) -> tuple[str, ...]:
-    """github_commands is one notice, plus a warning when the plan drops a default start."""
+def github_commands(
+    plans: tuple[JobPlan, ...],
+    conflicts: tuple = (),
+    mapping: Mapping | None = None,
+) -> tuple[str, ...]:
+    """github_commands is one notice, plus a warning per rule conflict and per dropped default."""
     start = sum(plan.would_run for plan in plans)
     skip = sum(plan.action == "stop" for plan in plans)
     unsure = sum(plan.action == "default" for plan in plans)
@@ -165,6 +169,11 @@ def github_commands(plans: tuple[JobPlan, ...]) -> tuple[str, ...]:
     if added:
         notice += f" This plan would start {_jobs(added)} the default would leave off."
     commands = [f"::notice title=Dispatcher plan::{notice}"]
+    if mapping is not None:
+        for conflict in conflicts:
+            commands.append(
+                "::warning title=Dispatcher plan::" + _conflict_text(conflict, mapping)
+            )
     if dropped:
         commands.append(
             "::warning title=Dispatcher plan::"
@@ -208,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         "mapping": mapping,
     }
     sys.stdout.write(format_plan(plans, **report))
-    for command in github_commands(plans):
+    for command in github_commands(plans, selection.conflicts, mapping):
         print(command)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
@@ -267,6 +276,8 @@ def _sections(
         by_action[plan.action].append(plan)
     sections = [
         _Section("Changed files", _changed_files(selection)),
+        _rules_section(selection, mapping),
+        _conflicts_section(selection, mapping),
         _job_section(
             "Will run",
             by_action["start"],
@@ -308,20 +319,13 @@ def _job_section(title, plans, reasons, selection, defaults, pull_request, mappi
     )
 
 
-def _unsure_section(plans, selection, defaults, pull_request):
-    blocked = []
-    plain = []
-    plain_reason = _plain_unsure_reason(selection)
-    for plan in plans:
-        clause = default_sentence(defaults[plan.job], pull_request)
-        reasons = _blocked_reasons(plan.job, selection)
-        if reasons is None:
-            plain.append((plan.job, plain_reason, clause))
-        else:
-            blocked.append((plan.job, reasons, clause))
-    body = _render_jobs(blocked) + _render_jobs(plain)
-    if not body:
-        body = ["  none"]
+def _unsure_section(plans, _selection, defaults, pull_request):
+    reason = ("no rule decided these jobs",)
+    entries = [
+        (plan.job, reason, default_sentence(defaults[plan.job], pull_request))
+        for plan in plans
+    ]
+    body = _render_jobs(entries) or ["  none"]
     return _Section(
         f"Unsure ({len(plans)})",
         tuple(body),
@@ -357,7 +361,9 @@ def _default_sections(plans: tuple[JobPlan, ...]) -> list[_Section]:
 def _collapses(title: str, count: int) -> bool:
     if count <= 3:
         return False
-    return title.startswith(("Unsure", "Will skip", "Default would start", "This plan would start"))
+    return title.startswith(
+        ("Unsure", "Will skip", "Conflicts", "Default would start", "This plan would start")
+    )
 
 
 def _render_jobs(entries: list[tuple[str, tuple[str, ...], str]]) -> list[str]:
@@ -384,33 +390,53 @@ def _render_jobs(entries: list[tuple[str, tuple[str, ...], str]]) -> list[str]:
     return lines
 
 
+def _rules_section(selection: Selection, mapping: Mapping) -> _Section:
+    lines: list[str] = []
+    for number in selection.matched_rules:
+        rule = mapping.by_number[number]
+        lines.append(f"  {number} {rule.name}")
+        lines.append(f"    {rule.condition()}")
+    if not lines:
+        lines.append("  none")
+    return _Section(f"Rules ({len(selection.matched_rules)})", tuple(lines))
+
+
+def _conflicts_section(selection: Selection, mapping: Mapping) -> _Section:
+    if not selection.conflicts:
+        return _Section("Conflicts (0)", ("  none",))
+    lines: list[str] = []
+    for conflict in selection.conflicts:
+        lines.append(f"  {conflict.job}")
+        lines.append(f"    {_conflict_text(conflict, mapping)}")
+    return _Section(
+        f"Conflicts ({len(selection.conflicts)})",
+        tuple(lines),
+        collapse=_collapses("Conflicts", len(selection.conflicts)),
+    )
+
+
+def _conflict_text(conflict, mapping: Mapping) -> str:
+    ran = _rule_phrase(conflict.run_rules, mapping)
+    skipped = _rule_phrase(conflict.skip_rules, mapping)
+    return f"{ran} runs {conflict.job} and {skipped} skips it. Run wins."
+
+
+def _rule_phrase(numbers: tuple[int, ...], mapping: Mapping) -> str:
+    labels = [f"rule {number} {mapping.by_number[number].name}" for number in numbers]
+    return _join_clauses(labels)
+
+
 def _run_reasons(job: str, selection: Selection, mapping: Mapping) -> tuple[str, ...]:
-    if job in mapping.always_run:
-        return ("this job runs on every pull request",)
     requirers = _requirers(job, selection, mapping)
     if job in selection.required_runs and requirers:
         return (f"{_with_verb(requirers, 'requires', 'require')} this job",)
-    if selection.reason == "label":
-        return (f"label {mapping.run_all_label} is set, so this job runs",)
-    if selection.reason == "no-diff":
-        return ("the diff was missing, so this job runs",)
-    if selection.reason == "always-run-all":
-        paths = [trace.path for trace in selection.files if trace.kind == "always-run-all"]
-        matched = _with_verb(paths, "matches", "match")
-        return (f"{matched} a run-everything pattern, so this job runs",)
-    if selection.reason == "docs-only":
-        return ("every changed file is documentation, so this job runs",)
-    lines = []
-    run_paths = _voted(selection, job, "explicit_runs")
-    skip_paths = _voted(selection, job, "explicit_skips")
-    if run_paths:
-        lines.append(_with_verb(run_paths, "says run", "say run"))
-    elif job in mapping.code_always_run:
-        lines.append("every code change runs this job")
-    else:
-        lines.append("a matched file says run")
-    if skip_paths:
-        lines.append(_with_verb(skip_paths, "says skip", "say skip"))
+    decision = selection.decision_for(job)
+    if decision is None:
+        return ("a rule says run",)
+    lines = [_rule_phrase(decision.rules, mapping)]
+    conflict = selection.conflict_for(job)
+    if conflict is not None:
+        lines.append(f"{_rule_phrase(conflict.skip_rules, mapping)} skips it")
         lines.append("run wins")
     return tuple(lines)
 
@@ -423,83 +449,17 @@ def _requirers(job: str, selection: Selection, mapping: Mapping) -> list[str]:
     )
 
 
-def _skip_reasons(job: str, selection: Selection, _mapping: Mapping) -> tuple[str, ...]:
-    if selection.reason == "docs-only":
-        return ("every changed file is documentation",)
-    skip_paths = _voted(selection, job, "explicit_skips")
-    if skip_paths:
-        return (_with_verb(skip_paths, "says skip", "say skip"),)
-    return ("every matched file says skip",)
-
-
-def _blocked_reasons(job: str, selection: Selection) -> tuple[str, ...] | None:
-    skip_paths = _voted(selection, job, "explicit_skips")
-    if not skip_paths:
-        return None
-    lines = [_with_verb(skip_paths, "says skip", "say skip")]
-    silent = [
-        trace.path
-        for trace in selection.files
-        if trace.kind == "domain"
-        and job not in trace.explicit_runs
-        and job not in trace.explicit_skips
-    ]
-    blockers = []
-    if silent:
-        blockers.append(_with_verb(silent, "does not say skip", "do not say skip"))
-    if selection.unmatched_files:
-        blockers.append(_unmatched_clause(selection.unmatched_files))
-    if blockers:
-        lines.append(f"{_join_clauses(blockers)}, so the skip does not stick")
-    else:
-        lines.append("the skip does not stick")
-    return tuple(lines)
-
-
-def _plain_unsure_reason(selection: Selection) -> tuple[str, ...]:
-    if selection.reason == "unmatched":
-        return ("No changed file matches a domain.",)
-    return ("No matched file asks to run or skip these jobs.",)
+def _skip_reasons(job: str, selection: Selection, mapping: Mapping) -> tuple[str, ...]:
+    decision = selection.decision_for(job)
+    if decision is None:
+        return ("no rule decided this job",)
+    return (_rule_phrase(decision.rules, mapping),)
 
 
 def _changed_files(selection: Selection) -> tuple[str, ...]:
-    lines: list[str] = []
-    unmatched: list[str] = []
-    for trace in selection.files:
-        if trace.kind == "unmatched":
-            unmatched.append(trace.path)
-            continue
-        lines.append(f"  {trace.path}")
-        lines.append(f"    {_file_line(trace, selection)}")
-    if unmatched:
-        noun = "file matches" if len(unmatched) == 1 else "files match"
-        lines.append(f"  {len(unmatched)} {noun} no domain")
-        lines.extend(f"    {path}" for path in unmatched)
-    if not lines:
+    if not selection.files:
         return ("  (no file list)",)
-    return tuple(lines)
-
-
-def _file_line(trace, selection: Selection) -> str:
-    if trace.kind == "docs":
-        if selection.reason == "docs-only":
-            return "documentation or changelog"
-        return "docs; ignored because other files change code"
-    if trace.kind == "always-run-all":
-        return "matches a run-everything pattern"
-    if trace.kind != "domain":
-        return trace.kind
-    label = "domains" if "," in trace.domain else "domain"
-    parts = [f"{label} {trace.domain.replace(',', ', ')}"]
-    if trace.explicit_runs:
-        parts.append("runs " + ", ".join(trace.explicit_runs))
-    if trace.explicit_skips:
-        parts.append("skips " + ", ".join(trace.explicit_skips))
-    return ", ".join(parts)
-
-
-def _voted(selection: Selection, job: str, field: str) -> list[str]:
-    return [trace.path for trace in selection.files if job in getattr(trace, field)]
+    return tuple(f"  {trace.path}" for trace in selection.files)
 
 
 def _header(shadow: bool) -> tuple[str, ...]:
@@ -628,14 +588,6 @@ def _join_clauses(parts: list[str]) -> str:
     if len(parts) == 2:
         return f"{parts[0]} and {parts[1]}"
     return f"{', '.join(parts[:-1])}, and {parts[-1]}"
-
-
-def _unmatched_clause(paths: tuple[str, ...]) -> str:
-    if len(paths) == 1:
-        return f"{paths[0]} matches no domain"
-    if len(paths) <= 3:
-        return f"{_join_files(list(paths))} match no domain"
-    return f"{len(paths)} files match no domain"
 
 
 def _jobs(count: int) -> str:

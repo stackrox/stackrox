@@ -63,7 +63,7 @@ jobs:
 
           common=(
             "${py}" ci/exploration/dispatcher.py
-            --mapping ci/test-domains.yaml
+            --mapping ci/test-domains.toml
             --defaults ci/exploration/gha_defaults.yaml
             --labels "${LABELS}"
             "${flags[@]}"

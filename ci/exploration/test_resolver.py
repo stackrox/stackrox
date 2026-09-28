@@ -1,4 +1,4 @@
-"""Behavior of the exploration test-selection resolver."""
+"""Behavior of the ordered rule list."""
 
 import json
 from pathlib import Path
@@ -7,34 +7,19 @@ import pytest
 
 from resolver import load_mapping, main, parse_mapping, resolve
 
-FIXTURE = Path(__file__).with_name("fixture.yaml")
+FIXTURE = Path(__file__).with_name("fixture.toml")
 
 JOBS = frozenset(
     {
         "style",
-        "go-unit-tests",
-        "build",
-        "build-operator",
-        "gke-qa-e2e-tests",
-        "gke-nongroovy-e2e-tests",
-        "gke-ui-e2e-tests",
-        "gke-scale-tests",
-        "ocp-4-12-qa-e2e-tests",
+        "go",
+        "sensor-integration-tests",
+        "go-postgres",
+        "wait-for-images",
+        "should-dispatch",
+        "other",
     }
 )
-
-SENSOR_RUN = frozenset(
-    {"style", "go-unit-tests", "build", "gke-nongroovy-e2e-tests"}
-)
-SENSOR_SKIP = frozenset(
-    {
-        "build-operator",
-        "gke-ui-e2e-tests",
-        "gke-scale-tests",
-        "ocp-4-12-qa-e2e-tests",
-    }
-)
-SENSOR_UNSURE = frozenset({"gke-qa-e2e-tests"})
 
 
 @pytest.fixture
@@ -46,248 +31,97 @@ def decide(mapping, files, labels=None, shadow=True):
     return resolve(files, mapping, labels, shadow=shadow)
 
 
-def assert_split(result, run, skip, unsure):
-    assert result.run == frozenset(run)
-    assert result.skip == frozenset(skip)
-    assert result.unsure == frozenset(unsure)
-    assert result.run | result.skip | result.unsure == JOBS
-    assert result.run.isdisjoint(result.skip)
-    assert result.run.isdisjoint(result.unsure)
-    assert result.skip.isdisjoint(result.unsure)
-
-
-def assert_run_all(result):
-    assert_split(result, JOBS, set(), set())
-    assert result.matched_domains == frozenset()
-    assert result.execute == JOBS
-
-
-def assert_unsure_all(result):
-    assert_split(result, set(), set(), JOBS)
-    assert result.matched_domains == frozenset()
-    assert result.execute == JOBS
-
-
-def test_fixture_uses_ten_path_patterns(mapping):
-    patterns = list(mapping.always_run_all_patterns)
-    patterns.extend(mapping.skip_all_patterns)
-    for domain in mapping.domains.values():
-        patterns.extend(domain.path_patterns)
-    assert len(patterns) == 10
-
-
-def test_label_runs_every_job_even_for_docs(mapping):
-    result = decide(mapping, ["README.md"], labels=["ci-run-all-tests"])
-    assert result.reason == "label"
-    assert_run_all(result)
-
-
-@pytest.mark.parametrize("files", [None, []])
-def test_missing_diff_runs_every_job(mapping, files):
-    result = decide(mapping, files)
-    assert result.reason == "no-diff"
-    assert_run_all(result)
-
-
-@pytest.mark.parametrize("path", ["go.mod", "proto/storage/alert.proto"])
-def test_always_run_all_patterns_run_every_job(mapping, path):
-    result = decide(mapping, [path, "sensor/common/foo.go"])
-    assert result.reason == "always-run-all"
-    assert_run_all(result)
-
-
-def test_go_mod_pattern_does_not_match_nested_files(mapping):
-    result = decide(mapping, ["third_party/go.mod"])
-    assert result.reason == "unmatched"
-    assert result.unmatched_files == ("third_party/go.mod",)
-
-
-def test_docs_only_skips_every_job_except_style(mapping):
+def test_docs_only_skips_go_and_runs_style(mapping):
     result = decide(mapping, ["README.md", "docs/guide.md"])
-    assert result.reason == "docs-only"
-    assert result.matched_domains == frozenset()
-    assert_split(result, {"style"}, JOBS - {"style"}, set())
+    assert result.reason == "rules"
+    assert result.unsure == frozenset()
+    assert "style" in result.run
+    assert "go" in result.skip
+    assert result.decision_for("go").rules == (3,)
+    assert result.conflicts == ()
+    assert "wait-for-images" in result.run
+    assert "should-dispatch" in result.required_runs
 
 
-def test_docs_mixed_with_code_use_the_code_domain(mapping):
-    result = decide(mapping, ["README.md", "sensor/common/foo.go"])
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"sensor"})
-    assert_split(result, SENSOR_RUN, SENSOR_SKIP, SENSOR_UNSURE)
-
-
-def test_unmatched_file_leaves_every_job_unsure(mapping):
-    result = decide(mapping, ["pkg/booleanpolicy/foo.go"])
-    assert result.reason == "unmatched"
-    assert result.unmatched_files == ("pkg/booleanpolicy/foo.go",)
-    assert_unsure_all(result)
-    assert result.files[0].kind == "unmatched"
-    assert result.files[0].explicit_runs == ()
-
-
-def test_unmatched_file_keeps_a_run_and_blocks_a_skip(mapping):
-    result = decide(
-        mapping, ["sensor/common/foo.go", "pkg/booleanpolicy/foo.go"]
-    )
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"sensor"})
-    assert result.unmatched_files == ("pkg/booleanpolicy/foo.go",)
-    assert_split(result, SENSOR_RUN, set(), SENSOR_SKIP | SENSOR_UNSURE)
-    by_path = {trace.path: trace for trace in result.files}
-    assert "gke-nongroovy-e2e-tests" in by_path["sensor/common/foo.go"].explicit_runs
-    assert "gke-ui-e2e-tests" in by_path["sensor/common/foo.go"].explicit_skips
-    assert by_path["pkg/booleanpolicy/foo.go"].explicit_runs == ()
-
-
-def test_longer_prefix_overrides_parent_instead_of_union(mapping):
-    result = decide(
-        mapping, ["sensor/kubernetes/complianceoperator/foo.go"]
-    )
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"sensor-ocp"})
-    assert_split(
-        result,
-        {
-            "style",
-            "go-unit-tests",
-            "build",
-            "gke-qa-e2e-tests",
-            "ocp-4-12-qa-e2e-tests",
-        },
-        {
-            "build-operator",
-            "gke-nongroovy-e2e-tests",
-            "gke-ui-e2e-tests",
-            "gke-scale-tests",
-        },
-        set(),
-    )
-
-
-def test_shorter_prefix_keeps_the_parent_domain(mapping):
+def test_go_file_runs_go_even_when_a_directory_rule_also_matches(mapping):
     result = decide(mapping, ["sensor/common/foo.go"])
-    assert result.matched_domains == frozenset({"sensor"})
-    assert_split(result, SENSOR_RUN, SENSOR_SKIP, SENSOR_UNSURE)
+    assert "go" in result.run
+    assert result.decision_for("go").rules == (4,)
+    assert "sensor-integration-tests" in result.run
+    assert "go-postgres" in result.skip
+    assert result.decision_for("go-postgres").rules == (5,)
+    assert result.conflicts == ()
 
 
-def test_ui_change_runs_build_and_skips_build_operator(mapping):
-    result = decide(mapping, ["ui/src/App.tsx"])
-    assert "build" in result.run
-    assert "build-operator" in result.skip
-    assert "build-operator" not in result.run
-    assert_split(
-        result,
-        {"style", "go-unit-tests", "build", "gke-ui-e2e-tests"},
-        {
-            "build-operator",
-            "gke-qa-e2e-tests",
-            "gke-nongroovy-e2e-tests",
-            "gke-scale-tests",
-            "ocp-4-12-qa-e2e-tests",
-        },
-        set(),
-    )
+def test_opposite_votes_warn_and_run_wins(mapping):
+    result = decide(mapping, ["sensor/common/foo.go", "central/policy/service.go"])
+    assert "go-postgres" in result.run
+    assert "sensor-integration-tests" in result.run
+    by_job = {conflict.job: conflict for conflict in result.conflicts}
+    assert by_job["go-postgres"].run_rules == (6,)
+    assert by_job["go-postgres"].skip_rules == (5,)
+    assert by_job["sensor-integration-tests"].run_rules == (5,)
+    assert by_job["sensor-integration-tests"].skip_rules == (6,)
 
 
-def test_scale_script_leaves_the_image_build_unsure(mapping):
-    result = decide(mapping, ["tests/e2e/run-scale.sh"])
-    assert result.matched_domains == frozenset({"scale"})
-    assert_split(
-        result,
-        {"style", "go-unit-tests", "gke-scale-tests"},
-        {
-            "build-operator",
-            "gke-qa-e2e-tests",
-            "gke-nongroovy-e2e-tests",
-            "gke-ui-e2e-tests",
-            "ocp-4-12-qa-e2e-tests",
-        },
-        {"build"},
-    )
+def test_run_all_label_beats_a_later_skip(mapping):
+    result = decide(mapping, ["README.md"], labels=["ci-run-all-tests"])
+    assert result.run == JOBS
+    assert result.skip == frozenset()
+    go = result.conflict_for("go")
+    assert go is not None
+    assert go.run_rules == (1,)
+    assert go.skip_rules == (3,)
 
 
-def test_policy_path_is_its_own_domain(mapping):
-    result = decide(mapping, ["central/policy/service.go"])
-    assert result.matched_domains == frozenset({"central-policy"})
-    assert "gke-qa-e2e-tests" in result.unsure
-    assert "gke-nongroovy-e2e-tests" in result.run
-    assert "gke-ui-e2e-tests" in result.skip
+def test_missing_diff_runs_every_job_and_docs_do_not_match(mapping):
+    result = decide(mapping, [])
+    assert result.run == JOBS
+    assert result.conflicts == ()
+    assert 3 not in result.matched_rules
 
 
-def test_mixed_domains_run_wins_and_silence_blocks_skip(mapping):
-    result = decide(mapping, ["sensor/common/foo.go", "scanner/matcher/bar.go"])
-    assert result.matched_domains == frozenset({"sensor", "scanner"})
-    assert "gke-nongroovy-e2e-tests" in result.run
-    assert "gke-ui-e2e-tests" in result.skip
-    assert "gke-scale-tests" in result.unsure
-    assert "gke-qa-e2e-tests" in result.unsure
+def test_remaining_does_not_conflict_with_an_earlier_run(mapping):
+    result = decide(mapping, ["README.md"])
+    assert result.conflict_for("style") is None
+    assert result.conflict_for("wait-for-images") is None
+    assert result.decision_for("other").rules == (8,)
 
 
-def test_shadow_mode_executes_every_job_while_reporting_skips(mapping):
-    result = decide(mapping, ["sensor/common/foo.go"], shadow=True)
-    assert result.shadow is True
-    assert result.skip
-    assert result.execute == JOBS
-
-
-def test_enforce_mode_executes_run_and_unsure_only(mapping):
+def test_enforce_executes_only_run(mapping):
     result = decide(mapping, ["sensor/common/foo.go"], shadow=False)
-    assert result.shadow is False
-    assert result.execute == SENSOR_RUN | SENSOR_UNSURE
-    assert result.skip == SENSOR_SKIP
+    assert result.execute == result.run
     assert result.execute.isdisjoint(result.skip)
 
 
-def test_shadow_is_the_default(mapping):
-    result = resolve(["sensor/common/foo.go"], mapping)
+def test_shadow_executes_every_job(mapping):
+    result = decide(mapping, ["sensor/common/foo.go"])
     assert result.shadow is True
     assert result.execute == JOBS
 
 
-def test_code_always_run_overrides_a_domain_skip():
-    mapping = parse_mapping(mapping_dict())
-    result = resolve(["ui/a.tsx"], mapping, shadow=False)
-    assert "style" in result.run
-
-
-def test_rejects_unknown_mapping_version():
-    data = mapping_dict()
-    data["version"] = 2
-    with pytest.raises(ValueError, match="version"):
+def test_last_rule_must_skip_what_remains():
+    data = _rules()
+    data["rules"][-1]["skip"] = ["other"]
+    with pytest.raises(ValueError, match="last rule"):
         parse_mapping(data)
 
 
-def test_rejects_opinion_for_an_unknown_job():
-    data = mapping_dict()
-    data["domains"] = {
-        "ui": {
-            "paths": ["^ui/"],
-            "jobs": {"build-operator": "run"},
-        }
-    }
-    with pytest.raises(ValueError, match="build-operator"):
+def test_numbers_must_follow_the_list():
+    data = _rules()
+    data["rules"][1]["number"] = 9
+    with pytest.raises(ValueError, match="numbered"):
         parse_mapping(data)
 
 
-def test_rejects_an_unknown_opinion():
-    data = mapping_dict()
-    data["domains"]["ui"]["jobs"] = {"build": "maybe"}
-    with pytest.raises(ValueError, match="maybe"):
+def test_a_rule_cannot_say_unsure():
+    data = _rules()
+    data["rules"][0]["unsure"] = ["other"]
+    with pytest.raises(ValueError, match="unsure"):
         parse_mapping(data)
 
 
-def test_rejects_an_unknown_parent_domain():
-    data = mapping_dict()
-    data["domains"]["child"] = {
-        "extends": "missing",
-        "paths": ["^child/"],
-        "jobs": {},
-    }
-    with pytest.raises(ValueError, match="missing"):
-        parse_mapping(data)
-
-
-def test_human_report_puts_the_summary_before_each_file(capsys):
+def test_human_report_lists_rules_then_conflicts(capsys):
     exit_code = main(
         [
             "--mapping",
@@ -295,56 +129,35 @@ def test_human_report_puts_the_summary_before_each_file(capsys):
             "--format",
             "human",
             "sensor/common/foo.go",
-            "pkg/booleanpolicy/foo.go",
+            "central/policy/service.go",
         ]
     )
     assert exit_code == 0
     report = capsys.readouterr().out
-    summary, changed = report.split("Changed files", 1)
-    assert report.index("Summary") < report.index("Changed files")
-    assert "A file with no rule blocks a skip" in summary
-    assert "gke-nongroovy-e2e-tests" in summary
-    assert "every known job is unsure" not in summary
-    assert "no rule matches this path" in changed
-    assert "explicit runs:" in changed
-    assert "gke-nongroovy-e2e-tests" in changed
+    assert report.index("Rules:") < report.index("Conflicts:")
+    assert report.index("Conflicts:") < report.index("Run (")
+    assert "go-postgres" in report
+    assert "run wins" in report
 
 
-def test_cli_shadow_json_lists_three_buckets(capsys):
+def test_cli_json_lists_conflicts(capsys):
     exit_code = main(
-        [
-            "--mapping",
-            str(FIXTURE),
-            "--format",
-            "json",
-            "sensor/common/foo.go",
-        ]
+        ["--mapping", str(FIXTURE), "--format", "json", "sensor/a.go", "central/policy/b.go"]
     )
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["shadow"] is True
-    assert payload["reason"] == "domains"
-    assert set(payload["execute"]) == set(payload["run"]) | set(
-        payload["skip"]
-    ) | set(payload["unsure"])
-    assert "gke-nongroovy-e2e-tests" in payload["run"]
-    assert "gke-ui-e2e-tests" in payload["skip"]
-    assert "gke-qa-e2e-tests" in payload["unsure"]
+    assert payload["reason"] == "rules"
+    assert payload["unsure"] == []
+    jobs = {item["job"] for item in payload["conflicts"]}
+    assert jobs == {"go-postgres", "sensor-integration-tests"}
 
 
-def mapping_dict():
+def _rules():
     return {
         "version": 1,
-        "jobs": ["style", "build"],
-        "code_always_run": ["style"],
-        "docs_run": ["style"],
-        "run_all_label": "ci-run-all-tests",
-        "always_run_all": ["^go\\.mod$"],
-        "skip_all": ["\\.md$"],
-        "domains": {
-            "ui": {
-                "paths": ["^ui/"],
-                "jobs": {"build": "run", "style": "skip"},
-            }
-        },
+        "jobs": ["style", "other"],
+        "rules": [
+            {"number": 1, "name": "style", "when": "always", "run": ["style"]},
+            {"number": 2, "name": "remaining", "when": "remaining", "skip": ["*"]},
+        ],
     }

@@ -18,7 +18,7 @@ from dispatcher import (
 from resolver import FileTrace, Selection, load_mapping, resolve
 
 DEFAULTS = Path(__file__).with_name("gha_defaults.yaml")
-MAPPING = Path(__file__).resolve().parents[1] / "test-domains.yaml"
+MAPPING = Path(__file__).resolve().parents[1] / "test-domains.toml"
 
 READY = PullRequest(draft=False, fork=False, labels=frozenset(), files=())
 
@@ -36,7 +36,8 @@ def test_run_starts_whether_or_not_the_old_trigger_would():
     by_job = {item.job: item for item in plan}
     assert by_job["style-check"].action == "start"
     assert by_job["style-check"].would_run is True
-    assert by_job["e2e-qa-tests-gke"].opinion == "unsure"
+    assert by_job["e2e-qa-tests-gke"].opinion == "skip"
+    assert by_job["e2e-qa-tests-gke"].would_run is False
 
 
 def test_run_starts_a_job_the_old_trigger_would_leave_off():
@@ -46,9 +47,7 @@ def test_run_starts_a_job_the_old_trigger_would_leave_off():
         skip=frozenset(),
         unsure=frozenset(),
         execute=frozenset({"e2e-qa-tests-gke"}),
-        reason="domains",
-        matched_domains=frozenset(),
-        unmatched_files=(),
+        reason="rules",
         shadow=True,
     )
     plan = dispatch(selection, defaults, READY)
@@ -69,19 +68,19 @@ def test_skip_stops_a_job_the_old_trigger_would_start():
     assert go_postgres.would_run is False
 
 
-def test_unsure_does_not_run():
+def test_skip_does_not_run():
     defaults = load_defaults(DEFAULTS)
     selection = resolve(["sensor/common/foo.go"], load_mapping(MAPPING))
     draft = PullRequest(draft=True, fork=False, labels=frozenset(), files=("sensor/common/foo.go",))
     plan = dispatch(selection, defaults, draft)
     by_job = {item.job: item for item in plan}
-    assert by_job["go"].action == "default"
-    assert by_job["go"].default_starts is True
-    assert by_job["go"].would_run is False
-    assert by_job["e2e-byodb-tests"].action == "default"
-    assert by_job["e2e-byodb-tests"].default_starts is False
+    assert by_job["go"].action == "start"
+    assert by_job["go"].would_run is True
+    assert by_job["go-postgres"].action == "stop"
+    assert by_job["go-postgres"].default_starts is True
+    assert by_job["go-postgres"].would_run is False
+    assert by_job["e2e-byodb-tests"].action == "stop"
     assert by_job["e2e-byodb-tests"].would_run is False
-    assert by_job["e2e-qa-tests-gke"].default_starts is False
 
 
 def test_label_is_the_old_trigger_for_optional_e2e():
@@ -177,108 +176,98 @@ def test_default_sentence_agrees_with_whether_the_default_starts():
 
 def test_plan_text_for_a_sensor_change():
     text, summary = _report(("sensor/common/foo.go",))
-    assert text.index("Changed files") < text.index("Will run (")
+    assert text.index("Changed files") < text.index("Rules (")
+    assert text.index("Rules (") < text.index("Conflicts (")
+    assert text.index("Conflicts (") < text.index("Will run (")
     assert text.index("Will run (") < text.index("Will skip (")
     assert text.index("Will skip (") < text.index("Unsure (")
     assert text.index("Unsure (") < text.index("Default would start these")
     assert "today" not in text.lower()
     assert "Shadow." in text
     assert "ci-dispatcher-enforce" in text
-    assert "::group::Unsure (" in text
+    assert "::group::Unsure (" not in text
     assert "::group::Will run (" not in text
 
-    changed = _between(text, "Changed files", "Will run (")
-    assert "domain sensor, runs sensor-integration-tests, skips go-postgres" in changed
-
+    assert "sensor/common/foo.go" in text
     run = _between(text, "Will run (", "Will skip (")
-    assert run.index("sensor-integration-tests") < run.index("style-check")
-    assert "sensor/common/foo.go says run" in run
-    assert "every code change runs this job" in run
-    assert "this job runs on every pull request" in run
+    assert "rule 5 go-sources" in run
+    assert "rule 7 sensor" in run
+    assert "rule 6 style" in run
+    assert "rule 9 image-wait" in run
     assert "wait-for-images requires this job" in run
-    assert (
-        text.count("default: starts because sensor/common/foo.go is outside ui/") == 2
-    )
+    assert "Conflicts (0)" in text
 
     skip = _between(text, "Will skip (", "Unsure (")
-    assert skip.index("go-postgres") < skip.index("sensor/common/foo.go says skip")
-    assert "default: starts on every pull request" in skip
+    assert "rule 7 sensor" in skip
+    assert "go-postgres" in skip
+    assert "rule 10 remaining" in skip
 
-    unsure = _between(text, "Unsure (", "Default would start")
-    assert unsure.count("default: starts on every pull request") == 1
-    assert "\n      go\n" in unsure
-    assert "No matched file asks to run or skip these jobs." in unsure
-
+    assert "Unsure (0)" in text
     dropped = _between(text, "Default would start these", "\n\n")
     assert "\n  go-postgres\n" in dropped
-    assert "\n  go\n" in dropped
+    assert "\n  go\n" not in dropped
 
     assert "## Will run (" in summary
-    assert "<summary>Unsure (" in summary
+    assert "<summary>Will skip (" in summary
     assert "::group::" not in summary
 
 
 def test_plan_text_shows_a_run_winning_over_a_skip():
-    text, _summary = _report(
-        (
-            "sensor/test-selection-shadow.txt",
-            "central/policy/test-selection-shadow.txt",
-            ".github/workflows/style.yaml",
-        )
+    files_for_conflict = (
+        "sensor/test-selection-shadow.txt",
+        "central/policy/test-selection-shadow.txt",
+        ".github/workflows/style.yaml",
     )
-    changed = _between(text, "Changed files", "Will run (")
-    assert "domain sensor, runs sensor-integration-tests, skips go-postgres" in changed
+    text, _summary = _report(files_for_conflict)
+    assert ".github/workflows/style.yaml" in text
+    conflicts = _between(text, "Conflicts (", "Will run (")
+    assert "go-postgres" in conflicts
+    assert "sensor-integration-tests" in conflicts
     assert (
-        "domain central-policy, runs go-postgres, skips sensor-integration-tests"
-        in changed
+        "rule 8 central-policy runs go-postgres and rule 7 sensor skips it. Run wins."
+        in conflicts
     )
-    assert "1 file matches no domain" in changed
-    assert ".github/workflows/style.yaml" in changed
-
+    assert (
+        "rule 7 sensor runs sensor-integration-tests and rule 8 central-policy skips it. Run wins."
+        in conflicts
+    )
     run = _between(text, "Will run (", "Will skip (")
-    assert "matches no domain" not in run
-    postgres = run.split("sensor-integration-tests", 1)[0]
-    assert "central/policy/test-selection-shadow.txt says run" in postgres
-    assert "sensor/test-selection-shadow.txt says skip" in postgres
-    assert "run wins" in postgres
-    sensor = run.split("sensor-integration-tests", 1)[1].split("style-check", 1)[0]
-    assert "sensor/test-selection-shadow.txt says run" in sensor
-    assert "central/policy/test-selection-shadow.txt says skip" in sensor
-    assert "run wins" in sensor
+    assert "run wins" in run
+    assert "rule 8 central-policy" in run
+    assert "rule 7 sensor" in run
+    mapping = load_mapping(MAPPING)
+    selection = resolve(list(files_for_conflict), mapping)
+    plans = dispatch(selection, load_defaults(DEFAULTS), READY)
+    warnings = [
+        command
+        for command in github_commands(plans, selection.conflicts, mapping)
+        if command.startswith("::warning")
+    ]
+    assert any("go-postgres" in command and "Run wins." in command for command in warnings)
 
-    skip = _between(text, "Will skip (", "Unsure (")
-    assert "go-postgres" not in skip
-    assert "none" in skip
 
-
-def test_plan_text_says_when_an_unmatched_file_blocks_a_skip():
+def test_plan_text_keeps_a_skip_when_another_file_matches_no_rule():
     text, _summary = _report(
         ("sensor/common/foo.go", ".github/workflows/style.yaml")
     )
     skip = _between(text, "Will skip (", "Unsure (")
-    assert "none" in skip
-    assert "go-postgres" not in skip
-    unsure = _between(text, "Unsure (", "Default would start")
-    blocked = unsure.split("No matched file asks", 1)[0]
-    assert blocked.index("go-postgres") < blocked.index("says skip")
-    assert (
-        ".github/workflows/style.yaml matches no domain, so the skip does not stick"
-        in blocked
-    )
+    assert "go-postgres" in skip
+    assert "rule 7 sensor" in skip
+    assert "Conflicts (0)" in text
 
 
 def test_plan_text_for_docs_only():
     text, summary = _report(("README.md",))
     assert "ignored because other files" not in text
-    assert "documentation or changelog" in text
     run = _between(text, "Will run (", "Will skip (")
     assert "style-check" in run
-    assert "every changed file is documentation, so this job runs" in run
-    assert "this job runs on every pull request" in run
+    assert "rule 4 docs-only" in run
+    assert "rule 6 style" in run
+    assert "rule 9 image-wait" in run
     assert "wait-for-images requires this job" in run
     skip = _between(text, "Will skip (", "Unsure (")
-    assert skip.count("every changed file is documentation") == 1
-    assert "go-postgres" in skip
+    assert "go" in skip
+    assert "rule 4 docs-only" in skip
     assert "::group::Will skip (" in text
     assert "Unsure (0)" in text
     assert "::group::Unsure" not in text
@@ -287,15 +276,16 @@ def test_plan_text_for_docs_only():
 
 def test_plan_text_for_files_that_match_nothing():
     text, _summary = _report((".github/workflows/style.yaml",))
-    assert "Will run (2)" in text
-    assert "this job runs on every pull request" in text
+    assert "Will run (3)" in text
+    assert "rule 6 style" in text
+    assert "rule 9 image-wait" in text
     assert "wait-for-images requires this job" in text
-    assert "Will skip (0)" in text
-    unsure = _between(text, "Unsure (", "Default would start")
-    assert "No changed file matches a domain." in unsure
-    assert text.count(".github/workflows/style.yaml matches the path rule") == 1
-    assert "github-actions-lint" in unsure
-    assert "github-actions-shellcheck" in unsure
+    assert "Will skip (" in text
+    skip = _between(text, "Will skip (", "Unsure (")
+    assert "github-actions-lint" in skip
+    assert "github-actions-shellcheck" in skip
+    assert "rule 10 remaining" in skip
+    assert ".github/workflows/style.yaml matches the path rule" in skip
 
 
 def test_plan_text_names_a_job_the_plan_starts_and_the_default_leaves_off():
@@ -307,9 +297,7 @@ def test_plan_text_names_a_job_the_plan_starts_and_the_default_leaves_off():
         skip=frozenset(),
         unsure=frozenset(),
         execute=frozenset({"e2e-qa-tests-gke"}),
-        reason="domains",
-        matched_domains=frozenset({"sensor"}),
-        unmatched_files=(),
+        reason="rules",
         shadow=True,
         files=(
             FileTrace(
@@ -321,7 +309,7 @@ def test_plan_text_names_a_job_the_plan_starts_and_the_default_leaves_off():
         ),
     )
     text, _summary = _report(("sensor/x.go",), defaults=defaults, selection=selection)
-    assert "sensor/x.go says run" in text
+    assert "a rule says run" in text
     assert "default: stays off because label e2e-qa-tests-gke is absent" in text
     assert "This plan would start these, and the default would not" in text
     assert "Default would start these" not in text
@@ -331,7 +319,7 @@ def test_plan_text_names_a_job_the_plan_starts_and_the_default_leaves_off():
 def test_plan_text_says_when_the_plan_and_the_default_agree():
     defaults = {"style-check": {"when": "always"}}
     text, _summary = _report(("central/policy/service.go",), defaults=defaults)
-    assert "every code change runs this job" in text
+    assert "rule 6 style" in text
     assert "Default matches this plan." in text
     assert "Default would start these" not in text
 
@@ -384,7 +372,7 @@ def test_cli_prints_the_plan_and_writes_the_summary(capsys, tmp_path, monkeypatc
     assert "Will run (" in out
     assert "::notice title=Dispatcher plan::" in out
     written = summary.read_text()
-    assert "<summary>Unsure (" in written
+    assert "<summary>Will skip (" in written
     assert "::group::" not in written
 
 

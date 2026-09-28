@@ -1,0 +1,72 @@
+# Small rule list for the resolver tests.
+
+version = 1
+
+jobs = [
+  "style",
+  "go",
+  "sensor-integration-tests",
+  "go-postgres",
+  "wait-for-images",
+  "should-dispatch",
+  "other",
+]
+
+[[rules]]
+number = 1
+name = "run-all-label"
+when = "label"
+label = "ci-run-all-tests"
+run = ["*"]
+
+[[rules]]
+number = 2
+name = "no-files"
+when = "no-files"
+run = ["*"]
+
+[[rules]]
+number = 3
+name = "docs-only"
+when = "all"
+paths = ['\.md$', '^docs/']
+run = ["style"]
+skip = ["go"]
+
+[[rules]]
+number = 4
+name = "go-sources"
+when = "any"
+paths = ['\.go$']
+run = ["go"]
+
+[[rules]]
+number = 5
+name = "sensor"
+when = "any"
+paths = ['^sensor/']
+run = ["sensor-integration-tests"]
+skip = ["go-postgres"]
+
+[[rules]]
+number = 6
+name = "central-policy"
+when = "any"
+paths = ['^central/policy/']
+run = ["go-postgres"]
+skip = ["sensor-integration-tests"]
+
+[[rules]]
+number = 7
+name = "image-wait"
+when = "always"
+run = ["wait-for-images"]
+
+[[rules]]
+number = 8
+name = "remaining"
+when = "remaining"
+skip = ["*"]
+
+[requires]
+wait-for-images = ["should-dispatch"]

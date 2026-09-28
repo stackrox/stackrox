@@ -1,21 +1,10 @@
-"""The three production rules in ci/test-domains.yaml."""
+"""The production rule list in ci/test-domains.toml."""
 
 from pathlib import Path
 
 from resolver import load_mapping, resolve
 
-PRODUCTION = Path(__file__).resolve().parents[1] / "test-domains.yaml"
-
-CI_FILES = [
-    ".github/workflows/test-selection-shadow.yaml",
-    ".gitignore",
-    "ci/exploration/fixture.yaml",
-    "ci/exploration/resolver.py",
-    "ci/exploration/test_production_map.py",
-    "ci/exploration/test_resolver.py",
-    "ci/test-domains.yaml",
-]
-
+PRODUCTION = Path(__file__).resolve().parents[1] / "test-domains.toml"
 
 IMAGE_WAIT = frozenset({"wait-for-images", "should-dispatch"})
 
@@ -25,73 +14,43 @@ def decide(files, labels=None):
     return mapping, resolve(files, mapping, labels)
 
 
-def test_docs_and_changelog_run_style_and_the_image_wait():
+def test_docs_and_changelog_skip_go():
     mapping, result = decide(["README.md", "CHANGELOG.md", "docs/guide.md"])
-    assert result.reason == "docs-only"
-    assert result.run == frozenset({"style-check"}) | IMAGE_WAIT
+    assert result.unsure == frozenset()
+    assert "style-check" in result.run
+    assert "go" in result.skip
+    assert result.decision_for("go").rules == (4,)
+    assert result.conflicts == ()
+    assert IMAGE_WAIT <= result.run
     assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == mapping.jobs - result.run
-    assert result.unsure == frozenset()
 
 
-def test_sensor_change_runs_sensor_integration_and_skips_central_postgres():
-    mapping, result = decide(["sensor/common/foo.go"])
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"sensor"})
-    assert result.run == frozenset({"style-check", "sensor-integration-tests"}) | IMAGE_WAIT
-    assert result.required_runs == frozenset({"should-dispatch"})
-    assert result.skip == frozenset({"go-postgres"})
-    assert result.unsure == mapping.jobs - result.run - result.skip
-    assert result.files[0].explicit_runs == ("sensor-integration-tests",)
-    assert result.files[0].explicit_skips == ("go-postgres",)
+def test_go_source_runs_go_unit_tests():
+    _mapping, result = decide(["sensor/common/foo.go"])
+    assert "go" in result.run
+    assert result.decision_for("go").rules == (5,)
+    assert "sensor-integration-tests" in result.run
+    assert "go-postgres" in result.skip
+    assert result.conflict_for("go") is None
 
 
-def test_central_policy_runs_postgres_tests_and_skips_sensor_integration():
-    mapping, result = decide(["central/policy/service.go"])
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"central-policy"})
-    assert result.run == frozenset({"style-check", "go-postgres"}) | IMAGE_WAIT
-    assert result.required_runs == frozenset({"should-dispatch"})
-    assert result.skip == frozenset({"sensor-integration-tests"})
-    assert result.unsure == mapping.jobs - result.run - result.skip
-    assert result.files[0].explicit_runs == ("go-postgres",)
-    assert result.files[0].explicit_skips == ("sensor-integration-tests",)
-
-
-def test_matched_runs_stay_when_other_files_match_nothing():
-    mapping, result = decide(
-        CI_FILES
-        + [
-            "ci/exploration/samples/docs-note.md",
-            "sensor/test-selection-shadow.txt",
-            "central/policy/test-selection-shadow.txt",
-        ]
+def test_sensor_and_central_conflict_and_run_wins():
+    _mapping, result = decide(
+        ["sensor/test-selection-shadow.txt", "central/policy/test-selection-shadow.txt"]
     )
-    assert result.reason == "domains"
-    assert result.matched_domains == frozenset({"sensor", "central-policy"})
-    assert result.run == frozenset(
-        {"style-check", "sensor-integration-tests", "go-postgres"}
-    ) | IMAGE_WAIT
-    assert result.required_runs == frozenset({"should-dispatch"})
-    assert result.skip == frozenset()
-    assert result.unsure == mapping.jobs - result.run
-    assert result.execute == mapping.jobs
+    assert "go" in result.skip
+    assert "sensor-integration-tests" in result.run
+    assert "go-postgres" in result.run
+    assert result.conflict_for("go-postgres") is not None
+    assert result.conflict_for("sensor-integration-tests") is not None
 
 
-def test_ci_only_change_runs_the_image_wait_and_leaves_the_rest_unsure():
-    mapping, result = decide(CI_FILES)
-    assert result.reason == "unmatched"
-    assert result.run == IMAGE_WAIT
-    assert result.required_runs == frozenset({"should-dispatch"})
-    assert result.skip == frozenset()
-    assert result.unsure == mapping.jobs - result.run
-    assert result.execute == mapping.jobs
-    assert [trace.path for trace in result.files] == CI_FILES
-    assert all(trace.explicit_runs == () for trace in result.files)
-
-
-def test_production_shadow_still_executes_every_job():
-    mapping, result = decide(["sensor/common/foo.go"])
-    assert result.shadow is True
-    assert result.execute == mapping.jobs
-    assert result.skip
+def test_ci_only_change_skips_go_and_runs_style_and_the_image_wait():
+    mapping, result = decide(["ci/test-domains.toml", ".github/workflows/style.yaml"])
+    assert "go" in result.skip
+    assert result.decision_for("go").rules == (10,)
+    assert "style-check" in result.run
+    assert IMAGE_WAIT <= result.run
+    assert result.unsure == frozenset()
+    assert result.skip == mapping.jobs - result.run

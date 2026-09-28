@@ -1,0 +1,163 @@
+# Rules are walked in number order. A later run overrides an earlier skip.
+# A later skip does not override an earlier run: the plan warns, and the
+# job runs. A job no rule has mentioned stays unsure until rule 10, which
+# skips whatever is left. Rules do not say unsure.
+#
+# The jobs list is every target a pull request can hit: GitHub Actions
+# job ids, then Prow job names. A prerequisite is a target too.
+
+version = 1
+
+jobs = [
+  "style-check",
+  "misc-checks",
+  "golangci-lint",
+  "check-generated-files",
+  "github-actions-lint",
+  "github-actions-shellcheck",
+  "openshift-ci-lint",
+  "check-dependent-images-exist",
+  "check-crd-compatibility",
+  "go",
+  "go-postgres",
+  "go-bench",
+  "ui",
+  "ui-component",
+  "local-roxctl-tests",
+  "shell-unit-tests",
+  "openshift-ci-unit-tests",
+  "sensor-integration-tests",
+  "db-integration-tests",
+  "scanner-ft-images",
+  "scanner-ft-run",
+  "e2e-byodb-tests",
+  "e2e-db-backup-restore-tests",
+  "e2e-gke-upgrade-tests",
+  "e2e-nongroovy-tests",
+  "e2e-qa-tests-gke",
+  "e2e-qa-tests-gke-konflux",
+  "e2e-qa-tests-ocp-4-22",
+  "e2e-test-on-kind",
+  "should-dispatch",
+  "wait-for-images",
+  "wait-for-konflux-images",
+  "aks-qa-e2e-tests",
+  "aro-qa-e2e-tests",
+  "eks-qa-e2e-tests",
+  "gke-external-pg-17-qa-e2e-tests",
+  "gke-nongroovy-compatibility-tests",
+  "gke-nongroovy-e2e-tests",
+  "gke-operator-e2e-tests",
+  "gke-qa-e2e-tests",
+  "gke-race-condition-qa-e2e-tests",
+  "gke-scale-tests",
+  "gke-scanner-v4-install-tests",
+  "gke-ui-e2e-tests",
+  "gke-version-compatibility-tests",
+  "ibmcloudz-qa-e2e-tests",
+  "ocp-compliance-e2e-tests",
+  "ocp-nongroovy-e2e-tests",
+  "ocp-operator-e2e-tests",
+  "ocp-perf-scale-tests",
+  "ocp-qa-e2e-tests",
+  "ocp-scanner-v4-install-tests",
+  "ocp-ui-e2e-tests",
+  "ocp-vm-scanning-e2e-tests",
+  "osd-aws-qa-e2e-tests",
+  "osd-gcp-qa-e2e-tests",
+  "powervs-qa-e2e-tests",
+  "rosa-qa-e2e-tests",
+  "ui-component-tests",
+]
+
+# 1. The run-all label starts every job. A later skip does not undo that.
+[[rules]]
+number = 1
+name = "run-all-label"
+when = "label"
+label = "ci-run-all-tests"
+run = ["*"]
+
+# 2. A missing diff may be the whole tree.
+[[rules]]
+number = 2
+name = "no-files"
+when = "no-files"
+run = ["*"]
+
+# 3. One of these files means the whole tree may have changed.
+[[rules]]
+number = 3
+name = "tree-may-have-changed"
+when = "any"
+paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
+run = ["*"]
+
+# 4. Every changed file is documentation. Go tests do not run.
+[[rules]]
+number = 4
+name = "docs-only"
+when = "all"
+paths = ['\.md$', '^docs/', '^CHANGELOG']
+run = ["style-check"]
+skip = ["go"]
+
+# 5. Any Go source runs the Go unit tests. A directory rule does not hide this.
+[[rules]]
+number = 5
+name = "go-sources"
+when = "any"
+paths = ['\.go$']
+run = ["go"]
+
+# 6. Any diff that has a file runs style.
+[[rules]]
+number = 6
+name = "style"
+when = "any"
+paths = ['.*']
+run = ["style-check"]
+
+# 7. Sensor changes run the Sensor integration job and skip Central Postgres.
+[[rules]]
+number = 7
+name = "sensor"
+when = "any"
+paths = ['^sensor/']
+run = ["sensor-integration-tests"]
+skip = ["go-postgres"]
+
+# 8. Policy package changes run Central Postgres and skip Sensor integration.
+[[rules]]
+number = 8
+name = "central-policy"
+when = "any"
+paths = ['^central/policy/']
+run = ["go-postgres"]
+skip = ["sensor-integration-tests"]
+
+# 9. The image wait has to pass before an image-backed test can start.
+[[rules]]
+number = 9
+name = "image-wait"
+when = "always"
+run = ["wait-for-images"]
+
+# 10. Mandatory. Skips every job that is still unsure.
+[[rules]]
+number = 10
+name = "remaining"
+when = "remaining"
+skip = ["*"]
+
+[requires]
+wait-for-images = ["should-dispatch"]
+wait-for-konflux-images = ["should-dispatch"]
+e2e-byodb-tests = ["wait-for-images"]
+e2e-db-backup-restore-tests = ["wait-for-images"]
+e2e-gke-upgrade-tests = ["wait-for-images"]
+e2e-nongroovy-tests = ["wait-for-images"]
+e2e-qa-tests-gke = ["wait-for-images"]
+e2e-qa-tests-ocp-4-22 = ["wait-for-images"]
+e2e-qa-tests-gke-konflux = ["wait-for-konflux-images"]
+scanner-ft-run = ["scanner-ft-images"]
