@@ -1,11 +1,13 @@
 # First production map. Three areas have rules. A pull request whose
-# files all match nothing leaves every job unsure, and unsure still runs.
-# A matched file keeps its runs when other files match nothing. Those
-# unmatched files block a skip.
+# files all match nothing leaves the other jobs unsure, and unsure still
+# runs. always_run jobs run on every pull request. A matched file keeps
+# its runs when other files match nothing. Those unmatched files block
+# a skip.
 #
-# The jobs list is the test jobs a pull request can hit: GitHub Actions
-# job ids, then Prow job names. A job that is not listed here cannot
-# appear in the shadow report.
+# The jobs list is every target a pull request can hit: GitHub Actions
+# job ids, then Prow job names. A prerequisite is a target too. A test
+# that needs it does not start if that job stays off. A job that is not
+# listed here cannot appear in the shadow report.
 
 version: 1
 
@@ -40,6 +42,10 @@ jobs:
   - e2e-qa-tests-gke-konflux
   - e2e-qa-tests-ocp-4-22
   - e2e-test-on-kind
+  # e2e-dispatch. These are not tests. The tests below them need them.
+  - should-dispatch
+  - wait-for-images
+  - wait-for-konflux-images
   # Prow
   - aks-qa-e2e-tests
   - aro-qa-e2e-tests
@@ -73,7 +79,13 @@ jobs:
 code_always_run:
   - style-check
 
-# A pull request whose files are all docs runs style and nothing else.
+# Runs on every pull request, including a docs-only one. A domain cannot
+# skip it. The image wait has to pass before an image-backed test can
+# start, so it runs even when no such test was selected.
+always_run:
+  - wait-for-images
+
+# A docs-only pull request runs style. always_run jobs run as well.
 docs_run:
   - style-check
 
@@ -117,3 +129,28 @@ domains:
     jobs:
       go-postgres: run
       sensor-integration-tests: skip
+
+# The key runs only if every job it lists also runs. The edges are the
+# needs: lines in the workflows. Selecting e2e-byodb-tests and leaving
+# wait-for-images off skips the test.
+requires:
+  wait-for-images:
+    - should-dispatch
+  wait-for-konflux-images:
+    - should-dispatch
+  e2e-byodb-tests:
+    - wait-for-images
+  e2e-db-backup-restore-tests:
+    - wait-for-images
+  e2e-gke-upgrade-tests:
+    - wait-for-images
+  e2e-nongroovy-tests:
+    - wait-for-images
+  e2e-qa-tests-gke:
+    - wait-for-images
+  e2e-qa-tests-ocp-4-22:
+    - wait-for-images
+  e2e-qa-tests-gke-konflux:
+    - wait-for-konflux-images
+  scanner-ft-run:
+    - scanner-ft-images

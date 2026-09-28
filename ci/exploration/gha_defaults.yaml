@@ -79,3 +79,10 @@ jobs:
     when: path
     path: '^central/notifiers/email/|^central/notifiers/acscsemail/|^central/auth/m2m/|^\.github/workflows/emailsender-central-compatibility\.yaml$'
     skip_fork: true
+  should-dispatch:
+    when: always
+  wait-for-images:
+    when: always
+  wait-for-konflux-images:
+    when: label
+    label: konflux-build

@@ -36,6 +36,7 @@ class Domain:
 class Mapping:
     jobs: frozenset[str]
     code_always_run: frozenset[str]
+    always_run: frozenset[str]
     docs_run: frozenset[str]
     run_all_label: str
     always_run_all_patterns: tuple[str, ...]
@@ -43,6 +44,8 @@ class Mapping:
     skip_all_patterns: tuple[str, ...]
     skip_all: tuple[re.Pattern[str], ...]
     domains: dict[str, Domain]
+    # Key requires every job in the tuple. A run of the key is a run of each.
+    requires: dict[str, tuple[str, ...]]
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,7 @@ class Selection:
     unmatched_files: tuple[str, ...]
     shadow: bool
     files: tuple[FileTrace, ...] = ()
+    required_runs: frozenset[str] = frozenset()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -78,6 +82,7 @@ class Selection:
             "execute": sorted(self.execute),
             "matched_domains": sorted(self.matched_domains),
             "unmatched_files": list(self.unmatched_files),
+            "required_runs": sorted(self.required_runs),
             "files": [
                 {
                     "path": trace.path,
@@ -113,6 +118,7 @@ def parse_mapping(data: dict) -> Mapping:
     return Mapping(
         jobs=job_set,
         code_always_run=_subset(data, "code_always_run", job_set),
+        always_run=_optional_subset(data, "always_run", job_set),
         docs_run=_subset(data, "docs_run", job_set),
         run_all_label=_required_str(data, "run_all_label"),
         always_run_all_patterns=_string_tuple(data, "always_run_all"),
@@ -120,6 +126,7 @@ def parse_mapping(data: dict) -> Mapping:
         skip_all_patterns=_string_tuple(data, "skip_all"),
         skip_all=_compile_all(data, "skip_all"),
         domains=domains,
+        requires=_parse_requires(data, job_set),
     )
 
 
@@ -278,6 +285,53 @@ def _docs_only(
     )
 
 
+def _force_always(
+    run: frozenset[str],
+    skip: frozenset[str],
+    unsure: frozenset[str],
+    always: frozenset[str],
+) -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
+    """always jobs run on every pull request. A domain skip does not stick."""
+    running = set(run)
+    skipped = set(skip)
+    unknown = set(unsure)
+    for job in always:
+        if job in running:
+            continue
+        running.add(job)
+        skipped.discard(job)
+        unknown.discard(job)
+    return frozenset(running), frozenset(skipped), frozenset(unknown)
+
+
+def _apply_requires(
+    run: frozenset[str],
+    skip: frozenset[str],
+    unsure: frozenset[str],
+    requires: dict[str, tuple[str, ...]],
+) -> tuple[frozenset[str], frozenset[str], frozenset[str], frozenset[str]]:
+    """A running job pulls in the jobs it requires. A skip does not."""
+    running = set(run)
+    skipped = set(skip)
+    unknown = set(unsure)
+    pulled: set[str] = set()
+    changed = True
+    while changed:
+        changed = False
+        for job, needs in requires.items():
+            if job not in running:
+                continue
+            for needed in needs:
+                if needed in running:
+                    continue
+                running.add(needed)
+                skipped.discard(needed)
+                unknown.discard(needed)
+                pulled.add(needed)
+                changed = True
+    return frozenset(running), frozenset(skipped), frozenset(unknown), frozenset(pulled)
+
+
 def _selection(
     mapping: Mapping,
     *,
@@ -290,6 +344,8 @@ def _selection(
     unmatched_files: tuple[str, ...] = (),
     files: tuple[FileTrace, ...] = (),
 ) -> Selection:
+    run, skip, unsure = _force_always(run, skip, unsure, mapping.always_run)
+    run, skip, unsure, required_runs = _apply_requires(run, skip, unsure, mapping.requires)
     # Shadow mode records the split and still runs every known job.
     execute = mapping.jobs if shadow else run | unsure
     return Selection(
@@ -302,6 +358,7 @@ def _selection(
         unmatched_files=unmatched_files,
         shadow=shadow,
         files=files,
+        required_runs=required_runs,
     )
 
 
@@ -430,6 +487,50 @@ def _parse_opinions(raw: object, domain: str, jobs: frozenset[str]) -> dict[str,
     return opinions
 
 
+def _parse_requires(data: dict, jobs: frozenset[str]) -> dict[str, tuple[str, ...]]:
+    raw = data.get("requires", {})
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise ValueError("requires must be a mapping")
+    requires: dict[str, tuple[str, ...]] = {}
+    for job, needed in raw.items():
+        if job not in jobs:
+            raise ValueError(f"unknown job {job} in requires")
+        if not isinstance(needed, list) or not needed:
+            raise ValueError(f"{job} requires a non-empty list")
+        names = tuple(str(item) for item in needed)
+        if len(names) != len(set(names)):
+            raise ValueError(f"duplicate requirement for {job}")
+        for name in names:
+            if name not in jobs:
+                raise ValueError(f"unknown job {name} required by {job}")
+            if name == job:
+                raise ValueError(f"{job} requires itself")
+        requires[str(job)] = names
+    _detect_require_cycles(requires)
+    return requires
+
+
+def _detect_require_cycles(requires: dict[str, tuple[str, ...]]) -> None:
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def walk(name: str) -> None:
+        if name in visited:
+            return
+        if name in visiting:
+            raise ValueError(f"requires cycle at {name}")
+        visiting.add(name)
+        for needed in requires.get(name, ()):
+            walk(needed)
+        visiting.remove(name)
+        visited.add(name)
+
+    for name in requires:
+        walk(name)
+
+
 def _detect_cycles(domains: dict[str, Domain]) -> None:
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -450,6 +551,12 @@ def _detect_cycles(domains: dict[str, Domain]) -> None:
 
     for name in domains:
         walk(name)
+
+
+def _optional_subset(data: dict, key: str, jobs: frozenset[str]) -> frozenset[str]:
+    if data.get(key) is None:
+        return frozenset()
+    return _subset(data, key, jobs)
 
 
 def _subset(data: dict, key: str, jobs: frozenset[str]) -> frozenset[str]:
@@ -497,8 +604,9 @@ def _print_human(selection: Selection) -> None:
     print(f"  reason: {selection.reason}")
     print(f"  {_reason_sentence(selection)}")
     explicit = {job for trace in selection.files for job in trace.explicit_runs}
-    noted = sorted(selection.run - explicit) if selection.reason == "domains" else []
-    _print_bucket("run", selection.run, note_jobs=noted)
+    required = set(selection.required_runs)
+    noted = sorted(selection.run - explicit - required) if selection.reason == "domains" else []
+    _print_bucket("run", selection.run, note_jobs=noted, required_jobs=sorted(required))
     _print_bucket("skip", selection.skip)
     _print_bucket("unsure", selection.unsure)
     if selection.shadow:
@@ -550,16 +658,23 @@ def _print_bucket(
     jobs: frozenset[str] | tuple[str, ...],
     *,
     note_jobs: list[str] | None = None,
+    required_jobs: list[str] | None = None,
     indent: str = "  ",
 ) -> None:
     names = list(jobs) if isinstance(jobs, tuple) else sorted(jobs)
     notes = set(note_jobs or [])
+    required = set(required_jobs or [])
     print(f"{indent}{label}:")
     if not names:
         print(f"{indent}  -")
         return
     for name in names:
-        suffix = " (every code change)" if name in notes else ""
+        if name in required:
+            suffix = " (required by a running job)"
+        elif name in notes:
+            suffix = " (every code change)"
+        else:
+            suffix = ""
         print(f"{indent}  {name}{suffix}")
 
 

@@ -385,6 +385,11 @@ def _render_jobs(entries: list[tuple[str, tuple[str, ...], str]]) -> list[str]:
 
 
 def _run_reasons(job: str, selection: Selection, mapping: Mapping) -> tuple[str, ...]:
+    if job in mapping.always_run:
+        return ("this job runs on every pull request",)
+    requirers = _requirers(job, selection, mapping)
+    if job in selection.required_runs and requirers:
+        return (f"{_with_verb(requirers, 'requires', 'require')} this job",)
     if selection.reason == "label":
         return (f"label {mapping.run_all_label} is set, so this job runs",)
     if selection.reason == "no-diff":
@@ -408,6 +413,14 @@ def _run_reasons(job: str, selection: Selection, mapping: Mapping) -> tuple[str,
         lines.append(_with_verb(skip_paths, "says skip", "say skip"))
         lines.append("run wins")
     return tuple(lines)
+
+
+def _requirers(job: str, selection: Selection, mapping: Mapping) -> list[str]:
+    return sorted(
+        other
+        for other, needs in mapping.requires.items()
+        if job in needs and other in selection.run
+    )
 
 
 def _skip_reasons(job: str, selection: Selection, _mapping: Mapping) -> tuple[str, ...]:

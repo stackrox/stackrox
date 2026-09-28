@@ -17,15 +17,19 @@ CI_FILES = [
 ]
 
 
+IMAGE_WAIT = frozenset({"wait-for-images", "should-dispatch"})
+
+
 def decide(files, labels=None):
     mapping = load_mapping(PRODUCTION)
     return mapping, resolve(files, mapping, labels)
 
 
-def test_docs_and_changelog_run_only_style():
+def test_docs_and_changelog_run_style_and_the_image_wait():
     mapping, result = decide(["README.md", "CHANGELOG.md", "docs/guide.md"])
     assert result.reason == "docs-only"
-    assert result.run == frozenset({"style-check"})
+    assert result.run == frozenset({"style-check"}) | IMAGE_WAIT
+    assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == mapping.jobs - result.run
     assert result.unsure == frozenset()
 
@@ -34,7 +38,8 @@ def test_sensor_change_runs_sensor_integration_and_skips_central_postgres():
     mapping, result = decide(["sensor/common/foo.go"])
     assert result.reason == "domains"
     assert result.matched_domains == frozenset({"sensor"})
-    assert result.run == frozenset({"style-check", "sensor-integration-tests"})
+    assert result.run == frozenset({"style-check", "sensor-integration-tests"}) | IMAGE_WAIT
+    assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == frozenset({"go-postgres"})
     assert result.unsure == mapping.jobs - result.run - result.skip
     assert result.files[0].explicit_runs == ("sensor-integration-tests",)
@@ -45,7 +50,8 @@ def test_central_policy_runs_postgres_tests_and_skips_sensor_integration():
     mapping, result = decide(["central/policy/service.go"])
     assert result.reason == "domains"
     assert result.matched_domains == frozenset({"central-policy"})
-    assert result.run == frozenset({"style-check", "go-postgres"})
+    assert result.run == frozenset({"style-check", "go-postgres"}) | IMAGE_WAIT
+    assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == frozenset({"sensor-integration-tests"})
     assert result.unsure == mapping.jobs - result.run - result.skip
     assert result.files[0].explicit_runs == ("go-postgres",)
@@ -65,18 +71,20 @@ def test_matched_runs_stay_when_other_files_match_nothing():
     assert result.matched_domains == frozenset({"sensor", "central-policy"})
     assert result.run == frozenset(
         {"style-check", "sensor-integration-tests", "go-postgres"}
-    )
+    ) | IMAGE_WAIT
+    assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == frozenset()
     assert result.unsure == mapping.jobs - result.run
     assert result.execute == mapping.jobs
 
 
-def test_ci_only_change_leaves_every_job_unsure_and_runs_them():
+def test_ci_only_change_runs_the_image_wait_and_leaves_the_rest_unsure():
     mapping, result = decide(CI_FILES)
     assert result.reason == "unmatched"
-    assert result.run == frozenset()
+    assert result.run == IMAGE_WAIT
+    assert result.required_runs == frozenset({"should-dispatch"})
     assert result.skip == frozenset()
-    assert result.unsure == mapping.jobs
+    assert result.unsure == mapping.jobs - result.run
     assert result.execute == mapping.jobs
     assert [trace.path for trace in result.files] == CI_FILES
     assert all(trace.explicit_runs == () for trace in result.files)

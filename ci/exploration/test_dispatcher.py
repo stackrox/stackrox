@@ -194,6 +194,8 @@ def test_plan_text_for_a_sensor_change():
     assert run.index("sensor-integration-tests") < run.index("style-check")
     assert "sensor/common/foo.go says run" in run
     assert "every code change runs this job" in run
+    assert "this job runs on every pull request" in run
+    assert "wait-for-images requires this job" in run
     assert (
         text.count("default: starts because sensor/common/foo.go is outside ui/") == 2
     )
@@ -272,6 +274,8 @@ def test_plan_text_for_docs_only():
     run = _between(text, "Will run (", "Will skip (")
     assert "style-check" in run
     assert "every changed file is documentation, so this job runs" in run
+    assert "this job runs on every pull request" in run
+    assert "wait-for-images requires this job" in run
     skip = _between(text, "Will skip (", "Unsure (")
     assert skip.count("every changed file is documentation") == 1
     assert "go-postgres" in skip
@@ -283,7 +287,9 @@ def test_plan_text_for_docs_only():
 
 def test_plan_text_for_files_that_match_nothing():
     text, _summary = _report((".github/workflows/style.yaml",))
-    assert "Will run (0)" in text
+    assert "Will run (2)" in text
+    assert "this job runs on every pull request" in text
+    assert "wait-for-images requires this job" in text
     assert "Will skip (0)" in text
     unsure = _between(text, "Unsure (", "Default would start")
     assert "No changed file matches a domain." in unsure
