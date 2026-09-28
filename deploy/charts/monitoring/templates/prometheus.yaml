@@ -59,7 +59,8 @@ data:
 {{- end }}
 
       # Kubelet /metrics exposes kubelet_volume_stats_* (PVC used/capacity),
-      # which cadvisor does not. Used for central-db PVC space alerting.
+      # which cadvisor does not. Used for central-db and scanner-v4-db PVC space
+      # alerting.
       - job_name: "kubernetes-kubelet"
         scheme: https
         metrics_path: /metrics
@@ -74,10 +75,10 @@ data:
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
         metric_relabel_configs:
-          # Keep only the central-db PVC volume stats needed for space alerting.
+          # Keep only the StackRox DB PVC volume stats needed for space alerting.
           - source_labels: [__name__, persistentvolumeclaim]
             action: keep
-            regex: kubelet_volume_stats_(used|capacity)_bytes;central-db
+            regex: kubelet_volume_stats_(used|capacity)_bytes;(central-db|scanner-v4-db)
 
       - job_name: stackrox
         tls_config:
@@ -158,3 +159,27 @@ data:
           annotations:
             summary: Central DB PVC almost full (pvc {{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }})
             description: "Central DB PVC {{ "{{" }} $labels.namespace {{ "}}" }}/{{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full."
+
+        # Scanner V4 DB PVC space utilization (used / filesystem capacity) from the
+        # kubelet volume stats. Exposed as a stable metric for dashboards and
+        # reused by the alerts below.
+        - record: stackrox:scanner_v4_db_pvc_usage_ratio
+          expr: kubelet_volume_stats_used_bytes{persistentvolumeclaim="scanner-v4-db"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="scanner-v4-db"}
+
+        - alert: StackRoxScannerV4DbPvcSpaceWarning
+          expr: stackrox:scanner_v4_db_pvc_usage_ratio > {{ .Values.scannerV4DbPvcUsageWarningRatio }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Scanner V4 DB PVC filling up (pvc {{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }})
+            description: "Scanner V4 DB PVC {{ "{{" }} $labels.namespace {{ "}}" }}/{{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full."
+
+        - alert: StackRoxScannerV4DbPvcSpaceCritical
+          expr: stackrox:scanner_v4_db_pvc_usage_ratio > {{ .Values.scannerV4DbPvcUsageCriticalRatio }}
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Scanner V4 DB PVC almost full (pvc {{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }})
+            description: "Scanner V4 DB PVC {{ "{{" }} $labels.namespace {{ "}}" }}/{{ "{{" }} $labels.persistentvolumeclaim {{ "}}" }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full."

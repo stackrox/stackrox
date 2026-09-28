@@ -124,6 +124,49 @@ tests:
           ]
         .networkpolicys["scanner-v4-indexer-monitoring-tls"] | assertThat(. != null)
 
+- name: "Scanner V4 DB PVC space alerts"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+    scannerV4.disable: false
+  tests:
+    # Scanner V4 DB in the secured cluster only uses a PVC when a default
+    # StorageClass is present; otherwise it falls back to emptyDir and no PVC
+    # alert should be emitted.
+    - name: "warning and critical alerts are created when PVC-backed"
+      server:
+        objects:
+        - apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: def-sc
+            annotations:
+              storageclass.kubernetes.io/is-default-class: true
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups |
+          assertThat(any(.[]; .name == "rhacs.scanner-v4-db"))
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups[] |
+          select(.name == "rhacs.scanner-v4-db") | .rules | [
+            assertThat(length == 2),
+            assertThat(all(.[]; .alert == "ScannerV4DBPersistentVolumeFillingUp")),
+            assertThat(any(.[]; .labels.severity == "warning")),
+            assertThat(any(.[]; .labels.severity == "critical"))
+          ]
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups[] |
+          select(.name == "rhacs.scanner-v4-db") | .rules[] |
+          select(.labels.severity == "warning") |
+          assertThat(.expr | contains("persistentvolumeclaim=\"scanner-v4-db\"") and contains("> 0.8"))
+
+    - name: "omitted when scanner-v4-db falls back to emptyDir (no default StorageClass)"
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"] | assertThat(. == null)
+
+    - name: "omitted when Scanner V4 is disabled"
+      set:
+        scannerV4.disable: true
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"] | assertThat(. == null)
+
 - name: "When enabled via default value"
   set:
     env.openshift: 4
