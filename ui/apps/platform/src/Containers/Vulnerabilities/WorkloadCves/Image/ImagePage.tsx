@@ -35,11 +35,12 @@ import useURLSearch from 'hooks/useURLSearch';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { runImageViewBasedReport } from 'services/ReportsService';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
-import GenerateSbomModal, {
-    getSbomGenerationStatusMessage,
-} from '../../components/GenerateSbomModal';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
+import { getSbomGenerationStatusMessage } from '../../utils/getSbomGenerationStatusMessage';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
@@ -56,9 +57,9 @@ import { getImageBaseNameDisplay } from '../utils/images';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 
 const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -155,19 +156,17 @@ function ImagePage({
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // Create a scoped search filter that includes the image SHA filter plus any applied search filters.
@@ -184,8 +183,16 @@ function ImagePage({
         imageData && imageName
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
-    const scanMessage = getImageScanMessage(imageData?.notes ?? [], imageData?.scanNotes ?? []);
+    const imageNotes = imageData?.notes ?? [];
+    const scanNotes = imageData?.scanNotes ?? [];
+    const scanMessage = getImageScanMessage(imageNotes, scanNotes);
     const hasScanMessage = !isEmpty(scanMessage);
+    // SBOM generation is only blocked when the image has no scan data at all;
+    // CVE-accuracy caveats (e.g. no base OS) must not disable it (ROX-36762).
+    const sbomGenerationStatusMessage = getSbomGenerationStatusMessage({
+        isScannerV4Enabled,
+        imageNotes,
+    });
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
@@ -235,10 +242,7 @@ function ImagePage({
                                 {hasWriteAccessForImage && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                                         <OptionalSbomButtonTooltip
-                                            message={getSbomGenerationStatusMessage({
-                                                isScannerV4Enabled,
-                                                hasScanMessage,
-                                            })}
+                                            message={sbomGenerationStatusMessage}
                                         >
                                             <Button
                                                 variant="secondary"
@@ -249,8 +253,7 @@ function ImagePage({
                                                     });
                                                 }}
                                                 isAriaDisabled={
-                                                    !isScannerV4Enabled ||
-                                                    hasScanMessage ||
+                                                    sbomGenerationStatusMessage !== undefined ||
                                                     !imageData.name?.fullName
                                                 }
                                             >
@@ -388,6 +391,8 @@ function ImagePage({
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
                     query={getRegexScopedQueryString(imageScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
+                    runViewBasedReport={runImageViewBasedReport}
+                    vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                 />
             )}
         </>

@@ -785,6 +785,9 @@
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
         },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
         "schedule": {
           "$ref": "#/definitions/v2ReportSchedule"
         },
@@ -970,6 +973,17 @@
       ],
       "default": "EXACT"
     },
+    "v2NodeVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "allVuln": {
+          "type": "boolean"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
     "v2NotificationMethod": {
       "type": "string",
       "enum": [
@@ -1043,6 +1057,9 @@
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
         },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
         "schedule": {
           "$ref": "#/definitions/v2ReportSchedule"
         },
@@ -1061,9 +1078,11 @@
     "v2ReportConfigurationReportType": {
       "type": "string",
       "enum": [
-        "VULNERABILITY"
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
       ],
-      "default": "VULNERABILITY"
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportHistoryResponse": {
       "type": "object",
@@ -1086,6 +1105,9 @@
         "viewBasedVulnReportFilters": {
           "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
         },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
         "areaOfConcern": {
           "type": "string"
         }
@@ -1094,9 +1116,11 @@
     "v2ReportRequestViewBasedReportType": {
       "type": "string",
       "enum": [
-        "VULNERABILITY"
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
       ],
-      "default": "VULNERABILITY"
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportSchedule": {
       "type": "object",
@@ -1159,6 +1183,9 @@
     "v2ReportSnapshot": {
       "type": "object",
       "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportSnapshotReportType"
+        },
         "reportConfigId": {
           "type": "string"
         },
@@ -1176,6 +1203,9 @@
         },
         "viewBasedVulnReportFilters": {
           "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
         },
         "collectionSnapshot": {
           "$ref": "#/definitions/v2CollectionSnapshot"
@@ -1206,6 +1236,15 @@
           "$ref": "#/definitions/v2ResourceScope"
         }
       }
+    },
+    "v2ReportSnapshotReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
+      ],
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportStatus": {
       "type": "object",

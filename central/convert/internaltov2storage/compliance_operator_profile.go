@@ -8,7 +8,7 @@ import (
 
 // ComplianceOperatorProfileV2 converts internal api profiles to V2 storage profiles
 func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV2, clusterID string) *storage.ComplianceOperatorProfileV2 {
-	var rules []*storage.ComplianceOperatorProfileV2_Rule
+	rules := make([]*storage.ComplianceOperatorProfileV2_Rule, 0, len(internalMsg.GetRules()))
 	for _, r := range internalMsg.GetRules() {
 		rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
 			RuleName: r.GetRuleName(),

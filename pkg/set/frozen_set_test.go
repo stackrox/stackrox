@@ -46,6 +46,38 @@ func TestFrozenStringSet(t *testing.T) {
 	assertFrozenSetContainsExactly(t, emptyFS)
 }
 
+func TestFrozenSetAll(t *testing.T) {
+	tests := map[string]struct {
+		elements []string
+	}{
+		"empty set":         {elements: nil},
+		"single element":    {elements: []string{"x"}},
+		"multiple elements": {elements: []string{"a", "b", "c"}},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			fs := NewFrozenSet(tc.elements...)
+			var collected []string
+			for elem := range fs.All() {
+				collected = append(collected, elem)
+			}
+			assert.ElementsMatch(t, fs.AsSlice(), collected)
+		})
+	}
+}
+
+func TestFrozenSetAllEarlyBreak(t *testing.T) {
+	fs := NewFrozenSet("a", "b", "c", "d", "e")
+	count := 0
+	for range fs.All() {
+		count++
+		if count == 2 {
+			break
+		}
+	}
+	assert.Equal(t, 2, count)
+}
+
 func TestFrozenStringSetAfterFreeze(t *testing.T) {
 	set := NewSet[string]()
 	set.Add("a")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
@@ -57,6 +58,12 @@ func TestBufferedConsumer_ConsumeSuccess(t *testing.T) {
 
 func TestBufferedConsumer_CallbackError(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
+
+	// Initialize the rate-limited logger before entering the synctest bubble.
+	// It uses a hashicorp LRU that spawns a background timer goroutine;
+	// if created inside the bubble, synctest panics on exit because the
+	// goroutine remains blocked.
+	logging.GetRateLimitedLogger()
 
 	synctest.Test(t, func(t *testing.T) {
 		expectedErr := errors.New("callback error")

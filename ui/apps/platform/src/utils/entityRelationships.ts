@@ -65,14 +65,10 @@ export function getVulnerabilityManagementEntityTypes(
     isFeatureFlagEnabled?: IsFeatureFlagEnabled
 ): VulnerabilityManagementEntityType[] {
     if (isFeatureFlagEnabled) {
-        // Arrays include all possible entity types for use case.
-        return vulnerabilityManagementEntityTypes.filter((/* entityType */) => {
-            /*
-            // Pattern to filter out an entity type if a feature flag is not enabled.
-            if (entityType === 'WHICHEVER' && !isFeatureFlagEnabled(ROX_WHATEVER)) {
+        return vulnerabilityManagementEntityTypes.filter((entityType) => {
+            if (entityType === 'CLUSTER_CVE' && !isFeatureFlagEnabled('ROX_LEGACY_SCANNER')) {
                 return false;
-            } 
-            */
+            }
             return true;
         });
     }

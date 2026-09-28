@@ -168,7 +168,7 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	query := &v1.Query{}
 
 	// Get a preloaded image from id.
-	results := make([]imagesView.ImageCore, 0)
+	results := make([]imagesView.ImageCore, 0, 2)
 	core1 := imagesViewMocks.NewMockImageCore(suite.mockCtrl)
 	core1.EXPECT().GetImageID().Return(sha1)
 	results = append(results, core1)
@@ -187,7 +187,7 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	}, images)
 
 	// Get a non-preloaded image from id.
-	results = make([]imagesView.ImageCore, 0)
+	results = make([]imagesView.ImageCore, 0, 3)
 	core1 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
 	core1.EXPECT().GetImageID().Return(sha1)
 	results = append(results, core1)
@@ -215,7 +215,7 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	}, images)
 
 	// Above call should now be preloaded.
-	results = make([]imagesView.ImageCore, 0)
+	results = make([]imagesView.ImageCore, 0, 3)
 	core1 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
 	core1.EXPECT().GetImageID().Return(sha1)
 	results = append(results, core1)

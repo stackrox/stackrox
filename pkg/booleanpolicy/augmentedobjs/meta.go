@@ -21,6 +21,9 @@ const (
 	envVarAugmentKey              = "EnvironmentVariable"
 	impersonatedEventResultKey    = "ImpersonatedEventResult"
 	fileAccessPathKey             = "FilePath"
+	// fileAccessOperationKey must match the proto field name "Operation"
+	// so that the augment clobbers the proto's Operation enum field.
+	fileAccessOperationKey = "Operation"
 )
 
 // This block enumerates metadata about the augmented objects we use in policies.
@@ -62,7 +65,8 @@ var (
 	NetworkPoliciesAppliedMeta = pathutil.NewAugmentedObjMeta((*NetworkPoliciesApplied)(nil))
 
 	FileAccessMeta = pathutil.NewAugmentedObjMeta((*storage.FileAccess)(nil)).
-			AddPlainObjectAt([]string{fileAccessPathKey}, (*fileAccessPath)(nil))
+			AddPlainObjectAt([]string{fileAccessPathKey}, (*fileAccessPath)(nil)).
+			AddPlainObjectAt([]string{fileAccessOperationKey}, (*fileAccessOperation)(nil))
 
 	NodeMeta = pathutil.NewAugmentedObjMeta((*NodeDetails)(nil)).
 			AddAugmentedObjectAt([]string{fileAccessKey}, FileAccessMeta)

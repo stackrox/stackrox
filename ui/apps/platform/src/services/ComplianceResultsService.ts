@@ -1,7 +1,8 @@
 import axios from 'services/instance';
 import type { SearchQueryOptions } from 'types/search';
 
-import { buildNestedRawQueryParams, complianceV2Url } from './ComplianceCommon';
+import { buildNestedRawQueryParams } from 'utils/searchUtils';
+import { complianceV2Url } from './ComplianceCommon';
 import type {
     ComplianceCheckStatus,
     ComplianceControl,

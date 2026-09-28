@@ -8,15 +8,28 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
+CONTAINER_ENGINE ?= docker
+export CONTAINER_ENGINE
+
 podman =
+# If CONTAINER_ENGINE is explicitly set to podman, detect it
+ifeq ($(CONTAINER_ENGINE),podman)
+	podman = yes
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
-ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+else ifneq (,$(findstring podman,$(shell $(CONTAINER_ENGINE) --version 2>/dev/null)))
+	podman = yes
+else ifneq (,$(findstring Podman,$(shell $(CONTAINER_ENGINE) version 2>/dev/null)))
 	podman = yes
 endif
-ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+# if docker is not available and podman is installed, use podman instead
+ifeq (,$(shell command -v docker 2>/dev/null))
+ifneq (,$(shell command -v podman 2>/dev/null))
 	podman = yes
+	CONTAINER_ENGINE=podman
 endif
+endif
+
 
 ifdef podman
 # Disable selinux for local podman builds.
@@ -236,7 +249,7 @@ config-controller-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -254,7 +267,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -359,20 +372,23 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
-deps: $(shell find $(BASE_DIR) -name "go.sum")
-	@echo "+ $@"
-	$(SILENT)touch deps
-
-%/go.sum: %/go.mod
-	$(SILENT)cd $*
-	@echo "+ $@"
-	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-endif
+# In CI, go.mod/go.sum must be committed — not auto-updated.
+# go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
+deps:
+	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)" >&2
+else
+deps: go.mod
+	@echo "+ $@"
+	$(SILENT)GOMOCK_REFLECT_DIRS=$$(find . -type d -name 'gomock_reflect_*'); \
+	if [ -n "$$GOMOCK_REFLECT_DIRS" ]; then \
+		echo "Found leftover gomock directories. Please remove them and rerun make deps!"; \
+		echo "$$GOMOCK_REFLECT_DIRS"; \
+		exit 1; \
+	fi
+	$(SILENT)go mod tidy
 	$(SILENT)touch $@
+endif
 
 .PHONY: clean-deps
 clean-deps:
@@ -466,8 +482,8 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 .PHONY: build-volumes
 build-volumes:
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
-	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
-	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOPATH_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOCACHE_VOLUME_NAME)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -476,12 +492,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -495,12 +511,13 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
 	$(GOBUILD) \
 		central \
+		central/worker \
 		compliance/cmd/compliance \
 		config-controller \
 		migrator \
@@ -542,6 +559,13 @@ swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 
 UNIT_TEST_PACKAGES ?= ./...
 
+# Root-module test discovery must not pass tests from nested Go modules to the
+# root module's go list. Those modules are tested separately in their own
+# working directories.
+NESTED_GO_MODULE_DIRS := $(shell find . -mindepth 2 -name go.mod -exec dirname {} \; | sed 's@^\./@@')
+NESTED_GO_MODULE_REGEX := $(shell printf '%s\n' $(NESTED_GO_MODULE_DIRS) | paste -sd'|' -)
+NESTED_GO_MODULES_WITH_TESTS := $(shell for dir in $(NESTED_GO_MODULE_DIRS); do git ls-files "$$dir/*_test.go" | grep -q . && echo "$$dir"; done)
+
 .PHONY: test-prep
 test-prep:
 	@echo "+ $@"
@@ -551,8 +575,15 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*_test.go' | grep -v -E '^($(NESTED_GO_MODULE_REGEX))(/|$$)' | scripts/go-files-to-packages.sh | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
+	# Nested modules have independent coverage profiles, so keep their coverage
+	# out of the root profile while including their verbose output in JUnit.
+	@set -o pipefail; \
+	for module_dir in $(NESTED_GO_MODULES_WITH_TESTS); do \
+		echo "Run tests in $$module_dir"; \
+		(cd "$$module_dir" && go test -buildvcs=false -race -v ./...) 2>&1 | tee -a $(GO_TEST_OUTPUT_PATH); \
+	done
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	@echo "Run log tests"
 	for encoding in console json; do \
@@ -573,19 +604,19 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" central pkg tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" migrator | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
-  $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "testing.B" central pkg migrator tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -681,6 +712,7 @@ docker-build-roxctl-image:
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
+	cp bin/linux_$(GOARCH)/worker image/rhel/bin/central-worker
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
@@ -720,7 +752,7 @@ scale-image: scale-build clean-image
 	cp bin/linux_$(GOARCH)/profiler scale/image/rhel/bin/profiler
 	cp bin/linux_$(GOARCH)/chaos scale/image/rhel/bin/chaos
 	chmod +w scale/image/rhel/bin/*
-	docker build \
+	$(CONTAINER_ENGINE) build \
 		-t stackrox/scale:$(TAG) \
 		-t quay.io/rhacs-eng/scale:$(TAG) \
 		-f scale/image/Dockerfile scale
@@ -729,7 +761,7 @@ webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux_$(GOARCH)/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build \
+	$(CONTAINER_ENGINE) build \
 		-t stackrox/webhookserver:1.2 \
 		-t quay.io/rhacs-eng/webhookserver:1.2 \
 		-f webhookserver/Dockerfile webhookserver
@@ -738,7 +770,7 @@ syslog-image: syslog-build
 	-mkdir qa-tests-backend/test-images/syslog/bin
 	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
 	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/qa:syslog_server_1_0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog

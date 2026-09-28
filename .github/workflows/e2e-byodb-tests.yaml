@@ -33,7 +33,6 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-byodb-qa-e2e-tests
       ARTIFACT_DIR: ./junit-reports
@@ -43,14 +42,16 @@ jobs:
       POSTGRES_VERSION: "17"
       LONGTERM_LICENSE: "unused"
       BYODB_TEST: "true"
+      # roxctl helm values pin scannerV4.disable=true unless this is set.
+      ROX_SCANNER_V4: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 150
+    timeout-minutes: 361
     steps:
 
     - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -75,16 +76,11 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster byodb
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster byodb
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
       run: |
@@ -120,8 +116,6 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
-        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION || 'us-east-2' }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
@@ -140,17 +134,18 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+        SLACK_FIXABLE_VULNS_CHANNEL: ${{ secrets.SLACK_FIXABLE_VULNS_CHANNEL }}
         SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
         SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
         OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
-      timeout-minutes: 110
+      timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
@@ -158,7 +153,7 @@ jobs:
         echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       shell: python
       env:
         ROX_USERNAME: admin
@@ -195,12 +190,18 @@ jobs:
           exit 6
         fi
 
-    - name: Publish test summary
+    - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        show: "fail"
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
 
     - name: Report junit failures in jira
       if: (!cancelled())

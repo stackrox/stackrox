@@ -84,7 +84,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	v, ok := s.imageCache.Get(cache.GetKey(req.GetImage()))
 	if id != "" && ok {
 		img := v.GetIfDone()
-		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
+		if img != nil && img.GetScan() != nil {
 			return &sensor.GetImageResponse{
 				Image: img,
 			}, nil
@@ -110,9 +110,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	// Ask Central to scan the image if the image is neither internal nor local
 	if !req.GetImage().GetIsClusterLocal() {
-		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+		scanResp, err := s.centralClient.ScanImageInternalForAdmission(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
-			CachedOnly: !req.GetScanInline(),
+			CachedOnly: false,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning image via central")

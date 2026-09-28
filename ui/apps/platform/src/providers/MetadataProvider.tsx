@@ -22,6 +22,7 @@ const metadataInitialState: Metadata = {
     licenseStatus: 'VALID',
     releaseBuild: true,
     version: '', // response for request before authentication does not reveal version
+    compatibleSensorVersions: [],
 };
 
 export function MetadataProvider({ children }: { children: ReactNode }) {

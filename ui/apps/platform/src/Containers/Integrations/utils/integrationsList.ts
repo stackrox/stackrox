@@ -175,6 +175,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         Logo: LogoSvg,
         label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
+        featureFlagDependency: ['ROX_LEGACY_SCANNER'],
     },
     {
         categories: 'Scanner',

@@ -32,7 +32,6 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 	baseValues := getBaseMetaValues(c, imageFlavor, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
-	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
 	collector := determineCollectorImage(mainImage, collectorImage, imageFlavor)
@@ -59,15 +58,6 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 	}
 
 	return mainImageName, collectorImageName, nil
-}
-
-// deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
-func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
-	scannerRemoteSlice := strings.Split(mainImage.GetRemote(), "/")
-	if len(scannerRemoteSlice) > 0 {
-		scannerRemoteSlice[len(scannerRemoteSlice)-1] = metaValues.ScannerSlimImageRemote
-		metaValues.ScannerSlimImageRemote = strings.Join(scannerRemoteSlice, "/")
-	}
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
@@ -151,9 +141,6 @@ func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, ch
 		FactImageTag:    versions.FactVersion,
 		FactImageRemote: imageFlavor.FactImageName,
 
-		ScannerImageTag:        versions.ScannerVersion,
-		ScannerSlimImageRemote: imageFlavor.ScannerSlimImageName,
-
 		KubectlOutput: true,
 
 		Versions: versions,
@@ -177,11 +164,10 @@ func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, ch
 }
 
 func getFeatureFlagsAsManifestBundleEnv() map[string]string {
-	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
-	// wrongly enable Scanner V4 delegated scanning on secured clusters which are set up
-	// using manifest bundles. But delegated scanning is not supported for manifest bundle
-	// installed secured clusters.
-	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4")
+	// ROX_SCANNER_V4 would enable delegated scanning, which bundles do not support.
+	// ROX_VIRTUAL_MACHINES is already set from virtualMachines.enabled; a duplicate
+	// env name would make kubectl apply fail to patch an existing Sensor Deployment.
+	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4", "ROX_VIRTUAL_MACHINES")
 	featureFlagVals := make(map[string]string)
 	for _, feature := range features.Flags {
 		envVar := feature.EnvVar()

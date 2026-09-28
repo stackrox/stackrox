@@ -200,6 +200,22 @@ message CosignSignature {
   bytes cert_pem = 3;
   bytes cert_chain_pem = 4;
   bytes rekor_bundle = 5;
+
+  // Signature format used in this message.
+  enum SignatureFormat {
+    SIGNATURE_FORMAT_UNSPECIFIED = 0;
+    // SimpleSigning: signature is stored across raw_signature, signature_payload,
+    // cert_pem, cert_chain_pem, and rekor_bundle.
+    SIMPLE_SIGNING = 1;
+    // DSSE (Dead Simple Signing Envelope): signature is a complete sigstore bundle
+    // stored in sigstore_bundle. The decomposed simple signing fields are not used.
+    DEAD_SIMPLE_SIGNING_ENVELOPE = 2;
+  }
+  SignatureFormat signature_format = 6;
+
+  // Complete sigstore bundle as raw JSON. When populated, it supersedes the
+  // decomposed simple signing fields.
+  bytes sigstore_bundle = 7;
 }
 
 message V2Metadata {

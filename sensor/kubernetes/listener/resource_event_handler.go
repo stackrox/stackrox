@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	sensorMetrics "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -75,12 +76,20 @@ func resourcesUnavailable() callbackCondition {
 	}
 }
 
-func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubSub *internalmessage.MessageSubscriber, text string) crd.WatcherCallback {
+func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubSub *internalmessage.MessageSubscriber, pubSubDispatcher pubSubPublisher, text string) crd.WatcherCallback {
 	return func(status *watcher.Status) {
 		if !cond(status) {
 			return
 		}
 		log.Info(status.String())
+		if features.SensorInternalPubSub.Enabled() {
+			if err := pubSubDispatcher.Publish(&events.SoftRestartEvent{
+				LifecycleEvent: events.LifecycleEvent{Text: text, Validity: ctx},
+			}); err != nil {
+				log.Errorf("Unable to publish SoftRestartEvent: %v", err)
+			}
+			return
+		}
 		if err := pubSub.Publish(&internalmessage.SensorInternalMessage{
 			Kind:     internalmessage.SensorMessageSoftRestart,
 			Text:     text,
@@ -186,6 +195,7 @@ func (k *listenerImpl) handleAllEvents() {
 	coCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
 		allResourcesAvailable(),
 		k.pubSub,
+		k.pubSubDispatcher,
 		"Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
 	)
 
@@ -217,6 +227,7 @@ func (k *listenerImpl) handleAllEvents() {
 		coCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
 			resourcesUnavailable(),
 			k.pubSub,
+			k.pubSubDispatcher,
 			"Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
 		)
 	}
@@ -242,6 +253,7 @@ func (k *listenerImpl) handleAllEvents() {
 		vmCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
 			allResourcesAvailable(),
 			k.pubSub,
+			k.pubSubDispatcher,
 			"VirtualMachine resources have been updated. Connection will restart to force reconciliation with Central")
 
 		shouldTrackVirtualMachines, err = vmAvailabilityChecker.Available(k.client)
@@ -256,6 +268,7 @@ func (k *listenerImpl) handleAllEvents() {
 			vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
 				resourcesUnavailable(),
 				k.pubSub,
+				k.pubSubDispatcher,
 				"VirtualMachine resources have been removed. Connection will restart to force reconciliation with Central")
 		}
 		if err := vmWatcher.Watch(vmCrdHandlerFn); err != nil {
@@ -511,11 +524,20 @@ func (k *listenerImpl) handleAllEvents() {
 	} else {
 		k.outputQueue.Send(syncedEvent)
 	}
-	utils.Should(k.pubSub.Publish(&internalmessage.SensorInternalMessage{
-		Kind:     internalmessage.SensorMessageResourceSyncFinished,
-		Text:     "Finished the k8s resource sync",
-		Validity: k.context,
-	}))
+	if features.SensorInternalPubSub.Enabled() {
+		utils.Should(k.pubSubDispatcher.Publish(&events.ResourceSyncFinishedEvent{
+			LifecycleEvent: events.LifecycleEvent{
+				Text:     "Finished the k8s resource sync",
+				Validity: k.context,
+			},
+		}))
+	} else {
+		utils.Should(k.pubSub.Publish(&internalmessage.SensorInternalMessage{
+			Kind:     internalmessage.SensorMessageResourceSyncFinished,
+			Text:     "Finished the k8s resource sync",
+			Validity: k.context,
+		}))
+	}
 }
 
 // Helper function that creates and adds a handler to an informer.

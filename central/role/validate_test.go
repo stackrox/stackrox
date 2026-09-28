@@ -274,8 +274,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 	for _, tc := range testCasesBad {
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateSimpleAccessScope(tc.scope)
-			var target *multierror.Error
-			if errors.As(err, &target) {
+			if target, converted := errors.AsType[*multierror.Error](err); converted {
 				assert.Equal(t, tc.expectedNumberOfErrors, target.Len())
 			} else {
 				assert.Zero(t, tc.expectedNumberOfErrors)

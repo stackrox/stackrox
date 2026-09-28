@@ -23,12 +23,12 @@ func makeRandomPlops(nport int, nprocess int, npod int) []*storage.ProcessListen
 	count := 0
 
 	plops := make([]*storage.ProcessListeningOnPort, 2*nport*nprocess*npod)
-	for podIdx := 0; podIdx < npod; podIdx++ {
+	for range npod {
 		podID := makeRandomString(10)
 		podUID := makeRandomString(10)
-		for processIdx := 0; processIdx < nprocess; processIdx++ {
+		for range nprocess {
 			execFilePath := makeRandomString(10)
-			for port := 0; port < nport; port++ {
+			for port := range nport {
 
 				plopTCP := &storage.ProcessListeningOnPort{
 					Endpoint: &storage.ProcessListeningOnPort_Endpoint{

@@ -54,7 +54,7 @@ func (s *migrationTestSuite) TestMigration() {
 		log.WriteToStderrf("Building test deployments")
 		for _, clusterID := range clusters {
 			var deployments []*storage.Deployment
-			for i := 0; i < deploymentsPerCluster; i++ {
+			for range deploymentsPerCluster {
 				deployment := &storage.Deployment{}
 				s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 				deployment.ClusterId = clusterID

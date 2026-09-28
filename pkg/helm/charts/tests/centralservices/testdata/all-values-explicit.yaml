@@ -60,6 +60,8 @@ scannerV4:
       key: "scanner tls key pem"
     password:
       value: "db password"
+centralWorker:
+  enabled: true
 monitoring:
   openshift:
     enabled: true

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +18,12 @@ import (
 	"github.com/quay/claircore"
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/toolkit/types"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -34,8 +40,6 @@ import (
 const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
-	rhcosPackageDB = "sqlite:usr/share/rpm"
-
 	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
 	// Direct import is prohibited by import rules
 	scannerDefinitionsRouteInSensor = "/scanner/definitions"
@@ -44,6 +48,16 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// rhcosPackageDBs are Claircore PackageDB names for RHCOS RPM databases.
+	// RHEL 8 uses Berkeley DB; RHEL 9+ uses SQLite. ostree reports the same RPMs
+	// under usr/share/rpm and usr/lib/sysimage/rpm-ostree-base-db.
+	rhcosPackageDBs = []string{
+		"sqlite:usr/share/rpm",
+		"sqlite:usr/lib/sysimage/rpm",
+		"bdb:usr/share/rpm",
+		"bdb:usr/lib/sysimage/rpm-ostree-base-db",
+	}
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
 	// Claircore indexing requires layers to have a digest, which is not stored,
@@ -96,28 +110,38 @@ func extractHostname(rawURL string) (string, error) {
 type NodeIndexerConfig struct {
 	// HostPath is the mount point of the read-only host filesystem on the node.
 	HostPath string
+	// OSReleasePath is the path where os-release can be found for RHCOS detection.
+	// This may differ from HostPath when the RPM database is mounted separately.
+	OSReleasePath string
 	// Client is the HTTP client used to reach out to external data sources.
 	// If unset, a default which uses client-side TLS certificates is used.
 	Client *http.Client
 	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
 	// Consulting the mapping file is preferred over the Container API.
 	Repo2CPEMappingURL string
+	// Repo2CPEMappingFile is a local path to the repo-to-CPE mapping file.
+	// When set, leave Repo2CPEMappingURL empty: claircore still fetches a
+	// non-empty URL on every call (its freshly-constructed rate limiter is
+	// not treated as "already fetched"), so a non-empty URL would make a
+	// network request on top of the seeded file.
+	Repo2CPEMappingFile string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
-	// PackageDBFilter removes irrelevant packages. For node scanning, we are
-	// currently only interested in the RHCOS RPM database.
-	// Filters out all packages whose packageDB does not match the filter.
-	// Empty string corresponds to no filtering.
-	PackageDBFilter string
+	// PackageDBFilter keeps RHCOS RPM databases and drops other package DBs
+	// Claircore finds under the host index mount. Empty means no filtering.
+	PackageDBFilter []string
 }
 
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
-		HostPath:           env.NodeIndexHostPath.Setting(),
+		HostPath:      env.NodeIndexHostPath.Setting(),
+		OSReleasePath: env.NodeIndexOSReleasePath.Setting(),
+		// The default, mTLS-capable client will be used.
+		Client:             nil,
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
-		PackageDBFilter:    rhcosPackageDB,
+		PackageDBFilter:    rhcosPackageDBs,
 	}
 }
 
@@ -173,6 +197,14 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ccReport.Repositories), len(ccReport.Packages))
 
+	rhcosRel, err := osRelease(ctx, l.cfg.OSReleasePath)
+	if err != nil {
+		log.Debugf("Not adding RHCOS package to index report: %v", err)
+	} else {
+		arch := extractArch(ccReport, pkgs)
+		addRHCOS(rhcosRel, arch, ccReport)
+	}
+
 	ccReport.Success = true
 	ccReport.State = controller.IndexFinished.String()
 
@@ -224,9 +256,10 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	config := rhel.RepositoryScannerConfig{
 		// Do not reach out to the Red Hat Container Catalog API.
 		// We do *not* want to reach out to the internet for node scanning.
-		DisableAPI:         true,
-		Repo2CPEMappingURL: cfg.Repo2CPEMappingURL,
-		Timeout:            cfg.Timeout,
+		DisableAPI:          true,
+		Repo2CPEMappingURL:  cfg.Repo2CPEMappingURL,
+		Repo2CPEMappingFile: cfg.Repo2CPEMappingFile,
+		Timeout:             cfg.Timeout,
 	}
 
 	var buf bytes.Buffer
@@ -247,28 +280,46 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	return repos, nil
 }
 
-func runPackageScanner(ctx context.Context, packageDBFilter string, layer *claircore.Layer) ([]*claircore.Package, error) {
+func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *claircore.Layer) ([]*claircore.Package, error) {
 	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
-	// Filter out packages in which we are not interested.
-	filtered := pkgs
-	if packageDBFilter != "" {
-		filtered = pkgs[:0]
-		for _, pkg := range pkgs {
-			if pkg.PackageDB == packageDBFilter {
-				filtered = append(filtered, pkg)
-			}
-		}
-	}
+	filtered := filterPackages(pkgs, packageDBFilter)
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
 	}
 
 	return filtered, nil
+}
+
+// filterPackages keeps packages whose PackageDB is in packageDBFilter.
+// ostree nodes expose the same RPMs in two PackageDBs, so duplicates
+// collapse to one per name/version/arch/kind.
+func filterPackages(pkgs []*claircore.Package, packageDBFilter []string) []*claircore.Package {
+	if len(packageDBFilter) == 0 {
+		return pkgs
+	}
+	type ident struct {
+		name, version, arch string
+		kind                types.PackageKind
+	}
+	out := make([]*claircore.Package, 0, len(pkgs))
+	seen := make(map[ident]struct{}, len(pkgs))
+	for _, pkg := range pkgs {
+		if !slices.Contains(packageDBFilter, pkg.PackageDB) {
+			continue
+		}
+		id := ident{pkg.Name, pkg.Version, pkg.Arch, pkg.Kind}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, pkg)
+	}
+	return out
 }
 
 func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*claircore.Repository, pkgs []*claircore.Package) (*claircore.IndexReport, error) {
@@ -286,4 +337,154 @@ func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*cl
 	}
 
 	return ir, nil
+}
+
+func validateOSRelease(osRel map[string]string) error {
+	if variant := osRel["VARIANT_ID"]; variant != "coreos" {
+		return fmt.Errorf("not RHCOS: VARIANT_ID=%q", variant)
+	}
+	if osRel["VERSION"] == "" {
+		return errors.New("VERSION not found in os-release")
+	}
+	if osRel["OPENSHIFT_VERSION"] == "" {
+		return errors.New("OPENSHIFT_VERSION not found in os-release")
+	}
+	if osRel["VERSION_ID"] == "" {
+		return errors.New("VERSION_ID not found in os-release")
+	}
+	return nil
+}
+
+func parseOSRelease(ctx context.Context, hostPath string) (map[string]string, error) {
+	var f *os.File
+	for _, relPath := range []string{osrelease.Path, osrelease.FallbackPath} {
+		path := filepath.Join(hostPath, relPath)
+		var err error
+		f, err = os.Open(path)
+		if err != nil {
+			continue
+		}
+		break
+	}
+	if f == nil {
+		return nil, fmt.Errorf("os-release not found in %s", hostPath)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	return osrelease.Parse(ctx, f)
+}
+
+type rhcosRelease struct {
+	version     string
+	normVersion claircore.Version
+	repoCPE     cpe.WFN
+}
+
+// osRelease opens, parse and validate the os release file, returning RHCOS
+// version and repository CPE.
+func osRelease(ctx context.Context, osRelPath string) (rhcosRelease, error) {
+	osRel, err := parseOSRelease(ctx, osRelPath)
+	if err != nil {
+		return rhcosRelease{}, fmt.Errorf("failed to parse os-release: %w", err)
+	}
+	if err := validateOSRelease(osRel); err != nil {
+		return rhcosRelease{}, fmt.Errorf("invalid os-release: %w", err)
+	}
+
+	rel := rhcosRelease{
+		version: osRel["VERSION"],
+	}
+
+	// Set up the repository CPE.
+	rhelMajor, _, _ := strings.Cut(osRel["VERSION_ID"], ".")
+	cpeStr := fmt.Sprintf("cpe:/a:redhat:openshift:%s::el%s", osRel["OPENSHIFT_VERSION"], rhelMajor)
+	rel.repoCPE, err = cpe.Unbind(cpeStr)
+	if err != nil {
+		return rhcosRelease{}, fmt.Errorf("failed to parse RHCOS repository CPE: %w", err)
+	}
+
+	// Set up the normalized version.
+	rhctagVersion, err := rhctag.Parse(rel.version)
+	if err != nil {
+		log.Warnf("Failed to parse RHCOS version %q: %v", rel.version, err)
+		return rhcosRelease{}, fmt.Errorf("failed to parse RHCOS version %q: %w", rel.version, err)
+	}
+	minorStart := rhctagVersion.MinorStart()
+	rel.normVersion = minorStart.Version(true)
+
+	return rel, nil
+}
+
+func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
+	const (
+		rhcosPkgID  = "rhcos-pkg"
+		rhcosSrcID  = "rhcos-src"
+		rhcosRepoID = "rhcos-repo"
+	)
+
+	srcPkg := &claircore.Package{
+		ID:                rhcosSrcID,
+		Name:              "rhcos",
+		Version:           rel.version,
+		Kind:              types.SourcePackage,
+		NormalizedVersion: rel.normVersion,
+		Arch:              arch,
+	}
+	binPkg := &claircore.Package{
+		ID:                rhcosPkgID,
+		Name:              "rhcos",
+		Version:           rel.version,
+		Kind:              types.BinaryPackage,
+		NormalizedVersion: rel.normVersion,
+		Source:            srcPkg,
+		PackageDB:         "",
+		Arch:              arch,
+		RepositoryHint:    "rhcc",
+	}
+	repo := &claircore.Repository{
+		ID:   rhcosRepoID,
+		Name: rel.repoCPE.String(),
+		Key:  rhcc.RepositoryKey,
+		CPE:  rel.repoCPE,
+	}
+
+	if report.Packages == nil {
+		report.Packages = make(map[string]*claircore.Package)
+	}
+	if report.Repositories == nil {
+		report.Repositories = make(map[string]*claircore.Repository)
+	}
+	if report.Environments == nil {
+		report.Environments = make(map[string][]*claircore.Environment)
+	}
+
+	report.Packages[srcPkg.ID] = srcPkg
+	report.Packages[binPkg.ID] = binPkg
+	report.Repositories[repo.ID] = repo
+	report.Environments[binPkg.ID] = []*claircore.Environment{
+		{
+			PackageDB:     "",
+			IntroducedIn:  ccLayerDigest,
+			RepositoryIDs: []string{repo.ID},
+		},
+	}
+
+	log.Debugf("Added RHCOS package: version=%s, cpe=%s", rel.version, rel.repoCPE.String())
+}
+
+// extractArch attempts to determine the RHCOS architecture from the current list
+// of packages, failing open if no good guess is found, returning an empty string.
+func extractArch(report *claircore.IndexReport, pkgs []*claircore.Package) string {
+	for _, d := range report.Distributions {
+		if d.Arch != "" && d.Arch != "noarch" {
+			return d.Arch
+		}
+	}
+	for _, p := range pkgs {
+		if p.Arch != "" && p.Arch != "noarch" {
+			return p.Arch
+		}
+	}
+	return ""
 }

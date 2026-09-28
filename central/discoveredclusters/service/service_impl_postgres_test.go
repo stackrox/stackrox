@@ -173,7 +173,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 func (s *servicePostgresTestSuite) addDiscoveredClusters(num int) []*v1.DiscoveredCluster {
 	fakeClusters := fixtures.GetManyDiscoveredClusters(num)
 	s.Require().NoError(s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeClusters...))
-	v1Clusters := []*v1.DiscoveredCluster{}
+	v1Clusters := make([]*v1.DiscoveredCluster, 0, len(fakeClusters))
 	for _, dc := range fakeClusters {
 		storageCluster := typetostorage.DiscoveredCluster(dc)
 		v1Clusters = append(v1Clusters, storagetov1.DiscoveredCluster(storageCluster))

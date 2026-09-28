@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
@@ -13,6 +14,8 @@ import (
 
 const (
 	defaultBufferSize = 1000
+
+	bufferedConsumerLoggingRateLimiter = "pubsub-buffered-consumer"
 )
 
 // bufferedEvent wraps an event with its error channel to pipe callback errors back to the caller
@@ -155,6 +158,7 @@ func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
 		// Callback completed - send error if present, otherwise just close errC
 		if err != nil {
 			operation = metrics.ConsumerError
+			logging.GetRateLimitedLogger().ErrorL(bufferedConsumerLoggingRateLimiter, "unable to handle event on lane %s, topic %s: %v", c.laneID, c.topic, err)
 			wrappedEv.errC <- err
 		}
 		// On success (err == nil), defer close handles it without sending

@@ -98,7 +98,7 @@ func (s *AdvisoryLockSuite) TestConcurrentTryAcquire() {
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(idx int) {
 			defer wg.Done()
 			results[idx], releases[idx], errs[idx] = TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
@@ -107,7 +107,7 @@ func (s *AdvisoryLockSuite) TestConcurrentTryAcquire() {
 	wg.Wait()
 
 	acquiredCount := 0
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		assert.NoError(s.T(), errs[i])
 		if results[i] {
 			acquiredCount++

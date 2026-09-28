@@ -1518,3 +1518,108 @@ func (l *mockPodLister) List(_ labels.Selector) ([]*v1.Pod, error) {
 func (l *mockPodLister) Pods(_ string) v1listers.PodNamespaceLister {
 	return l
 }
+
+type selectorAwarePodLister struct {
+	v1listers.PodLister
+	v1listers.PodNamespaceLister
+	pods []*v1.Pod
+}
+
+func (l *selectorAwarePodLister) List(sel labels.Selector) ([]*v1.Pod, error) {
+	var matched []*v1.Pod
+	for _, p := range l.pods {
+		if sel.Matches(labels.Set(p.Labels)) {
+			matched = append(matched, p)
+		}
+	}
+	return matched, nil
+}
+
+func (l *selectorAwarePodLister) Pods(_ string) v1listers.PodNamespaceLister {
+	return l
+}
+
+func TestGetPodsOwnershipFallback(t *testing.T) {
+	dcUID := "dc-uid-123"
+	rcUID := "rc-uid-456"
+
+	hierarchy := references.NewParentHierarchy()
+	// RC is child of DC
+	hierarchy.AddManually(rcUID, dcUID)
+
+	ownedPod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pod-owned",
+			Namespace: "namespace",
+			UID:       "pod-uid-1",
+			Labels:    map[string]string{"app": "test", "deploymentconfig": "actual-dc-name"},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "v1",
+					Kind:       "ReplicationController",
+					Name:       "test-rc",
+					UID:        types.UID(rcUID),
+				},
+			},
+		},
+	}
+	hierarchy.Add(ownedPod)
+
+	unownedPod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pod-unowned",
+			Namespace: "namespace",
+			UID:       "pod-uid-2",
+			Labels:    map[string]string{"app": "unrelated"},
+		},
+	}
+
+	cases := map[string]struct {
+		selector     *metav1.LabelSelector
+		pods         []*v1.Pod
+		expectedPods []string
+	}{
+		"labels match - finds pod by selector": {
+			selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "test", "deploymentconfig": "actual-dc-name"},
+			},
+			pods:         []*v1.Pod{ownedPod, unownedPod},
+			expectedPods: []string{"pod-owned"},
+		},
+		"labels mismatch - falls back to ownership": {
+			selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "test", "deploymentconfig": "wrong-name"},
+			},
+			pods:         []*v1.Pod{ownedPod, unownedPod},
+			expectedPods: []string{"pod-owned"},
+		},
+		"no owned pods at all - returns empty": {
+			selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "test", "deploymentconfig": "wrong-name"},
+			},
+			pods:         []*v1.Pod{unownedPod},
+			expectedPods: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			wrap := &deploymentWrap{
+				Deployment: &storage.Deployment{
+					Id:        dcUID,
+					Namespace: "namespace",
+				},
+			}
+			lister := &selectorAwarePodLister{pods: tc.pods}
+
+			pods, err := wrap.getPods(hierarchy, tc.selector, lister)
+			require.NoError(t, err)
+
+			var podNames []string
+			for _, p := range pods {
+				podNames = append(podNames, p.Name)
+			}
+			assert.Equal(t, tc.expectedPods, podNames)
+		})
+	}
+}

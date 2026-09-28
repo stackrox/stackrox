@@ -76,7 +76,7 @@ func Test_withRotatingCore(t *testing.T) {
 	logger, err := cfg.Build(zap.WrapCore(core))
 	require.NoError(t, err)
 	logger.Info("begin")
-	for i := 0; i < 10000; i++ {
+	for range 10000 {
 		logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 	}
 
@@ -136,7 +136,7 @@ func Test_withRotatingCore(t *testing.T) {
 	})
 	t.Run("ensure the oldest rotation is deleted", func(t *testing.T) {
 		// Write more to trigger a rotation.
-		for i := 0; i < 4000; i++ {
+		for range 4000 {
 			logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 		}
 		assert.NoError(t, logger.Sync())

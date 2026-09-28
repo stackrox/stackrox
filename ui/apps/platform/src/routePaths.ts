@@ -99,8 +99,15 @@ export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
-export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
-export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
+export const vulnerabilityImageReportsPath = `${vulnerabilityReportsPath}/images`;
+export const vulnerabilityImageConfigurationsReportsPath = `${vulnerabilityImageReportsPath}/configurations`;
+export const vulnerabilityImageConfigurationsReportsDetailsPath = `${vulnerabilityImageConfigurationsReportsPath}/:reportId`;
+export const vulnerabilityImageViewBasedJobsPath = `${vulnerabilityImageReportsPath}/view-based-jobs`;
+
+export const vulnerabilityNodeReportsPath = `${vulnerabilityReportsPath}/nodes`;
+export const vulnerabilityNodeConfigurationsReportsPath = `${vulnerabilityNodeReportsPath}/configurations`;
+export const vulnerabilityNodeConfigurationsReportsDetailsPath = `${vulnerabilityNodeConfigurationsReportsPath}/:reportId`;
+export const vulnerabilityNodeViewBasedJobsPath = `${vulnerabilityNodeReportsPath}/view-based-jobs`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 
@@ -194,6 +201,8 @@ export type RouteKey =
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
     | 'vulnerabilities/reports'
+    | 'vulnerabilities/reports/images'
+    | 'vulnerabilities/reports/nodes'
     | 'vulnerabilities/user-workloads'
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
@@ -366,10 +375,19 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'vulnerabilities/platform-cves': {
+        featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
+    // This is a lightweight page with cards that link to the individually gated report types
+    // below. NavigationSidebar decides link visibility by checking the sub-route keys directly
     'vulnerabilities/reports': {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource([]),
+    },
+    'vulnerabilities/reports/images': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/reports/nodes': {
+        resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'vulnerabilities/user-workloads': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
@@ -391,7 +409,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'base-images': {
-        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
         resourceAccessRequirements: everyResource(['ImageAdministration']),
     },
     'vulnerability-management': {
@@ -413,9 +430,15 @@ type RoutePredicates = {
 };
 
 export function isRouteEnabled(
-    { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
-    routeKey: RouteKey
-) {
+    routePredicates: RoutePredicates,
+    routeKey: RouteKey | RouteKey[]
+): boolean {
+    // An array is enabled if any one of the route keys is enabled.
+    if (Array.isArray(routeKey)) {
+        return routeKey.some((key) => isRouteEnabled(routePredicates, key));
+    }
+
+    const { hasReadAccess, isFeatureFlagEnabled } = routePredicates;
     const { featureFlagRequirements, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
     const areFeatureFlagRequirementsMet = featureFlagRequirements
@@ -483,6 +506,7 @@ const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Reports',
+    [vulnerabilityImageReportsPath]: 'Image reports',
     [exceptionManagementPath]: 'Exception Management',
 };
 

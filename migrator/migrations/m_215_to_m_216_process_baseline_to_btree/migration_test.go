@@ -46,7 +46,7 @@ func (s *migrationTestSuite) TestMigration() {
 	// Add some process baselines
 	var convertedProcessBaselines []oldSchema.ProcessBaselines
 	numBaselines := 3000
-	for i := 0; i < numBaselines; i++ {
+	for range numBaselines {
 		processBaseline := &storage.ProcessBaseline{}
 		s.Require().NoError(testutils.FullInit(processBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaseline.Id = uuid.NewV4().String()

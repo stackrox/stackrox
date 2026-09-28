@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -49,6 +51,9 @@ var (
 
 type ExportOptions struct {
 	ManualVulnURL string
+	// Sources restricts which updaters run. When nil or empty, all updaters run.
+	// Values must be pre-normalized (trimmed, no empty entries).
+	Sources []string
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
@@ -71,6 +76,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
+	bundles["cisa-kev"] = kevOpts()
 
 	// Claircore Updaters.
 	for _, uSet := range ccUpdaterSets {
@@ -79,6 +85,15 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			managerOpts = rhelVexOpts()
 		}
 		bundles[uSet] = managerOpts
+	}
+
+	if len(opts.Sources) > 0 {
+		filtered, err := filterSources(bundles, opts.Sources)
+		if err != nil {
+			return fmt.Errorf("filtering sources: %w", err)
+		}
+		slog.InfoContext(ctx, "source filter active", "running", len(filtered), "total", len(bundles), "sources", opts.Sources)
+		bundles = filtered
 	}
 
 	// Rate limit to ~16 requests/second by default.
@@ -187,26 +202,40 @@ func rhelVexOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{rhelVexUpdaterName}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
 			rhelVexUpdaterName: func(i any) error {
-				ctx := context.Background()
-				ctx = log.With(ctx, "updater", rhelVexUpdaterName)
+				ctx := log.With(context.Background(), "updater", rhelVexUpdaterName)
+				// Validate during factory configuration so invalid input fails manager
+				// initialization; updater configuration errors only skip the updater.
+				ignoreKernel := false
+				if value := os.Getenv("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES"); value != "" {
+					var err error
+					ignoreKernel, err = strconv.ParseBool(value)
+					if err != nil {
+						return fmt.Errorf("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: %w", err)
+					}
+				}
 
-				// This function gets called for both the Factory and the Updater.
-				// We only need to configure the Factory (which has the CompressedFileTimeout field).
+				// The factory passes the download timeout to the updater; UpdaterConfig
+				// has no timeout field. Kernel exclusion is set on UpdaterConfig because
+				// the manager configures the updater after construction, overwriting any
+				// kernel-exclusion value inherited from the factory.
 				switch cfg := i.(type) {
 				case *vex.FactoryConfig:
-					// Configure the factory with custom timeout.
-					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
-					if timeout != "" {
-						parsedTimeout, err := time.ParseDuration(timeout)
+					var timeout *claircore.Duration
+					if value := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT"); value != "" {
+						parsedTimeout, err := time.ParseDuration(value)
 						if err != nil {
 							slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
 						} else {
-							cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
+							duration := claircore.Duration(parsedTimeout)
+							timeout = &duration
 							slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
 						}
 					}
+					if timeout != nil {
+						cfg.CompressedFileTimeout = *timeout
+					}
 				case *vex.UpdaterConfig:
-					// Updater config - nothing to configure here.
+					cfg.IgnoreKernelPackages = ignoreKernel
 				default:
 					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
 				}
@@ -225,6 +254,28 @@ func redhatCSAFOpts() []updates.ManagerOption {
 			"stackrox.rhel-csaf": csaf.NewFactory(),
 		}),
 	}
+}
+
+func kevOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"clair.kev": kev.NewFactory(),
+		}),
+	}
+}
+
+func filterSources(bundles map[string][]updates.ManagerOption, selected []string) (map[string][]updates.ManagerOption, error) {
+	filtered := make(map[string][]updates.ManagerOption, len(selected))
+	for _, s := range selected {
+		if o, ok := bundles[s]; ok {
+			filtered[s] = o
+		} else {
+			return nil, fmt.Errorf("unknown source: %q", s)
+		}
+	}
+	return filtered, nil
 }
 
 func zstdWriter(filename string) (io.WriteCloser, error) {

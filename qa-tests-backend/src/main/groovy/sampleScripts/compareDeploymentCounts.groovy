@@ -73,6 +73,7 @@ log.info "Stackrox count: ${stackroxDeploymentCounts}, " +
 List<String> stackroxDeploymentNames = DeploymentService.listDeployments()*.name
 Javers javers = JaversBuilder.javers()
         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+        .withPrintProBanner(false)
         .build()
 log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
 

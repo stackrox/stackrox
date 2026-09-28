@@ -34,11 +34,11 @@ func redHatIntegrationMatcher() gomock.Matcher {
 }
 
 func validBundleJSON() []byte {
-	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM)
+	return fmt.Appendf(nil, `{"schemaVersion": "1.0", "cosignKeys": [{"name": "test-key-1", "publicKey": %q}]}`, testPublicKeyPEM)
 }
 
 func validBundleJSON2Keys() []byte {
-	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
+	return fmt.Appendf(nil, `{"schemaVersion": "1.0", "cosignKeys": [{"name": "test-key-1", "publicKey": %q}, {"name": "test-key-2", "publicKey": %q}]}`,
 		testPublicKeyPEM, testPublicKeyPEM2)
 }
 
@@ -81,7 +81,7 @@ func TestHandlerInvalidBundleReturnsNil(t *testing.T) {
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
 	handler := keyBundleHandler(mockStore)
-	err := handler([]byte(`{"keys": []}`))
+	err := handler([]byte(`{"cosignKeys": []}`))
 	assert.NoError(t, err, "parse errors must return nil to suppress retry")
 }
 
@@ -92,6 +92,15 @@ func TestHandlerMalformedJSONReturnsNil(t *testing.T) {
 	handler := keyBundleHandler(mockStore)
 	err := handler([]byte(`{not json`))
 	assert.NoError(t, err, "parse errors must return nil to suppress retry")
+}
+
+func TestHandlerNoSupportedKeysReturnsNil(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+
+	handler := keyBundleHandler(mockStore)
+	err := handler([]byte(`{"schemaVersion": "1.0", "pgpKeys": [{"name": "k", "armoredKey": "opaque"}]}`))
+	assert.NoError(t, err, "no-supported-keys errors must return nil to suppress retry")
 }
 
 func TestHandlerUpsertErrorReturnsError(t *testing.T) {

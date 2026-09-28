@@ -45,23 +45,18 @@ _run_compatibility_tests() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-    ci_export CENTRAL_PERSISTENCE_NONE "true"
-
-    export SENSOR_HELM_DEPLOY=true
-    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    export ROX_NETPOL_FIELDS=true
-    export ROX_SENSOR_UPGRADER_ENABLED=false
 
     test_preamble
     setup_deployment_env false false
 
-    remove_existing_stackrox_resources
+    "$ROOT/scripts/roxie.sh" teardown all --single-namespace || true
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
     deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
-    echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
+
+    setup_client_TLS_certs
 
     rm -f FAIL
 

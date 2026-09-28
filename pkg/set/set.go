@@ -2,6 +2,8 @@ package set
 
 import (
 	"fmt"
+	"iter"
+	"maps"
 	"sort"
 	"strings"
 )
@@ -360,6 +362,11 @@ func (k FrozenSet[KeyType]) Cardinality() int {
 // IsEmpty returns whether the underlying set is empty (includes uninitialized).
 func (k FrozenSet[KeyType]) IsEmpty() bool {
 	return len(k.underlying) == 0
+}
+
+// All returns an iterator over the elements of the set.
+func (k FrozenSet[KeyType]) All() iter.Seq[KeyType] {
+	return maps.Keys(k.underlying)
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.

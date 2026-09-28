@@ -16,6 +16,9 @@ const (
 	DetectorScanResultTopic
 	DetectorDeployAlertOutputTopic
 	ResolvedResourceEventTopic
+	SoftRestartTopic
+	ResourceSyncFinishedTopic
+	FakeFileActivityTopic
 )
 
 var (
@@ -33,6 +36,9 @@ var (
 		DetectorScanResultTopic:         "DetectorScanResult",
 		DetectorDeployAlertOutputTopic:  "DetectorDeployAlertOutput",
 		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
+		SoftRestartTopic:                "SoftRestart",
+		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
+		FakeFileActivityTopic:           "FakeFileActivity",
 	}
 )
 

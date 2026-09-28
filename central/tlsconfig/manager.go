@@ -18,6 +18,8 @@ const (
 	DefaultTLSCertSource ServerCertSource = iota
 	// ServiceCertSource is the source for the StackRox internal service TLS certificate.
 	ServiceCertSource
+	// OpenShiftTLSCertSource is the OpenShift service-serving certificate for the central-ocp Service.
+	OpenShiftTLSCertSource
 )
 
 // ClientCASource is an enum type that determines the source for obtaining TLS client certificate authorities.

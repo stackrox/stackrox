@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views/platformcve"
 	platformCVEViewMock "github.com/stackrox/rox/central/views/platformcve/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/suite"
@@ -79,7 +78,7 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVEsNonEmpty() {
 
 func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVEsWithQuery() {
 	q := &PaginatedQuery{
-		Query: pointers.String("CVE:cve-2022-xyz"),
+		Query: new("CVE:cve-2022-xyz"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
@@ -101,9 +100,9 @@ func (s *PlatformCVEResolverTestSuite) TestPlatformCVEsCVEsWithPaginatedQuery() 
 	q := &PaginatedQuery{
 		Pagination: &inputtypes.Pagination{
 			SortOption: &inputtypes.SortOption{
-				Field: pointers.String(search.CVSS.String()),
+				Field: new(search.CVSS.String()),
 				AggregateBy: &inputtypes.AggregateBy{
-					AggregateFunc: pointers.String(aggregatefunc.Max.Name()),
+					AggregateFunc: new(aggregatefunc.Max.Name()),
 				},
 			},
 		},
@@ -140,7 +139,7 @@ func (s *PlatformCVEResolverTestSuite) TestPlatformCVECount() {
 
 func (s *PlatformCVEResolverTestSuite) TestPlatformCVECountWithQuery() {
 	q := &RawQuery{
-		Query: pointers.String("Cluster:c1"),
+		Query: new("Cluster:c1"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Cluster, "c1").ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
@@ -172,7 +171,7 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVENonEmpty() {
 			CveID              *string
 			SubfieldScopeQuery *string
 		}{
-			CveID: pointers.String("cve-xyz#K8S_CVE"),
+			CveID: new("cve-xyz#K8S_CVE"),
 		},
 	)
 	s.NoError(err)
@@ -192,8 +191,8 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVENonEmpty() {
 		CveID              *string
 		SubfieldScopeQuery *string
 	}{
-		CveID:              pointers.String("cve-xyz#K8S_CVE"),
-		SubfieldScopeQuery: pointers.String("Cluster:c1"),
+		CveID:              new("cve-xyz#K8S_CVE"),
+		SubfieldScopeQuery: new("Cluster:c1"),
 	},
 	)
 	s.NoError(err)
@@ -213,8 +212,8 @@ func (s *PlatformCVEResolverTestSuite) TestGetPlatformCVENonEmpty() {
 		CveID              *string
 		SubfieldScopeQuery *string
 	}{
-		CveID:              pointers.String("cve-xyz#K8S_CVE"),
-		SubfieldScopeQuery: pointers.String("Cluster Platform Type:KUBERNETES_CLUSTER"),
+		CveID:              new("cve-xyz#K8S_CVE"),
+		SubfieldScopeQuery: new("Cluster Platform Type:KUBERNETES_CLUSTER"),
 	},
 	)
 	s.NoError(err)

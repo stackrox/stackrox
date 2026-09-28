@@ -200,6 +200,7 @@ const fileOperationOptions: DescriptorOption[] = [
     ['UNLINK', 'Delete (Unlink)'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
+    ['XATTR_CHANGE', 'Extended attribute change'],
 ].map(([value, label]) => ({ value, label }));
 
 const processActivityDescriptors: Descriptor[] = [
@@ -681,6 +682,28 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         defaultValue: true,
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Known Exploited CVE',
+        name: 'CISA KEV',
+        shortName: 'Known exploited CVE',
+        longName: 'Known exploited vulnerabilities from the CISA KEV catalog',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Yes',
+                value: true,
+            },
+            {
+                text: 'No',
+                value: false,
+            },
+        ],
+        defaultValue: true,
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+        featureFlagDependency: ['ROX_CISA_KEV'],
     },
     {
         label: 'Fixed by',

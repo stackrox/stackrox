@@ -8,18 +8,14 @@ import type { ReportStatus } from 'types/reportJob';
 import MyLastJobStatus from './MyLastJobStatus';
 
 const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
+    type: 'VULNERABILITY',
     reportConfigId: 'report-config-id-1',
     reportJobId: 'report-job-id-1',
     name: 'test-name-1',
     description: 'test-description-1',
     vulnReportFilters: {
-        fixability: 'FIXABLE',
-        severities: ['LOW_VULNERABILITY_SEVERITY'],
-        imageTypes: ['DEPLOYED'],
-        includeAdvisory: false,
-        includeEpssProbability: false,
-        includeNvdCvss: false,
         allVuln: true,
+        query: '',
     },
     collectionSnapshot: {
         id: 'test-collection-id-1',

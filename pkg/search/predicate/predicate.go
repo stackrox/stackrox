@@ -423,7 +423,7 @@ func createSliceNestedPredicate(parentType reflect.Type, field reflect.StructFie
 		}
 		var results []*search.Result
 		length := instance.Len()
-		for i := 0; i < length; i++ {
+		for i := range length {
 			idx := instance.Index(i)
 			if res, matches := nested.Evaluate(idx); matches {
 				results = append(results, res)

@@ -273,7 +273,7 @@ func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldSc
 }
 
 func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) ([]*storage.ComplianceOperatorProfileV2, error) {
-	var profiles []string
+	profiles := make([]string, 0, len(scanRequest.GetProfiles()))
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
 	}

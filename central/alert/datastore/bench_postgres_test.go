@@ -54,7 +54,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 
 	// Keep the count low in CI. You can run w/ higher numbers locally.
 	totalAlerts := 1000
-	for i := 0; i < totalAlerts; i++ {
+	for range totalAlerts {
 		id := uuid.NewV4().String()
 		ids = append(ids, id)
 		a := fixtures.GetAlertWithID(id)
@@ -99,7 +99,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
 
-	var expected []*violationsBySeverity
+	expected := make([]*violationsBySeverity, 0, len(sevToCount))
 	for sev, count := range sevToCount {
 		expected = append(expected, &violationsBySeverity{count, int(sev)})
 	}

@@ -209,9 +209,11 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
 		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(t, nginxDeploymentName,
-				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-			testC.LastViolationState(t, nginxDeploymentName,
+			testC.LastDeploymentStateWithTimeout(t, nginxDeploymentName,
+				assertLastDeploymentHasPortExposure(c.portConfig),
+				"'PortConfig' for Node Port service test not found",
+				10*time.Second)
+			testC.LastViolationStateWithTimeout(t, nginxDeploymentName,
 				assertAlertTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -220,7 +222,8 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 						State: storage.ViolationState_ACTIVE,
 					},
 				),
-				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
+				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName),
+				10*time.Second)
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
 			// Only checking services

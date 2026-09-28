@@ -79,6 +79,12 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Warn("Removal of node inventory is unsupported action")
 		return nil
 	}
+	if !features.LegacyScanner.Enabled() {
+		replyCompliance(ctx, "", ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
+		log.Debug("Discarding v2 NodeInventory because the legacy scanner is disabled")
+		return nil
+	}
+
 	ninv = ninv.CloneVT()
 
 	// Read the node from the database, if not found we fail.

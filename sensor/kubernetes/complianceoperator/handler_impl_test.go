@@ -477,7 +477,7 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
 
-	for i := 0; i < times; i++ {
+	for range times {
 		s.NoError(s.requestHandler.ProcessMessage(s.T().Context(), msg))
 
 		select {

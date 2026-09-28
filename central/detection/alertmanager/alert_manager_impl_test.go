@@ -52,8 +52,6 @@ var (
 
 // alertToMatchKey converts a *storage.Alert to an *alertviews.AlertMatchKey,
 // extracting the fields the same way the alertAdapter does in the impl file.
-func ptr[T any](v T) *T { return &v }
-
 func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 	key := &alertviews.AlertMatchKey{
 		ID:             a.GetId(),
@@ -64,35 +62,35 @@ func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 
 	// Deployment fields
 	if dep := a.GetDeployment(); dep != nil {
-		key.DeploymentID = ptr(dep.GetId())
-		key.DeploymentInactive = ptr(dep.GetInactive())
+		key.DeploymentID = new(dep.GetId())
+		key.DeploymentInactive = new(dep.GetInactive())
 	}
 
 	// Resource fields
 	if res := a.GetResource(); res != nil {
-		key.ResourceType = ptr(int(res.GetResourceType()))
-		key.ResourceName = ptr(res.GetName())
-		key.ClusterID = ptr(res.GetClusterId())
-		key.Namespace = ptr(res.GetNamespace())
+		key.ResourceType = new(int(res.GetResourceType()))
+		key.ResourceName = new(res.GetName())
+		key.ClusterID = new(res.GetClusterId())
+		key.Namespace = new(res.GetNamespace())
 	}
 
 	// Node fields
 	if node := a.GetNode(); node != nil {
-		key.NodeID = ptr(node.GetId())
-		key.NodeName = ptr(node.GetName())
+		key.NodeID = new(node.GetId())
+		key.NodeName = new(node.GetName())
 		if key.ClusterID == nil || *key.ClusterID == "" {
-			key.ClusterID = ptr(node.GetClusterId())
+			key.ClusterID = new(node.GetClusterId())
 		}
 	}
 
 	// Top-level cluster ID fallback (for deployment alerts)
 	if key.ClusterID == nil || *key.ClusterID == "" {
-		key.ClusterID = ptr(a.GetClusterId())
+		key.ClusterID = new(a.GetClusterId())
 	}
 
 	// Top-level namespace fallback (for deployment alerts)
 	if key.Namespace == nil || *key.Namespace == "" {
-		key.Namespace = ptr(a.GetNamespace())
+		key.Namespace = new(a.GetNamespace())
 	}
 
 	return key
@@ -154,7 +152,7 @@ func getFileAccess(accessTime time.Time) *storage.FileAccess {
 }
 
 func getFakeFileAccessAlert(accesses ...*storage.FileAccess) *storage.Alert {
-	var violations []*storage.Alert_Violation
+	violations := make([]*storage.Alert_Violation, 0, len(accesses))
 	for _, access := range accesses {
 		violations = append(violations, printer.GenerateFileAccessViolation(access))
 	}
@@ -169,6 +167,26 @@ func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert
 	printer.UpdateProcessAlertViolationMessage(v)
 	return &storage.Alert{
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
+		ProcessViolation: v,
+	}
+}
+
+func runtimeDeploymentAlert(id, depID string, inactive bool, process *storage.ProcessIndicator) *storage.Alert {
+	v := &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{process}}
+	printer.UpdateProcessAlertViolationMessage(v)
+	return &storage.Alert{
+		Id:     id,
+		Policy: getPolicies()[0],
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:       depID,
+				Name:     depID,
+				Inactive: inactive,
+			},
+		},
+		LifecycleStage:   storage.LifecycleStage_RUNTIME,
+		State:            storage.ViolationState_ACTIVE,
+		Time:             protocompat.GetProtoTimestampFromSeconds(100),
 		ProcessViolation: v,
 	}
 }
@@ -482,7 +500,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
@@ -519,7 +537,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
@@ -551,7 +569,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 	newAlert := alerts[0].CloneVT()
@@ -585,7 +603,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 	newAlert := alerts[0].CloneVT()
@@ -712,6 +730,49 @@ func (suite *AlertManagerTestSuite) TestDeploymentMarkedInactiveOnRemoval() {
 	suite.True(modified.Contains("dep-to-remove"), "removed deployment should appear in modified set")
 }
 
+// TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone covers a first runtime
+// alert arriving after the deployment is already gone.
+func (suite *AlertManagerTestSuite) TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone() {
+	incoming := runtimeDeploymentAlert("runtime-alert-new", "dep-gone", false, nowProcess)
+
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-gone").Return(true).AnyTimes()
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(nil, nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.True(a.GetDeployment().GetInactive(), "new runtime alert should be marked inactive")
+		return nil
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-gone"))
+}
+
+// TestMergedRuntimeAlertMarkedInactiveWhenDeploymentGone covers a later runtime
+// alert merging into a stored one after the deployment is already gone.
+func (suite *AlertManagerTestSuite) TestMergedRuntimeAlertMarkedInactiveWhenDeploymentGone() {
+	previous := runtimeDeploymentAlert("runtime-alert-1", "dep-gone", false, yesterdayProcess)
+	incoming := runtimeDeploymentAlert("runtime-alert-incoming", "dep-gone", false, nowProcess)
+
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-gone").Return(true).AnyTimes()
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		Return(alertsToMatchKeys([]*storage.Alert{previous}), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{previous.CloneVT()}, nil)
+
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.True(a.GetDeployment().GetInactive(), "merged runtime alert should be marked inactive")
+		suite.Len(a.GetProcessViolation().GetProcesses(), 2, "inactive stamp must not replace the merged processes")
+		return nil
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-gone"))
+}
+
 func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeploymentID() {
 	alerts := getAlerts()
 
@@ -731,6 +792,33 @@ func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeployment
 	suite.NoError(err)
 	suite.True(modified.Contains(alerts[0].GetDeployment().GetId()),
 		"resolved deployment alert's deployment ID should appear in modified set")
+}
+
+func TestMergeAlertsPreservesDeploymentInactive(t *testing.T) {
+	cases := map[string]struct {
+		oldInactive bool
+		newInactive bool
+		want        bool
+	}{
+		"stored inactive is kept when Sensor sends a new process": {
+			oldInactive: true,
+			newInactive: false,
+			want:        true,
+		},
+		"active stays active when both sides are active": {
+			oldInactive: false,
+			newInactive: false,
+			want:        false,
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			old := runtimeDeploymentAlert("alert-1", "dep", c.oldInactive, yesterdayProcess)
+			newAlert := runtimeDeploymentAlert("alert-incoming", "dep", c.newInactive, nowProcess)
+			merged := mergeAlerts(old, newAlert)
+			assert.Equal(t, c.want, merged.GetDeployment().GetInactive())
+		})
+	}
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
@@ -830,14 +918,14 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 			desc: "New has many that exceed max",
 			old: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, 30)
-				for i := 0; i < 30; i++ {
+				for i := range 30 {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
 			}(),
 			new: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, 20)
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
@@ -849,11 +937,11 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 				// This is old[10:30] (20 old accesses) + new[0:20] (20 new accesses)
 				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
 				// 20 from old (indices 10-29, the most recent old ones)
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(10+i) * time.Minute))
 				}
 				// All 20 from new
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[20+i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
@@ -864,7 +952,7 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 			desc: "Old at max; new access",
 			old: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
-				for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+				for i := range maxRunTimeViolationsPerAlert {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)

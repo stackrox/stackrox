@@ -143,7 +143,7 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 
 	s.receiver.Start(s.mockClient)
 
-	for i := 0; i < msgCount; i++ {
+	for range msgCount {
 		select {
 		case <-fastComponent.ResponsesC():
 			s.T().Log("Fast component processed the message")
@@ -197,7 +197,7 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.receiver.Start(s.mockClient)
 
 	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
-	for i := 0; i < numberOfCentralMessages; i++ {
+	for range numberOfCentralMessages {
 		messagesFromCentral <- ignoredMsg
 		time.Sleep(time.Millisecond)
 	}
@@ -268,7 +268,7 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	s.receiver.Start(s.mockClient)
 
 	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
-	for i := 0; i < numberOfCentralMessages; i++ {
+	for range numberOfCentralMessages {
 		messagesFromCentral <- testMsg
 		time.Sleep(time.Millisecond)
 	}
@@ -333,7 +333,7 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 
 	s.receiver.Start(s.mockClient)
 	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
-	for i := 0; i < numberOfCentralMessages; i++ {
+	for range numberOfCentralMessages {
 		messagesFromCentral <- testMsg
 	}
 

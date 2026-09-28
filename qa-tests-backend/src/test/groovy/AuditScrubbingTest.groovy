@@ -58,12 +58,14 @@ class AuditScrubbingTest extends BaseSpecification {
 
         when:
         "A POST request is made to the ExchangeToken API"
+        def encodedUser = URLEncoder.encode(username, 'UTF-8')
+        def encodedPass = URLEncoder.encode(password, 'UTF-8')
         RestAssured.given()
                 .relaxedHTTPSValidation()
                 .body(
                         JsonFormat.printer().print(
                                 AuthproviderService.ExchangeTokenRequest.newBuilder()
-                                    .setExternalToken("username=${username}&password=${password}")
+                                    .setExternalToken("username=${encodedUser}&password=${encodedPass}")
                                     .setState("${BASIC_AUTH_PROVIDER_ID}:${attemptId}")
                                     .setType("basic")))
                 .header("Referer", baseURL)
@@ -83,6 +85,7 @@ class AuditScrubbingTest extends BaseSpecification {
         and:
         "Verify that audit log string representation does not contain the password"
         assert !auditLogEntry.toString().contains(password)
+        assert !auditLogEntry.toString().contains(encodedPass)
 
         where:
         "Data inputs are"

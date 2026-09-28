@@ -9,6 +9,7 @@ import parseURL from 'utils/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'utils/WorkflowState';
 import { getVulnerabilityManagementEntityTypes } from 'utils/entityRelationships';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import { entityNounSentenceCasePlural } from '../entitiesForVulnerabilityManagement';
 import getSidePanelEntity from '../getSidePanelEntity';
@@ -18,6 +19,7 @@ import ListComponent from './VulnMgmtList';
 
 const WorkflowListPageLayout = () => {
     const location = useLocation();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -66,7 +68,9 @@ const WorkflowListPageLayout = () => {
                         <div className="flex items-center pl-2">
                             <EntitiesMenu
                                 text="All Entities"
-                                options={getVulnerabilityManagementEntityTypes()}
+                                options={getVulnerabilityManagementEntityTypes(
+                                    isFeatureFlagEnabled
+                                )}
                             />
                         </div>
                     </div>

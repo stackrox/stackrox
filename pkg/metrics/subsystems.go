@@ -6,6 +6,7 @@ type Subsystem string
 // These consts enumerate all the subsystems that expose Prometheus metrics.
 const (
 	CentralSubsystem          Subsystem = "central"
+	CentralWorkerSubsystem    Subsystem = "central_worker"
 	SensorSubsystem           Subsystem = "sensor"
 	AdmissionControlSubsystem Subsystem = "admission_control"
 	ComplianceSubsystem       Subsystem = "compliance"

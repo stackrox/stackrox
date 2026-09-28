@@ -79,6 +79,15 @@ func (m *ReportSnapshot_ViewBasedVulnReportFilters) CloneVT() isReportSnapshot_F
 	return r
 }
 
+func (m *ReportSnapshot_NodeVulnReportFilters) CloneVT() isReportSnapshot_Filter {
+	if m == nil {
+		return (*ReportSnapshot_NodeVulnReportFilters)(nil)
+	}
+	r := new(ReportSnapshot_NodeVulnReportFilters)
+	r.NodeVulnReportFilters = m.NodeVulnReportFilters.CloneVT()
+	return r
+}
+
 func (m *CollectionSnapshot) CloneVT() *CollectionSnapshot {
 	if m == nil {
 		return (*CollectionSnapshot)(nil)
@@ -270,6 +279,31 @@ func (this *ReportSnapshot_ViewBasedVulnReportFilters) EqualVT(thatIface isRepor
 		}
 		if q == nil {
 			q = &ViewBasedVulnerabilityReportFilters{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *ReportSnapshot_NodeVulnReportFilters) EqualVT(thatIface isReportSnapshot_Filter) bool {
+	that, ok := thatIface.(*ReportSnapshot_NodeVulnReportFilters)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.NodeVulnReportFilters, that.NodeVulnReportFilters; p != q {
+		if p == nil {
+			p = &NodeVulnerabilityReportFilters{}
+		}
+		if q == nil {
+			q = &NodeVulnerabilityReportFilters{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -580,6 +614,29 @@ func (m *ReportSnapshot_ViewBasedVulnReportFilters) MarshalToSizedBufferVT(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
+func (m *ReportSnapshot_NodeVulnReportFilters) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ReportSnapshot_NodeVulnReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NodeVulnReportFilters != nil {
+		size, err := m.NodeVulnReportFilters.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x7a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x7a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *CollectionSnapshot) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -858,6 +915,20 @@ func (m *ReportSnapshot_ViewBasedVulnReportFilters) SizeVT() (n int) {
 	_ = l
 	if m.ViewBasedVulnReportFilters != nil {
 		l = m.ViewBasedVulnReportFilters.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *ReportSnapshot_NodeVulnReportFilters) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NodeVulnReportFilters != nil {
+		l = m.NodeVulnReportFilters.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -1446,6 +1517,47 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 			}
 			if err := m.ResourceScope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportSnapshot_NodeVulnReportFilters); ok {
+				if err := oneof.NodeVulnReportFilters.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &NodeVulnerabilityReportFilters{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportSnapshot_NodeVulnReportFilters{NodeVulnReportFilters: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -2443,6 +2555,47 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			if err := m.ResourceScope.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportSnapshot_NodeVulnReportFilters); ok {
+				if err := oneof.NodeVulnReportFilters.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &NodeVulnerabilityReportFilters{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportSnapshot_NodeVulnReportFilters{NodeVulnReportFilters: v}
 			}
 			iNdEx = postIndex
 		default:

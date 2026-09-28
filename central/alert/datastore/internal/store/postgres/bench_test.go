@@ -16,7 +16,7 @@ import (
 func BenchmarkMany(b *testing.B) {
 	var alerts []*storage.Alert
 	const alertsNum = 10000
-	for i := 0; i < alertsNum; i++ {
+	for range alertsNum {
 		alert := &storage.Alert{}
 		err := testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
 		if err != nil {
@@ -25,7 +25,7 @@ func BenchmarkMany(b *testing.B) {
 		alerts = append(alerts, alert)
 	}
 
-	var idx []string
+	idx := make([]string, 0, len(alerts))
 	for _, a := range alerts {
 		idx = append(idx, a.GetId())
 	}

@@ -2,23 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-)
-
-const (
-	// Resource name regexes based on https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
-	// and https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
-	dnsSubdomain1123Regex = `[a-z0-9](?:[-\.a-z0-9]*[a-z0-9])?`
-	dnsLabel1123Regex     = `[a-z0-9](?:[-a-z0-9]*[a-z0-9])?`
-	uidRegex              = `[[:xdigit:]-]+`
-)
-
-var (
-	podIDRegex = regexp.MustCompile(`^(` + dnsSubdomain1123Regex + `)\.(` + dnsLabel1123Regex + `)@(` + uidRegex + `)$`)
 )
 
 // PodID allows uniquely identifying a pod instance.
@@ -43,15 +31,23 @@ func (p PodID) IsEmpty() bool {
 
 // ParsePodID takes a string and returns the parsed pod ID, or an error.
 func ParsePodID(str string) (PodID, error) {
-	matches := podIDRegex.FindStringSubmatch(str)
-	if len(matches) != 4 {
-		return PodID{}, fmt.Errorf("string %q is not a valid Pod ID; regex used for validation is %q", str, podIDRegex)
+	name, namespace, uid, ok := splitPodIDString(str)
+	if !ok || !isValidDNSSubdomain(name) || !isValidDNSLabel(namespace) || !isValidUID(uid) {
+		return PodID{}, fmt.Errorf("string %q is not a valid Pod ID", str)
 	}
-	return PodID{
-		Name:      matches[1],
-		Namespace: matches[2],
-		UID:       types.UID(matches[3]),
-	}, nil
+	return PodID{Name: name, Namespace: namespace, UID: types.UID(uid)}, nil
+}
+
+func splitPodIDString(s string) (name, namespace, uid string, ok bool) {
+	atIdx := strings.IndexByte(s, '@')
+	if atIdx < 0 || atIdx == len(s)-1 {
+		return "", "", "", false
+	}
+	dotIdx := strings.LastIndexByte(s[:atIdx], '.')
+	if dotIdx < 0 {
+		return "", "", "", false
+	}
+	return s[:dotIdx], s[dotIdx+1 : atIdx], s[atIdx+1:], true
 }
 
 // GetPodIDFromV1Pod returns a pod ID for the given pod object.
@@ -70,4 +66,57 @@ func GetPodIDFromStoragePod(pod *storage.Pod) PodID {
 		Namespace: pod.GetNamespace(),
 		UID:       types.UID(pod.GetId()),
 	}
+}
+
+func isLowerAlphaNum(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
+}
+
+// isValidDNSSubdomain matches `[a-z0-9](?:[-.a-z0-9]*[a-z0-9])?` per
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+func isValidDNSSubdomain(s string) bool {
+	if len(s) == 0 || !isLowerAlphaNum(s[0]) || !isLowerAlphaNum(s[len(s)-1]) {
+		return false
+	}
+	for i := 1; i < len(s)-1; i++ {
+		c := s[i]
+		if !isLowerAlphaNum(c) && c != '-' && c != '.' {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidDNSLabel matches `[a-z0-9](?:[-a-z0-9]*[a-z0-9])?` per
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+func isValidDNSLabel(s string) bool {
+	if len(s) == 0 || !isLowerAlphaNum(s[0]) || !isLowerAlphaNum(s[len(s)-1]) {
+		return false
+	}
+	for i := 1; i < len(s)-1; i++ {
+		c := s[i]
+		if !isLowerAlphaNum(c) && c != '-' {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidUID matches `[[:xdigit:]-]+` per
+// https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
+func isValidUID(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if c != '-' && !isHexByte(c) {
+			return false
+		}
+	}
+	return true
+}
+
+func isHexByte(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
 }

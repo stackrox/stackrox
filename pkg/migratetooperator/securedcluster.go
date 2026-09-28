@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/pointers"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +30,7 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 			Name: "stackrox-secured-cluster-services",
 		},
 		Spec: platform.SecuredClusterSpec{
-			ClusterName: pointers.String(clusterName),
+			ClusterName: new(clusterName),
 		},
 	}
 
@@ -72,7 +71,7 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 
 func setSCCentralEndpoint(sensorDep *appsv1.Deployment, cr *platform.SecuredCluster) {
 	if ep := envVarValue(sensorDep, "ROX_CENTRAL_ENDPOINT"); ep != "" && ep != "central.stackrox:443" {
-		cr.Spec.CentralEndpoint = pointers.String(ep)
+		cr.Spec.CentralEndpoint = new(ep)
 	}
 }
 

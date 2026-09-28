@@ -192,6 +192,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 	$(MAKE) docker-push-index
 
 ##@ Dependencies download
+include $(PROJECT_DIR)/../make/goproxy.mk
 include $(PROJECT_DIR)/../make/gotools.mk
 
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
@@ -236,14 +237,20 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 	[[ $${ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS:-false} = true ]] || $(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
-manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: parent-proto-generate controller-gen go-mod-download ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate controller-gen go-mod-download ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./api/...
+
+.PHONY: go-mod-download
+go-mod-download: ## Download modules we depend on, with retries.
+# Warm up go module cache so that transient network failures do not abort controller-gen.
+# Once downloaded, this command is very quick (~200 ms).
+	go mod download || go mod download || go mod download
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -254,7 +261,9 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.29
+# Dynamically derived from the k8s.io/api dependency version in go.mod (v0.X.Y -> 1.X),
+# since not all patch versions are re-published.
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f '{{.Version}}' k8s.io/api | sed 's/^v0\.\([0-9]*\).*/1.\1/')
 
 .PHONY: test
 test: manifests generate fmt vet  ## Run go unit tests
@@ -307,10 +316,10 @@ run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quic
 quick-run: ## Same as run, but without ensuring dependencies.
 	@if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
 		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
-		IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh | while read -r line; do \
+		while read -r line; do \
 			echo " * $$line"; \
 			export "$$line"; \
-		done; \
+		done < <(IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh); \
 	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
@@ -440,23 +449,17 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 	set -x ;\
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
-.PHONY: deploy-via-installer
-deploy-via-installer: ## Deploy current version of operator via distribution manifest file.
-	./hack/retry-kubectl.sh </dev/null apply -f dist/install.yaml
-# A hack for the NO_PROXY assertions in the e2e tests.
-	./hack/retry-kubectl.sh </dev/null set env -n $(TEST_NAMESPACE) deployment/rhacs-operator-controller-manager NO_PROXY=127.1.2.3/8
-# Need to hardcode the deployment name here and above, since kubectl barfs on the CRDs in the manifest when working on deployment:
-# $ oc rollout status  -f operator/dist/install.yaml --timeout=300s
-# deployment "rhacs-operator-controller-manager" successfully rolled out
-# unable to decode "operator/dist/install.yaml": no kind "CustomResourceDefinition" is registered for version "apiextensions.k8s.io/v1" in scheme "k8s.io/kubectl/pkg/scheme/scheme.go:28"
-# TODO(ROX-11901): work this around somehow to make it possible to deploy and e2e-test the community build
-	./hack/retry-kubectl.sh </dev/null rollout status deployment -n $(TEST_NAMESPACE) rhacs-operator-controller-manager --timeout=300s
-
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
-	helm install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
+	helm upgrade --install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
 		rhacs-operator ./dist/chart
+
+.PHONY: deploy-previous-via-chart
+deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using helm chart.
+	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	set -x ;\
+	TEST_NAMESPACE=$(TEST_NAMESPACE) ./hack/generate-and-install-chart.sh "$${replaced_version}"
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
@@ -465,13 +468,6 @@ upgrade-via-olm: kuttl
 .PHONY: upgrade-dirty-tag-via-olm
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
-
-.PHONY: upgrade-via-chart
-upgrade-via-chart:
-# TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
-	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
-		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
-		rhacs-operator ./dist/chart
 
 ##@ Bundle and Index build
 
@@ -511,7 +507,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
 	candidate_version=$$(go run ./bundle_helpers/main.go patch-csv \
@@ -534,15 +530,17 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--operator-image=$(IMG) \
 		--related-images-mode=$(RELATED_IMAGES_MODE) \
 		$${unreleased_opt:-}
-# Check that the resulting bundle still passes validations.
+
+.PHONY: bundle-validate
+bundle-validate: operator-sdk ## Validate the bundle manifests in build/bundle/.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-build
-bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
+bundle-build: bundle.Dockerfile bundle-post-process bundle-validate ## Build the bundle image.
 	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
-bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
+bundle-test: operator-sdk bundle-post-process bundle-validate ## Run scorecard tests against bundle files.
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
@@ -550,7 +548,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+index-build: bundle-post-process bundle-validate yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`

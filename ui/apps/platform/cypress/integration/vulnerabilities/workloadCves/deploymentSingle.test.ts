@@ -73,7 +73,7 @@ describe('Workload CVE Deployment Single page', () => {
         cy.get(vulnSelectors.summaryCard('CVEs by status'));
         // Check table exists with the correct headers
         cy.get('table thead tr th').contains('CVE');
-        cy.get('table thead tr th').contains('CVE severity');
+        cy.get('table thead tr th').contains('Top CVE severity');
         cy.get('table thead tr th').contains('CVE status');
         cy.get('table thead tr th').contains('Affected components');
         cy.get('table thead tr th').contains('First discovered');

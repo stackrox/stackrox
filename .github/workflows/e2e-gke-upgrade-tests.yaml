@@ -35,18 +35,18 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
       ARTIFACT_DIR: ./junit-reports
+      SCANNER_V4_DB_STORAGE_CLASS: faster
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
     - name: Checkout repo
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -60,16 +60,11 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster cent-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster cent-up
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -91,6 +86,9 @@ jobs:
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
+
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
       shell: python
@@ -158,12 +156,18 @@ jobs:
           exit 6
         fi
 
-    - name: Publish test summary
+    - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        show: "fail"
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -183,7 +187,6 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-postgres
@@ -194,7 +197,7 @@ jobs:
     steps:
 
     - name: Checkout repo
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -208,16 +211,11 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster pg-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster pg-up
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -239,6 +237,9 @@ jobs:
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
+
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
       shell: python
@@ -305,12 +306,18 @@ jobs:
           exit 6
         fi
 
-    - name: Publish test summary
+    - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        show: "fail"
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -330,7 +337,6 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-sensor
@@ -341,7 +347,7 @@ jobs:
     steps:
 
     - name: Checkout repo
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -355,16 +361,11 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster sens-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster sens-up
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -386,6 +387,9 @@ jobs:
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
+
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
       shell: python
@@ -439,12 +443,18 @@ jobs:
           exit 6
         fi
 
-    - name: Publish test summary
+    - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        show: "fail"
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
 
     - name: Report junit failures in jira
       if: (!cancelled())

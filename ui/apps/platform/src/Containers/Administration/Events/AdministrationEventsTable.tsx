@@ -11,6 +11,7 @@ import {
 } from 'services/AdministrationEventsService';
 import type { AdministrationEvent } from 'services/AdministrationEventsService';
 import type { SearchFilter } from 'types/search';
+import { administrationEventsBasePath } from 'routePaths';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
@@ -55,7 +56,9 @@ function AdministrationEventsTable({
                         <Tbody key={id} isExpanded>
                             <Tr style={{ borderBottom: 'none' }}>
                                 <Td dataLabel="Domain" modifier="nowrap">
-                                    <Link to={`/main/administration-events/${id}`}>{domain}</Link>
+                                    <Link to={`${administrationEventsBasePath}/${id}`}>
+                                        {domain}
+                                    </Link>
                                 </Td>
                                 <Td dataLabel="Resource type" modifier="nowrap">
                                     {resourceType}

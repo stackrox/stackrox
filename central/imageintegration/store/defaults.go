@@ -2,13 +2,16 @@ package store
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -159,6 +162,9 @@ func makeDelayedIntegration(imageIntegration *storage.ImageIntegration, creatorF
 			if err != nil {
 				return false
 			}
+			if closer, ok := scanner.(io.Closer); ok {
+				defer utils.IgnoreError(closer.Close)
+			}
 			return scanner.Test() == nil
 		},
 	}
@@ -179,12 +185,19 @@ var (
 			},
 		},
 	}
+)
 
-	// DelayedIntegrations are default integrations to be added only when the trigger function returns true
-	DelayedIntegrations = []DelayedIntegration{
+// GetDelayedIntegrations returns default integrations to be added only when
+// the trigger function returns true.
+func GetDelayedIntegrations() []DelayedIntegration {
+	if !features.LegacyScanner.Enabled() {
+		return nil
+	}
+
+	return []DelayedIntegration{
 		makeDelayedIntegration(defaultScanner, func() scanners.Creator {
 			_, creator := clairify.Creator(nil)
 			return creator
 		}),
 	}
-)
+}

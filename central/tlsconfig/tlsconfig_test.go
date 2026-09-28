@@ -198,7 +198,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnError
 func createCertChainWithLengthOf(length int) ([]*x509.Certificate, []*ecdsa.PrivateKey, error) {
 	var certs []*x509.Certificate
 	var privateKeys []*ecdsa.PrivateKey
-	for i := 0; i < length; i++ {
+	for i := range length {
 		var parentCert = &x509.Certificate{}
 		var parentKey = &ecdsa.PrivateKey{}
 		if i > 0 {

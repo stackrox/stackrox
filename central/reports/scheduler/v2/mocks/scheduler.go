@@ -15,6 +15,7 @@ import (
 
 	reportgenerator "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	storage "github.com/stackrox/rox/generated/storage"
+	postgres "github.com/stackrox/rox/pkg/postgres"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -72,6 +73,20 @@ func (mr *MockSchedulerMockRecorder) CancelReportRequest(ctx, reportID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelReportRequest", reflect.TypeOf((*MockScheduler)(nil).CancelReportRequest), ctx, reportID)
 }
 
+// GetScheduledConfigIDs mocks base method.
+func (m *MockScheduler) GetScheduledConfigIDs() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScheduledConfigIDs")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetScheduledConfigIDs indicates an expected call of GetScheduledConfigIDs.
+func (mr *MockSchedulerMockRecorder) GetScheduledConfigIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledConfigIDs", reflect.TypeOf((*MockScheduler)(nil).GetScheduledConfigIDs))
+}
+
 // RemoveReportSchedule mocks base method.
 func (m *MockScheduler) RemoveReportSchedule(reportConfigID string) {
 	m.ctrl.T.Helper()
@@ -85,15 +100,15 @@ func (mr *MockSchedulerMockRecorder) RemoveReportSchedule(reportConfigID any) *g
 }
 
 // Start mocks base method.
-func (m *MockScheduler) Start() {
+func (m *MockScheduler) Start(db postgres.DB) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
+	m.ctrl.Call(m, "Start", db)
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockSchedulerMockRecorder) Start() *gomock.Call {
+func (mr *MockSchedulerMockRecorder) Start(db any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockScheduler)(nil).Start))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockScheduler)(nil).Start), db)
 }
 
 // Stop mocks base method.

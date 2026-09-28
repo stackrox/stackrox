@@ -700,8 +700,8 @@ class PolicyConfigurationTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("SMOKE")
     def "Verify env var policy configuration for source #envVarSource fails validation"() {
-        expect:
-        assert !PolicyService.createNewPolicy(Policy.newBuilder()
+        when:
+        PolicyService.createNewPolicy(Policy.newBuilder()
                         .setName("TestEnvironmentPolicy")
                         .setDescription("TestEnvironment")
                         .setRationale("TestEnvironment")
@@ -717,6 +717,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                                                         .setValue("KEY=VALUE")
                                                         .build()).build())
                         ).build())
+
+        then:
+        thrown(Exception)
 
         where:
         "Data inputs are :"

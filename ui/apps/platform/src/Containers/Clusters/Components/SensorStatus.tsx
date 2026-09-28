@@ -21,7 +21,7 @@ function SensorStatus({ healthStatus }: SensorStatusProps): ReactElement {
 
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
     const { Icon, fgColor } = healthStatusStyles[sensorHealthStatus];
-    const icon = <Icon className="inline h-4 w-4" />;
+    const icon = <Icon />;
 
     const statusElement = (
         <HealthLabelWithDelayed

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -85,6 +86,18 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 			log.Debug("File system pipeline using pub/sub mode for process enrichment")
 			p.wg.Add(1)
 			go p.cleanupExpiredBuffers()
+		}
+
+		// Register consumer for fake file activities from fake workloads
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.FakeFileActivityConsumer,
+			pubsub.FakeFileActivityTopic,
+			pubsub.FakeFileActivityLane,
+			p.handleFakeFileActivityEvent,
+		); err != nil {
+			log.Errorf("Failed to register consumer for fake file activities: %v", err)
+		} else {
+			log.Debug("File system pipeline registered consumer for fake file activities")
 		}
 	}
 
@@ -159,6 +172,43 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
+	case *sensorAPI.FileActivity_Acl:
+		acl := fs.GetAcl()
+		entries := make([]*storage.AclEntry, 0, len(acl.GetEntries()))
+		for _, e := range acl.GetEntries() {
+			entries = append(entries, &storage.AclEntry{
+				Tag:  toStorageAclTag(e.GetTag()),
+				Perm: e.GetPerm(),
+				Id:   e.GetId(),
+			})
+		}
+		access.File = &storage.FileAccess_File{
+			EffectivePath: acl.GetActivity().GetPath(),
+			ActualPath:    acl.GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				AclType:    toStorageAclType(acl.GetAclType()),
+				AclEntries: entries,
+			},
+		}
+		access.Operation = storage.FileAccess_ACL_CHANGE
+	case *sensorAPI.FileActivity_XattrSet:
+		access.File = &storage.FileAccess_File{
+			EffectivePath: fs.GetXattrSet().GetActivity().GetPath(),
+			ActualPath:    fs.GetXattrSet().GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				XattrName: fs.GetXattrSet().GetXattrName(),
+			},
+		}
+		access.Operation = storage.FileAccess_XATTR_SET
+	case *sensorAPI.FileActivity_XattrRemove:
+		access.File = &storage.FileAccess_File{
+			EffectivePath: fs.GetXattrRemove().GetActivity().GetPath(),
+			ActualPath:    fs.GetXattrRemove().GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				XattrName: fs.GetXattrRemove().GetXattrName(),
+			},
+		}
+		access.Operation = storage.FileAccess_XATTR_REMOVE
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
@@ -307,6 +357,30 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 	return nil
 }
 
+func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+
+	fakeEvent, ok := event.(*events.FakeFileActivityEvent)
+	if !ok {
+		log.Errorf("File system pipeline received unexpected event type for fake file activity: %T", event)
+		return fmt.Errorf("unexpected event type: %T", event)
+	}
+
+	if fakeEvent.Activity == nil {
+		return nil
+	}
+
+	// Process fake file activity directly instead of writing to activityChan.
+	// This avoids potential panic on shutdown when the channel is closed by filesystemService.
+	// The activityChan is owned by the gRPC service, which is its only writer.
+	p.processFileActivity(fakeEvent.Activity)
+	return nil
+}
+
 func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {
 	process := fs.GetProcess()
 	if process == nil {
@@ -418,5 +492,41 @@ func (p *Pipeline) run() {
 			detectorMetrics.FileAccessEventsReceived.Inc()
 			p.processFileActivity(fs)
 		}
+	}
+}
+
+// toStorageAclTag maps sensor AclTag values to storage AclTag values explicitly,
+// so that any future divergence between the two proto enum definitions is caught
+// at compile time rather than silently producing incorrect values.
+func toStorageAclTag(t sensorAPI.AclTag) storage.AclEntry_AclTag {
+	switch t {
+	case sensorAPI.AclTag_ACL_TAG_USER_OBJ:
+		return storage.AclEntry_ACL_TAG_USER_OBJ
+	case sensorAPI.AclTag_ACL_TAG_USER:
+		return storage.AclEntry_ACL_TAG_USER
+	case sensorAPI.AclTag_ACL_TAG_GROUP_OBJ:
+		return storage.AclEntry_ACL_TAG_GROUP_OBJ
+	case sensorAPI.AclTag_ACL_TAG_GROUP:
+		return storage.AclEntry_ACL_TAG_GROUP
+	case sensorAPI.AclTag_ACL_TAG_MASK:
+		return storage.AclEntry_ACL_TAG_MASK
+	case sensorAPI.AclTag_ACL_TAG_OTHER:
+		return storage.AclEntry_ACL_TAG_OTHER
+	default:
+		log.Warnf("unknown AclTag value: %v", t)
+		return storage.AclEntry_ACL_TAG_UNSPECIFIED
+	}
+}
+
+// toStorageAclType maps sensor AclType values to storage AclType values explicitly.
+func toStorageAclType(t sensorAPI.AclType) storage.AclType {
+	switch t {
+	case sensorAPI.AclType_ACL_TYPE_ACCESS:
+		return storage.AclType_ACL_TYPE_ACCESS
+	case sensorAPI.AclType_ACL_TYPE_DEFAULT:
+		return storage.AclType_ACL_TYPE_DEFAULT
+	default:
+		log.Warnf("unknown AclType value: %v", t)
+		return storage.AclType_ACL_TYPE_UNSPECIFIED
 	}
 }

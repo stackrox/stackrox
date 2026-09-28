@@ -170,72 +170,188 @@ func podsReady(num int32) *storage.CollectorHealthInfo_TotalReadyPods {
 }
 
 func TestOverallHealth(t *testing.T) {
-	cases := []struct {
-		name     string
+	cases := map[string]struct {
 		health   *storage.ClusterHealthStatus
 		expected storage.ClusterHealthStatus_HealthStatusLabel
 	}{
-		{
-			name: "sensor degraded, collector unhealthy",
+		"sensor degraded, collector unhealthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
-		{
-			name: "sensor unhealthy, collector degraded",
+		"sensor unhealthy, collector degraded": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 			},
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
-		{
-			name: "sensor degraded, collector healthy",
+		"sensor degraded, collector healthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
-		{
-			name: "sensor healthy, collector degraded",
+		"sensor healthy, collector degraded": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 			},
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
-		{
-			name: "sensor healthy, collector unavailable",
+		"sensor healthy, collector unavailable": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
 			},
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
-		{
-			name: "sensor healthy, collector healthy",
+		"sensor healthy, collector healthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
-		{
-			name: "sensor unintialized, collector unhealthy: unexpected states",
+		"sensor uninitialized, collector unhealthy: unexpected states": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNINITIALIZED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
+		"scanner uninitialized does not affect overall health": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_UNINITIALIZED,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"scanner healthy does not degrade overall health": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_HEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"scanner unhealthy makes overall unhealthy": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"scanner degraded makes overall degraded": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		"scanner degraded with sensor unhealthy makes overall unhealthy": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, c.expected, PopulateOverallClusterStatus(c.health))
 		})
 	}
+}
 
+func TestPopulateLocalScannerStatus(t *testing.T) {
+	cases := map[string]struct {
+		scannerHealthInfo *storage.ScannerHealthInfo
+		expected          storage.ClusterHealthStatus_HealthStatusLabel
+	}{
+		"nil: local scanning not enabled (optional component)": {
+			scannerHealthInfo: nil,
+			expected:          storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"status errors: enabled but misconfigured (no scanner v4)": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				StatusErrors: []string{"local image scanning is enabled but Scanner V4 is not enabled"},
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"status errors take precedence over pod counts": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				StatusErrors:                []string{"unable to find scanner deployment"},
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"no pod counts, no errors: uninitialized": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{},
+			expected:          storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"desired analyzer pods zero: uninitialized": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(0),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(0),
+			},
+			expected: storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"no ready db pods: unhealthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(0),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"all analyzer and db pods ready: healthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"some analyzer pods not ready: degraded": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(2),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		"most analyzer pods not ready: unhealthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(1),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expected, PopulateLocalScannerStatus(c.scannerHealthInfo))
+		})
+	}
+}
+
+func analyzerPodsDesired(num int32) *storage.ScannerHealthInfo_TotalDesiredAnalyzerPods {
+	return &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{TotalDesiredAnalyzerPods: num}
+}
+func analyzerPodsReady(num int32) *storage.ScannerHealthInfo_TotalReadyAnalyzerPods {
+	return &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{TotalReadyAnalyzerPods: num}
+}
+func dbPodsReady(num int32) *storage.ScannerHealthInfo_TotalReadyDbPods {
+	return &storage.ScannerHealthInfo_TotalReadyDbPods{TotalReadyDbPods: num}
 }

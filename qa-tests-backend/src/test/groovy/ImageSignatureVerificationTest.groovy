@@ -42,6 +42,10 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String KEYLESS_SIGSTORE_UNVERIFIABLE = "Keyless-Sigstore-Unverifiable"
     static final private String KEYLESS_RHTAS_MATCHING = "Keyless-RHTAS-Matching"
     static final private String KEYLESS_RHTAS_UNVERIFIABLE = "Keyless-RHTAS-Unverifiable"
+    static final private String REFERRER_BYOPKI_MATCHING = "Referrer-BYOPKI-Matching"
+    static final private String REFERRER_BYOPKI_UNVERIFIABLE = "Referrer-BYOPKI-Unverifiable"
+    static final private String REFERRER_PUBKEY_MATCHING = "Referrer-PubKey-Matching"
+    static final private String REFERRER_PUBKEY_UNVERIFIABLE = "Referrer-PubKey-Unverifiable"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -59,6 +63,10 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             KEYLESS_SIGSTORE_UNVERIFIABLE,
             KEYLESS_RHTAS_MATCHING,
             KEYLESS_RHTAS_UNVERIFIABLE,
+            REFERRER_BYOPKI_MATCHING,
+            REFERRER_BYOPKI_UNVERIFIABLE,
+            REFERRER_PUBKEY_MATCHING,
+            REFERRER_PUBKEY_UNVERIFIABLE,
     ]
 
     // Public keys used within signature integrations.
@@ -139,38 +147,122 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private String BYOPKI_UNVERIFIABLE_ISSUER = "invalid"
     static final private String BYOPKI_UNVERIFIABLE_IDENTITY = "invalid"
 
+    // Root CA bundle for referrer BYOPKI test image.
+    static final private String REFERRER_BYOPKI_CA_BUNDLE = """\
+-----BEGIN CERTIFICATE-----
+MIIFqzCCA5OgAwIBAgIUXp5NfhduES4NIr+wVdh6oGiDmMkwDQYJKoZIhvcNAQEL
+BQAwVDELMAkGA1UEBhMCVVMxEDAOBgNVBAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RF
+VjEQMA4GA1UECwwHVGVzdGluZzETMBEGA1UEAwwKVGVzdGluZyBDQTAgFw0yNjA3
+MjgxMzAwNDZaGA8yMDUzMTIxMjEzMDA0NlowYTELMAkGA1UEBhMCVVMxEDAOBgNV
+BAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RFVjEQMA4GA1UECwwHVGVzdGluZzEgMB4G
+A1UEAwwXVGVzdGluZyBJbnRlcm1lZGlhdGUgQ0EwggIiMA0GCSqGSIb3DQEBAQUA
+A4ICDwAwggIKAoICAQCot6wi8hVYOFYioC1hx/kNpXWEO1vvoXLfFFIjgkN/SRz+
+h7JiEYT5h86lgFseNKwyWhXCSRjqU0wgwioZXxk8lWJ4oHUaelSHDoRsC2IuYLuG
+zk1yiQiaSMyde3zf7CiQ/zWEY7o5TD4I0jHoWE1igCnP7EKgznNK0OWA0kFmgrb/
+uv6yC/Mi8y0q8uM6SWrQZtnrqVP8ZWwd887l65gXrCzF+sERvG8rV3AEEn4H5x1W
+32xBve9H9UT2vqvR0etwEGTdjn5hSXOOp4eL/CmSwhthEJR5UCmtFnix1N2zv0Yx
+xRI5HCxcROTdWgqu2pSYr+WmflAMJHwLYnt90hoB5wa094moM+SM3dh3vRaIHw61
+D0VFFgbzePBN/aMIW8F1y/RWwsKsaaA42GVrJ9UrS2LakiYS3h/RAZWAl4JqAEH4
+5Zs0fIZ4oqgJiMWxbeXG3iHTM1NzXluBrxwVpN0bGhQz1q1kqXnlIwbNk6w8ORkq
+l8BxFYasXFjiDu3ukrAFeE8qXX1+UdFh9JM08lpfPmjmzeoi95spiN5CzjJQ7Ije
+NLs5T1wHloBVSo1DQNAyJ2+wDA2wR7xsji8TlcXayUD3V5427oTl8ReNrDrxyzSB
+1V5JTwdnRI7vcFUDK/+Cy/TVAfn2e9BBOPKsnTQVkyX8T8j+FvnMDgCPaZmtPwID
+AQABo2YwZDAdBgNVHQ4EFgQUrb+MoT88/AigoiWyKutB71e0Vg8wDgYDVR0PAQH/
+BAQDAgIEMBIGA1UdEwEB/wQIMAYBAf8CAQIwHwYDVR0jBBgwFoAUeKB90BMprglp
+ttMybtqk3NTWnkcwDQYJKoZIhvcNAQELBQADggIBAK81DMmXVogJ4zASBvjxrIrK
+NTAp91bB6ji6SkH2RcBIfyA/rLCrbWhg9euU/tN+9a141WYn/wdZ8IAIcFVNac+m
+eCxqC6BWbqesfIKOjuMIlkK1zE8sA36FlAxYZq3JHH31NwHdbN6xPBMP0/qBPWs4
+XuP0yIXOsVcm1elwBDPFztojOcXVZc0hpiwTAuiWSA4p4xbgyKaiubBYyy+KA41C
+dpxooMSFwnD82G4yS9UskWOmUq/7yCxIaINZKjFgFFIl3HKrZ2AmoT8fBnIXtfdK
+MgrpxpruBPM6pmEFm86tgwlOcZMjfo4/v5KMAUOBKL43+Cd/rAjMChTOdlFrC4RC
+Qlpdqv1ylSlCR6y8T+iRT14X4N1SVEIhVq/CqWijUksk+rgXdW8t+Sqf4N5NrecU
+AgUbVG8yoDQJx82zirtU1b0TL1dkZuWnJU8PMNm5sVabPmASnrtQmVedlnce2BET
+6/Z/RenLDW4FsMitUxAPEjLa8Gw3dCIlrxlRBd//6j30SqcgrXPQ4bAeGHb7xcMR
+3by+sIgtttcz10NP8yR4l/zO1FVBlMGB35jI6+e1DrVtRt+Mk9I75WkT0SJ3dC/0
+JWjz6++KJ8sXQqyveGdL/rnxf1d2nylGQj9Lcb41DdY8G8Q9hoN7QNGXvS19AYyk
+SX52n8GLrS4ph8b+hDgX
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIFizCCA3OgAwIBAgIUXbdRB0FhfSY7Qm780j6jn4jGAK4wDQYJKoZIhvcNAQEL
+BQAwVDELMAkGA1UEBhMCVVMxEDAOBgNVBAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RF
+VjEQMA4GA1UECwwHVGVzdGluZzETMBEGA1UEAwwKVGVzdGluZyBDQTAgFw0yNjA3
+MjgxMzAwMzVaGA8yMDUzMTIxMjEzMDAzNVowVDELMAkGA1UEBhMCVVMxEDAOBgNV
+BAcMB1Rlc3RpbmcxDDAKBgNVBAoMA0RFVjEQMA4GA1UECwwHVGVzdGluZzETMBEG
+A1UEAwwKVGVzdGluZyBDQTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIB
+AMt5lS0A3u7vzNFymcUxz4+M15/z4jfWD3csIgdwKUPXnOshkD5t9jrytlBPO/sA
+u9uSz0ZkLPYQivnVfopqobiwrpU0i1hR6WXsEqcAXsPyu5kIP12MMua+HD946RZK
+xXE7MP5HtaC634Ki9GsVHHWKkVKn+ChHfP6NVm8tKPipAbMRfxzYKAzV0GAgszKM
+MRTViW74NGG3+E6Lh8a88QwkvxC3gSIF7jYdCByCbn88EKpbzPc5asXzEB7XxxI4
+69886omw4G4HFaM4yS6LAc/GFixd4+XUGp6wyckHKt5yvh0pM8f0RkqUndhWREWG
+MM0FS0LUnaM/SYUCtp5g4OrYoT59cfqJiXgU7bpR4vjA0NxihoypMmt/8l12Yecb
+InGdp88hqPuQl5mUb43/tqWLnU7lqVlz2SifpY/dr8c8lHafY1++erfED19YhJkX
+pC+wmInqVxIgoy+O/iu0eZn0Enj1Y4ZkqM1V+R05JQ9LxMjw1RATLy4tDECiJrQI
+rr9P0dSdRpb9rWe42OUIrqsNVHtFJJ3iNwGuyC2qn6lFsbbP/smZzaufUUxVQMo3
+HiohNgLnXnLT8H9COmpZ9mPn4TixYUyaHxKhEtp/z3f1CUcZxbXdHiwzG0ua0Mji
+TQnaj0MROwyYr46Wx0JSF7G5a/RTexHRd8izq3ZNb9+rAgMBAAGjUzBRMB0GA1Ud
+DgQWBBR4oH3QEymuCWm20zJu2qTc1NaeRzAfBgNVHSMEGDAWgBR4oH3QEymuCWm2
+0zJu2qTc1NaeRzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQAr
+F63FL67wOBUaFsOJS3tjBC6T0LW6jJfdK1J+EPIaeMzfbYEfNrS1WvjHbDbucld7
+OasRv35j+1h3MlbH6H6SjLBqG0cAVoc5HxB9cQ83eWx6AQ3Qz1A20SQIQm+OsRNt
+KF44H5mhijtgEbCSXqPBmIMhvuubbZ1cnMzmYX9kS71c0okDEQcamVnNX8J+3T+F
+1PwIf94QPfy67jlcnBw3mvh46VmYh8RV52jGZiVBW4TWUDNEGlSfXei5r7zYNEDK
+ukaDvKuKdLxPkfqslD3Ewls/kYqA2/82aFDBlWgIQGRH6P1GfWt0OVN1zt2lCR3K
+yuO4rpbvz88A1gocDUGGsMF3lX4O429GD8eiJ5Iy3iDekf+fAKsE/C6QvNXZJ3PF
+tjGVYw5EoD+lhRIKveuePWwhsOOiEq+0fVDtOl93/QKbT/mODt6eC2v6EBqNKWF6
+MMfAX4tGHsunfJXOu2P2rt+sroTAfzzfhs45mHlR1SRjS0uSH33oMFGPV3VIMNup
+cQtyfbxM4JvxKiuJTQSE2KaxpMWz4GI/SIyOkgEQd7o7Gs6aagD1lcg6zcQTF9yI
+hN4lyr+IhJcs6FOmY1oCKEm0d+zZyZ0C9UhZT0WtCC21ODIhIY1cIOop+gHrQNI5
+YnCZegw4WELm9/9HL3/UKjODvfJWroVn4k8hPB+wWg==
+-----END CERTIFICATE-----"""
+    static final private String REFERRER_BYOPKI_MATCHING_ISSUER = "https://testing.org"
+    static final private String REFERRER_BYOPKI_MATCHING_IDENTITY = "team-a@testing.org"
+
+    // Public key used to sign the referrer-based test images.
+    // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
+    static final private Map<String, String> REFERRER_COSIGN_PUBLIC_KEY = [
+            "Referrer": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEu8+OtJR+dVIDHk89zl8WnzcQskow
+bfbvZqSDudXtfGwpKu6tZ1CtH9utaLkglXynrLNecl0QvrhuCuKA/htSwA==
+-----END PUBLIC KEY-----
+""",
+    ]
+
     static final private String KEYLESS_SIGSTORE_ISSUER = "https://github.com/login/oauth"
     static final private String KEYLESS_SIGSTORE_IDENTITY = ".*@redhat.com"
     static final private String KEYLESS_SIGSTORE_REKOR_URL = "https://rekor.sigstore.dev"
 
+    // RHTAS instance is hosted on
+    // [testing services cluster](
+    //   https://console-openshift-console.apps.rosa.c3a7d6d7i1o8i5l.427x.p3.openshiftapps.com
+    // ).
     static final private String KEYLESS_RHTAS_ISSUER = "https://accounts.google.com"
     static final private String KEYLESS_RHTAS_IDENTITY = ".*@redhat.com"
     static final private String KEYLESS_RHTAS_FULCIO_CHAIN = """\
 -----BEGIN CERTIFICATE-----
-MIICBDCCAYqgAwIBAgIUNo8BCDFZXeig9JJONBUirNKTPW0wCgYIKoZIzj0EAwMw
+MIICAzCCAYqgAwIBAgIUctVXHIIauBVird+Ti/YJjvX8hpowCgYIKoZIzj0EAwMw
 LDEQMA4GA1UEChMHUmVkIEhhdDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMB4X
-DTI1MDQwOTE1MzgzMFoXDTM1MDQwNzE1MzgzMFowLDEQMA4GA1UEChMHUmVkIEhh
+DTI2MDcyNDE0MzkwMloXDTM2MDcyMTE0MzkwMlowLDEQMA4GA1UEChMHUmVkIEhh
 dDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMHYwEAYHKoZIzj0CAQYFK4EEACID
-YgAEBUJFBeglXU9zgd34suFRG8FIWz3eNChxgd5vcAI22LJvT0dhDLxOE/W1h0f+
-jRa9jM9V0EeYRpMQ6SKhbOu5mv9dTJ1d36f0e1iHQAPKDXq09D5mDcwZmR7uiaE8
-rMPjo20wazAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
-FgQUNoDRLK7bVIxt7tLbETIvDzdJ5hAwKQYDVR0RBCIwIIEeYWNzLXRlYW0tYXV0
-b21hdGlvbkByZWRoYXQuY29tMAoGCCqGSM49BAMDA2gAMGUCMG8sro032ep9lnOx
-XaZsqx+Vjb6dGmJmFQbPZX9EZxgZxG1n50EnLi/xTMxR98z4HgIxAI4ViQ6pd+6r
-ceLzLr4eKGR5yqqoWWciLF5Che/Cfqgma3jSRxbiL2urMRS3Y7038g==
+YgAEozLgKDyvO+qnl3PZNnspzjY4xgBd1bMeyLZwKIPH19bRuCSGgJPVUizTdrkb
+mOXiGyHw7w97XLITtbEOSi7mIEhc+3CuvE2nq/mfWHQQRsgm6yOx1EDh1hhiBkuD
+asNuo20wazAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
+FgQUNqwE3qpbn7ZYcF8yWCigAzsMfRcwKQYDVR0RBCIwIIEeYWNzLXRlYW0tYXV0
+b21hdGlvbkByZWRoYXQuY29tMAoGCCqGSM49BAMDA2cAMGQCMFYVSgoPjQzhxBx+
+vpgZb5CUJwUZDHCvp9PPN/Kz48+ELC0kDF90KbTJv0Tj0GjnzAIwPl5EVmjV/Hoy
+yri0BdxRThPV8+/wTrDCqsA1bOlgOYzAzEAZqTNTvnLinNzf7yQ5
 -----END CERTIFICATE-----"""
     static final private String KEYLESS_RHTAS_CTLOG_PUBLIC_KEY = """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHOWcrgffC8A4CwsPqmfy+unEU1km
-SgPCnfCzwRToJ9263qyEp+3aaCv0T4QicC31fsokxoUIGzK0Ftrt3SoXDw==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE8ewvXPAw43N3ULmsN8YIYDh47rZu
+0EXuZ06hVeddfdxbRzHehpWIVNUO1zzl7wFpqPPYAffxxDmDDkNmy8cB6Q==
 -----END PUBLIC KEY-----"""
     static final private String KEYLESS_RHTAS_REKOR_URL =
-            "https://rekor-server-trusted-artifact-signer.apps.staging-central.services.rox.systems"
+            "https://rekor-server-trusted-artifact-signer.apps.rosa.c3a7d6d7i1o8i5l.427x.p3.openshiftapps.com"
     static final private String KEYLESS_RHTAS_REKOR_PUBLIC_KEY = """\
 -----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECsUdy4SYw0Wey6iYiJ7uArUqHhKTwpRn
-YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
-5mll4EcDCwjeQyH0cXjCdn9gXfIDFjg/
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAFH7J1JajguG/zJ6CsUWIbKau0/A
+l4RLgOfB7JK26P2QEGpNzOKYHxWIV+oBSrrG1/2q1LS6WJYqhlM2+tLK9g==
 -----END PUBLIC KEY-----"""
 
     static final private String DISTROLESS_IMAGE_DIGEST =
@@ -191,6 +283,14 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             "sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
     static final private String KEYLESS_RHTAS_IMAGE_DIGEST =
             "sha256:e246aa22ad2cbdfbd19e2a6ca2b275e26245a21920e2b2d0666324cee3f15549"
+    static final private String REFERRER_BYOPKI_IMAGE_DIGEST =
+            "sha256:05a79c7279f71f86a2a0d05eb72fcb56ea36139150f0a75cd87e80a4272e4e39"
+    static final private String REFERRER_PUBKEY_MATCHING_IMAGE_DIGEST =
+            "sha256:9e2bbca079387d7965c3a9cee6d0c53f4f4e63ff7637877a83c4c05f2a666112"
+    static final private String REFERRER_KEYLESS_RHTAS_MATCHING_IMAGE_DIGEST =
+            "sha256:e8e5cca392e3cf056fcdb3093e7ac2bf83fcf28b3bcf5818fe8ae71cf360c231"
+    static final private String REFERRER_KEYLESS_SIGSTORE_MATCHING_IMAGE_DIGEST =
+            "sha256:98ad9d1a2be345201bb0709b0d38655eb1b370145c7d94ca1fe9c421f76e245a"
 
     static final private List<String> IMAGE_DIGESTS = [
             DISTROLESS_IMAGE_DIGEST,
@@ -202,6 +302,10 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             BYOPKI_IMAGE_DIGEST,
             KEYLESS_SIGSTORE_IMAGE_DIGEST,
             KEYLESS_RHTAS_IMAGE_DIGEST,
+            REFERRER_BYOPKI_IMAGE_DIGEST,
+            REFERRER_PUBKEY_MATCHING_IMAGE_DIGEST,
+            REFERRER_KEYLESS_RHTAS_MATCHING_IMAGE_DIGEST,
+            REFERRER_KEYLESS_SIGSTORE_MATCHING_IMAGE_DIGEST,
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
@@ -291,6 +395,45 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
             .setImagePrefetcherAffinity()
 
+    // Deployment holding an image with BYOPKI signature stored as an OCI referrer.
+    static final private Deployment REFERRER_BYOPKI_DEPLOYMENT = new Deployment()
+            .setName("referrer-byopki")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-byopki@$REFERRER_BYOPKI_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-byopki")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
+    // Deployment holding an image signed with a public key using the sigstore bundle format.
+    static final private Deployment REFERRER_PUBKEY_MATCHING_DEPLOYMENT = new Deployment()
+            .setName("referrer-pubkey")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-pubkey" +
+                    "@$REFERRER_PUBKEY_MATCHING_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-pubkey")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
+    // Deployment holding an image signed keyless via RHTAS using the sigstore bundle format.
+    static final private Deployment REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT = new Deployment()
+            .setName("referrer-rhtas-keyless")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas" +
+                    "@$REFERRER_KEYLESS_RHTAS_MATCHING_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-keyless-rhtas")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
+    // Deployment holding an image signed keyless via public Sigstore using the sigstore bundle format.
+    static final private Deployment REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT = new Deployment()
+            .setName("referrer-sigstore-keyless")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-keyless" +
+                    "@$REFERRER_KEYLESS_SIGSTORE_MATCHING_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-sigstore-bundle-keyless")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
     // NOTE: If you add another deployment, make sure to add it here as well.
@@ -304,6 +447,10 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             BYOPKI_DEPLOYMENT,
             KEYLESS_SIGSTORE_DEPLOYMENT,
             KEYLESS_RHTAS_DEPLOYMENT,
+            REFERRER_BYOPKI_DEPLOYMENT,
+            REFERRER_PUBKEY_MATCHING_DEPLOYMENT,
+            REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT,
+            REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
@@ -487,6 +634,45 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_RHTAS_UNVERIFIABLE,
             keylessRHTASUnverifiableSignatureIntegrationID)
 
+        // Signature integration "Referrer-BYOPKI-Matching" which holds the referrer BYOPKI CA bundle
+        // with matching identity and issuer.
+        String referrerByopkiMatchingID = createSignatureIntegration(
+            REFERRER_BYOPKI_MATCHING, NO_PUBLIC_KEYS,
+            new CertificateVerificationArgs(
+                chain: REFERRER_BYOPKI_CA_BUNDLE,
+                identity: REFERRER_BYOPKI_MATCHING_IDENTITY,
+                issuer: REFERRER_BYOPKI_MATCHING_ISSUER,
+            ),
+        )
+        assert referrerByopkiMatchingID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_BYOPKI_MATCHING, referrerByopkiMatchingID)
+
+        // Referrer BYOPKI with non-matching identity and issuer.
+        String referrerByopkiUnverifiableID = createSignatureIntegration(
+            REFERRER_BYOPKI_UNVERIFIABLE, NO_PUBLIC_KEYS,
+            new CertificateVerificationArgs(
+                chain: REFERRER_BYOPKI_CA_BUNDLE,
+                identity: BYOPKI_UNVERIFIABLE_IDENTITY,
+                issuer: BYOPKI_UNVERIFIABLE_ISSUER,
+            ),
+        )
+        assert referrerByopkiUnverifiableID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_BYOPKI_UNVERIFIABLE, referrerByopkiUnverifiableID)
+
+        // Signature integration for referrer signed with a public key.
+        String referrerPubKeyMatchingID = createSignatureIntegration(
+            REFERRER_PUBKEY_MATCHING, REFERRER_COSIGN_PUBLIC_KEY,
+        )
+        assert referrerPubKeyMatchingID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_PUBKEY_MATCHING, referrerPubKeyMatchingID)
+
+        // Referrer with wrong public key.
+        String referrerPubKeyUnverifiableID = createSignatureIntegration(
+            REFERRER_PUBKEY_UNVERIFIABLE, UNVERIFIABLE_COSIGN_PUBLIC_KEY,
+        )
+        assert referrerPubKeyUnverifiableID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_PUBKEY_UNVERIFIABLE, referrerPubKeyUnverifiableID)
+
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { assert Services.waitForDeployment(it) }
@@ -560,151 +746,259 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
         }
 
         where:
-        policyName                                 | deployment                   | expectViolations
-        // Distroless should create alerts for all deployments except those using distroless images.
-        DISTROLESS                                 | BYOPKI_DEPLOYMENT            | true
-        DISTROLESS                                 | DISTROLESS_DEPLOYMENT        | false
-        DISTROLESS                                 | KEYLESS_RHTAS_DEPLOYMENT     | true
-        DISTROLESS                                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        DISTROLESS                                 | SAME_DIGEST_NO_SIGNATURE     | true
-        DISTROLESS                                 | SAME_DIGEST_WITH_SIGNATURE   | true
-        DISTROLESS                                 | TEKTON_DEPLOYMENT            | true
-        DISTROLESS                                 | UNVERIFIABLE_DEPLOYMENT      | true
-        DISTROLESS                                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Tekton should create alerts for all deployments except those using tekton images.
-        TEKTON                                     | BYOPKI_DEPLOYMENT            | true
-        TEKTON                                     | DISTROLESS_DEPLOYMENT        | true
-        TEKTON                                     | KEYLESS_RHTAS_DEPLOYMENT     | true
-        TEKTON                                     | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        TEKTON                                     | SAME_DIGEST_NO_SIGNATURE     | true
-        TEKTON                                     | SAME_DIGEST_WITH_SIGNATURE   | true
-        TEKTON                                     | TEKTON_DEPLOYMENT            | false
-        TEKTON                                     | UNVERIFIABLE_DEPLOYMENT      | true
-        TEKTON                                     | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Unverifiable should create alerts for all deployments.
-        UNVERIFIABLE                               | BYOPKI_DEPLOYMENT            | true
-        UNVERIFIABLE                               | DISTROLESS_DEPLOYMENT        | true
-        UNVERIFIABLE                               | KEYLESS_RHTAS_DEPLOYMENT     | true
-        UNVERIFIABLE                               | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        UNVERIFIABLE                               | SAME_DIGEST_NO_SIGNATURE     | true
-        UNVERIFIABLE                               | SAME_DIGEST_WITH_SIGNATURE   | true
-        UNVERIFIABLE                               | TEKTON_DEPLOYMENT            | true
-        UNVERIFIABLE                               | UNVERIFIABLE_DEPLOYMENT      | true
-        UNVERIFIABLE                               | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
-        DISTROLESS_AND_TEKTON                      | BYOPKI_DEPLOYMENT            | true
-        DISTROLESS_AND_TEKTON                      | DISTROLESS_DEPLOYMENT        | false
-        DISTROLESS_AND_TEKTON                      | KEYLESS_RHTAS_DEPLOYMENT     | true
-        DISTROLESS_AND_TEKTON                      | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        DISTROLESS_AND_TEKTON                      | SAME_DIGEST_NO_SIGNATURE     | true
-        DISTROLESS_AND_TEKTON                      | SAME_DIGEST_WITH_SIGNATURE   | true
-        DISTROLESS_AND_TEKTON                      | TEKTON_DEPLOYMENT            | false
-        DISTROLESS_AND_TEKTON                      | UNVERIFIABLE_DEPLOYMENT      | true
-        DISTROLESS_AND_TEKTON                      | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Policy with all three integrations should create alerts for all deployments except those using distroless /
-        // tekton images.
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | BYOPKI_DEPLOYMENT            | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | false
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | KEYLESS_RHTAS_DEPLOYMENT     | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_NO_SIGNATURE     | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_WITH_SIGNATURE   | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | TEKTON_DEPLOYMENT            | false
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
-        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Same digest should create alerts for all deployments except those using alt-nginx image.
-        SAME_DIGEST                                | BYOPKI_DEPLOYMENT            | true
-        SAME_DIGEST                                | DISTROLESS_DEPLOYMENT        | true
-        SAME_DIGEST                                | KEYLESS_RHTAS_DEPLOYMENT     | true
-        SAME_DIGEST                                | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        SAME_DIGEST                                | SAME_DIGEST_NO_SIGNATURE     | true
-        SAME_DIGEST                                | SAME_DIGEST_WITH_SIGNATURE   | false
-        SAME_DIGEST                                | TEKTON_DEPLOYMENT            | true
-        SAME_DIGEST                                | UNVERIFIABLE_DEPLOYMENT      | true
-        SAME_DIGEST                                | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // BYOPKI wildcard should create alerts for all deployments except the BYOPKI deployment one.
-        BYOPKI_WILDCARD                            | BYOPKI_DEPLOYMENT            | false
-        BYOPKI_WILDCARD                            | DISTROLESS_DEPLOYMENT        | true
-        BYOPKI_WILDCARD                            | KEYLESS_RHTAS_DEPLOYMENT     | true
-        BYOPKI_WILDCARD                            | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        BYOPKI_WILDCARD                            | SAME_DIGEST_NO_SIGNATURE     | true
-        BYOPKI_WILDCARD                            | SAME_DIGEST_WITH_SIGNATURE   | true
-        BYOPKI_WILDCARD                            | TEKTON_DEPLOYMENT            | true
-        BYOPKI_WILDCARD                            | UNVERIFIABLE_DEPLOYMENT      | true
-        BYOPKI_WILDCARD                            | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        policyName                                    | deployment                                      | expectViolations
         // BYOPKI matching should create alerts for all deployments except the BYOPKI deployment one.
-        BYOPKI_MATCHING                            | BYOPKI_DEPLOYMENT            | false
-        BYOPKI_MATCHING                            | DISTROLESS_DEPLOYMENT        | true
-        BYOPKI_MATCHING                            | KEYLESS_RHTAS_DEPLOYMENT     | true
-        BYOPKI_MATCHING                            | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        BYOPKI_MATCHING                            | SAME_DIGEST_NO_SIGNATURE     | true
-        BYOPKI_MATCHING                            | SAME_DIGEST_WITH_SIGNATURE   | true
-        BYOPKI_MATCHING                            | TEKTON_DEPLOYMENT            | true
-        BYOPKI_MATCHING                            | UNVERIFIABLE_DEPLOYMENT      | true
-        BYOPKI_MATCHING                            | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_MATCHING                               | BYOPKI_DEPLOYMENT                               | false
+        BYOPKI_MATCHING                               | DISTROLESS_DEPLOYMENT                           | true
+        BYOPKI_MATCHING                               | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        BYOPKI_MATCHING                               | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        BYOPKI_MATCHING                               | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        BYOPKI_MATCHING                               | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        BYOPKI_MATCHING                               | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        BYOPKI_MATCHING                               | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        BYOPKI_MATCHING                               | SAME_DIGEST_NO_SIGNATURE                        | true
+        BYOPKI_MATCHING                               | SAME_DIGEST_WITH_SIGNATURE                      | true
+        BYOPKI_MATCHING                               | TEKTON_DEPLOYMENT                               | true
+        BYOPKI_MATCHING                               | UNVERIFIABLE_DEPLOYMENT                         | true
+        BYOPKI_MATCHING                               | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
         // BYOPKI unverifiable should create alerts for all deployments.
-        BYOPKI_UNVERIFIABLE                        | BYOPKI_DEPLOYMENT            | true
-        BYOPKI_UNVERIFIABLE                        | DISTROLESS_DEPLOYMENT        | true
-        BYOPKI_UNVERIFIABLE                        | KEYLESS_RHTAS_DEPLOYMENT     | true
-        BYOPKI_UNVERIFIABLE                        | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_NO_SIGNATURE     | true
-        BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_WITH_SIGNATURE   | true
-        BYOPKI_UNVERIFIABLE                        | TEKTON_DEPLOYMENT            | true
-        BYOPKI_UNVERIFIABLE                        | UNVERIFIABLE_DEPLOYMENT      | true
-        BYOPKI_UNVERIFIABLE                        | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // BYOPKI wildcard + Tekton should create alerts for all deployments except the
-        // BYOPKI one and the Tekton one.
-        BYOPKI_WILDCARD_AND_TEKTON                 | BYOPKI_DEPLOYMENT            | false
-        BYOPKI_WILDCARD_AND_TEKTON                 | DISTROLESS_DEPLOYMENT        | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | KEYLESS_RHTAS_DEPLOYMENT     | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_NO_SIGNATURE     | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_WITH_SIGNATURE   | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | TEKTON_DEPLOYMENT            | false
-        BYOPKI_WILDCARD_AND_TEKTON                 | UNVERIFIABLE_DEPLOYMENT      | true
-        BYOPKI_WILDCARD_AND_TEKTON                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Keyless Sigstore matching should create alerts for all deployments except the
-        // one running the keyless Sigstore signed image.
-        KEYLESS_SIGSTORE_MATCHING                  | BYOPKI_DEPLOYMENT            | true
-        KEYLESS_SIGSTORE_MATCHING                  | DISTROLESS_DEPLOYMENT        | true
-        KEYLESS_SIGSTORE_MATCHING                  | KEYLESS_RHTAS_DEPLOYMENT     | true
-        KEYLESS_SIGSTORE_MATCHING                  | KEYLESS_SIGSTORE_DEPLOYMENT  | false
-        KEYLESS_SIGSTORE_MATCHING                  | SAME_DIGEST_NO_SIGNATURE     | true
-        KEYLESS_SIGSTORE_MATCHING                  | SAME_DIGEST_WITH_SIGNATURE   | true
-        KEYLESS_SIGSTORE_MATCHING                  | TEKTON_DEPLOYMENT            | true
-        KEYLESS_SIGSTORE_MATCHING                  | UNVERIFIABLE_DEPLOYMENT      | true
-        KEYLESS_SIGSTORE_MATCHING                  | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Keyless Sigstore unverifiable should create alerts for all deployments.
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | BYOPKI_DEPLOYMENT            | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | DISTROLESS_DEPLOYMENT        | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | KEYLESS_RHTAS_DEPLOYMENT     | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | SAME_DIGEST_NO_SIGNATURE     | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | SAME_DIGEST_WITH_SIGNATURE   | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | TEKTON_DEPLOYMENT            | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | UNVERIFIABLE_DEPLOYMENT      | true
-        KEYLESS_SIGSTORE_UNVERIFIABLE              | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        // Keyless RHTAS matching should create alerts for all deployments except the
-        // one running the keyless RHTAS signed image.
-        KEYLESS_RHTAS_MATCHING                     | BYOPKI_DEPLOYMENT            | true
-        KEYLESS_RHTAS_MATCHING                     | DISTROLESS_DEPLOYMENT        | true
-        KEYLESS_RHTAS_MATCHING                     | KEYLESS_RHTAS_DEPLOYMENT     | false
-        KEYLESS_RHTAS_MATCHING                     | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        KEYLESS_RHTAS_MATCHING                     | SAME_DIGEST_NO_SIGNATURE     | true
-        KEYLESS_RHTAS_MATCHING                     | SAME_DIGEST_WITH_SIGNATURE   | true
-        KEYLESS_RHTAS_MATCHING                     | TEKTON_DEPLOYMENT            | true
-        KEYLESS_RHTAS_MATCHING                     | UNVERIFIABLE_DEPLOYMENT      | true
-        KEYLESS_RHTAS_MATCHING                     | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        BYOPKI_UNVERIFIABLE                           | BYOPKI_DEPLOYMENT                               | true
+        BYOPKI_UNVERIFIABLE                           | DISTROLESS_DEPLOYMENT                           | true
+        BYOPKI_UNVERIFIABLE                           | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        BYOPKI_UNVERIFIABLE                           | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        BYOPKI_UNVERIFIABLE                           | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        BYOPKI_UNVERIFIABLE                           | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        BYOPKI_UNVERIFIABLE                           | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        BYOPKI_UNVERIFIABLE                           | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        BYOPKI_UNVERIFIABLE                           | SAME_DIGEST_NO_SIGNATURE                        | true
+        BYOPKI_UNVERIFIABLE                           | SAME_DIGEST_WITH_SIGNATURE                      | true
+        BYOPKI_UNVERIFIABLE                           | TEKTON_DEPLOYMENT                               | true
+        BYOPKI_UNVERIFIABLE                           | UNVERIFIABLE_DEPLOYMENT                         | true
+        BYOPKI_UNVERIFIABLE                           | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // BYOPKI wildcard should create alerts for all deployments except the BYOPKI deployment one.
+        BYOPKI_WILDCARD                               | BYOPKI_DEPLOYMENT                               | false
+        BYOPKI_WILDCARD                               | DISTROLESS_DEPLOYMENT                           | true
+        BYOPKI_WILDCARD                               | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        BYOPKI_WILDCARD                               | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        BYOPKI_WILDCARD                               | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        BYOPKI_WILDCARD                               | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        BYOPKI_WILDCARD                               | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        BYOPKI_WILDCARD                               | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        BYOPKI_WILDCARD                               | SAME_DIGEST_NO_SIGNATURE                        | true
+        BYOPKI_WILDCARD                               | SAME_DIGEST_WITH_SIGNATURE                      | true
+        BYOPKI_WILDCARD                               | TEKTON_DEPLOYMENT                               | true
+        BYOPKI_WILDCARD                               | UNVERIFIABLE_DEPLOYMENT                         | true
+        BYOPKI_WILDCARD                               | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // BYOPKI wildcard + Tekton should create alerts for all deployments except the BYOPKI one and the Tekton one.
+        BYOPKI_WILDCARD_AND_TEKTON                    | BYOPKI_DEPLOYMENT                               | false
+        BYOPKI_WILDCARD_AND_TEKTON                    | DISTROLESS_DEPLOYMENT                           | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | SAME_DIGEST_NO_SIGNATURE                        | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | SAME_DIGEST_WITH_SIGNATURE                      | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | TEKTON_DEPLOYMENT                               | false
+        BYOPKI_WILDCARD_AND_TEKTON                    | UNVERIFIABLE_DEPLOYMENT                         | true
+        BYOPKI_WILDCARD_AND_TEKTON                    | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Distroless should create alerts for all deployments except those using distroless images.
+        DISTROLESS                                    | BYOPKI_DEPLOYMENT                               | true
+        DISTROLESS                                    | DISTROLESS_DEPLOYMENT                           | false
+        DISTROLESS                                    | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        DISTROLESS                                    | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        DISTROLESS                                    | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        DISTROLESS                                    | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        DISTROLESS                                    | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        DISTROLESS                                    | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        DISTROLESS                                    | SAME_DIGEST_NO_SIGNATURE                        | true
+        DISTROLESS                                    | SAME_DIGEST_WITH_SIGNATURE                      | true
+        DISTROLESS                                    | TEKTON_DEPLOYMENT                               | true
+        DISTROLESS                                    | UNVERIFIABLE_DEPLOYMENT                         | true
+        DISTROLESS                                    | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
+        DISTROLESS_AND_TEKTON                         | BYOPKI_DEPLOYMENT                               | true
+        DISTROLESS_AND_TEKTON                         | DISTROLESS_DEPLOYMENT                           | false
+        DISTROLESS_AND_TEKTON                         | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        DISTROLESS_AND_TEKTON                         | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        DISTROLESS_AND_TEKTON                         | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        DISTROLESS_AND_TEKTON                         | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        DISTROLESS_AND_TEKTON                         | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        DISTROLESS_AND_TEKTON                         | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        DISTROLESS_AND_TEKTON                         | SAME_DIGEST_NO_SIGNATURE                        | true
+        DISTROLESS_AND_TEKTON                         | SAME_DIGEST_WITH_SIGNATURE                      | true
+        DISTROLESS_AND_TEKTON                         | TEKTON_DEPLOYMENT                               | false
+        DISTROLESS_AND_TEKTON                         | UNVERIFIABLE_DEPLOYMENT                         | true
+        DISTROLESS_AND_TEKTON                         | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Keyless RHTAS matching should create alerts for all deployments except those running a keyless RHTAS signed image.
+        KEYLESS_RHTAS_MATCHING                        | BYOPKI_DEPLOYMENT                               | true
+        KEYLESS_RHTAS_MATCHING                        | DISTROLESS_DEPLOYMENT                           | true
+        KEYLESS_RHTAS_MATCHING                        | KEYLESS_RHTAS_DEPLOYMENT                        | false
+        KEYLESS_RHTAS_MATCHING                        | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        KEYLESS_RHTAS_MATCHING                        | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        KEYLESS_RHTAS_MATCHING                        | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | false
+        KEYLESS_RHTAS_MATCHING                        | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        KEYLESS_RHTAS_MATCHING                        | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        KEYLESS_RHTAS_MATCHING                        | SAME_DIGEST_NO_SIGNATURE                        | true
+        KEYLESS_RHTAS_MATCHING                        | SAME_DIGEST_WITH_SIGNATURE                      | true
+        KEYLESS_RHTAS_MATCHING                        | TEKTON_DEPLOYMENT                               | true
+        KEYLESS_RHTAS_MATCHING                        | UNVERIFIABLE_DEPLOYMENT                         | true
+        KEYLESS_RHTAS_MATCHING                        | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
         // Keyless RHTAS unverifiable should create alerts for all deployments.
-        KEYLESS_RHTAS_UNVERIFIABLE                 | BYOPKI_DEPLOYMENT            | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | DISTROLESS_DEPLOYMENT        | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | KEYLESS_RHTAS_DEPLOYMENT     | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | SAME_DIGEST_NO_SIGNATURE     | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | SAME_DIGEST_WITH_SIGNATURE   | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | TEKTON_DEPLOYMENT            | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | UNVERIFIABLE_DEPLOYMENT      | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | BYOPKI_DEPLOYMENT                               | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | DISTROLESS_DEPLOYMENT                           | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | SAME_DIGEST_NO_SIGNATURE                        | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | SAME_DIGEST_WITH_SIGNATURE                      | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | TEKTON_DEPLOYMENT                               | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | UNVERIFIABLE_DEPLOYMENT                         | true
+        KEYLESS_RHTAS_UNVERIFIABLE                    | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Keyless Sigstore matching should create alerts for all deployments except those running a keyless Sigstore signed image.
+        KEYLESS_SIGSTORE_MATCHING                     | BYOPKI_DEPLOYMENT                               | true
+        KEYLESS_SIGSTORE_MATCHING                     | DISTROLESS_DEPLOYMENT                           | true
+        KEYLESS_SIGSTORE_MATCHING                     | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        KEYLESS_SIGSTORE_MATCHING                     | KEYLESS_SIGSTORE_DEPLOYMENT                     | false
+        KEYLESS_SIGSTORE_MATCHING                     | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        KEYLESS_SIGSTORE_MATCHING                     | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        KEYLESS_SIGSTORE_MATCHING                     | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | false
+        KEYLESS_SIGSTORE_MATCHING                     | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        KEYLESS_SIGSTORE_MATCHING                     | SAME_DIGEST_NO_SIGNATURE                        | true
+        KEYLESS_SIGSTORE_MATCHING                     | SAME_DIGEST_WITH_SIGNATURE                      | true
+        KEYLESS_SIGSTORE_MATCHING                     | TEKTON_DEPLOYMENT                               | true
+        KEYLESS_SIGSTORE_MATCHING                     | UNVERIFIABLE_DEPLOYMENT                         | true
+        KEYLESS_SIGSTORE_MATCHING                     | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Keyless Sigstore unverifiable should create alerts for all deployments.
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | BYOPKI_DEPLOYMENT                               | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | DISTROLESS_DEPLOYMENT                           | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | SAME_DIGEST_NO_SIGNATURE                        | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | SAME_DIGEST_WITH_SIGNATURE                      | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | TEKTON_DEPLOYMENT                               | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | UNVERIFIABLE_DEPLOYMENT                         | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE                 | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Policy with all three integrations should create alerts for all deployments except those using distroless / tekton images.
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | BYOPKI_DEPLOYMENT                               | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | DISTROLESS_DEPLOYMENT                           | false
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | SAME_DIGEST_NO_SIGNATURE                        | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | SAME_DIGEST_WITH_SIGNATURE                      | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | TEKTON_DEPLOYMENT                               | false
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | UNVERIFIABLE_DEPLOYMENT                         | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE    | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Referrer BYOPKI matching: only the referrer BYOPKI deployment passes.
+        REFERRER_BYOPKI_MATCHING                      | BYOPKI_DEPLOYMENT                               | true
+        REFERRER_BYOPKI_MATCHING                      | DISTROLESS_DEPLOYMENT                           | true
+        REFERRER_BYOPKI_MATCHING                      | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        REFERRER_BYOPKI_MATCHING                      | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        REFERRER_BYOPKI_MATCHING                      | REFERRER_BYOPKI_DEPLOYMENT                      | false
+        REFERRER_BYOPKI_MATCHING                      | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        REFERRER_BYOPKI_MATCHING                      | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        REFERRER_BYOPKI_MATCHING                      | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        REFERRER_BYOPKI_MATCHING                      | SAME_DIGEST_NO_SIGNATURE                        | true
+        REFERRER_BYOPKI_MATCHING                      | SAME_DIGEST_WITH_SIGNATURE                      | true
+        REFERRER_BYOPKI_MATCHING                      | TEKTON_DEPLOYMENT                               | true
+        REFERRER_BYOPKI_MATCHING                      | UNVERIFIABLE_DEPLOYMENT                         | true
+        REFERRER_BYOPKI_MATCHING                      | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Referrer BYOPKI unverifiable: wrong identity/issuer, all deployments alert.
+        REFERRER_BYOPKI_UNVERIFIABLE                  | BYOPKI_DEPLOYMENT                               | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | DISTROLESS_DEPLOYMENT                           | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | SAME_DIGEST_NO_SIGNATURE                        | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | SAME_DIGEST_WITH_SIGNATURE                      | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | TEKTON_DEPLOYMENT                               | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | UNVERIFIABLE_DEPLOYMENT                         | true
+        REFERRER_BYOPKI_UNVERIFIABLE                  | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Referrer with public key: only the matching deployment passes.
+        REFERRER_PUBKEY_MATCHING                      | BYOPKI_DEPLOYMENT                               | true
+        REFERRER_PUBKEY_MATCHING                      | DISTROLESS_DEPLOYMENT                           | true
+        REFERRER_PUBKEY_MATCHING                      | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        REFERRER_PUBKEY_MATCHING                      | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        REFERRER_PUBKEY_MATCHING                      | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        REFERRER_PUBKEY_MATCHING                      | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        REFERRER_PUBKEY_MATCHING                      | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        REFERRER_PUBKEY_MATCHING                      | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | false
+        REFERRER_PUBKEY_MATCHING                      | SAME_DIGEST_NO_SIGNATURE                        | true
+        REFERRER_PUBKEY_MATCHING                      | SAME_DIGEST_WITH_SIGNATURE                      | true
+        REFERRER_PUBKEY_MATCHING                      | TEKTON_DEPLOYMENT                               | true
+        REFERRER_PUBKEY_MATCHING                      | UNVERIFIABLE_DEPLOYMENT                         | true
+        REFERRER_PUBKEY_MATCHING                      | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Referrer with wrong public key: all deployments alert.
+        REFERRER_PUBKEY_UNVERIFIABLE                  | BYOPKI_DEPLOYMENT                               | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | DISTROLESS_DEPLOYMENT                           | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | SAME_DIGEST_NO_SIGNATURE                        | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | SAME_DIGEST_WITH_SIGNATURE                      | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | TEKTON_DEPLOYMENT                               | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | UNVERIFIABLE_DEPLOYMENT                         | true
+        REFERRER_PUBKEY_UNVERIFIABLE                  | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Same digest should create alerts for all deployments except those using alt-nginx image.
+        SAME_DIGEST                                   | BYOPKI_DEPLOYMENT                               | true
+        SAME_DIGEST                                   | DISTROLESS_DEPLOYMENT                           | true
+        SAME_DIGEST                                   | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        SAME_DIGEST                                   | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        SAME_DIGEST                                   | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        SAME_DIGEST                                   | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        SAME_DIGEST                                   | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        SAME_DIGEST                                   | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        SAME_DIGEST                                   | SAME_DIGEST_NO_SIGNATURE                        | true
+        SAME_DIGEST                                   | SAME_DIGEST_WITH_SIGNATURE                      | false
+        SAME_DIGEST                                   | TEKTON_DEPLOYMENT                               | true
+        SAME_DIGEST                                   | UNVERIFIABLE_DEPLOYMENT                         | true
+        SAME_DIGEST                                   | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Tekton should create alerts for all deployments except those using tekton images.
+        TEKTON                                        | BYOPKI_DEPLOYMENT                               | true
+        TEKTON                                        | DISTROLESS_DEPLOYMENT                           | true
+        TEKTON                                        | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        TEKTON                                        | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        TEKTON                                        | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        TEKTON                                        | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        TEKTON                                        | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        TEKTON                                        | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        TEKTON                                        | SAME_DIGEST_NO_SIGNATURE                        | true
+        TEKTON                                        | SAME_DIGEST_WITH_SIGNATURE                      | true
+        TEKTON                                        | TEKTON_DEPLOYMENT                               | false
+        TEKTON                                        | UNVERIFIABLE_DEPLOYMENT                         | true
+        TEKTON                                        | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
+        // Unverifiable should create alerts for all deployments.
+        UNVERIFIABLE                                  | BYOPKI_DEPLOYMENT                               | true
+        UNVERIFIABLE                                  | DISTROLESS_DEPLOYMENT                           | true
+        UNVERIFIABLE                                  | KEYLESS_RHTAS_DEPLOYMENT                        | true
+        UNVERIFIABLE                                  | KEYLESS_SIGSTORE_DEPLOYMENT                     | true
+        UNVERIFIABLE                                  | REFERRER_BYOPKI_DEPLOYMENT                      | true
+        UNVERIFIABLE                                  | REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT      | true
+        UNVERIFIABLE                                  | REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT   | true
+        UNVERIFIABLE                                  | REFERRER_PUBKEY_MATCHING_DEPLOYMENT             | true
+        UNVERIFIABLE                                  | SAME_DIGEST_NO_SIGNATURE                        | true
+        UNVERIFIABLE                                  | SAME_DIGEST_WITH_SIGNATURE                      | true
+        UNVERIFIABLE                                  | TEKTON_DEPLOYMENT                               | true
+        UNVERIFIABLE                                  | UNVERIFIABLE_DEPLOYMENT                         | true
+        UNVERIFIABLE                                  | WITHOUT_SIGNATURE_DEPLOYMENT                    | true
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.

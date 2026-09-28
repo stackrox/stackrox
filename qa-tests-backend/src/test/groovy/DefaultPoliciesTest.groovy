@@ -83,6 +83,10 @@ class DefaultPoliciesTest extends BaseSpecification {
             "tunnelfront - Secure Shell Server (sshd) Execution",
             "tunnelfront - Docker CIS 4.7: Alert on Update Instruction",
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
+            // Newer EKS ebs-csi-node DaemonSets use bidirectional mount propagation.
+            "ebs-csi-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
+            // GKE filestore-node DaemonSets use bidirectional mount propagation.
+            "filestore-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
@@ -114,7 +118,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/acs-san-stackroxci/qa-multi-arch:nginx-1.12")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
         new Deployment()

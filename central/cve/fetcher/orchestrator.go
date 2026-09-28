@@ -95,7 +95,7 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 }
 
 func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster, cveType utils.CVEType) error {
-	var newCVEs []converterV2.ClusterCVEParts
+	newCVEs := make([]converterV2.ClusterCVEParts, 0, len(embeddedCVEs))
 	for _, embeddedCVE := range embeddedCVEs {
 		cve := utils.EmbeddedVulnerabilityToClusterCVE(cveType.ToStorageCVEType(), embeddedCVE)
 		newCVEs = append(newCVEs, converterV2.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))

@@ -82,6 +82,29 @@
         ]
       }
     },
+    "/v1/lightspeed/status": {
+      "get": {
+        "summary": "GetLightspeedStatus returns the availability status of the Lightspeed AI service.",
+        "operationId": "MetadataService_GetLightspeedStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LightspeedStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/metadata": {
       "get": {
         "operationId": "MetadataService_GetMetadata",
@@ -286,6 +309,17 @@
         }
       }
     },
+    "v1LightspeedStatusResponse": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
     "v1Metadata": {
       "type": "object",
       "properties": {
@@ -301,6 +335,13 @@
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
+        },
+        "compatibleSensorVersions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sorted list of X.Y sensor versions that are compatible with this central,\naccording to the version skew policy known to central."
         }
       }
     },

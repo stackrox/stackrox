@@ -103,7 +103,7 @@ func TestPolicySeverityEnumConverter(t *testing.T) {
 	for k := range storage.Severity_value {
 		actual, err := notifiers.GetNotifiersCompatiblePolicySeverity(k)
 		assert.Nil(t, err)
-		prefix := strings.Split(k, "_")[0]
+		prefix, _, _ := strings.Cut(k, "_")
 		expected := strings.Title(strings.ToLower(prefix))
 		assert.Equal(t, actual, expected)
 	}

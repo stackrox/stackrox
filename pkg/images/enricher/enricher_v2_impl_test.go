@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -83,6 +84,7 @@ func TestEnricherV2Flow(t *testing.T) {
 		result                 EnrichmentResult
 		errorExpected          bool
 		expectedBaseImageCalls int // track Base Image logic
+		expectScanCall         *bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -162,6 +164,36 @@ func TestEnricherV2Flow(t *testing.T) {
 				ScanResult:   ScanSucceeded,
 			},
 			expectedBaseImageCalls: 1,
+		},
+		{
+			name: "data in both caches but force refetch metadata only",
+			ctx: EnrichmentContext{
+				FetchOpt: ForceRefetchMetadataOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Scan:   &storage.ImageScan{}}),
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     false,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 1,
+			expectScanCall:         new(bool),
 		},
 		{
 			name: " data in both caches but force refetch use names",
@@ -424,6 +456,9 @@ func TestEnricherV2Flow(t *testing.T) {
 
 			assert.Equal(t, c.result, result)
 			assert.Equal(t, c.expectedBaseImageCalls, mockBaseGetter.callCount, "Mismatch in: %s", c.name)
+			if c.expectScanCall != nil {
+				assert.Equal(t, *c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
+			}
 		})
 	}
 }
@@ -472,6 +507,51 @@ func TestCVESuppressionV2(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.GetScan().GetComponents()[0].GetVulns()[0].GetState())
+}
+
+// TestEnrichImageV2_ScanStatsRecomputedOnNewScan reproduces the exact object flow used
+// by the image reprocessor (central/reprocessor/reprocessor.go): an ImageV2 fetched
+// from the datastore (so ScanStats is already populated from its previous scan) is
+// passed into EnrichImage, which finds a genuinely new scan. ScanStats must be
+// recomputed to match the new scan (ROX-36389).
+func TestEnrichImageV2_ScanStatsRecomputedOnNewScan(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	ctrl := gomock.NewController(t)
+
+	fsr := newFakeRegistryScanner(opts{})
+	registrySet := registryMocks.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	enricherImpl := newEnricherV2(set, mockReporter)
+
+	img := &storage.ImageV2{
+		Id:        utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		Digest:    "sha",
+		Name:      &storage.ImageName{Registry: "reg", FullName: "reg"},
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 99},
+	}
+
+	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
+	require.NoError(t, err)
+	assert.True(t, results.ImageUpdated)
+
+	// The fake scanner always returns a scan with exactly 1 CVE.
+	require.Len(t, img.GetScan().GetComponents(), 1)
+	require.Len(t, img.GetScan().GetComponents()[0].GetVulns(), 1)
+
+	assert.Equal(t, int32(1), img.GetScanStats().GetCveCount())
 }
 
 func TestZeroIntegrationsV2(t *testing.T) {
@@ -992,6 +1072,51 @@ func TestEnrichWithSignatureVerificationDataV2_Failure(t *testing.T) {
 	assert.False(t, updated)
 }
 
+// TestEnrichWithSignatureVerificationDataV2_Timeout verifies that the signature verification
+// context is bounded by ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT for the V2 (flattened image
+// data) path. This guards against regressing to a timeout too short for keyless (remote-RPC)
+// verification, which caused valid keyless Sigstore signatures to be marked unverified
+// (ROX-36605).
+func TestEnrichWithSignatureVerificationDataV2_Timeout(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	// Use an arbitrary, non-default value so the assertion proves the deadline is driven by the
+	// env var rather than by the 30s default (or the old hardcoded 1s).
+	const timeout = 17 * time.Second
+	t.Setenv(env.ImageSignatureVerificationTimeout.EnvVar(), timeout.String())
+
+	var deadline time.Time
+	haveDeadline := false
+	e := enricherV2Impl{
+		signatureIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
+		signatureVerifier: func(ctx context.Context, _ []*storage.SignatureIntegration,
+			_ *storage.Image) []*storage.ImageSignatureVerificationResult {
+			deadline, haveDeadline = ctx.Deadline()
+			return []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+			}
+		},
+	}
+	img := &storage.ImageV2{
+		Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+		Digest:    "sha",
+		Name:      &storage.ImageName{FullName: "test:1.0"},
+		Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}}
+
+	// The verifier is a stub that returns immediately, so this call does not wait for the timeout;
+	// it only checks the deadline the enricher put on the verification context.
+	start := time.Now()
+	updated, err := e.enrichWithSignatureVerificationData(emptyCtx,
+		EnrichmentContext{FetchOpt: ForceRefetch}, img)
+	require.NoError(t, err)
+	assert.True(t, updated)
+	require.True(t, haveDeadline, "verification context should carry a deadline")
+	// The deadline must be start+timeout. A 1s tolerance absorbs the negligible work between
+	// capturing start and creating the context; it is unrelated to the old hardcoded 1s timeout.
+	assert.WithinDuration(t, start.Add(timeout), deadline, time.Second,
+		"verification deadline should reflect ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT")
+}
+
 func TestDelegateEnrichImageV2(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
@@ -1414,6 +1539,116 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	require.NotEmpty(t, img.GetBaseImageInfo(), "BaseImageInfo should have been populated")
 	assert.Equal(t, expectedName, img.GetBaseImageInfo()[0].GetBaseImageFullName())
 	assert.Equal(t, expectedDigest, img.GetBaseImageInfo()[0].GetBaseImageDigest())
+}
+
+func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
+	ctx := EnrichmentContext{FetchOpt: ForceRefetchMetadataOnly}
+
+	assert.False(t, ctx.FetchOnlyIfMetadataEmpty(),
+		"ForceRefetchMetadataOnly must force metadata refetch (same as ForceRefetch)")
+	assert.True(t, ctx.FetchOnlyIfScanEmpty(),
+		"ForceRefetchMetadataOnly must allow scan reuse from DB")
+	assert.False(t, ctx.FetchOpt.forceRefetchCachedValues(),
+		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
+}
+
+func TestScannerTypeDescription(t *testing.T) {
+	cases := map[string]struct {
+		scannerType string
+		expected    string
+	}{
+		"legacy StackRox Scanner": {
+			scannerType: scannertypes.Clairify,
+			expected:    "the legacy StackRox Scanner",
+		},
+		"Scanner V4": {
+			scannerType: scannertypes.ScannerV4,
+			expected:    "Scanner V4",
+		},
+		"unknown scanner type": {
+			scannerType: "some-future-scanner",
+			expected:    `a scanner of type "some-future-scanner"`,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := scannerTypeDescription(c.scannerType)
+			assert.Equal(t, c.expected, got)
+			// Internal-only names must never leak into user-facing text.
+			assert.NotContains(t, got, "V2")
+		})
+	}
+}
+
+func TestNoMatchingScannerErr(t *testing.T) {
+	cases := map[string]struct {
+		requiredType string
+		// mustContain lists substrings the error message must include.
+		mustContain []string
+	}{
+		"legacy scan but no matching scanner integrated": {
+			requiredType: scannertypes.Clairify,
+			mustContain: []string{
+				"the legacy StackRox Scanner",
+				"integrated",
+			},
+		},
+		"Scanner V4 scan but no matching scanner integrated": {
+			requiredType: scannertypes.ScannerV4,
+			mustContain: []string{
+				"Scanner V4",
+				"integrated",
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := noMatchingScannerErr(c.requiredType)
+			require.Error(t, err)
+
+			for _, substr := range c.mustContain {
+				assert.Contains(t, err.Error(), substr)
+			}
+			// Internal-only names must never leak into user-facing text.
+			assert.NotContains(t, err.Error(), "V2")
+		})
+	}
+}
+
+// TestEnrichWithVulnerabilitiesNoMatchingScannerV2 verifies the reachable case
+// where scanners are integrated (so scanners.IsEmpty() is false) but none matches
+// the scanner type that produced the scan (fakeScanner has type "type", not the
+// clairify type the scan components indicate).
+func TestEnrichWithVulnerabilitiesNoMatchingScannerV2(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	fsr := newFakeRegistryScanner(opts{})
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	enricher := newEnricherV2(set, mockReporter)
+
+	img := &storage.ImageV2{
+		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		Digest: "sha",
+		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+	}
+	// Empty indexer version => the components indicate the legacy (clairify) scanner.
+	components := scannertypes.NewScanComponents("", nil, nil)
+
+	result, err := enricher.EnrichWithVulnerabilities(img, components, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the legacy StackRox Scanner")
+	assert.Contains(t, err.Error(), "integrated")
+	assert.Equal(t, ScanNotDone, result.ScanResult)
+	assert.False(t, result.ImageUpdated)
 }
 
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {

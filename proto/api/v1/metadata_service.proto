@@ -24,6 +24,10 @@ message Metadata {
 
   // Do not use this field. It will always contain "VALID"
   LicenseStatus license_status = 4 [deprecated = true];
+
+  // Sorted list of X.Y sensor versions that are compatible with this central,
+  // according to the version skew policy known to central.
+  repeated string compatible_sensor_versions = 5;
 }
 
 message TrustInfo {
@@ -71,6 +75,11 @@ message DatabaseStatus {
 
 message DatabaseBackupStatus {
   storage.BackupInfo backup_info = 1;
+}
+
+message LightspeedStatusResponse {
+  bool available = 1;
+  string message = 2;
 }
 
 // Provides availability of certain functionality of Central Services in the current configuration.
@@ -134,5 +143,10 @@ service MetadataService {
 
   rpc GetCentralCapabilities(Empty) returns (CentralServicesCapabilities) {
     option (google.api.http) = {get: "/v1/central-capabilities"};
+  }
+
+  // GetLightspeedStatus returns the availability status of the Lightspeed AI service.
+  rpc GetLightspeedStatus(Empty) returns (LightspeedStatusResponse) {
+    option (google.api.http) = {get: "/v1/lightspeed/status"};
   }
 }

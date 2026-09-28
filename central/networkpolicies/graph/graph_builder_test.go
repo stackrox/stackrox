@@ -432,7 +432,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			b := newGraphBuilder(nil, c.deployments, c.networkTree, namespacesByID)
 			// Run the test multiple times to make sure that the graph builder is not put into a bad state the first time,
 			// and is capable of returning consistent results.
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
 				formattedMatches := make([]expectedMatch, 0, len(matches))
 				for _, match := range matches {

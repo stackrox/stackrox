@@ -872,7 +872,7 @@ class ComplianceTest extends BaseSpecification {
         def policyGroup = PolicyGroup.newBuilder()
                 .setFieldName("Environment Variable")
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
-        policyGroup.addAllValues([PolicyValue.newBuilder().setValue(".*SECRET.*=.*").build()])
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("RAW=.*SECRET.*=").build()])
 
         def policyId = PolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
                 .setName("XYZ Compliance Secrets")

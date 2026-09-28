@@ -2,6 +2,7 @@ package reportgenerator
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -19,8 +20,13 @@ func ValidateReportRequest(request *ReportRequest) error {
 	} else if request.ReportSnapshot.GetReportStatus() == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 	}
-	// only check resource scope is non nil if report snapshot is for config based vuln reports
+	// only check resource scope is non nil if report snapshot is for config based reports
 	if request.ReportSnapshot.GetVulnReportFilters() != nil && request.ReportSnapshot.GetResourceScope() == nil {
+		errorList.AddError(errors.New("Report request does not have a valid non-nil resource scope."))
+	}
+	if request.ReportSnapshot.GetNodeVulnReportFilters() != nil &&
+		request.ReportSnapshot.GetReportStatus().GetReportRequestType() != storage.ReportStatus_VIEW_BASED &&
+		request.ReportSnapshot.GetResourceScope() == nil {
 		errorList.AddError(errors.New("Report request does not have a valid non-nil resource scope."))
 	}
 

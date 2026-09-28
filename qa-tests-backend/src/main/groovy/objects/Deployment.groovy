@@ -14,6 +14,8 @@ class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
     String image
+    // Optional policy for the main container; takes precedence over the CI Quay policy.
+    String imagePullPolicyOverride
     Map<String, String> labels = [:]
     Map<Integer, String> ports = [:]
     Integer targetport
@@ -56,6 +58,7 @@ class Deployment {
     Boolean automountServiceAccountToken = true
     Boolean livenessProbeDefined = false
     Boolean readinessProbeDefined = false
+    Integer readinessProbeTcpPort = null
     String serviceName
     String serviceAccountName
     List<Map<String, Object>> initContainers = []
@@ -100,6 +103,11 @@ class Deployment {
                 """.stripIndent()
         }
         this.image = imageName
+        return this
+    }
+
+    Deployment setImagePullPolicyOverride(String policy) {
+        this.imagePullPolicyOverride = policy
         return this
     }
 
@@ -325,6 +333,11 @@ class Deployment {
 
     Deployment setReadinessProbeDefined(Boolean probeDefined) {
         this.readinessProbeDefined = probeDefined
+        return this
+    }
+
+    Deployment setReadinessProbeTcpPort(Integer port) {
+        this.readinessProbeTcpPort = port
         return this
     }
 

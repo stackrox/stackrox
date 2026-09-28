@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"time"
@@ -53,6 +54,7 @@ var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
 	_ scannerTypes.NodeScanner              = (*clairify)(nil)
+	_ io.Closer                             = (*clairify)(nil)
 
 	log             = logging.LoggerForModule()
 	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
@@ -87,6 +89,7 @@ type clairify struct {
 	protoImageIntegration *storage.ImageIntegration
 	activeRegistries      registries.Set
 
+	gRPCConnection         *grpc.ClientConn
 	pingServiceClient      clairGRPCV1.PingServiceClient
 	imageScanServiceClient clairGRPCV1.ImageScanServiceClient
 	nodeScanServiceClient  clairGRPCV1.NodeScanServiceClient
@@ -140,6 +143,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
 
+		gRPCConnection:         gRPCConnection,
 		imageScanServiceClient: clairGRPCV1.NewImageScanServiceClient(gRPCConnection),
 
 		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(numConcurrentScans),
@@ -191,6 +195,7 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 	return &clairify{
 		NodeScanSemaphore:      scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
 		conf:                   conf,
+		gRPCConnection:         gRPCConnection,
 		pingServiceClient:      pingServiceClient,
 		nodeScanServiceClient:  scanServiceClient,
 		imageScanServiceClient: imageScanServiceClient,
@@ -206,6 +211,14 @@ func getTLSConfig() (*tls.Config, error) {
 		return nil, errors.Wrap(err, "failed to initialize TLS config")
 	}
 	return tlsConfig, nil
+}
+
+// Close closes the underlying gRPC connection.
+func (c *clairify) Close() error {
+	if c.gRPCConnection != nil {
+		return c.gRPCConnection.Close()
+	}
+	return nil
 }
 
 // Test initiates a test of the Clairify Scanner which verifies that we have the proper scan permissions
@@ -534,6 +547,7 @@ func newOrchestratorScanner(integration *storage.OrchestratorIntegration) (*clai
 	return &clairify{
 		ScanSemaphore:                 scannerTypes.NewSemaphoreWithValue(defaultMaxConcurrentScans),
 		conf:                          conf,
+		gRPCConnection:                gRPCConnection,
 		protoOrchestratorIntegration:  integration,
 		orchestratorScanServiceClient: clairGRPCV1.NewOrchestratorScanServiceClient(gRPCConnection),
 	}, nil

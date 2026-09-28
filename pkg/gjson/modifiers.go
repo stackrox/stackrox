@@ -149,7 +149,11 @@ func TextModifier() CustomModifier {
 		})
 		// Ensure we keep the same order for the texts we generated.
 		keys := slices.Sorted(maps.Keys(texts))
+		// An empty slice and nil are marshaled differently. Therefore if keys is empty we want to keep result equal to nil.
 		var result []string
+		if len(keys) > 0 {
+			result = make([]string, 0, len(keys))
+		}
 		for _, key := range keys {
 			result = append(result, modifier.trimSeparator(texts[key]))
 		}

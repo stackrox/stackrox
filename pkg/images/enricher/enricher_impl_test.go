@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -79,6 +80,7 @@ func TestEnricherFlow(t *testing.T) {
 		result                 EnrichmentResult
 		errorExpected          bool
 		expectedBaseImageCalls int
+		expectScanCall         *bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -157,6 +159,36 @@ func TestEnricherFlow(t *testing.T) {
 				ScanResult:   ScanSucceeded,
 			},
 			expectedBaseImageCalls: 1,
+		},
+		{
+			name: "data in both caches but force refetch metadata only",
+			ctx: EnrichmentContext{
+				FetchOpt: ForceRefetchMetadataOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+			},
+			imageGetter: imageGetterFromImage(&storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+				Scan:  &storage.ImageScan{}}),
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     false,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 1,
+			expectScanCall:         new(bool),
 		},
 		{
 			name: " data in both caches but force refetch use names",
@@ -411,6 +443,9 @@ func TestEnricherFlow(t *testing.T) {
 
 			assert.Equal(t, c.result, result)
 			assert.Equal(t, c.expectedBaseImageCalls, mockBaseGetter.callCount, "Mismatch in: %s", c.name)
+			if c.expectScanCall != nil {
+				assert.Equal(t, *c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
+			}
 		})
 	}
 }
@@ -1014,6 +1049,46 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 	assert.False(t, updated)
 }
 
+// TestEnrichWithSignatureVerificationData_Timeout verifies that the signature verification
+// context is bounded by ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT. This guards against
+// regressing to a timeout too short for keyless (remote-RPC) verification, which caused valid
+// keyless Sigstore signatures to be marked unverified (ROX-36605).
+func TestEnrichWithSignatureVerificationData_Timeout(t *testing.T) {
+	// Use an arbitrary, non-default value so the assertion proves the deadline is driven by the
+	// env var rather than by the 30s default (or the old hardcoded 1s).
+	const timeout = 17 * time.Second
+	t.Setenv(env.ImageSignatureVerificationTimeout.EnvVar(), timeout.String())
+
+	var deadline time.Time
+	haveDeadline := false
+	e := enricherImpl{
+		signatureIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
+		signatureVerifier: func(ctx context.Context, _ []*storage.SignatureIntegration,
+			_ *storage.Image) []*storage.ImageSignatureVerificationResult {
+			deadline, haveDeadline = ctx.Deadline()
+			return []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+			}
+		},
+	}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "test:1.0"},
+		Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}}
+
+	// The verifier is a stub that returns immediately, so this call does not wait for the timeout;
+	// it only checks the deadline the enricher put on the verification context.
+	start := time.Now()
+	updated, err := e.enrichWithSignatureVerificationData(emptyCtx,
+		EnrichmentContext{FetchOpt: ForceRefetch}, img)
+	require.NoError(t, err)
+	assert.True(t, updated)
+	require.True(t, haveDeadline, "verification context should carry a deadline")
+	// The deadline must be start+timeout. A 1s tolerance absorbs the negligible work between
+	// capturing start and creating the context; it is unrelated to the old hardcoded 1s timeout.
+	assert.WithinDuration(t, start.Add(timeout), deadline, time.Second,
+		"verification deadline should reflect ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT")
+}
+
 func TestDelegateEnrichImage(t *testing.T) {
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
 	e := enricherImpl{
@@ -1311,6 +1386,13 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 				testImageName,
 			},
 			opt: ForceRefetchCachedValuesOnly,
+		},
+		"ForceRefetchMetadataOnly should retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: ForceRefetchMetadataOnly,
 		},
 		"UseImageNamesRefetchCachedValues should retain image names": {
 			expectedImageNames: []*storage.ImageName{

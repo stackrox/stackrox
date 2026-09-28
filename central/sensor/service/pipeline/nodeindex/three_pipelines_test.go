@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -140,13 +141,12 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, false)
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
 				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
-					// node arrives
+					// node arrives: non-RHCOS with LegacyScanner off upserts UNSUPPORTED and skips Clairify
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					// node index arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
@@ -175,6 +175,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
 				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
@@ -211,6 +212,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
 				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
@@ -244,6 +246,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				t.Setenv(features.ScannerV4.EnvVar(), "false")
 				t.Setenv(features.NodeIndexEnabled.EnvVar(), "false")
 				gomock.InOrder(
@@ -269,6 +272,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
 				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(

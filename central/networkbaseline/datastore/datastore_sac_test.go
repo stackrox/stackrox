@@ -228,7 +228,7 @@ func (s *networkBaselineDatastoreSACTestSuite) TestDeleteNetworkBaselines() {
 		// Upsert resources with various scopes.
 		s.NoError(s.datastore.UpsertNetworkBaselines(s.testContexts[testutils.UnrestrictedReadWriteCtx], nbs))
 		var (
-			ids         []string
+			ids         = make([]string, 0, len(nbs))
 			cluster1ids []string
 		)
 		for _, nb := range nbs {

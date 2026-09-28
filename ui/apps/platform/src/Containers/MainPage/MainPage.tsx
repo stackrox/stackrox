@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Button, Page } from '@patternfly/react-core';
-import { OutlinedCommentsIcon } from '@patternfly/react-icons';
+import { Page } from '@patternfly/react-core';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
@@ -11,7 +10,6 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import usePublicConfig from 'hooks/usePublicConfig';
 import { selectors } from 'reducers';
-import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
@@ -23,18 +21,15 @@ import NavigationSidebar from './Navigation/NavigationSidebar';
 import HorizontalSubnav from './Navigation/HorizontalSubnav';
 
 import Body from './Body';
-import AcsFeedbackModal from './AcsFeedbackModal';
 
 function MainPage(): ReactElement {
     const navigate = useNavigate();
-    const dispatch = useDispatch();
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
     const { publicConfig, isLoadingPublicConfig } = usePublicConfig();
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
-    const showFeedbackModal = useSelector(selectors.feedbackSelector);
 
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
@@ -79,26 +74,6 @@ function MainPage(): ReactElement {
             <div id="PageParent">
                 <PublicConfigHeader />
                 <Banners />
-                <Button
-                    style={{
-                        bottom: 'calc(2 * var(--pf-t--global--spacer--4xl))',
-                        position: 'absolute',
-                        right: '0',
-                        transform: 'rotate(270deg)',
-                        transformOrigin: 'bottom right',
-                        zIndex: 20000,
-                    }}
-                    icon={<OutlinedCommentsIcon />}
-                    iconPosition="left"
-                    variant="danger"
-                    id="feedback-trigger-button"
-                    onClick={() => {
-                        dispatch(actions.setFeedbackModalVisibility(true));
-                    }}
-                >
-                    Feedback
-                </Button>
-                {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
                     masthead={<Header />}

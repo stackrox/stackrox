@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/stackrox/rox/central/signatureintegration/store"
@@ -15,25 +13,6 @@ import (
 
 var redHatKeyBundlePath = signatures.RedHatKeyBundlePath()
 
-// ensureKeyBundleDirectory creates the directory where the watcher and
-// downloader expect to find bundle.json.
-func ensureKeyBundleDirectory() {
-	dir := filepath.Dir(redHatKeyBundlePath)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		log.Warnf("Failed to create key bundle directory %q: %v", dir, err)
-	}
-}
-
-// writeExampleBundle writes bundle.example.json so offline-mode customers can
-// see the expected format without consulting docs.
-func writeExampleBundle() {
-	dir := filepath.Dir(redHatKeyBundlePath)
-	examplePath := filepath.Join(dir, "bundle.example.json")
-	if err := os.WriteFile(examplePath, signatures.DefaultBundleJSON(), 0600); err != nil {
-		log.Warnf("Failed to write example bundle to %q: %v", examplePath, err)
-	}
-}
-
 func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handler {
 	return func(data []byte) error {
 		bundle, err := signatures.ParseKeyBundle(data)
@@ -43,7 +22,12 @@ func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handl
 			return nil
 		}
 
-		si := signatures.BundleToSignatureIntegration(bundle)
+		si, err := bundle.ToSignatureIntegration()
+		if err != nil {
+			log.Warnf("Failed to create Red Hat signature integration from key bundle: %v", err)
+			watcherFileErrorTotal.Inc()
+			return nil
+		}
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 		if err := siStore.Upsert(ctx, si); err != nil {
 			log.Errorf("Failed to upsert Red Hat signature integration from key bundle: %v", err)
@@ -52,15 +36,16 @@ func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handl
 		}
 
 		watcherUpsertTotal.WithLabelValues("success").Inc()
-		watcherKeyCount.Set(float64(len(bundle.Keys)))
+		cosignKeys := si.GetCosign().GetPublicKeys()
+		watcherKeyCount.Set(float64(len(cosignKeys)))
 		watcherLastSuccessTimestamp.SetToCurrentTime()
 
-		keyNames := make([]string, 0, len(bundle.Keys))
-		for _, k := range bundle.Keys {
-			keyNames = append(keyNames, k.Name)
+		keyNames := make([]string, 0, len(cosignKeys))
+		for _, k := range cosignKeys {
+			keyNames = append(keyNames, k.GetName())
 		}
 		log.Infof("Updated Red Hat signature integration with %d key(s) from bundle: [%s]",
-			len(bundle.Keys), strings.Join(keyNames, ", "))
+			len(cosignKeys), strings.Join(keyNames, ", "))
 		return nil
 	}
 }

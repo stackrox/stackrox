@@ -1,7 +1,6 @@
 package all
 
 import (
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -35,14 +34,11 @@ func TestAllPackagesAreImported(t *testing.T) {
 		existingNotifiers.Add(baseName)
 	}
 
-	var allImports []*ast.ImportSpec
 	f, err := parser.ParseFile(token.NewFileSet(), "all.go", nil, parser.ImportsOnly)
 	require.NoError(t, err, "failed to parse all.go")
 
-	allImports = append(allImports, f.Imports...)
-
 	importedNotifiers := set.NewStringSet()
-	for _, imp := range allImports {
+	for _, imp := range f.Imports {
 		pkgName := strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, `"`), `"`)
 		pkgBaseName := path.Base(pkgName)
 		importedNotifiers.Add(pkgBaseName)

@@ -3,14 +3,17 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -19,7 +22,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,6 +63,8 @@ const (
 
 var (
 	sensorPodLabels = map[string]string{"app": "sensor"}
+
+	errNotFound = errors.New("not found")
 )
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
@@ -293,7 +297,7 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	var alerts []*storage.ListAlert
 	// Retry until desired alert count is reached when sensor(s) resync
-	for i := 0; i < 45; i++ {
+	for range 45 {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()
@@ -420,7 +424,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 			},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(int32(replicas)),
+			Replicas: new(int32(replicas)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -590,7 +594,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(int64(0))})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())
@@ -832,30 +836,44 @@ func deleteNamespace(t *testing.T, name string) {
 
 // execInDeployment executes a command in a pod from the given deployment.
 // Assumes deployment pods have label app=<deploymentName> (set by privilegedDeploymentSpec).
+//
+// The pod is re-resolved and `kubectl exec` is retried within a bounded window
+// to tolerate transient exec failures (e.g. "error: EOF" from a dropped exec
+// stream) shortly after the deployment has been rolled/restarted (see
+// ROX-36497).
 func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName, namespace string, command ...string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	podList, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
-	})
-	require.NoError(t, err, "listing pods for deployment %q", deploymentName)
-	require.NotEmpty(t, podList.Items, "no pods found for deployment %q", deploymentName)
+	var lastPod string
+	mustEventually(t, ctx, func() error {
+		podList, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+		})
+		if err != nil {
+			return fmt.Errorf("listing pods for deployment %q: %w", deploymentName, err)
+		}
+		if len(podList.Items) == 0 {
+			return fmt.Errorf("no pods found for deployment %q", deploymentName)
+		}
 
-	podName := podList.Items[0].Name
+		podName := podList.Items[0].Name
+		lastPod = podName
 
-	args := make([]string, 0, 5+len(command))
-	args = append(args, "exec", "-n", namespace, podName, "--")
-	args = append(args, command...)
+		args := make([]string, 0, 5+len(command))
+		args = append(args, "exec", "-n", namespace, podName, "--")
+		args = append(args, command...)
 
-	cmd := exec.CommandContext(ctx, "kubectl", args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Logf("kubectl exec output: %s", string(output))
-	}
-	require.NoError(t, err, "executing command %v in pod %q", command, podName)
+		execCtx, execCancel := context.WithTimeout(ctx, 30*time.Second)
+		defer execCancel()
+		output, err := exec.CommandContext(execCtx, "kubectl", args...).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("executing command %v in pod %q: %w: %s", command, podName, err, string(output))
+		}
+		return nil
+	}, 10*time.Second, "kubectl exec failed, retrying")
 
-	t.Logf("Executed command %v in pod %q (deployment %q)", command, podName, deploymentName)
+	t.Logf("Executed command %v in pod %q (deployment %q)", command, lastPod, deploymentName)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
@@ -891,6 +909,36 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 }
 
 type logMatcher = logmatchers.LogMatcher
+
+// getPodLogLine returns the first log line found that matches the regular expression
+// and occurs after the fromByte position. Returns errNotFound if no lines match.
+func (ks *KubernetesSuite) getPodLogLine(ctx context.Context, namespace string, podName string, container string, fromByte int64, re *regexp.Regexp) (string, error) {
+	resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(podName, &coreV1.PodLogOptions{Container: container}).Do(ctx)
+	log, err := resp.Raw()
+	if err != nil {
+		return "", fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", podName, namespace, err)
+	}
+
+	reader := bytes.NewReader(log)
+	_, err = reader.Seek(fromByte, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("could not seek to pos %d: %w", fromByte, err)
+	}
+
+	br := bufio.NewReader(reader)
+	for {
+		line, _, err := br.ReadLine()
+		if errors.Is(err, io.EOF) {
+			return "", errNotFound
+		}
+		if err != nil {
+			return "", err
+		}
+		if re.Match(line) {
+			return string(line), nil
+		}
+	}
+}
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
@@ -1062,7 +1110,12 @@ func mustEventually(t *testing.T, ctx context.Context, f func() error, pauseInte
 		retry.Tries(math.MaxInt),
 		retry.WithContext(ctx),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(pauseInterval)
+			timer := time.NewTimer(pauseInterval)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+			}
 		}),
 		retry.OnFailedAttempts(func(err error) { logf(t, failureMsgPrefix+": %s", err) })))
 }

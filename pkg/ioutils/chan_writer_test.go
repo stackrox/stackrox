@@ -89,7 +89,7 @@ func TestChanWriter_ContextError(t *testing.T) {
 	assert.NoError(t, w.Close())
 
 	// Test that the error remains stable, even if we now are additionally closed.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		n, err := w.Write([]byte("foobar"))
 		assert.Equal(t, context.Canceled, err)
 		assert.Zero(t, n)

@@ -10,7 +10,7 @@ func (s sortableIPv4NetworkSlice) Len() int {
 }
 
 func (s sortableIPv4NetworkSlice) Less(i, j int) bool {
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		if s[5*i+k] != s[5*j+k] {
 			return s[5*i+k] > s[5*j+k]
 		}
@@ -19,7 +19,7 @@ func (s sortableIPv4NetworkSlice) Less(i, j int) bool {
 }
 
 func (s sortableIPv4NetworkSlice) Swap(i, j int) {
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		s[5*i+k], s[5*j+k] = s[5*j+k], s[5*i+k]
 	}
 }
@@ -31,7 +31,7 @@ func (s sortableIPv6NetworkSlice) Len() int {
 }
 
 func (s sortableIPv6NetworkSlice) Less(i, j int) bool {
-	for k := 0; k < 17; k++ {
+	for k := range 17 {
 		if s[17*i+k] != s[17*j+k] {
 			return s[17*i+k] > s[17*j+k]
 		}
@@ -40,7 +40,7 @@ func (s sortableIPv6NetworkSlice) Less(i, j int) bool {
 }
 
 func (s sortableIPv6NetworkSlice) Swap(i, j int) {
-	for k := 0; k < 17; k++ {
+	for k := range 17 {
 		s[17*i+k], s[17*j+k] = s[17*j+k], s[17*i+k]
 	}
 }

@@ -205,9 +205,9 @@ func TestGetPreviousYStream(t *testing.T) {
 			want:    &XyzVersion{X: 4, Y: 0, Z: 0},
 		},
 		{
-			name:    "trunk builds",
-			version: XyzVersion{X: 1, Y: 0, Z: 0},
-			want:    &XyzVersion{X: 0, Y: 0, Z: 0},
+			name:    "major version 5 to 4.11.0",
+			version: XyzVersion{X: 5, Y: 0, Z: 0},
+			want:    &XyzVersion{X: 4, Y: 11, Z: 0},
 		},
 		{
 			name:    "unknown major version",
@@ -333,10 +333,10 @@ func TestCalculateReplacedVersion(t *testing.T) {
 		wantNil    bool
 	}{
 		{
-			name:     "downstream trunk builds get no replace",
-			current:  "1.0.0",
+			name:     "version before first gets no replace",
+			current:  "3.74.0",
 			first:    "4.0.0",
-			previous: "0.0.0",
+			previous: "3.73.0",
 			wantNil:  true,
 		},
 		{

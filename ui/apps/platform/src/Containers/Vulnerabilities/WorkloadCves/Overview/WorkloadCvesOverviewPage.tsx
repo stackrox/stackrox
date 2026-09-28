@@ -34,7 +34,9 @@ import type { SearchFilter } from 'types/search';
 import { useIsFirstRender } from 'hooks/useIsFirstRender';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
+import { runImageViewBasedReport } from 'services/ReportsService';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
@@ -63,9 +65,9 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
 
@@ -129,7 +131,6 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
 
     const { analyticsTrack } = useAnalytics();
 
@@ -297,11 +298,10 @@ function WorkloadCvesOverviewPage() {
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
     const showDeferralUI = hasRequestExceptionsAbility && currentVulnerabilityState === 'OBSERVED';
@@ -485,6 +485,8 @@ function WorkloadCvesOverviewPage() {
                         setIsOpen={setIsCreateViewBasedReportModalOpen}
                         query={workloadCvesScopedQueryString}
                         areaOfConcern={viewContext}
+                        runViewBasedReport={runImageViewBasedReport}
+                        vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                     />
                 )}
             </PageSection>

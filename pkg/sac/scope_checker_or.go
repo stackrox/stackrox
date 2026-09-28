@@ -22,7 +22,7 @@ func NewOrScopeChecker(scopeCheckers ...ScopeChecker) ScopeChecker {
 }
 
 func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].SubScopeChecker(keys...))
 	}
@@ -52,7 +52,7 @@ func (s orScopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].ForClusterScopedObject(obj))
 	}
@@ -62,7 +62,7 @@ func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChe
 }
 
 func (s orScopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].ForNamespaceScopedObject(obj))
 	}
@@ -72,7 +72,7 @@ func (s orScopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) Scop
 }
 
 func (s orScopeChecker) AccessMode(am storage.Access) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].AccessMode(am))
 	}
@@ -82,7 +82,7 @@ func (s orScopeChecker) AccessMode(am storage.Access) ScopeChecker {
 }
 
 func (s orScopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].Resource(resource))
 	}
@@ -92,7 +92,7 @@ func (s orScopeChecker) Resource(resource permissions.ResourceHandle) ScopeCheck
 }
 
 func (s orScopeChecker) ClusterID(clusterID string) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].ClusterID(clusterID))
 	}
@@ -102,7 +102,7 @@ func (s orScopeChecker) ClusterID(clusterID string) ScopeChecker {
 }
 
 func (s orScopeChecker) Namespace(namespace string) ScopeChecker {
-	var checkers []ScopeChecker
+	checkers := make([]ScopeChecker, 0, len(s.scopeCheckers))
 	for i := range s.scopeCheckers {
 		checkers = append(checkers, s.scopeCheckers[i].Namespace(namespace))
 	}

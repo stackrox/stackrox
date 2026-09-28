@@ -1,5 +1,6 @@
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import { sourceTypeLabels } from '../../constants';
 import type { CveComponentRow } from '../aggregateUtils';
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import FixedByVersion from '../../components/FixedByVersion';
@@ -32,7 +33,7 @@ function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsT
                             <Td dataLabel="Advisory">
                                 <AdvisoryLinkOrText advisory={advisory} />
                             </Td>
-                            <Td dataLabel="Type">{sourceType}</Td>
+                            <Td dataLabel="Type">{sourceTypeLabels[sourceType]}</Td>
                         </Tr>
                     );
                 })}

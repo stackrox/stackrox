@@ -131,7 +131,7 @@ func TestSetOrdering(t *testing.T) {
 	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
 	require.NoError(t, scannerSet.UpdateImageIntegration(ecrIntegration))
 	require.NoError(t, scannerSet.UpdateImageIntegration(scannerV4Integration))
-	for i := 0; i < 10000; i++ {
+	for range 10000 {
 		scanners := scannerSet.GetAll()
 		assert.Equal(t, "ecr", scanners[0].GetScanner().Type())
 		assert.Equal(t, types.ScannerV4, scanners[1].GetScanner().Type())

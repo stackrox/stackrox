@@ -56,7 +56,7 @@ func setupBench(b *testing.B, totalAlerts int) *benchFixture {
 
 	am := New(notifier, ds, runtimeDetector)
 
-	for i := 0; i < totalAlerts; i++ {
+	for range totalAlerts {
 		a := fixtures.GetAlertWithID(uuid.NewV4().String())
 
 		// Distribute across 3 deployments with 60/25/15 ratio

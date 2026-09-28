@@ -4,6 +4,7 @@
 Returns the central-sensor version tuples to be used for compatibility testing.
 """
 import logging
+import re
 import subprocess
 import sys
 from collections import namedtuple
@@ -11,7 +12,6 @@ from pathlib import Path
 
 from get_latest_helm_chart_versions import (
     get_supported_helm_chart_versions,
-    get_latest_helm_chart_version_for_specific_release,
 )
 
 
@@ -19,17 +19,17 @@ from get_latest_helm_chart_versions import (
 # get_compatibility_test_tuples.py provides the function get_compatibility_test_tuples() which is called in our
 # compatibility tests that returns all tuples of central and sensor versions for which:
 #    1. Central is latest and Sensor is a supported older version OR
-#    2. Sensor is latest and Central is a supported older version OR
-#    3. Is a support exception
-# These are returned only if Helm charts for both versions could be found.
+#    2. Sensor is latest and Central is a supported older version
+# These are returned only if charts for both versions could be found.
 # After running get_compatibility_test_tuples.py I received the following output:
 # INFO:root:Listing supported versions tuples:
-# INFO:root:Tuple 1: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.5.3}
-# INFO:root:Tuple 2: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.4.5}
-# INFO:root:Tuple 3: {Central v400.5.3 - Sensor v4.6.x-736-g48077a980e-dirty}
-# INFO:root:Tuple 4: {Central v400.4.5 - Sensor v4.6.x-736-g48077a980e-dirty}
-# INFO:root:Tuple 5: {Central v4.6.x-736-g48077a980e-dirty - Sensor v74.9.0}
-# If no supported versions with available Helm charts are found, an empty list is returned.
+# INFO:root:Tuple 1: {Central v4.12.x-793-gf6bf3cc40e - Sensor v4.11.2}
+# INFO:root:Tuple 2: {Central v4.12.x-793-gf6bf3cc40e - Sensor v4.10.6}
+# INFO:root:Tuple 3: {Central v4.12.x-793-gf6bf3cc40e - Sensor v4.9.10}
+# INFO:root:Tuple 4: {Central v4.11.2 - Sensor v4.12.x-793-gf6bf3cc40e}
+# INFO:root:Tuple 5: {Central v4.10.6 - Sensor v4.12.x-793-gf6bf3cc40e}
+# INFO:root:Tuple 6: {Central v4.9.10 - Sensor v4.12.x-793-gf6bf3cc40e}
+# If no supported versions with available charts are found, an empty list is returned.
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     test_tuples = get_compatibility_test_tuples()
@@ -44,51 +44,40 @@ def main():
         )
 
 
-# Returns True if the helm_version is newer than the current_version
-def is_newer_version(current_version: str, helm_version: str):
-    helm_version_split = helm_version.split(sep='.')
-    current_version_split = current_version.split(sep='.')
+# Returns True if the product_version is newer than the current_version.
+#
+# current_version examples: '4.11.x-736-g48077a980e', '4.11.1-rc.2', '4.11.1'
+# product_version examples:  '4.9.3', '4.11.0'
+def is_newer_version(current_version: str, product_version: str):
+    product_parts = [int(x) for x in product_version.split('.')]
 
-    # Parse helm version format using numeric encoding:
-    # - New format: X00MM where X=major digit, 00=padding, MM=minor (zero-padded)
-    #   Example: 40009 → major=4, minor=09 (version 4.9)
-    #   Example: 40011 → major=4, minor=11 (version 4.11)
-    #   Formula: major = n // 10000, minor = n % 100
-    # - Old format: X00 where X=major digit, 00=padding (version 4.0.x)
-    #   Formula: major = n // 100
-    helm_major_num = int(helm_version_split[0])
-    if helm_major_num >= 10000:
-        # New format: extract major (first digit) and minor (last 2 digits)
-        helm_major = helm_major_num // 10000
-        helm_minor = helm_major_num % 100
-        helm_version_split = [str(helm_major), str(helm_minor)] + helm_version_split[1:]
-    else:
-        # Old format: extract major by removing padding
-        helm_version_split[0] = str(helm_major_num // 100)
-
-    # Remove commit hash from the current version
-    current_version_split = current_version_split[:-1]
-    # If we are in a release branch, we will have patch version with '-rc'
-    if len(current_version_split) > 2:
-        # Remove '-rc' if present
-        current_version_split[2] = str(current_version_split[2]).rstrip("-rc")
-
-    for (current, helm) in zip(current_version_split, helm_version_split):
-        if int(current) > int(helm):
+    # Parse the numeric major.minor[.patch] prefix from current_version, stopping
+    # at any component that does not begin with a digit (e.g. 'x-736-ghash').
+    # This correctly handles:
+    #   dev:     '4.11.x-736-ghash' -> [4, 11]
+    #   rc:      '4.11.1-rc.2'      -> [4, 11, 1]
+    #   release: '4.11.1'           -> [4, 11, 1]
+    current_parts = []
+    for part in current_version.split('.')[:3]:
+        m = re.match(r'^(\d+)', part)
+        if not m:
             break
-        if int(current) < int(helm):
+        current_parts.append(int(m.group(1)))
+
+    for (current, product) in zip(current_parts, product_parts):
+        if current > product:
+            return False
+        if current < product:
             return True
 
     return False
 
 
 def get_compatibility_test_tuples():
-    Release = namedtuple("Release", ["major", "minor"])
-
     # start logging
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-    central_chart_versions, sensor_chart_versions = get_supported_helm_chart_versions()
+    central_versions, sensor_versions = get_supported_helm_chart_versions()
 
     makefile_path = Path(__file__).parent.parent
     latest_tag = subprocess.check_output(
@@ -104,57 +93,35 @@ def get_compatibility_test_tuples():
     # versions.
     # There is no risk in excluding newer versions as the compatibility tests in
     # their respective branches will test against older versions.
-    central_chart_versions = [i for i in central_chart_versions
-                              if not
-                              is_newer_version(current_version=latest_tag,
-                                               helm_version=i)]
-    sensor_chart_versions = [i for i in sensor_chart_versions
-                             if not
-                             is_newer_version(current_version=latest_tag,
-                                              helm_version=i)]
+    central_versions = [i for i in central_versions
+                        if not is_newer_version(current_version=latest_tag,
+                                                product_version=i)]
+    sensor_versions = [i for i in sensor_versions
+                       if not is_newer_version(current_version=latest_tag,
+                                               product_version=i)]
 
-    if len(central_chart_versions) == 0:
-        logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
-    if len(sensor_chart_versions) == 0:
-        logging.info("Found no older sensor chart versions to test against according to the product lifecycles API.")
-    if len(central_chart_versions) == 0 or len(sensor_chart_versions) == 0:
-        logging.info("However versions with support exceptions will still be tested against.")
+    if len(central_versions) == 0:
+        logging.info("Found no older central versions to test against according to the product lifecycles API.")
+    if len(sensor_versions) == 0:
+        logging.info("Found no older sensor versions to test against according to the product lifecycles API.")
 
-    ChartVersions = namedtuple(
-        "Chart_versions", ["central_version", "sensor_version"])
+    VersionTuple = namedtuple("VersionTuple", ["central_version", "sensor_version"])
 
-    # Latest central vs sensor versions in sensor_chart_versions
+    # Latest central vs older sensor versions
     test_tuples = [
-        ChartVersions(central_version=latest_tag,
-                      sensor_version=sensor_chart_version)
-        for sensor_chart_version in sensor_chart_versions
+        VersionTuple(central_version=latest_tag,
+                     sensor_version=sensor_version)
+        for sensor_version in sensor_versions
     ]
-    # Latest sensor vs central versions in central_chart_versions
+    # Older central versions vs latest sensor
     test_tuples.extend(
         [
-            ChartVersions(central_version=central_chart_version,
-                          sensor_version=latest_tag)
-            for central_chart_version in central_chart_versions
+            VersionTuple(central_version=central_version,
+                         sensor_version=latest_tag)
+            for central_version in central_versions
         ]
     )
 
-    # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
-    # https://issues.redhat.com/browse/ROX-18223
-    # however a new support exception is being negotiated, add it here when it's ready
-    support_exceptions = [
-        ChartVersions(
-            central_version=latest_tag,
-            sensor_version=get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", Release(major=3, minor=74)
-            ),
-        )
-    ]
-
-    test_tuples.extend(
-        support_exception
-        for support_exception in support_exceptions
-        if support_exception not in test_tuples
-    )
     return test_tuples
 
 

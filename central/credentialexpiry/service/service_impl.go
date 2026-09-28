@@ -310,7 +310,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 
 	errorList := errorhelpers.NewErrorList("failed to determine Scanner V4 cert expiry")
 	expiries := make([]*time.Time, 0, numEndpoints)
-	for i := 0; i < numEndpoints; i++ {
+	for range numEndpoints {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()

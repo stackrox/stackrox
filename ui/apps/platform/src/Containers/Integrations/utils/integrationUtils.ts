@@ -40,6 +40,14 @@ export function getIsGCR(source: IntegrationSource, type: IntegrationType): bool
     return source === 'imageIntegrations' && type === 'google';
 }
 
+export function getIsS3(source: IntegrationSource, type: IntegrationType): boolean {
+    return source === 'backups' && type === 's3';
+}
+
+export function getIsS3Compatible(source: IntegrationSource, type: IntegrationType): boolean {
+    return source === 'backups' && type === 's3compatible';
+}
+
 export function getIsCloudSource(source: IntegrationSource): boolean {
     return source === 'cloudSources';
 }

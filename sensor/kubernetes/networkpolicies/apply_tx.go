@@ -177,7 +177,7 @@ func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.
 func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
 	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
 
-	for retryCount := 0; retryCount < maxConflictRetries; retryCount++ {
+	for retryCount := range maxConflictRetries {
 		old, err := nsClient.Get(ctx, policy.Name, metav1.GetOptions{})
 
 		if err != nil {

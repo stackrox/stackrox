@@ -1,6 +1,3 @@
-import org.javers.core.Javers
-import org.javers.core.JaversBuilder
-
 import io.stackrox.proto.storage.NodeOuterClass
 
 import services.ClusterService
@@ -11,6 +8,10 @@ import spock.lang.Tag
 
 @Tag("PZ")
 class NodeTest extends BaseSpecification {
+
+    private static Map<String, String> filterVolatileLabels(Map<String, String> labels) {
+        return labels.findAll { k, v -> !k.startsWith("image-prefetcher.stackrox.io/") }
+    }
 
     @Tag("BAT")
     def "Verify node details"() {
@@ -26,15 +27,16 @@ class NodeTest extends BaseSpecification {
             objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
             assert stackroxNode.clusterId == ClusterService.getClusterId()
             assert stackroxNode.name == orchestratorNode.name
-            if (stackroxNode.labelsMap != orchestratorNode.labels) {
+            def stableStackroxLabels = filterVolatileLabels(stackroxNode.labelsMap)
+            def stableOrchestratorLabels = filterVolatileLabels(orchestratorNode.labels)
+            if (stableStackroxLabels != stableOrchestratorLabels) {
                 log.info "There is a node label difference"
                 // Javers helps provide an useful error in the test log
-                Javers javers = JaversBuilder.javers().build()
-                def diff = javers.compare(stackroxNode.labelsMap, orchestratorNode.labels)
+                def diff = JAVERS.compare(stableStackroxLabels, stableOrchestratorLabels)
                 assert diff.changes.size() == 0
                 assert diff.changes.size() != 0 // should not get here
             }
-            assert stackroxNode.labelsMap == orchestratorNode.labels
+            assert stableStackroxLabels == stableOrchestratorLabels
             // compareAnnotations() - asserts on difference
             Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
             assert stackroxNode.internalIpAddressesList == orchestratorNode.internalIps

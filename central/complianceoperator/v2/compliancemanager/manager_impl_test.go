@@ -666,7 +666,7 @@ func getTestProfile(profileName string, version string, platform string, product
 
 	if ruleCount > 0 {
 		rules = make([]*storage.ComplianceOperatorProfileV2_Rule, 0, ruleCount)
-		for i := 0; i < ruleCount; i++ {
+		for i := range ruleCount {
 			rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
 				RuleName: fmt.Sprintf("name-%d", i),
 			})
@@ -699,7 +699,7 @@ func getTestProfileWithKind(profileName string, version string, platform string,
 
 func getTestScans(scanConfigName string, clusterID string, profileID string, count int) []*storage.ComplianceOperatorScanV2 {
 	scans := make([]*storage.ComplianceOperatorScanV2, 0, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		scanName := fmt.Sprintf("scan-%s-%s-%s-%d", scanConfigName, clusterID, profileID, i)
 
 		scans = append(scans, &storage.ComplianceOperatorScanV2{
@@ -848,7 +848,7 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByClusters() {
 			for _, clusterID := range tc.newClusterIDs {
 				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), clusterID).Return(nil, nil).Times(1)
 			}
-			testProfiles := make([]*storage.ComplianceOperatorProfileV2, 0)
+			testProfiles := make([]*storage.ComplianceOperatorProfileV2, 0, len(tc.profileNames))
 			for _, profileName := range tc.profileNames {
 				testProfiles = append(testProfiles, getTestProfile(profileName, "1.0.0", "platform", "ocp4", tc.newClusterIDs[0], 1))
 			}
@@ -916,7 +916,7 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByProfiles() {
 				}
 			}
 
-			newTestProfiles := make([]*storage.ComplianceOperatorProfileV2, 0)
+			newTestProfiles := make([]*storage.ComplianceOperatorProfileV2, 0, len(tc.newProfileNames))
 			for _, profileName := range tc.newProfileNames {
 				testProfile := getTestProfile(profileName, "1.0.0", "platform", "ocp4", tc.clusterIDs[0], 1)
 				newTestProfiles = append(newTestProfiles, testProfile)

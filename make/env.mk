@@ -19,7 +19,7 @@ GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
 export CGO_ENABLED ?= 1
-export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
+export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN
 
 # Update the arch to arm64 but only for Macs running on Apple Silicon (M1)
 ifeq ($(GOARCH),)
@@ -38,7 +38,7 @@ endif
 
 DEFAULT_GOOS := linux
 GO111MODULE := on
-GOPROXY := https://proxy.golang.org|https://goproxy.io|direct
+include $(dir $(lastword $(MAKEFILE_LIST)))goproxy.mk
 
 ifeq ($(GOBIN),)
 GOBIN := $(GOPATH)/bin

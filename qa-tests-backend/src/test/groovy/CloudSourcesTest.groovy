@@ -49,7 +49,6 @@ class CloudSourcesTest extends BaseSpecification {
 
         where:
         authMethod            | token                        | clientId                 | clientSecret
-        "OCM offline token"   | Env.mustGetOcmOfflineToken() | ""                       | ""
         "OCM service account" | ""                           | Env.mustGetOcmClientId() | Env.mustGetOcmClientSecret()
     }
 }

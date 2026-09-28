@@ -29,11 +29,13 @@ describe('System Health Clusters without fixture', () => {
         });
     });
 
-    it('should go to Clusters via click link in Sensor upgrade card', () => {
+    it('should go to Clusters via click link in Sensor compatibility status card', () => {
         visitSystemHealth();
 
         interactAndVisitClusters(() => {
-            cy.get(getCardHeaderDescendantSelector('Sensor upgrade', clustersLink)).click();
+            cy.get(
+                getCardHeaderDescendantSelector('Sensor compatibility status', clustersLink)
+            ).click();
         });
     });
 
@@ -148,31 +150,32 @@ describe('System Health Clusters with fixture', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
-    it('should have phrase in Sensor upgrade card header', () => {
+    it('should have phrase in Sensor compatibility status card header', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth({
             clusters: { fixture: clustersFixturePath },
         });
 
-        const cardTitle = 'Sensor upgrade';
+        const cardTitle = 'Sensor compatibility status';
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 degraded")'));
+        cy.get(
+            getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 incompatible sensors")')
+        );
     });
 
-    it('should have counts in Sensor upgrade card', () => {
+    it('should have counts in Sensor compatibility status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth({
             clusters: { fixture: clustersFixturePath },
         });
 
-        const cardTitle = 'Sensor upgrade';
+        const cardTitle = 'Sensor compatibility status';
         const nthRow = 1; // Clusters
 
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Up to date', 4));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Failed', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Out of date', 2));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Matched', 3));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Incompatible', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Compatible', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unknown', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
@@ -279,14 +282,21 @@ describe('System Health Clusters subset 3', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
-    it('should have not have counts in Sensor upgrade card', () => {
+    it('should have counts in Sensor compatibility status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        const cardTitle = 'Sensor upgrade';
+        const cardTitle = 'Sensor compatibility status';
+        const nthRow = 1; // Clusters
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("3 healthy")'));
-        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
+        cy.get(
+            getCardHeaderDescendantSelector(cardTitle, 'div:contains("No incompatible sensors")')
+        );
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Matched', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Incompatible', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Compatible', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unknown', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
     it('should have phrase in Credential expiration card header', () => {
@@ -377,18 +387,17 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
-    it('should have counts in Sensor upgrade card', () => {
+    it('should have counts in Sensor compatibility status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        const cardTitle = 'Sensor upgrade';
+        const cardTitle = 'Sensor compatibility status';
         const nthRow = 1; // Clusters
 
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Up to date', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Failed', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Out of date', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Matched', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Incompatible', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Compatible', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unknown', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
@@ -423,14 +432,21 @@ describe('System Health Clusters subset 1 Healthy', () => {
         cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
-    it('should have not have counts in Sensor upgrade card', () => {
+    it('should have counts in Sensor compatibility status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        const cardTitle = 'Sensor upgrade';
+        const cardTitle = 'Sensor compatibility status';
+        const nthRow = 1; // Clusters
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
-        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
+        cy.get(
+            getCardHeaderDescendantSelector(cardTitle, 'div:contains("No incompatible sensors")')
+        );
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Matched', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Incompatible', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Compatible', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unknown', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
     it('should have not have counts in Credential expiration card', () => {

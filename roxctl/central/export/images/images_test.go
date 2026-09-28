@@ -88,6 +88,10 @@ func (s *fakeImageService) ScanImageInternal(_ context.Context, _ *v1.ScanImageI
 	return nil, errox.NotImplemented
 }
 
+func (s *fakeImageService) ScanImageInternalForAdmission(_ context.Context, _ *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	return nil, errox.NotImplemented
+}
+
 func (s *fakeImageService) ScanImage(_ context.Context, _ *v1.ScanImageRequest) (*storage.Image, error) {
 	return nil, errox.NotImplemented
 }

@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -1044,16 +1043,16 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 				if val == nil {
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCveBaseInfo().GetCve(),
-						TopCVSS:                 pointers.Float32(vuln.GetCvss()),
+						TopCVSS:                 new(vuln.GetCvss()),
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
 					for _, metric := range vuln.GetCveBaseInfo().GetCvssMetrics() {
 						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv2().GetScore())
 							} else {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv3().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv3().GetScore())
 							}
 						}
 					}
@@ -1067,7 +1066,7 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
-				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
+				val.TopCVSS = new(max(val.GetTopCVSS(), vuln.GetCvss()))
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
@@ -1262,6 +1261,63 @@ func standardizeImages(images ...*storage.Image) {
 			return components[i].GetName() < components[j].GetName()
 		})
 	}
+}
+
+// TestImageCVECountFiltering verifies that "Image CVE Count > 0" doesn't drop any
+// CVEs from ImageCVEView results when the underlying data is healthy (see ROX-36389
+// for background on this field, including a case where it isn't).
+func (s *ImageCVEViewTestSuite) TestImageCVECountFiltering() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("Image CVE Count only maps to images_v2.ScanStats.CveCount when FlattenImageData is enabled")
+	}
+
+	ctx := s.suiteCtx
+
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	zeroCveImage := &storage.ImageV2{
+		Id:     imageUtils.NewImageV2ID(&storage.ImageName{Registry: "reg-zero", FullName: "reg-zero"}, "sha-zero"),
+		Digest: "sha-zero",
+		Name:   &storage.ImageName{Registry: "reg-zero", FullName: "reg-zero"},
+		Scan: &storage.ImageScan{
+			OperatingSystem: "zero-os",
+			Components:      []*storage.EmbeddedImageScanComponent{},
+		},
+	}
+	s.Require().NoError(imageV2Store.UpsertImage(ctx, zeroCveImage))
+	actualZeroCve, found, err := imageV2Store.GetImage(ctx, zeroCveImage.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal(int32(0), actualZeroCve.GetScanStats().GetCveCount())
+
+	noFilterQuery := search.EmptyQuery()
+	filteredQuery := search.NewQueryBuilder().AddStrings(search.ImageCVECount, ">0").ProtoQuery()
+
+	noFilterCount, err := s.cveView.Count(ctx, noFilterQuery)
+	s.Require().NoError(err)
+	filteredCount, err := s.cveView.Count(ctx, filteredQuery)
+	s.Require().NoError(err)
+
+	s.T().Logf("ImageCVEView.Count() with no filter: %d; with 'Image CVE Count > 0': %d", noFilterCount, filteredCount)
+
+	s.Equal(noFilterCount, filteredCount,
+		"expected 'Image CVE Count > 0' to be a no-op on the CVE count")
+
+	noFilterResults, err := s.cveView.Get(ctx, noFilterQuery, views.ReadOptions{})
+	s.Require().NoError(err)
+	filteredResults, err := s.cveView.Get(ctx, filteredQuery, views.ReadOptions{})
+	s.Require().NoError(err)
+
+	getCVESet := func(results []CveCore) []string {
+		ids := make([]string, 0, len(results))
+		for _, r := range results {
+			ids = append(ids, r.GetCVE())
+		}
+		slices.Sort(ids)
+		return ids
+	}
+
+	s.Equal(getCVESet(noFilterResults), getCVESet(filteredResults),
+		"expected the exact same set of CVEs to be returned with and without the 'Image CVE Count > 0' filter")
 }
 
 func TestImageCVEUnknownSeverity(t *testing.T) {

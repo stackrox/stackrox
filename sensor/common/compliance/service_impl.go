@@ -72,7 +72,7 @@ func (s *serviceImpl) Start() error {
 
 func (s *serviceImpl) Stop() {
 	concurrency.WithLock(&s.stopperLock, func() {
-		for _, stopper := range s.stopper.AsSlice() {
+		for stopper := range s.stopper {
 			stopper.Client().Stop()
 			_ = stopper.Client().Stopped().Wait()
 		}

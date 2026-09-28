@@ -212,6 +212,10 @@ describe('Violations', () => {
     });
 
     it('should sort the Severity column', () => {
+        // Freeze clock so the 5s poll in ViolationsTablePage doesn't race
+        // with waiting for violations responses.
+        cy.clock(Date.now(), ['setInterval']);
+
         interactAndWaitForViolationsResponses(() => {
             visitViolations();
         });

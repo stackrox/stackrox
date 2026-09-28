@@ -85,7 +85,7 @@ func (s *nodeDatastoreSACSuite) initTestResourceSet() {
 	const numberOfNodes = 3
 	for _, clusterID := range clusters {
 		s.testNodeIDs[clusterID] = make([]string, 0, numberOfNodes)
-		for i := 0; i < numberOfNodes; i++ {
+		for range numberOfNodes {
 			s.addTestNode(clusterID)
 		}
 	}
@@ -514,7 +514,7 @@ func (s *nodeDatastoreSACSuite) TestDeleteNodesMulti() {
 
 			targetClusterID := testconsts.Cluster2
 			var delNodeIDs []string
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				testNodeID := s.addTestNode(targetClusterID)
 
 				delNodeIDs = append(delNodeIDs, testNodeID)

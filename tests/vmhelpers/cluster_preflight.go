@@ -94,7 +94,7 @@ func nodeKVMCapacityString(node coreV1.Node) string {
 func InspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (ClusterKVMPreflightResult, error) {
 	nodeList, err := k8s.CoreV1().Nodes().List(ctx, metaV1.ListOptions{})
 	if err != nil {
-		return ClusterKVMPreflightResult{}, err
+		return ClusterKVMPreflightResult{}, fmt.Errorf("list nodes: %w", err)
 	}
 
 	result := ClusterKVMPreflightResult{
@@ -192,7 +192,8 @@ func VirtHandlerHostVsockVolumesLookUsable(ctx context.Context, t testing.TB, k8
 		}
 		for i := range pods.Items {
 			pod := &pods.Items[i]
-			phaseReady := pod.Status.Phase == coreV1.PodRunning || pod.Status.Phase == coreV1.PodPending
+			// Waiting for PodRunning, as PodPending pods may declare hostPath volumes that aren't mounted yet.
+			phaseReady := pod.Status.Phase == coreV1.PodRunning
 			if !phaseReady {
 				fmt.Fprintf(&diag, "namespace %q pod %q: phase=%q\n", ns, pod.Name, pod.Status.Phase)
 			}

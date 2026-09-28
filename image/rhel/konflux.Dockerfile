@@ -1,9 +1,9 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:75c5b9c2c910487007d4de42e86aae41d49751e6c7bcae7777c8bf630c31a3d8 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:e74b03198cccc24c24a27071ad4d6c2edcfe0bb10c6de99c609ce6e3c06d6d04 AS go-builder
 
-RUN dnf -y install --allowerasing jq
+RUN dnf -y install --allowerasing jq pigz
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -36,8 +36,15 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 
 RUN make copy-go-binaries-to-image-dir
 
+RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
+    shopt -s nullglob && \
+    for f in roxctl-*; do \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
+    done
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:926a8c473623a7f9896b7fd19e3e341805e9a706eaacc8bf77da27ad2c0e3bc4 as ui-builder
+
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:bb046ef111dd20f890fe9879a37df8e829ed661177fae2339ba7eeb495f46c60 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,9 +66,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:35de56a9413112f1474e392ebc35e0cf6f0fb484c8e8877bbae59b513694b41f AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:7a0454cbd9bd847e8f6a63b6f0254a6efbeb6e0ed71a5d824a4f6cccbe626650 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8bf0e8f20737e9c8a68c8a498299e9504ab397b1b1f2837acb2fef12ec698f0e AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:a4b9ec09b1e790a53ef25b7777c539976abe519248264298e5194dcbceac8c31 AS package_installer
 
 ARG PG_VERSION
 
@@ -103,11 +110,11 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central-worker /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
 RUN GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
+    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl
 
 ARG BUILD_TAG
 

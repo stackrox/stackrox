@@ -13,10 +13,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -107,6 +110,21 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// the database before writing. This is safe because NodeInventory and Node
 		// pipelines never run concurrently by the Sensor Event worker queues.
 		node.Scan = nil
+		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
+			log.Error(err)
+			return err
+		}
+		return nil
+	}
+
+	// If the node does NOT support v4 Node Scanning, AND the legacy scanner is not enabled,
+	// then we set the scan to unsupported and skip enrichment.
+	if !features.LegacyScanner.Enabled() {
+		node.Scan = &storage.NodeScan{
+			ScanTime: protocompat.TimestampNow(),
+			Notes:    []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED},
+		}
 		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
 			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)

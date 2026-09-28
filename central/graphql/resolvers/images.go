@@ -73,6 +73,8 @@ type ImageResolver interface {
 	SignatureCount(ctx context.Context) (int32, error)
 }
 
+var _ ImageResolver = (*imageResolver)(nil)
+
 var (
 	imageWatchStatuses []string
 
@@ -283,7 +285,7 @@ func (resolver *imageResolver) ImageComponents(ctx context.Context, args Paginat
 		log.Error(err)
 		return nil, err
 	}
-	return imgResolver, err
+	return imgResolver, nil
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {

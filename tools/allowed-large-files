@@ -16,6 +16,7 @@ central/image/service/service_impl.go
 central/networkgraph/service/service_impl_test.go
 central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
+central/pruning/pruning.go
 central/pruning/pruning_test.go
 central/reports/service/v2/service_impl_test.go
 central/sensor/service/connection/sensor-central-data-flow.excalidraw.svg
@@ -32,6 +33,8 @@ operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
+operator/internal/central/values/translation/translation_test.go
+operator/internal/securedcluster/values/translation/translation_test.go
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_builtin_test.go
 pkg/booleanpolicy/runtime_criteria_test.go
@@ -73,6 +76,7 @@ scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
+sensor/common/virtualmachine/vmscraper/scraper_test.go
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/common.go

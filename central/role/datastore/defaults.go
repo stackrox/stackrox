@@ -143,7 +143,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 
 func getDefaultRoles() []*storage.Role {
 	roles := make([]*storage.Role, 0, len(defaultPermissionSets))
-	for _, roleName := range accesscontrol.DefaultRoleNames.AsSlice() {
+	for roleName := range accesscontrol.DefaultRoleNames {
 		attributes, found := defaultPermissionSets[roleName]
 		if !found {
 			utils.Should(errors.Errorf("Default role %s does not have permission set defined", roleName))

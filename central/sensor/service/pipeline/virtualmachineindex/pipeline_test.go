@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -158,8 +159,25 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 }
 
 func (suite *PipelineTestSuite) TestCapabilities() {
-	capabilities := suite.pipeline.Capabilities()
-	suite.Contains(capabilities, centralsensor.CentralCapability(centralsensor.VirtualMachinesSupported))
+	cases := map[string]struct {
+		enabled bool
+		want    []centralsensor.CentralCapability
+	}{
+		"flag on advertises VirtualMachinesSupported": {
+			enabled: true,
+			want:    []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported},
+		},
+		"flag off advertises nothing": {
+			enabled: false,
+			want:    nil,
+		},
+	}
+	for name, tc := range cases {
+		suite.Run(name, func() {
+			suite.T().Setenv(features.VirtualMachines.EnvVar(), strconv.FormatBool(tc.enabled))
+			suite.Equal(tc.want, suite.pipeline.Capabilities())
+		})
+	}
 }
 
 func (suite *PipelineTestSuite) TestOnFinish() {
@@ -421,7 +439,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKWithVMIDAndVsockCIDResourceID() 
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_ACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for relay correlation")
+	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for VMID:CID resource ID correlation")
 	suite.Empty(ack.GetReason())
 }
 
@@ -873,9 +891,21 @@ func TestLookupGuestOS(t *testing.T) {
 		},
 		"v2 guest OS populates scan": {
 			v2Enabled: true,
-			v2VM:      &storage.VirtualMachineV2{GuestOs: "Red Hat Enterprise Linux 9"},
-			v2Found:   true,
-			wantOS:    "Red Hat Enterprise Linux 9",
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: "Red Hat Enterprise Linux 9",
+				Facts:   map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux 9"},
+			},
+			v2Found: true,
+			wantOS:  "Red Hat Enterprise Linux 9",
+		},
+		"v2 stamps scan from informer fact not display column": {
+			v2Enabled: true,
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: "Red Hat Enterprise Linux 9.2",
+				Facts:   map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux"},
+			},
+			v2Found: true,
+			wantOS:  "Red Hat Enterprise Linux",
 		},
 		"v1 VM not found leaves scan OS empty": {
 			v1Found: false,
@@ -895,9 +925,12 @@ func TestLookupGuestOS(t *testing.T) {
 		},
 		"v2 unknown guest OS leaves scan OS empty": {
 			v2Enabled: true,
-			v2VM:      &storage.VirtualMachineV2{GuestOs: pkgVM.UnknownGuestOS},
-			v2Found:   true,
-			wantOS:    "",
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: pkgVM.UnknownGuestOS,
+				Facts:   map[string]string{pkgVM.GuestOSKey: pkgVM.UnknownGuestOS},
+			},
+			v2Found: true,
+			wantOS:  "",
 		},
 		"v1 store error leaves scan OS empty": {
 			v1Err:  errors.New("db error"),

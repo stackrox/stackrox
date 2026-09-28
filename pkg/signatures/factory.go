@@ -27,7 +27,8 @@ type SignatureVerifier interface {
 
 // SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
 type SignatureFetcher interface {
-	FetchSignatures(ctx context.Context, image *storage.Image, fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
+	FetchSignatures(ctx context.Context, image *storage.Image, fullImageName string,
+		registry registryTypes.Registry, retryOpts ...retry.OptionsModifier) ([]*storage.Signature, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
@@ -121,20 +122,14 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 		return nil, nil
 	}
 
-	var fetchedSignatures []*storage.Signature
-	var err error
-	err = retry.WithRetry(func() error {
-		sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-		fetchedSignatures, err = fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
-		return err
-	},
+	retryOpts := []retry.OptionsModifier{
 		retry.WithContext(ctx),
 		retry.Tries(5),
 		retry.OnlyRetryableErrors(),
 		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(500 * time.Millisecond)
-		}))
+		}),
+	}
 
-	return fetchedSignatures, err
+	return fetcher.FetchSignatures(ctx, image, fullImageName, registry, retryOpts...)
 }

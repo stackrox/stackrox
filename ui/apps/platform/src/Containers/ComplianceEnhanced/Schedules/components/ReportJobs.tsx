@@ -31,7 +31,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import ReportJobStatusFilter, {
-    ensureReportJobStatuses,
+    isReportJobStatus,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import type { ReportJobStatus } from 'Components/ReportJob/types';
@@ -45,7 +45,7 @@ function getConfigName(snapshot: ComplianceReportSnapshot) {
     return snapshot.name;
 }
 
-function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
+function createQueryFromReportJobStatusFilters(reportJobStatuses: ReportJobStatus[]) {
     const query: Record<string, string[]> = {
         'Compliance Report State': [],
         'Compliance Report Notification Method': [],
@@ -69,8 +69,6 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
             value: 'PARTIAL_SCAN_ERROR_EMAIL',
         },
     };
-
-    const reportJobStatuses = ensureReportJobStatuses(jobStatusFilters);
 
     reportJobStatuses.forEach((jobStatus) => {
         const queryMapping = jobStatusQueryMappings[jobStatus];
@@ -103,7 +101,9 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
         'true',
     ]);
 
-    const reportJobStatusFilters = ensureStringArray(searchFilter['Compliance Report Job Status']);
+    const reportJobStatusFilters = ensureStringArray(
+        searchFilter['Compliance Report Job Status']
+    ).filter(isReportJobStatus);
 
     const query = getRequestQueryStringForSearchFilter({
         ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
@@ -151,10 +151,8 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
     const onReportJobStatusFilterChange = (_checked: boolean, selectedStatus: ReportJobStatus) => {
         const isStatusIncluded = reportJobStatusFilters.includes(selectedStatus);
         const newFilters = isStatusIncluded
-            ? ensureReportJobStatuses(
-                  reportJobStatusFilters.filter((status) => status !== selectedStatus)
-              )
-            : ensureReportJobStatuses([...reportJobStatusFilters, selectedStatus]);
+            ? reportJobStatusFilters.filter((status) => status !== selectedStatus)
+            : [...reportJobStatusFilters, selectedStatus];
         analyticsTrack({
             event: 'Compliance Report Job Status Filtered',
             properties: {
@@ -197,7 +195,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                                 'PARTIAL_SCAN_ERROR_EMAIL',
                                 'ERROR',
                             ]}
-                            selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}
+                            selectedStatuses={reportJobStatusFilters}
                             onChange={onReportJobStatusFilterChange}
                         />
                     </ToolbarItem>

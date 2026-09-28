@@ -150,7 +150,7 @@ func AssertionMatcher(assertFn interface{}, args ...interface{}) gomock.Matcher 
 }
 
 func (m *assertionMatcher) String() string {
-	var argStrings []string
+	argStrings := make([]string, 0, len(m.staticArgs))
 	for _, argVal := range m.staticArgs {
 		argStrings = append(argStrings, fmt.Sprintf("%s", argVal.Interface()))
 	}

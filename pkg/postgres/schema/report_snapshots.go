@@ -55,6 +55,7 @@ type ReportSnapshots struct {
 	ReportID                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
 	ReportConfigurationID                string                                  `gorm:"column:reportconfigurationid;type:varchar"`
 	Name                                 string                                  `gorm:"column:name;type:varchar"`
+	Type                                 storage.ReportSnapshot_ReportType       `gorm:"column:type;type:integer"`
 	ReportStatusRunState                 storage.ReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
 	ReportStatusQueuedAt                 *time.Time                              `gorm:"column:reportstatus_queuedat;type:timestamp"`
 	ReportStatusCompletedAt              *time.Time                              `gorm:"column:reportstatus_completedat;type:timestamp"`

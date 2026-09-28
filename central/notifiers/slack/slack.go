@@ -116,7 +116,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 				opString = " AND "
 			}
 
-			var valueStrings []string
+			valueStrings := make([]string, 0, len(values))
 			for _, value := range values {
 				codeString := fmt.Sprintf("`%s`", value.GetValue())
 				valueStrings = append(valueStrings, codeString)

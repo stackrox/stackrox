@@ -21,6 +21,9 @@ func TestNodeVulnConv(t *testing.T) {
 	nodeVuln.CveBaseInfo.References = nil
 	nodeVuln.CveBaseInfo.CvssMetrics = nil
 	nodeVuln.CveBaseInfo.Epss = nil
+	nodeVuln.CveBaseInfo.Exploit = nil
+	nodeVuln.CveBaseInfo.CisaKev = false
+	nodeVuln.CveBaseInfo.KnownRansomwareCampaign = false
 	embedvuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
 	protoassert.Equal(t, nodeVuln, embedvuln)
 }

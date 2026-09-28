@@ -8,7 +8,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterStatusCard from './ClusterStatusCard';
 import CredentialExpirationCard from './CredentialExpirationCard';
-import SensorUpgradeCard from './SensorUpgradeCard';
+import SensorCompatibilityCard from './SensorCompatibilityCard';
 
 type ClustersHealthCardsProps = {
     pollingCount: number;
@@ -54,7 +54,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                 />
             </GridItem>
             <GridItem span={12}>
-                <SensorUpgradeCard
+                <SensorCompatibilityCard
                     clusters={clusters}
                     isFetchingInitialRequest={isFetchingInitialRequest}
                     errorMessageFetching={errorMessageFetching}

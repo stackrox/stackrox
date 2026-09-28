@@ -71,6 +71,7 @@ var (
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
 			v1.ImageService_ScanImageInternal_FullMethodName,
+			v1.ImageService_ScanImageInternalForAdmission_FullMethodName,
 		},
 		idcheck.SensorsOnly(): {
 			v1.ImageService_GetImageVulnerabilitiesInternal_FullMethodName,
@@ -302,8 +303,24 @@ func (s *serviceImpl) saveImageV2(img *storage.ImageV2) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	return s.scanImageInternalWithOpt(ctx, request, enricher.ForceRefetch)
+}
+
+// ScanImageInternalForAdmission handles admission-controller image requests.
+// For tag-only images it refreshes registry metadata but reuses an existing
+// scan from Central's DB when the resolved digest is already known, avoiding
+// a redundant Scanner round-trip. For digest-based images it behaves
+// identically to ScanImageInternal.
+func (s *serviceImpl) ScanImageInternalForAdmission(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	return s.scanImageInternalWithOpt(ctx, request, enricher.ForceRefetchMetadataOnly)
+}
+
+// scanImageInternalWithOpt is the shared implementation for ScanImageInternal
+// and ScanImageInternalForAdmission. tagOnlyFetchOpt controls the enricher
+// FetchOption used when the request has no digest (tag-only image).
+func (s *serviceImpl) scanImageInternalWithOpt(ctx context.Context, request *v1.ScanImageInternalRequest, tagOnlyFetchOpt enricher.FetchOption) (*v1.ScanImageInternalResponse, error) {
 	if features.FlattenImageData.Enabled() {
-		return s.scanImageV2Internal(ctx, request)
+		return s.scanImageV2InternalWithOpt(ctx, request, tagOnlyFetchOpt)
 	}
 
 	if err := s.acquireScanSemaphore(ctx); err != nil {
@@ -380,8 +397,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		fetchOpt = enricher.UseCachesIfPossible
 		if request.GetCachedOnly() {
 			fetchOpt = enricher.NoExternalMetadata
-		} else if imgID == "" { // If no ID, then don't use caches as they could return stale data.
-			fetchOpt = enricher.ForceRefetch
+		} else if imgID == "" {
+			fetchOpt = tagOnlyFetchOpt
 		}
 		img = types.ToImage(request.GetImage())
 	}
@@ -400,7 +417,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	return internalScanRespFromImage(img), nil
 }
 
-func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+func (s *serviceImpl) scanImageV2InternalWithOpt(ctx context.Context, request *v1.ScanImageInternalRequest, tagOnlyFetchOpt enricher.FetchOption) (*v1.ScanImageInternalResponse, error) {
 	imgID := request.GetImage().GetIdV2()
 	if imgID == "" {
 		imgID = utils.NewImageV2ID(request.GetImage().GetName(), request.GetImage().GetId())
@@ -465,8 +482,8 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		fetchOpt = enricher.UseCachesIfPossible
 		if request.GetCachedOnly() {
 			fetchOpt = enricher.NoExternalMetadata
-		} else if imgID == "" { // If no ID, then don't use caches as they could return stale data.
-			fetchOpt = enricher.ForceRefetch
+		} else if imgID == "" {
+			fetchOpt = tagOnlyFetchOpt
 		}
 		imgV2 = types.ToImageV2(request.GetImage())
 		if imgV2.GetId() == "" {

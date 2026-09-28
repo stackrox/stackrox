@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
+import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
@@ -30,6 +31,7 @@ const entityMenuTypes = [
 
 const VulnMgmtDashboardPage = () => {
     const navigate = useNavigate();
+    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
@@ -118,9 +120,11 @@ const VulnMgmtDashboardPage = () => {
                 <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                     <MostCommonVulnerabilities search={searchState} />
                 </div>
-                <div className="s-2 xxxl:sx-2">
-                    <ClustersWithMostClusterVulnerabilities />
-                </div>
+                {isLegacyScannerEnabled && (
+                    <div className="s-2 xxxl:sx-2">
+                        <ClustersWithMostClusterVulnerabilities />
+                    </div>
+                )}
             </DashboardLayout>
         </>
     );

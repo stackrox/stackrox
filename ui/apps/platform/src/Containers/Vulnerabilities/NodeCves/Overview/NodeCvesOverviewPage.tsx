@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     DropdownItem,
@@ -10,6 +11,12 @@ import {
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
+import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -25,28 +32,29 @@ import useAnalytics, {
     NODE_CVE_ENTITY_CONTEXT_VIEWED,
     NODE_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
+import { runNodeViewBasedReport } from 'services/NodeReportsService';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+import { vulnerabilityNodeViewBasedJobsPath } from 'routePaths';
 
 import {
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    nodeSearchFilterConfig,
+    attributeForSnoozed,
+    searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport,
 } from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
-import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
+import { createScheduledReportForNodeVulnerabilitiesURL } from '../../Reports/NodeVulnerabilityReports/nodeVulnerabilityReports.utils';
 import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import { parseQuerySearchFilter } from '../../utils/searchUtils';
+import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 
+import CreateReportDropdown from '../components/CreateReportDropdown';
 import CVEsTable, {
     defaultSortOption as cveDefaultSortOption,
     sortFields as cveSortFields,
@@ -57,20 +65,15 @@ import NodesTable, {
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
-const searchFilterConfig = [
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-];
-
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const scannerV4NodeScanResultsPossible =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
+    const showScannerV4NodeScannerInfoAlert =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED') &&
+        isFeatureFlagEnabled('ROX_LEGACY_SCANNER');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -82,15 +85,23 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    // Default to Observed tab in UI and corresponding search filter in API when unspecified.
+    const querySearchFilter = parseQuerySearchFilter({
+        [attributeForSnoozed.searchTerm]: attributeForSnoozed.inputProps.options[0].value,
+        ...searchFilter,
+    });
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
-    const snoozedCveCount = useSnoozedCveCount('Node');
     const { version } = useMetadata();
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+    const navigate = useNavigate();
+
+    // Unlike WorkloadCves pages, 'CVE Snoozed' is in search filter of NodeCves page.
+    const viewBasedQueryString = getRegexScopedQueryString(querySearchFilter);
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -119,12 +130,23 @@ function NodeCvesOverviewPage() {
         pagination.setPage(1);
     }
 
+    function onSelectSnoozedTab(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
+        pagination.setPage(1);
+    }
+
     const { data } = useNodeCveEntityCounts(querySearchFilter);
 
     const entityCounts = {
         CVE: data?.nodeCVECount ?? 0,
         Node: data?.nodeCount ?? 0,
     };
+
+    // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport
+    );
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
@@ -136,7 +158,16 @@ function NodeCvesOverviewPage() {
                 pagination.setPage(1);
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
-        />
+        >
+            <CreateReportDropdown
+                onSelectExportReportAsCSV={() => {
+                    setIsCreateViewBasedReportModalOpen(true);
+                }}
+                onSelectCreateScheduledReport={() => {
+                    navigate(createScheduledReportForNodeVulnerabilitiesURL(querySearchFilter));
+                }}
+            />
+        </AdvancedFiltersToolbar>
     );
 
     const entityToggleGroup = (
@@ -175,16 +206,9 @@ function NodeCvesOverviewPage() {
                         <Title headingLevel="h1">Node CVEs</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
-                    <FlexItem>
-                        <SnoozedCveToggleButton
-                            searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
-                            snoozedCveCount={snoozedCveCount}
-                        />
-                    </FlexItem>
                 </Flex>
             </PageSection>
-            {scannerV4NodeScanResultsPossible && (
+            {showScannerV4NodeScannerInfoAlert && (
                 <PageSection>
                     <Alert
                         isInline
@@ -208,7 +232,15 @@ function NodeCvesOverviewPage() {
                     </Alert>
                 </PageSection>
             )}
-            <PageSection isCenterAligned>
+            <PageSection type="tabs">
+                <SelectExclusiveSingleTabs
+                    attribute={attributeForSnoozed}
+                    onSelectTab={onSelectSnoozedTab}
+                    searchFilter={searchFilter}
+                    tabContentId="node-cves"
+                />
+            </PageSection>
+            <PageSection id="node-cves" isCenterAligned>
                 <TableEntityToolbar
                     filterToolbar={filterToolbar}
                     entityToggleGroup={entityToggleGroup}
@@ -267,6 +299,14 @@ function NodeCvesOverviewPage() {
                     />
                 )}
             </PageSection>
+            <CreateViewBasedReportModal
+                isOpen={isCreateViewBasedReportModalOpen}
+                setIsOpen={setIsCreateViewBasedReportModalOpen}
+                query={viewBasedQueryString}
+                areaOfConcern="Nodes"
+                runViewBasedReport={runNodeViewBasedReport}
+                vulnerabilityViewBasedJobsPath={vulnerabilityNodeViewBasedJobsPath}
+            />
         </>
     );
 }

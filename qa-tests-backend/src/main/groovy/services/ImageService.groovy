@@ -10,6 +10,7 @@ import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegrationCategory
 import io.stackrox.proto.storage.ImageOuterClass
 
 @Slf4j
@@ -51,6 +52,17 @@ class ImageService extends BaseService {
     static ImageOuterClass.Image scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
         return evaluateWithRetry(10, 15) {
             return scanImageNoRetry(image, includeSnoozed, force)
+        }
+    }
+
+    static void waitForScannerIntegration(int retries = 60, int intervalSeconds = 10) {
+        log.info "Waiting for a scanner integration to become available"
+        evaluateWithRetry(retries, intervalSeconds) {
+            def scanners = ImageIntegrationService.getImageIntegrations().findAll {
+                it.categoriesList.contains(ImageIntegrationCategory.SCANNER)
+            }
+            assert !scanners.isEmpty() : "No scanner integrations available yet"
+            log.info "Scanner integration available: ${scanners.first().name}"
         }
     }
 

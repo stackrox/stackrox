@@ -210,6 +210,23 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(newImage.GetId(), results[0].ID)
+
+	// Search by Dockerfile Instruction Keyword (from child table images_layers).
+	q = pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.DockerfileInstructionKeyword, "RUN").ProtoQuery()
+	results, err = s.datastore.Search(ctx, q)
+	s.NoError(err)
+	s.Len(results, 2)
+
+	// Count by Dockerfile Instruction Keyword.
+	count, err := s.datastore.Count(ctx, q)
+	s.NoError(err)
+	s.Equal(2, count)
+
+	// Search by Dockerfile Instruction Value.
+	q = pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.DockerfileInstructionValue, "apt-get").ProtoQuery()
+	results, err = s.datastore.Search(ctx, q)
+	s.NoError(err)
+	s.Len(results, 2)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TestFixableWithPostgres() {
@@ -955,6 +972,14 @@ func getTestImage(id string) *storage.Image {
 							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 					},
+				},
+			},
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "ADD", Value: "file:abc123 in /"},
+					{Instruction: "RUN", Value: "apt-get update && apt-get install -y curl"},
 				},
 			},
 		},

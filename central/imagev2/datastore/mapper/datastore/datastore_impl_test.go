@@ -50,7 +50,7 @@ func TestGetImage_MergesAllNamesWhenMultipleV2ImagesShareDigest(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found)
 
-	var fullNames []string
+	fullNames := make([]string, 0, len(result.GetNames()))
 	for _, n := range result.GetNames() {
 		fullNames = append(fullNames, n.GetFullName())
 	}

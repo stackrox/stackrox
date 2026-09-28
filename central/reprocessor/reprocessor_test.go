@@ -26,93 +26,84 @@ import (
 )
 
 func TestImagesWithSignaturesQuery(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
-
 	testCtx := sac.WithAllAccess(context.Background())
 
 	testingDB := pgtest.ForT(t)
 	pool := testingDB.DB
 	defer pool.Close()
 
-	imageDS := imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
-
-	imgWithSignature := fixtures.GetImage()
-	imgWithoutSignature := fixtures.GetImageWithUniqueComponents(10)
-
 	oneHourAgo := time.Now().Add(-1 * time.Hour)
 	oneMinuteAgo := time.Now().Add(-1 * time.Minute)
+
 	const imgWithSignatureID = "sha256:image-with-signature"
 	const imgWithoutSignatureID = "sha256:image-without-signature"
 
-	imgWithSignature.Id = imgWithSignatureID
-	imgWithSignature.Signature = &storage.ImageSignature{
-		Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo),
-	}
-	imgWithoutSignature.Id = imgWithoutSignatureID
+	t.Run("V1", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithoutSignature))
+		imageDS := imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 
-	results, err := imageDS.Search(testCtx, imagesWithSignaturesQuery)
-	assert.NoError(t, err)
+		imgWithSignature := fixtures.GetImage()
+		imgWithoutSignature := fixtures.GetImageWithUniqueComponents(10)
 
-	require.Len(t, results, 1)
-	assert.Equal(t, results[0].ID, imgWithSignatureID)
+		imgWithSignature.Id = imgWithSignatureID
+		imgWithSignature.Signature = &storage.ImageSignature{
+			Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo),
+		}
+		imgWithoutSignature.Id = imgWithoutSignatureID
 
-	imgWithSignature.Signature = &storage.ImageSignature{
-		Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneMinuteAgo),
-	}
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithoutSignature))
 
-	results, err = imageDS.Search(testCtx, imagesWithSignaturesQuery)
-	assert.NoError(t, err)
+		results, err := imageDS.Search(testCtx, imagesWithSignaturesQuery)
+		assert.NoError(t, err)
+		require.Len(t, results, 1)
+		assert.Equal(t, results[0].ID, imgWithSignatureID)
 
-	require.Len(t, results, 1)
-	assert.Equal(t, results[0].ID, imgWithSignatureID)
-}
+		imgWithSignature.Signature = &storage.ImageSignature{
+			Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneMinuteAgo),
+		}
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
 
-func TestImagesWithSignaturesQueryV2(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+		results, err = imageDS.Search(testCtx, imagesWithSignaturesQuery)
+		assert.NoError(t, err)
+		require.Len(t, results, 1)
+		assert.Equal(t, results[0].ID, imgWithSignatureID)
+	})
 
-	testCtx := sac.WithAllAccess(context.Background())
+	t.Run("V2", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 
-	testingDB := pgtest.ForT(t)
-	pool := testingDB.DB
-	defer pool.Close()
+		imageDS := imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 
-	imageDS := imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+		imgWithSignature := fixtures.GetImageV2()
+		imgWithoutSignature := fixtures.GetImageV2WithUniqueComponents(10)
 
-	imgWithSignature := fixtures.GetImageV2()
-	imgWithoutSignature := fixtures.GetImageV2WithUniqueComponents(10)
+		imgWithSignatureID := utils.NewImageV2ID(imgWithSignature.GetName(), imgWithSignatureID)
+		imgWithoutSignatureID := utils.NewImageV2ID(imgWithoutSignature.GetName(), imgWithoutSignatureID)
 
-	oneHourAgo := time.Now().Add(-1 * time.Hour)
-	oneMinuteAgo := time.Now().Add(-1 * time.Minute)
-	imgWithSignatureID := utils.NewImageV2ID(imgWithSignature.GetName(), "sha256:image-with-signature")
-	imgWithoutSignatureID := utils.NewImageV2ID(imgWithoutSignature.GetName(), "sha256:image-without-signature")
+		imgWithSignature.Id = imgWithSignatureID
+		imgWithSignature.Signature = &storage.ImageSignature{
+			Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo),
+		}
+		imgWithoutSignature.Id = imgWithoutSignatureID
 
-	imgWithSignature.Id = imgWithSignatureID
-	imgWithSignature.Signature = &storage.ImageSignature{
-		Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo),
-	}
-	imgWithoutSignature.Id = imgWithoutSignatureID
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithoutSignature))
 
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithoutSignature))
+		results, err := imageDS.Search(testCtx, imagesWithSignaturesQuery)
+		assert.NoError(t, err)
+		require.Len(t, results, 1)
+		assert.Equal(t, results[0].ID, imgWithSignatureID)
 
-	results, err := imageDS.Search(testCtx, imagesWithSignaturesQuery)
-	assert.NoError(t, err)
+		imgWithSignature.Signature = &storage.ImageSignature{
+			Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneMinuteAgo),
+		}
+		require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
 
-	require.Len(t, results, 1)
-	assert.Equal(t, results[0].ID, imgWithSignatureID)
-
-	imgWithSignature.Signature = &storage.ImageSignature{
-		Fetched: protocompat.ConvertTimeToTimestampOrNil(&oneMinuteAgo),
-	}
-	require.NoError(t, imageDS.UpsertImage(testCtx, imgWithSignature))
-
-	results, err = imageDS.Search(testCtx, imagesWithSignaturesQuery)
-	assert.NoError(t, err)
-
-	require.Len(t, results, 1)
-	assert.Equal(t, results[0].ID, imgWithSignatureID)
+		results, err = imageDS.Search(testCtx, imagesWithSignaturesQuery)
+		assert.NoError(t, err)
+		require.Len(t, results, 1)
+		assert.Equal(t, results[0].ID, imgWithSignatureID)
+	})
 }

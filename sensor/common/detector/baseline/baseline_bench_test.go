@@ -92,7 +92,7 @@ func createDuplicateBaselines(baselineCount, processCount int) []*storage.Proces
 
 	// Create identical process elements that will be duplicated
 	elements := make([]*storage.BaselineElement, processCount)
-	for i := 0; i < processCount; i++ {
+	for i := range processCount {
 		elements[i] = &storage.BaselineElement{
 			Element: &storage.BaselineItem{
 				Item: &storage.BaselineItem_ProcessName{
@@ -103,7 +103,7 @@ func createDuplicateBaselines(baselineCount, processCount int) []*storage.Proces
 	}
 
 	// Create many baselines with the same process set
-	for i := 0; i < baselineCount; i++ {
+	for i := range baselineCount {
 		baselines[i] = &storage.ProcessBaseline{
 			Id: fmt.Sprintf("duplicate-baseline-%d", i),
 			Key: &storage.ProcessBaselineKey{
@@ -123,7 +123,7 @@ func createK8sRealisticBaselines(totalContainers int, processesPerContainer int,
 	baselines := make([]*storage.ProcessBaseline, totalContainers)
 	containersPerImageType := totalContainers / uniqueImageTypes
 
-	for i := 0; i < totalContainers; i++ {
+	for i := range totalContainers {
 		// Determine which "image type" this container represents
 		imageTypeID := i / containersPerImageType
 		if imageTypeID >= uniqueImageTypes {
@@ -132,7 +132,7 @@ func createK8sRealisticBaselines(totalContainers int, processesPerContainer int,
 
 		// Create baseline elements based on image type
 		elements := make([]*storage.BaselineElement, processesPerContainer)
-		for j := 0; j < processesPerContainer; j++ {
+		for j := range processesPerContainer {
 			elements[j] = &storage.BaselineElement{
 				Element: &storage.BaselineItem{
 					Item: &storage.BaselineItem_ProcessName{
@@ -160,13 +160,13 @@ func createK8sRealisticBaselines(totalContainers int, processesPerContainer int,
 func createUniqueBaselines(baselineCount, processCount int) []*storage.ProcessBaseline {
 	baselines := make([]*storage.ProcessBaseline, baselineCount)
 
-	for i := 0; i < baselineCount; i++ {
+	for i := range baselineCount {
 		deploymentID := fmt.Sprintf("deployment-%d", i/10) // 10 containers per deployment
 		containerName := fmt.Sprintf("container-%d", i%10)
 
 		// Create completely unique process names that include deployment and container info
 		elements := make([]*storage.BaselineElement, processCount)
-		for j := 0; j < processCount; j++ {
+		for j := range processCount {
 			elements[j] = &storage.BaselineElement{
 				Element: &storage.BaselineItem{
 					Item: &storage.BaselineItem_ProcessName{

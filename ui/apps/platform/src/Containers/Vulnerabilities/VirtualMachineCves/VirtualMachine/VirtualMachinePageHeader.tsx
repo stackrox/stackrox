@@ -1,20 +1,20 @@
 import { Alert, Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 
-import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
-import type { VirtualMachine } from 'services/VirtualMachineService';
+import type { VMDetail } from 'services/VirtualMachineService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
+import { agentStatusDisplayMap, stateDisplayMap } from './virtualMachineUtils';
 
 export type VirtualMachinePageHeaderProps = {
-    virtualMachine: VirtualMachine | undefined;
+    virtualMachineDetail: VMDetail | undefined;
     isLoading: boolean;
     error: Error | undefined;
 };
 
 function VirtualMachinePageHeader({
-    virtualMachine,
+    virtualMachineDetail,
     isLoading,
     error,
 }: VirtualMachinePageHeaderProps) {
@@ -40,26 +40,26 @@ function VirtualMachinePageHeader({
         );
     }
 
-    if (!virtualMachine) {
+    if (!virtualMachineDetail) {
         return null;
     }
 
+    const { name, clusterName, namespace, state, agentStatus, latestScan, guestOs } =
+        virtualMachineDetail;
+
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                <Title headingLevel="h1">{virtualMachine.name}</Title>
-                <TechnologyPreviewLabel />
-            </Flex>
+            <Title headingLevel="h1">{name}</Title>
             <LabelGroup numLabels={5}>
                 <Label>
-                    In: {virtualMachine.clusterName}/{virtualMachine.namespace}
+                    In: {clusterName}/{namespace}
                 </Label>
-                {virtualMachine.scan?.scanTime && (
-                    <Label>Scan time: {getDateTime(virtualMachine.scan.scanTime)}</Label>
+                <Label>Status: {stateDisplayMap[state] ?? state}</Label>
+                <Label>Agent: {agentStatusDisplayMap[agentStatus] ?? agentStatus}</Label>
+                {latestScan?.scanTime && (
+                    <Label>Scan time: {getDateTime(latestScan.scanTime)}</Label>
                 )}
-                {virtualMachine?.facts?.guestOS && (
-                    <Label>Guest OS: {virtualMachine.facts.guestOS}</Label>
-                )}
+                {guestOs && <Label>Guest OS: {guestOs}</Label>}
             </LabelGroup>
         </Flex>
     );

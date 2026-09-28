@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/pointers"
 )
 
 const (
@@ -29,7 +28,7 @@ func GetNamespaceFilter(cluster *storage.Cluster) *string {
 	// Persistence filter has highest priority, since any other
 	// option is only its subset
 	if config.GetNoPersistence() {
-		return pointers.String(noPersistence)
+		return new(noPersistence)
 	}
 
 	filter := config.GetExcludeNamespaceFilter()
@@ -48,5 +47,5 @@ func GetNamespaceFilter(cluster *storage.Cluster) *string {
 		return nil
 	}
 
-	return pointers.String(filter)
+	return new(filter)
 }

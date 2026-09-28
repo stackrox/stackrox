@@ -46,6 +46,12 @@ spec:
                     operator: DoesNotExist
       {{- end}}
       serviceAccount: monitoring
+      # Docker Hub auth for grafana/prometheus (higher rate limits than anonymous).
+      # Kept on the Pod, not the ServiceAccount: on OpenShift the image-registry
+      # controller also writes SA imagePullSecrets, which conflicts with Helm
+      # server-side apply on upgrades.
+      imagePullSecrets:
+      - name: stackrox
       # The uid and gid are set to make `/var/prometheus` writable. See https://github.com/prometheus/prometheus/issues/5976.
       securityContext:
         runAsUser: 1000

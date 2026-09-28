@@ -85,6 +85,17 @@ function setup() {
     [ "$status" -eq 0 ]
 }
 
+@test "scanner restart during upgrade postgres bounce is OK" {
+    run "$CMD" "gke-upgrade-tests-central" "${TEST_FIXTURES}/upgrade-scanner-previous.log"
+    [ "$status" -eq 0 ]
+    [ "${lines[1]}" = "Ignoring this restart due to: scanner restart due to DB connection loss during postgres bounce in upgrade test" ]
+}
+
+@test "scanner restart during upgrade postgres bounce is NOT OK for non-upgrade jobs" {
+    run "$CMD" "gke-nongroovy-e2e-tests" "${TEST_FIXTURES}/upgrade-scanner-previous.log"
+    [ "$status" -eq 2 ]
+}
+
 teardown () {
     echo "$BATS_TEST_NAME
 --------

@@ -93,6 +93,10 @@ func (s *fakeDeploymentService) GetLabels(_ context.Context, _ *v1.Empty) (*v1.D
 	return nil, errox.NotImplemented
 }
 
+func (s *fakeDeploymentService) GetDeploymentRiskAISummary(_ context.Context, _ *v1.ResourceByID) (*v1.DeploymentRiskAISummaryResponse, error) {
+	return nil, errox.NotImplemented
+}
+
 // getDeploymentForSerializationTest returns a Mock Deployment for serialization testing purpose.
 func getDeploymentForSerializationTest() *storage.Deployment {
 	deployment := fixtures.LightweightDeployment()

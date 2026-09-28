@@ -13,7 +13,7 @@ import (
 func GetImageV2() *storage.ImageV2 {
 	numComponentsPerImage := 50
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
-	for i := 0; i < numComponentsPerImage; i++ {
+	for i := range numComponentsPerImage {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
@@ -26,7 +26,7 @@ func GetImageV2() *storage.ImageV2 {
 func GetImageV2withDulicateVulnerabilities() *storage.ImageV2 {
 	numComponentsPerImage := 50
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
-	for i := 0; i < numComponentsPerImage; i++ {
+	for i := range numComponentsPerImage {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
@@ -54,7 +54,7 @@ func GetImageV2withDulicateVulnerabilities() *storage.ImageV2 {
 // GetImageV2WithUniqueComponents returns a Mock Image where each component is unique
 func GetImageV2WithUniqueComponents(numComponents int) *storage.ImageV2 {
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    fmt.Sprintf("name-%d", i),
 			Version: fmt.Sprintf("%d.2.3.4", i),

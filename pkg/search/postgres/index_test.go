@@ -1388,7 +1388,7 @@ func (s *IndexSuite) TestMapHighlights() {
 
 func (s *IndexSuite) TestPagination() {
 	var testStructs []*storage.TestStruct
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		testStructs = append(testStructs, s.getStruct(i, func(s *storage.TestStruct) {
 			s.String_ = fmt.Sprintf("string-%d", i)
 			s.Int64 = int64(rand.Int31())

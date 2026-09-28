@@ -91,7 +91,7 @@ func (s *ViewBasedReportingTestSuite) SetupTest() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
 		s.watchedImageDatastore, nil, nil, s.blobStore, s.clusterDatastore,
-		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore, nil)
+		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore)
 }
 
 func (s *ViewBasedReportingTestSuite) TearDownTest() {
@@ -660,8 +660,8 @@ func (s *ViewBasedReportingTestSuite) collectViewBasedReportData(cveResponses []
 	deploymentNames := set.NewStringSet()
 	imageNames := set.NewStringSet()
 	componentNames := set.NewStringSet()
-	cveNames := make([]string, 0)
-	cvss := make([]float64, 0)
+	cveNames := make([]string, 0, len(cveResponses))
+	cvss := make([]float64, 0, len(cveResponses))
 
 	for _, res := range cveResponses {
 		if res.GetDeployment() != "" {

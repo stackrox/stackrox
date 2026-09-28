@@ -376,7 +376,7 @@ func (s *VirtualMachineV2DataStoreTestSuite) TestConcurrentUpsertVMAndUpsertScan
 	wg.Add(goroutines)
 	errs := make([]error, goroutines)
 
-	for i := 0; i < goroutines; i++ {
+	for i := range goroutines {
 		go func(idx int) {
 			defer wg.Done()
 			if idx%2 == 0 {
@@ -422,7 +422,7 @@ func (s *VirtualMachineV2DataStoreTestSuite) TestConcurrentUpsertScanAndDelete()
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
 
-	for i := 0; i < goroutines; i++ {
+	for i := range goroutines {
 		go func(idx int) {
 			defer wg.Done()
 			if idx%2 == 0 {

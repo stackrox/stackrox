@@ -8,9 +8,11 @@ import (
 
 	"github.com/stackrox/rox/central/imageintegration/store"
 	mockIIStore "github.com/stackrox/rox/central/imageintegration/store/mocks"
+	mockHealthDS "github.com/stackrox/rox/central/integrationhealth/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/openshift"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -154,5 +156,59 @@ func TestSetupScannerV4Integration(t *testing.T) {
 		s.EXPECT().Get(ctx, defID).Return(nil, true, nil)
 		s.EXPECT().PruneMany(ctx, []string{"ID-Other-ScannerV4"})
 		setupScannerV4Integration(ctx, s, iis)
+	})
+}
+
+func TestSetupLegacyScannerIntegration(t *testing.T) {
+	ctx := context.Background()
+
+	iis := []*storage.ImageIntegration{
+		{Id: "ID-ScannerV4", Type: scannerTypes.ScannerV4},
+		{Id: "ID-Clairify-1", Type: scannerTypes.Clairify},
+		{Id: "ID-Clairify-2", Type: scannerTypes.Clairify},
+	}
+
+	t.Run("do nothing when LegacyScanner is enabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.LegacyScanner, true)
+		ctrl := gomock.NewController(t)
+		s := mockIIStore.NewMockStore(ctrl)
+		h := mockHealthDS.NewMockDataStore(ctrl)
+
+		setupLegacyScannerIntegration(ctx, s, h, iis)
+	})
+
+	t.Run("do nothing if no Clairify integrations", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.LegacyScanner, false)
+		ctrl := gomock.NewController(t)
+		s := mockIIStore.NewMockStore(ctrl)
+		h := mockHealthDS.NewMockDataStore(ctrl)
+
+		setupLegacyScannerIntegration(ctx, s, h, iis[:1])
+	})
+
+	t.Run("delete Clairify integrations and health when feature disabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.LegacyScanner, false)
+		ctrl := gomock.NewController(t)
+		s := mockIIStore.NewMockStore(ctrl)
+		h := mockHealthDS.NewMockDataStore(ctrl)
+
+		s.EXPECT().PruneMany(ctx, []string{"ID-Clairify-1", "ID-Clairify-2"})
+		h.EXPECT().RemoveIntegrationHealth(ctx, "ID-Clairify-1").Return(nil)
+		h.EXPECT().RemoveIntegrationHealth(ctx, "ID-Clairify-2").Return(nil)
+
+		setupLegacyScannerIntegration(ctx, s, h, iis)
+	})
+
+	t.Run("ignore NotFound when health record does not exist", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.LegacyScanner, false)
+		ctrl := gomock.NewController(t)
+		s := mockIIStore.NewMockStore(ctrl)
+		h := mockHealthDS.NewMockDataStore(ctrl)
+
+		s.EXPECT().PruneMany(ctx, []string{"ID-Clairify-1", "ID-Clairify-2"})
+		h.EXPECT().RemoveIntegrationHealth(ctx, "ID-Clairify-1").Return(errox.NotFound.New("not found"))
+		h.EXPECT().RemoveIntegrationHealth(ctx, "ID-Clairify-2").Return(nil)
+
+		setupLegacyScannerIntegration(ctx, s, h, iis)
 	})
 }

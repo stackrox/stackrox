@@ -70,7 +70,7 @@ func receive(ctx context.Context, t *testing.T, start ValueStreamIter[int], num 
 	defer wg.Done()
 
 	it := start
-	for i := 0; i < num; i++ {
+	for range num {
 		var err error
 		it, err = it.Next(ctx)
 		if !assert.NoError(t, err) {
@@ -102,7 +102,7 @@ func TestValueStream_ParallelAsync(t *testing.T) {
 			if even {
 				ofs = 2
 			}
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				go vs.Push(2*i + ofs)
 			}
 		}(even)

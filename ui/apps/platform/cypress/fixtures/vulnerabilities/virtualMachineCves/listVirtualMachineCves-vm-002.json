@@ -1,0 +1,29 @@
+{
+    "cves": [
+        {
+            "cve": "CVE-2024-0004",
+            "severity": "LOW_VULNERABILITY_SEVERITY",
+            "isFixable": false,
+            "cvss": 4.0,
+            "nvdCvss": 4.0,
+            "epssProbability": 0.02,
+            "epssPercentile": 0.15,
+            "epss": {
+                "epssProbability": 0.02,
+                "epssPercentile": 0.15
+            },
+            "affectedComponentCount": 1,
+            "publishedOn": "2024-04-01T00:00:00.000Z",
+            "lastModified": "2024-04-15T00:00:00.000Z",
+            "firstSystemOccurrence": "2024-04-05T00:00:00.000Z",
+            "summary": "Low severity kernel vulnerability",
+            "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0004",
+            "cvssMetrics": [],
+            "advisory": {
+                "name": "",
+                "link": ""
+            }
+        }
+    ],
+    "totalCount": 1
+}

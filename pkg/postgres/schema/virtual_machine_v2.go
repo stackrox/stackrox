@@ -56,13 +56,14 @@ const (
 
 // VirtualMachineV2 holds the Gorm model for Postgres table `virtual_machine_v2`.
 type VirtualMachineV2 struct {
-	ID          string                         `gorm:"column:id;type:uuid;primaryKey"`
-	Name        string                         `gorm:"column:name;type:varchar"`
-	Namespace   string                         `gorm:"column:namespace;type:varchar"`
-	ClusterID   string                         `gorm:"column:clusterid;type:uuid"`
-	ClusterName string                         `gorm:"column:clustername;type:varchar"`
-	GuestOs     string                         `gorm:"column:guestos;type:varchar"`
-	State       storage.VirtualMachineV2_State `gorm:"column:state;type:integer"`
-	LastUpdated *time.Time                     `gorm:"column:lastupdated;type:timestamptz"`
-	Serialized  []byte                         `gorm:"column:serialized;type:bytea"`
+	ID               string                         `gorm:"column:id;type:uuid;primaryKey"`
+	Name             string                         `gorm:"column:name;type:varchar"`
+	Namespace        string                         `gorm:"column:namespace;type:varchar"`
+	ClusterID        string                         `gorm:"column:clusterid;type:uuid"`
+	ClusterName      string                         `gorm:"column:clustername;type:varchar"`
+	GuestOs          string                         `gorm:"column:guestos;type:varchar"`
+	State            storage.VirtualMachineV2_State `gorm:"column:state;type:integer"`
+	LastUpdated      *time.Time                     `gorm:"column:lastupdated;type:timestamptz"`
+	LastAgentContact *time.Time                     `gorm:"column:lastagentcontact;type:timestamptz"`
+	Serialized       []byte                         `gorm:"column:serialized;type:bytea"`
 }

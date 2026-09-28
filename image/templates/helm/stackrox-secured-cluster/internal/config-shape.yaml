@@ -46,17 +46,6 @@ image:
     tag: null # string
     fullRef: null # string
     pullPolicy: null # string
-  scanner:
-    registry: null # string
-    name: null # string
-    repository: null # string
-    tag: null # string
-    fullRef: null # string
-  scannerDb:
-    registry: null # string
-    name: null # string
-    tag: null # string
-    fullRef: null # string
   scannerV4:
     registry: null # string
     name: null # string
@@ -210,6 +199,12 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
+virtualMachines:
+  enabled: null # bool
+  scraper:
+    concurrency: null          # int
+    maxResponseSizeKB: null    # int
+    pollInterval: null         # string (duration)
 crs:
   file: null # string
 consolePlugin:

@@ -6,16 +6,14 @@ import {
     HelperText,
     HelperTextItem,
 } from '@patternfly/react-core';
-import { getIn } from 'formik';
-import type { FormikProps } from 'formik';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
+import CompoundSearchFilterSelectInputField from 'Components/CompoundSearchFilter/components/CompoundSearchFilterSelectInputField';
 import type {
     CompoundSearchFilterConfig,
+    GenericSelectSearchFilterAttribute,
     OnSearchPayload,
-    SelectSearchFilterAttribute,
 } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
@@ -25,28 +23,29 @@ import {
     getSearchFilterFromSearchString,
 } from 'utils/searchUtils';
 
-export type FiltersQueryConfiguration = {
-    vulnReportFilters: {
-        query: string;
-    };
-};
-
-export type FiltersQueryProps<T extends FiltersQueryConfiguration = FiltersQueryConfiguration> = {
-    attributesSeparateFromConfig: SelectSearchFilterAttribute[];
-    formik: FormikProps<T>;
+// Because filter property name differs for different report types,
+// renderer is responsible to provide values from formik object.
+export type FiltersQueryProps = {
+    attributesSeparateFromConfig: GenericSelectSearchFilterAttribute[];
+    error: string | undefined;
+    query: string;
     searchFilterConfig: CompoundSearchFilterConfig;
+    setQueryValue: (value: string, shouldValidate?: boolean) => void;
+    touched: boolean | undefined;
 };
 
-function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfiguration>({
+function FiltersQuery({
     attributesSeparateFromConfig,
-    formik,
+    error,
+    query,
     searchFilterConfig,
-}: FiltersQueryProps<T>): ReactElement {
-    const searchFilter = getSearchFilterFromSearchString(formik.values.vulnReportFilters.query);
+    setQueryValue,
+    touched,
+}: FiltersQueryProps): ReactElement {
+    const searchFilter = getSearchFilterFromSearchString(query);
 
     function onFilterChange(searchFilterChanged: SearchFilter) {
-        formik.setFieldValue(
-            'vulnReportFilters.query',
+        setQueryValue(
             getRequestQueryStringForSearchFilter(applyRegexSearchModifiers(searchFilterChanged))
         );
     }
@@ -59,7 +58,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
         <>
             {attributesSeparateFromConfig.map((attribute) => (
                 <FormGroup key={attribute.searchTerm} label={attribute.displayName} fieldId="TODO">
-                    <SearchFilterSelectInclusive
+                    <CompoundSearchFilterSelectInputField
                         attribute={attribute}
                         onSearch={onSearch}
                         searchFilter={searchFilter}
@@ -81,13 +80,11 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                         searchFilter={searchFilter}
                     />
                 ) : (
-                    getIn(formik.touched, 'vulnReportFilters.query') &&
-                    getIn(formik.errors, 'vulnReportFilters.query') && (
+                    touched &&
+                    error && (
                         <FormHelperText>
                             <HelperText>
-                                <HelperTextItem variant="error">
-                                    {getIn(formik.errors, 'vulnReportFilters.query')}
-                                </HelperTextItem>
+                                <HelperTextItem variant="error">{error}</HelperTextItem>
                             </HelperText>
                         </FormHelperText>
                     )

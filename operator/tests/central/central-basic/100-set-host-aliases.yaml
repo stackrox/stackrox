@@ -18,16 +18,6 @@ spec:
       hostAliases:
         - ip: "127.0.0.1"
           hostnames: ["central-db.com"]
-  scanner:
-    scannerComponent: Enabled
-    analyzer:
-      hostAliases:
-        - ip: "127.0.0.1"
-          hostnames: ["scanner.com"]
-    db:
-      hostAliases:
-        - ip: "127.0.0.1"
-          hostnames: [ "scanner-db.com" ]
   scannerV4:
     # Explicitly enable, scannerV4 is currenlty opt-in
     scannerComponent: Enabled

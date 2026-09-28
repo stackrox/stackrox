@@ -66,7 +66,7 @@ func processToIDAndArgs(process *storage.ProcessIndicator) processindicator.IDAn
 func TestRabbitMQPruning(t *testing.T) {
 	var processes []processindicator.IDAndArgs
 	processes = append(processes, processToIDAndArgs(deterministicRabbitMQProcess))
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		processes = append(processes, processToIDAndArgs(rabbitMQBeamSMPProcess()))
 	}
 	pruner := NewFactory(1, time.Second).StartPruning()
@@ -79,7 +79,7 @@ func TestRabbitMQPruning(t *testing.T) {
 func BenchmarkRabbitMQPruning(b *testing.B) {
 	var processes []processindicator.IDAndArgs
 	processes = append(processes, processToIDAndArgs(deterministicRabbitMQProcess))
-	for i := 0; i < 1000000; i++ {
+	for range 1000000 {
 		processes = append(processes, processToIDAndArgs(rabbitMQBeamSMPProcess()))
 	}
 	for b.Loop() {

@@ -50,7 +50,7 @@ func BenchmarkDatastoreUpsertFlows(b *testing.B) {
 func benchmarkDatastoreUpsertFlows(ds *flowDataStoreImpl, numFlows uint32) func(*testing.B) {
 	return func(b *testing.B) {
 		flows := make([]*storage.NetworkFlow, 0, numFlows)
-		for i := uint32(0); i < numFlows; i++ {
+		for i := range numFlows {
 			id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 			require.NoError(b, err)
 			flows = append(flows, testutils.ExtFlow(fixtureconsts.Deployment1, id.String()))

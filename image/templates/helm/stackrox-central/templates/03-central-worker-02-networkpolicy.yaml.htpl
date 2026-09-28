@@ -1,0 +1,18 @@
+{{- include "srox.init" . -}}
+{{- if and ._rox.centralWorker.enabled ._rox.network.enableNetworkPolicies }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-worker
+  namespace: {{ ._rox._namespace | quote }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-worker") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-worker") | nindent 4 }}
+spec:
+  policyTypes:
+  - Ingress
+  podSelector:
+    matchLabels:
+      app: central-worker
+{{- end }}

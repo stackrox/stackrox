@@ -90,7 +90,7 @@ func updateDeploymentHashes(db postgres.DB, ctx context.Context, table string, i
 
 	results := conn.SendBatch(ctx, batch)
 
-	for i := 0; i < len(ids); i++ {
+	for i := range ids {
 		if _, err := results.Exec(); err != nil {
 			// Attempt to close batch results, but ignore close error since we're already
 			// returning the more important Exec error.

@@ -19,6 +19,11 @@ spec:
     - podSelector:
         matchLabels:
           app: central
+    {{- if ._rox.centralWorker.enabled }}
+    - podSelector:
+        matchLabels:
+          app: central-worker
+    {{- end }}
     ports:
     - port: 5432
       protocol: TCP

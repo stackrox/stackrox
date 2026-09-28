@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/search"
@@ -41,7 +40,7 @@ func waitForVMCondition(ctx context.Context, client v2.VirtualMachineServiceClie
 	err := pollUntil(ctx, opts, desc, func(ctx context.Context) (bool, string, error) {
 		cur, err := client.GetVirtualMachine(ctx, &v2.GetVirtualMachineRequest{Id: id})
 		if err != nil {
-			return false, "", err
+			return false, "", fmt.Errorf("get virtual machine %s: %w", id, err)
 		}
 		done, detail := check(cur)
 		if done {
@@ -92,25 +91,6 @@ func WaitForVMScanTimestamp(ctx context.Context, client v2.VirtualMachineService
 			return false, "scan_time is nil"
 		}
 		return true, "scan_time set"
-	})
-}
-
-// WaitForScanTimestampAfter polls until the VM's scan_time is strictly after the given
-// threshold. Use this to wait for a rescan to be reflected in Central.
-func WaitForScanTimestampAfter(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string, after time.Time) (*v2.VirtualMachine, error) {
-	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("scan timestamp after %v (id=%q)", after.Format(time.RFC3339), id), func(vm *v2.VirtualMachine) (bool, string) {
-		sc := vm.GetScan()
-		if sc == nil {
-			return false, "scan is nil"
-		}
-		if sc.GetScanTime() == nil {
-			return false, "scan_time is nil"
-		}
-		ts := sc.GetScanTime().AsTime()
-		if !ts.After(after) {
-			return false, fmt.Sprintf("scan_time=%v not yet after %v", ts.Format(time.RFC3339Nano), after.Format(time.RFC3339Nano))
-		}
-		return true, fmt.Sprintf("scan_time=%v", ts.Format(time.RFC3339Nano))
 	})
 }
 
@@ -165,6 +145,12 @@ func rawListQueryNamespaceAndName(namespace, name string) string {
 	return fmt.Sprintf("%s:%q+%s:%q", search.Namespace, namespace, search.VirtualMachineName, name)
 }
 
+// rawListQueryNamespaceNameGuestOS adds an exact Guest OS match so search
+// hits the same string List/GetVM return.
+func rawListQueryNamespaceNameGuestOS(namespace, name, guestOS string) string {
+	return fmt.Sprintf("%s+%s:%q", rawListQueryNamespaceAndName(namespace, name), search.GuestOS, guestOS)
+}
+
 // ListVMByNamespaceName returns the first VirtualMachine in Central whose namespace and name
 // match the given values. Returns (nil, nil) when no match is found.
 func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceClient, namespace, name string) (*v2.VirtualMachine, error) {
@@ -174,7 +160,7 @@ func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceC
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list virtual machines: %w", err)
 	}
 	if vms := resp.GetVirtualMachines(); len(vms) > 0 {
 		return vms[0], nil

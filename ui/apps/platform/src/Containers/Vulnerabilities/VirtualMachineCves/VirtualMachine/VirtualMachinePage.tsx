@@ -15,22 +15,11 @@ import {
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
-import useURLSort from 'hooks/useURLSort';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { getVirtualMachine } from 'services/VirtualMachineService';
+import { getVM } from 'services/VirtualMachineService';
 
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
-import {
-    COMPONENT_SORT_FIELD,
-    CVE_EPSS_PROBABILITY_SORT_FIELD,
-    CVE_SEVERITY_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVSS_SORT_FIELD,
-} from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
 import VirtualMachinePageComponents from './VirtualMachinePageComponents';
 import VirtualMachinePageDetails from './VirtualMachinePageDetails';
@@ -44,37 +33,11 @@ const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
 });
 
-const sortFields = [
-    COMPONENT_SORT_FIELD,
-    CVE_EPSS_PROBABILITY_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVE_SEVERITY_SORT_FIELD,
-    CVSS_SORT_FIELD,
-];
-
-const defaultComponentsSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
-
-const defaultVulnerabilitiesSortOption = {
-    field: CVE_SEVERITY_SORT_FIELD,
-    direction: 'desc',
-} as const;
-
 function VirtualMachinePage() {
     const { virtualMachineId } = useParams() as { virtualMachineId: string };
-    const urlPagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const urlSearch = useURLSearch();
-    const urlSorting = useURLSort({
-        sortFields,
-        defaultSortOption: defaultVulnerabilitiesSortOption,
-        onSort: () => urlPagination.setPage(1, 'replace'),
-    });
 
-    const fetchVirtualMachine = useCallback(
-        () => getVirtualMachine(virtualMachineId),
-        [virtualMachineId]
-    );
-
-    const { data: virtualMachine, isLoading, error } = useRestQuery(fetchVirtualMachine);
+    const fetchVirtualMachine = useCallback(() => getVM(virtualMachineId), [virtualMachineId]);
+    const { data: virtualMachineDetail, isLoading, error } = useRestQuery(fetchVirtualMachine);
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
@@ -82,29 +45,22 @@ function VirtualMachinePage() {
     const componentsTabKey = detailsTabValues[4];
     const detailsTabKey = detailsTabValues[1];
 
-    const virtualMachineName = virtualMachine?.name;
-
     function onTabChange(value: string | number) {
-        if (value === componentsTabKey) {
-            urlSorting.setSortOption(defaultComponentsSortOption);
-        } else {
-            urlSorting.setSortOption(defaultVulnerabilitiesSortOption);
-        }
         setActiveTabKey(value);
-        urlPagination.setPage(1, 'replace');
-        urlSearch.setSearchFilter({});
     }
 
     return (
         <>
-            <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageTitle
+                title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineDetail?.name}`}
+            />
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
-                        {virtualMachineName ?? (
+                        {virtualMachineDetail?.name ?? (
                             <Skeleton
                                 screenreaderText="Loading Virtual Machine name"
                                 width="200px"
@@ -114,14 +70,14 @@ function VirtualMachinePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <VirtualMachinePageHeader
-                    virtualMachine={virtualMachine}
+                    virtualMachineDetail={virtualMachineDetail}
                     isLoading={isLoading}
                     error={error}
                 />
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_, key) => {
@@ -146,7 +102,7 @@ function VirtualMachinePage() {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'padding' }}>
+            <PageSection padding={{ default: 'padding' }}>
                 <Content component="p">
                     <Content component="p">
                         {activeTabKey === vulnTabKey &&
@@ -159,41 +115,29 @@ function VirtualMachinePage() {
                 </Content>
             </PageSection>
             <PageSection
-                hasBodyWrapper={false}
                 isFilled
                 padding={{ default: 'padding' }}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                 aria-label={activeTabKey}
                 role="tabpanel"
                 tabIndex={0}
             >
                 {activeTabKey === vulnTabKey && (
                     <TabContent id={VULNERABILITIES_TAB_ID}>
-                        <VirtualMachinePageVulnerabilities
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
-                            urlSearch={urlSearch}
-                            urlSorting={urlSorting}
-                            urlPagination={urlPagination}
-                        />
+                        <VirtualMachinePageVulnerabilities virtualMachineId={virtualMachineId} />
                     </TabContent>
                 )}
                 {activeTabKey === componentsTabKey && (
                     <TabContent id={COMPONENTS_TAB_ID}>
-                        <VirtualMachinePageComponents
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
-                            urlSearch={urlSearch}
-                            urlSorting={urlSorting}
-                            urlPagination={urlPagination}
-                        />
+                        <VirtualMachinePageComponents virtualMachineId={virtualMachineId} />
                     </TabContent>
                 )}
                 {activeTabKey === detailsTabKey && (
                     <TabContent id={DETAILS_TAB_ID}>
-                        <VirtualMachinePageDetails virtualMachine={virtualMachine} />
+                        {virtualMachineDetail && (
+                            <VirtualMachinePageDetails
+                                virtualMachineDetail={virtualMachineDetail}
+                            />
+                        )}
                     </TabContent>
                 )}
             </PageSection>

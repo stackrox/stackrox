@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,8 +34,16 @@ func TestGetMetadataIntegration(t *testing.T) {
 			Tag:      "1.14.8",
 		},
 	}
-	_, err = dockerHubClient.Metadata(&image)
-	require.Nil(t, err)
+	err = retry.WithRetry(func() error {
+		_, retryErr := dockerHubClient.Metadata(&image)
+		return retryErr
+	}, retry.Tries(3),
+		retry.WithExponentialBackoff(),
+		retry.OnFailedAttempts(func(err error) {
+			t.Logf("retrying: %v", err)
+		}),
+	)
+	require.NoError(t, err)
 
 	// Make sure that request and histogram metrics but no timeouts have been recorded.
 	assert.NotEmpty(t, metricsHandler.TestCollectRequestCounter(t))
@@ -64,7 +73,15 @@ func TestOCIImageIndexManifest(t *testing.T) {
 		},
 	}
 
-	_, err = gcrClient.Metadata(&image)
+	err = retry.WithRetry(func() error {
+		_, retryErr := gcrClient.Metadata(&image)
+		return retryErr
+	}, retry.Tries(3),
+		retry.WithExponentialBackoff(),
+		retry.OnFailedAttempts(func(err error) {
+			t.Logf("retrying: %v", err)
+		}),
+	)
 	require.NoError(t, err)
 }
 
@@ -90,6 +107,14 @@ func TestOCIImageIndexManifestWithoutManifestCall(t *testing.T) {
 		},
 	}
 
-	_, err = gcrClient.Metadata(&image)
+	err = retry.WithRetry(func() error {
+		_, retryErr := gcrClient.Metadata(&image)
+		return retryErr
+	}, retry.Tries(3),
+		retry.WithExponentialBackoff(),
+		retry.OnFailedAttempts(func(err error) {
+			t.Logf("retrying: %v", err)
+		}),
+	)
 	require.NoError(t, err)
 }

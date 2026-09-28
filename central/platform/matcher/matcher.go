@@ -22,8 +22,8 @@ type PlatformMatcher interface {
 
 func New(configDatastore configDS.DataStore) PlatformMatcher {
 	allAccessCtx := sac.WithAllAccess(context.Background())
-	regexes := []*regexp.Regexp{}
 	config, _, _ := configDatastore.GetPlatformComponentConfig(allAccessCtx)
+	regexes := make([]*regexp.Regexp, 0, len(config.GetRules()))
 	for _, rule := range config.GetRules() {
 		regex, _ := regexp.Compile(rule.GetNamespaceRule().GetRegex())
 		regexes = append(regexes, regex)

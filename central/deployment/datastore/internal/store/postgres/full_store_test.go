@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -171,5 +173,78 @@ func TestGetManyListDeployments(t *testing.T) {
 		assert.Equal(t, dep1.GetClusterName(), result.GetCluster())
 		assert.Equal(t, dep1.GetClusterId(), result.GetClusterId())
 		assert.Equal(t, dep1.GetNamespace(), result.GetNamespace())
+	})
+}
+
+func TestGetV2ImageIDsForDigests(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+	fullStore := NewFullStore(testDB.DB)
+
+	digest1 := types.NewDigest("digest-1").Digest()
+	digest2 := types.NewDigest("digest-2").Digest()
+	digest3 := types.NewDigest("digest-3").Digest()
+
+	name1a := &storage.ImageName{FullName: "registry.io/repo/image1a:latest"}
+	name1b := &storage.ImageName{FullName: "registry.io/repo/image1b:latest"}
+	name2 := &storage.ImageName{FullName: "registry.io/repo/image2:latest"}
+
+	v2ID1a := utils.NewImageV2ID(name1a, digest1)
+	v2ID1b := utils.NewImageV2ID(name1b, digest1)
+	v2ID2 := utils.NewImageV2ID(name2, digest2)
+
+	// Two deployments reference digest1 with different V2 IDs (different image names).
+	dep1 := &storage.Deployment{
+		Id: uuid.NewV4().String(), Name: "dep-1", Namespace: "ns",
+		ClusterId: "c1", ClusterName: "c1", NamespaceId: "c1ns",
+		Containers: []*storage.Container{{
+			Image: &storage.ContainerImage{Id: digest1, IdV2: v2ID1a, Name: name1a},
+		}},
+	}
+	dep2 := &storage.Deployment{
+		Id: uuid.NewV4().String(), Name: "dep-2", Namespace: "ns",
+		ClusterId: "c1", ClusterName: "c1", NamespaceId: "c1ns",
+		Containers: []*storage.Container{{
+			Image: &storage.ContainerImage{Id: digest1, IdV2: v2ID1b, Name: name1b},
+		}},
+	}
+	// One deployment references digest2.
+	dep3 := &storage.Deployment{
+		Id: uuid.NewV4().String(), Name: "dep-3", Namespace: "ns",
+		ClusterId: "c1", ClusterName: "c1", NamespaceId: "c1ns",
+		Containers: []*storage.Container{{
+			Image: &storage.ContainerImage{Id: digest2, IdV2: v2ID2, Name: name2},
+		}},
+	}
+
+	require.NoError(t, fullStore.Upsert(ctx, dep1))
+	require.NoError(t, fullStore.Upsert(ctx, dep2))
+	require.NoError(t, fullStore.Upsert(ctx, dep3))
+
+	t.Run("multiple digests with multiple V2 IDs", func(t *testing.T) {
+		result, err := fullStore.GetV2ImageIDsForDigests(ctx, []string{digest1, digest2})
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.ElementsMatch(t, []string{v2ID1a, v2ID1b}, result[digest1])
+		assert.ElementsMatch(t, []string{v2ID2}, result[digest2])
+	})
+
+	t.Run("digest not in any deployment", func(t *testing.T) {
+		result, err := fullStore.GetV2ImageIDsForDigests(ctx, []string{digest3})
+		assert.NoError(t, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		result, err := fullStore.GetV2ImageIDsForDigests(ctx, nil)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("mix of existing and non-existing digests", func(t *testing.T) {
+		result, err := fullStore.GetV2ImageIDsForDigests(ctx, []string{digest1, digest3})
+		assert.NoError(t, err)
+		assert.Len(t, result, 1)
+		assert.ElementsMatch(t, []string{v2ID1a, v2ID1b}, result[digest1])
 	})
 }

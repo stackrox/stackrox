@@ -31,6 +31,7 @@ linters:
     - ineffassign
     - modernize
     - nolintlint
+    - prealloc
     - protogetter
     - revive # replaces golint
     - rowserrcheck
@@ -172,8 +173,6 @@ linters:
     modernize:
       disable:
         - any
-        - newexpr
-        - rangeint
   exclusions:
     generated: lax
     rules:
@@ -190,6 +189,12 @@ linters:
       - linters:
           - forbidigo
         path: roxctl/central/generate/interactive.go
+      - linters:
+          - prealloc
+        path-except: ^(pkg)/
+      - linters:
+          - prealloc
+        path: _test\.go
       - linters:
           - forbidigo
           - wrapcheck

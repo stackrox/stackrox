@@ -16,7 +16,7 @@ func BenchmarkKeyFence(b *testing.B) {
 
 		numThreads := 20 // must be even
 		startSignal := NewSignal()
-		for j := 0; j < numThreads; j++ {
+		for j := range numThreads {
 			zeroOrOne := byte(j & 0x1)
 
 			go func() {
@@ -36,7 +36,7 @@ func BenchmarkKeyFence(b *testing.B) {
 
 func TestKeyFence(t *testing.T) {
 	numIterations := 100
-	for i := 0; i < numIterations; i++ {
+	for range numIterations {
 		counters := []int{0, 0}
 
 		keyFence := NewKeyFence()
@@ -45,7 +45,7 @@ func TestKeyFence(t *testing.T) {
 		startSignal := NewSignal()
 		waitGroup := sync.WaitGroup{}
 		waitGroup.Add(numThreads)
-		for j := 0; j < numThreads; j++ {
+		for j := range numThreads {
 			zeroOrOne := byte(j & 0x1)
 
 			go func() {

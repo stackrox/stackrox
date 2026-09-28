@@ -393,6 +393,8 @@ func local_request_VirtualMachineV2Service_GetVMDashboardCounts_0(ctx context.Co
 	return msg, metadata, err
 }
 
+var filter_VirtualMachineV2Service_GetVMCVEDetail_0 = &utilities.DoubleArray{Encoding: map[string]int{"cve_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
 func request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetVMCVEDetailRequest
@@ -409,6 +411,12 @@ func request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context, marsh
 	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMCVEDetail_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := client.GetVMCVEDetail(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -427,6 +435,12 @@ func local_request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context,
 	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMCVEDetail_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := server.GetVMCVEDetail(ctx, &protoReq)
 	return msg, metadata, err

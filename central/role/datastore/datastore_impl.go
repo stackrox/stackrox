@@ -1018,7 +1018,7 @@ func (ds *dataStoreImpl) RemoveFilteredPermissionSets(ctx context.Context, filte
 
 	// Delete permission sets that are not referenced.
 	deletedCount := 0
-	for _, id := range candidateSet.AsSlice() {
+	for id := range candidateSet {
 		if err := ds.permissionSetStorage.Delete(ctx, id); err != nil {
 			log.Errorf("Failed to delete filtered permission set %q: %v", id, err)
 		} else {
@@ -1068,7 +1068,7 @@ func (ds *dataStoreImpl) RemoveFilteredAccessScopes(ctx context.Context, filter 
 
 	// Delete access scopes that are not referenced.
 	deletedCount := 0
-	for _, id := range candidateSet.AsSlice() {
+	for id := range candidateSet {
 		if err := ds.accessScopeStorage.Delete(ctx, id); err != nil {
 			log.Errorf("Failed to delete filtered access scope %q: %v", id, err)
 		} else {

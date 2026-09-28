@@ -137,7 +137,7 @@ func (w *managerImpl[T]) NewWaiter() (Waiter[T], error) {
 	}
 
 	// otherwise setup the new waiter.
-	for i := 0; i < maxIDCollisions; i++ {
+	for range maxIDCollisions {
 		id := uuid.NewV4().String()
 
 		waiterCh, created := w.addWaiter(id)

@@ -90,7 +90,7 @@ func insertBenchDeployments(b *testing.B, ctx context.Context, db *pghelper.Test
 	orphanCount := numDeployments / 10
 	orphaned = make([]string, 0, orphanCount)
 
-	for i := 0; i < numDeployments; i++ {
+	for i := range numDeployments {
 		id := uuid.NewV4().String()
 		dt := deployTypes[i%len(deployTypes)]
 		_, err := db.Exec(ctx,
@@ -103,7 +103,7 @@ func insertBenchDeployments(b *testing.B, ctx context.Context, db *pghelper.Test
 	}
 
 	// Create orphaned deployment IDs (no row in deployments table)
-	for i := 0; i < orphanCount; i++ {
+	for range orphanCount {
 		orphaned = append(orphaned, uuid.NewV4().String())
 	}
 
@@ -194,7 +194,7 @@ func makeBenchAlert(index int, deployIDs []string, deployTypes []string) *storag
 			}
 			numPods := rand.Intn(10) + 1
 			processes := make([]*storage.ProcessIndicator, 0, numPods*2)
-			for p := 0; p < numPods; p++ {
+			for p := range numPods {
 				podID := fmt.Sprintf("pod-%d-%d", index, p)
 				processes = append(processes,
 					&storage.ProcessIndicator{

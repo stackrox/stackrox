@@ -20,9 +20,10 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import usePermissions from 'hooks/usePermissions';
+import { runImageViewBasedReport } from 'services/ReportsService';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { wrapInQuotes } from 'utils/searchUtils';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
 import type { DeploymentMetadata } from './DeploymentPageHeader';
@@ -32,10 +33,10 @@ import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/s
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -75,14 +76,11 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
 
     // Report-specific functionality
-    const { hasReadAccess } = usePermissions();
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // Create a scoped search filter that includes the deployment ID filter plus any applied search filters.
@@ -198,6 +196,8 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
                     query={getRegexScopedQueryString(deploymentScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
+                    runViewBasedReport={runImageViewBasedReport}
+                    vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                 />
             )}
         </>

@@ -58,7 +58,7 @@ func RemoveMissingResults(results []Result, missingIndices []int) []Result {
 	numResultsBefore := len(results)
 
 	var outIdx int
-	for i := 0; i < len(missingIndices); i++ {
+	for i := range missingIndices {
 		missingIdx := missingIndices[i]
 		if i == 0 {
 			outIdx = missingIdx

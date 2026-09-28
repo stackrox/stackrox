@@ -47,12 +47,6 @@ Label=com.example=test'
 STAGE_CONTAINER='[Container]
 SENTINEL-CONTAINER=true'
 
-STAGE_TIMER='SENTINEL-TIMER=true'
-
-STAGE_PREP_SERVICE='SENTINEL-PREP=true'
-
-STAGE_TMPFILES_CONF='SENTINEL-TMPFILES=true'
-
 setup() {
     INSTALL_SCRIPT="${BATS_TEST_DIRNAME}/../../../${INSTALL_SCRIPT_REL}"
     STAGE_DIR="${BATS_TEST_TMPDIR}/custom-stage"
@@ -83,24 +77,14 @@ setup() {
     QUADLET_FILES_DIR="${STAGE_DIR}" run bash "${INSTALL_SCRIPT}"
     assert_success
     assert_output --partial "Done!"
-    assert_output --partial "periodically"
+    assert_output --partial "serve process is running"
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
-    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
-    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
-    [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
+    [ ! -e "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
+    [ ! -e "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
     assert_output --partial "SENTINEL-CONTAINER"
-
-    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent.timer"
-    assert_output --partial "SENTINEL-TIMER"
-
-    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
-    assert_output --partial "SENTINEL-PREP"
-
-    run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
-    assert_output --partial "SENTINEL-TMPFILES"
 }
 
 # =============================================================================
@@ -113,21 +97,11 @@ setup() {
     refute_output --partial "Done!"
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
-    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
-    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
-    [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
+    [ ! -e "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
+    [ ! -e "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
     assert_output --partial "SENTINEL-CONTAINER"
-
-    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent.timer"
-    assert_output --partial "SENTINEL-TIMER"
-
-    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
-    assert_output --partial "SENTINEL-PREP"
-
-    run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
-    assert_output --partial "SENTINEL-TMPFILES"
 }
 
 @test "--stage-dir does not invoke any remote transport" {
@@ -378,9 +352,8 @@ setup() {
     run cat "${CALL_LOG}"
     assert_output --partial "install.sh"
     assert_output --partial "roxagent.container"
-    assert_output --partial "roxagent.timer"
-    assert_output --partial "roxagent-prep.service"
-    assert_output --partial "roxagent-tmpfiles.conf"
+    refute_output --partial "roxagent-prep.service"
+    refute_output --partial "roxagent-tmpfiles.conf"
 }
 
 @test "install_remote heredoc includes cleanup trap with rm -rf" {
@@ -406,7 +379,7 @@ setup() {
     run bash "${INSTALL_SCRIPT}" --stage-dir "${STAGE_DIR}"
     assert_success
     refute_output --partial "Done!"
-    refute_output --partial "periodically"
+    refute_output --partial "serve process is running"
 }
 
 @test "SSH mode prints Done epilogue exactly once" {
@@ -437,10 +410,8 @@ setup() {
 # =============================================================================
 
 write_stage_files() {
+    cp "${INSTALL_SCRIPT}" "${STAGE_DIR}/install.sh"
     printf '%s\n' "${STAGE_CONTAINER}" > "${STAGE_DIR}/roxagent.container"
-    printf '%s\n' "${STAGE_TIMER}" > "${STAGE_DIR}/roxagent.timer"
-    printf '%s\n' "${STAGE_PREP_SERVICE}" > "${STAGE_DIR}/roxagent-prep.service"
-    printf '%s\n' "${STAGE_TMPFILES_CONF}" > "${STAGE_DIR}/roxagent-tmpfiles.conf"
 }
 
 # Place a fake "sudo" on PATH that intercepts file operations and redirects

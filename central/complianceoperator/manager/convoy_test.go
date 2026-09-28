@@ -86,8 +86,8 @@ func makeConvoyProfile(clusterID, profileName string, ruleNames []string) *stora
 
 func seedProfiles(tb testing.TB, mgr *managerImpl, numClusters, profilesPerCluster int, ruleNames []string) {
 	tb.Helper()
-	for c := 0; c < numClusters; c++ {
-		for p := 0; p < profilesPerCluster; p++ {
+	for c := range numClusters {
+		for p := range profilesPerCluster {
 			profile := makeConvoyProfile(fmt.Sprintf("cluster-%d", c), fmt.Sprintf("profile-%d", p), ruleNames)
 			require.NoError(tb, mgr.AddProfile(profile))
 		}
@@ -132,11 +132,11 @@ func TestConcurrentAddProfileCompletesWithoutConvoy(t *testing.T) {
 	wg.Add(sensorClusters)
 
 	start := time.Now()
-	for c := 0; c < sensorClusters; c++ {
+	for c := range sensorClusters {
 		go func(clusterIdx int) {
 			defer wg.Done()
 			clusterID := fmt.Sprintf("reconnecting-%d", clusterIdx)
-			for p := 0; p < 10; p++ {
+			for p := range 10 {
 				if ctx.Err() != nil {
 					errs[clusterIdx] = ctx.Err()
 					return
@@ -178,11 +178,11 @@ func BenchmarkAddProfileConvoy(b *testing.B) {
 			for b.Loop() {
 				var wg sync.WaitGroup
 				wg.Add(numClusters)
-				for c := 0; c < numClusters; c++ {
+				for c := range numClusters {
 					go func(clusterIdx int) {
 						defer wg.Done()
 						clusterID := fmt.Sprintf("reconnecting-%d", clusterIdx)
-						for p := 0; p < profilesPerCluster; p++ {
+						for p := range profilesPerCluster {
 							profile := makeConvoyProfile(clusterID, fmt.Sprintf("profile-%d", p), ruleNames)
 							_ = mgr.AddProfile(profile)
 						}

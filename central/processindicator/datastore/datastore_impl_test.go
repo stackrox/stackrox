@@ -204,7 +204,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) generateIndicatorsWithPods(podIDs []string, containerIDs []string) []*storage.ProcessIndicator {
-	var indicators []*storage.ProcessIndicator
+	indicators := make([]*storage.ProcessIndicator, 0, len(containerIDs)*len(podIDs))
 	for _, p := range podIDs {
 		for _, c := range containerIDs {
 			indicators = append(indicators, &storage.ProcessIndicator{
@@ -335,13 +335,15 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, extraIndicator))
 
 	// Allow the next prune to go through; this time, prune something.
-	expectedIndicators := []*storage.ProcessIndicator{extraIndicator}
+	expectedIndicators := make([]*storage.ProcessIndicator, 0, 1+len(indicators))
+	expectedIndicators = append(expectedIndicators, extraIndicator)
 	expectedIndicators = append(expectedIndicators, indicators...)
 	mockPruner.EXPECT().Prune(matcher(expectedIndicators...)).Return([]string{indicators[0].GetId()})
 	prunedSignal.Reset()
 	pruneTurnstile.AllowOne()
 	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 5*prunePeriod))
-	expectedIndicators = []*storage.ProcessIndicator{extraIndicator}
+	expectedIndicators = make([]*storage.ProcessIndicator, 0, len(indicators))
+	expectedIndicators = append(expectedIndicators, extraIndicator)
 	expectedIndicators = append(expectedIndicators, indicators[1:]...)
 	suite.verifyIndicatorsAre(expectedIndicators...)
 
@@ -449,7 +451,7 @@ func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
 	ids := make([]string, 0, count)
 	pruneIndicators := make([]*storage.ProcessIndicator, 0, count)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		id := uuid.NewV4().String()
 		newIndicator := indicators[0].CloneVT()
 		newIndicator.Id = id

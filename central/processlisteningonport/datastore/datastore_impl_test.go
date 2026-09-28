@@ -2294,12 +2294,12 @@ func makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*st
 	nplops := 2 * nprocess * npod * nport
 
 	plops := make([]*storage.ProcessListeningOnPortFromSensor, nplops)
-	for podIdx := 0; podIdx < npod; podIdx++ {
+	for range npod {
 		podID := makeRandomString(10)
 		podUid := uuid.NewV4().String()
-		for processIdx := 0; processIdx < nprocess; processIdx++ {
+		for range nprocess {
 			execFilePath := makeRandomString(10)
-			for port := 0; port < nport; port++ {
+			for port := range nport {
 
 				plopTCP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -2468,11 +2468,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
 			suite.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
 				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
 				suite.Nil(err)
@@ -2637,11 +2637,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
 			suite.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
 				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
 				suite.Nil(err)
@@ -2675,7 +2675,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcessInfo() {
 	indicators := getIndicators()
 
-	var indicatorIds []string
+	indicatorIds := make([]string, 0, len(indicators))
 
 	for _, indicator := range indicators {
 		indicatorIds = append(indicatorIds, indicator.GetId())
@@ -2735,19 +2735,20 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	}
 }
 
-func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
+func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) error {
 	batchSize := 30000
 
-	// Use an explicit context timeout so that ContextWithTimeoutIfNotExists
-	// in the Postgres pool layer sees an existing deadline and skips the
-	// 60-second default per-query timeout, which is too short in some cases.
-	ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
-	defer cancel()
-
 	for plopBatch := range slices.Chunk(plops, batchSize) {
+		// Per-batch deadline so ContextWithTimeoutIfNotExists skips the
+		// 60-second default without sharing one budget across all batches.
+		ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
 		err := suite.datastore.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopBatch...)
-		suite.NoError(err)
+		cancel()
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
@@ -2763,7 +2764,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, np
 	}
 
 	// Add the PLOPs
-	suite.addTooMany(plopObjects)
+	suite.Require().NoError(suite.addTooMany(plopObjects))
 
 	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 	suite.Equal(plopCount, 2*nport*nprocess*npod)
@@ -2805,7 +2806,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	go func() {
 		defer wg.Done()
 		iterations := 3
-		for i := 0; i < iterations; i++ {
+		for range iterations {
 			nport := 30
 			nprocess := 30
 			npod := 30
@@ -2822,7 +2823,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the open PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 
 			// Close the PLOPs
 			// This is so that UpsertMany will trigger deletes
@@ -2831,7 +2832,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the closed PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 		}
 	}()
 
@@ -2873,24 +2874,4 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// that number.
 	suite.GreaterOrEqual(plopsWithoutPodUids, totalPrunedCount/2)
 	suite.LessOrEqual(plopsWithoutPodUids, totalPrunedCount)
-}
-
-func (suite *PLOPDataStoreTestSuite) TestSortMany() {
-	nport := 50
-	nprocess := 50
-	npod := 50
-
-	plops := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
-	suite.addTooMany(plops)
-
-	suite.addDeployments()
-
-	startTime := time.Now()
-	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
-	suite.NoError(err)
-	duration := time.Since(startTime)
-
-	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
-
 }

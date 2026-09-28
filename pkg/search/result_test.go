@@ -11,7 +11,7 @@ import (
 
 func createResults(num int) []Result {
 	results := make([]Result, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		results[i].ID = fmt.Sprintf("%d", i)
 	}
 	return results

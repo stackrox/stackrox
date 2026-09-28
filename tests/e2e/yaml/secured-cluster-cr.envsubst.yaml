@@ -8,6 +8,9 @@ spec:
   perNode:
     fileActivityMonitoring:
       mode: $fam_mode_setting
+  virtualMachines:
+    scraper:
+      pollInterval: $vm_scraper_poll_interval
   processIndicators:
     excludeNamespaceRegex: namespace-without-persistence
   scanner:

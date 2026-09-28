@@ -9,7 +9,7 @@ import (
 
 func getTestImage(numComponents int) *storage.Image {
 	components := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    fmt.Sprintf("component-%d", i),
 			Version: fmt.Sprintf("1.%d.0", i),

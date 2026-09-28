@@ -194,7 +194,7 @@ func (s *complianceReportSnapshotDataStoreSuite) TestDeleteOrphaned() {
 		storage.ComplianceOperatorReportStatus_FAILURE,
 		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR,
 	}
-	var reports []*storage.ComplianceOperatorReportSnapshotV2
+	reports := make([]*storage.ComplianceOperatorReportSnapshotV2, 0, len(runStates)*2+2)
 	for _, state := range runStates {
 		id := uuid.NewV4()
 		reports = append(reports, getTestReport(id.String(),

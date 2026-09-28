@@ -35,7 +35,7 @@ func TestGetDeployment(t *testing.T) {
 func TestGetDeploymentsFlattenedCVEData(t *testing.T) {
 	mocks := mockResolver(t)
 
-	results := make([]deploymentsView.DeploymentCore, 0)
+	results := make([]deploymentsView.DeploymentCore, 0, 2)
 	core1 := deploymentsViewMocks.NewMockDeploymentCore(mocks.ctrl)
 	core1.EXPECT().GetDeploymentID().Return("one")
 	results = append(results, core1)

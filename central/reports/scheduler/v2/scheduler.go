@@ -5,6 +5,7 @@ import (
 
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // Scheduler maintains the schedules for reports
@@ -15,6 +16,8 @@ type Scheduler interface {
 	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	// RemoveReportSchedule removes the given report configuration from scheduled execution.
 	RemoveReportSchedule(reportConfigID string)
+	// GetScheduledConfigIDs returns the IDs of all report configurations that have active schedules.
+	GetScheduledConfigIDs() []string
 
 	// CanSubmitReportRequest returns true if the given user can submit an on-demand report request for the given report configuration.
 	CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error)
@@ -28,9 +31,10 @@ type Scheduler interface {
 	// If the report is already being prepared or has completed execution, it cannot be cancelled.
 	CancelReportRequest(ctx context.Context, reportID string) (bool, error)
 
-	// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
-	// This func will log errors if the scheduler fails to start.
-	Start()
+	// Start acquires a PostgreSQL advisory lock and starts the scheduler.
+	// If the lock is already held by another process, the scheduler is not started.
+	// A scheduler instance can only be started once and cannot be re-started once stopped.
+	Start(db postgres.DB)
 	// Stop scheduler
 	Stop()
 }

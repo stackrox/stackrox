@@ -172,7 +172,7 @@ func TestConcurrentWrites(t *testing.T) {
 		stopper:                   set.NewSet[concurrency.Stopper](),
 	}
 	var stopFns []func()
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		_, stopFn := createMockService(t, i, srv, mockOrchestrator, mockAuditLogManager, mockAuditLogC)
 		stopFns = append(stopFns, stopFn)
 	}

@@ -92,7 +92,16 @@ var (
 				EpssProbability: 22,
 				EpssPercentile:  98,
 			},
+			Exploit: &storage.Exploit{
+				DateAdded:                  "2023-11-21",
+				ShortDescription:           "Buffer overflow in glibc ld.so",
+				RequiredAction:             "Apply mitigations per vendor instructions.",
+				DueDate:                    "2023-12-12",
+				KnownRansomwareCampaignUse: "Unknown",
+			},
+			CisaKev:    true,
 			Datasource: "test-ds",
+			Origin:     storage.VulnOrigin_VULN_ORIGIN_RED_HAT,
 		},
 		{
 			Cve:     "cve2",
@@ -131,6 +140,8 @@ var (
 			CvssMetrics:           nil,
 			NvdCvss:               0,
 			Epss:                  nil,
+			Exploit:               nil,
+			CisaKev:               false,
 		},
 	}
 )
@@ -214,6 +225,14 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 				EpssProbability: 22,
 				EpssPercentile:  98,
 			},
+			Exploit: &storage.Exploit{
+				DateAdded:                  "2023-11-21",
+				ShortDescription:           "Buffer overflow in glibc ld.so",
+				RequiredAction:             "Apply mitigations per vendor instructions.",
+				DueDate:                    "2023-12-12",
+				KnownRansomwareCampaignUse: "Unknown",
+			},
+			CisaKev: true,
 		},
 		Cvss:                 0,
 		Severity:             0,
@@ -226,6 +245,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 		HasFixedBy:           nil,
 		ComponentId:          getTestComponentID(0),
 		Datasource:           "test-ds",
+		Origin:               storage.VulnOrigin_VULN_ORIGIN_RED_HAT,
 	}
 
 	cve2 := &storage.ImageCVEV2{
@@ -255,6 +275,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			References:  nil,
 			CvssMetrics: nil,
 			Epss:        nil,
+			Exploit:     nil,
 		},
 		Cvss:                 0,
 		Severity:             0,

@@ -20,7 +20,6 @@ func mustReadValues(t *testing.T, s string) chartutil.Values {
 
 func TestPatchCSV_BasicVersionPatching(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
-	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
 
 	input := mustReadValues(t, `
 metadata:
@@ -54,7 +53,6 @@ spec:
 
 func TestPatchCSV_ReplacesVersionCalculation(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
-	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
 
 	input := mustReadValues(t, `
 metadata:
@@ -80,8 +78,8 @@ spec:
 
 func TestInjectRelatedImageEnvVars(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
-	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0")
-	t.Setenv("RELATED_IMAGE_SCANNER_DB", "quay.io/rhacs-eng/scanner-db:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER_V4", "quay.io/rhacs-eng/scanner-v4:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER_V4_DB", "quay.io/rhacs-eng/scanner-v4-db:4.5.0")
 
 	spec := mustReadValues(t, `
 install:
@@ -93,8 +91,8 @@ install:
             containers:
             - env:
               - name: RELATED_IMAGE_MAIN
-              - name: RELATED_IMAGE_SCANNER
-              - name: RELATED_IMAGE_SCANNER_DB
+              - name: RELATED_IMAGE_SCANNER_V4
+              - name: RELATED_IMAGE_SCANNER_V4_DB
 `)
 
 	err := injectRelatedImageEnvVars(spec)
@@ -108,8 +106,8 @@ install:
 	env := container["env"].([]any)
 
 	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", env[0].(map[string]any)["value"])
-	assert.Equal(t, "quay.io/rhacs-eng/scanner:4.5.0", env[1].(map[string]any)["value"])
-	assert.Equal(t, "quay.io/rhacs-eng/scanner-db:4.5.0", env[2].(map[string]any)["value"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner-v4:4.5.0", env[1].(map[string]any)["value"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner-v4-db:4.5.0", env[2].(map[string]any)["value"])
 }
 
 func TestInjectRelatedImageEnvVars_MissingEnvVar(t *testing.T) {
@@ -162,7 +160,7 @@ install:
 
 func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
-	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER_V4", "quay.io/rhacs-eng/scanner-v4:4.5.0")
 
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
@@ -173,7 +171,7 @@ func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 	// Verify relatedImages was created
 	relatedImages, ok := spec["relatedImages"].([]map[string]any)
 	require.True(t, ok, "relatedImages should be a []map[string]any")
-	require.GreaterOrEqual(t, len(relatedImages), 3, "should have at least 3 entries (main, scanner, manager)")
+	require.GreaterOrEqual(t, len(relatedImages), 3, "should have at least 3 entries (main, scanner_v4, manager)")
 
 	// Find entries by name
 	imagesByName := make(map[string]string)
@@ -185,7 +183,7 @@ func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 
 	// Verify entries
 	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", imagesByName["main"])
-	assert.Equal(t, "quay.io/rhacs-eng/scanner:4.5.0", imagesByName["scanner"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner-v4:4.5.0", imagesByName["scanner_v4"])
 	assert.Equal(t, "quay.io/rhacs-eng/rhacs-operator:4.5.0", imagesByName["manager"])
 }
 
@@ -215,7 +213,7 @@ func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
 }
 
 func TestConstructRelatedImages_NameTransformation(t *testing.T) {
-	t.Setenv("RELATED_IMAGE_SCANNER_DB_SLIM", "quay.io/rhacs-eng/scanner-db-slim:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER_V4_DB", "quay.io/rhacs-eng/scanner-v4-db:4.5.0")
 
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
@@ -230,13 +228,13 @@ func TestConstructRelatedImages_NameTransformation(t *testing.T) {
 	// Find the scanner_db_slim entry
 	found := false
 	for _, img := range relatedImages {
-		if img["name"].(string) == "scanner_db_slim" {
+		if img["name"].(string) == "scanner_v4_db" {
 			found = true
-			assert.Equal(t, "quay.io/rhacs-eng/scanner-db-slim:4.5.0", img["image"])
+			assert.Equal(t, "quay.io/rhacs-eng/scanner-v4-db:4.5.0", img["image"])
 			break
 		}
 	}
-	assert.True(t, found, "should have scanner_db_slim entry with lowercase name")
+	assert.True(t, found, "should have scanner_v4_db entry with lowercase name")
 }
 
 func TestPatchCSV_EnrichesSecurityPolicyCRD(t *testing.T) {

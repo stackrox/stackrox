@@ -109,6 +109,7 @@ tests:
           listenOnEvents: false
       expect: |
         .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 1)
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions[0].key | assertThat(. == "kubernetes.io/metadata.name")
     - name: "override namespace selector"
       values:
         admissionControl:
@@ -118,11 +119,11 @@ tests:
           listenOnEvents: false
           namespaceSelector:
             matchExpressions:
-            - key: namespace.metadata.stackrox.io/name
+            - key: kubernetes.io/metadata.name
               operator: NotIn
               values:
                 - default
-            - key: namespace.metadata.stackrox.io/name
+            - key: kubernetes.io/metadata.name
               operator: NotIn
               values:
                 - stackrox2

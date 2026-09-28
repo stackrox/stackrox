@@ -3,6 +3,7 @@ package store
 import (
 	"testing"
 
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -55,7 +56,7 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"with GuestOS": {
@@ -114,7 +115,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original running with VSOCK - update running with different VSOCK": {
@@ -123,14 +124,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(2),
+				VSOCKCID:  new(uint32(2)),
 			},
 		},
 		"original running with VSOCK - update running with same VSOCK": {
@@ -139,14 +140,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original running with VSOCK - update running without VSOCK": {
@@ -155,7 +156,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
@@ -171,7 +172,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
@@ -249,7 +250,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original nil - update not running": {
@@ -285,13 +286,6 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			nsIOs, ok := s.store.namespaceToID[tCase.new.Namespace]
 			s.Assert().True(ok)
 			s.Assert().Len(nsIOs, 1)
-			if tCase.new.VSOCKCID == nil {
-				s.Assert().Len(s.store.cidToID, 0)
-				s.Assert().Len(s.store.idToCID, 0)
-			} else {
-				s.Assert().Len(s.store.cidToID, 1)
-				s.Assert().Len(s.store.idToCID, 1)
-			}
 		})
 	}
 }
@@ -451,14 +445,11 @@ func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 
 	vsock = 456
 	s.Equal(uint32(123), *storePtr, "store-managed pointer should remain unchanged even if informer pointer is mutated")
-
-	s.Equal(uint32(123), s.store.idToCID[vmID], "idToCID map should track the original value")
-	s.Equal(virtualmachine.VMID(vmID), s.store.cidToID[123], "cidToID map should continue to refer back to the VM")
 }
 
 func (s *storeSuite) Test_UpdateStateOrCreate() {
-	vsockCID1 := newVSOCKCID(1)
-	vsockCID2 := newVSOCKCID(2)
+	vsockCID1 := new(uint32(1))
+	vsockCID2 := new(uint32(2))
 	cases := map[string]struct {
 		original *virtualmachine.Info
 		new      *virtualmachine.Info
@@ -475,14 +466,14 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 		},
@@ -513,7 +504,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -535,7 +526,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -558,7 +549,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -696,7 +687,7 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 		Name:        vmName,
 		Namespace:   vmNamespace,
 		Running:     true,
-		VSOCKCID:    newVSOCKCID(1),
+		VSOCKCID:    new(uint32(1)),
 		GuestOS:     "Red Hat Enterprise Linux 9",
 		Description: "instance description",
 		IPAddresses: []string{"10.0.0.2"},
@@ -726,8 +717,58 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 	}
 }
 
+func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
+	agentFacts := map[string]string{
+		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+	}
+
+	s.Run("AddOrUpdate preserves when nil", func() {
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, AgentFacts: agentFacts,
+		})
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, Description: "updated",
+		})
+		assert.Equal(s.T(), agentFacts, s.store.Get(vmID).AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate preserves when nil", func() {
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, AgentFacts: agentFacts,
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
+			ID: vmID, Name: vmName, Namespace: vmNamespace, Running: true, VSOCKCID: new(uint32(1)),
+		})
+		assert.Equal(s.T(), agentFacts, s.store.Get(vmID).AgentFacts)
+	})
+}
+
+func (s *storeSuite) Test_SetAgentFacts() {
+	s.Run("replaces facts on an existing VM", func() {
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:          vmID,
+			Name:        vmName,
+			Namespace:   vmNamespace,
+			GuestOS:     "from-informer",
+			Description: "kept",
+		})
+		facts := map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive}
+		s.store.SetAgentFacts(vmID, facts)
+		got := s.store.Get(vmID)
+		assert.Equal(s.T(), facts, got.AgentFacts)
+		assert.Equal(s.T(), "from-informer", got.GuestOS)
+		assert.Equal(s.T(), "kept", got.Description)
+	})
+
+	s.Run("ignores a missing VM", func() {
+		s.store.SetAgentFacts(vmID, map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive})
+		assert.Nil(s.T(), s.store.Get(vmID))
+	})
+}
+
 func (s *storeSuite) Test_RemoveVirtualMachine() {
-	vsockCID1 := newVSOCKCID(1)
+	vsockCID1 := new(uint32(1))
 	cases := map[string]struct {
 		original   *virtualmachine.Info
 		idToRemove virtualmachine.VMID
@@ -831,7 +872,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 }
 
 func (s *storeSuite) Test_ClearState() {
-	vsockCID1 := newVSOCKCID(1)
+	vsockCID1 := new(uint32(1))
 	cases := map[string]struct {
 		original *virtualmachine.Info
 		id       virtualmachine.VMID
@@ -856,7 +897,7 @@ func (s *storeSuite) Test_ClearState() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			id: vmID,
 			expected: &virtualmachine.Info{
@@ -962,7 +1003,7 @@ func (s *storeSuite) Test_ClearStateShouldRetainSpecFields() {
 		Name:        vmName,
 		Namespace:   vmNamespace,
 		Running:     true,
-		VSOCKCID:    newVSOCKCID(1),
+		VSOCKCID:    new(uint32(1)),
 		GuestOS:     "Red Hat Enterprise Linux 9",
 		Description: "instance description",
 		IPAddresses: []string{"10.0.0.2"},
@@ -1079,7 +1120,7 @@ func (s *storeSuite) Test_GetVirtualMachine() {
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
-		VSOCKCID:  newVSOCKCID(1),
+		VSOCKCID:  new(uint32(1)),
 		Running:   true,
 		GuestOS:   "Red Hat Enterprise Linux",
 	}
@@ -1103,7 +1144,7 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
-		VSOCKCID:  newVSOCKCID(1),
+		VSOCKCID:  new(uint32(1)),
 		Running:   true,
 	}
 	s.Run("success", func() {
@@ -1118,73 +1159,11 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 	})
 }
 
-func (s *storeSuite) Test_GetVirtualMachineFromCID() {
-	cases := map[string]struct {
-		vm         *virtualmachine.Info
-		cid        uint32
-		expectedVM *virtualmachine.Info
-	}{
-		"should find a valid CID": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
-				Running:   true,
-			},
-			cid: 1,
-			expectedVM: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
-				Running:   true,
-			},
-		},
-		"should return nil an invalid CID": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
-				Running:   true,
-			},
-			cid:        2, // Invalid CID
-			expectedVM: nil,
-		},
-		"should return nil if the VM does not have a Vsock CID yet": {
-			vm: &virtualmachine.Info{
-				ID:        vmID,
-				Name:      vmName,
-				Namespace: vmNamespace,
-				VSOCKCID:  nil,
-				Running:   true,
-			},
-			cid:        1, // VM does not have a cid
-			expectedVM: nil,
-		},
-	}
-	for tName, tCase := range cases {
-		s.Run(tName, func() {
-			s.store.AddOrUpdate(tCase.vm)
-			s.assertVM(tCase.vm)
-			actual := s.store.GetFromCID(tCase.cid)
-			if tCase.expectedVM == nil {
-				s.Assert().Nil(actual)
-			} else {
-				assertVMs(s.T(), tCase.expectedVM, actual)
-			}
-		})
-	}
-}
-
 func (s *storeSuite) assertEmpty() {
 	s.store.lock.Lock()
 	defer s.store.lock.Unlock()
 	s.Assert().Len(s.store.virtualMachines, 0)
 	s.Assert().Len(s.store.namespaceToID, 0)
-	s.Assert().Len(s.store.cidToID, 0)
-	s.Assert().Len(s.store.idToCID, 0)
 }
 
 func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
@@ -1201,15 +1180,6 @@ func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
 	nsIDs, ok := s.store.namespaceToID[expected.Namespace]
 	s.Assert().True(ok)
 	s.Assert().Contains(nsIDs, expected.ID)
-	if expected.VSOCKCID == nil {
-		return
-	}
-	cid, ok := s.store.idToCID[expected.ID]
-	s.Assert().True(ok)
-	s.Assert().Equal(*expected.VSOCKCID, cid)
-	id, ok := s.store.cidToID[*expected.VSOCKCID]
-	s.Assert().True(ok)
-	s.Assert().Equal(expected.ID, id)
 }
 
 func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachine.Info) {
@@ -1222,8 +1192,4 @@ func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachi
 	} else {
 		assert.Equal(t, *expected.VSOCKCID, *actual.VSOCKCID)
 	}
-}
-
-func newVSOCKCID(val uint32) *uint32 {
-	return &val
 }

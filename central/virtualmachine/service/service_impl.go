@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -57,6 +58,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v2.GetVirtualMachineRequest) (*v2.VirtualMachine, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be specified")
+	}
+	if _, err := uuid.FromString(request.GetId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "id must be a valid UUID (got: %q)", request.GetId())
 	}
 
 	vm, exists, err := s.datastore.GetVirtualMachine(ctx, request.GetId())

@@ -411,7 +411,7 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 		fixtureconsts.Deployment5,
 	}
 
-	var createdAlerts []*storage.Alert
+	createdAlerts := make([]*storage.Alert, 0, len(alertIDs))
 	for i, id := range alertIDs {
 		alert := fixtures.GetAlert()
 		alert.Id = id

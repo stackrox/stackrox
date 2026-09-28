@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"slices"
@@ -27,8 +26,7 @@ import (
 )
 
 const (
-	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
-	appArmorAnnotationTemplate                 = `container.apparmor.security.beta.kubernetes.io/%s`
+	appArmorAnnotationTemplate = `container.apparmor.security.beta.kubernetes.io/%s`
 )
 
 var (
@@ -72,31 +70,10 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 		return nil, nil
 	}
 
-	// This only applies to OpenShift
-	if encDeploymentConfig, ok := objMeta.GetLabels()[openshiftEncodedDeploymentConfigAnnotation]; ok {
-		newMeta, newKind, err := extractDeploymentConfig(encDeploymentConfig)
-		if err != nil {
-			log.Error(err)
-		} else {
-			objMeta, kind = newMeta, newKind
-		}
-	}
-
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
 	return wrap.Deployment, nil
 
-}
-
-func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, string, error) {
-	// Anonymous struct that only contains the fields we are interested in (note: json.Unmarshal silently ignores
-	// fields that are not in the destination object).
-	dc := struct {
-		metav1.TypeMeta
-		MetaData metav1.ObjectMeta `json:"metadata"`
-	}{}
-	err := json.Unmarshal([]byte(encodedDeploymentConfig), &dc)
-	return &dc.MetaData, dc.Kind, err
 }
 
 func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {

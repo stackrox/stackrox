@@ -15,6 +15,7 @@ import type { IAction } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useMetadata from 'hooks/useMetadata';
 import useSet from 'hooks/useSet';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -32,6 +33,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import {
+    getAggregateOrigin,
     getIsSomeVulnerabilityFixable,
     hasKnownExploit,
     hasKnownRansomwareCampaignUse,
@@ -53,7 +55,7 @@ import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { infoForEpssProbability } from './infoForTh';
+import { getInfoForCveOrigin, infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
@@ -74,7 +76,7 @@ export const defaultColumns = {
         isUntoggleAble: true,
     },
     cveSeverity: {
-        title: 'CVE severity',
+        title: 'Top CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -82,7 +84,7 @@ export const defaultColumns = {
         isShownByDefault: true,
     },
     cvss: {
-        title: 'CVSS',
+        title: 'Top CVSS',
         isShownByDefault: true,
     },
     nvdCvss: {
@@ -95,6 +97,10 @@ export const defaultColumns = {
     },
     affectedComponents: {
         title: 'Affected components',
+        isShownByDefault: true,
+    },
+    origin: {
+        title: 'CVE origin',
         isShownByDefault: true,
     },
     firstDiscovered: {
@@ -130,6 +136,9 @@ export const imageVulnerabilitiesFragment = gql`
         cveBaseInfo {
             epss {
                 epssProbability
+            }
+            exploit {
+                knownRansomwareCampaignUse
             }
         }
         discoveredAtImage
@@ -184,6 +193,7 @@ function ImageVulnerabilitiesTable({
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { version } = useMetadata();
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -207,14 +217,14 @@ function ImageVulnerabilitiesTable({
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
-                        CVE severity
+                        Top CVE severity
                     </Th>
                     <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cvss')} sort={getSortParams('CVSS')}>
-                        CVSS
+                        Top CVSS
                     </Th>
                     <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     <Th
@@ -227,6 +237,12 @@ function ImageVulnerabilitiesTable({
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('origin')}
+                        info={getInfoForCveOrigin(version, 'image')}
+                    >
+                        CVE origin
                     </Th>
                     <Th className={getVisibilityClass('firstDiscovered')} modifier="nowrap">
                         First discovered
@@ -271,6 +287,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const aggregateOrigin = getAggregateOrigin(vulnerabilities);
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
 
                         const labels: ReactNode[] = [];
@@ -279,10 +296,6 @@ function ImageVulnerabilitiesTable({
                             isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
-                            // Add in imageVulnerabilitiesFragment following epss:
-                            // exploit {
-                            //     knownRansomwareCampaignUse
-                            // }
                             labels.push(<KnownExploitLabel key="exploit" isCompact />);
                             if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                 labels.push(
@@ -344,7 +357,7 @@ function ImageVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
                                         modifier="nowrap"
-                                        dataLabel="CVE severity"
+                                        dataLabel="Top CVE severity"
                                     >
                                         {isVulnerabilitySeverity(severity) && (
                                             <VulnerabilitySeverityIconText severity={severity} />
@@ -362,7 +375,7 @@ function ImageVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cvss')}
                                         modifier="nowrap"
-                                        dataLabel="CVSS"
+                                        dataLabel="Top CVSS"
                                     >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
@@ -390,6 +403,12 @@ function ImageVulnerabilitiesTable({
                                         {imageComponents.length === 1
                                             ? imageComponents[0].name
                                             : `${imageComponents.length} components`}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('origin')}
+                                        dataLabel="CVE origin"
+                                    >
+                                        {aggregateOrigin}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('firstDiscovered')}

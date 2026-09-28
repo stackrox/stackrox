@@ -9,7 +9,7 @@ openshift*)
   target="upgrade-via-olm"
   ;;
 *)
-  target="upgrade-via-chart"
+  target="deploy-via-chart"
   ;;
 esac
 make -C "${ROOT_DIR}/operator" "${target}" "$@"

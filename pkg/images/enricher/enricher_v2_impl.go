@@ -108,7 +108,26 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 
 	return EnrichmentResult{
 		ScanResult: ScanNotDone,
-	}, errors.New("no image vulnerability retrievers are integrated")
+	}, noMatchingScannerErr(components.ScannerType())
+}
+
+func noMatchingScannerErr(requiredType string) error {
+	return errors.Errorf(
+		"this scan request was produced by %s, but no scanner of that type is integrated",
+		scannerTypeDescription(requiredType))
+}
+
+// scannerTypeDescription returns a human-friendly name for a scanner type
+// string
+func scannerTypeDescription(scannerType string) string {
+	switch scannerType {
+	case scannerTypes.Clairify:
+		return "the legacy StackRox Scanner"
+	case scannerTypes.ScannerV4:
+		return "Scanner V4"
+	default:
+		return fmt.Sprintf("a scanner of type %q", scannerType)
+	}
 }
 
 func (e *enricherV2Impl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
@@ -435,7 +454,8 @@ func (e *enricherV2Impl) enrichWithMetadata(ctx context.Context, enrichmentConte
 	}
 
 	if !enrichmentContext.FetchOpt.forceRefetchCachedValues() &&
-		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues {
+		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues &&
+		enrichmentContext.FetchOpt != ForceRefetchMetadataOnly {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue, ok := e.metadataCache.Get(getRefV2(imageV2)); ok {
 			e.metrics.IncrementMetadataCacheHit()
@@ -793,10 +813,12 @@ func (e *enricherV2Impl) enrichWithSignatureVerificationData(ctx context.Context
 		return false, nil
 	}
 
-	// Timeout is based on benchmark test result for 200 integrations with 1 config each (roughly 0.1 sec) + a grace
-	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
-	// changed accordingly when RPCs are required (i.e. cosign keyless).
-	verifySignatureCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	// Bound the time spent verifying signatures for a single image against all configured integrations.
+	// Public-key verification is local and fast, but keyless (cosign) verification performs remote RPCs
+	// (Sigstore TUF trust root, Fulcio/Rekor material, transparency log lookups) and can take several
+	// seconds. The timeout is configurable via ROX_IMAGE_SIGNATURE_VERIFICATION_TIMEOUT so it can be
+	// tuned for slow Sigstore infrastructure without silently marking valid signatures as unverified.
+	verifySignatureCtx, cancel := context.WithTimeout(ctx, env.ImageSignatureVerificationTimeout.DurationSetting())
 	defer cancel()
 
 	res := e.signatureVerifier(verifySignatureCtx, sigIntegrations, utils.ConvertToV1(imgV2))

@@ -941,8 +941,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFiel
 		suite.NoError(err)
 		suite.Len(searchResults, 2)
 
-		var actualIds []string
-		var actualNames []string
+		actualIds := make([]string, 0, len(searchResults))
+		actualNames := make([]string, 0, len(searchResults))
 		for _, result := range searchResults {
 			actualIds = append(actualIds, result.GetId())
 			actualNames = append(actualNames, result.GetName())

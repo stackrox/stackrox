@@ -525,7 +525,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 		startWg.Add(numGoroutines)
 
 		// Launch concurrent requests with the same token
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
@@ -546,7 +546,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 			"expected exactly 1 TokenReview call for %d concurrent requests", numGoroutines)
 
 		// Verify all goroutines got the same result
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			require.NoError(t, errs[i])
 			assert.Equal(t, "test-user", results[i].Username)
 		}
@@ -595,7 +595,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		startWg.Add(numGoroutines)
 
 		// Launch concurrent authorize requests for the same user/namespace
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
@@ -617,7 +617,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 			"expected exactly 1 SAR call for %d concurrent requests", numGoroutines)
 
 		// Verify all goroutines got success
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			assert.NoError(t, errs[i])
 		}
 	})
@@ -662,7 +662,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		var startWg sync.WaitGroup
 		startWg.Add(numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
@@ -681,7 +681,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		assert.Equal(t, int32(1), sarCallCount.Load(),
 			"expected exactly 1 SAR call for %d concurrent forbidden requests", numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			require.Errorf(t, errs[i], "expected forbidden error for goroutine %d", i)
 			assert.Contains(t, errs[i].Error(), "lacks")
 		}

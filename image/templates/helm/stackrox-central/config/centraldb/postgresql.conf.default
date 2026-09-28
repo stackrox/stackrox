@@ -1,6 +1,6 @@
 hba_file = '/etc/stackrox.d/config/pg_hba.conf'
 listen_addresses = '*'
-max_connections = 100
+max_connections = 120
 password_encryption = scram-sha-256
 
 ssl = on

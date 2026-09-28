@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/suite"
@@ -84,7 +83,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsNonEmpty() {
 
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithQuery() {
 	q := &PaginatedQuery{
-		Query: pointers.String("CVE:cve-2022-xyz"),
+		Query: new("CVE:cve-2022-xyz"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
@@ -107,9 +106,9 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithPaginatedQuery() {
 	q := &PaginatedQuery{
 		Pagination: &inputtypes.Pagination{
 			SortOption: &inputtypes.SortOption{
-				Field: pointers.String(search.NodeTopCVSS.String()),
+				Field: new(search.NodeTopCVSS.String()),
 				AggregateBy: &inputtypes.AggregateBy{
-					AggregateFunc: pointers.String(aggregatefunc.Max.Name()),
+					AggregateFunc: new(aggregatefunc.Max.Name()),
 				},
 			},
 		},
@@ -160,7 +159,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECount() {
 
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountWithQuery() {
 	q := &RawQuery{
-		Query: pointers.String("Node:node"),
+		Query: new("Node:node"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
@@ -200,7 +199,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENoNodePerm() {
 			Cve                *string
 			SubfieldScopeQuery *string
 		}{
-			Cve: pointers.String("cve-xyz"),
+			Cve: new("cve-xyz"),
 		},
 	)
 	s.Error(err)
@@ -221,7 +220,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENonEmpty() {
 			Cve                *string
 			SubfieldScopeQuery *string
 		}{
-			Cve: pointers.String("cve-xyz"),
+			Cve: new("cve-xyz"),
 		},
 	)
 	s.NoError(err)
@@ -242,8 +241,8 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENonEmpty() {
 		Cve                *string
 		SubfieldScopeQuery *string
 	}{
-		Cve:                pointers.String("cve-xyz"),
-		SubfieldScopeQuery: pointers.String("Fixable:true"),
+		Cve:                new("cve-xyz"),
+		SubfieldScopeQuery: new("Fixable:true"),
 	},
 	)
 	s.NoError(err)
@@ -264,8 +263,8 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVENonEmpty() {
 		Cve                *string
 		SubfieldScopeQuery *string
 	}{
-		Cve:                pointers.String("cve-xyz"),
-		SubfieldScopeQuery: pointers.String("Namespace:n1"),
+		Cve:                new("cve-xyz"),
+		SubfieldScopeQuery: new("Namespace:n1"),
 	},
 	)
 	s.NoError(err)
@@ -307,7 +306,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverity() {
 
 func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
 	q := &RawQuery{
-		Query: pointers.String("Node:node"),
+		Query: new("Node:node"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
@@ -374,7 +373,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 			Cve                *string
 			SubfieldScopeQuery *string
 		}{
-			Cve: pointers.String("cve-xyz"),
+			Cve: new("cve-xyz"),
 		},
 	)
 	s.NoError(err)

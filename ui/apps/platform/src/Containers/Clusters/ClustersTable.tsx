@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useMetadata from 'hooks/useMetadata';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import type { TableUIState } from 'utils/getTableUIState';
@@ -24,8 +25,8 @@ import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
-import SensorUpgrade from './Components/SensorUpgrade';
-import SensorUpgradePanel from './Components/SensorUpgradePanel';
+import SensorCompatibility from './Components/SensorCompatibility';
+import SensorCompatibilityPanel from './Components/SensorCompatibilityPanel';
 
 export type ClustersTableProps = {
     centralVersion: string;
@@ -36,7 +37,6 @@ export type ClustersTableProps = {
     onDeleteCluster: (cluster: Cluster) => (event: MouseEvent) => void;
     toggleAllClusters: () => void;
     toggleCluster: (clusterId) => void;
-    upgradeSingleCluster: (clusterId: string) => void;
 };
 
 export const EXPANDABLE_COLUMN = {
@@ -56,9 +56,11 @@ function ClustersTable({
     onDeleteCluster,
     toggleAllClusters,
     toggleCluster,
-    upgradeSingleCluster,
 }: ClustersTableProps): ReactElement {
     const [expanded, setExpanded] = useState<ExpansionMap>({});
+    const metadata = useMetadata();
+    const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
+    const sensorColumnLabel = 'Sensor compatibility status';
 
     function toggle(clusterId: string, col: ExpandableColumnId) {
         setExpanded((prev) => ({
@@ -94,7 +96,7 @@ function ClustersTable({
                         <Th>Cluster</Th>
                         <Th>Provider (Region)</Th>
                         <Th>Cluster status</Th>
-                        <Th width={20}>Sensor upgrade status</Th>
+                        <Th width={20}>{sensorColumnLabel}</Th>
                         <Th>Credential expiration</Th>
                         <Th>Cluster deletion</Th>
                     </Tr>
@@ -164,28 +166,22 @@ function ClustersTable({
                                                 />
                                             </Td>
                                             <Td
-                                                dataLabel="Sensor upgrade status"
-                                                compoundExpand={
-                                                    clusterInfo?.status?.upgradeStatus
-                                                        ? {
-                                                              isExpanded: isCellExpanded(
-                                                                  clusterId,
-                                                                  EXPANDABLE_COLUMN.SENSOR
-                                                              ),
-                                                              onToggle: () =>
-                                                                  toggle(
-                                                                      clusterId,
-                                                                      EXPANDABLE_COLUMN.SENSOR
-                                                                  ),
-                                                              rowIndex,
-                                                              columnIndex: 4,
-                                                          }
-                                                        : undefined
-                                                }
+                                                dataLabel={sensorColumnLabel}
+                                                compoundExpand={{
+                                                    isExpanded: isCellExpanded(
+                                                        clusterId,
+                                                        EXPANDABLE_COLUMN.SENSOR
+                                                    ),
+                                                    onToggle: () =>
+                                                        toggle(clusterId, EXPANDABLE_COLUMN.SENSOR),
+                                                    rowIndex,
+                                                    columnIndex: 4,
+                                                }}
                                             >
-                                                <SensorUpgrade
-                                                    upgradeStatus={
-                                                        clusterInfo.status?.upgradeStatus
+                                                <SensorCompatibility
+                                                    compatibility={
+                                                        clusterInfo.status
+                                                            ?.sensorVersionCompatibility
                                                     }
                                                 />
                                             </Td>
@@ -240,18 +236,16 @@ function ClustersTable({
                                             <Tr isExpanded>
                                                 <Td colSpan={colSpan}>
                                                     <ExpandableRowContent>
-                                                        <SensorUpgradePanel
-                                                            centralVersion={centralVersion}
+                                                        <SensorCompatibilityPanel
+                                                            compatibility={
+                                                                clusterInfo.status
+                                                                    ?.sensorVersionCompatibility
+                                                            }
+                                                            compatibleVersions={compatibleVersions}
                                                             sensorVersion={
                                                                 clusterInfo.status?.sensorVersion
                                                             }
-                                                            upgradeStatus={
-                                                                clusterInfo.status?.upgradeStatus
-                                                            }
-                                                            actionProps={{
-                                                                clusterId: clusterInfo.id,
-                                                                upgradeSingleCluster,
-                                                            }}
+                                                            centralVersion={centralVersion}
                                                         />
                                                     </ExpandableRowContent>
                                                 </Td>

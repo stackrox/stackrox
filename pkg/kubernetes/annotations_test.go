@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,12 +51,14 @@ func TestTrimAnnotationsRace(t *testing.T) {
 	TrimAnnotations(&obj)
 	assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 
-	for i := 0; i < numGoroutines; i++ {
-		go func() {
-			for i := 0; i < numIterations; i++ {
+	var wg sync.WaitGroup
+	for range numGoroutines {
+		wg.Go(func() {
+			for range numIterations {
 				TrimAnnotations(&obj)
 				assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 			}
-		}()
+		})
 	}
+	wg.Wait()
 }

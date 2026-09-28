@@ -18,7 +18,7 @@ var allowAllPodsAllNS = &storage.NetworkPolicyIngressRule{
 }
 
 func generateIngressRules(node *node, namespacesByName map[string]*storage.NamespaceMetadata) []*storage.NetworkPolicyIngressRule {
-	var rules []*storage.NetworkPolicyIngressRule
+	rules := make([]*storage.NetworkPolicyIngressRule, 0, len(node.incoming))
 
 	for port := range node.incoming {
 		rules = append(rules, generateIngressRule(node, port, namespacesByName))

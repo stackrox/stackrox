@@ -79,7 +79,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Proxy relevant headers.
-	for _, headerName := range headersToProxy.AsSlice() {
+	for headerName := range headersToProxy.All() {
 		for _, value := range request.Header.Values(headerName) {
 			centralRequest.Header.Add(headerName, value)
 		}

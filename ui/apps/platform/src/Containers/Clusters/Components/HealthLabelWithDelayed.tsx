@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import capitalize from 'lodash/capitalize';
 
 import { healthStatusLabels } from '../cluster.constants';
 import type { ClusterHealthItem, ClusterHealthItemStatus } from '../clusterTypes';
@@ -26,12 +27,12 @@ function HealthLabelWithDelayed({
     const healthLabelText = isList
         ? clusterHealthItem
         : healthStatusLabels[clusterHealthItemStatus];
-    const healthLabelElement = <span className="capitalize">{healthLabelText}</span>;
+    const healthLabelElement = <span>{capitalize(healthLabelText)}</span>;
     if (isDelayed) {
         return (
             <div data-testid={testId} className={`${isList ? 'inline' : ''}`}>
                 {healthLabelElement}
-                <span className="whitespace-nowrap">{` ${delayedText}`}</span>
+                <span className="pf-v6-u-text-nowrap">{` ${delayedText}`}</span>
             </div>
         );
     }

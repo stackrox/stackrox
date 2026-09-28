@@ -66,7 +66,7 @@ func BenchmarkUpsertFlows(b *testing.B) {
 func benchmarkUpsertFlows(flowStore store.FlowStore, numFlows uint32) func(*testing.B) {
 	return func(b *testing.B) {
 		flows := make([]*storage.NetworkFlow, 0, numFlows)
-		for i := uint32(0); i < numFlows; i++ {
+		for i := range numFlows {
 			id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 			require.NoError(b, err)
 			flows = append(flows, testutils.ExtFlow(fixtureconsts.Deployment1, id.String()))
@@ -125,7 +125,7 @@ func BenchmarkGetFlowsForDeployment(b *testing.B) {
 
 func setupDeploymentFlows(b *testing.B, flowStore store.FlowStore, fromId string, toId string, numFlows int) {
 	flows := make([]*storage.NetworkFlow, 0, numFlows)
-	for i := 0; i < numFlows; i++ {
+	for range numFlows {
 		flows = append(flows, testutils.DepFlow(toId, fromId))
 	}
 
@@ -135,7 +135,7 @@ func setupDeploymentFlows(b *testing.B, flowStore store.FlowStore, fromId string
 
 func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deploymentId string, numFlows uint32) {
 	flows := make([]*storage.NetworkFlow, 0, numFlows)
-	for i := uint32(0); i < numFlows; i++ {
+	for i := range numFlows {
 		id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 		require.NoError(b, err)
 		flows = append(flows, testutils.ExtFlow(deploymentId, id.String()))
@@ -147,7 +147,7 @@ func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deployme
 
 func setupExternalEgressFlows(b *testing.B, flowStore store.FlowStore, deploymentId string, numFlows uint32) {
 	flows := make([]*storage.NetworkFlow, 0, numFlows)
-	for i := uint32(0); i < numFlows; i++ {
+	for i := range numFlows {
 		id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 		require.NoError(b, err)
 

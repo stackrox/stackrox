@@ -228,7 +228,7 @@ func testBaselineImplementation(t *testing.T, evaluatorFactory func() Evaluator)
 // createTestBaseline creates a process baseline with specified number of processes
 func createTestBaseline(deploymentID, containerName string, processCount int) *storage.ProcessBaseline {
 	elements := make([]*storage.BaselineElement, processCount)
-	for i := 0; i < processCount; i++ {
+	for i := range processCount {
 		elements[i] = &storage.BaselineElement{
 			Element: &storage.BaselineItem{
 				Item: &storage.BaselineItem_ProcessName{

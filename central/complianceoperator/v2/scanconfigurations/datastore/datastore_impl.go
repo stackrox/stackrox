@@ -71,7 +71,7 @@ func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanNam
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
 func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) error {
-	for i := 0; i < len(profiles); i++ {
+	for i := range profiles {
 		for j := i + 1; j < len(profiles); j++ {
 			if strings.EqualFold(profiles[i], profiles[j]) {
 				return errors.Errorf("the scan configuration contains duplicate profiles.  Profile %q and profile %q", profiles[i], profiles[j])

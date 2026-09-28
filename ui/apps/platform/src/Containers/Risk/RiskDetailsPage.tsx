@@ -25,10 +25,16 @@ import {
     riskPlatformViewPath,
     riskUserWorkloadsViewPath,
 } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import useLightspeedStatus from 'hooks/useLightspeedStatus';
+import AiExperienceIcon from 'images/aiExperience.svg?react';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
+import AiRiskSummaryCard from './AiRiskSummary/AiRiskSummaryCard';
+import useAiRiskSummary from './AiRiskSummary/useAiRiskSummary';
+import ConditionalTooltip from 'Components/ConditionalTooltip';
 
 function getRiskBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
     // Note: We cannot exhaustively check for all possible values of filteredWorkflowView because
@@ -51,6 +57,13 @@ function RiskDetailsPage(): ReactElement {
     const deploymentName = data?.deployment.name;
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRiskSummaryEnabled = isFeatureFlagEnabled('ROX_LIGHTSPEED_RISK_SUMMARY');
+    const { isAvailable } = useLightspeedStatus();
+    const isAiSummaryAvailable = isRiskSummaryEnabled && isAvailable;
+    const aiRiskSummary = useAiRiskSummary(deploymentId);
+    const hasAiRiskSummary = Boolean(aiRiskSummary.summary);
 
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
@@ -76,22 +89,58 @@ function RiskDetailsPage(): ReactElement {
                         <Skeleton width="25%" screenreaderText="Loading deployment information" />
                     )}
                     <FlexItem>
-                        {isRouteEnabledForNetworkGraph && data && (
-                            <Button
-                                variant="link"
-                                href={getLinkToDeploymentInNetworkGraph({
-                                    cluster: data.deployment.clusterName,
-                                    namespace: data.deployment.namespace,
-                                    deploymentId: data.deployment.id,
-                                })}
-                                component={LinkShim}
-                            >
-                                View Deployment in Network Graph
-                            </Button>
-                        )}
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {isRouteEnabledForNetworkGraph && data && (
+                                <FlexItem>
+                                    <Button
+                                        variant="link"
+                                        href={getLinkToDeploymentInNetworkGraph({
+                                            cluster: data.deployment.clusterName,
+                                            namespace: data.deployment.namespace,
+                                            deploymentId: data.deployment.id,
+                                        })}
+                                        component={LinkShim}
+                                    >
+                                        View Deployment in Network Graph
+                                    </Button>
+                                </FlexItem>
+                            )}
+                            {isAiSummaryAvailable && data && (
+                                <FlexItem>
+                                    <ConditionalTooltip
+                                        renderTooltip={hasAiRiskSummary}
+                                        content="A Risk Summary has already been generated for this deployment."
+                                    >
+                                        <Button
+                                            variant="primary"
+                                            icon={<AiExperienceIcon />}
+                                            onClick={aiRiskSummary.investigate}
+                                            isAriaDisabled={hasAiRiskSummary}
+                                        >
+                                            Investigate with AI
+                                        </Button>
+                                    </ConditionalTooltip>
+                                </FlexItem>
+                            )}
+                        </Flex>
                     </FlexItem>
                 </Flex>
             </PageSection>
+            {isAiSummaryAvailable && aiRiskSummary.isPresent && data && (
+                <PageSection>
+                    <AiRiskSummaryCard
+                        summary={aiRiskSummary.summary?.summary}
+                        isLoading={aiRiskSummary.isLoading}
+                        error={aiRiskSummary.error}
+                        isExpanded={aiRiskSummary.isExpanded}
+                        onExpand={() => aiRiskSummary.setExpanded(!aiRiskSummary.isExpanded)}
+                        onRetry={aiRiskSummary.investigate}
+                    />
+                </PageSection>
+            )}
             {error && (
                 <TableErrorComponent
                     error={error}

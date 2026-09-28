@@ -20,6 +20,7 @@ type registryStore interface {
 
 type centralClient interface {
 	ScanImageInternal(context.Context, *v1.ScanImageInternalRequest, ...grpc.CallOption) (*v1.ScanImageInternalResponse, error)
+	ScanImageInternalForAdmission(context.Context, *v1.ScanImageInternalRequest, ...grpc.CallOption) (*v1.ScanImageInternalResponse, error)
 	EnrichLocalImageInternal(context.Context, *v1.EnrichLocalImageInternalRequest, ...grpc.CallOption) (*v1.ScanImageInternalResponse, error)
 }
 

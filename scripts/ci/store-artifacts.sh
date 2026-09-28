@@ -46,6 +46,7 @@ store_artifacts() {
     local gs_destination
     gs_destination=$(get_unique_gs_destination "${destination}")
 
+    info "Artifact size: $(du -sh "$path" | awk '{print $1}')"
     info "Writing to $gs_destination..."
     local exitstatus=0
     local tmp_out
@@ -107,7 +108,7 @@ set_gs_path_vars() {
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     elif is_GITHUB_ACTIONS; then
         WORKFLOW_SUBDIR="${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-        JOB_SUBDIR="${GITHUB_JOB}"
+        JOB_SUBDIR="${CI_JOB_NAME:-${GITHUB_JOB}}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"

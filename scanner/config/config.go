@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
@@ -270,7 +270,23 @@ func (c *MatcherConfig) validate() error {
 		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
 	}
 
+	c.VulnBundleAllowlist = NormalizeStringList(c.VulnBundleAllowlist)
+
 	return nil
+}
+
+// NormalizeStringList trims whitespace from each entry and drops empty strings.
+func NormalizeStringList(entries []string) []string {
+	if entries == nil {
+		return nil
+	}
+	result := make([]string, 0, len(entries))
+	for _, s := range entries {
+		if t := strings.TrimSpace(s); t != "" {
+			result = append(result, t)
+		}
+	}
+	return result
 }
 
 // Database provides database configuration for scanner backends.

@@ -420,6 +420,7 @@ func (m *CosignSignature) CloneVT() *CosignSignature {
 		return (*CosignSignature)(nil)
 	}
 	r := new(CosignSignature)
+	r.SignatureFormat = m.SignatureFormat
 	if rhs := m.RawSignature; rhs != nil {
 		tmpBytes := make([]byte, len(rhs))
 		copy(tmpBytes, rhs)
@@ -444,6 +445,11 @@ func (m *CosignSignature) CloneVT() *CosignSignature {
 		tmpBytes := make([]byte, len(rhs))
 		copy(tmpBytes, rhs)
 		r.RekorBundle = tmpBytes
+	}
+	if rhs := m.SigstoreBundle; rhs != nil {
+		tmpBytes := make([]byte, len(rhs))
+		copy(tmpBytes, rhs)
+		r.SigstoreBundle = tmpBytes
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -1376,6 +1382,12 @@ func (this *CosignSignature) EqualVT(that *CosignSignature) bool {
 		return false
 	}
 	if string(this.RekorBundle) != string(that.RekorBundle) {
+		return false
+	}
+	if this.SignatureFormat != that.SignatureFormat {
+		return false
+	}
+	if string(this.SigstoreBundle) != string(that.SigstoreBundle) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2776,6 +2788,18 @@ func (m *CosignSignature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.SigstoreBundle) > 0 {
+		i -= len(m.SigstoreBundle)
+		copy(dAtA[i:], m.SigstoreBundle)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SigstoreBundle)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.SignatureFormat != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.SignatureFormat))
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.RekorBundle) > 0 {
 		i -= len(m.RekorBundle)
 		copy(dAtA[i:], m.RekorBundle)
@@ -3818,6 +3842,13 @@ func (m *CosignSignature) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.RekorBundle)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.SignatureFormat != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.SignatureFormat))
+	}
+	l = len(m.SigstoreBundle)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -6690,6 +6721,59 @@ func (m *CosignSignature) UnmarshalVT(dAtA []byte) error {
 			m.RekorBundle = append(m.RekorBundle[:0], dAtA[iNdEx:postIndex]...)
 			if m.RekorBundle == nil {
 				m.RekorBundle = []byte{}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureFormat", wireType)
+			}
+			m.SignatureFormat = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SignatureFormat |= CosignSignature_SignatureFormat(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SigstoreBundle", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SigstoreBundle = append(m.SigstoreBundle[:0], dAtA[iNdEx:postIndex]...)
+			if m.SigstoreBundle == nil {
+				m.SigstoreBundle = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -10870,6 +10954,56 @@ func (m *CosignSignature) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RekorBundle = dAtA[iNdEx:postIndex]
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureFormat", wireType)
+			}
+			m.SignatureFormat = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SignatureFormat |= CosignSignature_SignatureFormat(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SigstoreBundle", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SigstoreBundle = dAtA[iNdEx:postIndex]
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

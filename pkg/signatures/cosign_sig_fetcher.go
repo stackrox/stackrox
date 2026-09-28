@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,13 +14,10 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
-	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v3/pkg/cosign"
-	"github.com/sigstore/cosign/v3/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v3/pkg/oci/remote"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,8 +26,11 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
+
+const fetchTimeout = 10 * time.Second
 
 type cosignSignatureFetcher struct {
 	// registryRateLimiter is a rate limiter for parallel calls to the registry. This will avoid reaching out to the
@@ -53,11 +54,15 @@ func init() {
 }
 
 // FetchSignatures implements the SignatureFetcher interface.
-// The signature associated with the image will be fetched from the given registry.
-// It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
-// NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
+// Signatures are discovered via two methods concurrently: the legacy cosign tag-based
+// path and the OCI 1.1 Referrers API. Results from both are merged and deduplicated.
+// When one path fails but the other returns signatures, the error is logged and the
+// successful results are returned. When both paths fail, the joined error is returned.
+// Unauthorized errors are wrapped as errox.NotAuthorized regardless of which path
+// produced them.
+// NOTE: No error will be returned when the image has no signature available.
 func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry,
+	fullImageName string, registry registryTypes.Registry, retryOpts ...retry.OptionsModifier,
 ) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.
@@ -75,85 +80,156 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	// Wait until the registry rate limiter allows entrance.
 	err = c.registryRateLimiter.Wait(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "waiting for rate limiter entrance for registry %q", registry.Name())
+		return nil, fmt.Errorf("waiting for rate limiter entrance for registry %q: %w", registry.Name(), err)
 	}
 
-	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
-	// client.
-	// Additionally, use a local signed entity to skip fetching the image manifest and only fetch the signature manifest.
-	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(ctx, registry)...))
-	signedPayloads, err := cosign.FetchSignatures(se)
+	// Inject the registry specific authentication options to the google/go-containerregistry client.
+	remoteOpts := optionsFromRegistry(ctx, registry)
+	ociOpts := []ociremote.Option{ociremote.WithRemoteOptions(remoteOpts...)}
 
-	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
-	// error types are exposed need to check for string comparison.
-	// Cosign ref:
-	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
-	if err != nil && !isMissingSignatureError(err) && !isUnknownMimeTypeError(err) {
-		// Specifically mark an error as errox.NotAuthorized so we skip using the same credentials for fetching.
-		// We can safely skip the potential marking of retryable errors as unauthorized errors are not transient.
-		if isUnauthorizedError(err) {
-			return nil, errox.NotAuthorized.CausedBy(err)
+	imgSHA := imgUtils.GetSHA(image)
+
+	// Fetch from both discovery methods concurrently. Each path retries independently
+	// so a transient failure in one does not block the other.
+	var (
+		tagPayloads      []signaturePayload
+		tagErr           error
+		referrerPayloads []signaturePayload
+		referrerErr      error
+		wg               sync.WaitGroup
+	)
+	wg.Go(func() {
+		tagPayloads, tagErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]signaturePayload, error) {
+			return fetchSignaturesByTag(imgSHA, imgRef, opts)
+		})
+	})
+	wg.Go(func() {
+		if imgSHA == "" {
+			referrerErr = fmt.Errorf("image %q has no SHA digest for referrer lookup", fullImageName)
+			return
 		}
-		// Ensure we mark transient errors as retryable.
-		return nil, makeTransientErrorRetryable(err)
+		digestRef := imgRef.Context().Digest(imgSHA)
+		referrerPayloads, referrerErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]signaturePayload, error) {
+			return fetchSignaturesByReferrer(ctx, digestRef, imgRef.Context(), opts)
+		})
+	})
+	wg.Wait()
+
+	// Merge payloads from both discovery methods. A path is successful when it
+	// returns no error, regardless of whether it found signatures.
+	var allPayloads []signaturePayload
+	if tagErr == nil {
+		allPayloads = append(allPayloads, tagPayloads...)
+	} else {
+		log.Warnf("Tag-based discovery failed for %q: %v", fullImageName, tagErr)
+	}
+	if referrerErr == nil {
+		allPayloads = append(allPayloads, referrerPayloads...)
+	} else {
+		log.Warnf("Referrer-based discovery failed for %q: %v", fullImageName, referrerErr)
 	}
 
-	// Short-circuit if no signatures are associated with the image.
-	if len(signedPayloads) == 0 {
+	// Return an error only when both discovery paths failed.
+	if tagErr != nil && referrerErr != nil {
+		fetchErr := errors.Join(tagErr, referrerErr)
+		if isUnauthorizedError(tagErr) || isUnauthorizedError(referrerErr) {
+			return nil, errox.NotAuthorized.CausedBy(fetchErr)
+		}
+		return nil, fetchErr
+	}
+
+	if len(allPayloads) == 0 {
 		return nil, nil
 	}
 
-	cosignSignatures := make([]*storage.Signature, 0, len(signedPayloads))
-
-	for _, signedPayload := range signedPayloads {
-		rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
-		// We skip the invalid base64 signature and log its occurrence.
-		if err != nil {
-			log.Errorf("Error during decoding of raw signature for image %q: %v",
-				fullImageName, err)
-			continue
-		}
-
-		certPEM, err := certificateFromSignedPayload(signedPayload)
-		if err != nil {
-			log.Errorf("Error during unmarshalling certificate to PEM for image %q: %v", fullImageName, err)
-		}
-
-		chainPEM, err := certificateChainFromSignedPayload(signedPayload)
-		if err != nil {
-			log.Errorf("Error during unmarshalling certificate chain to PEM for image %q: %v",
-				fullImageName, err)
-		}
-
-		var rekorBundle []byte
-		if signedPayload.Bundle != nil {
-			rekorBundle, err = json.Marshal(signedPayload.Bundle)
-			if err != nil {
-				log.Errorf("Error during marshalling rekor bundle for image %q: %v", fullImageName, err)
-			}
-		}
-
-		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
-		// the signature.
-		cosignSignatures = append(cosignSignatures, &storage.Signature{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig,
-					SignaturePayload: signedPayload.Payload,
-					CertPem:          certPEM,
-					CertChainPem:     chainPEM,
-					RekorBundle:      rekorBundle,
-				},
-			},
-		})
-	}
-
-	// Since we are skipping invalid base64 signatures, need to check the length of the result.
+	cosignSignatures := convertPayloadsToSignatures(allPayloads, fullImageName)
 	if len(cosignSignatures) == 0 {
 		return nil, nil
 	}
 
 	return protoutils.SliceUnique(cosignSignatures), nil
+}
+
+// fetchWithRetry calls fn, optionally wrapping it in retry logic with a per-attempt timeout.
+// The timeout context is injected into the OCI options so fn does not need to handle contexts.
+// When retryOpts is empty, fn is called directly without retry or timeout wrapping.
+func fetchWithRetry(ctx context.Context, ociOpts []ociremote.Option, retryOpts []retry.OptionsModifier,
+	fn func([]ociremote.Option) ([]signaturePayload, error),
+) ([]signaturePayload, error) {
+	if len(retryOpts) == 0 {
+		return fn(ociOpts)
+	}
+	var payloads []signaturePayload
+	err := retry.WithRetry(func() error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+		defer cancel()
+		opts := append(slices.Clone(ociOpts),
+			ociremote.WithMoreRemoteOptions(gcrRemote.WithContext(fetchCtx)))
+		var fetchErr error
+		payloads, fetchErr = fn(opts)
+		return makeTransientErrorRetryable(fetchErr)
+	}, retryOpts...)
+	return payloads, err
+}
+
+// convertPayloadsToSignatures converts fetched payloads into CosignSignature protos.
+// Storage: sigstore bundles are stored as raw JSON in SigstoreBundle. SimpleSigning
+// signatures are decomposed into individual proto fields (RawSignature, SignaturePayload,
+// CertPem, CertChainPem, RekorBundle). Old images without SigstoreBundle fall back to
+// the decomposed fields at verification time.
+func convertPayloadsToSignatures(payloads []signaturePayload, fullImageName string) []*storage.Signature {
+	signatures := make([]*storage.Signature, 0, len(payloads))
+
+	for _, signedPayload := range payloads {
+		cosignSig := &storage.CosignSignature{}
+
+		// DSSE bundle takes priority if it exists.
+		if len(signedPayload.sigstoreBundle) > 0 {
+			cosignSig.SignatureFormat = storage.CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE
+			cosignSig.SigstoreBundle = signedPayload.sigstoreBundle
+		} else {
+			cosignSig.SignatureFormat = storage.CosignSignature_SIMPLE_SIGNING
+			cosignSig.SignaturePayload = signedPayload.Payload
+			rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
+			if err != nil {
+				log.Errorf("Error during decoding of raw signature for image %q: %v",
+					fullImageName, err)
+				continue
+			}
+			cosignSig.RawSignature = rawSig
+
+			certPEM, err := certificateFromSignedPayload(signedPayload.SignedPayload)
+			if err != nil {
+				log.Errorf("Error during unmarshalling certificate to PEM for image %q: %v", fullImageName, err)
+			}
+			cosignSig.CertPem = certPEM
+
+			chainPEM, err := certificateChainFromSignedPayload(signedPayload.SignedPayload)
+			if err != nil {
+				log.Errorf("Error during unmarshalling certificate chain to PEM for image %q: %v",
+					fullImageName, err)
+			}
+			cosignSig.CertChainPem = chainPEM
+
+			if signedPayload.Bundle != nil {
+				rekorBundle, err := json.Marshal(signedPayload.Bundle)
+				if err != nil {
+					log.Errorf("Error during marshalling rekor bundle for image %q: %v", fullImageName, err)
+				} else {
+					cosignSig.RekorBundle = rekorBundle
+				}
+			}
+		}
+
+		signatures = append(signatures, &storage.Signature{
+			Signature: &storage.Signature_Cosign{Cosign: cosignSig},
+		})
+	}
+
+	return signatures
 }
 
 func certificateFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {
@@ -261,6 +337,9 @@ func isUnknownMimeTypeError(err error) bool {
 // isUnauthorizedError is checking whether the returned error indicates that there was a http.StatusUnauthorized was
 // returned during fetching of signatures.
 func isUnauthorizedError(err error) bool {
+	if err == nil {
+		return false
+	}
 	return checkIfErrorContainsCode(err, http.StatusUnauthorized, http.StatusForbidden)
 }
 
@@ -271,55 +350,15 @@ func isUnauthorizedError(err error) bool {
 // If the error is not matching any of these types or the code is not contained in the given codes, false will be
 // returned.
 func checkIfErrorContainsCode(err error, codes ...int) bool {
-	var transportErr *transport.Error
-	var statusError *dockerRegistry.HttpStatusError
-
 	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
-	if errors.As(err, &transportErr) {
+	if transportErr, ok := errors.AsType[*transport.Error](err); ok {
 		return slices.Index(codes, transportErr.StatusCode) != -1
 	}
 
 	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
-	if errors.As(err, &statusError) && statusError.Response != nil {
+	if statusError, ok := errors.AsType[*dockerRegistry.HttpStatusError](err); ok && statusError.Response != nil {
 		return slices.Index(codes, statusError.Response.StatusCode) != -1
 	}
 
 	return false
-}
-
-var _ oci.SignedEntity = (*localSignedEntity)(nil)
-
-// localSignedEntity is an implementation of oci.SignedEntity used for fetching signatures.
-// This implementation skips fetching the manifest of the signed image, since within the image enriching, we already
-// fetched the image manifest beforehand.
-type localSignedEntity struct {
-	oci.SignedEntity
-	opts   []ociremote.Option
-	imgRef name.Reference
-	imgSHA string
-}
-
-func newLocalSignedEntity(img *storage.Image, imgRef name.Reference, opts ...ociremote.Option) *localSignedEntity {
-	imgSHA := imgUtils.GetSHA(img)
-	return &localSignedEntity{
-		opts:   opts,
-		imgRef: imgRef,
-		imgSHA: imgSHA,
-	}
-}
-
-func (s *localSignedEntity) Digest() (v1.Hash, error) {
-	return v1.NewHash(s.imgSHA)
-}
-
-func (s *localSignedEntity) Signatures() (oci.Signatures, error) {
-	h, err := s.Digest()
-	if err != nil {
-		return nil, err
-	}
-	// The name reference of the signature to fetch is going to be:
-	// <registry>/<repository>@<digest>.sig
-	// This is being kept in line with:
-	// https://github.com/sigstore/cosign/blob/65eb28af970d133adeefdc6c48d6e9304dd8cc3a/pkg/oci/remote/remote.go#L87
-	return ociremote.Signatures(s.imgRef.Context().Tag(fmt.Sprint(h.Algorithm, "-", h.Hex, ".sig")), s.opts...)
 }

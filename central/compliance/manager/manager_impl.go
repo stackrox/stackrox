@@ -352,7 +352,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			var dataPromise dataPromise
 			if standard.HasAnyDataDependency(scrapeDataDeps...) {
 				if scrapeBasedPromise == nil {
-					var standardIDs []string
+					standardIDs := make([]string, 0, len(standardImpls))
 					for _, standard := range standardImpls {
 						standardIDs = append(standardIDs, standard.ID)
 					}

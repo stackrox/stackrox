@@ -11,6 +11,7 @@ import (
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -51,6 +52,11 @@ func NewOrchestratorIstioCVEManagerImpl(
 		},
 		updateSignal: concurrency.NewSignal(),
 	}
+	if !features.LegacyScanner.Enabled() {
+		log.Info("Orchestrator scanning is disabled: no orchestrator scanners are integrated")
+		return m, nil
+	}
+
 	clairifyName, clairifyCreator := clairify.OrchestratorScannerCreator()
 	m.orchestratorCVEMgr.creators[clairifyName] = clairifyCreator
 

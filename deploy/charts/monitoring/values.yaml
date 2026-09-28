@@ -3,12 +3,14 @@ prometheusImage: prom/prometheus:v2.34.0
 password: stackrox
 anonymousAdminAccess: true
 
+# No memory limit: scrape/compaction spikes OOMKill under fixed caps on real
+# clusters. Request reserves scheduler headroom; the process may use more.
+# Keep a CPU limit so Prometheus cannot starve other pods when busy.
 resources:
   requests:
-    memory: "1Gi"
+    memory: "2Gi"
     cpu: "500m"
   limits:
-    memory: "2Gi"
     cpu: "1000m"
 
 exposure:
@@ -27,10 +29,70 @@ cadvisorMetricRelabelConfigs: []
 
 kube-state-metrics:
   releaseNamespace: true
+  # Align with the parent monitoring Deployment UIDs. Upstream defaults use
+  # 65534 (nobody), which OpenShift restricted-v2 rejects when the SA lacks
+  # a broader SCC; with nonroot-v2 these UIDs remain valid non-root values.
+  securityContext:
+    enabled: true
+    runAsUser: 1000
+    runAsGroup: 2000
+    fsGroup: 2000
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 2000
+  # autoscaling/v2beta2 is gone on current clusters; the default HPA collector
+  # only produces "requested resource not found" log spam.
+  collectors:
+    - certificatesigningrequests
+    - configmaps
+    - cronjobs
+    - daemonsets
+    - deployments
+    - endpoints
+    - ingresses
+    - jobs
+    - limitranges
+    - mutatingwebhookconfigurations
+    - namespaces
+    - networkpolicies
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - poddisruptionbudgets
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - resourcequotas
+    - secrets
+    - services
+    - statefulsets
+    - storageclasses
+    - validatingwebhookconfigurations
+    - volumeattachments
 
 alertmanager:
   persistence:
     enabled: false
+  # Pod-level runAsUser covers the configmap-reload sidecar, which has no
+  # container securityContext in the upstream chart.
+  podSecurityContext:
+    fsGroup: 2000
+    runAsUser: 1000
+    runAsNonRoot: true
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 2000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  # configmap-reload pulls from Docker Hub; same Hub auth as the parent pod.
+  imagePullSecrets:
+    - name: stackrox
   config:
     receivers:
       - name: pagerduty-notifications
@@ -42,4 +104,6 @@ alertmanager:
   configmapReload:
     enabled: true
 
-enableMonitoringPSPs: ${MONITORING_ENABLE_PSP}
+# PSPs are removed from modern Kubernetes/OpenShift/GKE. Classic deploy can
+# still enable them with --set enableMonitoringPSPs=true when the API exists.
+enableMonitoringPSPs: false

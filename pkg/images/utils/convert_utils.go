@@ -48,7 +48,7 @@ func ConvertToV1(image *storage.ImageV2, names ...*storage.ImageName) *storage.I
 
 // ConvertNotesToV1 converts a list of storage.ImageV2_Note to a list of storage.Image_Note.
 func ConvertNotesToV1(notes []storage.ImageV2_Note) []storage.Image_Note {
-	res := make([]storage.Image_Note, 0)
+	res := make([]storage.Image_Note, 0, len(notes))
 	for _, note := range notes {
 		res = append(res, storage.Image_Note(note.Number()))
 	}
@@ -110,7 +110,7 @@ func convertToV2(image *storage.Image, nameOverride *storage.ImageName) *storage
 }
 
 func ConvertNotesToV2(notes []storage.Image_Note) []storage.ImageV2_Note {
-	res := make([]storage.ImageV2_Note, 0)
+	res := make([]storage.ImageV2_Note, 0, len(notes))
 	for _, note := range notes {
 		res = append(res, storage.ImageV2_Note(note.Number()))
 	}

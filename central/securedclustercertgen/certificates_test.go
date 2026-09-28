@@ -194,7 +194,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 			serviceTypes = localScannerServiceTypes
 		}
 		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
-		for _, serviceType := range serviceTypes.AsSlice() {
+		for serviceType := range serviceTypes.All() {
 			serviceTypeNames = append(serviceTypeNames, serviceType.String())
 		}
 		return set.NewFrozenSet(serviceTypeNames...)

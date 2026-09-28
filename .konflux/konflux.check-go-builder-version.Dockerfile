@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:75c5b9c2c910487007d4de42e86aae41d49751e6c7bcae7777c8bf630c31a3d8
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:e74b03198cccc24c24a27071ad4d6c2edcfe0bb10c6de99c609ce6e3c06d6d04
 
 WORKDIR /workspace
 

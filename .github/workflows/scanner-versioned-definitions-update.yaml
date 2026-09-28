@@ -1,8 +1,6 @@
 name: Scanner versioned vulnerabilities update
 
 on:
-  schedule:
-  - cron: "30 */4 * * *"
   pull_request:
     types:
     - opened
@@ -23,6 +21,11 @@ on:
           Sets the git reference to build a bundle that will be uploaded to the
           release candidate version stream, appending `-rc` to the version
           stream vN (eg. v2-rc).
+        required: false
+      vuln_bundles:
+        description: >
+          Sets a specific updater to run. If unset, all updaters are built.
+          Not supported by older git references, please double-check
         required: false
       job:
         type: choice
@@ -45,7 +48,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -104,7 +107,7 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -204,7 +207,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -214,7 +217,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -242,7 +245,12 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run updater (multi bundle)
+      env:
+        VULN_BUNDLES: ${{ github.event.inputs.vuln_bundles }}
       run: |
+        if [ -n "$VULN_BUNDLES" ]; then
+            export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
+        fi
         tag=$(make -s --no-print-directory tag)
         # In pre-4.9, the exporter requires --split to generate multi-bundles.
         case "$tag" in
@@ -255,7 +263,67 @@ jobs:
         esac
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
+    - name: Validate bundle
+      # ROX-33993: fails on any per-source issue; "Upload definitions artifacts"
+      # still runs via if: always() so healthy sources still reach users.
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+
+        files=(bundles/*.json.zst)
+        if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::no vulnerability bundle files found in bundles/ directory"
+            exit 1
+        fi
+
+        # Accumulate failures so all sources are checked before exiting.
+        failures=()
+        fail() {
+            echo "::error::$*"
+            failures+=("$*")
+        }
+
+        # Counts JSON objects in an NDJSON stream, failing on any non-object value.
+        # shellcheck disable=SC2016 # $i is jq syntax, not a shell variable.
+        jq_filter='reduce inputs as $i (0; if ($i | type) == "object" then . + 1 else error("malformed JSON value: \($i | type)") end)'
+        for f in "${files[@]}"; do
+            name=$(basename "$f" .json.zst)
+
+            if [ ! -s "$f" ]; then
+                fail "source '$name': file $f is empty (0 bytes)"
+                continue
+            fi
+
+            if ! zstd -t "$f" >/dev/null 2>&1; then
+                fail "source '$name': file $f is not a valid zstd archive (corrupted/truncated?)"
+                continue
+            fi
+
+            if ! record_count=$(zstd -dc "$f" | jq -n "$jq_filter" 2>/dev/null); then
+                fail "source '$name': file $f decompressed successfully, but a malformed JSON value was found"
+                continue
+            fi
+
+            if [ "$record_count" -eq 0 ]; then
+                fail "source '$name': file $f decompresses fine but contains 0 JSON objects (expected >0)"
+                continue
+            fi
+
+            echo "source '$name': OK ($record_count records)"
+        done
+
+        if [ "${#failures[@]}" -gt 0 ]; then
+            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken (affected source(s) will be missing from the published bundle; this does not block publishing)"
+            printf '  - %s\n' "${failures[@]}"
+            exit 1
+        fi
+
+        echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
+
+    # Uploads the definitions as a temporary GitHub Actions artifact. The actual publishing to GCS happens on: upload-definitions
     - name: Upload definitions artifacts
+      if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
@@ -263,7 +331,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
         fetch-depth: 0
@@ -285,7 +353,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -295,7 +363,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -353,7 +421,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
         fetch-depth: 0
@@ -365,7 +433,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -444,7 +512,12 @@ jobs:
     - upload-definitions
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    permissions:
+      checks: read
+      actions: read
     steps:
-    - name: Send Slack notification on workflow failure
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

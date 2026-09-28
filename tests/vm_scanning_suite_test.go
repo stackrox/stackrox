@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,6 +90,8 @@ type VMHandle struct {
 	ID string
 	// NodeName is the Kubernetes node hosting the VirtualMachineInstance (populated after VMI is Running).
 	NodeName string
+	// SkipReason, when set, skips this VM's subtests so other VMs still run.
+	SkipReason string
 }
 
 // VMScanningSuite exercises OpenShift VM scanning end-to-end (KubeVirt guests, roxagent, Central).
@@ -107,8 +108,12 @@ type VMScanningSuite struct {
 	dynamicClient dynamic.Interface
 	namespace     string
 
-	conn     *grpc.ClientConn
-	vmClient v2.VirtualMachineServiceClient
+	conn       *grpc.ClientConn
+	vmClient   v2.VirtualMachineServiceClient
+	vmV2Client v2.VirtualMachineV2ServiceClient
+	// enhancedVMModel follows Central's ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL.
+	// That flag selects VirtualMachineV2Service vs VirtualMachineService.
+	enhancedVMModel bool
 
 	virtctl vmhelpers.Virtctl
 
@@ -157,10 +162,12 @@ func (s *VMScanningSuite) SetupSuite() {
 	s.logf("VM scanning setup: connect to Central gRPC")
 	s.conn = centralgrpc.GRPCConnectionToCentral(t)
 	s.vmClient = v2.NewVirtualMachineServiceClient(s.conn)
+	s.vmV2Client = v2.NewVirtualMachineV2ServiceClient(s.conn)
 
 	s.logf("VM scanning setup: verify central/sensor connectivity and feature gates")
 	s.mustWaitForHealthyCentralSensorConnection()
 	s.mustVerifyVirtualMachinesFeatureEnabled()
+	s.resolveVMAPI()
 	s.logf("VM scanning setup: verify cluster VSOCK readiness")
 	mustVerifyClusterVSOCKReady(t, s.ctx, s.k8sClient, s.dynamicClient)
 
@@ -312,6 +319,57 @@ func (s *VMScanningSuite) mustWaitForHealthyCentralSensorConnection() {
 	waitUntilCentralSensorConnectionIs(s.T(), s.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
+// resolveVMAPI reads ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL from Central and
+// checks that the matching gRPC service is registered.
+func (s *VMScanningSuite) resolveVMAPI() {
+	t := s.T()
+	t.Helper()
+
+	flag := features.VirtualMachinesEnhancedDataModel
+	s.enhancedVMModel = s.centralFeatureEnabled(flag)
+	s.logf("VM scanning setup: Central %s=%v", flag.EnvVar(), s.enhancedVMModel)
+
+	if s.enhancedVMModel {
+		_, err := s.vmV2Client.ListVMs(s.ctx, &v2.ListVMsRequest{})
+		require.NoError(t, err, "VirtualMachineV2Service must be registered when %s is enabled", flag.EnvVar())
+		return
+	}
+	_, err := s.vmClient.ListVirtualMachines(s.ctx, &v2.ListVirtualMachinesRequest{})
+	require.NoError(t, err, "VirtualMachineService must be registered when %s is disabled", flag.EnvVar())
+}
+
+// centralFeatureEnabled reports whether flag is on in the Central deployment,
+// matching features.Enabled: explicit true/false, otherwise the flag default.
+func (s *VMScanningSuite) centralFeatureEnabled(flag features.FeatureFlag) bool {
+	t := s.T()
+	t.Helper()
+
+	obj, err := s.k8sClient.AppsV1().Deployments(namespaces.StackRox).Get(s.ctx, "central", metaV1.GetOptions{})
+	require.NoError(t, err, "get Deployment %s/central", namespaces.StackRox)
+	for _, c := range obj.Spec.Template.Spec.Containers {
+		if c.Name != "central" {
+			continue
+		}
+		for _, e := range c.Env {
+			if e.Name != flag.EnvVar() {
+				continue
+			}
+			switch strings.ToLower(strings.TrimSpace(e.Value)) {
+			case "false":
+				return false
+			case "true":
+				return true
+			default:
+				return flag.Default()
+			}
+		}
+		return flag.Default()
+	}
+	require.FailNowf(t, "container central not found in Deployment stackrox/central",
+		"available containers: %s", formatContainerNames(obj.Spec.Template.Spec.Containers))
+	return false
+}
+
 func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	ctx, cancel := context.WithTimeout(s.ctx, featureGateVerifyTimeout)
 	defer cancel()
@@ -322,13 +380,37 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	// Verify the feature flag env var is set on all components that need it.
 	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
-	s.mustVerifyContainerEnvVar(ctx, "daemonset", "collector", "compliance", ns, wantEnv)
+	s.mustVerifySensorVSOCKRBAC(ctx)
+}
+
+// mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
+// Pull-mode scraping fails without this; the Helm chart creates the binding when
+// virtualMachines.enabled follows ROX_VIRTUAL_MACHINES (on by default).
+func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
+	t := s.T()
+	t.Helper()
+
+	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
+	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
+		"Sensor cannot scrape guest agents over vsock without this RBAC "+
+		"(check that Helm virtualMachines.enabled / ROX_VIRTUAL_MACHINES is on)")
+	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
+	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
+
+	foundSensorSA := false
+	for _, sub := range binding.Subjects {
+		if sub.Kind == "ServiceAccount" && sub.Name == "sensor" && sub.Namespace == namespaces.StackRox {
+			foundSensorSA = true
+			break
+		}
+	}
+	require.True(t, foundSensorSA, "ClusterRoleBinding stackrox:vsock-access-binding must bind stackrox/sensor")
 }
 
 // mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
 // has the given environment variable set to a truthy value ("true", "1", etc.).
-// This catches deployment misconfigurations where a feature flag reaches Central but not
-// the workload containers that also need it.
+// This catches deployment misconfigurations where a feature flag reaches one component
+// but not another that also needs it.
 func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, name, containerName, ns, envName string) {
 	t := s.T()
 	t.Helper()
@@ -355,14 +437,13 @@ func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, n
 			if e.Name == envName {
 				val := strings.ToLower(strings.TrimSpace(e.Value))
 				require.Truef(t, val == "true" || val == "1",
-					"%s %s/%s container %q has %s=%q which is not truthy; "+
-						"the VSOCK relay will not start without this flag",
+					"%s %s/%s container %q has %s=%q which is not truthy",
 					kind, ns, name, containerName, envName, e.Value)
 				return
 			}
 		}
 		require.Failf(t, fmt.Sprintf("%s %s/%s container %q is missing env var %s", kind, ns, name, containerName, envName),
-			"the feature flag must be set on all components that need it (Central, Sensor, compliance); "+
+			"the feature flag must be set on Central and Sensor for pull-mode VM scanning; "+
 				"present env vars: %s", formatContainerEnvNames(c.Env))
 	}
 	require.Failf(t, fmt.Sprintf("container %q not found in %s %s/%s", containerName, kind, ns, name),
@@ -570,7 +651,7 @@ func (s *VMScanningSuite) prepareGuests() {
 func (s *VMScanningSuite) prepareGuestWithRecovery(vm *VMHandle) error {
 	const maxRecoveries = 2
 	for recoveryAttempt := 0; recoveryAttempt <= maxRecoveries; recoveryAttempt++ {
-		err := s.prepareGuest(*vm)
+		err := s.prepareGuest(vm)
 		if err == nil {
 			return nil
 		}
@@ -654,6 +735,20 @@ func (s *VMScanningSuite) vmSpecToRequest(sp vmhelpers.VMSpec) vmhelpers.VMReque
 	}
 }
 
+func (s *VMScanningSuite) skipUnlessLegacyVMAPI(t *testing.T) {
+	t.Helper()
+	if s.enhancedVMModel {
+		t.Skip("VirtualMachineService is not used when ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL is enabled")
+	}
+}
+
+func (s *VMScanningSuite) skipUnlessV2VMAPI(t *testing.T) {
+	t.Helper()
+	if !s.enhancedVMModel {
+		t.Skip("VirtualMachineV2Service is not used when ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL is disabled")
+	}
+}
+
 func (s *VMScanningSuite) mustListVMByNamespaceAndName(namespace, name string) *v2.VirtualMachine {
 	t := s.T()
 	t.Helper()
@@ -667,6 +762,24 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 	t := s.T()
 	t.Helper()
 	resp, err := s.vmClient.GetVirtualMachine(s.ctx, &v2.GetVirtualMachineRequest{Id: id})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	return resp
+}
+
+func (s *VMScanningSuite) mustListV2VMByNamespaceAndName(namespace, name string) *v2.VMListItem {
+	t := s.T()
+	t.Helper()
+	vm, err := vmhelpers.ListV2VMByNamespaceName(s.ctx, s.vmV2Client, namespace, name)
+	require.NoError(t, err)
+	require.NotNil(t, vm, "ListVMs: no VM for namespace=%q name=%q", namespace, name)
+	return vm
+}
+
+func (s *VMScanningSuite) mustGetVMV2(id string) *v2.VMDetail {
+	t := s.T()
+	t.Helper()
+	resp, err := s.vmV2Client.GetVM(s.ctx, &v2.GetVMRequest{Id: id})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	return resp
@@ -689,29 +802,54 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureCanonicalScan runs a single guest-side roxagent invocation.
-// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
-func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
+// ensureRoxagentServing starts Quadlet roxagent.service on the guest if needed
+// and waits until it is active (VSOCK listener ready). Sensor scrapes afterward.
+func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
-		return errors.New("ensureCanonicalScan: nil VM handle")
+		return errors.New("ensureRoxagentServing: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
 	if err := s.waitForScannerV4Initialized(); err != nil {
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name)
 }
 
-// waitForScan polls Central in order until scan data is visible.
-func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.VirtualMachine, error) {
+// centralScanSnapshot is the scan-ready view from the VM API selected by Central's flag.
+type centralScanSnapshot struct {
+	ID     string
+	Legacy *v2.VirtualMachine
+	Detail *v2.VMDetail
+}
+
+// waitForScan polls the VM API selected by ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL.
+func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*centralScanSnapshot, error) {
 	if vm == nil {
 		return nil, errors.New("waitForScan: nil VM handle")
 	}
-	s.logf("scan wait %s/%s: start (timeout=%v poll=%v)", vm.Namespace, vm.Name, s.cfg.ScanTimeout, s.cfg.ScanPollInterval)
+	s.logf("scan wait %s/%s: start (timeout=%v poll=%v enhancedVMModel=%v)",
+		vm.Namespace, vm.Name, s.cfg.ScanTimeout, s.cfg.ScanPollInterval, s.enhancedVMModel)
 	waitCtx, cancel := context.WithTimeout(ctx, s.cfg.ScanTimeout)
 	defer cancel()
 
+	if s.enhancedVMModel {
+		detail, err := s.waitForV2Scan(waitCtx, vm)
+		if err != nil {
+			return nil, err
+		}
+		vm.ID = detail.GetId()
+		return &centralScanSnapshot{ID: vm.ID, Detail: detail}, nil
+	}
+	legacy, err := s.waitForLegacyScan(waitCtx, vm)
+	if err != nil {
+		return nil, err
+	}
+	vm.ID = legacy.GetId()
+	return &centralScanSnapshot{ID: vm.ID, Legacy: legacy}, nil
+}
+
+func (s *VMScanningSuite) waitForLegacyScan(waitCtx context.Context, vm *VMHandle) (*v2.VirtualMachine, error) {
 	baseOpts := vmhelpers.WaitOptions{
 		Timeout:      s.cfg.ScanTimeout,
 		PollInterval: s.cfg.ScanPollInterval,
@@ -724,7 +862,7 @@ func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.Vi
 	}
 	vm.ID = present.GetId()
 
-	s.logf("%s/%s: VM appeared in Central (id=%q), waiting for namespace/name fields to be populated", vm.Namespace, vm.Name, vm.ID)
+	s.logf("%s/%s: VM appeared in Central via VirtualMachineService (id=%q), waiting for namespace/name fields", vm.Namespace, vm.Name, vm.ID)
 	if _, err := vmhelpers.WaitForVMIdentityFields(waitCtx, s.vmClient, baseOpts, present.GetId(), vm.Namespace, vm.Name); err != nil {
 		return nil, err
 	}
@@ -744,6 +882,35 @@ func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.Vi
 	return vmhelpers.WaitForScanReady(waitCtx, s.vmClient, baseOpts, present.GetId())
 }
 
+func (s *VMScanningSuite) waitForV2Scan(waitCtx context.Context, vm *VMHandle) (*v2.VMDetail, error) {
+	baseOpts := vmhelpers.WaitOptions{
+		Timeout:      s.cfg.ScanTimeout,
+		PollInterval: s.cfg.ScanPollInterval,
+		Logf:         s.logf,
+	}
+
+	present, err := vmhelpers.WaitForV2VMPresentInCentral(waitCtx, s.vmV2Client, baseOpts, vm.Namespace, vm.Name)
+	if err != nil {
+		return nil, err
+	}
+	vm.ID = present.GetId()
+
+	s.logf("%s/%s: VM appeared in Central via VirtualMachineV2Service (id=%q), waiting for namespace/name fields", vm.Namespace, vm.Name, vm.ID)
+	if _, err := vmhelpers.WaitForV2VMIdentityFields(waitCtx, s.vmV2Client, baseOpts, present.GetId(), vm.Namespace, vm.Name); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for Central to report VM as VM_STATE_RUNNING", vm.Namespace, vm.Name)
+	if _, err := vmhelpers.WaitForV2VMRunningInCentral(waitCtx, s.vmV2Client, baseOpts, present.GetId()); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for latest_scan to arrive in Central", vm.Namespace, vm.Name)
+	if _, err := vmhelpers.WaitForV2VMLatestScan(waitCtx, s.vmV2Client, baseOpts, present.GetId()); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for all v2 components to be vulnerability-matched (no NOT_SCANNED)", vm.Namespace, vm.Name)
+	return vmhelpers.WaitForV2ScanReady(waitCtx, s.vmV2Client, baseOpts, present.GetId())
+}
+
 func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	if s.cfg != nil && s.cfg.DeleteTimeout > 0 {
 		return s.cfg.DeleteTimeout
@@ -751,18 +918,8 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	return defaultVMDeleteTimeout
 }
 
-func (s *VMScanningSuite) mustGetScanTimestamp(id string) *timestamppb.Timestamp {
-	t := s.T()
-	t.Helper()
-	vm := s.mustGetVM(id)
-	require.NotNil(t, vm.GetScan(), "mustGetScanTimestamp: GetVirtualMachine id=%q returned nil scan", id)
-	ts := vm.GetScan().GetScanTime()
-	require.NotNil(t, ts, "mustGetScanTimestamp: GetVirtualMachine id=%q scan_time is nil", id)
-	return ts
-}
-
-func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
-	virt := s.virtctlForVM(vm)
+func (s *VMScanningSuite) prepareGuest(vm *VMHandle) error {
+	virt := s.virtctlForVM(*vm)
 	stepNum := 0
 	runStep := func(stepName, errContext string, timeout time.Duration, fn func(stepCtx context.Context) error) error {
 		stepNum++
@@ -794,15 +951,15 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}); err != nil {
 		return err
 	}
-	if err := runStep("Copy roxagent binary", "CopyRoxagentBinary", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.CopyRoxagentBinary(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentBinaryPath)
+	if err := runStep("Install roxagent Quadlet", "InstallRoxagentQuadlet", max(stepTimeout, 15*time.Minute), func(stepCtx context.Context) error {
+		return vmhelpers.InstallRoxagentQuadlet(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentImage, s.cfg.Repo2CPEURL, s.cfg.PodmanAuthFilePath)
 	}); err != nil {
-		return err
-	}
-	// Runs `roxagent --help` to confirm the binary is present, executable, and in $PATH.
-	if err := runStep("Verify roxagent installed", "VerifyRoxagentInstalled", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentInstalled(stepCtx, virt, vm.Namespace, vm.Name)
-	}); err != nil {
+		if errors.Is(err, vmhelpers.ErrPodmanNotFound) {
+			vm.SkipReason = err.Error()
+			s.logf("[guest prep] Quadlet install skipped on %s/%s; VM subtest will be skipped: %v",
+				vm.Namespace, vm.Name, err)
+			return nil
+		}
 		return err
 	}
 	s.logf("[guest prep] COMPLETED for %s/%s in %d step(s)", vm.Namespace, vm.Name, stepNum)

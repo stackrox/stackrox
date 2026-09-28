@@ -145,33 +145,46 @@ func MaybeGetDefaultTLSCertificateFromDefaultDirectory() (*tls.Certificate, erro
 
 // MaybeGetDefaultTLSCertificateFromDirectory loads the default TLS certificate from the given directory.
 func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, error) {
+	return maybeLoadTLSCertificateFromDirectory("default TLS", dir)
+}
+
+// MaybeLoadOpenShiftTLSCertificateFromDirectory loads the OpenShift service-serving
+// TLS certificate from the given directory.
+func MaybeLoadOpenShiftTLSCertificateFromDirectory(dir string) (*tls.Certificate, error) {
+	return maybeLoadTLSCertificateFromDirectory("OpenShift service-serving TLS", dir)
+}
+
+// maybeLoadTLSCertificateFromDirectory loads TLS certificate and key files from
+// the given directory. The label is used in log and error messages to identify
+// which certificate is being loaded.
+func maybeLoadTLSCertificateFromDirectory(label, dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, TLSCertFileName)
 	keyFile := filepath.Join(dir, TLSKeyFileName)
 
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if default TLS certificate file exists", logging.Err(err))
+			log.Warnw(fmt.Sprintf("Error checking if %s certificate file exists", label), logging.Err(err))
 			return nil, err
 		}
-		log.Debugf("Default TLS certificate file %q does not exist. Skipping", certFile)
+		log.Debugf("%s certificate file %q does not exist. Skipping", label, certFile)
 		return nil, nil
 	}
 
 	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if default TLS key file exists", logging.Err(err))
+			log.Warnw(fmt.Sprintf("Error checking if %s key file exists", label), logging.Err(err))
 			return nil, err
 		}
-		log.Debugf("Default TLS key file %q does not exist. Skipping", keyFile)
+		log.Debugf("%s key file %q does not exist. Skipping", label, keyFile)
 		return nil, nil
 	}
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		if strings.Contains(err.Error(), "private key does not match public key") {
-			return nil, errors.Wrap(err, "loading default certificate; if the certificate file contains a certificate chain, ensure that the certificate chain is in the correct order (the first certificate should be the leaf certificate, any following certificates should form the certificate chain)")
+			return nil, errors.Wrap(err, fmt.Sprintf("loading %s certificate; if the certificate file contains a certificate chain, ensure that the certificate chain is in the correct order (the first certificate should be the leaf certificate, any following certificates should form the certificate chain)", label))
 		}
-		return nil, errors.Wrap(err, "loading default certificate failed")
+		return nil, errors.Wrap(err, fmt.Sprintf("loading %s certificate failed", label))
 	}
 
 	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])

@@ -1,7 +1,4 @@
-import {
-    findUpgradeState,
-    getCredentialExpirationStatus,
-} from 'Containers/Clusters/cluster.helpers';
+import { getCredentialExpirationStatus } from 'Containers/Clusters/cluster.helpers';
 import type { CertExpiryStatus } from 'Containers/Clusters/clusterTypes'; // TODO types/cluster.proto.ts
 import type { Cluster } from 'types/cluster.proto';
 
@@ -41,37 +38,6 @@ export function getCertificateExpirationCounts(
                         certExpiryStatus as CertExpiryStatus,
                         currentDatetime
                     );
-                    counts[key] += 1;
-                }
-            }
-        }
-    });
-
-    return counts;
-}
-
-export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts {
-    const counts = getClusterStatusCountsObject();
-
-    clusters.forEach((cluster) => {
-        if (cluster && cluster.healthStatus) {
-            switch (cluster.healthStatus.overallHealthStatus) {
-                case 'UNAVAILABLE':
-                case 'UNINITIALIZED': {
-                    counts[cluster.healthStatus.overallHealthStatus] += 1;
-                    break;
-                }
-                default: {
-                    const { upgradeStatus } = cluster.status ?? {};
-                    const upgradeState = findUpgradeState(upgradeStatus);
-
-                    const key =
-                        upgradeState?.type === 'current'
-                            ? 'HEALTHY'
-                            : upgradeState?.type === 'failure'
-                              ? 'UNHEALTHY'
-                              : 'DEGRADED';
-
                     counts[key] += 1;
                 }
             }

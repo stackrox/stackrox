@@ -55,6 +55,8 @@ type ClusterVulnerabilityResolver interface {
 	VulnerabilityTypes() []string
 }
 
+var _ ClusterVulnerabilityResolver = (*clusterCVEResolver)(nil)
+
 // ClusterVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerability")

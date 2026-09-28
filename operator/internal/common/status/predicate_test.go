@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -293,7 +292,7 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 			name: "spec.replicas changed should NOT trigger reconciliation",
 			old: &appsv1.Deployment{
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(int32(3)),
+					Replicas: new(int32(3)),
 				},
 				Status: appsv1.DeploymentStatus{
 					Replicas:          3,
@@ -303,7 +302,7 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 			},
 			new: &appsv1.Deployment{
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(int32(5)), // Changed by HPA
+					Replicas: new(int32(5)), // Changed by HPA
 				},
 				Status: appsv1.DeploymentStatus{
 					Replicas:          3,
@@ -391,7 +390,7 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 			name: "spec and status both changed should trigger reconciliation",
 			old: &appsv1.Deployment{
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(int32(3)),
+					Replicas: new(int32(3)),
 				},
 				Status: appsv1.DeploymentStatus{
 					Replicas:          3,
@@ -401,7 +400,7 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 			},
 			new: &appsv1.Deployment{
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(int32(5)),
+					Replicas: new(int32(5)),
 				},
 				Status: appsv1.DeploymentStatus{
 					Replicas:          5,

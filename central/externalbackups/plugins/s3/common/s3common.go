@@ -139,9 +139,15 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 		now: time.Now,
 
 		clientWrapper: &s3WrapperImpl{
-			bucket:   cfg.GetBucket(),
-			client:   awsClient,
-			uploader: manager.NewUploader(awsClient),
+			bucket: cfg.GetBucket(),
+			client: awsClient,
+			// manager.NewUploader defaults RequestChecksumCalculation to
+			// WhenSupported, ignoring the config/client setting. Propagate
+			// it explicitly so S3-compatible services aren't sent checksums
+			// they don't support.
+			uploader: manager.NewUploader(awsClient, func(u *manager.Uploader) {
+				u.RequestChecksumCalculation = awsCfg.RequestChecksumCalculation
+			}),
 		},
 	}, nil
 }

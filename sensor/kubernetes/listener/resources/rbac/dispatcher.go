@@ -44,7 +44,7 @@ func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 
 func mapReference(subjects set.Set[namespacedSubject]) []resolver.NamespaceServiceAccount {
 	var result []resolver.NamespaceServiceAccount
-	for _, subj := range subjects.AsSlice() {
+	for subj := range subjects {
 		namespace, serviceAccount, err := subj.splitNamespaceAndName()
 		if err != nil {
 			log.Errorf("failed to decode namespaced service account (%s) in RBAC in-memory store: %s", subj, err)

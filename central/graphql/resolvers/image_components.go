@@ -103,6 +103,8 @@ type ImageComponentResolver interface {
 	FixedIn(ctx context.Context) string
 }
 
+var _ ImageComponentResolver = (*imageComponentV2Resolver)(nil)
+
 // ImageComponent returns an image component based on an input id (name:version)
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")

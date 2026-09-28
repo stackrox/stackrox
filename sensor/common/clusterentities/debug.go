@@ -92,7 +92,7 @@ func (e *podIPsStore) debug() interface{} {
 		for deplID, addrSet := range e.reverseIPMap {
 			// addrSet.AsSlice() does not print well
 			arr := make([]string, 0, addrSet.Cardinality())
-			for _, addr := range addrSet.AsSlice() {
+			for addr := range addrSet.All() {
 				arr = append(arr, addr.String())
 			}
 			dbg["reverseIPMap"][deplID] = arr
@@ -127,7 +127,7 @@ func (e *endpointsStore) debug() interface{} {
 		for deplID, setOfEp := range e.reverseEndpointMap {
 			// setOfEp.AsSlice() does not print well
 			arr := make([]string, 0, setOfEp.Cardinality())
-			for _, ep := range setOfEp.AsSlice() {
+			for ep := range setOfEp {
 				arr = append(arr, ep.String())
 			}
 			// we need dummy entry "deployments" to fit into the dbg declaration

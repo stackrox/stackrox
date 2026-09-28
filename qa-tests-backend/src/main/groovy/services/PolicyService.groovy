@@ -1,6 +1,7 @@
 package services
 
 import groovy.util.logging.Slf4j
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -23,21 +24,14 @@ class PolicyService extends BaseService {
         return getPolicyClient().listPolicies(query).policiesList
     }
 
+    @Retry
     static String createNewPolicy(PolicyOuterClass.Policy policy) {
-        String policyID = ""
-
-        try {
-            policyID = getPolicyClient().postPolicy(
-                    PolicyServiceOuterClass.PostPolicyRequest.newBuilder().
-                            setPolicy(policy).
-                            setEnableStrictValidation(true).
-                            build()
-            ).getId()
-        } catch (Exception e) {
-            log.error("error creating new policy", e)
-        }
-
-        return policyID
+        return getPolicyClient().postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder().
+                        setPolicy(policy).
+                        setEnableStrictValidation(true).
+                        build()
+        ).getId()
     }
 
     static PolicyOuterClass.Policy createAndFetchPolicy(PolicyOuterClass.Policy policy) {

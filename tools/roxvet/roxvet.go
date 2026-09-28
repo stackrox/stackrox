@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoptrs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/setasslice"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/sortslices"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
@@ -37,6 +38,7 @@ func main() {
 		protoclone.Analyzer,
 		protoptrs.Analyzer,
 		regexes.Analyzer,
+		setasslice.Analyzer,
 		sortslices.Analyzer,
 		storeinterface.Analyzer,
 		structuredlogs.Analyzer,

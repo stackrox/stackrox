@@ -151,7 +151,7 @@ func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool
 	}
 
 	newCachedFileHashes := maputil.ShallowClone(w.cachedFileHashes)
-	for _, removedFile := range removedFiles.AsSlice() {
+	for removedFile := range removedFiles {
 		delete(newCachedFileHashes, removedFile)
 	}
 

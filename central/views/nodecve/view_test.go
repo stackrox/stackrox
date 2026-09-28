@@ -815,7 +815,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 			}
 		}
 	}
-	var expected []CveCore
+	expected := make([]CveCore, 0, len(cveMap))
 	for _, withStats := range cveMap {
 		core := withStats.response
 		core.CVEIDs = set.NewStringSet(core.CVEIDs...).AsSlice()

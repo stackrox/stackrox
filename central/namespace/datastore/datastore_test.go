@@ -405,7 +405,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestPerformanceWithLargeDataset()
 	namespaces := make([]*storage.NamespaceMetadata, 0, numNamespaces)
 
 	// Create many namespaces
-	for i := 0; i < numNamespaces; i++ {
+	for i := range numNamespaces {
 		ns := fixtures.GetScopedNamespace(
 			uuid.NewV4().String(),
 			testconsts.Cluster1,
@@ -511,12 +511,12 @@ func (s *namespaceDatastoreComprehensiveSuite) TestConcurrentOperations() {
 	var wg sync.WaitGroup
 	errors := make(chan error, numGoroutines*numOperationsPerGoroutine)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(goroutineID int) {
 			defer wg.Done()
 
-			for j := 0; j < numOperationsPerGoroutine; j++ {
+			for j := range numOperationsPerGoroutine {
 				ns := fixtures.GetScopedNamespace(
 					uuid.NewV4().String(),
 					testconsts.Cluster1,
