@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
@@ -35,9 +36,11 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresDefaultCursorTimeout.DurationSetting())
+	defer cancel()
 	var baselines []*storage.ProcessBaseline
-	// The number of process baselines could be large.  So using WalkByQuery
-	err := ds.storage.WalkByQuery(ctx, q, func(baseline *storage.ProcessBaseline) error {
+	// This method retains the full result, so a cursor does not bound its memory.
+	err := ds.storage.GetByQueryFn(ctx, q, func(baseline *storage.ProcessBaseline) error {
 		baselines = append(baselines, baseline)
 		return nil
 	})
