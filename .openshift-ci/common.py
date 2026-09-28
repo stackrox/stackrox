@@ -39,6 +39,14 @@ def enable_sfa_for_ocp():
     """
     try:
         ocp_variant = os.environ.get("CLUSTER_FLAVOR_VARIANT", "")
+
+        # A special case, OCP release candidate version. Most certainly newer
+        # than we require.
+        if ocp_variant == "openshift-4-ocp/candidate":
+            os.environ["SFA_AGENT"] = "true"
+            log_print("Enabled SFA agent for OCP", ocp_variant)
+            return
+
         expr = r"openshift-4-ocp/\w+-(?P<major>\d+)\.(?P<minor>\d+)"
         m = re.match(expr, ocp_variant)
         if m:

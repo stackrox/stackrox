@@ -14,6 +14,20 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+- ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
+
+## [5.0.0]
+
+
+
+### Added Features
+
 - ROX-32148: Virtual machine scanning is now enabled by default. RHEL VMs created with OpenShift Virtualization can be scanned for package vulnerabilities after installing roxagent in the guest.
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
@@ -25,7 +39,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
-- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
 

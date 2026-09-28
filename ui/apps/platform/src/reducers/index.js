@@ -4,7 +4,6 @@ import { connectRouter } from 'connected-react-router';
 
 import bindSelectors from 'utils/bindSelectors';
 import auth, { selectors as authSelectors } from './auth';
-import feedback, { selectors as feedbackSelectors } from './feedback';
 import invite, { selectors as inviteSelectors } from './invite';
 import notifications, { selectors as notificationSelectors } from './notifications';
 import roles, { selectors as roleSelectors } from './roles';
@@ -23,7 +22,6 @@ import centralCapabilities, {
 
 const appReducer = combineReducers({
     auth,
-    feedback,
     invite,
     notifications,
     roles,
@@ -48,7 +46,6 @@ export default createRootReducer;
 
 const getApp = (state) => state.app;
 const getAuth = (state) => getApp(state).auth;
-const getFeedback = (state) => getApp(state).feedback;
 const getInvite = (state) => getApp(state).invite;
 const getNotifications = (state) => getApp(state).notifications;
 const getRoles = (state) => getApp(state).roles;
@@ -61,7 +58,6 @@ const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
 
 const boundSelectors = {
     ...bindSelectors(getAuth, authSelectors),
-    ...bindSelectors(getFeedback, feedbackSelectors),
     ...bindSelectors(getInvite, inviteSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getRoles, roleSelectors),

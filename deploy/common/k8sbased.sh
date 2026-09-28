@@ -457,9 +457,9 @@ function launch_central {
         fi
       fi
 
-      if [[ -n "${ROX_CENTRAL_WORKER_ENABLED:-}" ]]; then
+      if [[ "${ROX_CENTRAL_WORKER_ENABLED:-}" == "true" ]]; then
         helm_args+=(
-          --set "centralWorker.enabled=${ROX_CENTRAL_WORKER_ENABLED}"
+          --set centralWorker.enabled=true
         )
       fi
 
@@ -635,7 +635,11 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
+    # Central-db is waited first because it needs to be online before Central can start.
     rollout_wait_timeout="10m"
+    if [[ -z "$EXTERNAL_DB" ]]; then
+        kubectl -n "${central_namespace}" rollout status deploy/central-db --timeout="${rollout_wait_timeout}"
+    fi
     kubectl -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
@@ -940,19 +944,17 @@ function launch_sensor {
         extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
 
-      # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-      # Matcher-not-ready drops the first index as unretryable; a short interval
-      # covers the next scan without restarting collector.
-      helm_args+=(
-        --set customize.envVars.ROX_NODE_SCANNING_MAX_INITIAL_WAIT=1s
-        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=30s
-      )
-
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
+
+      # Scan every 9-11 minutes with Helm deployments.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=10m
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
+      )
 
       if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         helm_args+=(
@@ -1099,6 +1101,10 @@ function launch_sensor {
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
         kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
+
+      # Scan every 9-11 minutes with manifest deployments.
+      kubectl -n "${sensor_namespace}" set env ds/collector --containers=compliance \
+        ROX_NODE_SCANNING_INTERVAL=10m ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
     fi
 
     collector_env=()

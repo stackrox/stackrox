@@ -925,9 +925,12 @@ func TestLookupGuestOS(t *testing.T) {
 		},
 		"v2 unknown guest OS leaves scan OS empty": {
 			v2Enabled: true,
-			v2VM:      &storage.VirtualMachineV2{GuestOs: pkgVM.UnknownGuestOS},
-			v2Found:   true,
-			wantOS:    "",
+			v2VM: &storage.VirtualMachineV2{
+				GuestOs: pkgVM.UnknownGuestOS,
+				Facts:   map[string]string{pkgVM.GuestOSKey: pkgVM.UnknownGuestOS},
+			},
+			v2Found: true,
+			wantOS:  "",
 		},
 		"v1 store error leaves scan OS empty": {
 			v1Err:  errors.New("db error"),
