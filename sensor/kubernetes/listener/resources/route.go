@@ -30,7 +30,7 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 		return nil
 	}
 
-	if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
 		r.serviceStore.upsertRoute(route)
 	}
 	if action == central.ResourceAction_REMOVE_RESOURCE {
