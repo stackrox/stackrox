@@ -45,7 +45,7 @@ func TestCIMinimalBundle(t *testing.T) {
 		} `json:"customize"`
 	}
 	require.NoError(t, yaml.Unmarshal(values, &ci))
-	allowlist := strings.Split(ci.Customize["scanner-v4-matcher"].EnvVars["SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST"], ",")
+	allowlist := ci.Customize["scanner-v4-matcher"].EnvVars["SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST"]
 
 	for _, f := range r.File {
 		require.Contains(t, map[string]bool{
@@ -56,7 +56,9 @@ func TestCIMinimalBundle(t *testing.T) {
 		}, f.Name)
 		require.NotContains(t, f.Name, "synthetic")
 		seenSources[f.Name] = true
-		require.Contains(t, allowlist, strings.TrimSuffix(f.Name, ".json.zst"), "CI must import every selected source")
+		if allowlist != "" {
+			require.Contains(t, strings.Split(allowlist, ","), strings.TrimSuffix(f.Name, ".json.zst"), "CI must import every selected source")
+		}
 
 		rc, err := f.Open()
 		require.NoError(t, err)

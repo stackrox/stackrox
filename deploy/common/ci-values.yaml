@@ -42,11 +42,9 @@ scannerV4:
       requests:
         cpu: "500m"
 
-# Import the distro bundles used by the CI image-scanning tests. NVD is
-# enrichment data and cannot produce image vulnerabilities by itself.
+# Import all sources from the reduced bundle used by CI image-scanning tests.
 customize:
   scanner-v4-matcher:
     envVars:
       # Use the repaired ci-minimal bundle from GitHub for fast CI testing.
       SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
-      SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST: "alpine,aws,debian,epss,manual,nvd,oracle,osv,photon,rhel-vex,stackrox-rhel-csaf,ubuntu"

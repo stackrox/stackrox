@@ -125,9 +125,9 @@ Run `TestCIMinimalBundleStruts` in the Scanner E2E suite and the backend QA suit
 same source snapshot and database configuration. Archive checks alone do not
 establish runtime coverage.
 
-The matcher-specific CI allowlist must include every archive source. The Helm
-customization order applies matcher-specific environment variables after global
-ones; the standalone Scanner E2E chart has no allowlist and imports all members.
+CI and the standalone Scanner E2E chart import all archive members without an
+allowlist: definitions are already reduced by the bundle generator. If a CI
+allowlist is configured, it must include every archive source.
 
 Publishing is separate from local generation: publish the validated bundle
 commit first, then update every immutable bundle URL (CI values, Scanner E2E
