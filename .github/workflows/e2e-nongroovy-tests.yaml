@@ -97,15 +97,6 @@ jobs:
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Retrieving roxie version from repository
-      id: roxie-version
-      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
-
-    - name: Install roxie
-      uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
-      with:
-        version: "v${{ steps.roxie-version.outputs.version }}"
-
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
       run: |
