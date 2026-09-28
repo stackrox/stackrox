@@ -736,7 +736,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorCon
 		{
 			name:             "Error when cluster cannot be found",
 			ctx:              sac.WithAllAccess(context.Background()),
-			clusterID:        fakeClusterID,
+			clusterID:        uuid.NewV4().String(),
 			states:           states,
 			clusterIsMissing: true,
 			realClusterFound: false,

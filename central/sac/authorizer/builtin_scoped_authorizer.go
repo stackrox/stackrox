@@ -28,11 +28,11 @@ var (
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
-	clusters, err := clusterStore.Singleton().GetClustersForSAC()
+	clusters, err := clusterStore.Singleton().GetClustersForSAC(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC()
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
