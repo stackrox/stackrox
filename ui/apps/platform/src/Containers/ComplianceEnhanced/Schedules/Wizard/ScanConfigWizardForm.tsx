@@ -27,14 +27,15 @@ import useFormikScanConfig from './useFormikScanConfig';
 import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
 
-const PARAMETERS = 'Set parameters';
+// Parameters (and so on) for step label are consistent with the corresponding step heading and view heading.
+const PARAMETERS = 'Parameters';
 const PARAMETERS_ID = 'parameters';
-const SELECT_CLUSTERS = 'Select clusters';
+const SELECT_CLUSTERS = 'Clusters';
 const SELECT_CLUSTERS_ID = 'clusters';
-const SELECT_PROFILES = 'Select profiles';
+const SELECT_PROFILES = 'Profiles';
 const SELECT_PROFILES_ID = 'profiles';
-const CONFIGURE_REPORT = 'Configure report';
-const CONFIGURE_REPORT_ID = 'report';
+const CONFIGURE_REPORT = 'Delivery';
+const CONFIGURE_REPORT_ID = 'delivery';
 const REVIEW_CONFIG = 'Review';
 const REVIEW_CONFIG_ID = 'review';
 
