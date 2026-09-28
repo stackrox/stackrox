@@ -313,6 +313,13 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created == !blocked
 
         cleanup:
+        // Delete policy first to avoid enforcement blocking cleanup,
+        // and to prevent leftover policy from impacting later tests.
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+            // Brief wait to allow policy deletion to propagate to admission controller
+            sleep(2000)
+        }
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
@@ -320,12 +327,9 @@ class AdmissionControllerTest extends BaseSpecification {
             // Wait for full namespace deletion; a namespace left in Terminating state
             // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
             orchestrator.deleteNamespace(testNs)
-        } finally {
-            // Delete the per-test policy even if the namespace deletion above times out
-            // and throws, otherwise the leftover policy affects later tests.
-            if (policyId) {
-                PolicyService.deletePolicy(policyId)
-            }
+        } catch (Exception e) {
+            log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
+            throw e
         }
 
         where:
@@ -417,6 +421,13 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created2
 
         cleanup:
+        // Delete policy first to avoid enforcement blocking cleanup,
+        // and to prevent leftover policy from impacting later tests.
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+            // Brief wait to allow policy deletion to propagate to admission controller
+            sleep(2000)
+        }
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
@@ -424,12 +435,9 @@ class AdmissionControllerTest extends BaseSpecification {
             // Wait for full namespace deletion; a namespace left in Terminating state
             // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
             orchestrator.deleteNamespace(testNs)
-        } finally {
-            // Delete the per-test policy even if the namespace deletion above times out
-            // and throws, otherwise the leftover policy affects later tests.
-            if (policyId) {
-                PolicyService.deletePolicy(policyId)
-            }
+        } catch (Exception e) {
+            log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
+            throw e
         }
 
         where:
