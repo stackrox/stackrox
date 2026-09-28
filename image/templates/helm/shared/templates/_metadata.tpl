@@ -272,6 +272,32 @@
 {{- end -}}
 
 {{/*
+  srox.optionalGlobalResourceName $ $name [ $separator ]
+
+  Opt-in wrapper around srox.globalResourceName: it applies namespace-prefixing to a
+  global (cluster-scoped) resource name only when ._rox.namespacePrefixGlobalResources
+  is set; otherwise the static base $name is returned verbatim. The arguments are
+  forwarded unchanged to srox.globalResourceName, so the optional separator argument
+  behaves identically.
+
+  This keeps namespace-prefixing of global resources opt-in: names default to stable,
+  static values (production safety) and prefixing can be enabled -- e.g. for tests that
+  deploy multiple secured clusters into different namespaces of the same cluster -- to
+  avoid cluster-scoped resource name clashes. Individual global resources opt in by
+  calling this helper instead of hard-coding a static name. This is deliberately generic
+  so further global resources can adopt it as the need arises.
+   */}}
+{{- define "srox.optionalGlobalResourceName" -}}
+{{- $ := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if $._rox.namespacePrefixGlobalResources -}}
+  {{- include "srox.globalResourceName" . -}}
+{{- else -}}
+  {{- $name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
     srox.initGlobalPrefix $
 
     Initializes prefix for global resources.

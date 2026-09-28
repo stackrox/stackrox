@@ -1,4 +1,4 @@
-name: "Test ValidatingWebhookConfiguration keeps base name stackrox"
+name: "Test ValidatingWebhookConfiguration global resource naming"
 values:
   imagePullSecrets:
     allowNone: true
@@ -8,15 +8,34 @@ defs: |
     (.validatingwebhookconfigurations // {}) | keys;
 
 tests:
-- name: base name is used verbatim in the standard namespace
+# By default namespacePrefixGlobalResources is false, so the base name is kept static
+# ("stackrox") regardless of namespace, for production safety.
+- name: base name is static in the standard namespace
   expect: |
     vwcNames | assertThat(. == ["stackrox"])
 
-- name: base name is namespace-prefixed in a non-standard namespace
+- name: base name stays static in a non-standard namespace when prefixing is disabled
   release:
     namespace: custom-ns
   set:
     allowNonstandardNamespace: true
+  expect: |
+    vwcNames | assertThat(. == ["stackrox"])
+
+# When namespacePrefixGlobalResources is enabled the name is namespace-prefixed to avoid
+# clashes across multiple secured clusters in different namespaces of the same cluster.
+- name: base name is used verbatim in the standard namespace even when prefixing is enabled
+  set:
+    namespacePrefixGlobalResources: true
+  expect: |
+    vwcNames | assertThat(. == ["stackrox"])
+
+- name: base name is namespace-prefixed in a non-standard namespace when prefixing is enabled
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+    namespacePrefixGlobalResources: true
   expect: |
     # A bare "stackrox" base name (no suffix) must not trigger the "Unknown naming
     # convention" failure; the global prefix already carries the namespace.
