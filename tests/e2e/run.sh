@@ -54,14 +54,6 @@ test_e2e() {
     ensure_roxie_on_path
 
     roxie_config="$(mktemp)"
-    # - Use single namespace.
-    # - Pause operator reconciliation so tests can modify operator-managed
-    #   resources directly (e.g. TestConfigControllerAdditionalCA rewrites the
-    #   'additional-ca' secret) without the operator clobbering their changes.
-    # - Use CI-scaled resource requests so the deployment fits on smaller CI
-    #   clusters. Prow runs this job on e2-standard-4 nodes (with Scanner V4
-    #   on), where full-size requests leave central-db unschedulable
-    #   ("Insufficient cpu").
     merge_yaml "$roxie_config" <<'EOF'
 central:
   namespace: stackrox
