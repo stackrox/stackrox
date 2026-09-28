@@ -15,10 +15,9 @@ description: >
 # values with `${{ inputs.x || 'fallback' }}` and writes them to GITHUB_ENV.
 inputs:
   cluster-provisioning-method:
-    description: "Selects cluster provisioning method to use (supported: direct-gke, infra). Default: direct-gke"
+    description: "Selects cluster provisioning method to use (supported: direct-gke, infra, dbg-existing-infra). Default: direct-gke."
   cluster-name-prefix:
     description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
-    required: true
   infra-flavor:
     description: "Infra cluster flavor, e.g. gke-default, openshift-4. Default: gke-default"
   infra-args:
@@ -47,6 +46,8 @@ inputs:
   quay-rhacs-eng-ro-password:
     description: "Read-only quay.io password for quay/rhacs-eng."
     required: true
+  dbg-existing-cluster-name:
+    description: "Cluster name for an existing cluster."
 
 outputs:
   cluster-name:
@@ -79,6 +80,8 @@ runs:
         GKE_SPOT=${{ inputs.gke-spot || 'true' }}
         ARTIFACT_DIR=${{ inputs.artifact-dir || './junit-reports/' }}
         INSTALL_ROXIE=${{ inputs.install-roxie || 'true' }}
+        DBG_EXISTING_CLUSTER_NAME=${{ inputs.dbg-existing-cluster-name }}
+        DEBUG_RUN=${{ inputs.cluster-provisioning-method == 'dbg-existing-infra' || 'false' }}
         EOF
 
         {
@@ -98,34 +101,49 @@ runs:
         INFRA_TOKEN: ${{ inputs.infra-token }}
       run: |
         case "$CLUSTER_PROVISIONING_METHOD" in
-          direct-gke|infra) ;;
-          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra"; exit 1 ;;
+          direct-gke|infra|dbg-existing-infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra, dbg-existing-infra."; exit 1 ;;
         esac
 
-        if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
-          echo "::error::Input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+        need_infra="false"
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" || "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
+          need_infra="true"
+        fi
+
+        if [[ "$need_infra" == "true" && -z "$INFRA_TOKEN" ]]; then
+          echo "::error::Input infra-token is required for interacting with infra clusters."
           exit 1
         fi
 
-        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" && -z "$INFRA_TOKEN" ]]; then
-          echo "::error::Input infra-token is required when cluster-provisioning-method is infra."
-          exit 1
+        if [[ "$DEBUG_RUN" == "false" ]]; then
+          if [[ -z "${CLUSTER_NAME_PREFIX}" ]]; then
+            echo "::error::Input cluster-name-prefix must be non-empty and at most $CLUSTER_NAME_PREFIX_MAX characters long."
+            exit 1
+          fi
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
+            echo "::error::Input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+            exit 1
+          fi
         fi
 
     - name: Compute cluster name for infra-provisioned cluster
-      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra' || env.CLUSTER_PROVISIONING_METHOD == 'dbg-existing-infra'
       shell: bash
       # infractl enforces a 28-char limit for cluster names.
       run: |
-        cluster_name_max=28
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" ]]; then
+          cluster_name_max=28
 
-        hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
-        hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
-        hash="$(echo "$hash_input" | sha256sum)"
-        hash_truncated="${hash:0:$hash_length}"
+          hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
+          hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+          hash="$(echo "$hash_input" | sha256sum)"
+          hash_truncated="${hash:0:$hash_length}"
 
-        cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
-        echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+          cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
+          echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+        elif [[ "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
+          echo "CLUSTER_NAME=${DBG_EXISTING_CLUSTER_NAME}" >> "$GITHUB_ENV"
+        fi
 
     - name: Prepare infra args
       if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
@@ -209,10 +227,10 @@ runs:
         oc version --client
 
     - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
-      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra' || env.CLUSTER_PROVISIONING_METHOD == 'dbg-existing-infra'
 
     - name: Wait for infra cluster and get kubeconfig
-      if: env.CLUSTER_PROVISIONING_METHOD == 'infra'
+      if: env.CLUSTER_PROVISIONING_METHOD == 'infra' || env.CLUSTER_PROVISIONING_METHOD == 'dbg-existing-infra'
       shell: bash
       env:
         INFRA_TOKEN: ${{ inputs.infra-token }}

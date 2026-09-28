@@ -10,7 +10,7 @@ description: >
 # defaults are resolved via `${{ inputs.x || 'fallback' }}` in a setup step.
 inputs:
   cluster-provisioning-method:
-    description: "Selects cluster provisioning method that was used (supported: direct-gke, infra)."
+    description: "Selects cluster provisioning method that was used (supported: direct-gke, infra, dbg-existing-infra). Default: direct-gke."
   artifact-dir:
     description: "Directory containing JUnit XML reports."
     required: true
@@ -39,12 +39,16 @@ runs:
         CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
       run: |
         case "$CLUSTER_PROVISIONING_METHOD" in
-          direct-gke|infra) ;;
-          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra"; exit 1 ;;
+          direct-gke|infra|dbg-existing-infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra, dbg-existing-infra."; exit 1 ;;
         esac
 
-        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" && -z "$INFRA_TOKEN" ]]; then
-          echo "::error::Input infra-token is required when cluster-provisioning-method is infra."
+        need_infra="false"
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" || "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
+          need_infra="true"
+        fi
+        if [[ "$need_infra" == "true" && -z "$INFRA_TOKEN" ]]; then
+          echo "::error::Input infra-token is required for interacting with infra clusters."
           exit 1
         fi
 
@@ -57,22 +61,28 @@ runs:
         ARTIFACT_DIR=${{ inputs.artifact-dir }}
         EOF
 
+        debug_run="false"
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
+          debug_run="true"
+        fi
+        echo "DEBUG_RUN=${debug_run}" >> "$GITHUB_ENV"
+
     - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.DEBUG_RUN == 'false'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "fail"
 
     - name: Publish summary for passed and skipped tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.DEBUG_RUN == 'false'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "pass, skip"
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && env.DEBUG_RUN == 'false'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
