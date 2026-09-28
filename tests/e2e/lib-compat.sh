@@ -291,8 +291,8 @@ handle_scanner_v4_matcher_resources() {
         return
     fi
 
-    info "  setting scanner-v4-matcher memory limit to 6Gi"
-    patch_yaml "$config_file" '.central.spec.scannerV4.matcher.resources.limits.memory = "6Gi"'
+    info "  setting scanner-v4-matcher memory limit to 3Gi"
+    patch_yaml "$config_file" '.central.spec.scannerV4.matcher.resources.limits.memory = "3Gi"'
 }
 
 handle_trusted_ca_file() {
