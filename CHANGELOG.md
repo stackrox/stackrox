@@ -16,6 +16,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Removed Features
 
+- ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
+
 ### Deprecated Features
 
 ### Technical Changes
