@@ -15,7 +15,7 @@ func IssuerFromRawIDToken(rawIDToken string) (string, error) {
 	// Explicitly ignore the signature of the ID token for now.
 	// This will be handled in a latter part, when the metadata from the provider will be used to verify the signature.
 	// This does not pose a security threat, since this is only used to optimize fetching of the correct TokenExchanger.
-	// The TokenExchanger will do the final validation of the token including it's signature.
+	// The TokenExchanger will do the final validation of the token including it's signature..
 	_, err := jwt.ParseWithClaims(rawIDToken, standardClaims, func(token *jwt.Token) (interface{}, error) {
 		return nil, nil
 	}, jwt.WithoutClaimsValidation())
