@@ -94,6 +94,8 @@ roxie_config_from_environment_compat() {
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
 
+    handle_endpoints_for_test "$config_file" # Echoes info internally.
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -368,6 +370,44 @@ handle_load_balancer_setting() {
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
         ;;
     esac
+}
+
+# Populate a roxie config file with the endpoint settings required by endpoints_test.go:
+# plaintext endpoints (8080/8081) and the full central-endpoints ConfigMap (8082, 8444-8448).
+# Values are taken from the ROX_PLAINTEXT_ENDPOINTS and ROXDEPLOY_CONFIG_FILE_MAP env vars,
+# which are exported by test_preamble() of the jobs that run endpoints_test.go. Jobs that do
+# not set these are left untouched, so this is safe to call unconditionally from such a job.
+handle_endpoints_for_test() {
+    local config_file="$1"
+
+    # Expose plaintext endpoints required by endpoints_test.go.
+    if [[ -n "${ROX_PLAINTEXT_ENDPOINTS:-}" ]]; then
+        info "Configuring central ROX_PLAINTEXT_ENDPOINTS to ${ROX_PLAINTEXT_ENDPOINTS}..."
+        set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "${ROX_PLAINTEXT_ENDPOINTS}"
+    fi
+
+    # Inject the full endpoint config into the central-endpoints ConfigMap so that
+    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+        info "Configuring central-endpoints ConfigMap from ${ROXDEPLOY_CONFIG_FILE_MAP}..."
+        local overlay_tmp; overlay_tmp="$(mktemp)"
+        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
+        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
+        cat > "$overlay_tmp" <<'OVERLAY'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: central-endpoints
+      patches:
+      - path: data.endpoints\.yaml
+        verbatim: |
+OVERLAY
+        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        merge_yaml "$config_file" < "$overlay_tmp"
+        rm -f "$overlay_tmp"
+    fi
 }
 
 handle_declarative_configuration() {
