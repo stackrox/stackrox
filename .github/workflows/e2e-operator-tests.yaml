@@ -16,8 +16,7 @@ on:
         required: true
         type: string
       cluster-name-prefix:
-        description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
-        required: true
+        description: "Passed to e2e-test-begin."
         type: string
       # Inputs below are passed through to e2e-test-begin. See
       # .github/actions/e2e-test-begin/action.yaml for effective defaults.
@@ -52,6 +51,9 @@ on:
         description: "Overall job timeout."
         type: number
         default: 361
+      dbg-existing-cluster-name:
+        description: "Passed to e2e-test-begin."
+        type: string
 
 permissions:
   contents: read
@@ -103,6 +105,7 @@ jobs:
           quay-rhacs-eng-ro-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-rhacs-eng-ro-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
           install-roxie: false # This test suite deliberately does not deploy ACS using roxie.
+          dbg-existing-cluster-name: ${{ inputs.dbg-existing-cluster-name }}
 
       - name: Run pre-test
         shell: python
