@@ -25,9 +25,8 @@ jobs:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
       ci-job-name: e2e-operator-tests-gke-konflux
-      cluster-name-prefix: e2e-op-tests-gke-kfx
-      cluster-provisioning-method: direct-gke
-      gke-num-nodes: 4
+      dbg-existing-cluster-name: mc-09-28-property-farmer-nex
+      cluster-provisioning-method: dbg-existing-infra
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
