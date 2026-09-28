@@ -53,6 +53,7 @@ test_e2e() {
     # the GHA runner (which installs the pinned version explicitly).
     ensure_roxie_on_path
 
+    local roxie_config
     roxie_config="$(mktemp)"
     merge_yaml "$roxie_config" <<'EOF'
 central:
