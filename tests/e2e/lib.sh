@@ -297,6 +297,10 @@ securedCluster:
     clusterName: remote
 EOF
 
+    # Scan every 9-11 minutes during compatibility tests.
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL" "10m"
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL_DEVIATION" "60s"
+
     # Expose plaintext endpoints required by endpoints_test.go.
     set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
 
@@ -440,6 +444,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-true}"
     ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
@@ -620,6 +625,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
     customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
@@ -749,13 +756,11 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
-    # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-    # Matcher-not-ready drops the first index as unretryable; a short interval
-    # covers the next scan without restarting collector.
-    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_MAX_INITIAL_WAIT'
-    customize_envVars+=$'\n      value: "1s"'
+    # Scan every 9-11 minutes during operator-deployed e2e tests.
     customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
-    customize_envVars+=$'\n      value: "30s"'
+    customize_envVars+=$'\n      value: "10m"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL_DEVIATION'
+    customize_envVars+=$'\n      value: "60s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -772,6 +777,10 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_INIT_CONTAINER_SUPPORT:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
         customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
+    fi
+    if [[ -n "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+        customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION}"'"'
     fi
 
     local scannerV4DbPersistenceYaml
@@ -1803,8 +1812,8 @@ _record_build_info() {
     set_ci_shared_export "build" "${build_info}"
 }
 
-restore_4_6_postgres_backup() {
-    info "Restoring a 4.6 postgres backup"
+restore_postgres_backup() {
+    info "Restoring a postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
@@ -1814,10 +1823,10 @@ restore_4_6_postgres_backup() {
     if is_CI; then
         setup_gcp
     fi
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4.10.0.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-            central db restore --timeout 5m postgres_db_4_6.sql.zip
+            central db restore --timeout 5m postgres_db_4.10.0.sql.zip
 }
 
 update_public_config() {

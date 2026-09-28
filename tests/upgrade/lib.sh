@@ -108,7 +108,11 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
@@ -120,7 +124,20 @@ deploy_earlier_postgres_central() {
     export ROX_ADMIN_PASSWORD
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
+    # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
+    # because the later Helm upgrade cannot change an existing PVC's class.
+    local helm_extra_args=()
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
+            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        fi
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+
+    # The generated chart can inherit the PR tag, which has no Scanner V2 images.
+    # Use the released Scanner V2 images for the initial deployment.
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         "${helm_extra_args[@]}" \
          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
          --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
@@ -128,7 +145,9 @@ deploy_earlier_postgres_central() {
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
          --set central.image.tag="${EARLIER_TAG}" \
-         --set central.db.image.tag="${EARLIER_TAG}"
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="${EARLIER_TAG}" \
+         --set scanner.dbImage.tag="${EARLIER_TAG}"
 
     # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
     # the scripts.  So we will give it a minute for things to get started before we proceed
@@ -249,31 +268,31 @@ EOT
     wait_for_scanner_V4 "$namespace"
 }
 
-restore_4_6_backup() {
-    info "Restoring a 4.6 backup into a newer central"
+restore_backup() {
+    info "Restoring a backup into a newer central"
 
-    restore_4_6_postgres_backup
+    restore_postgres_backup
 }
 
 force_rollback() {
-    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+    info "Forcing a rollback to ${EARLIER_TAG}"
 
     local upgradeStatus
     upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "${EARLIER_TAG}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
     local config_patch
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 }
 
 validate_sensor_bundle_via_upgrader() {

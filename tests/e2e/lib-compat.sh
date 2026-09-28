@@ -153,6 +153,10 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Scan every 9-11 minutes in roxie-deployed QA tests, including GHA.
+        env_with_default ROX_NODE_SCANNING_INTERVAL "10m"
+        env_with_default ROX_NODE_SCANNING_INTERVAL_DEVIATION "60s"
+
         collect_feature_flags
     )
 
@@ -201,6 +205,7 @@ collect_feature_flags() {
     env_with_default ROX_NODE_VULNERABILITY_REPORTS "true"
     env_with_default ROX_TAILORED_PROFILES "true"
     env_with_default ROX_INIT_CONTAINER_SUPPORT "true"
+    env_with_default ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "true"
     env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
