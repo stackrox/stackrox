@@ -15,6 +15,7 @@ set -euo pipefail
 #   VM_SSH_PRIVATE_KEY_PATH   PEM identity for virtctl (default: $VM_SCAN_E2E_DIR/ssh-identity)
 #   VIRTCTL_PATH              optional virtctl override
 #   VM_GUEST_JOURNAL_TIMEOUT  per-VM virtctl ssh ceiling (default: 90s)
+#   VM_GUEST_COLLECT_DEADLINE total collection budget (default: 540s)
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
@@ -132,6 +133,21 @@ guest_ssh() {
         < /dev/null
 }
 
+# seconds_left is the timeout for the next virtctl ssh. Collection stops
+# on its own before the 10 minute post-test kill, which fails the job.
+seconds_left() {
+    local cap="${VM_GUEST_JOURNAL_TIMEOUT:-90}"
+    local left=$((collect_deadline_at - SECONDS))
+    if ((left < 1)); then
+        return 1
+    fi
+    if ((left < cap)); then
+        printf '%s\n' "$left"
+        return 0
+    fi
+    printf '%s\n' "$cap"
+}
+
 # collect_roxagent_container_journal writes container stdout that RHEL 8
 # Podman does not file on roxagent.service. Those entries are tagged
 # systemd-roxagent.
@@ -156,6 +172,11 @@ collect_roxagent_container_journal() {
             echo "--- stderr ---"
             cat "$stderr_file"
         } >> "$out_file"
+    elif [[ -s "$stderr_file" ]]; then
+        {
+            echo "--- stderr ---"
+            cat "$stderr_file"
+        } >> "$out_file"
     fi
     rm -f "$stderr_file"
 }
@@ -171,7 +192,9 @@ collect_roxagent_journal() {
     local vmi="$5"
     local out_file="$6"
     local container_file="$7"
-    local ssh_timeout="${VM_GUEST_JOURNAL_TIMEOUT:-90}"
+    local ssh_timeout
+
+    ssh_timeout="$(seconds_left)" || return 1
 
     local stderr_file
     stderr_file="$(mktemp)"
@@ -190,6 +213,7 @@ collect_roxagent_journal() {
         return 0
     fi
     rm -f "$stderr_file"
+    ssh_timeout="$(seconds_left)" || return 1
     collect_roxagent_container_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$container_file" "$ssh_timeout" || true
 }
 
@@ -202,6 +226,7 @@ collect_journals() {
 
     if [[ -n "$virtctl_bin" && -n "$identity" ]]; then
         info ">>> Collecting roxagent journals into ${output_dir} <<<"
+        collect_deadline_at=$((SECONDS + ${VM_GUEST_COLLECT_DEADLINE:-540}))
         local vmi_count=0 ns vmi out_file container_file vmi_list list_err
         vmi_list="$(mktemp)"
         list_err="$(mktemp)"
@@ -221,7 +246,11 @@ collect_journals() {
             out_file="${output_dir}/${ns}_${vmi}_roxagent.journal.log"
             container_file="${output_dir}/${ns}_${vmi}_roxagent.container.journal.log"
             info "Collecting roxagent journals for ${ns}/${vmi} -> ${out_file} ${container_file}"
-            collect_roxagent_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" "$container_file" || true
+            if ! collect_roxagent_journal "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$out_file" "$container_file"; then
+                echo "stopped at ${ns}/${vmi}: collect deadline reached" \
+                    > "${output_dir}/collection-partial.txt"
+                break
+            fi
         done < "$vmi_list"
         rm -f "$vmi_list"
 

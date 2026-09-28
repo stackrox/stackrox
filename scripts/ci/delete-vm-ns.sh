@@ -32,7 +32,8 @@ delete_vm_scan_namespaces() {
     while IFS= read -r ns; do
         [[ -z "$ns" ]] && continue
         info "Deleting namespace ${ns}"
-        kubectl delete namespace "$ns" --wait=false --request-timeout=60s </dev/null 2>&1 || \
+        # 10s leaves room for the namespace list inside the 60s cleanup budget.
+        kubectl delete namespace "$ns" --wait=false --request-timeout=10s </dev/null 2>&1 || \
             info "Namespace delete for ${ns} failed or already removed"
     done < "$ns_list"
     rm -f "$ns_list"
