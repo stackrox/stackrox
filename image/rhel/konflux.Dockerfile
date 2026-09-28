@@ -43,6 +43,11 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
         tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
     done
 
+RUN arch=$(uname -m) ; \
+    case $arch in x86_64) arch=amd64 ;; aarch64) arch=arm64 ;; esac ; \
+    cp /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl-linux-${arch} \
+       /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl
+
 
 FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:bb046ef111dd20f890fe9879a37df8e829ed661177fae2339ba7eeb495f46c60 as ui-builder
 
@@ -104,7 +109,8 @@ COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl /stackrox/roxctl
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
@@ -112,9 +118,6 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central-worker /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-RUN GOARCH=$(uname -m) ; \
-    case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl
 
 ARG BUILD_TAG
 
