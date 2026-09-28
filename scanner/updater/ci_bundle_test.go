@@ -23,7 +23,7 @@ import (
 // intentionally carry Unknown severity; Scanner V4 applies the authoritative
 // NVD enrichment record when it materializes the effective severity.
 func TestCIMinimalBundle(t *testing.T) {
-	bundlePath := filepath.Join("ci", "bundles", "ci-minimal", "vulnerabilities.zip")
+	bundlePath := filepath.Join("..", "image", "scanner", "bundles", "ci-minimal", "vulnerabilities.zip")
 	if candidate := os.Getenv("CI_MINIMAL_BUNDLE_PATH"); candidate != "" {
 		bundlePath = candidate
 	}

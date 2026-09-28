@@ -73,8 +73,9 @@ CI_MINIMAL_BUNDLE_PATH=/tmp/ci-minimal-one.zip \
 go test ./scanner/updater -run '^TestCIMinimalBundle$' -count=1
 ```
 
-Omit `CI_MINIMAL_OUTPUT_PATHS` to regenerate both checked-in copies after
-validation. `CI_MINIMAL_TEST_CVE_PATHS` and `CI_MINIMAL_PACKAGE_SELECTION` allow
+Omit `CI_MINIMAL_OUTPUT_PATHS` to regenerate the canonical checked-in bundle at
+`scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip` after validation.
+`CI_MINIMAL_TEST_CVE_PATHS` and `CI_MINIMAL_PACKAGE_SELECTION` allow
 isolated generator fixtures; they do not alter the production updater config.
 
 To refresh `qa-packages.json`, index the image with the current Scanner indexer,

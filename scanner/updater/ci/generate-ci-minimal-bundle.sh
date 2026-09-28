@@ -80,7 +80,6 @@ alpine_packages=(
 )
 
 output_paths=(
-  "scanner/updater/ci/bundles/ci-minimal/vulnerabilities.zip"
   "scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 )
 
