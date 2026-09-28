@@ -9,6 +9,8 @@ import (
 	"io"
 	"testing"
 
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
+	signatureIntegrationPostgres "github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -22,7 +24,9 @@ func BenchmarkService_Export(b *testing.B) {
 		b.Error(err)
 	}
 
-	svc := New(testHelper.Images, testHelper.ImagesV2, testHelper.Images, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	sigStore := signatureIntegrationPostgres.New(testHelper.GetDB())
+	sigDS := signatureIntegrationDS.New(sigStore, nil)
+	svc := New(testHelper.Images, testHelper.ImagesV2, testHelper.Images, nil, nil, nil, nil, nil, nil, nil, nil, nil, sigDS)
 	benchmarkFunc := getExportServiceBenchmark(testHelper, svc)
 	testHelper.InjectDataAndRunBenchmark(b, true, benchmarkFunc)
 }
