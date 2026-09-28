@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -109,7 +110,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// the database before writing. This is safe because NodeInventory and Node
 		// pipelines never run concurrently by the Sensor Event worker queues.
 		node.Scan = nil
-		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+		if err := p.upsertNodeIfClusterActive(ctx, clusterID, node); err != nil {
 			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)
 			return err
@@ -124,7 +125,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			ScanTime: protocompat.TimestampNow(),
 			Notes:    []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED},
 		}
-		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+		if err := p.upsertNodeIfClusterActive(ctx, clusterID, node); err != nil {
 			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)
 			return err
@@ -138,12 +139,38 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			"risk information will not be updated): %v", nodeDatastore.NodeString(node), err)
 	}
 
-	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
+	if err := p.calculateRiskAndUpsertNodeIfClusterActive(ctx, clusterID, node); err != nil {
 		log.Error(err)
 		return err
 	}
 
 	return nil
+}
+
+func (p *pipelineImpl) upsertNodeIfClusterActive(ctx context.Context, clusterID string, node *storage.Node) error {
+	return p.withActiveCluster(ctx, clusterID, func() error {
+		return p.nodeDatastore.UpsertNode(ctx, node)
+	})
+}
+
+func (p *pipelineImpl) calculateRiskAndUpsertNodeIfClusterActive(ctx context.Context, clusterID string, node *storage.Node) error {
+	return p.withActiveCluster(ctx, clusterID, func() error {
+		return p.riskManager.CalculateRiskAndUpsertNode(node)
+	})
+}
+
+func (p *pipelineImpl) withActiveCluster(ctx context.Context, clusterID string, write func() error) error {
+	active, release := lifecycle.Singleton().Enter(clusterID)
+	if !active {
+		return nil
+	}
+	defer release()
+
+	_, exists, err := p.clusterStore.GetClusterName(ctx, clusterID)
+	if err != nil || !exists {
+		return err
+	}
+	return write()
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}

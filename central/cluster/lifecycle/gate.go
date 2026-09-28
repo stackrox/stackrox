@@ -1,6 +1,9 @@
 package lifecycle
 
-import "sync"
+import (
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
+)
 
 // Gate serializes cluster deletion with writes that must not outlive the cluster.
 type Gate struct {
@@ -32,17 +35,20 @@ func New() *Gate {
 func (g *Gate) Enter(clusterID string) (active bool, release func()) {
 	e := g.retain(clusterID)
 
-	e.stateMu.Lock()
-	if e.deleting {
-		e.stateMu.Unlock()
+	active = concurrency.WithLock1(&e.stateMu, func() bool {
+		if e.deleting {
+			return false
+		}
+		e.mu.RLock()
+		return true
+	})
+	if !active {
 		g.release(clusterID, e)
 		return false, nil
 	}
-	e.mu.RLock()
-	e.stateMu.Unlock()
 
 	return true, func() {
-		e.mu.RUnlock()
+		concurrency.UnsafeRUnlock(&e.mu)
 		g.release(clusterID, e)
 	}
 }
@@ -51,16 +57,16 @@ func (g *Gate) Enter(clusterID string) (active bool, release func()) {
 // The returned function must be called once cluster cleanup completes.
 func (g *Gate) BeginDeletion(clusterID string) func() {
 	e := g.retain(clusterID)
-	e.stateMu.Lock()
-	e.deleting = true
-	e.stateMu.Unlock()
+	concurrency.WithLock(&e.stateMu, func() {
+		e.deleting = true
+	})
 	e.mu.Lock()
 
 	return func() {
-		e.mu.Unlock()
-		e.stateMu.Lock()
-		e.deleting = false
-		e.stateMu.Unlock()
+		concurrency.UnsafeUnlock(&e.mu)
+		concurrency.WithLock(&e.stateMu, func() {
+			e.deleting = false
+		})
 		g.release(clusterID, e)
 	}
 }
