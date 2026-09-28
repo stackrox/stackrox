@@ -42,6 +42,7 @@ import services.AlertService
 import services.BaseService
 import services.ImageService
 import services.NetworkPolicyService
+import util.E2ETiming
 import util.Timer
 
 @CompileStatic
@@ -191,21 +192,27 @@ class Services extends BaseService {
 
     private static List<AlertOuterClass.ListAlert> getViolationsHelper(
             String query, String policyName, int timeoutSeconds) {
-        int intervalSeconds = 3
-        int retries = (timeoutSeconds / intervalSeconds).intValue()
+        return E2ETiming.measure(
+                "stackrox_violation_visible_wait",
+                "Services.getViolationsHelper",
+                [policy_name: policyName]
+        ) {
+            int intervalSeconds = 3
+            int retries = (timeoutSeconds / intervalSeconds).intValue()
 
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
-            def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
-                    .setQuery(query).build())
-            if (violations.size() > 0) {
-                LOG.info "violation size is: ${violations.size()}"
-                LOG.info "${policyName} triggered after waiting ${t.SecondsSince()} seconds"
-                return violations
+            Timer t = new Timer(retries, intervalSeconds)
+            while (t.IsValid()) {
+                def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
+                        .setQuery(query).build())
+                if (violations.size() > 0) {
+                    LOG.info "violation size is: ${violations.size()}"
+                    LOG.info "${policyName} triggered after waiting ${t.SecondsSince()} seconds"
+                    return violations
+                }
             }
+            LOG.info "Failed to trigger ${policyName} after waiting ${t.SecondsSince()} seconds"
+            return new ArrayList<AlertOuterClass.ListAlert>()
         }
-        LOG.info "Failed to trigger ${policyName} after waiting ${t.SecondsSince()} seconds"
-        return []
     }
 
     static List<AlertOuterClass.ListAlert> getViolationsWithTimeout(
@@ -490,16 +497,22 @@ class Services extends BaseService {
     }
 
     static boolean waitForSRDeletionByID(String id, String name) {
-        // Wait until the deployment disappears from StackRox.
-        Timer t = new Timer(120, 1)
-        boolean disappearedFromStackRox = false
-        while (t.IsValid()) {
-            if (!roxDetectedDeployment(id, name)) {
-                disappearedFromStackRox = true
-                break
+        return E2ETiming.measure(
+                "stackrox_deployment_termination_wait",
+                "Services.waitForSRDeletionByID",
+                [deployment_id: id ?: "", deployment_name: name]
+        ) {
+            // Wait until the deployment disappears from StackRox.
+            Timer t = new Timer(120, 1)
+            boolean disappearedFromStackRox = false
+            while (t.IsValid()) {
+                if (!roxDetectedDeployment(id, name)) {
+                    disappearedFromStackRox = true
+                    break
+                }
             }
+            return disappearedFromStackRox
         }
-        return disappearedFromStackRox
     }
 
     // When changing the timeout here, remember there might be other enclosing
@@ -518,16 +531,22 @@ class Services extends BaseService {
     }
 
     static boolean waitForDeploymentByID(String id, String name, int retries = 30, int interval = 2) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
-            if (roxDetectedDeployment(id, name)) {
-                LOG.info "SR found deployment ${name} within ${t.SecondsSince()}s"
-                return true
+        return E2ETiming.measure(
+                "stackrox_deployment_visible_wait",
+                "Services.waitForDeploymentByID",
+                [deployment_id: id ?: "", deployment_name: name]
+        ) {
+            Timer t = new Timer(retries, interval)
+            while (t.IsValid()) {
+                if (roxDetectedDeployment(id, name)) {
+                    LOG.info "SR found deployment ${name} within ${t.SecondsSince()}s"
+                    return true
+                }
+                LOG.info "SR has not found deployment ${name} yet"
             }
-            LOG.info "SR has not found deployment ${name} yet"
+            LOG.info "SR did not detect the deployment ${name} in ${t.SecondsSince()} seconds"
+            return false
         }
-        LOG.info "SR did not detect the deployment ${name} in ${t.SecondsSince()} seconds"
-        return false
     }
 
     static waitForImage(objects.Deployment deployment, int retries = 30, int interval = 2) {

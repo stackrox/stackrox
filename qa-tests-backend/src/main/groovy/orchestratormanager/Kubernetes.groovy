@@ -122,6 +122,7 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import util.E2ETiming
 import util.Env
 import util.Timer
 
@@ -421,18 +422,24 @@ class Kubernetes {
     }
 
     void waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
-        Timer t = new Timer(retries, intervalSeconds)
+        E2ETiming.measure(
+                "fixture_k8s_deployment_delete_wait",
+                "Kubernetes.waitForDeploymentDeletion",
+                [deployment_name: deploy.name, namespace: deploy.namespace]
+        ) {
+            Timer t = new Timer(retries, intervalSeconds)
 
-        K8sDeployment d
-        while (t.IsValid()) {
-            d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
-            if (d == null) {
-                log.debug "${deploy.name}: deployment removed."
-                return
+            K8sDeployment d
+            while (t.IsValid()) {
+                d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
+                if (d == null) {
+                    log.debug "${deploy.name}: deployment removed."
+                    return
+                }
+                getAndPrintPods(deploy.namespace, deploy.name)
             }
-            getAndPrintPods(deploy.namespace, deploy.name)
+            log.debug "Timed out waiting for deployment ${deploy.name} to be deleted"
         }
-        log.debug "Timed out waiting for deployment ${deploy.name} to be deleted"
     }
 
     void deleteAndWaitForDeploymentDeletion(Deployment... deployments) {
@@ -2169,9 +2176,15 @@ class Kubernetes {
         K8sDeployment d = toK8sDeployment(deployment)
 
         try {
-            withK8sClientRetry(maxNumRetries, 1) {
-                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            E2ETiming.measure(
+                    "fixture_k8s_deployment_create",
+                    "Kubernetes.createDeploymentNoWait",
+                    [deployment_name: deployment.name, namespace: deployment.namespace]
+            ) {
+                withK8sClientRetry(maxNumRetries, 1) {
+                    client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                    log.debug "Told the orchestrator to createOrReplace " + deployment.name
+                }
             }
             if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
@@ -2210,36 +2223,46 @@ class Kubernetes {
     }
 
     String waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        Timer t = new Timer(60, 3)
-        while (t.IsValid()) {
-            log.debug "Waiting for ${deploymentName} to start"
-            K8sDeployment d = null
-            try {
-                d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
-            } catch (Exception e) {
-                log.warn("Error getting k8s deployment", e)
+        return E2ETiming.measure(
+                "fixture_k8s_deployment_ready_wait",
+                "Kubernetes.waitForDeploymentStart",
+                [
+                        deployment_name: deploymentName,
+                        namespace: namespace,
+                        skip_replica_wait: String.valueOf(skipReplicaWait),
+                ]
+        ) {
+            Timer t = new Timer(60, 3)
+            while (t.IsValid()) {
+                log.debug "Waiting for ${deploymentName} to start"
+                K8sDeployment d = null
+                try {
+                    d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
+                } catch (Exception e) {
+                    log.warn("Error getting k8s deployment", e)
+                }
+                getAndPrintPods(namespace, deploymentName)
+                if (d == null) {
+                    log.debug "${deploymentName} not found yet"
+                    continue
+                } else if (skipReplicaWait) {
+                    // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
+                    // to work its way through the system.
+                    sleep(sleepDurationSeconds * 1000)
+                    log.debug "${deploymentName}: deployment created (skipped replica wait)."
+                    return
+                }
+                if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
+                    log.debug "All ${d.getSpec().getReplicas()} replicas found " +
+                            "in ready state for ${deploymentName}"
+                    log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
+                    return d.getMetadata().getUid()
+                }
+                log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
+                        "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
             }
-            getAndPrintPods(namespace, deploymentName)
-            if (d == null) {
-                log.debug "${deploymentName} not found yet"
-                continue
-            } else if (skipReplicaWait) {
-                // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
-                // to work its way through the system.
-                sleep(sleepDurationSeconds * 1000)
-                log.debug "${deploymentName}: deployment created (skipped replica wait)."
-                return
-            }
-            if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
-                log.debug "All ${d.getSpec().getReplicas()} replicas found " +
-                        "in ready state for ${deploymentName}"
-                log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
-                return d.getMetadata().getUid()
-            }
-            log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
-                    "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
+            return ""
         }
-        return ""
     }
 
     @CompileDynamic

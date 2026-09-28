@@ -21,6 +21,7 @@ class ActiveSpan:
 
 
 SpanKey = Tuple[str, str, str]
+_ACTIVITY_MARKER = "e2e_timing_activity "
 
 
 def _timestamp(event: dict) -> str:
@@ -121,6 +122,80 @@ def _finish_span(
     )
 
 
+def _activity_span(event: dict, marker: dict, active: Dict[str, ActiveSpan]) -> bool:
+    action = marker.get("event")
+    span_id = marker.get("span_id")
+    if action not in {"start", "end"} or not isinstance(span_id, str) or not span_id:
+        return False
+
+    category = marker.get("activity", "unknown")
+    helper = marker.get("helper", "unknown")
+    if not isinstance(category, str) or not isinstance(helper, str):
+        return False
+    details = marker.get("attributes")
+    if details is None:
+        details = {}
+    if not isinstance(details, dict):
+        return False
+    attributes = {
+        "framework": "go",
+        "activity": category,
+        "helper": helper,
+    }
+    attributes.update({str(key): str(value) for key, value in details.items()})
+    test = event.get("Test") or attributes.get("test_name", "")
+    if test:
+        attributes.setdefault("test_name", test)
+    span_name = f"activity:{category}:{helper}"
+
+    if action == "start":
+        span = ActiveSpan(
+            span_id=span_id,
+            phase="test-activity",
+            name=span_name,
+            attributes=attributes,
+        )
+        active[span_id] = span
+        emit_span_event(
+            span.phase,
+            span.name,
+            span.span_id,
+            "start",
+            _timestamp(event),
+            attributes=span.attributes,
+        )
+    else:
+        span = active.pop(span_id, None)
+        if span is None:
+            return False
+        emit_span_event(
+            span.phase,
+            span.name,
+            span.span_id,
+            "end",
+            _timestamp(event),
+            attributes=span.attributes,
+            outcome=marker.get("outcome"),
+        )
+    return True
+
+
+def _render_output(event: dict, active_activities: Dict[str, ActiveSpan]) -> None:
+    output = event.get("Output", "")
+    for line in output.splitlines(keepends=True):
+        if _ACTIVITY_MARKER not in line:
+            sys.stdout.write(line)
+            continue
+        marker_text = line.split(_ACTIVITY_MARKER, 1)[1].strip()
+        try:
+            marker = json.loads(marker_text)
+        except (json.JSONDecodeError, TypeError):
+            sys.stdout.write(line)
+            continue
+        if not isinstance(marker, dict) or not _activity_span(event, marker, active_activities):
+            sys.stdout.write(line)
+
+
 def _render_test_event(event: dict, action: str) -> None:
     test = event.get("Test", "")
     package = event.get("Package", "")
@@ -148,11 +223,15 @@ def _render_test_event(event: dict, action: str) -> None:
 def _handle_event(
     event: dict,
     active: Dict[SpanKey, List[ActiveSpan]],
+    active_activities: Dict[str, ActiveSpan],
     timing_enabled: bool,
 ) -> None:
     action = event.get("Action", "")
     if action in {"output", "build-output", "build-fail"}:
-        sys.stdout.write(event.get("Output", ""))
+        if action == "output" and timing_enabled:
+            _render_output(event, active_activities)
+        else:
+            sys.stdout.write(event.get("Output", ""))
     elif action == "start" and not event.get("Test"):
         if timing_enabled:
             _start_span(event, active)
@@ -172,6 +251,7 @@ def _handle_event(
 def process_events(lines: Iterable[str]) -> None:
     """Stream readable Go test output and timing sentinels without buffering."""
     active: Dict[SpanKey, List[ActiveSpan]] = {}
+    active_activities: Dict[str, ActiveSpan] = {}
     timing_enabled = is_enabled()
 
     for line in lines:
@@ -187,7 +267,7 @@ def process_events(lines: Iterable[str]) -> None:
             sys.stdout.flush()
             continue
 
-        _handle_event(event, active, timing_enabled)
+        _handle_event(event, active, active_activities, timing_enabled)
 
     # If the test command exits or is terminated with unfinished tests, close
     # those intervals as interrupted rather than leaving dangling start events.
@@ -204,6 +284,18 @@ def process_events(lines: Iterable[str]) -> None:
                 attributes=span.attributes,
                 outcome="interrupted",
             )
+    for span in active_activities.values():
+        emit_span_event(
+            span.phase,
+            span.name,
+            span.span_id,
+            "end",
+            datetime.now(timezone.utc)
+            .isoformat(timespec="milliseconds")
+            .replace("+00:00", "Z"),
+            attributes=span.attributes,
+            outcome="interrupted",
+        )
 
 
 def main() -> int:

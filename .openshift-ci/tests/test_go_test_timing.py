@@ -132,6 +132,79 @@ class TestGoTestTiming(unittest.TestCase):
         self.assertIn("--- FAIL: TestBroken", output.getvalue())
         self.assertIn("FAIL\texample.test/pkg", output.getvalue())
 
+    def test_activity_markers_become_shared_spans_and_are_removed_from_test_output(self):
+        marker = {
+            "event": "start",
+            "span_id": "test-activity:123:1",
+            "activity": "fixture_k8s_deployment_ready_wait",
+            "helper": "waitForDeploymentReadyInK8s",
+            "attributes": {
+                "deployment_name": "fixture",
+                "namespace": "qa",
+                "test_name": "TestFixture",
+            },
+        }
+        end_marker = {**marker, "event": "end"}
+        fixture = [
+            go_event("run", test="TestFixture", timestamp="2026-09-25T12:00:01Z"),
+            go_event(
+                "output",
+                test="TestFixture",
+                Output=(
+                    "    common.go:1: e2e_timing_activity "
+                    + json.dumps(marker)
+                    + "\n"
+                ),
+                timestamp="2026-09-25T12:00:02Z",
+            ),
+            go_event(
+                "output",
+                test="TestFixture",
+                Output=(
+                    "    common.go:1: e2e_timing_activity "
+                    + json.dumps(end_marker)
+                    + "\n"
+                ),
+                timestamp="2026-09-25T12:00:04Z",
+            ),
+        ]
+        output = io.StringIO()
+        with redirect_stdout(output):
+            process_events(fixture)
+
+        events = [
+            event
+            for event in timing_events(output.getvalue())
+            if event["phase"] == "test-activity"
+        ]
+        self.assertEqual(["start", "end"], [event["event"] for event in events])
+        self.assertEqual(events[0]["span_id"], events[1]["span_id"])
+        self.assertEqual(
+            "activity:fixture_k8s_deployment_ready_wait:waitForDeploymentReadyInK8s",
+            events[0]["name"],
+        )
+        self.assertEqual("TestFixture", events[0]["attributes"]["test_name"])
+        self.assertEqual("2026-09-25T12:00:02Z", events[0]["timestamp"])
+        self.assertEqual("2026-09-25T12:00:04Z", events[1]["timestamp"])
+        self.assertNotIn("e2e_timing_activity", output.getvalue())
+
+    def test_malformed_activity_attributes_are_preserved_as_regular_test_output(self):
+        marker = {"event": "start", "span_id": "test-activity:123:1", "attributes": []}
+        fixture = [
+            go_event(
+                "output",
+                test="TestFixture",
+                Output="    common.go:1: e2e_timing_activity " + json.dumps(marker) + "\n",
+                timestamp="2026-09-25T12:00:02Z",
+            ),
+        ]
+        output = io.StringIO()
+        with redirect_stdout(output):
+            process_events(fixture)
+
+        self.assertIn("e2e_timing_activity", output.getvalue())
+        self.assertFalse(timing_events(output.getvalue()))
+
     def test_non_event_json_line_is_preserved(self):
         line = '{"diagnostic":"not a go test event"}\n'
         output = io.StringIO()

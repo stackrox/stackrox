@@ -152,6 +152,10 @@ func waitForDeploymentCountInCentral(t testutils.T, query string, count int) {
 }
 
 func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string) {
+	defer startE2ETestActivity(t, "fixture_k8s_deployment_ready_wait", "waitForDeploymentReadyInK8s", map[string]string{
+		"deployment_name": deploymentName,
+		"namespace":       namespace,
+	})()
 	client := createK8sClient(t)
 
 	ticker := time.NewTicker(2 * time.Second)
@@ -247,6 +251,9 @@ func printDeploymentConditions(t testutils.T, conditions []appsV1.DeploymentCond
 }
 
 func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
+	defer startE2ETestActivity(t, "stackrox_deployment_visible_wait", "waitForDeploymentInCentral", map[string]string{
+		"deployment_name": deploymentName,
+	})()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -295,6 +302,7 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 // waitForAlert waits for the desired number of alerts to appear in Central.
 // It polls the AlertService every 2 seconds for up to 90 seconds (45 attempts).
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
+	defer startE2ETestActivity(t, "stackrox_violation_visible_wait", "waitForAlert", nil)()
 	var alerts []*storage.ListAlert
 	// Retry until desired alert count is reached when sensor(s) resync
 	for range 45 {
@@ -318,6 +326,9 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 }
 
 func waitForTermination(t testutils.T, deploymentName string) {
+	defer startE2ETestActivity(t, "stackrox_deployment_termination_wait", "waitForTermination", map[string]string{
+		"deployment_name": deploymentName,
+	})()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -447,6 +458,10 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 	defer cancel()
 
 	t.Logf("Calling K8s API to create deployment %q in namespace %q...", deploymentName, namespace)
+	defer startE2ETestActivity(t, "fixture_k8s_deployment_create", "createDeploymentViaAPI", map[string]string{
+		"deployment_name": deploymentName,
+		"namespace":       namespace,
+	})()
 	createdDeployment, err := client.AppsV1().Deployments(namespace).Create(ctx, deployment, metaV1.CreateOptions{})
 
 	if err != nil {
@@ -665,6 +680,10 @@ func teardownDeployment(t *testing.T, deploymentName string, namespace string) {
 // Returns an error if the deployment still exists after the timeout, which triggers a retry
 // of the entire delete operation.
 func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string, namespace string, timeout time.Duration) error {
+	defer startE2ETestActivity(t, "fixture_k8s_deployment_delete_wait", "waitForK8sDeploymentDeletion", map[string]string{
+		"deployment_name": deploymentName,
+		"namespace":       namespace,
+	})()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
