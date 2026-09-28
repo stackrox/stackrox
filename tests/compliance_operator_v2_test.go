@@ -1322,8 +1322,13 @@ func TestComplianceV2NodeRoles(t *testing.T) {
 			Clusters: []string{clusterID},
 			ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 				OneTimeScan: true,
-				Profiles:    []string{"rhcos4-e8"},
-				NodeRoles:   []string{"worker"},
+				// Use a node profile exclusive to this test's subtests (freed by the
+				// "@all role" subtest's cleanup before this runs). Avoid rhcos4-e8 and
+				// bare ocp4-cis-node: TestComplianceV2CreateGetScanConfigurations runs in
+				// parallel on the same cluster and claims both, and the product enforces
+				// one scan config per profile per cluster.
+				Profiles:  []string{"ocp4-cis-node-2-0"},
+				NodeRoles: []string{"worker"},
 			},
 		}
 		resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
