@@ -107,11 +107,7 @@ jobs:
         run: |
           source ./workflow/env.sh
           roxie teardown central --single-namespace
-
-          # Delete all namespaces created by scale script.
-          for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
-          ./scripts/k8s/cleanup.sh "stackrox${i}"
-          done
+          ./scale/dev/kill-sensors.sh
 
       - name: Get PR image tag
         run: |
