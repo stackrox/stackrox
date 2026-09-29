@@ -297,10 +297,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-qa-tests-ocp-konflux-fips:
-    needs: [ wait-for-konflux-images, should-dispatch ]
+    needs: [ should-dispatch ]
     uses: ./.github/workflows/e2e-qa-tests-ocp-konflux-fips.yaml
     with:
-      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      tag: "5.1.0-61-g3fdd43fa96-fast"
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-konflux-fips }}
     secrets: inherit
     concurrency:
