@@ -81,21 +81,19 @@ func TestCheckAndWarn(t *testing.T) {
 
 func TestCentralVersionClientInterceptor(t *testing.T) {
 	cases := map[string]struct {
-		ctx            context.Context
+		suppress       bool
 		centralVersion string
 		expectWarning  string
 	}{
 		"incompatible version warns": {
-			ctx:            context.Background(),
 			centralVersion: "4.2.0",
 			expectWarning:  "too new",
 		},
 		"compatible version is silent": {
-			ctx:            context.Background(),
 			centralVersion: "4.10.6",
 		},
 		"incompatible version does not warn if suppressed": {
-			ctx:            ContextWithVersionCheckerSuppressor(context.Background(), true),
+			suppress:       true,
 			centralVersion: "4.2.0",
 		},
 	}
@@ -103,6 +101,9 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
+			t.Cleanup(func() {
+				ResetSuppressWarningForTesting(t)
+			})
 
 			var buf bytes.Buffer
 			conn := setupServerAndClient(t,
@@ -111,7 +112,10 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 			)
 
 			client := v1.NewMetadataServiceClient(conn)
-			_, err := client.GetMetadata(tc.ctx, &v1.Empty{})
+			if tc.suppress {
+				SuppressWarning()
+			}
+			_, err := client.GetMetadata(context.Background(), &v1.Empty{})
 			require.NoError(t, err)
 
 			if tc.expectWarning != "" {
@@ -137,6 +141,9 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
+			t.Cleanup(func() {
+				ResetSuppressWarningForTesting(t)
+			})
 
 			var serverInterceptors []grpc.UnaryServerInterceptor
 			if tc.authenticated {
@@ -161,6 +168,9 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 
 func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
+	t.Cleanup(func() {
+		ResetSuppressWarningForTesting(t)
+	})
 
 	var buf bytes.Buffer
 	conn := setupServerAndClient(t,

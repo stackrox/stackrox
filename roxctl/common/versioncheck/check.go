@@ -15,6 +15,14 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+var suppressWarning atomic.Bool
+
+// SuppressWarning if call the warnings in CentralVersionClientInterceptor will
+// be suppressed
+func SuppressWarning() {
+	suppressWarning.Store(true)
+}
+
 // CentralVersionClientInterceptor returns a gRPC unary client interceptor that reads
 // the Central version from response header and emits a warning if the
 // versions of Central and roxctl are incompatible. The warning is emitted at most once per
@@ -27,7 +35,7 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 		// Response headers are populated after the RPC completes.
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if vals := md.Get(clientconn.CentralVersionHeader); len(vals) > 0 {
-			if !checked.Swap(true) && !ShouldSuppressVersionChecker(ctx) {
+			if !checked.Swap(true) && !suppressWarning.Load() {
 				checkAndWarn(vals[0], w)
 			}
 		}

@@ -90,7 +90,8 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	ctx, cancel := context.WithTimeout(versioncheck.ContextWithVersionCheckerSuppressor(context.Background(), true), cmd.timeout)
+	versioncheck.SuppressWarning()
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})

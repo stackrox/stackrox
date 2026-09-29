@@ -41,6 +41,10 @@ type centralVersionTestSuite struct {
 	suite.Suite
 }
 
+func (c *centralVersionTestSuite) TearDownTest() {
+	versioncheck.ResetSuppressWarningForTesting(c.T())
+}
+
 type mockMetadataServer struct {
 	v1.UnimplementedMetadataServiceServer
 	version string
