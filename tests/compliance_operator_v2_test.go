@@ -1340,7 +1340,10 @@ func TestComplianceV2NodeRoles(t *testing.T) {
 
 		updateReq := req.CloneVT()
 		updateReq.Id = resp.GetId()
-		updateReq.ScanConfig.NodeRoles = []string{"master", "infra"}
+		// Submit a mixed-case role: Central normalizes roles to lowercase before
+		// validating and storing (design-doc §5.4), so "Master" must be accepted
+		// and persisted as "master", not rejected.
+		updateReq.ScanConfig.NodeRoles = []string{"Master", "infra"}
 		_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, updateReq)
 		require.NoError(t, err)
 
@@ -1348,6 +1351,9 @@ func TestComplianceV2NodeRoles(t *testing.T) {
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"master", "infra"}, status.GetScanConfig().GetNodeRoles())
 
+		// Central lowercased the roles, so the CO ScanSetting reflects the
+		// normalized values; assert against the lowercased expectation.
+		updateReq.ScanConfig.NodeRoles = []string{"master", "infra"}
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, updateReq)
 		}, defaultTimeout, defaultInterval)

@@ -215,6 +215,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 		"single default role":             {"master"},
 		"single character role":           {"a"},
 		"exactly 39 characters":           {strings.Repeat("a", 39)},
+		"mixed case normalized":           {"Master", "Worker"},
+		"uppercase @all normalized":       {"@ALL"},
 	}
 	for name, roles := range validCases {
 		s.Run("valid/"+name, func() {
@@ -231,15 +233,16 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 		roles     []string
 		msgSubstr string
 	}{
-		"@all mixed with other roles": {[]string{allNodesRole, "worker"}, "@all"},
-		"special characters":          {[]string{"inv@lid"}, "invalid"},
-		"empty string in list":        {[]string{"master", ""}, "empty"},
-		"too long":                    {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
-		"duplicate role":              {[]string{"worker", "worker"}, "Duplicate"},
-		"leading hyphen":              {[]string{"-infra"}, "invalid"},
-		"trailing hyphen":             {[]string{"infra-"}, "invalid"},
-		"hyphen alone":                {[]string{"-"}, "invalid"},
-		"too long by one character":   {[]string{strings.Repeat("a", 40)}, "invalid"},
+		"@all mixed with other roles":   {[]string{allNodesRole, "worker"}, "@all"},
+		"special characters":            {[]string{"inv@lid"}, "invalid"},
+		"empty string in list":          {[]string{"master", ""}, "empty"},
+		"too long":                      {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
+		"duplicate role":                {[]string{"worker", "worker"}, "Duplicate"},
+		"duplicate after normalization": {[]string{"Master", "master"}, "Duplicate"},
+		"leading hyphen":                {[]string{"-infra"}, "invalid"},
+		"trailing hyphen":               {[]string{"infra-"}, "invalid"},
+		"hyphen alone":                  {[]string{"-"}, "invalid"},
+		"too long by one character":     {[]string{strings.Repeat("a", 40)}, "invalid"},
 	}
 	for name, tc := range invalidCases {
 		s.Run("invalid/"+name, func() {
@@ -252,6 +255,24 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 			s.Require().Contains(err.Error(), tc.msgSubstr)
 		})
 	}
+
+	// Normalization: validateScanConfiguration must lowercase the roles in place so
+	// downstream storage/conversion operate on the canonical values.
+	s.Run("normalizes roles in place", func() {
+		request := getTestAPIRec()
+		request.ScanConfig.NodeRoles = []string{"Master", "INFRA", "worker"}
+		s.Require().NoError(validateScanConfiguration(request))
+		s.Require().Equal([]string{"master", "infra", "worker"}, request.GetScanConfig().GetNodeRoles())
+	})
+
+	// Storage: the value persisted via convertV2ScanConfigToStorage must be lowercase.
+	s.Run("stored value is lowercase", func() {
+		request := getTestAPIRec()
+		request.ScanConfig.NodeRoles = []string{"Master", "Worker"}
+		s.Require().NoError(validateScanConfiguration(request))
+		storageCfg := convertV2ScanConfigToStorage(allAccessContext, request)
+		s.Require().Equal([]string{"master", "worker"}, storageCfg.GetNodeRoles())
+	})
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
