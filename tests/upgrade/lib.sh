@@ -117,7 +117,7 @@ deploy_earlier_postgres_central() {
     # The time-travel checkout only needs the host roxctl binary. `make cli`
     # builds and installs every supported platform, even though CI invokes
     # this path on Linux amd64.
-    local cli_target="cli_${TEST_HOST_PLATFORM//_/-}"
+    local cli_target="roxctl_${TEST_HOST_PLATFORM//_/-}"
     info "Building time-travel roxctl target: ${cli_target}"
     # The host-only target writes bin/<platform>/roxctl but does not install
     # the command. The upgrade helpers also call roxctl without a path (for
