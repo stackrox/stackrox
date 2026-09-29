@@ -211,7 +211,7 @@ func isValidTagPattern(tagPattern string) (bool, error) {
 		return false, errox.InvalidArgs.Newf("tag pattern is too long: %d characters (max %d)", len(tagPattern), maxTagPatternLength)
 	}
 	if strings.ContainsAny(tagPattern, "/:@") || strings.ContainsFunc(tagPattern, unicode.IsSpace) {
-		return false, errox.InvalidArgs.Newf("tag pattern '%s' must not contain '/', ':', '@' or whitespace - for a registry with a port, put 'registry:port/repo' in the repository field and only the tag mask (e.g. '1.*') here", tagPattern)
+		return false, errox.InvalidArgs.Newf("tag pattern '%s' must not contain '/', ':', '@' or whitespace - for a registry with a port, set baseImageRepoPath to 'registry:port/repo' and baseImageTagPattern to the tag pattern (e.g. '1.*')", tagPattern)
 	}
 	// path.Match validates the pattern and returns an error for malformed input.
 	_, err := path.Match(tagPattern, "")

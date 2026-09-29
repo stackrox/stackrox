@@ -60,25 +60,45 @@ const addValidationSchema = yup.object({
     baseImagePath: yup
         .string()
         .required('Base image path is required')
-        .test(
-            'has-tag',
-            'Base image path must include a tag mask after ":" - for a registry with a port use "registry:port/repo:tag" (e.g. "registry:5000/repo:1.*")',
-            (value) => {
-                if (!value) {
-                    return false;
-                }
-                const { tagPattern } = parseBaseImagePath(value);
-                return tagPattern.length > 0;
+        .test('has-tag', 'Base image path must include a tag pattern after ":"', (value) => {
+            if (!value) {
+                return false;
             }
-        ),
+            const { tagPattern } = parseBaseImagePath(value);
+            return tagPattern.length > 0;
+        })
+        .test('valid-tag-pattern', function (value) {
+            if (!value) {
+                return true;
+            }
+            const { tagPattern } = parseBaseImagePath(value);
+            const error = tagPattern && getTagPatternError(tagPattern);
+            return error ? this.createError({ message: error }) : true;
+        }),
 });
 
 const editValidationSchema = yup.object({
-    baseImageTagPattern: yup.string().required('Tag pattern is required'),
+    baseImageTagPattern: yup
+        .string()
+        .required('Tag pattern is required')
+        .test('valid-tag-pattern', function (value) {
+            const error = value && getTagPatternError(value);
+            return error ? this.createError({ message: error }) : true;
+        }),
 });
 
 type AddFormData = yup.InferType<typeof addValidationSchema>;
 type EditFormData = yup.InferType<typeof editValidationSchema>;
+
+export function getTagPatternError(tagPattern: string): string | undefined {
+    if (new TextEncoder().encode(tagPattern).length > 128) {
+        return 'Tag pattern must be at most 128 bytes';
+    }
+    if (/[/:@\p{White_Space}]/u.test(tagPattern)) {
+        return 'Tag pattern must not contain "/", ":", "@", or whitespace';
+    }
+    return undefined;
+}
 
 /**
  * Parses a base image path into repository path and tag pattern.
@@ -305,9 +325,9 @@ function BaseImagesModal({
                                                 </HelperTextItem>
                                             )}
                                         <HelperTextItem>
-                                            Include repository path and tag (e.g.,
-                                            example-registry.io/path/to/image:tag). Tag can be a
-                                            pattern (e.g., 1.*)
+                                            For registries with a port, use registry:port/repo:tag
+                                            (e.g., registry:5000/repo:1.*). The tag pattern can be a
+                                            specific version or a pattern such as 1.*
                                         </HelperTextItem>
                                     </HelperText>
                                 </FormHelperText>

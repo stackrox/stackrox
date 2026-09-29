@@ -237,7 +237,7 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 			description:    "rejects pattern with slash (repo path leaked into tag field)",
 			input:          "5000/library/ubuntu*",
 			expectedValid:  false,
-			expectedErrMsg: "must not contain",
+			expectedErrMsg: "set baseImageRepoPath to 'registry:port/repo' and baseImageTagPattern to the tag pattern",
 		},
 		{
 			description:    "rejects pattern with colon (registry port leaked into tag field)",
