@@ -191,6 +191,10 @@ prepare_for_konflux() {
         registry_ro_login "quay.io/rhacs-eng"
 
         info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
+        if is_release_version "$main_image_tag" || is_RC_version "$main_image_tag"; then
+            info "On release tag (${main_image_tag}), skipping main image tag patching for Konflux usage"
+            return
+        fi
         if is_CI; then
             # get_branch_name() may only be called in CI context.
             local branch_name
