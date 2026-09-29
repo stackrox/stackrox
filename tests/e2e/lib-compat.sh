@@ -216,7 +216,17 @@ central:
         passwordSecret:
           name: "central-external-db-password"
 EOF
-    retrying_kubectl -n "${namespace}" create secret generic central-external-db-password --from-literal="password=${EXTERNAL_DB_PASSWORD}"
+    retrying_kubectl -n "${namespace}" apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: central-external-db-password
+  labels:
+    app.kubernetes.io/managed-by: "${managed_by}"
+data:
+  password: $(base64 < "${EXTERNAL_DB_PASSWORD}" | tr -d '\n')
+EOF
 }
 
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
