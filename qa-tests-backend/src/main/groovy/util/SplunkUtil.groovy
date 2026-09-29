@@ -306,7 +306,8 @@ class SplunkUtil {
                     // We're only interested in the Index Processor and Search Scheduler,
                     // as overall health can be degraded because of IOWait or disk storage.
                     assert entry.content.features.searchScheduler.health == "green"
-                    // The IndexProcessor can be yellow because of free disk space. That's okay for the short-lived test.
+                    // The IndexProcessor can be yellow because of free disk space.
+                    // That's okay for the short-lived test.
                     assert (entry.content.features.indexProcessor.health == "green" ||
                             entry.content.features.indexProcessor.health == "yellow")
                 }
