@@ -25,13 +25,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type GRPCConfig interface {
+	WithRetryTimeout(time.Duration)
+	WithVersionCheck(io.Writer)
+	WithoutVersionCheck()
+}
+
 // GRPCOption encodes behavior of a gRPC connection.
-type GRPCOption func(*grpcConfig)
+type GRPCOption func(GRPCConfig)
 
 // WithRetryTimeout sets a retry timeout for the gRPC connection.
 func WithRetryTimeout(timeout time.Duration) GRPCOption {
-	return func(config *grpcConfig) {
-		config.retryTimeout = timeout
+	return func(config GRPCConfig) {
+		config.WithRetryTimeout(timeout)
 	}
 }
 
@@ -39,8 +45,15 @@ func WithRetryTimeout(timeout time.Duration) GRPCOption {
 // Warnings are written to w at most once when a version incompatibility is
 // detected from the Central version response header.
 func WithVersionCheck(w io.Writer) GRPCOption {
-	return func(config *grpcConfig) {
-		config.versionCheckWriter = w
+	return func(config GRPCConfig) {
+		config.WithVersionCheck(w)
+	}
+}
+
+// WithoutVersionCheck disables version compatibility checking on gRPC responses.
+func WithoutVersionCheck() GRPCOption {
+	return func(config GRPCConfig) {
+		config.WithoutVersionCheck()
 	}
 }
 
@@ -87,6 +100,19 @@ type grpcConfig struct {
 	endpoint           string
 	retryTimeout       time.Duration
 	versionCheckWriter io.Writer
+	skipVersionCheck   bool
+}
+
+func (c *grpcConfig) WithRetryTimeout(time time.Duration) {
+	c.retryTimeout = time
+}
+
+func (c *grpcConfig) WithVersionCheck(writer io.Writer) {
+	c.versionCheckWriter = writer
+}
+
+func (c *grpcConfig) WithoutVersionCheck() {
+	c.skipVersionCheck = true
 }
 
 func makeCtxWithCommandHeader(ctx context.Context) context.Context {
@@ -138,7 +164,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		addCommandHeaderUnaryInterceptor,
 		grpc_retry.UnaryClientInterceptor(retryOpts...),
 	}
-	if c.versionCheckWriter != nil {
+	if c.versionCheckWriter != nil && !c.skipVersionCheck {
 		unaryInterceptors = append(unaryInterceptors, versioncheck.CentralVersionClientInterceptor(c.versionCheckWriter))
 	}
 

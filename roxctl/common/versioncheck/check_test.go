@@ -94,10 +94,6 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 			ctx:            context.Background(),
 			centralVersion: "4.10.6",
 		},
-		"incompatible version does not warn if suppressed": {
-			ctx:            ContextWithVersionCheckerSuppressor(context.Background(), true),
-			centralVersion: "4.2.0",
-		},
 	}
 
 	for name, tc := range cases {

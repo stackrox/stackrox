@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
-	"github.com/stackrox/rox/roxctl/common/versioncheck"
 )
 
 type centralVersionCommand struct {
@@ -84,13 +83,13 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 	roxctlVersion := version.GetMainVersion()
 
-	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout), common.WithoutVersionCheck())
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing gRPC connection to Central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	ctx, cancel := context.WithTimeout(versioncheck.ContextWithVersionCheckerSuppressor(context.Background(), true), cmd.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
