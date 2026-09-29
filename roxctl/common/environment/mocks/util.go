@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/io"
@@ -24,24 +23,6 @@ func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environmen
 	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
 	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
 	envMock.EXPECT().GRPCConnection(gomock.Any()).AnyTimes().Return(conn, nil)
-	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
-
-	return envMock, out, errOut
-}
-
-// NewEnvWithConnBuilder creates a new environment with given connection and opts.
-// It returns an environment and out / errOut buffer.
-func NewEnvWithConnBuilder(connBuilder func(opts ...common.GRPCOption) (*grpc.ClientConn, error), t *testing.T) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
-	envMock := NewMockEnvironment(gomock.NewController(t))
-
-	testIO, _, out, errOut := io.TestIO()
-	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
-
-	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
-	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
-	envMock.EXPECT().GRPCConnection(gomock.Any()).AnyTimes().DoAndReturn(func(opts ...common.GRPCOption) (*grpc.ClientConn, error) {
-		return connBuilder(opts...)
-	})
 	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
 
 	return envMock, out, errOut
