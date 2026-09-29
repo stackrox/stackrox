@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
@@ -18,16 +19,32 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
-SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
-
-# This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/central-db > /dev/null; then
   >&2 echo "Running the scale workload requires a PVC"
   exit 1
 fi
 
-kubectl -n "${namespace}" delete deploy/admission-control
-kubectl -n "${namespace}" delete daemonset collector
+ROXIE_CONFIG=$(mktemp)
+trap "rm -f $ROXIE_CONFIG" EXIT
+
+cat > "$ROXIE_CONFIG" <<EOF
+securedCluster:
+  namespace: "$namespace"
+  pauseReconciliation: true
+  metadata:
+    annotations:
+      platform.stackrox.io/namespace-prefix-global-resources: "true"
+  spec:
+    clusterName: "$namespace"
+    centralEndpoint: "central.stackrox.svc:443"
+    scannerV4:
+      scannerComponent: Disabled
+EOF
+
+roxie deploy secured-cluster --config "$ROXIE_CONFIG" --verbose --early-readiness
+
+kubectl -n "${namespace}" delete deploy/admission-control || true
+kubectl -n "${namespace}" delete daemonset collector || true
 
 kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0 ROX_FAKE_WORKLOAD_STORAGE=/var/cache/stackrox/pebble.db
 kubectl -n "${namespace}" delete configmap scale-workload-config || true
