@@ -255,7 +255,7 @@ class AdmissionControllerTest extends BaseSpecification {
         log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
-    def deletePolicyWithCaution(String policyId) {
+    def Exception deletePolicyWithCaution(String policyId) {
         try {
             if (policyId) {
                 PolicyService.deletePolicy(policyId)
@@ -276,7 +276,9 @@ class AdmissionControllerTest extends BaseSpecification {
             }
         } catch (Exception e) {
             log.warn "Failed to delete policy ${policyId}: ${e.message}"
+            return e
         }
+        return null
     }
 
     // Retry to allow time for the admission controller to fetch scan data from
@@ -345,7 +347,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        deletePolicyWithCaution(policyId)
+        policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
@@ -356,6 +358,9 @@ class AdmissionControllerTest extends BaseSpecification {
         } catch (Exception e) {
             log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
             throw e
+        }
+        if (policyDeletionFailure) {
+            throw policyDeletionFailure
         }
 
         where:
@@ -449,7 +454,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        deletePolicyWithCaution(policyId)
+        policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
@@ -460,6 +465,9 @@ class AdmissionControllerTest extends BaseSpecification {
         } catch (Exception e) {
             log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
             throw e
+        }
+        if (policyDeletionFailure) {
+            throw policyDeletionFailure
         }
 
         where:
