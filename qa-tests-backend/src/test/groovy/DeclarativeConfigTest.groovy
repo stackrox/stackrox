@@ -538,7 +538,8 @@ class DeclarativeConfigTest extends BaseSpecification {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
-            assert permissionSetHealth.getErrorMessage() == 'cannot delete permission set in use by role "declarative-config-test--role"'
+            assert permissionSetHealth.getErrorMessage() ==
+                    'cannot delete permission set in use by role "declarative-config-test--role"'
             assert permissionSetHealth.getStatus() == Status.UNHEALTHY
         }
 
@@ -580,7 +581,8 @@ class DeclarativeConfigTest extends BaseSpecification {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
-            assert accessScopeHealth.getErrorMessage() == 'cannot delete permission set in use by role "declarative-config-test--role"'
+            assert accessScopeHealth.getErrorMessage() ==
+                    'cannot delete permission set in use by role "declarative-config-test--role"'
             assert accessScopeHealth.getStatus() == Status.UNHEALTHY
         }
 
