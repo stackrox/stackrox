@@ -37,13 +37,10 @@ logging.basicConfig(
 
 
 def main():
-    dry_run = os.environ.get("DRY_RUN", "true") == "true"
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    dry_run = os.environ.get("DRY_RUN", "true") == "true" or event_name == "pull_request"
     override = os.environ.get("SUPPORTED_VERSIONS_OVERRIDE", "")
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY", "")
-
-    if event_name == "pull_request":
-        dry_run = True
 
     versions = get_supported_versions(override)
     master_content = git_show_safe("origin/master", BUMP_FILE)
