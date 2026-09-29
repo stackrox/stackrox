@@ -43,6 +43,53 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	}
 }
 
+// VersionGuidance holds structured guidance about version compatibility.
+type VersionGuidance struct {
+	Summary        string
+	Recommendation string
+}
+
+func (g VersionGuidance) String() string {
+	if g.Recommendation == "" {
+		return g.Summary
+	}
+	return g.Summary + "\n" + g.Recommendation
+}
+
+// Guidance returns structured guidance for the given compatibility classification,
+// describing the version relationship and recommended actions.
+func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
+	switch c {
+	case versioncompatibility.Matched:
+		return VersionGuidance{
+			Summary: "roxctl version is matched with Central.",
+		}
+	case versioncompatibility.CompatibleAhead:
+		return VersionGuidance{
+			Summary:        "Central version is compatible with roxctl but is ahead of roxctl.",
+			Recommendation: "No immediate action is required. Use newer roxctl version to match Central for optimal functionality.",
+		}
+	case versioncompatibility.CompatibleBehind:
+		return VersionGuidance{
+			Summary: "Central version is compatible with roxctl but is behind roxctl.",
+			Recommendation: "No immediate action is required. It is recommended to plan a Central upgrade. " +
+				"If you prefer not to upgrade Central, consider using an older roxctl version to match Central.",
+		}
+	case versioncompatibility.IncompatibleAhead:
+		return VersionGuidance{
+			Summary:        "Central version is outside the compatible version range and is ahead of roxctl.",
+			Recommendation: "Use newer roxctl version to match Central, or at minimum to within the compatible version range.",
+		}
+	case versioncompatibility.IncompatibleBehind:
+		return VersionGuidance{
+			Summary:        "Central version is outside the compatible version range and is behind roxctl.",
+			Recommendation: "Plan a Central upgrade or use older roxctl version to be within the compatible version range.",
+		}
+	default:
+		return VersionGuidance{}
+	}
+}
+
 func checkAndWarn(centralVersion string, w io.Writer) bool {
 	remoteXY, err := productstreams.ParseXYFromVersionString(centralVersion)
 	if err != nil {
@@ -71,16 +118,12 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	}
 	compatRange := formatVersionRange(versionRange)
 
-	var direction string
-	if compat == versioncompatibility.IncompatibleAhead {
-		direction = "too old"
-	} else {
-		direction = "too new"
+	g := Guidance(compat)
+	fmt.Fprintf(w, "Warning: roxctl %s and Central %s are incompatible.\n", roxctlVersion, centralVersion)
+	fmt.Fprintf(w, "         %s\n", g.Summary)
+	if g.Recommendation != "" {
+		fmt.Fprintf(w, "         %s\n", g.Recommendation)
 	}
-	fmt.Fprintf(w, "Warning: Your roxctl %s is %s for this Central %s. "+
-		"Correct functioning is not guaranteed. "+
-		"Use roxctl version matching the Central version or at least such that the Central version is within the roxctl compatibility range.\n",
-		roxctlVersion, direction, centralVersion)
 	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
 		roxctlVersion, centralVersion, compatRange)
 	return true

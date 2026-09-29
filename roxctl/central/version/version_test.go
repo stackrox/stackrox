@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net"
-	"strings"
 	"testing"
 	"time"
 
@@ -153,8 +152,10 @@ func (c *centralVersionTestSuite) TestCompatibilityStates() {
 			c.Assert().Contains(output, "Compatible Central versions:")
 			c.Assert().Contains(output, "Compatibility:")
 			c.Assert().Contains(output, tt.wantDisplay)
-			for line := range strings.SplitSeq(guidance(tt.wantCompat), "\n") {
-				c.Assert().Contains(output, "  "+line)
+			g := versioncheck.Guidance(tt.wantCompat)
+			c.Assert().Contains(output, "  "+g.Summary)
+			if g.Recommendation != "" {
+				c.Assert().Contains(output, "  "+g.Recommendation)
 			}
 		})
 	}
@@ -263,12 +264,12 @@ func TestGuidance(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			g := guidance(tt.c)
+			g := versioncheck.Guidance(tt.c)
 			if tt.wantEmpty {
-				assert.Empty(t, g)
+				assert.Empty(t, g.Summary)
 			} else {
-				require.NotEmpty(t, g)
-				assert.Contains(t, g, tt.contains)
+				require.NotEmpty(t, g.Summary)
+				assert.Contains(t, g.String(), tt.contains)
 			}
 		})
 	}

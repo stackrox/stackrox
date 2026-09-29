@@ -131,7 +131,7 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 		CentralVersion:            centralVersion,
 		CompatibleCentralVersions: compatStrs,
 		Compatibility:             compat.String(),
-		Guidance:                  guidance(compat),
+		Guidance:                  versioncheck.Guidance(compat).String(),
 		compatibility:             compat,
 	}, nil
 }
@@ -142,8 +142,10 @@ func (cmd *centralVersionCommand) printText(r *versionResult) {
 	cmd.env.Logger().PrintfLn(labelFmt, "roxctl version:", r.RoxctlVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "  Compatible Central versions:", strings.Join(r.CompatibleCentralVersions, ", "))
 	cmd.env.Logger().PrintfLn(labelFmt, "Compatibility:", r.compatibility.DisplayName())
-	for line := range strings.SplitSeq(r.Guidance, "\n") {
-		cmd.env.Logger().PrintfLn("  %s", line)
+	g := versioncheck.Guidance(r.compatibility)
+	cmd.env.Logger().PrintfLn("  %s", g.Summary)
+	if g.Recommendation != "" {
+		cmd.env.Logger().PrintfLn("  %s", g.Recommendation)
 	}
 }
 
@@ -151,26 +153,4 @@ func (cmd *centralVersionCommand) printJSON(r *versionResult) error {
 	enc := json.NewEncoder(cmd.env.InputOutput().Out())
 	enc.SetIndent("", "  ")
 	return errors.Wrap(enc.Encode(r), "encoding version information as JSON")
-}
-
-func guidance(c versioncompatibility.Compatibility) string {
-	switch c {
-	case versioncompatibility.Matched:
-		return "roxctl version is matched with Central."
-	case versioncompatibility.CompatibleAhead:
-		return "Central version is compatible with roxctl but is ahead of roxctl.\n" +
-			"No immediate action is required. Use newer roxctl version to match Central for optimal functionality."
-	case versioncompatibility.CompatibleBehind:
-		return "Central version is compatible with roxctl but is behind roxctl.\n" +
-			"No immediate action is required. It is recommended to plan a Central upgrade. " +
-			"If you prefer not to upgrade Central, consider using an older roxctl version to match Central."
-	case versioncompatibility.IncompatibleAhead:
-		return "Central version is outside the compatible version range and is ahead of roxctl.\n" +
-			"Use newer roxctl version to match Central, or at minimum to within the compatible version range."
-	case versioncompatibility.IncompatibleBehind:
-		return "Central version is outside the compatible version range and is behind roxctl.\n" +
-			"Plan a Central upgrade or use older roxctl version to be within the compatible version range."
-	default:
-		return ""
-	}
 }
