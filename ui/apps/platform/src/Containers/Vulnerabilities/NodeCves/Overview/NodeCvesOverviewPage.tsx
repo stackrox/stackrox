@@ -159,16 +159,14 @@ function NodeCvesOverviewPage() {
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         >
-            {isFeatureFlagEnabled('ROX_NODE_VULNERABILITY_REPORTS') && (
-                <CreateReportDropdown
-                    onSelectExportReportAsCSV={() => {
-                        setIsCreateViewBasedReportModalOpen(true);
-                    }}
-                    onSelectCreateScheduledReport={() => {
-                        navigate(createScheduledReportForNodeVulnerabilitiesURL(querySearchFilter));
-                    }}
-                />
-            )}
+            <CreateReportDropdown
+                onSelectExportReportAsCSV={() => {
+                    setIsCreateViewBasedReportModalOpen(true);
+                }}
+                onSelectCreateScheduledReport={() => {
+                    navigate(createScheduledReportForNodeVulnerabilitiesURL(querySearchFilter));
+                }}
+            />
         </AdvancedFiltersToolbar>
     );
 
@@ -301,16 +299,14 @@ function NodeCvesOverviewPage() {
                     />
                 )}
             </PageSection>
-            {isFeatureFlagEnabled('ROX_NODE_VULNERABILITY_REPORTS') && (
-                <CreateViewBasedReportModal
-                    isOpen={isCreateViewBasedReportModalOpen}
-                    setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={viewBasedQueryString}
-                    areaOfConcern="Nodes"
-                    runViewBasedReport={runNodeViewBasedReport}
-                    vulnerabilityViewBasedJobsPath={vulnerabilityNodeViewBasedJobsPath}
-                />
-            )}
+            <CreateViewBasedReportModal
+                isOpen={isCreateViewBasedReportModalOpen}
+                setIsOpen={setIsCreateViewBasedReportModalOpen}
+                query={viewBasedQueryString}
+                areaOfConcern="Nodes"
+                runViewBasedReport={runNodeViewBasedReport}
+                vulnerabilityViewBasedJobsPath={vulnerabilityNodeViewBasedJobsPath}
+            />
         </>
     );
 }

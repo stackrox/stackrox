@@ -1,8 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
-import {
-    interceptAndOverrideFeatureFlags,
-    interceptAndOverridePermissions,
-} from '../../../helpers/request';
+import { interceptAndOverridePermissions } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 import pf6 from '../../../selectors/pf6';
 
@@ -24,7 +21,6 @@ describe('Vulnerability Reports Overview Navigation', () => {
 
     it('navigates to the node vulnerability reports page', () => {
         interceptAndOverridePermissions({ Cluster: 'READ_ACCESS', Node: 'READ_ACCESS' });
-        interceptAndOverrideFeatureFlags({ ROX_NODE_VULNERABILITY_REPORTS: true });
 
         visit(vulnerabilityReportsOverviewPath);
 
