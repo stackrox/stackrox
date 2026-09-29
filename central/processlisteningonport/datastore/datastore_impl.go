@@ -596,27 +596,6 @@ func (ds *datastoreImpl) PruneOrphanedPLOPs(ctx context.Context, orphanWindow ti
 	return commandTag.RowsAffected()
 }
 
-// PruneOrphanedPLOPsByProcessIndicators prunes PLOPs that match process indicators without pods
-func (ds *datastoreImpl) PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration) {
-	// TODO(ROX-22443): Once it is guaranteed that all listening endpoints have PodUIDs, remove this function
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	// Delete processes listening on ports orphaned because process indicators are orphaned due to
-	// missing deployments
-	query := fmt.Sprintf(deleteOrphanedPLOPDeploymentsAndPI, int(orphanWindow.Minutes()))
-	if _, err := ds.pool.Exec(ctx, query); err != nil {
-		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
-	}
-
-	// Delete processes listening on ports orphaned because process indicators are orphaned due to
-	// missing pods.
-	query = fmt.Sprintf(deleteOrphanedPLOPPods, int(orphanWindow.Minutes()))
-	if _, err := ds.pool.Exec(ctx, query); err != nil {
-		log.Errorf("failed to prune process listening on ports by pods: %v", err)
-	}
-}
-
 func (ds *datastoreImpl) readRowsToFindPLOPsWithNoProcessInformation(rows pgx.Rows) ([]string, error) {
 	var ids []string
 

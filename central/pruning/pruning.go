@@ -669,9 +669,6 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 	defer metrics.SetPruningDuration(time.Now(), "Processes")
-	g.plops.PruneOrphanedPLOPsByProcessIndicators(pruningCtx, orphanWindow)
-
-	log.Info("[PLOP pruning by processes] Pruning of orphaned PLOPs by processes complete")
 
 	// Prune processes in chunks.  First get the ones orphaned by deployments and then go back and
 	// do the same for those orphaned by pod

@@ -1,15 +1,6 @@
 package datastore
 
 const (
-	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
-	deleteOrphanedPLOPDeploymentsAndPI = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
-                (SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND
-                (signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
-
-	deleteOrphanedPLOPPods = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
-                (SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND
-                (signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
-
 	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
 	// This leads to a possible race condition where a listening endpoint reaches the database before the deployment,
 	// and the pruning job happens to run before the deployment information arrives in the database.

@@ -32,7 +32,6 @@ type DataStore interface {
 	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
 	RemovePlopsByPod(ctx context.Context, id string) error
 	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64
-	PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration)
 	RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error)
 }
 
