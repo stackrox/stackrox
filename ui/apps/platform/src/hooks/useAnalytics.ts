@@ -3,6 +3,7 @@ import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
 import type { ReportPageAction } from 'Components/Reports/reports.types';
+import type { SchedulePageAction } from 'Containers/ComplianceEnhanced/Schedules/compliance.scanConfigs.utils';
 import type { ImageType } from 'services/ReportsService.types';
 import type { Telemetry } from 'types/config.proto';
 import type { Schedule } from 'types/schedule.proto';
@@ -549,7 +550,7 @@ export type AnalyticsEvent =
           properties: {
               success: true | false;
               errorMessage: string;
-              action: 'create' | 'edit';
+              action: SchedulePageAction;
               clusters: number;
               intervalType: Schedule['intervalType'];
               notifiers: number;
