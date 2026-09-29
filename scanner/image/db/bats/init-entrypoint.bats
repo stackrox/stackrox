@@ -77,6 +77,212 @@ assert_upgrade() {
     [ ! -d "$PGDATA-old" ] || return 1
 }
 
+# Version downgrade detection
+@test "extract-major-minor: release version" {
+    run extract-major-minor "4.8.1"
+    assert_success
+    assert_output "4.8"
+}
+
+@test "extract-major-minor: release candidate" {
+    run extract-major-minor "5.1.0-rc.2"
+    assert_success
+    assert_output "5.1"
+}
+
+@test "extract-major-minor: dev build" {
+    run extract-major-minor "5.2.x-23-gabcdef"
+    assert_success
+    assert_output "5.2"
+}
+
+@test "extract-major-minor: major only returns empty" {
+    run extract-major-minor "5"
+    assert_success
+    assert_output ""
+}
+
+@test "extract-major-minor: empty string returns empty" {
+    run extract-major-minor ""
+    assert_success
+    assert_output ""
+}
+
+@test "extract-major-minor: garbage returns empty" {
+    run extract-major-minor "not-a-version"
+    assert_success
+    assert_output ""
+}
+
+@test "extract-major-minor: two-digit components" {
+    run extract-major-minor "12.34.56"
+    assert_success
+    assert_output "12.34"
+}
+
+@test "is-downgrade: 5.1 -> 4.8 is a downgrade" {
+    run is-downgrade "5.1" "4.8"
+    assert_success
+}
+
+@test "is-downgrade: 4.8 -> 5.1 is NOT a downgrade" {
+    run is-downgrade "4.8" "5.1"
+    assert_failure
+}
+
+@test "is-downgrade: same version is NOT a downgrade" {
+    run is-downgrade "5.1" "5.1"
+    assert_failure
+}
+
+@test "is-downgrade: 5.1 -> 5.0 is a downgrade" {
+    run is-downgrade "5.1" "5.0"
+    assert_success
+}
+
+@test "is-downgrade: 5.0 -> 5.1 is NOT a downgrade" {
+    run is-downgrade "5.0" "5.1"
+    assert_failure
+}
+
+@test "is-downgrade: empty stored is NOT a downgrade" {
+    run is-downgrade "" "5.1"
+    assert_failure
+}
+
+@test "is-downgrade: empty current is NOT a downgrade" {
+    run is-downgrade "5.1" ""
+    assert_failure
+}
+
+@test "is-downgrade: both empty is NOT a downgrade" {
+    run is-downgrade "" ""
+    assert_failure
+}
+
+@test "is-downgrade: major version decrease 5.0 -> 4.9" {
+    run is-downgrade "5.0" "4.9"
+    assert_success
+}
+
+@test "is-downgrade: 10.1 -> 9.99 is a downgrade" {
+    run is-downgrade "10.1" "9.99"
+    assert_success
+}
+
+# ACS version tracking
+@test "main: upgrade updates the ACS version without wiping the database" {
+    init_pgdata
+    local version_file="$PGDATA/.scanner-db-version"
+    echo "4.8" > "$version_file"
+    touch "$PGDATA/should-survive"
+    export BUILD_TAG="5.1.0"
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ -e "$PGDATA/should-survive" ]
+    assert_equal "$(cat "$version_file")" "5.1"
+}
+
+@test "main: same version does NOT wipe the database" {
+    init_pgdata
+    local version_file="$PGDATA/.scanner-db-version"
+    echo "5.1" > "$version_file"
+    touch "$PGDATA/should-survive"
+    export BUILD_TAG="5.1.2"
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ -e "$PGDATA/should-survive" ]
+    assert_equal "$(cat "$version_file")" "5.1"
+}
+
+@test "main: no version file (legacy install) does NOT wipe" {
+    init_pgdata
+    touch "$PGDATA/should-survive"
+    export BUILD_TAG="5.1.0"
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ -e "$PGDATA/should-survive" ]
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.1"
+}
+
+@test "main: no BUILD_TAG skips version tracking" {
+    init_pgdata
+    unset BUILD_TAG
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ ! -e "$PGDATA/.scanner-db-version" ]
+}
+
+@test "main: latest skips downgrade detection and preserves the database" {
+    init_pgdata
+    local version_file="$PGDATA/.scanner-db-version"
+    echo "5.1" > "$version_file"
+    touch "$PGDATA/should-survive"
+    export BUILD_TAG="latest"
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ -e "$PGDATA/should-survive" ]
+    assert_equal "$(cat "$version_file")" "5.1"
+}
+
+@test "main: malformed stored version warns and reinitializes" {
+    init_pgdata
+    local version_file="$PGDATA/.scanner-db-version"
+    echo "garbage" > "$version_file"
+    given_initdb "$NEW_BINARIES" 16
+    export BUILD_TAG="5.1.0"
+
+    run _main
+
+    assert_success
+    assert_output --partial "malformed version"
+    assert_upgrade "16"
+    assert_equal "$(cat "$version_file")" "5.1"
+}
+
+@test "main: empty stored version warns and reinitializes" {
+    init_pgdata
+    local version_file="$PGDATA/.scanner-db-version"
+    : > "$version_file"
+    given_initdb "$NEW_BINARIES" 16
+    export BUILD_TAG="5.1.0"
+
+    run _main
+
+    assert_success
+    assert_output --partial "malformed version"
+    assert_upgrade "16"
+    assert_equal "$(cat "$version_file")" "5.1"
+}
+
+@test "main: patch rollback within the same minor does NOT wipe" {
+    init_pgdata
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+    touch "$PGDATA/should-survive"
+    export BUILD_TAG="5.1.1"
+
+    run _main
+
+    assert_success
+    [ -e "$PGDATA/.init-ready" ]
+    [ -e "$PGDATA/should-survive" ]
+}
+
 # Fresh initialization
 @test "fresh init creates database" {
     given_initdb "$NEW_BINARIES" 16
@@ -213,6 +419,160 @@ assert_upgrade() {
     assert_success
     [[ "$output" == *"No usable transfer mode"* ]]
     assert_upgrade "15"
+}
+
+@test "upgrade - preserves ACS version when current version is not provided" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+    assert_success
+    assert_upgrade "16"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.1"
+}
+
+@test "upgrade - writes current ACS version before marking the new cluster ready" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+
+    run maybe-upgrade "$TEST_DIR/pgsql" "5.2"
+    assert_success
+    assert_upgrade "16"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.2"
+}
+
+@test "main - updates ACS version without a PostgreSQL upgrade" {
+    init_pgdata
+    given_data_version "$PGDATA" 16
+    given_binary_version "$NEW_BINARIES" 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+    export BUILD_TAG="5.2.0"
+
+    run _main
+    assert_success
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.2"
+}
+
+@test "ACS version marker is not rewritten when its value is unchanged" {
+    mkdir -p "$PGDATA"
+    echo "5.2" > "$PGDATA/.scanner-db-version"
+    mv() { return 1; }
+
+    run set-acs-version "$PGDATA" "5.2"
+    assert_success
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.2"
+}
+
+@test "ACS version marker temp files from an interrupted write are cleaned up" {
+    mkdir -p "$PGDATA"
+    local stale_version_file
+    stale_version_file=$(mktemp "$PGDATA/.scanner-db-version.XXXXXX")
+
+    run set-acs-version "$PGDATA" ""
+    assert_success
+    [ ! -e "$stale_version_file" ]
+}
+
+@test "ACS version marker update continues when stale temp cleanup fails" {
+    mkdir -p "$PGDATA"
+    rm() {
+        if [ "$1" = "-f" ]; then
+            return 1
+        fi
+        command rm "$@"
+    }
+
+    run set-acs-version "$PGDATA" "5.2"
+    assert_success
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.2"
+}
+
+@test "upgrade - marker copy failure does not fail the upgrade" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+    cp() { return 1; }
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+    assert_success
+    assert_output --partial "continuing without the marker"
+    assert_upgrade "16"
+    [ ! -e "$PGDATA/.scanner-db-version" ]
+    [ ! -d "$PGDATA-old" ]
+    [ ! -e "$PGDATA-new/.init-ready" ]
+}
+
+@test "upgrade - interrupted swap restores ACS version for downgrade detection" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+    mv() {
+        [ "$1" != "$NEW_DATADIR" ] || return 1
+        command mv "$@"
+    }
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+    assert_failure
+    [ ! -d "$PGDATA" ]
+    assert_equal "$(cat "$PGDATA-new/.scanner-db-version")" "5.1"
+
+    recover-interrupted-upgrade
+    assert_upgrade "15"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.1"
+
+    export BUILD_TAG="5.0.0"
+    run _main
+    assert_success
+    assert_output --partial "downgrade detected"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.0"
+    assert_upgrade "16"
+}
+
+@test "main - ACS downgrade skips PostgreSQL upgrade and statistics refresh" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+    touch "$PGDATA/.stats-pending" "$PGDATA/should-be-removed"
+    export BUILD_TAG="5.0.0"
+    maybe-upgrade() { touch "$TEST_DIR/upgrade-ran"; }
+    maybe-refresh-statistics() { touch "$TEST_DIR/refresh-ran"; }
+
+    run _main
+    assert_success
+    assert_output --partial "downgrade detected"
+    assert_upgrade "16"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.0"
+    [ ! -e "$PGDATA/should-be-removed" ]
+    [ ! -e "$PGDATA/.stats-pending" ]
+    [ ! -e "$TEST_DIR/upgrade-ran" ]
+    [ ! -e "$TEST_DIR/refresh-ran" ]
+}
+
+@test "main - statistics shutdown failure after upgrade preserves ACS version" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    echo "5.1" > "$PGDATA/.scanner-db-version"
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+    assert_success
+    mock_executable "$NEW_BINARIES/pg_ctl" '[[ "$*" != *stop* ]]'
+    mock_executable "$NEW_BINARIES/vacuumdb" 'exit 1'
+    export BUILD_TAG="5.2.0"
+
+    run bash -c 'source "$1"; _main' _ "${BATS_TEST_DIRNAME}/../scripts/init-entrypoint.sh"
+    assert_failure
+    assert_output --partial "Could not stop the refresh server"
+    assert_upgrade "16"
+    assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.1"
+    [ -e "$PGDATA/.stats-pending" ]
 }
 
 # Optimizer statistics
