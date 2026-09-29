@@ -255,7 +255,7 @@ class AdmissionControllerTest extends BaseSpecification {
         log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
-    def Exception deletePolicyWithCaution(String policyId) {
+    Exception deletePolicyWithCaution(String policyId) {
         try {
             if (policyId) {
                 PolicyService.deletePolicy(policyId)
