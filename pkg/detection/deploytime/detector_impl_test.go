@@ -107,8 +107,8 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 	})
 
 	t.Run("with an image exclusion, a deployment running the excluded image still alerts", func(t *testing.T) {
-		// Image exclusions only apply at build time. Honoring them per container at deploy time is
-		// tracked in ROX-34071; until then this documents the current behavior.
+		// Image exclusions only apply at build time, so a deployment running the excluded image is
+		// still evaluated at deploy time.
 		legacy := deploymentRunning("legacy-app", imageWithOldCriticalCVE(t, excludedImage))
 		policy := oldCriticalCVEPolicy(imageExclusion(excludedImage))
 		alerts, err := detectorFor(t, policy).Detect(ctx, legacy)
