@@ -5,6 +5,7 @@ import mapValues from 'lodash/mapValues';
 import type { ReportPageAction } from 'Components/Reports/reports.types';
 import type { ImageType } from 'services/ReportsService.types';
 import type { Telemetry } from 'types/config.proto';
+import type { Schedule } from 'types/schedule.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -391,7 +392,7 @@ export type AnalyticsEvent =
           properties: {
               action: ReportPageAction;
               cvesSince: 'allVuln'; // | 'sinceLastSentScheduledReport' | 'sinceStartDate'
-              intervalType: 'DAILY' | 'MONTHLY' | 'WEEKLY' | 'UNSET';
+              intervalType: Schedule['intervalType'];
               notifiers: number;
               resourceScope: string;
           };
@@ -548,6 +549,11 @@ export type AnalyticsEvent =
           properties: {
               success: true | false;
               errorMessage: string;
+              action: 'create' | 'edit';
+              clusters: number;
+              intervalType: Schedule['intervalType'];
+              notifiers: number;
+              profiles: number;
           };
       }
     | {

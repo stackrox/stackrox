@@ -36,7 +36,7 @@ export type ScanConfigFormValues = {
     report: ScanReportConfiguration;
 };
 
-export type PageActions = 'create' | 'edit' | 'clone';
+export type SchedulePageAction = 'create' | 'edit';
 
 export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
     // Given an ISO 8601 date time string from response,
