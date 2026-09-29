@@ -9,8 +9,11 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
@@ -287,6 +290,81 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 		break
 	case <-time.After(10 * updateInterval):
 		s.Fail("the message in ResponsesC should be cancelled")
+	}
+}
+
+func (s *UpdaterTestSuite) TestLocalScannerDisabled() {
+	s.T().Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "false")
+
+	updater := s.createNewUpdater(updateInterval)
+	s.Nil(updater.getLocalScannerInfo(), "no scanner health info should be reported when local scanning is disabled")
+}
+
+func (s *UpdaterTestSuite) TestLocalScannerV4NotSupportedByCentral() {
+	s.T().Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "true")
+	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+	s.setCentralCaps() // Central does not advertise ScannerV4Supported.
+
+	updater := s.createNewUpdater(updateInterval)
+	info := updater.getLocalScannerInfo()
+
+	s.Require().NotNil(info)
+	// Pod counts must not be reported: the failure is a misconfiguration, not pod state.
+	s.Nil(info.GetTotalDesiredAnalyzerPodsOpt())
+	s.Nil(info.GetTotalReadyAnalyzerPodsOpt())
+	s.Require().Len(info.GetStatusErrors(), 1)
+	s.Contains(info.GetStatusErrors()[0], "Central is not reporting support for Scanner V4")
+}
+
+func (s *UpdaterTestSuite) TestLocalScannerV4FeatureDisabled() {
+	s.T().Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "true")
+	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
+	s.setCentralCaps(centralsensor.ScannerV4Supported)
+
+	updater := s.createNewUpdater(updateInterval)
+	info := updater.getLocalScannerInfo()
+
+	s.Require().NotNil(info)
+	s.Nil(info.GetTotalDesiredAnalyzerPodsOpt())
+	s.Require().Len(info.GetStatusErrors(), 1)
+	s.Contains(info.GetStatusErrors()[0], "Scanner V4 is not enabled")
+	// This case is distinct from Central lacking Scanner V4 support.
+	s.NotContains(info.GetStatusErrors()[0], "Central")
+}
+
+func (s *UpdaterTestSuite) TestLocalScannerV4Healthy() {
+	s.T().Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "true")
+	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+	s.setCentralCaps(centralsensor.ScannerV4Supported)
+	s.addDeployment(makeScannerDeployment("scanner-v4-indexer", 3, 3))
+	s.addDeployment(makeScannerDeployment("scanner-v4-db", 1, 1))
+
+	updater := s.createNewUpdater(updateInterval)
+	info := updater.getLocalScannerInfo()
+
+	s.Require().NotNil(info)
+	s.Empty(info.GetStatusErrors())
+	s.Equal(int32(3), info.GetTotalDesiredAnalyzerPods())
+	s.Equal(int32(3), info.GetTotalReadyAnalyzerPods())
+	s.Equal(int32(1), info.GetTotalDesiredDbPods())
+	s.Equal(int32(1), info.GetTotalReadyDbPods())
+}
+
+func (s *UpdaterTestSuite) setCentralCaps(caps ...centralsensor.CentralCapability) {
+	centralcaps.Set(caps)
+	s.T().Cleanup(func() { centralcaps.Set(nil) })
+}
+
+func makeScannerDeployment(name string, replicas, ready int32) appsV1.Deployment {
+	return appsV1.Deployment{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      name,
+			Namespace: "stackrox-mock-ns",
+		},
+		Status: appsV1.DeploymentStatus{
+			Replicas:      replicas,
+			ReadyReplicas: ready,
+		},
 	}
 }
 

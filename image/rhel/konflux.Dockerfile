@@ -43,8 +43,13 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
         tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
     done
 
+RUN arch=$(uname -m) ; \
+    case $arch in x86_64) arch=amd64 ;; aarch64) arch=arm64 ;; esac ; \
+    cp /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl-linux-${arch} \
+       /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:a38a749f3a37a1c033932b4c13f3052f4958aa0eb7dbb0761cb3b5536ffe6878 as ui-builder
+
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:ef4f18a7e736696b1314bdc21bcf57bfd50ba3ea4f80c13833f777316b25c035 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -66,9 +71,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:f332c99eb8f798a8486821c91937f10ad64ee83d7e739303be2df051040918f6 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:7a0454cbd9bd847e8f6a63b6f0254a6efbeb6e0ed71a5d824a4f6cccbe626650 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:25a147defd01e19674714f55d17538c8dbe55d8c305fa157ecc3f9c8977b05b6 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:7a38d75d376f7989033e75fcaaf9fcbb090fafc58e05c2c99de76ae0ba083fdb AS package_installer
 
 ARG PG_VERSION
 
@@ -104,7 +109,8 @@ COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl /stackrox/roxctl
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
@@ -112,9 +118,6 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central-worker /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-RUN GOARCH=$(uname -m) ; \
-    case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl
 
 ARG BUILD_TAG
 
