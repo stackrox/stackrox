@@ -1,8 +1,7 @@
-"""Turn resolver opinions into GitHub Actions start, stop, or not start.
+"""Turn resolver opinions into a run, skip, or unsure plan.
 
-Only opinion run starts a job. Skip and unsure do not. The plan names the
-rules that decided each job. A default line is the trigger recorded for
-that job.
+Only opinion run starts a job. The plan includes Prow jobs. A default line
+is the GitHub Actions trigger recorded for that job.
 """
 
 from __future__ import annotations
@@ -36,6 +35,8 @@ class JobPlan:
     opinion: str
     default_starts: bool
     action: str
+    # False for a Prow job: gha_defaults.yaml has no trigger to compare.
+    has_default: bool = True
 
     @property
     def would_run(self) -> bool:
@@ -59,19 +60,20 @@ def dispatch(
     defaults: dict[str, dict[str, str]],
     pull_request: PullRequest,
 ) -> tuple[JobPlan, ...]:
+    # Defaults cover GitHub Actions. The resolver also decides Prow jobs.
+    names = set(defaults) | selection.run | selection.skip | selection.unsure
     plans = []
-    for job in sorted(defaults):
+    for job in sorted(names):
         opinion = _opinion(selection, job)
-        starts = default_would_start(defaults[job], pull_request)
         if opinion == "run":
             action = "start"
         elif opinion == "skip":
             action = "stop"
         else:
             action = "default"
-        plans.append(
-            JobPlan(job, opinion, starts, action)
-        )
+        known = job in defaults
+        starts = default_would_start(defaults[job], pull_request) if known else False
+        plans.append(JobPlan(job, opinion, starts, action, has_default=known))
     return tuple(plans)
 
 
@@ -163,8 +165,8 @@ def github_commands(
     start = sum(plan.would_run for plan in plans)
     skip = sum(plan.action == "stop" for plan in plans)
     unsure = sum(plan.action == "default" for plan in plans)
-    dropped = sum(plan.default_starts and not plan.would_run for plan in plans)
-    added = sum(plan.would_run and not plan.default_starts for plan in plans)
+    dropped = sum(_default_dropped(plan) for plan in plans)
+    added = sum(_default_added(plan) for plan in plans)
     notice = f"Would start {start}, skip {skip}, unsure {unsure}."
     if added:
         notice += f" This plan would start {_jobs(added)} the default would leave off."
@@ -233,6 +235,7 @@ def _json(plans: tuple[JobPlan, ...]) -> dict[str, object]:
                 "job": item.job,
                 "opinion": item.opinion,
                 "default_starts": item.default_starts,
+                "has_default": item.has_default,
                 "action": item.action,
                 "would_run": item.would_run,
             }
@@ -307,7 +310,7 @@ def _job_section(title, plans, reasons, selection, defaults, pull_request, mappi
         (
             plan.job,
             reasons(plan.job, selection, mapping),
-            default_sentence(defaults[plan.job], pull_request),
+            _default_clause(plan, defaults, pull_request),
         )
         for plan in plans
     ]
@@ -322,7 +325,7 @@ def _job_section(title, plans, reasons, selection, defaults, pull_request, mappi
 def _unsure_section(plans, _selection, defaults, pull_request):
     reason = ("no rule decided these jobs",)
     entries = [
-        (plan.job, reason, default_sentence(defaults[plan.job], pull_request))
+        (plan.job, reason, _default_clause(plan, defaults, pull_request))
         for plan in plans
     ]
     body = _render_jobs(entries) or ["  none"]
@@ -333,9 +336,23 @@ def _unsure_section(plans, _selection, defaults, pull_request):
     )
 
 
+def _default_clause(plan: JobPlan, defaults, pull_request: PullRequest) -> str:
+    if not plan.has_default:
+        return ""
+    return default_sentence(defaults[plan.job], pull_request)
+
+
+def _default_dropped(plan: JobPlan) -> bool:
+    return plan.has_default and plan.default_starts and not plan.would_run
+
+
+def _default_added(plan: JobPlan) -> bool:
+    return plan.has_default and plan.would_run and not plan.default_starts
+
+
 def _default_sections(plans: tuple[JobPlan, ...]) -> list[_Section]:
-    dropped = [plan.job for plan in plans if plan.default_starts and not plan.would_run]
-    added = [plan.job for plan in plans if plan.would_run and not plan.default_starts]
+    dropped = [plan.job for plan in plans if _default_dropped(plan)]
+    added = [plan.job for plan in plans if _default_added(plan)]
     sections = []
     if dropped:
         sections.append(
@@ -374,19 +391,28 @@ def _render_jobs(entries: list[tuple[str, tuple[str, ...], str]]) -> list[str]:
         grouped.setdefault(reasons, []).append((job, clause))
     lines: list[str] = []
     for reasons, members in grouped.items():
-        if len(members) == 1:
-            job, clause = members[0]
+        recorded = [(job, clause) for job, clause in members if clause]
+        without_default = [job for job, clause in members if not clause]
+        if len(members) == 1 and recorded:
+            job, clause = recorded[0]
             lines.append(f"  {job}")
             lines.extend(f"    {reason}" for reason in reasons)
             lines.append(f"    default: {clause}")
             continue
+        if len(members) == 1:
+            lines.append(f"  {without_default[0]}")
+            lines.extend(f"    {reason}" for reason in reasons)
+            continue
         lines.extend(f"  {reason}" for reason in reasons)
         by_clause: dict[str, list[str]] = {}
-        for job, clause in members:
+        for job, clause in recorded:
             by_clause.setdefault(clause, []).append(job)
         for clause, jobs in by_clause.items():
             lines.append(f"    default: {clause}")
             lines.extend(f"      {job}" for job in jobs)
+        if without_default:
+            lines.append("    no GitHub Actions default")
+            lines.extend(f"      {job}" for job in without_default)
     return lines
 
 
@@ -467,11 +493,18 @@ def _header(shadow: bool) -> tuple[str, ...]:
         return (
             "Shadow. Other GitHub workflows still start themselves.",
             f"The switch is the pull request label {ENFORCE_LABEL}.",
-            "Prow jobs keep their own config. This plan is GitHub Actions only.",
-            "Only a job whose opinion is run is started. Unsure does not run.",
+            *_plan_scope(),
         )
     return (
         "Enforce. This dispatcher is the starter for these GitHub Actions jobs.",
+        *_plan_scope(),
+    )
+
+
+def _plan_scope() -> tuple[str, ...]:
+    return (
+        "Run, skip, and unsure include Prow. Default lines are GitHub Actions triggers.",
+        "dispatch.sh applies this plan to Prow before the cluster is created.",
         "Only a job whose opinion is run is started. Unsure does not run.",
     )
 

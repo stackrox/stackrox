@@ -212,6 +212,35 @@ def test_plan_text_for_a_sensor_change():
     assert "::group::" not in summary
 
 
+def test_plan_text_includes_prow_jobs_when_dispatch_changes():
+    text, summary = _report((".openshift-ci/dispatch.sh",))
+    run = _between(text, "Will run (", "Will skip (")
+    skip = _between(text, "Will skip (", "Unsure (")
+    assert "gke-nongroovy-e2e-tests" in run
+    assert "rule 10 prow-demo-run" in run
+    assert "gke-nongroovy-e2e-tests\n    rule 10 prow-demo-run\n    default:" not in text
+    assert "gke-ui-e2e-tests" in skip
+    assert "gke-qa-e2e-tests" in skip
+    assert "rule 11 prow-demo-skip" in skip
+    assert "no GitHub Actions default" in skip
+    dropped = _between(text, "Default would start these", "\n\n")
+    assert "gke-ui-e2e-tests" not in dropped
+    assert "gke-nongroovy-e2e-tests" not in dropped
+    assert "gke-nongroovy-e2e-tests" in summary
+    assert "gke-ui-e2e-tests" in summary
+
+    mapping = load_mapping(MAPPING)
+    selection = resolve([".openshift-ci/dispatch.sh"], mapping)
+    plans = dispatch(selection, load_defaults(DEFAULTS), READY)
+    notice = github_commands(plans, selection.conflicts, mapping)[0]
+    start = sum(plan.would_run for plan in plans)
+    skipped = sum(plan.action == "stop" for plan in plans)
+    unsure = sum(plan.action == "default" for plan in plans)
+    assert f"Would start {start}, skip {skipped}, unsure {unsure}." in notice
+    assert f"Will run ({start})" in text
+    assert f"Will skip ({skipped})" in text
+
+
 def test_plan_text_shows_a_run_winning_over_a_skip():
     files_for_conflict = (
         "sensor/test-selection-shadow.txt",
