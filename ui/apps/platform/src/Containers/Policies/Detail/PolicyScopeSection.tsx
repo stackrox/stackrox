@@ -14,7 +14,12 @@ import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions
 import type { PolicyExclusion, PolicyScope } from 'types/policy.proto';
 import InclusionScopeDetails from './InclusionScopeDetails';
 import ExclusionDeploymentDetails from './ExclusionDeploymentDetails';
-import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';
+import ExclusionWorkloadTypeDetails from './ExclusionWorkloadTypeDetails';
+import {
+    getExcludedDeployments,
+    getExcludedImageNames,
+    getExcludedWorkloadTypes,
+} from '../policies.utils';
 
 type PolicyScopeSectionProps = {
     scope: PolicyScope[];
@@ -24,12 +29,15 @@ type PolicyScopeSectionProps = {
 function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): ReactElement {
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const excludedDeployments = getExcludedDeployments(exclusions);
+    const excludedWorkloadTypes = getExcludedWorkloadTypes(exclusions);
     const imageExclusionNames = getExcludedImageNames(exclusions);
 
     const hasIncludedScope = scope?.length > 0;
     const hasExcludedDeployments = excludedDeployments.length > 0;
+    const hasExcludedWorkloadTypes = excludedWorkloadTypes.length > 0;
     const hasImageExclusions = imageExclusionNames.length > 0;
-    const hasAnyResources = hasIncludedScope || hasExcludedDeployments || hasImageExclusions;
+    const hasExcludedResources = hasExcludedDeployments || hasExcludedWorkloadTypes;
+    const hasAnyResources = hasIncludedScope || hasExcludedResources || hasImageExclusions;
 
     return (
         <>
@@ -54,10 +62,21 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                     </Grid>
                 </>
             )}
-            {hasExcludedDeployments && (
+            {hasExcludedResources && (
                 <>
                     <Title headingLevel="h3">Excluded resources</Title>
                     <Grid hasGutter md={12} xl={6}>
+                        {hasExcludedWorkloadTypes && (
+                            <GridItem>
+                                <Card>
+                                    <CardBody>
+                                        <ExclusionWorkloadTypeDetails
+                                            types={excludedWorkloadTypes}
+                                        />
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        )}
                         {excludedDeployments.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>

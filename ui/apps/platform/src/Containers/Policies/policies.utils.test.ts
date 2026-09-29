@@ -1,10 +1,13 @@
 import type { ClientPolicy, Policy } from 'types/policy.proto';
 import {
+    formatWorkloadTypeExclusionMessage,
+    formatWorkloadTypeList,
     getClientWizardPolicy,
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
     getServerPolicy,
     initialExcludedDeployment,
+    initialPolicy,
     initialScope,
     isExcludedDeploymentScopeEmpty,
 } from './policies.utils';
@@ -287,6 +290,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadTypes: [],
                 serverPolicySections: [
                     {
                         sectionName: 'Policy Section 1',
@@ -621,6 +625,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadTypes: [],
                 serverPolicySections: [
                     {
                         sectionName: 'Policy Section 1',
@@ -701,6 +706,7 @@ describe('policies.utils', () => {
                         scope: initialExcludedDeployment.scope,
                     },
                 ],
+                excludedWorkloadTypes: [],
                 serverPolicySections: [],
                 policySections: [],
                 severity: 'LOW_SEVERITY' as const,
@@ -751,6 +757,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadTypes: [],
                 serverPolicySections: [],
                 policySections: [],
                 severity: 'LOW_SEVERITY' as const,
@@ -770,6 +777,52 @@ describe('policies.utils', () => {
             } satisfies ClientPolicy;
 
             expect(getServerPolicy(clientPolicy).exclusions?.[0]?.deployment?.scope).toBeNull();
+        });
+
+        test('serializes selected workload types as a single exclude-by-type exclusion', () => {
+            const serverPolicy = getServerPolicy({
+                ...initialPolicy,
+                excludedWorkloadTypes: ['JOB', 'CRON_JOB'],
+            });
+
+            expect(serverPolicy.exclusions).toEqual([
+                {
+                    deployment: null,
+                    image: null,
+                    excludeByType: { types: ['CRON_JOB', 'JOB'] },
+                },
+            ]);
+            expect(getClientWizardPolicy(serverPolicy).excludedWorkloadTypes).toEqual([
+                'CRON_JOB',
+                'JOB',
+            ]);
+        });
+
+        test('splits a combined image and type exclusion into client fields', () => {
+            const serverPolicy = getServerPolicy(initialPolicy);
+            serverPolicy.exclusions = [
+                {
+                    deployment: null,
+                    image: { name: 'nginx' },
+                    excludeByType: { types: ['JOB'] },
+                },
+            ];
+
+            const clientPolicy = getClientWizardPolicy(serverPolicy);
+
+            expect(clientPolicy.excludedImageNames).toEqual(['nginx']);
+            expect(clientPolicy.excludedWorkloadTypes).toEqual(['JOB']);
+            expect(getServerPolicy(clientPolicy).exclusions).toEqual([
+                {
+                    deployment: null,
+                    image: null,
+                    excludeByType: { types: ['JOB'] },
+                },
+                {
+                    image: { name: 'nginx' },
+                    deployment: null,
+                },
+            ]);
         });
     });
 
@@ -836,6 +889,7 @@ describe('policies.utils', () => {
                         eventSource: 'NOT_APPLICABLE',
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadTypes: ['CRON_JOB'],
                     },
                     ['BUILD', 'DEPLOY']
                 )
@@ -844,6 +898,7 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
+                excludedWorkloadTypes: ['CRON_JOB'],
             });
         });
 
@@ -854,6 +909,7 @@ describe('policies.utils', () => {
                         lifecycleStages: ['BUILD', 'DEPLOY'],
                         eventSource: 'NOT_APPLICABLE',
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadTypes: ['JOB'],
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                     },
                     ['DEPLOY']
@@ -863,6 +919,7 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['SCALE_TO_ZERO_ENFORCEMENT'],
                 excludedImageNames: [],
+                excludedWorkloadTypes: ['JOB'],
             });
         });
 
@@ -874,6 +931,7 @@ describe('policies.utils', () => {
                         eventSource: 'NOT_APPLICABLE',
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadTypes: ['CRON_JOB', 'JOB'],
                     },
                     ['BUILD']
                 )
@@ -882,7 +940,23 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
+                excludedWorkloadTypes: [],
             });
+        });
+    });
+
+    describe('workload type exclusion copy', () => {
+        test('formats review labels and wizard info text', () => {
+            expect(formatWorkloadTypeList(['JOB', 'CRON_JOB'])).toEqual('CronJobs, Jobs');
+            expect(formatWorkloadTypeExclusionMessage([])).toEqual(
+                'Policy will not exclude any workload types.'
+            );
+            expect(formatWorkloadTypeExclusionMessage(['JOB'])).toEqual(
+                'Policy will exclude Jobs.'
+            );
+            expect(formatWorkloadTypeExclusionMessage(['CRON_JOB', 'JOB'])).toEqual(
+                'Policy will exclude CronJobs and Jobs.'
+            );
         });
     });
 });
