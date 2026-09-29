@@ -200,7 +200,7 @@ def test_plan_text_for_a_sensor_change():
     skip = _between(text, "Will skip (", "Unsure (")
     assert "rule 7 sensor" in skip
     assert "go-postgres" in skip
-    assert "rule 10 remaining" in skip
+    assert "rule 12 remaining" in skip
 
     assert "Unsure (0)" in text
     dropped = _between(text, "Default would start these", "\n\n")
@@ -284,7 +284,7 @@ def test_plan_text_for_files_that_match_nothing():
     skip = _between(text, "Will skip (", "Unsure (")
     assert "github-actions-lint" in skip
     assert "github-actions-shellcheck" in skip
-    assert "rule 10 remaining" in skip
+    assert "rule 12 remaining" in skip
     assert ".github/workflows/style.yaml matches the path rule" in skip
 
 

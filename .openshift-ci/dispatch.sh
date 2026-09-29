@@ -29,6 +29,30 @@ case "$ci_job" in
         ;;
 esac
 
+# The resolver is the only start/skip decision. Exit 0 on skip, before
+# credentials and cluster setup, so the Prow context is a success. A resolver
+# error runs the job: a broken gate must not turn a required job green.
+if is_in_PR_context; then
+    resolver_status=0
+    if [[ -z "${PULL_BASE_SHA:-}" ]]; then
+        info "Resolver gate: no base SHA; running ${ci_job}"
+    elif ! changed="$(git -C "$ROOT" diff --name-only "${PULL_BASE_SHA}...HEAD" 2>/dev/null)"; then
+        info "Resolver gate: diff failed; running ${ci_job}"
+    else
+        printf '%s\n' "$changed" | python3 "$ROOT/ci/exploration/resolver.py" \
+            --mapping "$ROOT/ci/test-domains.toml" \
+            --job "$ci_job" \
+            --enforce \
+            - || resolver_status=$?
+        if [[ "$resolver_status" -eq 10 ]]; then
+            exit 0
+        fi
+        if [[ "$resolver_status" -ne 0 ]]; then
+            info "Resolver gate failed (${resolver_status}); running ${ci_job}"
+        fi
+    fi
+fi
+
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
     source "${SHARED_DIR:-}/shared_env"

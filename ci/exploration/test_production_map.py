@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from resolver import load_mapping, resolve
+from resolver import load_mapping, main, resolve
 
 PRODUCTION = Path(__file__).resolve().parents[1] / "test-domains.toml"
 
@@ -46,10 +46,58 @@ def test_sensor_and_central_conflict_and_run_wins():
     assert result.conflict_for("sensor-integration-tests") is not None
 
 
+def test_dispatch_change_runs_one_prow_suite_and_skips_the_others():
+    _mapping, result = decide([".openshift-ci/dispatch.sh"])
+    assert "gke-nongroovy-e2e-tests" in result.run
+    assert result.decision_for("gke-nongroovy-e2e-tests").rules == (10,)
+    assert "gke-ui-e2e-tests" in result.skip
+    assert result.decision_for("gke-ui-e2e-tests").rules == (11,)
+    assert "gke-qa-e2e-tests" in result.skip
+    assert result.decision_for("gke-qa-e2e-tests").rules == (11,)
+
+
+def test_job_flag_exits_for_the_prow_demonstration(capsys):
+    skip = main(
+        [
+            "--mapping",
+            str(PRODUCTION),
+            "--job",
+            "gke-ui-e2e-tests",
+            "--enforce",
+            ".openshift-ci/dispatch.sh",
+        ]
+    )
+    assert skip == 10
+    assert "skip" in capsys.readouterr().err
+    run = main(
+        [
+            "--mapping",
+            str(PRODUCTION),
+            "--job",
+            "gke-nongroovy-e2e-tests",
+            "--enforce",
+            ".openshift-ci/dispatch.sh",
+        ]
+    )
+    assert run == 0
+    assert "prow-demo-run" in capsys.readouterr().err
+    outside = main(
+        [
+            "--mapping",
+            str(PRODUCTION),
+            "--job",
+            "test-binary-build-commands",
+            "--enforce",
+            ".openshift-ci/dispatch.sh",
+        ]
+    )
+    assert outside == 0
+
+
 def test_ci_only_change_skips_go_and_runs_style_and_the_image_wait():
     mapping, result = decide(["ci/test-domains.toml", ".github/workflows/style.yaml"])
     assert "go" in result.skip
-    assert result.decision_for("go").rules == (10,)
+    assert result.decision_for("go").rules == (12,)
     assert "style-check" in result.run
     assert IMAGE_WAIT <= result.run
     assert result.unsure == frozenset()

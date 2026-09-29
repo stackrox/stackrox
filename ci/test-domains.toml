@@ -1,6 +1,6 @@
 # Rules are walked in number order. A later run overrides an earlier skip.
 # A later skip does not override an earlier run: the plan warns, and the
-# job runs. A job no rule has mentioned stays unsure until rule 10, which
+# job runs. A job no rule has mentioned stays unsure until rule 12, which
 # skips whatever is left. Rules do not say unsure.
 #
 # The jobs list is every target a pull request can hit: GitHub Actions
@@ -114,7 +114,7 @@ run = ["go"]
 [[rules]]
 number = 6
 name = "style"
-when = "any"
+when = "any-file"
 paths = ['.*']
 run = ["style-check"]
 
@@ -143,9 +143,26 @@ name = "image-wait"
 when = "always"
 run = ["wait-for-images"]
 
-# 10. Mandatory. Skips every job that is still unsure.
+# 10. A change to the Prow entrypoint keeps one suite, so a pull request
+# that edits it can show a job the resolver runs.
 [[rules]]
 number = 10
+name = "prow-demo-run"
+when = "any-file"
+paths = ['^\.openshift-ci/dispatch\.sh$']
+run = ["gke-nongroovy-e2e-tests"]
+
+# 11. That same change skips the other suites Prow starts on every pull request.
+[[rules]]
+number = 11
+name = "prow-demo-skip"
+when = "any-file"
+paths = ['^\.openshift-ci/dispatch\.sh$']
+skip = ["gke-ui-e2e-tests", "gke-qa-e2e-tests"]
+
+# 12. Mandatory. Skips every job that is still unsure.
+[[rules]]
+number = 12
 name = "remaining"
 when = "remaining"
 skip = ["*"]

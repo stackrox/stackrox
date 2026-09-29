@@ -256,6 +256,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Execute run only, and drop skip. The default is shadow mode.",
     )
+    parser.add_argument(
+        "--job",
+        default="",
+        help="Decide this job only. Exit 10 when the decision is skip.",
+    )
     parser.add_argument("files", nargs="*", help="Changed paths. '-' reads stdin.")
     args = parser.parse_args(argv)
 
@@ -265,12 +270,41 @@ def main(argv: list[str] | None = None) -> int:
     labels = [label for label in args.labels.split(",") if label]
     mapping = load_mapping(args.mapping)
     selection = resolve(files, mapping, labels, shadow=not args.enforce)
+    if args.job:
+        return _decide_job(selection, mapping, args.job)
     if args.format == "json":
         json.dump(selection.to_dict(), sys.stdout, indent=2)
         sys.stdout.write("\n")
     else:
         _print_human(selection, mapping)
     return 0
+
+
+def _decide_job(selection: Selection, mapping: Mapping, job: str) -> int:
+    """_decide_job reports one job. Exit 10 means skip; every other code means run."""
+    if job not in mapping.jobs:
+        print(f"resolver: {job} run (not in the rule list)", file=sys.stderr)
+        return 0
+    if job in selection.run:
+        if job in selection.required_runs:
+            detail = "required by a job the rules run"
+        else:
+            decision = selection.decision_for(job)
+            detail = _cite(decision, mapping) if decision else "no rule"
+        print(f"resolver: {job} run ({detail})", file=sys.stderr)
+        return 0
+    if job in selection.skip:
+        decision = selection.decision_for(job)
+        detail = _cite(decision, mapping) if decision else "no rule"
+        print(f"resolver: {job} skip ({detail})", file=sys.stderr)
+        return 10
+    print(f"resolver: {job} run (no rule decided it)", file=sys.stderr)
+    return 0
+
+
+def _cite(decision: Decision, mapping: Mapping) -> str:
+    names = [f"rule {number} {mapping.by_number[number].name}" for number in decision.rules]
+    return " and ".join(names)
 
 
 def _record(
