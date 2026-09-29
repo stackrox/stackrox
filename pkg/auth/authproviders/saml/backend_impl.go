@@ -27,6 +27,8 @@ var (
 
 	errAssertionExpired          = errox.NotAuthorized.New("SAML assertion expired or not yet valid")
 	errAssertionAudienceMismatch = errox.NotAuthorized.New("SAML assertion audience mismatch")
+	errAssertionReplay           = errox.NotAuthorized.New("SAML assertion replay detected")
+	errAssertionWithoutID        = errox.NotAuthorized.New("SAML assertion has no ID")
 )
 
 // All configuration keys the auth provider exposes within the auth provider config map.
@@ -47,6 +49,7 @@ type backendImpl struct {
 	id                 string
 	provider           authproviders.Provider
 	audienceConfigured bool
+	replayCache        *replayCache
 
 	config map[string]string
 }
@@ -54,10 +57,16 @@ type backendImpl struct {
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {
 	p.provider = provider
 	p.factory.RegisterBackend(p)
+	if p.replayCache != nil {
+		p.replayCache.start()
+	}
 }
 
 func (p *backendImpl) OnDisable(_ authproviders.Provider) {
 	p.factory.UnregisterBackend(p)
+	if p.replayCache != nil {
+		p.replayCache.stop()
+	}
 }
 
 func (p *backendImpl) loginURL(clientState string) (string, error) {
@@ -77,8 +86,9 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 		return nil, errors.New("SAML requires exactly one UI endpoint")
 	}
 	p := &backendImpl{
-		acsURLPath: acsURLPath,
-		id:         id,
+		acsURLPath:  acsURLPath,
+		id:          id,
+		replayCache: newReplayCache(),
 	}
 
 	acsURL := &url.URL{
@@ -153,6 +163,35 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in saml response")
+	}
+
+	// Check for replay attacks using assertion IDs
+	var expiresAt time.Time
+	if ai.SessionNotOnOrAfter != nil {
+		expiresAt = *ai.SessionNotOnOrAfter
+	} else {
+		// If no session expiration is set, use a default expiration of 1 hour
+		expiresAt = time.Now().Add(1 * time.Hour)
+	}
+
+	for _, assertion := range ai.Assertions {
+		if assertion.ID == "" {
+			log.Warnw("SAML invalid assertion detected (no ID), rejecting authentication.",
+				logging.ErrCode(codes.SAMLAssertionWithoutID),
+				logging.AuthProviderName(p.provider.Name()),
+			)
+			return nil, errAssertionWithoutID
+		}
+		// If the cache already contains an entry for the assertion,
+		// we are in a replay attack scenario. Reject the authentication.
+		if !p.replayCache.add(assertion.ID, expiresAt) {
+			log.Warnw("SAML assertion replay detected, rejecting authentication.",
+				logging.ErrCode(codes.SAMLAssertionReplay),
+				logging.AuthProviderName(p.provider.Name()),
+				logging.String("assertion_id", assertion.ID),
+			)
+			return nil, errAssertionReplay
+		}
 	}
 
 	if err := validateAssertionWarnings(ai.WarningInfo); err != nil {
