@@ -9,15 +9,16 @@ with a read-only fallback to the diagnostic bundles when the Prometheus time
 series is missing), so the numbers match the plot.
 
 Usage:
-    python3 events-rate-table.py <results_base_dir> [rate1 rate2 ...]
+    python3 events-rate-table.py <results_base_dir> [--deployments N] [rate1 rate2 ...]
 
     results_base_dir: e.g. perf_berserker_cpu_2
+    --deployments N:  berserker deployment count to report (default: 1). Selects
+                      runs tagged _<N>dep; N=1 also matches legacy untagged runs.
     rates:            configured event rates to report (default: 100 500 1000 2500 5000)
 
 The observed value is averaged over the same window used by the plots, matched
 to the test length (10m -> 60-660s, 20m -> 60-1260s).
 """
-import glob
 import importlib.util
 import os
 import sys
@@ -60,9 +61,10 @@ def main():
         print(__doc__)
         sys.exit(1)
 
-    base = sys.argv[1].rstrip('/')
-    rates = [int(a) for a in sys.argv[2:]] or DEFAULT_RATES
     mod = load_plot_helpers()
+    argv, num_deployments = mod.parse_deployments(sys.argv[1:])
+    base = argv[0].rstrip('/')
+    rates = [int(a) for a in argv[1:]] or DEFAULT_RATES
 
     def fmt(v):
         return f"{v:9.1f}" if v is not None else f"{'n/a':>9}"
@@ -71,12 +73,7 @@ def main():
         return f"{100 * v / r:7.0f}%" if v is not None else f"{'n/a':>8}"
 
     def find_run_dir(rate, mode_suffix):
-        # Resolve the run dir for a rate/mode without hardcoding num_sensors or
-        # run_time; the trailing mode suffix keeps the rate match exact
-        # (file-activity-100 vs file-activity-1000 don't collide).
-        matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
-        return matches[0] if matches else None
+        return mod.find_berserker_run_dir(base, rate, mode_suffix, num_deployments)
 
     print(f"Results dir: {base}")
     # Observed events/sec at the sensor per mode, then that as a % of the ideal

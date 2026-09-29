@@ -25,6 +25,9 @@ from plot_utils import (
     ALL_MODES,
     mode_for_dir,
     series_style,
+    deployments_for_dir,
+    deployments_label,
+    parse_deployments,
 )
 
 # Human-readable label per mode key, and the canonical order to draw modes in
@@ -32,6 +35,19 @@ from plot_utils import (
 # plot_utils so every analysis script agrees on names and suffixes.
 MODE_LABEL = {key: label for key, _suffix, label in ALL_MODES}
 MODE_CANONICAL_ORDER = [key for key, _suffix, _label in ALL_MODES]
+
+
+def combo_label(mode, deployments, multi_dep):
+    """
+    Legend label for a (mode, deployment-count) series.
+
+    A "series" on the comparison plots is one test mode at one deployment count.
+    When more than one deployment count is present (the deployment-count axis is in
+    use), the count is appended so the curves are distinguishable; otherwise the
+    plain mode label is kept (identical to the pre-deployment-axis behavior).
+    """
+    base = MODE_LABEL[mode]
+    return f"{base} ({deployments_label(deployments)})" if multi_dep else base
 
 def extract_batch_size(dirname):
     """
@@ -54,6 +70,29 @@ def extract_batch_size(dirname):
         return event_rate // 10
 
     return None
+
+def find_berserker_run_dir(base, rate, mode_suffix, num_deployments=1):
+    """
+    Resolve a berserker run dir for a rate / mode / deployment-count, or None.
+
+    Matches the _<N>dep token the harness writes before the mode suffix
+    (..._file-activity-<rate>_<N>dep<mode_suffix>). For num_deployments==1 it also
+    falls back to the legacy name with no token, so runs made before the
+    deployment-count axis existed still resolve. Shared by the table scripts so
+    they agree on the naming with the plots.
+    """
+    patterns = [
+        f"{base}/berserker_file_activity_results_*_file-activity-{rate}_{num_deployments}dep{mode_suffix}"
+    ]
+    if num_deployments == 1:
+        patterns.append(
+            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}")
+    for pat in patterns:
+        matches = sorted(glob.glob(pat))
+        if matches:
+            return matches[0]
+    return None
+
 
 def read_metric_average(file_path, start_offset=60.0, end_offset=None, base_time=None):
     """
@@ -257,15 +296,16 @@ def _finalize_plot(output_dir, filename, title, ylabel, equations, record,
 
 
 def _plot_series_vs_rate(output_dir, event_rates, filename, title, ylabel,
-                         series_by_mode, mode_order, record):
+                         series_by_combo, combos, labels, record):
     """Render a vs-event-rate comparison plot with one line (and trend line) per
-    test mode. Works for any number of modes (2 for fake, 3 for berserker)."""
+    series, where a series is a (mode, deployment-count) combination. Works for any
+    number of modes (2 for fake, 3 for berserker) and deployment counts."""
     plt.figure(figsize=(12, 7))
     equations = []
-    for i, mode in enumerate(mode_order):
+    for i, combo in enumerate(combos):
         color, marker = series_style(i)
-        label = MODE_LABEL[mode]
-        y = series_by_mode.get(mode, [])
+        label = labels[combo]
+        y = series_by_combo.get(combo, [])
         plt.plot(event_rates, y, marker=marker, linestyle='-', label=label,
                  linewidth=2, markersize=8, color=color)
         eq = add_trendline(event_rates, y, f'Trend ({label})', color)
@@ -437,69 +477,95 @@ def plot_scaling_comparison(base_dir, output_dir):
     END_OFFSET = trend_window(result_dirs[0], start=START_OFFSET)[1]
     TIME_WINDOW_DESC = f"{int(START_OFFSET)}-{int(END_OFFSET)}s"
 
-    # Organize by batch size and mode: data[batch_size][mode_key] = dir.
+    # Organize by batch size and series, where a series is a (mode, deployments)
+    # combination: data[batch_size][(mode_key, deployments)] = dir. The deployment
+    # count is parsed from the dir name (1 when untagged), so 1-deployment runs made
+    # before the axis existed still slot in as deployments=1.
     data = {}
     modes_present = set()
+    deps_present = set()
+    combos_present = set()
     for dir_path in result_dirs:
         batch_size = extract_batch_size(dir_path)
         if batch_size is None:
             continue
         mode_key, _label = mode_for_dir(dir_path)
-        data.setdefault(batch_size, {})[mode_key] = dir_path
+        deployments = deployments_for_dir(dir_path)
+        combo = (mode_key, deployments)
+        data.setdefault(batch_size, {})[combo] = dir_path
         modes_present.add(mode_key)
+        deps_present.add(deployments)
+        combos_present.add(combo)
 
     batch_sizes = sorted(data.keys())
-    event_rates = [b * 10 for b in batch_sizes]  # batch_size * 10 events/sec
+    event_rates = [b * 10 for b in batch_sizes]  # batch_size * 10 events/sec (per deployment)
     if not batch_sizes:
         print(f"No test results found in {base_dir}")
         return
 
-    # Draw modes in the canonical order, restricted to those actually present.
+    # Draw modes in canonical order, and within a mode by ascending deployment
+    # count; keep only (mode, deployments) combos actually present. multi_dep drives
+    # whether legend labels mention the deployment count at all.
     mode_order = [m for m in MODE_CANONICAL_ORDER if m in modes_present]
+    dep_order = sorted(deps_present)
+    multi_dep = len(dep_order) > 1
+    combos = [(m, d) for m in mode_order for d in dep_order if (m, d) in combos_present]
+    labels = {c: combo_label(c[0], c[1], multi_dep) for c in combos}
 
     print(f"Found results for batch sizes: {batch_sizes}")
-    print(f"Event rates: {event_rates} events/sec")
-    print(f"Modes: {[MODE_LABEL[m] for m in mode_order]}")
+    print(f"Event rates (per deployment): {event_rates} events/sec")
+    print(f"Deployment counts: {dep_order}")
+    print(f"Series: {[labels[c] for c in combos]}")
 
-    # series[metric_key][mode] = [one value per event rate]
-    series = {key: {m: [] for m in mode_order} for key, *_ in METRIC_SPECS}
+    # series[metric_key][combo] = [one value per event rate]
+    series = {key: {c: [] for c in combos} for key, *_ in METRIC_SPECS}
     for batch in batch_sizes:
-        for mode in mode_order:
-            run_dir = data[batch].get(mode)
+        for combo in combos:
+            run_dir = data[batch].get(combo)
             baseline_cache = {}  # component -> baseline, per run
             for key, filename, component, reader, conv in METRIC_SPECS:
                 v = _extract(run_dir, filename, component, reader,
                              baseline_cache, START_OFFSET, END_OFFSET)
-                series[key][mode].append(_convert(v, conv))
+                series[key][combo].append(_convert(v, conv))
 
-    # Standard vs-rate plots: one line per mode.
+    # Standard vs-rate plots: one line per (mode, deployments) series.
     for key, png, title_tmpl, ylabel in STANDARD_PLOTS:
         _plot_series_vs_rate(output_dir, event_rates, png,
                              title_tmpl.format(win=TIME_WINDOW_DESC), ylabel,
-                             series[key], mode_order, record)
+                             series[key], combos, labels, record)
 
-    # CPU overhead of each non-reference mode relative to the reference (first)
-    # mode -- baseline for berserker, Without Policy for fake. One line per other
-    # mode; needs at least two modes to be meaningful.
+    # CPU overhead of each non-reference mode relative to the reference (first) mode
+    # -- baseline for berserker, Without Policy for fake -- computed within the same
+    # deployment count so the comparison isolates the policy, not the load. One line
+    # per (non-ref mode, deployment count); needs >= 2 modes to be meaningful.
     if len(mode_order) >= 2:
         ref = mode_order[0]
         ref_label = MODE_LABEL[ref]
         plt.figure(figsize=(12, 7))
         equations = []
-        for i, mode in enumerate(mode_order[1:], start=1):
-            color, marker = series_style(i)
-            label = MODE_LABEL[mode]
-            overhead = []
-            for base_v, v in zip(series['central_cpu'][ref], series['central_cpu'][mode]):
-                if base_v and v and base_v > 0:
-                    overhead.append((v - base_v) / base_v * 100)
-                else:
-                    overhead.append(None)
-            plt.plot(event_rates, overhead, marker=marker, linestyle='-',
-                     label=f'{label} vs {ref_label}', linewidth=2, markersize=8, color=color)
-            eq = add_trendline(event_rates, overhead, f'Trend ({label})', color)
-            if eq:
-                equations.append((label, eq[0], eq[1], color))
+        line_idx = 0
+        for dep in dep_order:
+            ref_series = series['central_cpu'].get((ref, dep))
+            if ref_series is None:
+                continue  # no reference run at this deployment count
+            for mode in mode_order[1:]:
+                mode_series = series['central_cpu'].get((mode, dep))
+                if mode_series is None:
+                    continue
+                color, marker = series_style(line_idx)
+                line_idx += 1
+                label = combo_label(mode, dep, multi_dep)
+                overhead = []
+                for base_v, v in zip(ref_series, mode_series):
+                    if base_v and v and base_v > 0:
+                        overhead.append((v - base_v) / base_v * 100)
+                    else:
+                        overhead.append(None)
+                plt.plot(event_rates, overhead, marker=marker, linestyle='-',
+                         label=f'{label} vs {ref_label}', linewidth=2, markersize=8, color=color)
+                eq = add_trendline(event_rates, overhead, f'Trend ({label})', color)
+                if eq:
+                    equations.append((label, eq[0], eq[1], color))
         plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
         _finalize_plot(output_dir, 'policy_cpu_overhead.png',
                        f'Central CPU Overhead vs {ref_label}\n({TIME_WINDOW_DESC})',
@@ -512,10 +578,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     equations = []
     observed = []
-    for i, mode in enumerate(mode_order):
+    for i, combo in enumerate(combos):
         color, marker = series_style(i)
-        label = MODE_LABEL[mode]
-        y = series['events_received'][mode]
+        label = labels[combo]
+        y = series['events_received'][combo]
         plt.plot(event_rates, y, marker=marker, linestyle='-', label=label,
                  linewidth=2, markersize=8, color=color)
         eq = add_trendline(event_rates, y, f'Trend ({label})', color)

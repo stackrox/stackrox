@@ -11,12 +11,13 @@ run is the total count. Values come from the same metric files the plots use
 (older runs, or a metric source not scraped in that cluster) show as n/a.
 
 Usage:
-    python3 restart-oom-table.py <results_base_dir> [rate1 rate2 ...]
+    python3 restart-oom-table.py <results_base_dir> [--deployments N] [rate1 rate2 ...]
 
     results_base_dir: e.g. perf_berserker/20m
+    --deployments N:  berserker deployment count to report (default: 1). Selects
+                      runs tagged _<N>dep; N=1 also matches legacy untagged runs.
     rates:            configured event rates to report (default: 100 500 1000 2500 5000)
 """
-import glob
 import importlib.util
 import os
 import sys
@@ -56,16 +57,13 @@ def main():
         print(__doc__)
         sys.exit(1)
 
-    base = sys.argv[1].rstrip('/')
-    rates = [int(a) for a in sys.argv[2:]] or DEFAULT_RATES
     mod = load_plot_helpers()
+    argv, num_deployments = mod.parse_deployments(sys.argv[1:])
+    base = argv[0].rstrip('/')
+    rates = [int(a) for a in argv[1:]] or DEFAULT_RATES
 
     def find_run_dir(rate, mode_suffix):
-        # Resolve the run dir for a rate/mode without hardcoding num_sensors or
-        # run_time; the trailing mode suffix keeps the rate match exact.
-        matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
-        return matches[0] if matches else None
+        return mod.find_berserker_run_dir(base, rate, mode_suffix, num_deployments)
 
     def cell(values):
         def fmt(v):

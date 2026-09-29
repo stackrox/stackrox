@@ -34,11 +34,34 @@ workload_name=$3  # e.g., file-activity-100, file-activity-500
 #                cost of an active monitoring policy from the cost of processing events.
 test_mode=${4:-baseline}
 results_base_dir=${5:-perf}  # base directory for results; defaults to perf
+# Number of independent berserker deployments to run concurrently. Each is a
+# separate StackRox deployment (distinct deployment ID), so its alerts shard onto
+# a different Central ingestion worker (alerts hash by deployment ID). Use >1 to
+# test whether spreading load across deployments relieves the single-worker drain
+# bottleneck. Every deployment runs the SAME workload file, so total offered rate
+# is (workload rate * num_deployments).
+num_deployments=${6:-1}
 
 case "$test_mode" in
   alerting|baseline|idlepolicy) ;;
   *) echo "Error: test_mode must be one of: alerting, baseline, idlepolicy (got '$test_mode')"; exit 1 ;;
 esac
+
+if ! [[ "$num_deployments" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Error: num_deployments must be a positive integer (got '$num_deployments')"; exit 1
+fi
+
+# Instance (k8s object) name for the i-th deployment. A single deployment keeps the
+# plain workload name (unchanged from before); multiple deployments get a -dN suffix
+# so each is a distinct StackRox deployment. Must match the cleanup loop below.
+instance_name_for() {
+  local idx=$1
+  if [[ "$num_deployments" -eq 1 ]]; then
+    echo "${workload_name}"
+  else
+    echo "${workload_name}-d${idx}"
+  fi
+}
 
 # Directory the idlepolicy mode points its policy at. berserker only ever touches
 # /tmp/data, so /tmp/quiet stays empty -> the policy is active but no events flow.
@@ -92,7 +115,10 @@ export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="$sensor_helm_values"
 # and conflict with Helm's server-side apply on the next deploy.
 teardown || true
 
-results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_${test_mode}"
+# Results dir encodes the deployment count as a _<N>dep token before the mode
+# suffix (kept last so the analysis scripts still match modes by suffix). Analysis
+# treats a dir with no _<N>dep token as a single deployment (backward compatible).
+results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_${num_deployments}dep_${test_mode}"
 # Start from a clean results dir. rm -rf succeeds even when the dir is absent,
 # so mkdir must run unconditionally (not as an || fallback) to ensure it exists.
 rm -rf "$results_dir"
@@ -137,15 +163,21 @@ echo "Deploying ACS completed in ${duration} seconds."
 kubectl -n stackrox delete deployment scanner || true
 kubectl -n stackrox delete deployment scanner-db || true
 
-# Deploy berserker workload
-echo "Deploying berserker workload: ${workload_name}"
+# Deploy berserker workload(s). With num_deployments>1 each instance runs the same
+# workload file under a distinct name, yielding distinct StackRox deployment IDs.
+echo "Deploying ${num_deployments} berserker deployment(s) for workload: ${workload_name}"
 start_time=$(date +%s)
-"${DIR}/deploy-berserker.sh" "${workload_name}" "stackrox"
+for i in $(seq 1 "$num_deployments"); do
+  instance="$(instance_name_for "$i")"
+  echo "Deploying berserker instance ${i}/${num_deployments}: ${instance}"
+  "${DIR}/deploy-berserker.sh" "${workload_name}" "stackrox" "${instance}"
+done
 # Record when berserker is up (epoch ms, matching the Prometheus metric
-# timestamps). deploy-berserker.sh blocks on the DaemonSet rollout, so control
-# returns here only once berserker is ready. Berserker is deployed last (central,
-# sensor and collector are already up), so this single timestamp is t=0 for every
-# component in the pipeline. Consumed by determine_baseline_timestamp in plot_utils.py.
+# timestamps). deploy-berserker.sh blocks on each DaemonSet rollout, so control
+# returns here only once every berserker instance is ready. Berserker is deployed
+# last (central, sensor and collector are already up), so this single timestamp is
+# t=0 for every component in the pipeline. Consumed by determine_baseline_timestamp
+# in plot_utils.py.
 date +%s%3N > "${results_dir}/berserker_ready_timestamp.txt"
 end_time=$(date +%s)
 duration=$((end_time - start_time))
@@ -278,10 +310,12 @@ end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Prometheus query script completed in ${duration} seconds."
 
-# Cleanup berserker workload
-echo "Cleaning up berserker workload..."
+# Cleanup berserker workload(s) - one call per deployed instance.
+echo "Cleaning up ${num_deployments} berserker deployment(s)..."
 start_time=$(date +%s)
-"${DIR}/cleanup-berserker.sh" "${workload_name}" "stackrox"
+for i in $(seq 1 "$num_deployments"); do
+  "${DIR}/cleanup-berserker.sh" "$(instance_name_for "$i")" "stackrox"
+done
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Berserker cleanup completed in ${duration} seconds."

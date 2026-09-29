@@ -10,6 +10,10 @@ num_sensors=${1:-1}
 run_time=${2:-10m}
 results_base_dir=${3:-perf}  # base directory for results; defaults to perf
 workload_type=${4:-fake}     # fake or berserker
+# Number of concurrent berserker deployments per test (berserker only; ignored for
+# the fake workload). >1 spreads load across distinct deployment IDs so alerts
+# shard onto separate Central ingestion workers. See perf-test-file-activity-berserker.sh.
+num_deployments=${5:-1}
 
 # Select the per-test script based on workload type. The two workloads also use
 # different workload-name conventions (see workload_name below).
@@ -65,18 +69,37 @@ run_batch_test() {
   # dir to force its test to re-run; delete a partial dir before resuming.
   local mode_suffix
   mode_suffix="$(suffix_for_mode "$mode")"
-  local results_dir="${results_base_dir}/${results_dir_prefix}_${num_sensors}_${run_time}_${workload_name}_${mode_suffix}"
+  # Berserker encodes the deployment count as a _<N>dep token before the mode; the
+  # fake workload has no such concept. This must mirror the name the per-test
+  # scripts build so the resume/skip check matches.
+  local dep_token=""
+  if [[ "$workload_type" == "berserker" ]]; then
+    dep_token="${num_deployments}dep_"
+  fi
+  local results_dir="${results_base_dir}/${results_dir_prefix}_${num_sensors}_${run_time}_${workload_name}_${dep_token}${mode_suffix}"
   if [[ -d "$results_dir" ]]; then
     echo "Results dir already exists, skipping: ${results_dir}"
     return 0
   fi
 
-  "$perf_test_script" \
-    "$num_sensors" \
-    "$run_time" \
-    "$workload_name" \
-    "$mode" \
-    "$results_base_dir"
+  # num_deployments is the 6th arg to the berserker per-test script; the fake
+  # per-test script does not take it, so only pass it for berserker.
+  if [[ "$workload_type" == "berserker" ]]; then
+    "$perf_test_script" \
+      "$num_sensors" \
+      "$run_time" \
+      "$workload_name" \
+      "$mode" \
+      "$results_base_dir" \
+      "$num_deployments"
+  else
+    "$perf_test_script" \
+      "$num_sensors" \
+      "$run_time" \
+      "$workload_name" \
+      "$mode" \
+      "$results_base_dir"
+  fi
 
   # Clean up between tests
   echo "Cleaning up before next test..."

@@ -66,6 +66,47 @@ def mode_for_dir(dir_path):
     return None
 
 
+# Berserker result dirs optionally encode the number of concurrent deployments as a
+# _<N>dep token placed before the mode suffix, e.g.
+#   ..._file-activity-1000_2dep_alerting
+# The token sits before the mode so mode_for_dir's endswith match is unaffected. A
+# dir without the token is a single-deployment run (backward compatible with runs
+# made before the deployment-count axis existed).
+_DEPLOYMENTS_RE = re.compile(r'_(\d+)dep_')
+
+
+def deployments_for_dir(dir_path):
+    """Number of concurrent berserker deployments for a results dir (1 if untagged)."""
+    base = os.path.basename(dir_path.rstrip('/'))
+    m = _DEPLOYMENTS_RE.search(base)
+    return int(m.group(1)) if m else 1
+
+
+def deployments_label(n):
+    """Short label for a deployment count, e.g. '1 dep'."""
+    return f"{n} dep"
+
+
+def parse_deployments(argv):
+    """
+    Pull an optional `--deployments N` flag out of a table script's argv.
+
+    Table scripts take positional args (base dir, then rates); the deployment
+    count is an optional named flag so it can appear anywhere without disturbing
+    those positions. Returns (remaining_argv, num_deployments), defaulting to 1
+    (single-deployment / legacy runs) when the flag is absent.
+    """
+    argv = list(argv)
+    n = 1
+    if '--deployments' in argv:
+        i = argv.index('--deployments')
+        if i + 1 >= len(argv):
+            raise SystemExit("--deployments requires a value")
+        n = int(argv[i + 1])
+        del argv[i:i + 2]
+    return argv, n
+
+
 def run_duration_seconds(path, default=DEFAULT_RUN_DURATION):
     """
     Parse the nominal test duration (seconds) from a results path.
