@@ -102,6 +102,17 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 		assert.Equal(t, "payments", alerts[0].GetDeployment().GetName())
 	})
 
+	t.Run("with an image exclusion, a deployment running the excluded image still alerts", func(t *testing.T) {
+		// Image exclusions only apply at build time. Honoring them per container at deploy time is
+		// tracked in ROX-34071; until then this documents the current behavior.
+		legacy := deploymentRunning("legacy-app", imageWithOldCriticalCVE(t, excludedImage))
+		policy := oldCriticalCVEPolicy(&storage.Exclusion{Image: &storage.Exclusion_Image{Name: excludedImage}})
+		alerts, err := detectorFor(t, policy).Detect(ctx, legacy)
+		require.NoError(t, err)
+		require.Len(t, alerts, 1)
+		assert.Equal(t, "legacy-app", alerts[0].GetDeployment().GetName())
+	})
+
 	t.Run("a deployment exclusion still skips the named deployment", func(t *testing.T) {
 		policy := oldCriticalCVEPolicy(&storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "payments"}})
 		alerts, err := detectorFor(t, policy).Detect(ctx, payments)

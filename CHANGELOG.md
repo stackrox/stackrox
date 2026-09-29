@@ -22,6 +22,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
+- Fixed image exclusions turning off deploy-time and runtime evaluation of a policy for every deployment. Image exclusions now only apply at the build stage, so deployments running the excluded image are evaluated at deploy time and runtime, and can be blocked by admission control if the policy enforces. To skip an image at deploy time, split the policy into a build-only policy with the image exclusion and a deploy policy without it.
 
 ## [5.0.0]
 
