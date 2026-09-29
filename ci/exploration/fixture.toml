@@ -28,7 +28,7 @@ run = ["*"]
 [[rules]]
 number = 3
 name = "docs-only"
-when = "all"
+when = "all-files"
 paths = ['\.md$', '^docs/']
 run = ["style"]
 skip = ["go"]
@@ -36,14 +36,14 @@ skip = ["go"]
 [[rules]]
 number = 4
 name = "go-sources"
-when = "any"
+when = "any-file"
 paths = ['\.go$']
 run = ["go"]
 
 [[rules]]
 number = 5
 name = "sensor"
-when = "any"
+when = "any-file"
 paths = ['^sensor/']
 run = ["sensor-integration-tests"]
 skip = ["go-postgres"]
@@ -51,7 +51,7 @@ skip = ["go-postgres"]
 [[rules]]
 number = 6
 name = "central-policy"
-when = "any"
+when = "any-file"
 paths = ['^central/policy/']
 run = ["go-postgres"]
 skip = ["sensor-integration-tests"]

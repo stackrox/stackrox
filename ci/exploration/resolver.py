@@ -19,7 +19,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_WHEN = frozenset({"all", "any", "always", "label", "no-files", "remaining"})
+_WHEN = frozenset({"all-files", "any-file", "always", "label", "no-files", "remaining"})
 
 
 @dataclass(frozen=True)
@@ -42,9 +42,9 @@ class Rule:
             return "the diff has no files"
         if self.when == "label":
             return f"label {self.label} is set"
-        if self.when == "all":
+        if self.when == "all-files":
             return "every changed file matches"
-        if self.when == "any":
+        if self.when == "any-file":
             return "any changed file matches"
         return "every job no earlier rule decided"
 
@@ -299,9 +299,9 @@ def _rule_matches(rule: Rule, files: list[str], labels: set[str]) -> bool:
         return not files
     if rule.when == "label":
         return rule.label in labels
-    if rule.when == "any":
+    if rule.when == "any-file":
         return any(_matches(path, rule.paths) for path in files)
-    if rule.when == "all":
+    if rule.when == "all-files":
         return bool(files) and all(_matches(path, rule.paths) for path in files)
     return False
 
@@ -403,11 +403,11 @@ def _check_when_fields(
     name: str,
 ) -> None:
     where = f"rule {number} {name}"
-    if when in {"any", "all"} and not patterns:
+    if when in {"any-file", "all-files"} and not patterns:
         raise ValueError(f"{where} needs paths")
     if when == "label" and not label:
         raise ValueError(f"{where} needs a label")
-    if when not in {"any", "all"} and patterns:
+    if when not in {"any-file", "all-files"} and patterns:
         raise ValueError(f"{where} does not take paths")
     if when != "label" and label:
         raise ValueError(f"{where} does not take a label")
