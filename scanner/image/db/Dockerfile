@@ -29,6 +29,10 @@ ARG LABEL_VERSION
 ARG LABEL_RELEASE
 ARG QUAY_TAG_EXPIRATION
 
+# Bake the image version in so init-entrypoint.sh can detect downgrades without
+# relying on the version being parsed out of the image ref at deploy time.
+ENV SCANNER_V4_DB_VERSION="${LABEL_VERSION}"
+
 LABEL name="scanner-v4-db" \
       vendor="StackRox" \
       maintainer="https://stackrox.io/" \
