@@ -132,8 +132,12 @@ class AdmissionControllerTest extends BaseSpecification {
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
-        for (policyID in createdPolicyIds) {
-            PolicyService.deletePolicy(policyID)
+        try {
+            for (policyID in createdPolicyIds) {
+                PolicyService.deletePolicy(policyID)
+            }
+        } catch (Exception e) {
+            log.warn "Failed to delete one or more policies during cleanup: ${e.message}"
         }
     }
 
@@ -249,6 +253,26 @@ class AdmissionControllerTest extends BaseSpecification {
         log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
+    def deletePolicyWithCaution(String policyId) {
+        try {
+            if (policyId) {
+                PolicyService.deletePolicy(policyId)
+                // Wait for policy deletion to propagate to admission controller
+                withRetry(10, 1) {
+                    def policyExists = true
+                    try {
+                        Services.getPolicy(policyId)
+                    } catch (Exception e) {
+                        policyExists = false
+                    }
+                    assert !policyExists : "Policy ${policyId} still exists after deletion"
+                }
+            }
+        } catch (Exception e) {
+            log.warn "Failed to delete policy ${policyId}: ${e.message}"
+        }
+    }
+
     // Retry to allow time for the admission controller to fetch scan data from
     // Central. Policies that require image enrichment (e.g. severity) may not
     // evaluate on the first attempt if the AC pod handling this request hasn't
@@ -315,11 +339,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
-            // Brief wait to allow policy deletion to propagate to admission controller
-            sleep(2000)
-        }
+        deletePolicyWithCaution(policyId)
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
@@ -423,11 +443,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
-            // Brief wait to allow policy deletion to propagate to admission controller
-            sleep(2000)
-        }
+        deletePolicyWithCaution(policyId)
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
