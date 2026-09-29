@@ -39,6 +39,10 @@ func oldCriticalCVEPolicy(exclusions ...*storage.Exclusion) *storage.Policy {
 	}
 }
 
+func imageExclusion(fullName string) *storage.Exclusion {
+	return &storage.Exclusion{Image: &storage.Exclusion_Image{Name: fullName}}
+}
+
 func imageWithOldCriticalCVE(t *testing.T, fullName string) *storage.Image {
 	firstSeen, err := protocompat.ConvertTimeToTimestampOrError(time.Now().AddDate(0, 0, -365))
 	require.NoError(t, err)
@@ -95,7 +99,7 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 	})
 
 	t.Run("with an image exclusion, a deployment that does not run the excluded image still alerts", func(t *testing.T) {
-		policy := oldCriticalCVEPolicy(&storage.Exclusion{Image: &storage.Exclusion_Image{Name: excludedImage}})
+		policy := oldCriticalCVEPolicy(imageExclusion(excludedImage))
 		alerts, err := detectorFor(t, policy).Detect(ctx, payments)
 		require.NoError(t, err)
 		require.Len(t, alerts, 1)
@@ -106,7 +110,7 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 		// Image exclusions only apply at build time. Honoring them per container at deploy time is
 		// tracked in ROX-34071; until then this documents the current behavior.
 		legacy := deploymentRunning("legacy-app", imageWithOldCriticalCVE(t, excludedImage))
-		policy := oldCriticalCVEPolicy(&storage.Exclusion{Image: &storage.Exclusion_Image{Name: excludedImage}})
+		policy := oldCriticalCVEPolicy(imageExclusion(excludedImage))
 		alerts, err := detectorFor(t, policy).Detect(ctx, legacy)
 		require.NoError(t, err)
 		require.Len(t, alerts, 1)
@@ -125,7 +129,7 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 // behavior: the excluded image is skipped, other images are still checked.
 func TestImageExclusionStillAppliesAtBuildTime(t *testing.T) {
 	ctx := context.Background()
-	policy := oldCriticalCVEPolicy(&storage.Exclusion{Image: &storage.Exclusion_Image{Name: excludedImage}})
+	policy := oldCriticalCVEPolicy(imageExclusion(excludedImage))
 	compiled, err := detection.CompilePolicy(policy, nil, nil)
 	require.NoError(t, err)
 
