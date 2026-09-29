@@ -184,9 +184,11 @@ for container in central central-db sensor collector fact berserker; do
 done
 
 # Database table sizes - focus on tables relevant to file activity testing
-# File activity events may trigger alerts, so monitor alerts table
-# Also monitor deployments as file activity is associated with deployments
-for table in alerts deployments; do
+# File activity events may trigger alerts, so monitor alerts table.
+# Also monitor deployments as file activity is associated with deployments, and
+# process_indicators to see how many process events land in the DB (a second,
+# storage-side view of the process-event volume alongside the sensor counter below).
+for table in alerts deployments process_indicators; do
   metric='rox_central_postgres_table_size{namespace=\"stackrox\",table=\"'$table'\"}'
   result="$(get_time_series_for_metric "$metric" "$from" "$to")"
   echo "$result" > "${output_file_prefix}_${table}.txt"
@@ -239,6 +241,29 @@ declare -A fact_drop_metric=(
 )
 for out_name in "${!fact_drop_metric[@]}"; do
   result="$(get_time_series_for_metric "${fact_drop_metric[$out_name]}" "$from" "$to")" || true
+  if [[ -n "${result//[[:space:]]/}" ]]; then
+    echo "$result" > "${output_file_prefix}_${out_name}.txt"
+  fi
+done
+
+# Process and network event volume received by Sensor. This tells us how much
+# non-file-activity load Sensor is carrying, so it can be compared across the three
+# test modes (baseline / alerting / idlepolicy) and against the file-activity rate.
+#  - network_flows_received: rox_sensor_total_network_flows_sensor_received_counter,
+#    a plain Counter of flows Sensor received from Collector
+#    (sensor/common/metrics/metrics.go). sum() collapses per-instance series.
+#  - process_indicators_received: there is no dedicated "process signals received"
+#    counter on Sensor, so we use the detector's process-indicator queue ADD count
+#    (rox_sensor_detector_process_indicator_queue_operations_total{Operation="Add"} --
+#    note the capitalized label key and value, from metrics.Add.String()). This is
+#    the number of process indicators entering the detector pipeline.
+#    process_indicators table row count (captured above) is the storage-side companion.
+declare -A received_metric=(
+  [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"stackrox\"})'
+  [process_indicators_received]='sum(rox_sensor_detector_process_indicator_queue_operations_total{namespace=\"stackrox\",Operation=\"Add\"})'
+)
+for out_name in "${!received_metric[@]}"; do
+  result="$(get_time_series_for_metric "${received_metric[$out_name]}" "$from" "$to")" || true
   if [[ -n "${result//[[:space:]]/}" ]]; then
     echo "$result" > "${output_file_prefix}_${out_name}.txt"
   fi

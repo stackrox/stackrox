@@ -24,10 +24,27 @@ STACKROX_DIR="$DIR/../.."
 num_sensors=$1
 run_time=$2
 workload_name=$3  # e.g., file-activity-100, file-activity-500
-test_with_policy=${4:-false}  # true or false - whether to enable file activity policy
+# test_mode selects one of three scenarios (replaces the old with/without-policy pair):
+#   alerting   - runtime policy on /tmp/data/** (where berserker writes). fact monitors
+#                that path, so it is busy and alerts fire on berserker's activity.
+#   baseline   - no file-activity policy at all. With FACT_PATHS no longer set, fact has
+#                nothing to monitor and is almost completely inactive (control case).
+#   idlepolicy - runtime policy on /tmp/quiet/** (a directory with NO berserker activity).
+#                fact is configured to monitor a path but sees no events, isolating the
+#                cost of an active monitoring policy from the cost of processing events.
+test_mode=${4:-baseline}
 results_base_dir=${5:-perf}  # base directory for results; defaults to perf
 
-logmein_script="${HOME}/go/src/github.com/stackrox/workflow/bin/logmein"
+case "$test_mode" in
+  alerting|baseline|idlepolicy) ;;
+  *) echo "Error: test_mode must be one of: alerting, baseline, idlepolicy (got '$test_mode')"; exit 1 ;;
+esac
+
+# Directory the idlepolicy mode points its policy at. berserker only ever touches
+# /tmp/data, so /tmp/quiet stays empty -> the policy is active but no events flow.
+IDLE_POLICY_PATH="/tmp/quiet/**"
+ALERTING_POLICY_NAME="Berserker File Activity Test Policy"
+IDLE_POLICY_NAME="Berserker Idle File Activity Policy"
 
 # Export default value for PAGERDUTY_INTEGRATION_KEY to fix Helm validation error
 export PAGERDUTY_INTEGRATION_KEY="${PAGERDUTY_INTEGRATION_KEY:-dummy-key-for-dev-testing}"
@@ -53,19 +70,18 @@ export SFA_AGENT=true
 # the chart. Injected via the deploy script's supported extra-values hook.
 image_registry="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$STACKROX_DIR" default-image-registry)}"
 sensor_helm_values="${DIR}/sensor-image-values.yaml"
-# FACT_PATHS tells the fact (file-activity monitor) container which paths to watch;
-# point it at where berserker writes its files (/tmp/data/**/*). The customize hook
-# keys env vars by container: the "/fact" key under the collector daemonset scopes
-# FACT_PATHS to the fact container only (the "/"-prefixed key is stripped for the
-# other collector-pod containers). See image/templates/helm/shared/templates/_metadata.tpl.
+# NOTE: FACT_PATHS is intentionally NOT set. It is the deprecated, static way of
+# telling the fact container what to monitor. The only supported mechanism now is
+# the runtime policy's "File Path" field: Sensor derives the monitored paths from
+# enabled file-access policies and pushes them to fact via the fact-config ConfigMap
+# (sensor/common/filesystem/settings_manager.go), gated by the ROX_SENSITIVE_FILE_ACTIVITY
+# feature flag (default enabled). Consequences, per test_mode:
+#   baseline   -> no policy -> fact monitors nothing (nearly idle).
+#   alerting   -> policy on /tmp/data/** -> fact monitors berserker's directory.
+#   idlepolicy -> policy on /tmp/quiet/** -> fact monitors an empty directory.
 cat > "$sensor_helm_values" <<EOF
 image:
   registry: ${image_registry}
-customize:
-  collector:
-    envVars:
-      "/fact":
-        FACT_PATHS: "/tmp/data/**/*"
 EOF
 export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="$sensor_helm_values"
 
@@ -76,7 +92,7 @@ export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="$sensor_helm_values"
 # and conflict with Helm's server-side apply on the next deploy.
 teardown || true
 
-results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_policy_${test_with_policy}"
+results_dir="${results_base_dir}/berserker_file_activity_results_${num_sensors}_${run_time}_${workload_name}_${test_mode}"
 # Start from a clean results dir. rm -rf succeeds even when the dir is absent,
 # so mkdir must run unconditionally (not as an || fallback) to ensure it exists.
 rm -rf "$results_dir"
@@ -161,17 +177,36 @@ end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Disabled policies completed in ${duration} seconds."
 
-# Enable or disable file activity policy based on parameter
-if [[ "$test_with_policy" == "true" ]]; then
-  start_time=$(date +%s)
-  echo "Enabling file activity test policy..."
-  "${DIR}/enable-file-activity-policy-berserker.sh"
-  end_time=$(date +%s)
-  duration=$((end_time - start_time))
-  echo "Enabling file activity policy completed in ${duration} seconds."
-else
-  echo "Running test WITHOUT file activity policy enabled"
-fi
+# Enable the file-activity policy appropriate to the mode. The policy's File Path is
+# what drives fact's monitoring (see the FACT_PATHS note above), so:
+#   alerting   -> watch /tmp/data/** (berserker's dir): fact busy, alerts fire.
+#   idlepolicy -> watch /tmp/quiet/** (empty): fact configured, no events, ~no alerts.
+#   baseline   -> no policy: fact idle.
+# active_policy_name is the policy CheckDB later queries for alerts; empty for baseline.
+active_policy_name=""
+case "$test_mode" in
+  alerting)
+    active_policy_name="${ALERTING_POLICY_NAME}"
+    start_time=$(date +%s)
+    echo "Enabling alerting file activity policy (watching /tmp/data/**)..."
+    "${DIR}/enable-file-activity-policy-berserker.sh" "/tmp/data/**" "${ALERTING_POLICY_NAME}"
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    echo "Enabling file activity policy completed in ${duration} seconds."
+    ;;
+  idlepolicy)
+    active_policy_name="${IDLE_POLICY_NAME}"
+    start_time=$(date +%s)
+    echo "Enabling idle file activity policy (watching ${IDLE_POLICY_PATH}, no berserker activity)..."
+    "${DIR}/enable-file-activity-policy-berserker.sh" "${IDLE_POLICY_PATH}" "${IDLE_POLICY_NAME}"
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    echo "Enabling idle file activity policy completed in ${duration} seconds."
+    ;;
+  baseline)
+    echo "Running baseline test with NO file activity policy (fact idle)"
+    ;;
+esac
 
 # Wait for workload to stabilize
 sleep 30
@@ -189,9 +224,9 @@ end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Get the diagnostic bundle completed in ${duration} seconds."
 
-if [[ "$test_with_policy" == "true" ]]; then
+if [[ -n "$active_policy_name" ]]; then
   start_time=$(date +%s)
-  "${DIR}/CheckDB-file-activity.sh" "Berserker File Activity Test Policy" > "${results_dir}/file_activity_alerts_1.txt"
+  "${DIR}/CheckDB-file-activity.sh" "${active_policy_name}" > "${results_dir}/file_activity_alerts_1.txt"
   end_time=$(date +%s)
   duration=$((end_time - start_time))
   echo "Checking the DB for file activity alerts completed in ${duration} seconds."
@@ -206,9 +241,9 @@ end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Getting the diagnostic bundle completed in ${duration} seconds."
 
-if [[ "$test_with_policy" == "true" ]]; then
+if [[ -n "$active_policy_name" ]]; then
   start_time=$(date +%s)
-  "${DIR}/CheckDB-file-activity.sh" "Berserker File Activity Test Policy" > "${results_dir}/file_activity_alerts_2.txt"
+  "${DIR}/CheckDB-file-activity.sh" "${active_policy_name}" > "${results_dir}/file_activity_alerts_2.txt"
   end_time=$(date +%s)
   duration=$((end_time - start_time))
   echo "Checking the DB for file activity alerts completed in ${duration} seconds."

@@ -24,10 +24,30 @@ fi
 # Array of batch sizes to test
 batch_sizes=(10 50 100 250 500)
 
-# Run a single test for the given batch size and policy setting.
+# The set of scenarios to run per batch size, and the results-dir suffix each maps to.
+# berserker uses three modes (see perf-test-file-activity-berserker.sh); the fake
+# workload keeps the original with/without-policy pair.
+#   berserker: mode name IS the suffix        -> ..._<mode>
+#   fake:      legacy true/false with a prefix -> ..._policy_<mode>
+if [[ "$workload_type" == "berserker" ]]; then
+  test_modes=(baseline alerting idlepolicy)
+else
+  test_modes=(false true)
+fi
+
+suffix_for_mode() {
+  local mode=$1
+  if [[ "$workload_type" == "berserker" ]]; then
+    echo "${mode}"
+  else
+    echo "policy_${mode}"
+  fi
+}
+
+# Run a single test for the given batch size and test mode.
 run_batch_test() {
   local batch=$1
-  local with_policy=$2
+  local mode=$2
 
   # Fake workload names by batch size (file-activity-batch-10); berserker names
   # by event rate, which is batch size * 10 (file-activity-100).
@@ -43,7 +63,9 @@ run_batch_test() {
   # (each test takes many minutes). This must mirror the results_dir name the
   # per-test scripts build (results_dir_prefix differs by workload). Delete a
   # dir to force its test to re-run; delete a partial dir before resuming.
-  local results_dir="${results_base_dir}/${results_dir_prefix}_${num_sensors}_${run_time}_${workload_name}_policy_${with_policy}"
+  local mode_suffix
+  mode_suffix="$(suffix_for_mode "$mode")"
+  local results_dir="${results_base_dir}/${results_dir_prefix}_${num_sensors}_${run_time}_${workload_name}_${mode_suffix}"
   if [[ -d "$results_dir" ]]; then
     echo "Results dir already exists, skipping: ${results_dir}"
     return 0
@@ -53,7 +75,7 @@ run_batch_test() {
     "$num_sensors" \
     "$run_time" \
     "$workload_name" \
-    "$with_policy" \
+    "$mode" \
     "$results_base_dir"
 
   # Clean up between tests
@@ -62,18 +84,14 @@ run_batch_test() {
   sleep 30
 }
 
-# Test each batch size without policy
-echo "=== Running ${workload_type} tests WITHOUT file activity policy ==="
-for batch in "${batch_sizes[@]}"; do
-  echo "Testing batch ${batch} without policy..."
-  run_batch_test "$batch" "false"
-done
-
-# Test each batch size with policy enabled
-echo "=== Running ${workload_type} tests WITH file activity policy ==="
-for batch in "${batch_sizes[@]}"; do
-  echo "Testing batch ${batch} with policy..."
-  run_batch_test "$batch" "true"
+# Run every batch size for each mode. Iterate mode-outer so all rates for one
+# scenario complete before moving to the next.
+for mode in "${test_modes[@]}"; do
+  echo "=== Running ${workload_type} tests: mode=${mode} ==="
+  for batch in "${batch_sizes[@]}"; do
+    echo "Testing batch ${batch} (mode=${mode})..."
+    run_batch_test "$batch" "$mode"
+  done
 done
 
 echo "All file activity tests completed!"
