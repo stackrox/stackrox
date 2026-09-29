@@ -306,25 +306,6 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 	return ds.storage.Walk(ctx, fn)
 }
 
-func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
-	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.removePLOP(ctx, ids)
-}
-
-func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
-
-	if len(ids) == 0 {
-		return nil
-	}
-
-	return ds.storage.DeleteMany(ctx, ids)
-}
-
 func (ds *datastoreImpl) fetchExistingPLOPs(
 	ctx context.Context,
 	indicatorIds []string,
