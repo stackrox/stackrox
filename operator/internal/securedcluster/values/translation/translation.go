@@ -618,22 +618,26 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 	return &cv
 }
 
-// clusterLabels returns the user-specified cluster labels merged with
-// auto-detected labels. When a Central CR exists anywhere in the cluster, the
-// label stackrox.io/central-colocated=true is added so that access scopes can
+// clusterLabels returns the user-specified cluster labels (excluding the
+// reserved central-colocated label) merged with auto-detected labels. When a
+// Central CR exists anywhere in the cluster, the label
+// stackrox.io/central-colocated=true is added so that access scopes can
 // dynamically match the cluster where Central runs. The Central CR may live
 // in a different namespace than the SecuredCluster CR, so the whole cluster
 // is searched rather than just the SecuredCluster's own namespace.
 func (t Translator) clusterLabels(ctx context.Context, sc platform.SecuredCluster) map[string]string {
+	labels := maps.Clone(sc.Spec.ClusterLabels)
+	delete(labels, centralColocatedLabelKey)
+
 	centralList := &platform.CentralList{}
 	if err := t.client.List(ctx, centralList); err != nil {
-		return sc.Spec.ClusterLabels
-	}
-	if len(centralList.Items) > 0 {
-		labels := make(map[string]string, len(sc.Spec.ClusterLabels)+1)
-		maps.Copy(labels, sc.Spec.ClusterLabels)
-		labels[centralColocatedLabelKey] = "true"
 		return labels
 	}
-	return sc.Spec.ClusterLabels
+	if len(centralList.Items) > 0 {
+		if labels == nil {
+			labels = make(map[string]string, 1)
+		}
+		labels[centralColocatedLabelKey] = "true"
+	}
+	return labels
 }
