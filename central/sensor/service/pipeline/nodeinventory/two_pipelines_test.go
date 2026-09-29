@@ -230,6 +230,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			if tt.setUpMocks != nil {
 				tt.setUpMocks(t, tt.mocks)
 			}
+			tt.mocks.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 			pNodeInv := NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 
