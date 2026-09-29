@@ -36,6 +36,8 @@ final class E2ETiming {
             outcome = "failure"
             throw failure
         } finally {
+            // Callers can add observed values (for example, retry attempts) while the span is open.
+            attributes.putAll(details)
             emit(spanId, name, "end", attributes, outcome)
         }
     }

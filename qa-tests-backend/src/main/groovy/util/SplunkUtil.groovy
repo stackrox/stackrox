@@ -71,13 +71,24 @@ class SplunkUtil {
     static List<SplunkAlert> waitForSplunkAlerts(int port, String search = "search") {
         log.info("Waiting for data to arrive in Splunk for search query: " + search)
         List<SplunkAlert> results = []
-        withRetry(40, 15) {
-            String searchId = createSearch(port, search)
-            results = getSplunkAlerts(port, searchId)
-            assert results.size() > 0
+        Map<String, String> timingDetails = [configured_retries: "40", retry_pause_seconds: "15"]
+        int attempts = 0
+        return E2ETiming.measure(
+                "external_service_event_visible_wait",
+                "SplunkUtil.waitForSplunkAlerts",
+                timingDetails
+        ) {
+            withRetry(40, 15) {
+                attempts++
+                timingDetails.put("attempts", attempts.toString())
+                String searchId = createSearch(port, search)
+                results = getSplunkAlerts(port, searchId)
+                timingDetails.put("alerts_found", results.size().toString())
+                assert results.size() > 0
+            }
+            log.info("Data arrived in Splunk!")
+            return results
         }
-        log.info("Data arrived in Splunk!")
-        return results
     }
 
     static List<String> waitForSplunkSyslog(int port, int timeoutSeconds) {
@@ -124,14 +135,25 @@ class SplunkUtil {
     }
 
     private static void waitForSearchComplete(int port, String searchId) {
-        withRetry(30, 3) {
-            Response status = splunkAdminRequest()
-                    .param("output_mode", "json")
-                    .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId)
-            assert status.statusCode() == 200
-            String dispatchState = status.jsonPath().getString("entry[0].content.dispatchState")
-            log.debug("Search " + searchId + " state: " + dispatchState)
-            assert dispatchState == "DONE" : "Search not complete: " + dispatchState
+        Map<String, String> timingDetails = [configured_retries: "30", retry_pause_seconds: "3"]
+        int attempts = 0
+        E2ETiming.measure(
+                "external_service_query_complete_wait",
+                "SplunkUtil.waitForSearchComplete",
+                timingDetails
+        ) {
+            withRetry(30, 3) {
+                attempts++
+                timingDetails.put("attempts", attempts.toString())
+                Response status = splunkAdminRequest()
+                        .param("output_mode", "json")
+                        .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId)
+                assert status.statusCode() == 200
+                String dispatchState = status.jsonPath().getString("entry[0].content.dispatchState")
+                timingDetails.put("dispatch_state", dispatchState ?: "unknown")
+                log.debug("Search " + searchId + " state: " + dispatchState)
+                assert dispatchState == "DONE" : "Search not complete: " + dispatchState
+            }
         }
     }
 
@@ -184,57 +206,63 @@ class SplunkUtil {
     }
 
     static SplunkDeployment createSplunk(Kubernetes orchestrator, String namespace) {
-        UUID uid = UUID.randomUUID()
-        String deploymentName = "splunk-" + uid
-        Deployment deployment
-        Service collectorSvc
-        Service syslogSvc
-        LocalPortForward splunkPortForward
-        try {
-            // No TCP readiness probe: Splunk binds 8089 after the container is
-            // running, and waitForSplunkBoot already waits on the health API.
-            deployment =
-                    new Deployment()
-                            .setNamespace(namespace)
-                            .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
-                            .addPort(8000)
-                            .addPort(8088)
-                            .addPort(8089)
-                            .addPort(514)
-                            .setEnv(ENV_VARIABLES)
-                            .addLabel("app", deploymentName)
-                            .addRequest("cpu", "500m")
-                            .addLimits("memory", "3Gi")
-            orchestrator.createDeployment(deployment)
+        return E2ETiming.measure(
+                "fixture_k8s_external_service_create",
+                "SplunkUtil.createSplunk",
+                [namespace: namespace]
+        ) {
+            UUID uid = UUID.randomUUID()
+            String deploymentName = "splunk-" + uid
+            Deployment deployment
+            Service collectorSvc
+            Service syslogSvc
+            LocalPortForward splunkPortForward
+            try {
+                // No TCP readiness probe: Splunk binds 8089 after the container is
+                // running, and waitForSplunkBoot already waits on the health API.
+                deployment =
+                        new Deployment()
+                                .setNamespace(namespace)
+                                .setName(deploymentName)
+                                .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
+                                .addPort(8000)
+                                .addPort(8088)
+                                .addPort(8089)
+                                .addPort(514)
+                                .setEnv(ENV_VARIABLES)
+                                .addLabel("app", deploymentName)
+                                .addRequest("cpu", "500m")
+                                .addLimits("memory", "3Gi")
+                orchestrator.createDeployment(deployment)
 
-            collectorSvc = new Service("splunk-collector-" + uid, namespace)
-            collectorSvc.addLabel("app", deploymentName)
-            collectorSvc.addPort(8088, "TCP")
-            collectorSvc.setType(Service.Type.CLUSTERIP)
-            orchestrator.createService(collectorSvc)
+                collectorSvc = new Service("splunk-collector-" + uid, namespace)
+                collectorSvc.addLabel("app", deploymentName)
+                collectorSvc.addPort(8088, "TCP")
+                collectorSvc.setType(Service.Type.CLUSTERIP)
+                orchestrator.createService(collectorSvc)
 
-            syslogSvc = new Service("splunk-syslog-" + uid, namespace)
-            syslogSvc.addLabel("app", deploymentName)
-            syslogSvc.addPort(514, "TCP")
-            syslogSvc.setType(Service.Type.CLUSTERIP)
-            orchestrator.createService(syslogSvc)
+                syslogSvc = new Service("splunk-syslog-" + uid, namespace)
+                syslogSvc.addLabel("app", deploymentName)
+                syslogSvc.addPort(514, "TCP")
+                syslogSvc.setType(Service.Type.CLUSTERIP)
+                orchestrator.createService(syslogSvc)
 
-            splunkPortForward = orchestrator.createPortForward(8089, deployment)
-        } catch (Exception e) {
-            log.info("Something bad happened, will run cleanup before failing", e)
-            if (syslogSvc) {
-                orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
+                splunkPortForward = orchestrator.createPortForward(8089, deployment)
+            } catch (Exception e) {
+                log.info("Something bad happened, will run cleanup before failing", e)
+                if (syslogSvc) {
+                    orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
+                }
+                if (collectorSvc) {
+                    orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
+                }
+                if (deployment) {
+                    orchestrator.deleteDeployment(deployment)
+                }
+                throw e
             }
-            if (collectorSvc) {
-                orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
-            }
-            if (deployment) {
-                orchestrator.deleteDeployment(deployment)
-            }
-            throw e
+            return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
         }
-        return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
     }
 
     static void waitForSplunkReady(int port) {
@@ -256,35 +284,51 @@ class SplunkUtil {
 
     static void waitForSplunkBoot(int port) {
         log.info("Waiting for Splunk to boot...")
-        Response response = null
-        withRetry(30, 10) {
-            response = splunkAdminRequest()
-                    .param("output_mode", "json")
-                    .get("https://127.0.0.1:" + port + "/services/server/health/splunkd/details")
-            assert response != null
-            log.debug("Splunkd status: \n" + response?.asString())
-            SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
-            for (SplunkHealthEntry entry: results.entry) {
-                // Splunk status is modeled as green/yellow/red.
-                // We're only interested in the Index Processor and Search Scheduler,
-                // as overall health can be degraded because of IOWait or disk storage.
-                assert entry.content.features.searchScheduler.health == "green"
-                // The IndexProcessor can be yellow because of free disk space. That's okay for the short-lived test.
-                assert (entry.content.features.indexProcessor.health == "green" ||
-                        entry.content.features.indexProcessor.health == "yellow")
+        Map<String, String> timingDetails = [configured_retries: "30", retry_pause_seconds: "10"]
+        int attempts = 0
+        E2ETiming.measure(
+                "fixture_external_service_ready_wait",
+                "SplunkUtil.waitForSplunkBoot",
+                timingDetails
+        ) {
+            Response response = null
+            withRetry(30, 10) {
+                attempts++
+                timingDetails.put("attempts", attempts.toString())
+                response = splunkAdminRequest()
+                        .param("output_mode", "json")
+                        .get("https://127.0.0.1:" + port + "/services/server/health/splunkd/details")
+                assert response != null
+                log.debug("Splunkd status: \n" + response?.asString())
+                SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
+                for (SplunkHealthEntry entry: results.entry) {
+                    // Splunk status is modeled as green/yellow/red.
+                    // We're only interested in the Index Processor and Search Scheduler,
+                    // as overall health can be degraded because of IOWait or disk storage.
+                    assert entry.content.features.searchScheduler.health == "green"
+                    // The IndexProcessor can be yellow because of free disk space. That's okay for the short-lived test.
+                    assert (entry.content.features.indexProcessor.health == "green" ||
+                            entry.content.features.indexProcessor.health == "yellow")
+                }
+                log.info("Splunk has completed booting")
             }
-            log.info("Splunk has completed booting")
         }
     }
 
     static void tearDownSplunk(Kubernetes orchestrator, SplunkDeployment splunkDeployment) {
-        List<String> imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
-        for (String secret : imagePullSecrets) {
-            orchestrator.deleteSecret(secret, splunkDeployment.deployment.namespace)
+        E2ETiming.measure(
+                "fixture_k8s_external_service_delete",
+                "SplunkUtil.tearDownSplunk",
+                [namespace: splunkDeployment.deployment.namespace]
+        ) {
+            List<String> imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
+            for (String secret : imagePullSecrets) {
+                orchestrator.deleteSecret(secret, splunkDeployment.deployment.namespace)
+            }
+            orchestrator.deleteService(splunkDeployment.syslogSvc.name, splunkDeployment.syslogSvc.namespace)
+            orchestrator.deleteService(splunkDeployment.collectorSvc.name, splunkDeployment.collectorSvc.namespace)
+            orchestrator.deleteDeployment(splunkDeployment.deployment)
         }
-        orchestrator.deleteService(splunkDeployment.syslogSvc.name, splunkDeployment.syslogSvc.namespace)
-        orchestrator.deleteService(splunkDeployment.collectorSvc.name, splunkDeployment.collectorSvc.namespace)
-        orchestrator.deleteDeployment(splunkDeployment.deployment)
     }
 
     static void postToSplunk(int port, String path, Map<String, String> parameters) {

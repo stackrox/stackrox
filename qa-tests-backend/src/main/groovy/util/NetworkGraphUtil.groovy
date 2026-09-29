@@ -114,23 +114,38 @@ class NetworkGraphUtil {
     static checkForEdge(String sourceId, String targetId, Timestamp since = null,
                         int timeoutSeconds = 90, String query = null) {
         int intervalSeconds = 1
-        int waitTime
-        def startTime = System.currentTimeMillis()
-        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            if (waitTime > 0) {
-                sleep intervalSeconds * 1000
-            }
+        Map<String, String> timingDetails = [
+                timeout_seconds: timeoutSeconds.toString(),
+                poll_interval_seconds: intervalSeconds.toString(),
+        ]
+        return E2ETiming.measure(
+                "stackrox_network_graph_edge_wait",
+                "NetworkGraphUtil.checkForEdge",
+                timingDetails
+        ) {
+            int attempts = 0
+            int waitTime
+            def startTime = System.currentTimeMillis()
+            for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+                if (waitTime > 0) {
+                    sleep intervalSeconds * 1000
+                }
 
-            def graph = NetworkGraphService.getNetworkGraph(since, query)
-            def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
-            if (edges != null && edges.size() > 0) {
-                log.debug "Found source ${sourceId} -> target ${targetId} " +
-                    "in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
-                return edges
+                attempts++
+                timingDetails.put("poll_attempts", attempts.toString())
+                def graph = NetworkGraphService.getNetworkGraph(since, query)
+                def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
+                if (edges != null && edges.size() > 0) {
+                    timingDetails.put("result", "edge_found")
+                    log.debug "Found source ${sourceId} -> target ${targetId} " +
+                            "in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                    return edges
+                }
             }
+            timingDetails.put("result", "edge_not_found")
+            log.warn "SR did not detect the edge in Network Flow graph"
+            return null
         }
-        log.warn "SR did not detect the edge in Network Flow graph"
-        return null
     }
 
     static NetworkGraphNodes getDeploymentsAsGraphNodes() {
@@ -174,4 +189,3 @@ class NetworkGraphUtil {
         }
     }
 }
-
