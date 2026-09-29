@@ -22,6 +22,10 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
+# Bake the image version in so init-entrypoint.sh can detect downgrades without
+# relying on the version being parsed out of the image ref at deploy time.
+ENV SCANNER_V4_DB_VERSION="${BUILD_TAG}"
+
 USER root
 
 COPY \
