@@ -5,6 +5,7 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -32,9 +33,7 @@ func startE2ETestActivity(t testutils.T, category, helper string, details map[st
 
 	spanID := fmt.Sprintf("test-activity:%d:%d", os.Getpid(), e2eTimingSequence.Add(1))
 	attributes := make(map[string]string, len(details)+1)
-	for key, value := range details {
-		attributes[key] = value
-	}
+	maps.Copy(attributes, details)
 	if named, ok := t.(interface{ Name() string }); ok {
 		attributes["test_name"] = named.Name()
 	}
