@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -262,8 +264,12 @@ class AdmissionControllerTest extends BaseSpecification {
                     def policyExists = true
                     try {
                         Services.getPolicy(policyId)
-                    } catch (Exception e) {
-                        policyExists = false
+                    } catch (StatusRuntimeException e) {
+                        if (e.status.code == Status.Code.NOT_FOUND) {
+                            policyExists = false
+                        } else {
+                            throw e
+                        }
                     }
                     assert !policyExists : "Policy ${policyId} still exists after deletion"
                 }
