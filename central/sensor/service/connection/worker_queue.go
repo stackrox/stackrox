@@ -106,5 +106,6 @@ func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal,
 	for i := 0; i < w.totalSize; i++ {
 		go w.runWorker(ctx, i, stopSig, deduper, handler)
 	}
+
 	w.waitGroup.Wait()
 }
