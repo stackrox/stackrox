@@ -94,8 +94,8 @@ type Exclusion struct {
 	Name       string     `json:"name,omitempty"`
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
-	// ExcludeByType excludes all workloads of the selected Kubernetes kinds.
 	// +optional
+	// ExcludeByType excludes all workloads of the selected Kubernetes kinds.
 	ExcludeByType *ExcludeByType `json:"excludeByType,omitempty"`
 	// +optional
 	// +kubebuilder:validation:Format="date-time"
@@ -106,8 +106,8 @@ type Exclusion struct {
 type WorkloadType string
 
 type ExcludeByType struct {
-	// Types is the list of Kubernetes workload kinds to exclude.
 	// +kubebuilder:validation:MinItems=1
+	// Types is the list of Kubernetes workload kinds to exclude.
 	Types []WorkloadType `json:"types"`
 }
 
