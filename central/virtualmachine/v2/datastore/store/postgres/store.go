@@ -69,8 +69,8 @@ func (s *storeImpl) EnsureExists(ctx context.Context, vmID, clusterID string) er
 		}
 
 		const stmt = "INSERT INTO " + vmTable +
-			" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
-			" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+			" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, LastAgentContact, serialized)" +
+			" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 			" ON CONFLICT(Id) DO NOTHING"
 
 		_, err := s.db.Exec(ctx, stmt,
@@ -82,6 +82,7 @@ func (s *storeImpl) EnsureExists(ctx context.Context, vmID, clusterID string) er
 			vm.GetGuestOs(),
 			vm.GetState(),
 			protocompat.NilOrTime(vm.GetLastUpdated()),
+			protocompat.NilOrTime(vm.GetLastAgentContact()),
 			serialized,
 		)
 		return err
@@ -124,6 +125,11 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 				return errors.Wrapf(rbErr, "rollback after: %v", err)
 			}
 			return err
+		}
+
+		// Sensor informer upserts never carry last_agent_contact; keep the scrape stamp.
+		if existingVM != nil && vm.GetLastAgentContact() == nil {
+			vm.LastAgentContact = existingVM.GetLastAgentContact()
 		}
 
 		if existingVM != nil && existingVM.GetHash() == hash {
@@ -174,17 +180,19 @@ func (s *storeImpl) insertVM(ctx context.Context, tx *postgres.Tx, vm *storage.V
 		vm.GetGuestOs(),
 		vm.GetState(),
 		protocompat.NilOrTime(vm.GetLastUpdated()),
+		protocompat.NilOrTime(vm.GetLastAgentContact()),
 		serialized,
 	}
 
 	const stmt = "INSERT INTO " + vmTable +
-		" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
-		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+		" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, LastAgentContact, serialized)" +
+		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 		" ON CONFLICT(Id) DO UPDATE SET" +
 		" Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace," +
 		" ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName," +
 		" GuestOs = EXCLUDED.GuestOs, State = EXCLUDED.State," +
-		" LastUpdated = EXCLUDED.LastUpdated, serialized = EXCLUDED.serialized"
+		" LastUpdated = EXCLUDED.LastUpdated, LastAgentContact = EXCLUDED.LastAgentContact," +
+		" serialized = EXCLUDED.serialized"
 	_, err = tx.Exec(ctx, stmt, values...)
 	return err
 }
@@ -200,8 +208,8 @@ func (s *storeImpl) updateVMTimestamp(ctx context.Context, tx *postgres.Tx, vm *
 		return err
 	}
 
-	const stmt = "UPDATE " + vmTable + " SET LastUpdated = $2, serialized = $3 WHERE Id = $1"
-	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(vm.GetLastUpdated()), serialized)
+	const stmt = "UPDATE " + vmTable + " SET LastUpdated = $2, LastAgentContact = $3, serialized = $4 WHERE Id = $1"
+	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(vm.GetLastUpdated()), protocompat.NilOrTime(vm.GetLastAgentContact()), serialized)
 	return err
 }
 
@@ -313,7 +321,10 @@ func (s *storeImpl) touchVMLastUpdated(ctx context.Context, tx *postgres.Tx, vmI
 	if existingVM == nil {
 		return errox.NotFound.Newf("VM %s not found", vmID)
 	}
-	existingVM.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&t)
+	ts := protocompat.ConvertTimeToTimestampOrNil(&t)
+	existingVM.LastUpdated = ts
+	// UpsertScan is the scrape-derived path (index-report SYNC), so last contact moves with last_updated.
+	existingVM.LastAgentContact = ts
 	return s.updateVMTimestamp(ctx, tx, existingVM)
 }
 

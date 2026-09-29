@@ -36,6 +36,13 @@ const (
 	ForceRefetchSignaturesOnly
 	ForceRefetchCachedValuesOnly
 	UseImageNamesRefetchCachedValues
+	// ForceRefetchMetadataOnly forces a registry metadata refresh (bypassing the
+	// in-memory metadata cache) but allows reusing an existing scan from the
+	// database if the resolved image ID already has one. This is the hybrid
+	// option used by admission-controller tag-only requests: always confirm the
+	// current tag→digest mapping via registry, yet skip Scanner when Central
+	// already holds scan data for that image ID.
+	ForceRefetchMetadataOnly
 )
 
 // forceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
@@ -86,7 +93,7 @@ type EnrichmentContext struct {
 // FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved
 // version of the external metadata
 func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch
+	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch && e.FetchOpt != ForceRefetchMetadataOnly
 }
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it

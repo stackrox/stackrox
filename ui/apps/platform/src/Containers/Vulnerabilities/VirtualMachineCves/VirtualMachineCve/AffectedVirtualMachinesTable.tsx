@@ -8,19 +8,40 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useSet from 'hooks/useSet';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import type { VMCVEAffectedVMRow } from 'services/VirtualMachineService';
 
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+import AffectedComponentsTable from '../components/AffectedComponentsTable';
+import {
+    CVE_SEVERITY_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    GUEST_OS_SORT_FIELD,
+    VIRTUAL_MACHINE_SORT_FIELD,
+} from '../../utils/sortFields';
+
+export const sortFields = [
+    VIRTUAL_MACHINE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    GUEST_OS_SORT_FIELD,
+];
+
+export const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 export type AffectedVirtualMachinesTableProps = {
+    cveId: string;
     tableState: TableUIState<VMCVEAffectedVMRow>;
+    getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
 };
 
 function AffectedVirtualMachinesTable({
+    cveId,
     tableState,
+    getSortParams,
     onClearFilters,
 }: AffectedVirtualMachinesTableProps) {
     const colSpan = 7;
@@ -31,11 +52,11 @@ function AffectedVirtualMachinesTable({
             <Thead noWrap>
                 <Tr>
                     <Th screenReaderText="Row expansion" />
-                    <Th>Virtual machine</Th>
-                    <Th>CVE severity</Th>
+                    <Th sort={getSortParams(VIRTUAL_MACHINE_SORT_FIELD)}>Virtual machine</Th>
+                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top CVE severity</Th>
                     <Th>CVE status</Th>
-                    <Th>CVSS</Th>
-                    <Th>Guest OS</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
+                    <Th sort={getSortParams(GUEST_OS_SORT_FIELD)}>Guest OS</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
@@ -74,7 +95,7 @@ function AffectedVirtualMachinesTable({
                                             />
                                         </Link>
                                     </Td>
-                                    <Td dataLabel="CVE severity" modifier="nowrap">
+                                    <Td dataLabel="Top CVE severity" modifier="nowrap">
                                         <VulnerabilitySeverityIconText
                                             severity={virtualMachine.severity}
                                         />
@@ -84,7 +105,7 @@ function AffectedVirtualMachinesTable({
                                             isFixable={virtualMachine.isFixable}
                                         />
                                     </Td>
-                                    <Td dataLabel="CVSS" modifier="nowrap">
+                                    <Td dataLabel="Top CVSS" modifier="nowrap">
                                         <CvssFormatted cvss={virtualMachine.cvss} />
                                     </Td>
                                     <Td dataLabel="Guest OS">
@@ -101,7 +122,12 @@ function AffectedVirtualMachinesTable({
                                     <Td />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
-                                            Affected component details coming soon
+                                            {isExpanded && (
+                                                <AffectedComponentsTable
+                                                    virtualMachineId={virtualMachine.vmId}
+                                                    cveId={cveId}
+                                                />
+                                            )}
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>

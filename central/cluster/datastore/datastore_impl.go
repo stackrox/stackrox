@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"math"
 	"regexp"
 	"slices"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
@@ -34,6 +36,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -58,6 +62,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 )
 
 const (
@@ -94,6 +100,9 @@ type datastoreImpl struct {
 	compliancePruner          compliancePruning.Pruner
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
+	virtualMachineDataStore   virtualMachineDataStore.DataStore
+	// virtualMachineV2DataStore is nil when VirtualMachinesEnhancedDataModel is off.
+	virtualMachineV2DataStore virtualMachineV2DataStore.DataStore
 
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
@@ -316,6 +325,7 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	}
 
 	ds.populateHealthInfos(ctx, clusters...)
+	ds.populateSensorVersionCompatibility(clusters...)
 	ds.updateClusterPriority(clusters...)
 	return clusters, nil
 }
@@ -330,6 +340,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	}
 
 	ds.populateHealthInfos(ctx, cluster)
+	ds.populateSensorVersionCompatibility(cluster)
 	ds.updateClusterPriority(cluster)
 	return cluster, true, nil
 }
@@ -345,6 +356,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		}
 
 		ds.populateHealthInfos(ctx, clusters...)
+		ds.populateSensorVersionCompatibility(clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
@@ -365,6 +377,18 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 		return "", false, nil
 	}
 	return val.(string), true, nil
+}
+
+func (ds *datastoreImpl) GetClusterID(ctx context.Context, name string) (string, bool, error) {
+	idVal, ok := ds.nameToIDCache.Get(name)
+	if !ok {
+		return "", false, nil
+	}
+	id := idVal.(string)
+	if allowed, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !allowed {
+		return "", false, err
+	}
+	return id, true, nil
 }
 
 // Figure out if an indicator matches provided namespace filter. We consider
@@ -400,6 +424,7 @@ func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clonedCluster := cluster.CloneVT()
 			ds.populateHealthInfos(ctx, clonedCluster)
+			ds.populateSensorVersionCompatibility(clonedCluster)
 			ds.updateClusterPriority(clonedCluster)
 			return fn(clonedCluster)
 		})
@@ -634,7 +659,9 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return err
 	}
 
+	release := lifecycle.Singleton().BeginDeletion(id)
 	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
+		release()
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
@@ -642,11 +669,12 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
-	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
+	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done, release)
 	return nil
 }
 
-func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
+func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal, release func()) {
+	defer release()
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
 		ds.cm.CloseConnection(cluster.GetId())
@@ -672,6 +700,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
+
+	ds.removeClusterVirtualMachines(ctx, cluster)
 
 	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
@@ -748,6 +778,43 @@ func (ds *datastoreImpl) removeClusterPods(ctx context.Context, cluster *storage
 			log.Errorf("Failed to remove pod with id %s as part of removal of cluster %s: %v", pod.ID, cluster.GetId(), err)
 		}
 	}
+}
+
+// removeClusterVirtualMachines deletes V1 and V2 VM inventory for the cluster.
+// Child scan/component/CVE rows cascade from the VM; ClusterID has no FK to clusters.
+func (ds *datastoreImpl) removeClusterVirtualMachines(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	q.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
+
+	if ds.virtualMachineDataStore != nil {
+		vms, err := ds.virtualMachineDataStore.SearchRawVirtualMachines(ctx, q)
+		if err != nil {
+			log.Errorf("Failed to get virtual machines for removed cluster %s: %v", cluster.GetId(), err)
+		} else if ids := virtualMachineIDs(vms); len(ids) > 0 {
+			if err := ds.virtualMachineDataStore.DeleteVirtualMachines(ctx, ids...); err != nil {
+				log.Errorf("Failed to remove virtual machines as part of removal of cluster %s: %v", cluster.GetId(), err)
+			}
+		}
+	}
+
+	if ds.virtualMachineV2DataStore != nil {
+		results, err := ds.virtualMachineV2DataStore.Search(ctx, q)
+		if err != nil {
+			log.Errorf("Failed to get v2 virtual machines for removed cluster %s: %v", cluster.GetId(), err)
+		} else if ids := pkgSearch.ResultsToIDs(results); len(ids) > 0 {
+			if err := ds.virtualMachineV2DataStore.DeleteVirtualMachines(ctx, ids...); err != nil {
+				log.Errorf("Failed to remove v2 virtual machines as part of removal of cluster %s: %v", cluster.GetId(), err)
+			}
+		}
+	}
+}
+
+func virtualMachineIDs(vms []*storage.VirtualMachine) []string {
+	ids := make([]string, 0, len(vms))
+	for _, vm := range vms {
+		ids = append(ids, vm.GetId())
+	}
+	return ids
 }
 
 func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) []string {
@@ -931,6 +998,42 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 		}
 		cluster.HealthStatus = infos[healthIdx]
 		healthIdx++
+	}
+}
+
+func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage.Cluster) {
+	for _, cluster := range clusters {
+		if cluster.GetStatus() == nil {
+			continue
+		}
+		sensorXY, err := productstreams.ParseXYFromVersionString(cluster.GetStatus().GetSensorVersion())
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		compat, err := versioncompatibility.ClassifyVersion(sensorXY)
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		cluster.Status.SensorVersionCompatibility = compatibilityToProto(compat)
+	}
+}
+
+func compatibilityToProto(c versioncompatibility.Compatibility) storage.SensorVersionCompatibility {
+	switch c {
+	case versioncompatibility.Matched:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED
+	case versioncompatibility.CompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND
+	case versioncompatibility.CompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD
+	case versioncompatibility.IncompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND
+	case versioncompatibility.IncompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD
+	default:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 	}
 }
 

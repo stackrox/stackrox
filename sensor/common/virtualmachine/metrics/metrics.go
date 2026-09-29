@@ -1,16 +1,9 @@
 package metrics
 
 import (
-	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
-
-// StartTimeToMS allows to record sub-millisecond durations. Without this, things faster than 1ms are rounded to 0.
-func StartTimeToMS(t time.Time) float64 {
-	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
-}
 
 var (
 	StatusCentralNotReadyLabels = prometheus.Labels{"status": "central not ready"}
@@ -30,56 +23,13 @@ var IndexReportsSent = prometheus.NewCounterVec(
 	[]string{"status"},
 )
 
-// IndexReportProcessingDuration label values.
-const (
-	// IndexReportHandlingMessageToCentralSuccess marks processing flows that successfully send to Central.
-	IndexReportHandlingMessageToCentralSuccess = "success"
-	// IndexReportHandlingMessageToCentralNilReport marks flows that exit because the report was nil.
-	IndexReportHandlingMessageToCentralNilReport = "nil_report"
-	// IndexReportHandlingMessageToCentralInvalidCID marks flows that exit because the message could not be constructed due to an invalid vsock CID.
-	IndexReportHandlingMessageToCentralInvalidCID = "invalid_vsock_cid"
-	// IndexReportHandlingMessageToCentralVMUnknown marks flows that exit because the virtual machine is not known to Sensor.
-	IndexReportHandlingMessageToCentralVMUnknown = "vm_unknown_to_sensor"
-)
-
-// IndexReportProcessingDurationMilliseconds tracks how long Sensor spends processing index reports after dequeuing them.
-var IndexReportProcessingDurationMilliseconds = prometheus.NewHistogramVec(
-	prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_processing_duration_milliseconds",
-		Help:      "Distribution of time spent (in ms) processing virtual machine index reports after reading from indexReports and before sending to Central",
-		Buckets:   prometheus.ExponentialBuckets(10, 2, 12),
-	},
-	[]string{"outcome"},
-)
-
-// IndexReportEnqueueOutcome label values for enqueue latency observations.
-const (
-	IndexReportEnqueueOutcomeSuccess  = "success"
-	IndexReportEnqueueOutcomeTimeout  = "context_timeout"
-	IndexReportEnqueueOutcomeCanceled = "context_canceled"
-)
-
-// IndexReportBlockingEnqueueDurationMilliseconds measures how long Sensor waits after detecting backpressure.
-var IndexReportBlockingEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
-	prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_blocking_enqueue_duration_milliseconds",
-		Help:      "Time spent (in ms) waiting for indexReports capacity after encountering a full channel",
-		Buckets:   append([]float64{1, 5, 10, 50, 100, 250, 500}, prometheus.ExponentialBuckets(1000, 2, 8)...), // 1ms to 128s
-	},
-	[]string{"outcome"},
-)
-
 // IndexReportEnqueueBlockedTotal counts how often the enqueue channel was full.
 var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "virtual_machine_index_report_enqueue_blocked_total",
-		Help:      "Number of times virtual machine index report enqueue attempts found the indexReports channel full",
+		Help:      "Number of times virtual machine index report enqueue attempts found the channel full",
 	},
 )
 
@@ -105,18 +55,60 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
-// Pull-mode request status label values for PullRequestsTotal.
+// Pull-mode GetReport outcomes are split across three counters so transport,
+// GetReport protocol, and scrape-pipeline results stay distinct. Each
+// GetReport attempt increments exactly one of those. PullSyncTotal counts
+// the optional second VSOCK RPC that pushes a repo-to-CPE mapping.
+
+// Transport-layer status values for PullTransportTotal.
 const (
-	PullStatusSuccess       = "success"
-	PullStatusUnchanged     = "unchanged"
-	PullStatusDialError     = "dial_error"
-	PullStatusReadError     = "read_error"
-	PullStatusInvalidReport = "invalid_report"
-	PullStatusSendError     = "send_error"
-	PullStatusNotReady      = "not_ready"
-	PullStatusUnknownMethod = "unknown_method"
-	PullStatusTimeout       = "timeout"
-	PullStatusBusy          = "busy"
+	PullTransportDialError     = "dial_error"
+	PullTransportTimeout       = "timeout"
+	PullTransportReadError     = "read_error"
+	PullTransportAbnormalClose = "abnormal_close"
+	PullTransportUnexpected    = "unexpected"
+)
+
+// GetReport protocol status values for PullGetReportTotal.
+const (
+	PullGetReportUnchanged         = "unchanged"
+	PullGetReportNotReady          = "not_ready"
+	PullGetReportMappingRequired   = "mapping_required"
+	PullGetReportUnknownMethod     = "unknown_method"
+	PullGetReportBusy              = "busy"
+	PullGetReportInternalError     = "internal_error"
+	PullGetReportMalformedRequest  = "malformed_request"
+	PullGetReportRequestTooLarge   = "request_too_large"
+	PullGetReportUnknownAgentError = "unknown_agent_error"
+)
+
+// Scrape-pipeline status values for PullScrapeTotal (post-GetReport).
+const (
+	PullScrapeSuccess       = "success"
+	PullScrapeInvalidReport = "invalid_report"
+	PullScrapeSendError     = "send_error"
+)
+
+// Sync-RPC status values for PullSyncTotal.
+const (
+	// PullSyncSuccess counts an accepted push; Updated true/false both count.
+	PullSyncSuccess = "success"
+	// PullSyncError is a sync dial failure or a rejection other than not-Sensor-managed.
+	PullSyncError = "error"
+	// PullSyncNotManaged is a rejection Sensor's own gate should have prevented.
+	PullSyncNotManaged = "not_managed"
+	// PullSyncURLHashMismatch is a URL-managed agent whose hash differs from Sensor's cache; Sensor never dials.
+	PullSyncURLHashMismatch = "url_hash_mismatch"
+	// PullSyncTimeout is a skipped sync because GetReport already consumed the per-VM deadline.
+	PullSyncTimeout = "timeout"
+)
+
+// Mapping-path label values for PullTrackedVMsByMappingPath. Bounded to
+// the three RepoCPEMappingUpdatePath cases so cardinality stays fixed.
+const (
+	MappingPathSensor      = "sensor"
+	MappingPathURL         = "url"
+	MappingPathUnspecified = "unspecified"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
@@ -152,13 +144,15 @@ var PullTotalDurationSeconds = prometheus.NewHistogram(
 	},
 )
 
-// PullCycleDurationSeconds measures the full poll cycle across all VMs.
-var PullCycleDurationSeconds = prometheus.NewHistogram(
+// PullTickDurationSeconds measures how long each scraper tick spends
+// scraping the VMs that were due, not a poll of the whole VM set: VMs are
+// scraped on independent per-VM schedules, not in lockstep.
+var PullTickDurationSeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycle_duration_seconds",
-		Help:      "Duration of a full poll cycle across all VMs",
+		Name:      "vsock_pull_tick_duration_seconds",
+		Help:      "Duration of a scraper tick spent scraping the VMs due at that tick",
 		Buckets:   prometheus.ExponentialBuckets(1, 2, 10), // 1s to ~512s
 	},
 )
@@ -189,53 +183,170 @@ var PullReportPackages = prometheus.NewHistogram(
 	},
 )
 
-// PullRequestsTotal counts per-VM pull attempts by status.
-var PullRequestsTotal = prometheus.NewCounterVec(
+// PullTransportTotal counts per-VM pull attempts that failed at the VSOCK
+// transport layer (dial / read / abnormal close) before a protocol result.
+var PullTransportTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_requests_total",
-		Help:      "Per-VM pull attempts by outcome status",
+		Name:      "vsock_pull_transport_total",
+		Help:      "Per-VM pull attempts that failed at the VSOCK transport layer",
 	},
 	[]string{"status"},
 )
 
-// PullCyclesTotal counts poll cycles executed.
-var PullCyclesTotal = prometheus.NewCounter(
+// PullGetReportTotal counts per-VM GetReport protocol outcomes (Unchanged,
+// ErrorCode sentinels). Transport failures are counted on PullTransportTotal
+// instead; successful full reports continue into the scrape pipeline and are
+// counted on PullScrapeTotal.
+var PullGetReportTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycles_total",
-		Help:      "Total number of pull poll cycles executed",
+		Name:      "vsock_pull_get_report_total",
+		Help:      "Per-VM GetReport protocol outcomes (unchanged and agent ErrorCode results)",
+	},
+	[]string{"status"},
+)
+
+// PullScrapeTotal counts per-VM scrape-pipeline outcomes after a full
+// GetReport payload was received (viability check, send to Central, success).
+var PullScrapeTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_scrape_total",
+		Help:      "Per-VM scrape-pipeline outcomes after a full GetReport payload was received",
+	},
+	[]string{"status"},
+)
+
+// PullSyncTotal counts the optional second VSOCK RPC that pushes a
+// repo-to-CPE mapping after GetReport. It is not part of the GetReport
+// transport/protocol/scrape partition.
+var PullSyncTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_sync_total",
+		Help:      "Per-VM repo-to-CPE mapping sync outcomes (second VSOCK RPC after GetReport)",
+	},
+	[]string{"status"},
+)
+
+// PullTicksTotal counts scraper ticks executed.
+var PullTicksTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_ticks_total",
+		Help:      "Total number of scraper ticks executed",
 	},
 )
 
-// PullVMsInCycle tracks the number of running VMs in the last poll set.
-var PullVMsInCycle = prometheus.NewGauge(
+// PullTrackedVMs tracks the number of VMs currently tracked for pull-mode
+// scraping, regardless of how many were due at the last tick.
+var PullTrackedVMs = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_vms_in_cycle",
-		Help:      "Number of running VMs in the last poll set",
+		Name:      "vsock_pull_tracked_vms",
+		Help:      "Number of VMs currently tracked for pull-mode scraping",
+	},
+)
+
+// PullTrackedVMsByMappingPath is currently tracked VMs partitioned by
+// repo-to-CPE mapping update path. It is fleet mix, not scrape events;
+// the three series sum to vsock_pull_tracked_vms.
+var PullTrackedVMsByMappingPath = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_tracked_vms_by_mapping_path",
+		Help:      "Number of VMs currently tracked for pull-mode scraping, partitioned by repo-to-CPE mapping update path (sensor, url, unspecified). This is fleet mix, not scrape events.",
+	},
+	[]string{"path"},
+)
+
+// PullDueVMs is how many VMs were eligible to scrape at the start of the last
+// tick (nextAttemptAt had arrived and they were not already in flight).
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help:      "How many VMs were eligible to scrape at the beginning of the last scraper tick",
+	},
+)
+
+// PullStartsPerTick is how many VM scrapes each tick launches. Idle ticks
+// (nobody due) are omitted so the histogram is not dominated by zeros.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick. " +
+			"Idle ticks are not observed. Compare with vsock_pull_due_vms: " +
+			"spread due times keep both small; a mass of large starts is a dump.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central. The first forward after start is not observed.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. The first forward after Sensor start does not count.",
+		// 10ms to ~47h. Sized for a 24h poll in extreme cases so those
+		// gaps stay in a finite bucket instead of +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 25),
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to cadence after success or a permanent non-retry outcome (retries/NACKs do not).
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
+		// 250ms to ~36h. Sized for a 24h poll in extreme cases (W up to 24h).
+		Buckets: prometheus.ExponentialBuckets(0.25, 2, 20),
 	},
 )
 
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
-		IndexReportProcessingDurationMilliseconds,
-		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
 		IndexReportAcksReceived,
 		PullDialDurationSeconds,
 		PullReadDurationSeconds,
 		PullTotalDurationSeconds,
-		PullCycleDurationSeconds,
+		PullTickDurationSeconds,
 		PullReportBytes,
 		PullReportPackages,
-		PullRequestsTotal,
-		PullCyclesTotal,
-		PullVMsInCycle,
+		PullTransportTotal,
+		PullGetReportTotal,
+		PullScrapeTotal,
+		PullSyncTotal,
+		PullTicksTotal,
+		PullTrackedVMs,
+		PullTrackedVMsByMappingPath,
+		PullDueVMs,
+		PullStartsPerTick,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
+	for _, path := range []string{MappingPathSensor, MappingPathURL, MappingPathUnspecified} {
+		PullTrackedVMsByMappingPath.WithLabelValues(path).Set(0)
+	}
 }

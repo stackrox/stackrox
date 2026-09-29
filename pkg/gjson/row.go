@@ -486,7 +486,7 @@ func (ct *columnTree) createColumnFromColumnNodes(columnIndex int) []string {
 		return nodes[i].index < nodes[j].index
 	})
 
-	var column []string
+	var column []string //nolint:prealloc // size depends on duplicateElems calls, unpredictable
 	for _, node := range nodes {
 		amount := node.countLeafNodes(0)
 

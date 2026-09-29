@@ -71,7 +71,6 @@ tests/roxctl/bats-tests/local/central-migrate-to-operator.bats   @stackrox/insta
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
 /.github/workflows/scanner*                               @stackrox/scanner
-/.github/workflows/update_scanner_periodic.yaml           @stackrox/scanner
 /central/image/service/                                   @stackrox/scanner
 /central/imageintegration/service/                        @stackrox/scanner
 /central/imageintegration/store/defaults.go               @stackrox/scanner

@@ -30,17 +30,6 @@ var staticDefaults = platform.SecuredClusterSpec{
 	ProcessBaselines: &platform.ProcessBaselinesSpec{
 		AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
 	},
-	Scanner: &platform.LocalScannerComponentSpec{
-		ScannerComponent: platform.LocalScannerComponentAutoSense.Pointer(),
-		Analyzer: &platform.ScannerAnalyzerComponent{
-			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: new(platform.ScannerAutoScalingEnabled),
-				Replicas:    new(int32(3)),
-				MinReplicas: new(int32(2)),
-				MaxReplicas: new(int32(5)),
-			},
-		},
-	},
 	ScannerV4: &platform.LocalScannerV4ComponentSpec{
 		// ScannerComponent field is set using a dedicated defaulting flow.
 		Indexer: &platform.ScannerV4Component{
@@ -77,11 +66,10 @@ var staticDefaults = platform.SecuredClusterSpec{
 		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
 	},
 	VirtualMachines: &platform.VirtualMachinesSpec{
-		Mode: platform.VirtualMachinesModeDisabled.Pointer(),
 		Scraper: &platform.VirtualMachinesScraperSpec{
 			Concurrency:       new(int32(20)),
 			MaxResponseSizeKB: new(int32(16384)),
-			PollInterval:      new("5m"),
+			PollInterval:      new("4h"),
 		},
 	},
 }

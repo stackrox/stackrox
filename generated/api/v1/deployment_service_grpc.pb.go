@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	DeploymentService_GetDeployment_FullMethodName                  = "/v1.DeploymentService/GetDeployment"
 	DeploymentService_GetDeploymentWithRisk_FullMethodName          = "/v1.DeploymentService/GetDeploymentWithRisk"
+	DeploymentService_GetDeploymentRiskAISummary_FullMethodName     = "/v1.DeploymentService/GetDeploymentRiskAISummary"
 	DeploymentService_CountDeployments_FullMethodName               = "/v1.DeploymentService/CountDeployments"
 	DeploymentService_ListDeployments_FullMethodName                = "/v1.DeploymentService/ListDeployments"
 	DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName = "/v1.DeploymentService/ListDeploymentsWithProcessInfo"
@@ -39,6 +40,8 @@ type DeploymentServiceClient interface {
 	GetDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Deployment, error)
 	// GetDeploymentWithRisk returns a deployment and its risk given its ID.
 	GetDeploymentWithRisk(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetDeploymentWithRiskResponse, error)
+	// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
+	GetDeploymentRiskAISummary(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*DeploymentRiskAISummaryResponse, error)
 	// CountDeployments returns the number of deployments.
 	CountDeployments(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountDeploymentsResponse, error)
 	// ListDeployments returns the list of deployments.
@@ -72,6 +75,16 @@ func (c *deploymentServiceClient) GetDeploymentWithRisk(ctx context.Context, in 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDeploymentWithRiskResponse)
 	err := c.cc.Invoke(ctx, DeploymentService_GetDeploymentWithRisk_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) GetDeploymentRiskAISummary(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*DeploymentRiskAISummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeploymentRiskAISummaryResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_GetDeploymentRiskAISummary_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +160,8 @@ type DeploymentServiceServer interface {
 	GetDeployment(context.Context, *ResourceByID) (*storage.Deployment, error)
 	// GetDeploymentWithRisk returns a deployment and its risk given its ID.
 	GetDeploymentWithRisk(context.Context, *ResourceByID) (*GetDeploymentWithRiskResponse, error)
+	// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
+	GetDeploymentRiskAISummary(context.Context, *ResourceByID) (*DeploymentRiskAISummaryResponse, error)
 	// CountDeployments returns the number of deployments.
 	CountDeployments(context.Context, *RawQuery) (*CountDeploymentsResponse, error)
 	// ListDeployments returns the list of deployments.
@@ -170,6 +185,9 @@ func (UnimplementedDeploymentServiceServer) GetDeployment(context.Context, *Reso
 }
 func (UnimplementedDeploymentServiceServer) GetDeploymentWithRisk(context.Context, *ResourceByID) (*GetDeploymentWithRiskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDeploymentWithRisk not implemented")
+}
+func (UnimplementedDeploymentServiceServer) GetDeploymentRiskAISummary(context.Context, *ResourceByID) (*DeploymentRiskAISummaryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDeploymentRiskAISummary not implemented")
 }
 func (UnimplementedDeploymentServiceServer) CountDeployments(context.Context, *RawQuery) (*CountDeploymentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CountDeployments not implemented")
@@ -238,6 +256,24 @@ func _DeploymentService_GetDeploymentWithRisk_Handler(srv interface{}, ctx conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).GetDeploymentWithRisk(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_GetDeploymentRiskAISummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).GetDeploymentRiskAISummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_GetDeploymentRiskAISummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).GetDeploymentRiskAISummary(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -339,6 +375,10 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDeploymentWithRisk",
 			Handler:    _DeploymentService_GetDeploymentWithRisk_Handler,
+		},
+		{
+			MethodName: "GetDeploymentRiskAISummary",
+			Handler:    _DeploymentService_GetDeploymentRiskAISummary_Handler,
 		},
 		{
 			MethodName: "CountDeployments",

@@ -5,10 +5,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
+
+const defaultConsumerLoggingRateLimiter = "pubsub-default-consumer"
 
 func NewDefaultConsumer() pubsub.NewConsumer {
 	return func(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (pubsub.Consumer, error) {
@@ -32,7 +35,10 @@ type DefaultConsumer struct {
 }
 
 func (c *DefaultConsumer) Consume(waitable concurrency.Waitable, event pubsub.Event) <-chan error {
-	errC := make(chan error)
+	// Buffered so the send below never blocks on a reader: callers (e.g. concurrentLane)
+	// are not required to drain this channel, and must not need to in order for this
+	// goroutine to exit.
+	errC := make(chan error, 1)
 	go func() {
 		defer close(errC)
 		start := time.Now()
@@ -43,6 +49,7 @@ func (c *DefaultConsumer) Consume(waitable concurrency.Waitable, event pubsub.Ev
 			err := c.callback(event)
 			if err != nil {
 				operation = metrics.ConsumerError
+				logging.GetRateLimitedLogger().ErrorL(defaultConsumerLoggingRateLimiter, "unable to handle event on lane %s, topic %s: %v", c.laneID, c.topic, err)
 			}
 			return err
 		}():

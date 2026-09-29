@@ -144,7 +144,7 @@ import (
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
-	v2Service "github.com/stackrox/rox/central/reports/service/v2"
+	nodeReportServiceV2 "github.com/stackrox/rox/central/reports/service/v2/node"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -178,7 +178,9 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineScanV2DS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
+	virtualMachineV2DS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
@@ -216,6 +218,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/grpc/versionheader"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -380,11 +383,7 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		pruning.Singleton().Start()
-	} else {
-		log.Info("Pruning is managed by central-worker, skipping start in Central")
-	}
+	pruning.Singleton().Start()
 	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
 	}
@@ -491,6 +490,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
+	if features.NodeVulnerabilityReports.Enabled() {
+		servicesToRegister = append(servicesToRegister, nodeReportServiceV2.Singleton())
+	}
+
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
@@ -579,6 +582,9 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		if features.ACMAccessControlDelegation.Enabled() {
+			authProviderBackendFactories[openshift.TypeNameWithACMAccessControlDelegation] = openshift.NewFactoryWithACMAccessControlDelegation
+		}
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
@@ -656,6 +662,8 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.CentralVersionServerInterceptor())
+
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
 	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
@@ -716,6 +724,10 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(virtualMachineDS.GatherV2(
+		virtualMachineV2DS.Singleton(),
+		virtualMachineScanV2DS.Singleton(),
+	))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -987,9 +999,18 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
 		Authorizer:    user.With(permissions.View(resources.Image)),
-		ServerHandler: v2Service.NewDownloadHandler(),
+		ServerHandler: reportServiceV2.NewDownloadHandler(),
 		Compression:   true,
 	})
+
+	if features.NodeVulnerabilityReports.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/node/jobs/download",
+			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
+			ServerHandler: reportServiceV2.NewNodeDownloadHandler(),
+			Compression:   true,
+		})
+	}
 
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -1042,9 +1063,7 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 	}
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
-	}
+	stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
 	stoppables = append(stoppables, []stoppableWithName{
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},

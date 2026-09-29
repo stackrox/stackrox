@@ -94,6 +94,8 @@ roxie_config_from_environment_compat() {
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
 
+    handle_endpoints_for_test "$config_file" # Echoes info internally.
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -153,6 +155,10 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Scan every 9-11 minutes in roxie-deployed QA tests, including GHA.
+        env_with_default ROX_NODE_SCANNING_INTERVAL "10m"
+        env_with_default ROX_NODE_SCANNING_INTERVAL_DEVIATION "60s"
+
         collect_feature_flags
     )
 
@@ -177,8 +183,9 @@ roxie_config_from_environment_compat() {
     )
 
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
+    handle_scanner_v4_vuln_readiness "$config_file"
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -199,10 +206,16 @@ collect_feature_flags() {
     env_with_default ROX_NODE_VULNERABILITY_REPORTS "true"
     env_with_default ROX_TAILORED_PROFILES "true"
     env_with_default ROX_INIT_CONTAINER_SUPPORT "true"
+    env_with_default ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "true"
+    env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
+    env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
+    env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
+    env_with_default ROX_AI_INTEGRATIONS "true"
+    env_with_default ROX_LIGHTSPEED_RISK_SUMMARY "true"
 
     # Enabled by default in StackRox, but disabled by default for test deployments.
     env_with_default ROX_NETWORK_GRAPH_EXTERNAL_IPS "false"
@@ -221,14 +234,18 @@ handle_pod_security_policies() {
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
 }
 
+# handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is
+# the CRD enum when V4 is on: Central uses Enabled, SecuredCluster uses AutoSense.
 handle_scanner_v4_setting() {
     local config_file="$1"
     local path="$2"
-    local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
+    local enabled_value="$3"
+    # Scanner V4 is the default scanner. Jobs that must omit it set ROX_SCANNER_V4=false.
+    local rox_scanner_v4="${ROX_SCANNER_V4:-true}"
 
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$config_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"${enabled_value}\""
             ;;
         false)
             patch_yaml "$config_file" "${path} = \"Disabled\""
@@ -237,6 +254,36 @@ handle_scanner_v4_setting() {
             die "Unsupported value for ROX_SCANNER_V4: $rox_scanner_v4"
             ;;
     esac
+}
+
+# handle_scanner_v4_vuln_readiness gates the scanner-v4-matcher pod's readiness
+# probe on the vulnerability bundle being fully loaded. The matcher's default
+# readiness is "database" (ready as soon as Postgres is reachable), so without
+# this the deployment reports ready while vulns are still importing and tests
+# would scan before any vuln data exists. Setting
+# SCANNER_V4_MATCHER_READINESS=vulnerability keeps the matcher unready until the
+# initial load completes, so the deploy step waits for it. The env vars go into
+# the Central CR's customize.envVars, which the operator propagates to
+# scanner-v4-matcher.
+handle_scanner_v4_vuln_readiness() {
+    local config_file="$1"
+
+    # Only meaningful when Scanner V4 is enabled.
+    if [[ "${ROX_SCANNER_V4:-true}" == "false" ]]; then
+        return
+    fi
+
+    # export_test_environment establishes the default (true); jobs that don't
+    # need gating (e.g. install-only) set SCANNER_V4_VULN_READINESS=false.
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        info "  gating scanner-v4-matcher readiness on vulnerability load"
+        set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_READINESS" "vulnerability"
+    fi
+
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        info "  restricting vuln bundle sources to ${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+        set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+    fi
 }
 
 handle_trusted_ca_file() {
@@ -310,6 +357,44 @@ handle_load_balancer_setting() {
     esac
 }
 
+# Populate a roxie config file with the endpoint settings required by endpoints_test.go:
+# plaintext endpoints (8080/8081) and the full central-endpoints ConfigMap (8082, 8444-8448).
+# Values are taken from the ROX_PLAINTEXT_ENDPOINTS and ROXDEPLOY_CONFIG_FILE_MAP env vars,
+# which are exported by test_preamble() of the jobs that run endpoints_test.go. Jobs that do
+# not set these are left untouched, so this is safe to call unconditionally from such a job.
+handle_endpoints_for_test() {
+    local config_file="$1"
+
+    # Expose plaintext endpoints required by endpoints_test.go.
+    if [[ -n "${ROX_PLAINTEXT_ENDPOINTS:-}" ]]; then
+        info "Configuring central ROX_PLAINTEXT_ENDPOINTS to ${ROX_PLAINTEXT_ENDPOINTS}..."
+        set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "${ROX_PLAINTEXT_ENDPOINTS}"
+    fi
+
+    # Inject the full endpoint config into the central-endpoints ConfigMap so that
+    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+        info "Configuring central-endpoints ConfigMap from ${ROXDEPLOY_CONFIG_FILE_MAP}..."
+        local overlay_tmp; overlay_tmp="$(mktemp)"
+        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
+        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
+        cat > "$overlay_tmp" <<'OVERLAY'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: central-endpoints
+      patches:
+      - path: data.endpoints\.yaml
+        verbatim: |
+OVERLAY
+        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        merge_yaml "$config_file" < "$overlay_tmp"
+        rm -f "$overlay_tmp"
+    fi
+}
+
 handle_declarative_configuration() {
     local config_file="$1"
     merge_yaml "$config_file" <<EOF
@@ -343,27 +428,12 @@ handle_file_activity_monitoring() {
 
 handle_virtual_machines_configuration() {
     local config_file="$1"
-    local virtual_machines="${ROX_VIRTUAL_MACHINES:-false}"
     local poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
-    local vm_mode_setting
-
-    case "$virtual_machines" in
-    true)
-        vm_mode_setting="Enabled"
-        ;;
-    false)
-        vm_mode_setting="Disabled"
-        ;;
-    *)
-        die "Unsupported value for ROX_VIRTUAL_MACHINES: ${ROX_VIRTUAL_MACHINES}"
-        ;;
-    esac
 
     merge_yaml "$config_file" <<EOF
 securedCluster:
   spec:
     virtualMachines:
-      mode: "${vm_mode_setting}"
       scraper:
         pollInterval: "${poll_interval}"
 EOF

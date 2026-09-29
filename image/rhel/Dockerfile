@@ -39,6 +39,17 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
+FROM ubi-base AS cli-tarballs
+
+RUN dnf install -y pigz
+COPY bin/roxctl* /tmp/roxctl/
+RUN cd /tmp/roxctl && \
+    shopt -s nullglob && \
+    for f in roxctl-*; do \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
+    done
+
 FROM ubi-micro-base
 
 ARG LABEL_VERSION
@@ -94,9 +105,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-COPY bin/roxctl*            /assets/downloads/cli/
-
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

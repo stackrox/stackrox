@@ -7,16 +7,8 @@ collectors:
 - type: pod
   selector: app=central-db
   tail: -1
-- type: pod
-  selector: app=scanner
-  tail: -1
-- type: pod
-  selector: app=scanner-db
-  tail: -1
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
 timeout: 1500
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
@@ -44,20 +36,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central-db
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-db
 status:
   availableReplicas: 1
 ---

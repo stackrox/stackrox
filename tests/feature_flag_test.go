@@ -28,6 +28,8 @@ var (
 	}
 )
 
+// TestFeatureFlagSettings asserts Central's live flags match flag.Enabled()
+// computed in this process from the same environment and build type.
 func TestFeatureFlagSettings(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 		t.Skip("Skipping on OCP: ci_export uses cci-export which does not set shell variables, causing systemic mismatch between test runner and Central")
@@ -37,23 +39,13 @@ func TestFeatureFlagSettings(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
-	metadataService := v1.NewMetadataServiceClient(conn)
-	metadata, err := metadataService.GetMetadata(ctx, &v1.Empty{})
-	require.NoError(t, err, "failed to retrieve metadata")
-
 	expectedFlagVals := make(map[string]bool)
 	for _, flag := range features.Flags {
 		if skipFeatures[flag.EnvVar()] {
 			continue
 		}
 
-		// For non-release builds, test that feature flag settings match the local environment;
-		// for release builds, test that they match the defaults.
-		expectedVal := flag.Enabled()
-		if metadata.GetReleaseBuild() {
-			expectedVal = flag.Default()
-		}
-		expectedFlagVals[flag.EnvVar()] = expectedVal
+		expectedFlagVals[flag.EnvVar()] = flag.Enabled()
 	}
 
 	featureFlagService := v1.NewFeatureFlagServiceClient(conn)

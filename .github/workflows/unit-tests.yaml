@@ -585,7 +585,7 @@ jobs:
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
-        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
+        mention_author: true
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure

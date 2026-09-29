@@ -42,6 +42,7 @@ func TestScanSBOMHttpHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("invalid request method", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.ScannerV4, true)
+		testutils.MustUpdateFeature(t, features.SBOMScanning, true)
 
 		req := httptest.NewRequest(http.MethodGet, "/sbom", nil)
 		recorder := httptest.NewRecorder()
@@ -50,12 +51,9 @@ func TestScanSBOMHttpHandler_ServeHTTP(t *testing.T) {
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
-		body, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		err = res.Body.Close()
+		err := res.Body.Close()
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusNotImplemented, res.StatusCode)
-		assert.Contains(t, string(body), "SBOM Scanning is disabled")
+		assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
 	})
 
 	t.Run("invalid media type", func(t *testing.T) {

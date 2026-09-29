@@ -24,6 +24,9 @@ jobs:
       with:
         go-version-file: go.mod
 
+    - name: Test
+      run: cd tools/retest && go test ./...
+
     - name: Retest
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

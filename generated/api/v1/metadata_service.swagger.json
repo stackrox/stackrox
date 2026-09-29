@@ -82,6 +82,29 @@
         ]
       }
     },
+    "/v1/lightspeed/status": {
+      "get": {
+        "summary": "GetLightspeedStatus returns the availability status of the Lightspeed AI service.",
+        "operationId": "MetadataService_GetLightspeedStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LightspeedStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/metadata": {
       "get": {
         "operationId": "MetadataService_GetMetadata",
@@ -283,6 +306,17 @@
         },
         "databaseIsExternal": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1LightspeedStatusResponse": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
         }
       }
     },

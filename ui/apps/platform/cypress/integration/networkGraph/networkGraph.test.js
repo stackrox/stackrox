@@ -105,28 +105,37 @@ describe('Network Graph smoke tests', () => {
         // Verify that 'stackrox' namespace is present
         cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
 
-        // Verify that central, central-db, scanner, scanner-db, sensor are present
-        ['central', 'central-db', 'scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+        // Verify that central, central-db, scanner-v4-indexer, scanner-v4-matcher, scanner-v4-db, sensor are present
+        [
+            'central',
+            'central-db',
+            'scanner-v4-indexer',
+            'scanner-v4-matcher',
+            'scanner-v4-db',
+            'sensor',
+        ].forEach((deployment) => {
             cy.get(networkGraphSelectors.deploymentNode(deployment));
         });
 
         // Apply a deployment filter for 'central-db'
         selectDeployment('central-db');
 
-        // Verify that central, central-db are present and that scanner, scanner-db, sensor are not present
+        // Verify that central, central-db are present and that scanner-v4-indexer, scanner-v4-matcher, scanner-v4-db, sensor are not present
         ['central', 'central-db'].forEach((deployment) => {
             cy.get(networkGraphSelectors.deploymentNode(deployment));
         });
-        ['scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
-            cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
-        });
+        ['scanner-v4-indexer', 'scanner-v4-matcher', 'scanner-v4-db', 'sensor'].forEach(
+            (deployment) => {
+                cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
+            }
+        );
 
         // Remove the central-db selection from the scope filter
         selectDeployment('central-db');
-        // Apply a general filter of "Deployment Label" for 'app=scanner-db'
-        selectFilter('Deployment Label', 'app=scanner-db');
+        // Apply a general filter of "Deployment Label" for 'app=scanner-v4-db'
+        selectFilter('Deployment Label', 'app=scanner-v4-db');
 
-        ['scanner', 'scanner-db'].forEach((deployment) => {
+        ['scanner-v4-indexer', 'scanner-v4-matcher', 'scanner-v4-db'].forEach((deployment) => {
             cy.get(networkGraphSelectors.deploymentNode(deployment));
         });
         ['central', 'central-db', 'sensor'].forEach((deployment) => {

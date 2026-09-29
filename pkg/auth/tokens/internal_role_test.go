@@ -1,9 +1,11 @@
 package tokens
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -375,6 +377,446 @@ func TestInternalRoleJSONEncoding(t *testing.T) {
 			assert.Equal(it, tc.role.RoleName, unmarshaledRole.RoleName)
 			assert.Equal(it, tc.role.GetPermissions(), unmarshaledRole.GetPermissions())
 			protoassert.Equal(it, tc.role.GetAccessScope(), unmarshaledRole.GetAccessScope())
+		})
+	}
+}
+
+// mockClusterResolver is a test implementation of ClusterResolver
+type mockClusterResolver struct {
+	clusters map[string]string // map of cluster name -> cluster ID
+	err      error             // error to return from GetClusterID
+}
+
+func (m *mockClusterResolver) GetClusterID(ctx context.Context, name string) (string, bool, error) {
+	if m.err != nil {
+		return "", false, m.err
+	}
+	id, found := m.clusters[name]
+	return id, found, nil
+}
+
+func TestNewInternalRoleFromPermissionsAndScope(t *testing.T) {
+	const deploymentResource = "Deployment"
+	const imageResource = "Image"
+	const namespaceA = "namespace-a"
+	const namespaceB = "namespace-b"
+	const clusterNameDev = "dev-cluster"
+	const clusterNameProd = "prod-cluster"
+
+	for name, tc := range map[string]struct {
+		roleName      string
+		permissions   *storage.PermissionSet
+		scope         *storage.SimpleAccessScope
+		resolver      ClusterResolver
+		expectedRole  *InternalRole
+		expectedError string
+	}{
+		"Nil resolver returns error": {
+			roleName: "test-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{},
+			},
+			resolver:      nil,
+			expectedError: "missing cluster ID resolver",
+		},
+		"Empty permissions and scope": {
+			roleName: "empty-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName:    "empty-role",
+				Permissions: map[storage.Access][]string{},
+				Clusters:    ClusterScopes{},
+			},
+		},
+		"Role with read permissions only": {
+			roleName: "reader-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+					imageResource:      storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "reader-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource, imageResource},
+				},
+				Clusters: ClusterScopes{},
+			},
+		},
+		"Role with write permissions only": {
+			roleName: "writer-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_WRITE_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "writer-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_WRITE_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{},
+			},
+		},
+		"Role with mixed read and write permissions": {
+			roleName: "mixed-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+					imageResource:      storage.Access_READ_WRITE_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "mixed-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       {deploymentResource},
+					storage.Access_READ_WRITE_ACCESS: {imageResource},
+				},
+				Clusters: ClusterScopes{},
+			},
+		},
+		"Scope with cluster IDs only": {
+			roleName: "cluster-id-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusterIds: []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2},
+				},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "cluster-id-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {"*"},
+					fixtureconsts.Cluster2: {"*"},
+				},
+			},
+		},
+		"Scope with cluster names that resolve": {
+			roleName: "cluster-name-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{clusterNameDev, clusterNameProd},
+				},
+			},
+			resolver: &mockClusterResolver{
+				clusters: map[string]string{
+					clusterNameDev:  fixtureconsts.Cluster1,
+					clusterNameProd: fixtureconsts.Cluster2,
+				},
+			},
+			expectedRole: &InternalRole{
+				RoleName: "cluster-name-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {"*"},
+					fixtureconsts.Cluster2: {"*"},
+				},
+			},
+		},
+		"Scope with cluster names that don't resolve are skipped": {
+			roleName: "missing-cluster-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{clusterNameDev, "unknown-cluster"},
+				},
+			},
+			resolver: &mockClusterResolver{
+				clusters: map[string]string{
+					clusterNameDev: fixtureconsts.Cluster1,
+					// "unknown-cluster" not in map
+				},
+			},
+			expectedRole: &InternalRole{
+				RoleName: "missing-cluster-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {"*"},
+					// unknown-cluster is skipped
+				},
+			},
+		},
+		"Cluster name resolution error propagates": {
+			roleName: "error-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{clusterNameDev},
+				},
+			},
+			resolver: &mockClusterResolver{
+				err: errors.New("resolver error"),
+			},
+			expectedError: "failed to resolve cluster ID",
+		},
+		"Scope with namespace rules using cluster IDs": {
+			roleName: "namespace-id-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterId:     fixtureconsts.Cluster1,
+							NamespaceName: namespaceA,
+						},
+						{
+							ClusterId:     fixtureconsts.Cluster1,
+							NamespaceName: namespaceB,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "namespace-id-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceA, namespaceB},
+				},
+			},
+		},
+		"Scope with namespace rules using cluster names": {
+			roleName: "namespace-name-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   clusterNameDev,
+							NamespaceName: namespaceA,
+						},
+						{
+							ClusterName:   clusterNameProd,
+							NamespaceName: namespaceB,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{
+				clusters: map[string]string{
+					clusterNameDev:  fixtureconsts.Cluster1,
+					clusterNameProd: fixtureconsts.Cluster2,
+				},
+			},
+			expectedRole: &InternalRole{
+				RoleName: "namespace-name-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceA},
+					fixtureconsts.Cluster2: {namespaceB},
+				},
+			},
+		},
+		"Namespace with unresolved cluster name is skipped": {
+			roleName: "namespace-missing-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   clusterNameDev,
+							NamespaceName: namespaceA,
+						},
+						{
+							ClusterName:   "unknown-cluster",
+							NamespaceName: namespaceB,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{
+				clusters: map[string]string{
+					clusterNameDev: fixtureconsts.Cluster1,
+					// "unknown-cluster" not in map
+				},
+			},
+			expectedRole: &InternalRole{
+				RoleName: "namespace-missing-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceA},
+					// namespace with unknown cluster is skipped
+				},
+			},
+		},
+		"Namespace cluster name resolution error propagates": {
+			roleName: "namespace-error-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   clusterNameDev,
+							NamespaceName: namespaceA,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{
+				err: errors.New("namespace resolver error"),
+			},
+			expectedError: "failed to resolve cluster ID",
+		},
+		"Mixed scope with cluster IDs, cluster names, and namespace rules": {
+			roleName: "complex-scope-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+					imageResource:      storage.Access_READ_WRITE_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusterIds: []string{fixtureconsts.Cluster1},
+					IncludedClusters:   []string{clusterNameProd},
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterId:     fixtureconsts.Cluster3,
+							NamespaceName: namespaceA,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{
+				clusters: map[string]string{
+					clusterNameProd: fixtureconsts.Cluster2,
+				},
+			},
+			expectedRole: &InternalRole{
+				RoleName: "complex-scope-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       {deploymentResource},
+					storage.Access_READ_WRITE_ACCESS: {imageResource},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {"*"},
+					fixtureconsts.Cluster2: {"*"},
+					fixtureconsts.Cluster3: {namespaceA},
+				},
+			},
+		},
+		"Namespace appends to existing cluster scope": {
+			roleName: "namespace-append-role",
+			permissions: &storage.PermissionSet{
+				ResourceToAccess: map[string]storage.Access{
+					deploymentResource: storage.Access_READ_ACCESS,
+				},
+			},
+			scope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusterIds: []string{fixtureconsts.Cluster1},
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterId:     fixtureconsts.Cluster1,
+							NamespaceName: namespaceA,
+						},
+					},
+				},
+			},
+			resolver: &mockClusterResolver{clusters: map[string]string{}},
+			expectedRole: &InternalRole{
+				RoleName: "namespace-append-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
+				},
+				Clusters: ClusterScopes{
+					// Cluster1 has both wildcard and namespace - appended
+					fixtureconsts.Cluster1: {"*", namespaceA},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			ctx := context.Background()
+			role, err := NewInternalRoleFromPermissionsAndScope(
+				ctx,
+				tc.roleName,
+				tc.permissions,
+				tc.scope,
+				tc.resolver,
+			)
+
+			if tc.expectedError != "" {
+				assert.Error(it, err)
+				assert.Contains(it, err.Error(), tc.expectedError)
+				return
+			}
+
+			assert.NoError(it, err)
+			assert.Equal(it, tc.expectedRole.RoleName, role.RoleName)
+			assert.Equal(it, tc.expectedRole.Permissions, role.Permissions)
+			assert.Equal(it, tc.expectedRole.Clusters, role.Clusters)
 		})
 	}
 }

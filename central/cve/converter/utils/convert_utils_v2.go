@@ -36,6 +36,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 		State:                 vuln.GetState(),
 		Datasource:            vuln.GetDatasource(),
+		Origin:                vuln.GetOrigin(),
 	}
 
 	if vuln.GetIsFixable() {
@@ -86,19 +87,20 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 		Id:          cveID,
 		ComponentId: componentID,
 		CveBaseInfo: &storage.CVEInfo{
-			Cve:          from.GetCve(),
-			Summary:      from.GetSummary(),
-			Link:         from.GetLink(),
-			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
-			LastModified: from.GetLastModified(),
-			CvssV2:       from.GetCvssV2(),
-			CvssV3:       from.GetCvssV3(),
-			CvssMetrics:  from.GetCvssMetrics(),
-			Epss:         from.GetEpss(),
-			Exploit:      from.GetExploit(),
-			CisaKev:      from.GetExploit() != nil,
-			ScoreVersion: scoreVersion,
+			Cve:                     from.GetCve(),
+			Summary:                 from.GetSummary(),
+			Link:                    from.GetLink(),
+			PublishedOn:             from.GetPublishedOn(),
+			CreatedAt:               from.GetFirstSystemOccurrence(),
+			LastModified:            from.GetLastModified(),
+			CvssV2:                  from.GetCvssV2(),
+			CvssV3:                  from.GetCvssV3(),
+			CvssMetrics:             from.GetCvssMetrics(),
+			Epss:                    from.GetEpss(),
+			Exploit:                 from.GetExploit(),
+			CisaKev:                 from.GetExploit() != nil,
+			KnownRansomwareCampaign: from.GetExploit() != nil && from.GetExploit().GetKnownRansomwareCampaignUse() == "Known",
+			ScoreVersion:            scoreVersion,
 		},
 		Cvss:                  from.GetCvss(),
 		Nvdcvss:               nvdCvss,
@@ -111,6 +113,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 		ImpactScore:           impactScore,
 		Advisory:              from.GetAdvisory(),
 		Datasource:            from.GetDatasource(),
+		Origin:                from.GetOrigin(),
 	}
 	if !features.FlattenImageData.Enabled() {
 		ret.ImageId = imageID

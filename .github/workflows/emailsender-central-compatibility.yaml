@@ -62,6 +62,16 @@ jobs:
       - uses: ./stackrox/.github/actions/job-preamble
         with:
           free-disk-space: 40
+
+      - name: Retrieve roxie version from repository
+        id: roxie-version
+        run: echo "version=$(cat stackrox/ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Install roxie
+        uses: stackrox/actions/roxie/install-cli@6691d5c300d4af17546145bdbbb9862c53975af4 # ratchet:stackrox/actions@v1
+        with:
+          version: "v${{ steps.roxie-version.outputs.version }}"
+
       - name: Create Kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
         with:

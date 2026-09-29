@@ -3,10 +3,17 @@
 package tests
 
 import (
+	"context"
+	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/namespaces"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
 )
@@ -14,6 +21,12 @@ import (
 func (s *VMScanningSuite) TestScanPipeline() {
 	for i := range s.vms {
 		vm := &s.vms[i]
+		if vm.SkipReason != "" {
+			s.T().Run(vm.Name, func(t *testing.T) {
+				t.Skip(vm.SkipReason)
+			})
+			continue
+		}
 		virt := s.virtctlForVM(*vm)
 
 		if err := vmhelpers.EnsureVsockReady(s.ctx, virt, vm.Namespace, vm.Name, "scan pipeline"); err != nil {
@@ -22,12 +35,12 @@ func (s *VMScanningSuite) TestScanPipeline() {
 		}
 
 		s.T().Run(vm.Name, func(t *testing.T) {
-			var first *v2.VirtualMachine
+			var snapshot *centralScanSnapshot
 			roxagentOK := false
 
 			t.Run("EnsureRoxagentServing", func(t *testing.T) {
-				t.Logf("ensuring pull-mode agent: sudo %s serve --port 818 --host-path / --rescan-interval 5m --repo-cpe-url %s",
-					vmhelpers.DefaultRoxagentInstallPath, s.cfg.Repo2CPEURL)
+				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s)",
+					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval)
 				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true
@@ -37,18 +50,29 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				return
 			}
 
+			t.Run("WaitForSensorPushedMapping", func(t *testing.T) {
+				if strings.TrimSpace(s.cfg.Repo2CPEURL) != "" {
+					t.Skip("ROXAGENT_REPO2CPE_URL set: agent is URL-managed, Sensor will not push mapping")
+				}
+				s.waitForSensorPushedMapping(vm)
+			})
+
 			t.Run("WaitForScan", func(t *testing.T) {
 				var err error
-				first, err = s.waitForScan(s.ctx, vm)
+				snapshot, err = s.waitForScan(s.ctx, vm)
 				require.NoError(t, err)
-				vm.ID = first.GetId()
+				require.NotEmpty(t, snapshot.ID)
+				vm.ID = snapshot.ID
 			})
-			if first == nil {
+			if snapshot == nil {
 				t.Log("skipping remaining subtests: scan did not appear in Central")
 				return
 			}
 
 			t.Run("CentralVMMetadata", func(t *testing.T) {
+				s.skipUnlessLegacyVMAPI(t)
+				first := snapshot.Legacy
+				require.NotNil(t, first, "WaitForScan returned no VirtualMachine")
 				listed := s.mustListVMByNamespaceAndName(vm.Namespace, vm.Name)
 				require.Equal(t, listed.GetId(), first.GetId())
 				require.Equal(t, vm.Name, first.GetName())
@@ -58,9 +82,13 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.Equal(t, v2.VirtualMachine_RUNNING, first.GetState())
 				require.NotNil(t, first.GetScan())
 				require.NotNil(t, first.GetScan().GetScanTime())
+				requireForwardedAgentFacts(t, first.GetFacts())
 			})
 
 			t.Run("CentralScanComponents", func(t *testing.T) {
+				s.skipUnlessLegacyVMAPI(t)
+				first := snapshot.Legacy
+				require.NotNil(t, first)
 				for _, component := range first.GetScan().GetComponents() {
 					require.NotContains(t, component.GetNotes(), v2.ScanComponent_UNSCANNED)
 				}
@@ -68,28 +96,133 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			})
 
 			t.Run("CentralScanOperatingSystem", func(t *testing.T) {
-				os := first.GetScan().GetOperatingSystem()
+				s.skipUnlessLegacyVMAPI(t)
+				os := snapshot.Legacy.GetScan().GetOperatingSystem()
 				require.NotEmpty(t, os,
 					"scan.operating_system should be populated via Sensor DiscoveredData")
 			})
 
 			t.Run("ConsistencyCheck", func(t *testing.T) {
-				fetched := s.mustGetVM(first.GetId())
-				require.Equal(t, first.GetId(), fetched.GetId(),
+				s.skipUnlessLegacyVMAPI(t)
+				fetched := s.mustGetVM(snapshot.ID)
+				require.Equal(t, snapshot.ID, fetched.GetId(),
 					"VM ID should remain stable after pull-mode scan")
+			})
+
+			t.Run("VirtualMachineV2GetVM", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				detail := s.mustGetVMV2(snapshot.ID)
+				require.Equal(t, snapshot.ID, detail.GetId())
+				require.Equal(t, vm.Name, detail.GetName())
+				require.Equal(t, vm.Namespace, detail.GetNamespace())
+				require.NotEmpty(t, detail.GetClusterId())
+				require.NotEmpty(t, detail.GetClusterName())
+				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, detail.GetState())
+				require.NotNil(t, detail.GetLatestScan())
+				require.NotNil(t, detail.GetLatestScan().GetScanTime())
+				requireForwardedAgentFacts(t, detail.GetFacts())
+				require.Equal(t, detail.GetFacts()[pkgVM.DetectedGuestOSKey], detail.GetGuestOs(),
+					"GetVM.guest_os should prefer facts.detectedGuestOS")
+			})
+
+			t.Run("VirtualMachineV2GuestOSSearch", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				detail := s.mustGetVMV2(snapshot.ID)
+				guestOS := detail.GetGuestOs()
+				require.Regexp(t, `^Red Hat Enterprise Linux \d`, guestOS,
+					"guest_os must be versioned so quoted informer search can miss")
+
+				found, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, guestOS)
+				require.NoError(t, err)
+				require.NotNil(t, found, "ListVMs Guest OS:%q should find this VM", guestOS)
+				require.Equal(t, snapshot.ID, found.GetId())
+
+				const informerGuestOS = "Red Hat Enterprise Linux"
+				miss, err := vmhelpers.ListV2VMByNamespaceNameGuestOS(s.ctx, s.vmV2Client, vm.Namespace, vm.Name, informerGuestOS)
+				require.NoError(t, err)
+				require.Nil(t, miss,
+					"quoted informer Guest OS must not match a versioned guest_os column")
+			})
+
+			t.Run("VirtualMachineV2ListVMs", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				listed := s.mustListV2VMByNamespaceAndName(vm.Namespace, vm.Name)
+				require.Equal(t, snapshot.ID, listed.GetId())
+				require.Equal(t, vm.Name, listed.GetName())
+				require.Equal(t, vm.Namespace, listed.GetNamespace())
+				require.NotEmpty(t, listed.GetClusterId())
+				require.NotEmpty(t, listed.GetClusterName())
+				require.Equal(t, v2.VirtualMachineV2State_VM_STATE_RUNNING, listed.GetState())
+				require.NotNil(t, listed.GetScanTime(),
+					"ListVMs.scan_time should be populated from the latest scan")
+
+				detail := s.mustGetVMV2(snapshot.ID)
+				require.Equal(t, detail.GetGuestOs(), listed.GetGuestOs(),
+					"ListVMs.guest_os should match GetVM.guest_os")
+
+				cves, total, err := vmhelpers.ListAllVMCVEsByVM(s.ctx, s.vmV2Client, snapshot.ID)
+				require.NoError(t, err)
+				require.Greater(t, total, int32(0), "scanned RHEL guest should report CVEs via ListVMCVEsByVM")
+				require.Equal(t, int(total), len(cves), "paginated CVE rows should cover total_count")
+				for _, row := range cves {
+					require.NotEmpty(t, row.GetCve())
+				}
+
+				distinct := distinctCVEIDs(cves)
+				summary, err := s.vmV2Client.GetVMVulnSummary(s.ctx, &v2.GetVMVulnSummaryRequest{Id: snapshot.ID})
+				require.NoError(t, err)
+				requireChipsAgree(t, listed.GetCveSeverityCounts(), summary.GetSeverityCounts())
+				requireChipsCoverTable(t, listed.GetCveSeverityCounts(), cves, len(distinct))
+			})
+
+			t.Run("VirtualMachineV2ListVMCVEsByVM", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				cves, total, err := vmhelpers.ListAllVMCVEsByVM(s.ctx, s.vmV2Client, snapshot.ID)
+				require.NoError(t, err)
+				require.Greater(t, total, int32(0))
+				require.NotEmpty(t, cves)
+				for _, row := range cves {
+					require.NotEmpty(t, row.GetCve())
+				}
+				require.Equal(t, len(cves), len(distinctCVEIDs(cves)), "ListVMCVEsByVM CVE IDs must be unique")
+
+				var found bool
+				for _, row := range cves {
+					comps, err := s.vmV2Client.GetVMCVEComponents(s.ctx, &v2.GetVMCVEComponentsRequest{
+						VmId:  snapshot.ID,
+						CveId: row.GetCve(),
+					})
+					require.NoError(t, err)
+					if len(comps.GetComponents()) == 0 {
+						continue
+					}
+					require.GreaterOrEqual(t, row.GetAffectedComponentCount(), int32(1),
+						"CVE %q has %d components from GetVMCVEComponents but affected_component_count=%d",
+						row.GetCve(), len(comps.GetComponents()), row.GetAffectedComponentCount())
+					found = true
+					break
+				}
+				require.True(t, found, "at least one ListVMCVEsByVM row should have components from GetVMCVEComponents")
+			})
+
+			t.Run("VirtualMachineV2ListVMComponents", func(t *testing.T) {
+				s.skipUnlessV2VMAPI(t)
+				comps, total, err := vmhelpers.ListAllVMComponents(s.ctx, s.vmV2Client, snapshot.ID)
+				require.NoError(t, err)
+				require.Greater(t, total, int32(0), "completed scan should list components")
+				require.NotEmpty(t, comps)
+				require.Equal(t, int(total), len(comps), "paginated component rows should cover total_count")
+				for _, c := range comps {
+					require.NotEqual(t, v2.ScanStatus_NOT_SCANNED, c.GetScanStatus())
+					require.NotEqual(t, v2.ScanStatus_SCAN_PENDING, c.GetScanStatus())
+				}
 			})
 
 			// Regression test for ROX-36273: after a change to the RPM database (package removal), the agent should
 			// detect the change on a later periodic rescan without being restarted.
 			t.Run("Changes to RPM DB are detected by periodic rescan", func(t *testing.T) {
-				require.NotNil(t, first.GetScan().GetScanTime())
-				baselineScanTime := first.GetScan().GetScanTime().AsTime()
-				baselineCount := len(first.GetScan().GetComponents())
-				// bc is installed by stackrox/vm-images into every VM
-				// container-disk so this test has a known removable probe package.
 				removed := vmhelpers.VMImageProbePackage
-				require.Contains(t, scanComponentNames(first), removed,
-					"baseline scan must include %q from the VM image build", removed)
+				baselineCount := s.requireProbePackagePresent(t, snapshot, removed)
 
 				beforeInvocationID, err := vmhelpers.RoxagentServeInvocationID(s.ctx, virt, vm.Namespace, vm.Name)
 				require.NoError(t, err)
@@ -101,19 +234,32 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				// Central moves scan_time.
 				const minScanAdvances = 2
 				waitTimeout := max(s.cfg.ScanTimeout, 2*vmhelpers.E2ERescanInterval+2*vmhelpers.E2EScraperPollInterval+3*time.Minute)
-				t.Logf("removed package %q; waiting for %d scan_time advances (rescan=%s scraper=%s timeout=%s; baseline components=%d scan_time=%s)",
+				t.Logf("removed package %q; waiting for %d scan_time advances (rescan=%s scraper=%s timeout=%s; baseline components=%d)",
 					removed, minScanAdvances, vmhelpers.E2ERescanInterval, vmhelpers.E2EScraperPollInterval, waitTimeout,
-					baselineCount, baselineScanTime.UTC().Format(time.RFC3339))
+					baselineCount)
 
-				updated, err := vmhelpers.WaitForScanMissingComponent(
-					s.ctx, s.vmClient, vmhelpers.WaitOptions{
-						Timeout:      waitTimeout,
-						PollInterval: s.cfg.ScanPollInterval,
-						Logf:         s.logf,
-					}, first.GetId(), removed, baselineScanTime, minScanAdvances)
-				require.NoError(t, err)
-				require.Equal(t, baselineCount-1, len(updated.GetScan().GetComponents()),
-					"exactly one component should disappear after removing %q", removed)
+				opts := vmhelpers.WaitOptions{
+					Timeout:      waitTimeout,
+					PollInterval: s.cfg.ScanPollInterval,
+					Logf:         s.logf,
+				}
+				if s.enhancedVMModel {
+					require.NotNil(t, snapshot.Detail.GetLatestScan().GetScanTime())
+					baselineScanTime := snapshot.Detail.GetLatestScan().GetScanTime().AsTime()
+					updated, err := vmhelpers.WaitForV2ScanMissingComponent(
+						s.ctx, s.vmV2Client, opts, snapshot.ID, removed, baselineScanTime, minScanAdvances)
+					require.NoError(t, err)
+					require.Equal(t, baselineCount-1, len(updated),
+						"exactly one component should disappear after removing %q", removed)
+				} else {
+					require.NotNil(t, snapshot.Legacy.GetScan().GetScanTime())
+					baselineScanTime := snapshot.Legacy.GetScan().GetScanTime().AsTime()
+					updated, err := vmhelpers.WaitForScanMissingComponent(
+						s.ctx, s.vmClient, opts, snapshot.ID, removed, baselineScanTime, minScanAdvances)
+					require.NoError(t, err)
+					require.Equal(t, baselineCount-1, len(updated.GetScan().GetComponents()),
+						"exactly one component should disappear after removing %q", removed)
+				}
 
 				require.NoError(t, vmhelpers.RoxagentServeDidNotRestart(
 					s.ctx, virt, vm.Namespace, vm.Name, beforeInvocationID),
@@ -121,6 +267,34 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			})
 		})
 	}
+}
+
+// waitForSensorPushedMapping waits until Sensor logs a successful repo-to-CPE
+// mapping push for vm. Setup installs without --repo-cpe-url, so a scan cannot
+// complete until this push happens.
+func (s *VMScanningSuite) waitForSensorPushedMapping(vm *VMHandle) {
+	waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)
+	defer cancel()
+	re := regexp.MustCompile(regexp.QuoteMeta(
+		fmt.Sprintf(`VMScraper: synced repo-to-CPE mapping to "%s/%s"`, vm.Namespace, vm.Name)))
+	s.waitUntilLog(waitCtx, namespaces.StackRox, sensorPodLabels, sensorContainer,
+		"contain Sensor-pushed repo-to-CPE mapping sync",
+		logmatchers.ContainsLineMatching(re))
+}
+
+func (s *VMScanningSuite) requireProbePackagePresent(t *testing.T, snapshot *centralScanSnapshot, pkg string) int {
+	t.Helper()
+	if s.enhancedVMModel {
+		comps, _, err := vmhelpers.ListAllVMComponents(s.ctx, s.vmV2Client, snapshot.ID)
+		require.NoError(t, err)
+		require.Contains(t, componentRowNames(comps), pkg,
+			"baseline v2 component list must include %q from the VM image build", pkg)
+		return len(comps)
+	}
+	require.NotNil(t, snapshot.Legacy)
+	require.Contains(t, scanComponentNames(snapshot.Legacy), pkg,
+		"baseline scan must include %q from the VM image build", pkg)
+	return len(snapshot.Legacy.GetScan().GetComponents())
 }
 
 func scanComponentNames(vm *v2.VirtualMachine) []string {
@@ -132,4 +306,83 @@ func scanComponentNames(vm *v2.VirtualMachine) []string {
 		}
 	}
 	return names
+}
+
+func componentRowNames(comps []*v2.VMComponentRow) []string {
+	names := make([]string, 0, len(comps))
+	for _, c := range comps {
+		if name := c.GetName(); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+func requireForwardedAgentFacts(t *testing.T, facts map[string]string) {
+	t.Helper()
+	require.NotEmpty(t, facts)
+	require.Regexp(t, `^Red Hat Enterprise Linux \d`, facts[pkgVM.DetectedGuestOSKey],
+		"facts.detectedGuestOS should be the versioned guest OS from roxagent")
+	require.NotEmpty(t, facts[pkgVM.AgentVersionKey],
+		"facts.agentVersion should be the roxagent version from ResponseMeta")
+}
+
+// requireChipsAgree checks ListVMs and GetVMVulnSummary use the same chip grain.
+func requireChipsAgree(t *testing.T, listed, summary *v2.VulnCountBySeverity) {
+	t.Helper()
+	require.Equal(t, listed.GetCritical().GetTotal(), summary.GetCritical().GetTotal(), "critical")
+	require.Equal(t, listed.GetImportant().GetTotal(), summary.GetImportant().GetTotal(), "important")
+	require.Equal(t, listed.GetModerate().GetTotal(), summary.GetModerate().GetTotal(), "moderate")
+	require.Equal(t, listed.GetLow().GetTotal(), summary.GetLow().GetTotal(), "low")
+	require.Equal(t, listed.GetUnknown().GetTotal(), summary.GetUnknown().GetTotal(), "unknown")
+	require.Equal(t, listed.GetCritical().GetFixable(), summary.GetCritical().GetFixable(), "critical fixable")
+	require.Equal(t, listed.GetImportant().GetFixable(), summary.GetImportant().GetFixable(), "important fixable")
+	require.Equal(t, listed.GetModerate().GetFixable(), summary.GetModerate().GetFixable(), "moderate fixable")
+	require.Equal(t, listed.GetLow().GetFixable(), summary.GetLow().GetFixable(), "low fixable")
+	require.Equal(t, listed.GetUnknown().GetFixable(), summary.GetUnknown().GetFixable(), "unknown fixable")
+}
+
+// requireChipsCoverTable allows a CVE in more than one severity chip, matching
+// imageCVECountBySeverity. Each chip still covers table rows at that severity
+// and cannot exceed the distinct CVE count.
+func requireChipsCoverTable(t *testing.T, chips *v2.VulnCountBySeverity, tableRows []*v2.VMCVERow, distinct int) {
+	t.Helper()
+	table := vmhelpers.CountVMCVERowsBySeverity(tableRows)
+	require.GreaterOrEqual(t, vmhelpers.VulnCountBySeverityTotal(chips), int32(distinct),
+		"chip total must cover distinct ListVMCVEsByVM CVE IDs")
+	for _, tc := range []struct {
+		name  string
+		chip  *v2.VulnFixableCount
+		table *v2.VulnFixableCount
+	}{
+		{"critical", chips.GetCritical(), table.GetCritical()},
+		{"important", chips.GetImportant(), table.GetImportant()},
+		{"moderate", chips.GetModerate(), table.GetModerate()},
+		{"low", chips.GetLow(), table.GetLow()},
+		{"unknown", chips.GetUnknown(), table.GetUnknown()},
+	} {
+		require.GreaterOrEqual(t, tc.chip.GetTotal(), tc.table.GetTotal(),
+			"%s chip must cover table rows at that severity", tc.name)
+		require.LessOrEqual(t, tc.chip.GetTotal(), int32(distinct),
+			"%s chip cannot exceed distinct CVE IDs", tc.name)
+		require.LessOrEqual(t, tc.chip.GetFixable(), tc.chip.GetTotal(),
+			"%s fixable cannot exceed that chip total", tc.name)
+	}
+}
+
+func distinctCVEIDs(cves []*v2.VMCVERow) []string {
+	seen := make(map[string]struct{}, len(cves))
+	ids := make([]string, 0, len(cves))
+	for _, row := range cves {
+		id := row.GetCve()
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
 }

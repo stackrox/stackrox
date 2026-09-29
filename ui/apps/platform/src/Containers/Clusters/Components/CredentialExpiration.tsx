@@ -36,13 +36,13 @@ function CredentialExpiration({
     // Adapt health status categories to certificate expiration.
     const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
     const { Icon, fgColor } = healthStatusStylesLegacy[healthStatus];
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon />;
 
     // Order arguments according to date-fns@2 convention:
     // If sensorCertExpiry > currentDateTime: in X units
     // If sensorCertExpiry <= currentDateTime: X units ago
     const distanceElement = (
-        <span className="whitespace-nowrap">
+        <span className="pf-v6-u-text-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
         </span>
     );
@@ -68,7 +68,7 @@ function CredentialExpiration({
         expirationElement = (
             <div data-testid={testId}>
                 {distanceElement}{' '}
-                <span className="whitespace-nowrap">{`on ${
+                <span className="pf-v6-u-text-nowrap">{`on ${
                     diffInDays > 0 && diffInDays < 7
                         ? getDayOfWeek(sensorCertExpiry)
                         : getDate(sensorCertExpiry)
@@ -88,7 +88,7 @@ function CredentialExpiration({
                 <div>
                     {expirationElement}
                     {version && (
-                        <div className="flex flex-row items-end leading-tight">
+                        <div>
                             <ExternalLink>
                                 <a
                                     href={getVersionedDocs(

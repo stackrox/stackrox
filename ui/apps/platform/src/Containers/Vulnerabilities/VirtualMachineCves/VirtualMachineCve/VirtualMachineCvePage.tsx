@@ -7,26 +7,45 @@ import {
     Flex,
     PageSection,
     Pagination,
-    Split,
-    SplitItem,
-    Title,
 } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { getVMCVEDetail, listVMCVEAffectedVMs } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import { getOverviewPagePath } from '../../utils/searchUtils';
+import {
+    virtualMachineComponentSearchFilterConfig,
+    virtualMachinesClusterSearchFilterConfig,
+    virtualMachinesNamespaceSearchFilterConfig,
+    virtualMachinesSearchFilterConfig,
+} from '../../searchFilterConfig';
+import {
+    getHiddenSeverities,
+    getOverviewPagePath,
+    parseQuerySearchFilter,
+} from '../../utils/searchUtils';
 import AffectedVirtualMachinesSummaryCard from './AffectedVirtualMachinesSummaryCard';
-import AffectedVirtualMachinesTable from './AffectedVirtualMachinesTable';
+import AffectedVirtualMachinesTable, {
+    defaultSortOption,
+    sortFields,
+} from './AffectedVirtualMachinesTable';
 import VirtualMachineCvePageHeader from './VirtualMachineCvePageHeader';
+
+const searchFilterConfig = [
+    virtualMachinesClusterSearchFilterConfig,
+    virtualMachinesNamespaceSearchFilterConfig,
+    virtualMachinesSearchFilterConfig,
+    virtualMachineComponentSearchFilterConfig,
+];
 
 const virtualMachineCveOverviewCvePath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'CVE',
@@ -34,15 +53,27 @@ const virtualMachineCveOverviewCvePath = getOverviewPagePath('VirtualMachine', {
 
 function VirtualMachineCvePage() {
     const { cveId } = useParams<{ cveId: string }>();
-
-    const fetchCveDetail = useCallback(() => getVMCVEDetail(cveId ?? ''), [cveId]);
-    const { data: cveDetail, isLoading, error } = useRestQuery(fetchCveDetail);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({ sortFields, defaultSortOption });
+
+    const fetchCveDetail = useCallback(
+        () => getVMCVEDetail(cveId ?? '', parseQuerySearchFilter(searchFilter)),
+        [cveId, searchFilter]
+    );
+    const { data: cveDetail, isLoading, error } = useRestQuery(fetchCveDetail);
 
     const fetchAffectedVMs = useCallback(
-        () => listVMCVEAffectedVMs(cveId ?? '', { page, perPage }),
-        [cveId, page, perPage]
+        () =>
+            listVMCVEAffectedVMs(cveId ?? '', {
+                searchFilter: parseQuerySearchFilter(searchFilter),
+                sortOption,
+                page,
+                perPage,
+            }),
+        [cveId, searchFilter, sortOption, page, perPage]
     );
     const {
         data: affectedVMsData,
@@ -54,7 +85,7 @@ function VirtualMachineCvePage() {
         isLoading: isLoadingAffectedVMs,
         data: affectedVMsData?.vms ?? [],
         error: affectedVMsError,
-        searchFilter: {},
+        searchFilter,
     });
 
     const affectedVMCount = affectedVMsData?.totalCount ?? 0;
@@ -76,6 +107,16 @@ function VirtualMachineCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false}>
+                <AdvancedFiltersToolbar
+                    searchFilterConfig={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    defaultSearchFilterEntity="Virtual machine"
+                    additionalContextFilter={{ CVE: `"${cveId ?? ''}"` }}
+                    onFilterChange={(newFilter) => {
+                        setSearchFilter(newFilter);
+                        setPage(1);
+                    }}
+                />
                 <SummaryCardLayout error={error} isLoading={isLoading}>
                     <SummaryCard
                         data={cveDetail}
@@ -95,35 +136,29 @@ function VirtualMachineCvePage() {
                             <BySeveritySummaryCard
                                 title="VMs by severity"
                                 severityCounts={data.vmSeverityCounts}
-                                hiddenSeverities={new Set()}
+                                hiddenSeverities={getHiddenSeverities(querySearchFilter)}
                             />
                         )}
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <Split hasGutter className="pf-v6-u-align-items-baseline">
-                    <SplitItem isFilled>
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                            <Title headingLevel="h2">
-                                {`${affectedVMCount} ${pluralize('virtual machine', affectedVMCount)} affected`}
-                            </Title>
-                        </Flex>
-                    </SplitItem>
-                    <SplitItem>
-                        <Pagination
-                            itemCount={affectedVMCount}
-                            perPage={perPage}
-                            page={page}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </SplitItem>
-                </Split>
+                <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
+                    <Pagination
+                        itemCount={affectedVMCount}
+                        perPage={perPage}
+                        page={page}
+                        onSetPage={(_, newPage) => setPage(newPage)}
+                        onPerPageSelect={(_, newPerPage) => {
+                            setPerPage(newPerPage);
+                        }}
+                    />
+                </Flex>
                 <AffectedVirtualMachinesTable
+                    cveId={cveId ?? ''}
                     tableState={tableState}
+                    getSortParams={getSortParams}
                     onClearFilters={() => {
+                        setSearchFilter({});
                         setPage(1);
                     }}
                 />

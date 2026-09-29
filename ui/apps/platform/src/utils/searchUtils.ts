@@ -26,6 +26,7 @@ import {
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
 import { profileName } from 'Components/CompoundSearchFilter/attributes/profile';
+import { virtualMachineAttributes } from 'Components/CompoundSearchFilter/attributes/virtualMachine';
 
 import type { NonEmptyArray, ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -220,16 +221,11 @@ export function flattenFilterValue<UndefinedFallback>(
  * @param options.perPage The number of items per page
  */
 export function getListQueryParams({
-    searchFilter,
+    searchFilter = {},
     sortOption,
     page,
     perPage,
-}: {
-    searchFilter: SearchFilter;
-    sortOption: ApiSortOption;
-    page: number;
-    perPage: number;
-}): string {
+}: SearchQueryOptions): string {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
@@ -454,6 +450,7 @@ const regexSearchOptions = [
     clusterTypeAttribute,
     policyAttributes,
     profileName,
+    virtualMachineAttributes,
 ]
     .flat()
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')

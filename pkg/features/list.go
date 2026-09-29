@@ -99,7 +99,7 @@ var (
 	// KnownExploitedVulnerabilities enables support for CISA Known Exploited Vulnerabilities (KEV) data.
 	//
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
-	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
+	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
 
 	// Display Compliance Dashboard (Deprecated) in user interface (not displayed by default starting in 4.11 release).
 	DeprecatedComplianceDashboard = registerFeature("Display Compliance Dashboard (Deprecated) in user interface", "ROX_DEPRECATED_COMPLIANCE_DASHBOARD")
@@ -128,11 +128,14 @@ var (
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING", enabled)
 
+	// VulnerabilityReportStreamingDownload enables streaming downloadable vulnerability reports directly to blob storage.
+	VulnerabilityReportStreamingDownload = registerFeature("Enables streaming downloadable vulnerability reports to blob storage", "ROX_VULNERABILITY_REPORT_STREAMING_DOWNLOAD", enabled)
+
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
-	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
+	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS", enabled)
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
-	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
@@ -143,14 +146,20 @@ var (
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 
+	// PolicyWorkloadTypeExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
+	PolicyWorkloadTypeExclusion = registerFeature("Enable excluding all workloads of a given type from a policy", "ROX_POLICY_WORKLOAD_TYPE_EXCLUSION")
+
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
-	// SensorCompatibilityStatus enables sensor compatibility status UI in place of sensor upgrade status
-	SensorCompatibilityStatus = registerFeature("Display sensor compatibility status instead of sensor upgrade status", "ROX_SENSOR_COMPATIBILITY_STATUS")
+	// LegacyScanner enables Scanner V2 integration. Off by default; locked in release builds.
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", unchangeableInProd)
 
-	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
-	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
+	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
+
+	// LightspeedRiskSummary enables Lightspeed AI risk summary
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -190,13 +199,14 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
-	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+	// VirtualMachines gates VM inventory, scanning, and VSOCK RBAC in Sensor.
+	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES", enabled)
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
-	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING", enabled)
 
 	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
@@ -206,4 +216,7 @@ var (
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
 	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
+
+	// ScannerV4SuppressOSVWithRedHatVEX suppresses OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists.
+	ScannerV4SuppressOSVWithRedHatVEX = registerFeature("Scanner V4 will suppress OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists", "ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX", enabled)
 )

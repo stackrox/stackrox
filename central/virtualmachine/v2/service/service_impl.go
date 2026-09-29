@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -17,6 +18,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -28,6 +30,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -104,6 +107,11 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		vmIDs = append(vmIDs, vm.GetId())
 	}
 
+	scanTimeByVM, err := s.latestScanTimeByVM(ctx, vmIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Fetch per-VM CVE severity counts via SQL GROUP BY.
 	vmFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
 	severityRows, err := s.cveView.CountBySeverityPerVM(ctx, vmFilter)
@@ -132,6 +140,7 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 			item.CveSeverityCounts = &v2.VulnCountBySeverity{}
 		}
 		item.ComponentScanCount = componentCountsByVM[vm.GetId()]
+		item.ScanTime = scanTimeByVM[vm.GetId()]
 		items = append(items, item)
 	}
 
@@ -208,6 +217,32 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 		VmCount:  int32(vmCount),
 		CveCount: int32(cveCount),
 	}, nil
+}
+
+// latestScanTimeByVM returns the latest scan timestamp per VM. Scan IDs are
+// UUIDv7, so the greatest ID is the latest scan (same rule as GetVM).
+func (s *serviceImpl) latestScanTimeByVM(ctx context.Context, vmIDs []string) (map[string]*timestamppb.Timestamp, error) {
+	result := make(map[string]*timestamppb.Timestamp, len(vmIDs))
+	if len(vmIDs) == 0 {
+		return result, nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
+	scans, err := s.scanDS.SearchRawVMScans(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	latestID := make(map[string]string, len(scans))
+	for _, scan := range scans {
+		vmID := scan.GetVmV2Id()
+		if prevID, ok := latestID[vmID]; ok && scan.GetId() <= prevID {
+			continue
+		}
+		latestID[vmID] = scan.GetId()
+		result[vmID] = scan.GetScanTime()
+	}
+	return result, nil
 }
 
 // batchComponentScanCounts fetches all components for the given VM IDs in one query
@@ -303,7 +338,7 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 		vmFilter = search.ConjunctionQuery(vmFilter, additionalQuery)
 	}
 
-	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter)
+	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter, search.CVE)
 	if err != nil {
 		return nil, err
 	}
@@ -339,25 +374,80 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 
 	countQuery := searchQuery.CloneVT()
 	countQuery.Pagination = nil
-	totalCount, err := s.cveDS.Count(ctx, countQuery)
+	totalCount, err := s.cveView.Count(ctx, countQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	cves, err := s.cveView.GetCVEsForVM(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch one raw storage row per CVE for metadata not available through
+	// the view (summary, link). These are stored in the serialized blob.
+	cveIDs := make([]string, 0, len(cves))
+	for _, cve := range cves {
+		cveIDs = append(cveIDs, cve.GetCVE())
+	}
+	metadataByID, err := s.fetchCVEMetadata(ctx, request.GetVmId(), cveIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	items := make([]*v2.VMCVERow, 0, len(cves))
 	for _, cve := range cves {
-		items = append(items, storagetov2.VirtualMachineCVEV2ToRow(cve))
+		row := &v2.VMCVERow{
+			Cve:                    cve.GetCVE(),
+			Severity:               v2.VulnerabilitySeverity(cve.GetMaxSeverity()),
+			IsFixable:              cve.GetIsFixable(),
+			Cvss:                   cve.GetMaxCVSS(),
+			NvdCvss:                cve.GetMaxNVDCVSS(),
+			EpssProbability:        cve.GetEPSSProbability(),
+			AffectedComponentCount: int32(cve.GetAffectedComponentCount()),
+			PublishedOn:            protocompat.ConvertTimeToTimestampOrNil(cve.GetPublishDate()),
+		}
+		if meta, ok := metadataByID[cve.GetCVE()]; ok {
+			row.Summary = meta.GetCveBaseInfo().GetSummary()
+			row.Link = meta.GetCveBaseInfo().GetLink()
+			if adv := meta.GetAdvisory(); adv != nil && adv.GetName() != "" {
+				row.Advisory = &v2.Advisory{
+					Name: adv.GetName(),
+					Link: adv.GetLink(),
+				}
+			}
+		}
+		items = append(items, row)
 	}
 
 	return &v2.ListVMCVEsByVMResponse{
 		Cves:       items,
 		TotalCount: int32(totalCount),
 	}, nil
+}
+
+// fetchCVEMetadata fetches one raw storage row per CVE for metadata fields
+// (summary, link) that aren't available through the SQL view.
+func (s *serviceImpl) fetchCVEMetadata(ctx context.Context, vmID string, cveIDs []string) (map[string]*storage.VirtualMachineCVEV2, error) {
+	if len(cveIDs) == 0 {
+		return nil, nil
+	}
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmID).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.CVE, cveIDs...).ProtoQuery(),
+	)
+	rows, err := s.cveDS.SearchRawVMCVEs(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]*storage.VirtualMachineCVEV2, len(cveIDs))
+	for _, row := range rows {
+		cveID := row.GetCveBaseInfo().GetCve()
+		if _, exists := result[cveID]; !exists {
+			result[cveID] = row
+		}
+	}
+	return result, nil
 }
 
 // GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
@@ -486,7 +576,7 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 		viewFilter = search.ConjunctionQuery(viewFilter, additionalQuery)
 	}
 
-	severityCounts, err := s.cveView.CountBySeverity(ctx, viewFilter)
+	severityCounts, err := s.cveView.CountBySeverity(ctx, viewFilter, search.VirtualMachineID)
 	if err != nil {
 		return nil, err
 	}
@@ -547,8 +637,8 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		searchQuery,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
-	searchQuery = common.UpdateSortAggs(searchQuery)
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+	searchQuery = common.UpdateSortAggs(searchQuery)
 
 	countQuery := searchQuery.CloneVT()
 	countQuery.Pagination = nil
@@ -599,6 +689,11 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 	}
 
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
+	detail.AgentStatus = storagetov2.AgentStatusFromLastContact(
+		vm.GetLastAgentContact(),
+		time.Now(),
+		env.VirtualMachinesAgentStaleAfter.DurationSetting(),
+	)
 
 	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
 	// so sorting by the primary key is equivalent to sorting by time and avoids

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // pool is a thread-safe string pool using set.StringSet
@@ -141,19 +142,20 @@ func generateAndAddIPToPool(ipPool *pool) string {
 	return ip
 }
 
-func getRandomOriginator(containerID string, pool *ProcessPool) *storage.NetworkProcessUniqueKey {
-	var process *storage.ProcessSignal
-	var percentMatchedProcess float32 = 0.5
-	p := rand.Float32()
-	if p < percentMatchedProcess {
+func getRandomProcessSignal(containerID string, pool *ProcessPool) *storage.ProcessSignal {
+	if rand.Float32() < 0.5 {
 		// There is a chance that the process has been filtered out or hasn't gotten to
 		// the central-db for some other reason so this is not a guarantee that the
 		// process is in the central-db
-		process = pool.getRandomProcess(containerID)
-	} else {
-		process = getGoodProcess(containerID)
+		if process := pool.getRandomProcess(containerID); process != nil {
+			return process
+		}
 	}
+	return getGoodProcess(containerID)
+}
 
+func getRandomOriginator(containerID string, pool *ProcessPool) *storage.NetworkProcessUniqueKey {
+	process := getRandomProcessSignal(containerID, pool)
 	return getNetworkProcessUniqueKeyFromProcess(process)
 }
 
@@ -167,4 +169,27 @@ func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *stor
 	}
 
 	return nil
+}
+
+func getSensorProcessFromStorageProcess(process *storage.ProcessSignal) *sensor.ProcessSignal {
+	return &sensor.ProcessSignal{
+		Id:           uuid.NewV4().String(),
+		ContainerId:  process.GetContainerId(),
+		Name:         process.GetName(),
+		Args:         process.GetArgs(),
+		ExecFilePath: process.GetExecFilePath(),
+		Pid:          uint32(rand.Intn(65535) + 1),
+		Uid:          1000,
+		Gid:          1000,
+	}
+}
+
+func getRandomSensorProcess(containerID string, pool *ProcessPool) *sensor.ProcessSignal {
+	process := getRandomProcessSignal(containerID, pool)
+	return getSensorProcessFromStorageProcess(process)
+}
+
+func getRandomNodeProcess() *sensor.ProcessSignal {
+	process := getGoodProcess("")
+	return getSensorProcessFromStorageProcess(process)
 }

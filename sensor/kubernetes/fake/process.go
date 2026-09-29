@@ -472,8 +472,13 @@ func getActiveProcesses(containerID string) []*storage.ProcessSignal {
 }
 
 func getProcess(path, name, containerID string) *storage.ProcessSignal {
+	// For node events, containerID is empty
+	cid := containerID
+	if len(containerID) >= 12 {
+		cid = containerID[:12]
+	}
 	return &storage.ProcessSignal{
-		ContainerId:  containerID[:12],
+		ContainerId:  cid,
 		Time:         protocompat.TimestampNow(),
 		Name:         name,
 		Args:         "abc def ghi jkl lmn op qrs tuv",

@@ -120,22 +120,11 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 		return
 	}
 	for _, c := range consumers {
-		errC := c.Consume(l.stopper.Client().Stopped(), event)
-		// Spawning go routine here to not block other consumers
-		go l.handleConsumerError(errC)
-	}
-}
-
-func (l *concurrentLane) handleConsumerError(errC <-chan error) {
-	// This blocks until the consumer finishes the processing
-	// TODO: Consider adding a timeout here
-	select {
-	case err := <-errC:
-		if err != nil {
-			// TODO: consider adding a callback to inform of the error
-			rateLimitedLog.ErrorL(l.id.String(), "unable to handle event: %v", err)
-		}
-	case <-l.stopper.Flow().StopRequested():
+		// Consume() is expected to return promptly; consumers are responsible for
+		// reporting their own errors (metrics/logs), so the result is not awaited here.
+		// Waiting on it would require a per-event goroutine that outlives this call
+		// whenever the consumer stalls, with no way to bound how many accumulate.
+		c.Consume(l.stopper.Client().Stopped(), event)
 	}
 }
 

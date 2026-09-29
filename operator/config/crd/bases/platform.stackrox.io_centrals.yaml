@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -600,6 +600,19 @@ spec:
                     - Recreate
                     - RollingUpdate
                     type: string
+                  signingKeyBundle:
+                    description: |-
+                      References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+                      This allows air-gapped customers to provide or update the signing keys used for
+                      signature verification of Red Hat container images. The ConfigMap is managed
+                      externally; key rotation requires only editing the ConfigMap, not a CR update.
+                    properties:
+                      name:
+                        description: The name of the referenced config map.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   telemetry:
                     description: |-
                       Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
@@ -2255,8 +2268,8 @@ spec:
                 type: array
               scanner:
                 description: |-
-                  Settings for the Scanner component, which is responsible for vulnerability scanning of container
-                  images.
+                  Obsolete field. This field will be removed in a future release.
+                  The legacy Scanner has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
@@ -3117,9 +3130,7 @@ spec:
                   scannerComponent:
                     description: |-
                       Can be specified as "Enabled" or "Disabled".
-                      If this field is not specified, the following defaulting takes place:
-                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
-                      * for new installations starting with ACS 4.8, the default is: Enabled.
+                      The default is: Enabled.
                     enum:
                     - Default
                     - Enabled

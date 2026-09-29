@@ -1,7 +1,6 @@
 package fake
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -11,14 +10,6 @@ import (
 
 func newUUID() types.UID {
 	return types.UID(uuid.NewV4().String())
-}
-
-// fakeVMUUID generates a deterministic UUID-like string from an index.
-// This ensures the same index always produces the same ID, and the ID
-// is a valid UUID format that Central will accept.
-// Format: 00000000-0000-4000-8000-{12-digit-index}
-func fakeVMUUID(index int) string {
-	return fmt.Sprintf("00000000-0000-4000-8000-%012d", index)
 }
 
 const charset = "abcdef0123456789"

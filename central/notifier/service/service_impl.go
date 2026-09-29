@@ -24,6 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/postgres"
+	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
@@ -58,6 +60,7 @@ type serviceImpl struct {
 	processor notifier.Processor
 	reporter  integrationhealth.Reporter
 	cryptoKey string
+	db        postgres.DB
 
 	policyCleaner policycleaner.PolicyCleaner
 }
@@ -164,6 +167,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, err
 	}
 	s.processor.UpdateNotifier(ctx, notifier)
+	s.notifyWorker(ctx, request.GetNotifier().GetId())
 	return &v1.Empty{}, nil
 }
 
@@ -195,6 +199,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	}
 	request.Id = id
 	s.processor.UpdateNotifier(ctx, notifier)
+	s.notifyWorker(ctx, id)
 
 	if err = s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_NOTIFIER); err != nil {
 		return nil, err
@@ -266,10 +271,20 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	s.processor.RemoveNotifier(ctx, request.GetId())
+	s.notifyWorker(ctx, request.GetId())
 	if err := s.reporter.RemoveIntegrationHealth(request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) notifyWorker(ctx context.Context, notifierID string) {
+	if s.db == nil {
+		return
+	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.NotifierChanged, notifierID); err != nil {
+		log.Errorf("Failed to notify worker of notifier change %s: %v", notifierID, err)
+	}
 }
 
 func (s *serviceImpl) reconcileUpdateNotifierRequest(ctx context.Context, updateRequest *v1.UpdateNotifierRequest) error {

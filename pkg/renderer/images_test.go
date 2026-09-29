@@ -167,28 +167,18 @@ func TestConfigureImageOverrides(t *testing.T) {
 		configValues                 CommonConfig
 		expectedMainRegistry         string
 		expectedMainOverrides        map[string]string
-		expectedScannerOverrides     map[string]string
-		expectedScannerDBOverrides   map[string]string
 		expectedScannerV4Overrides   map[string]string
 		expectedScannerV4DBOverrides map[string]string
 	}{
 		"Override Main Registry": {
 			configValues: CommonConfig{
 				MainImage:        "quay.io/rhacs/main",
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
 			},
 			expectedMainRegistry: "quay.io/rhacs",
 			expectedMainOverrides: map[string]string{
 				"Tag": "latest",
-			},
-			expectedScannerOverrides: map[string]string{
-				"Registry": "test.registry",
-			},
-			expectedScannerDBOverrides: map[string]string{
-				"Registry": "test.registry",
 			},
 			expectedScannerV4Overrides: map[string]string{
 				"Registry": "test.registry",
@@ -200,8 +190,6 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Don't override main registry": {
 			configValues: CommonConfig{
 				MainImage:        testFlavor.MainImage(),
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
 			},
@@ -209,20 +197,12 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Main sub-repo": {
 			configValues: CommonConfig{
 				MainImage:        "test.registry/sub-repo/main",
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
 			},
 			expectedMainRegistry: "test.registry/sub-repo",
 			expectedMainOverrides: map[string]string{
 				"Tag": "latest",
-			},
-			expectedScannerOverrides: map[string]string{
-				"Registry": "test.registry",
-			},
-			expectedScannerDBOverrides: map[string]string{
-				"Registry": "test.registry",
 			},
 			expectedScannerV4Overrides: map[string]string{
 				"Registry": "test.registry",
@@ -234,8 +214,6 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Main sub-repo and name": {
 			configValues: CommonConfig{
 				MainImage:        "test.registry/sub-repo/my-main",
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
 			},
@@ -248,14 +226,8 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Scanner registry": {
 			configValues: CommonConfig{
 				MainImage:        testFlavor.MainImage(),
-				ScannerImage:     "quay.io/rhacs/scanner",
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   "quay.io/rhacs/scanner-v4",
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
-			},
-			expectedScannerOverrides: map[string]string{
-				"Registry": "quay.io/rhacs",
-				"Tag":      "latest",
 			},
 			expectedScannerV4Overrides: map[string]string{
 				"Registry": "quay.io/rhacs",
@@ -266,14 +238,8 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override ScannerDB registry": {
 			configValues: CommonConfig{
 				MainImage:        testFlavor.MainImage(),
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   "quay.io/rhacs/scanner-db",
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: "quay.io/rhacs/scanner-v4-db",
-			},
-			expectedScannerDBOverrides: map[string]string{
-				"Registry": "quay.io/rhacs",
-				"Tag":      "latest",
 			},
 			expectedScannerV4DBOverrides: map[string]string{
 				"Registry": "quay.io/rhacs",
@@ -283,21 +249,12 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Main and Scanner registries": {
 			configValues: CommonConfig{
 				MainImage:        "quay.io/rhacs/main",
-				ScannerImage:     "stackrox.io/scanner",
-				ScannerDBImage:   testFlavor.ScannerDBImage(),
 				ScannerV4Image:   "stackrox.io/scanner-v4",
 				ScannerV4DBImage: testFlavor.ScannerV4DBImage(),
 			},
 			expectedMainRegistry: "quay.io/rhacs",
 			expectedMainOverrides: map[string]string{
 				"Tag": "latest",
-			},
-			expectedScannerOverrides: map[string]string{
-				"Registry": "stackrox.io",
-				"Tag":      "latest",
-			},
-			expectedScannerDBOverrides: map[string]string{
-				"Registry": "test.registry",
 			},
 			expectedScannerV4Overrides: map[string]string{
 				"Registry": "stackrox.io",
@@ -310,21 +267,12 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Main and ScannerDB registries": {
 			configValues: CommonConfig{
 				MainImage:        "quay.io/rhacs/main",
-				ScannerImage:     testFlavor.ScannerImage(),
-				ScannerDBImage:   "stackrox.io/scanner-db",
 				ScannerV4Image:   testFlavor.ScannerV4Image(),
 				ScannerV4DBImage: "stackrox.io/scanner-v4-db",
 			},
 			expectedMainRegistry: "quay.io/rhacs",
 			expectedMainOverrides: map[string]string{
 				"Tag": "latest",
-			},
-			expectedScannerOverrides: map[string]string{
-				"Registry": "test.registry",
-			},
-			expectedScannerDBOverrides: map[string]string{
-				"Registry": "stackrox.io",
-				"Tag":      "latest",
 			},
 			expectedScannerV4Overrides: map[string]string{
 				"Registry": "test.registry",
@@ -337,19 +285,11 @@ func TestConfigureImageOverrides(t *testing.T) {
 		"Override Main, Scanner and ScannerDB with the same registries": {
 			configValues: CommonConfig{
 				MainImage:        "quay.io/rhacs/main",
-				ScannerImage:     "quay.io/rhacs/scanner",
-				ScannerDBImage:   "quay.io/rhacs/scanner-db",
 				ScannerV4Image:   "quay.io/rhacs/scanner-v4",
 				ScannerV4DBImage: "quay.io/rhacs/scanner-v4-db",
 			},
 			expectedMainRegistry: "quay.io/rhacs",
 			expectedMainOverrides: map[string]string{
-				"Tag": "latest",
-			},
-			expectedScannerOverrides: map[string]string{
-				"Tag": "latest",
-			},
-			expectedScannerDBOverrides: map[string]string{
 				"Tag": "latest",
 			},
 			expectedScannerV4Overrides: map[string]string{
@@ -382,16 +322,6 @@ func TestConfigureImageOverrides(t *testing.T) {
 				assert.Equal(t, c.expectedMainOverrides, config.K8sConfig.ImageOverrides["Main"].(map[string]string))
 			} else {
 				assert.Len(t, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
-			}
-			if c.expectedScannerOverrides != nil {
-				assert.Equal(t, c.expectedScannerOverrides, config.K8sConfig.ImageOverrides["Scanner"].(map[string]string))
-			} else {
-				assert.Len(t, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
-			}
-			if c.expectedScannerDBOverrides != nil {
-				assert.Equal(t, c.expectedScannerDBOverrides, config.K8sConfig.ImageOverrides["ScannerDB"].(map[string]string))
-			} else {
-				assert.Len(t, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
 			}
 			if c.expectedScannerV4Overrides != nil {
 				assert.Equal(t, c.expectedScannerV4Overrides, config.K8sConfig.ImageOverrides["ScannerV4"].(map[string]string))

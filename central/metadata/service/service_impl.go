@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	"github.com/stackrox/rox/central/metadata/centralcapabilities"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -32,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"google.golang.org/grpc"
 )
 
@@ -41,6 +43,7 @@ var (
 			v1.MetadataService_GetDatabaseStatus_FullMethodName,
 			v1.MetadataService_GetDatabaseBackupStatus_FullMethodName,
 			v1.MetadataService_GetCentralCapabilities_FullMethodName,
+			v1.MetadataService_GetLightspeedStatus_FullMethodName,
 		},
 		// When this endpoint was public, Sensor relied on it to check Central's
 		// availability. While Sensor might not do so today, we need to ensure
@@ -176,9 +179,10 @@ func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
 
-	db              postgres.DB
-	systemInfoStore systemInfoStorage.Store
-	certProvider    CertificateProvider
+	db               postgres.DB
+	systemInfoStore  systemInfoStorage.Store
+	certProvider     CertificateProvider
+	lightspeedClient olsClient.Client
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -203,9 +207,14 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
 	}
-	// Only return the version to logged in users, not anonymous users.
+	// Only return version information to logged-in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
+		if versions, err := versioncompatibility.CompatibleVersions(); err == nil {
+			for _, xy := range versions {
+				metadata.CompatibleSensorVersions = append(metadata.CompatibleSensorVersions, xy.String())
+			}
+		}
 	}
 	return metadata, nil
 }
@@ -361,4 +370,26 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 // GetCentralCapabilities returns central services capabilities.
 func (s *serviceImpl) GetCentralCapabilities(_ context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
 	return centralcapabilities.GetCentralCapabilities(), nil
+}
+
+// GetLightspeedStatus returns the availability status of the Lightspeed AI service.
+func (s *serviceImpl) GetLightspeedStatus(_ context.Context, _ *v1.Empty) (*v1.LightspeedStatusResponse, error) {
+	if s.lightspeedClient == nil {
+		return &v1.LightspeedStatusResponse{
+			Available: false,
+			Message:   "Lightspeed client not configured",
+		}, nil
+	}
+
+	if err := s.lightspeedClient.TestConnectivity(); err != nil {
+		return &v1.LightspeedStatusResponse{
+			Available: false,
+			Message:   errors.Wrap(err, "Lightspeed AI service connectivity test failed").Error(),
+		}, nil
+	}
+
+	return &v1.LightspeedStatusResponse{
+		Available: true,
+		Message:   "Lightspeed AI service is available",
+	}, nil
 }

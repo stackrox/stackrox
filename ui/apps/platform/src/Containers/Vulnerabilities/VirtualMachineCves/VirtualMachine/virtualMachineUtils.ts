@@ -9,4 +9,5 @@ export const stateDisplayMap: Record<VirtualMachineV2State, string> = {
 export const agentStatusDisplayMap: Record<AgentStatus, string> = {
     AGENT_STATUS_UNKNOWN: 'Unknown',
     AGENT_STATUS_ACTIVE: 'Active',
+    AGENT_STATUS_INACTIVE: 'Inactive',
 };

@@ -87,7 +87,7 @@ func includedNamespacesFromScopeConfig(scope *declarativeconfig.AccessScope) []*
 }
 
 func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelector) ([]*storage.SetBasedLabelSelector, error) {
-	var setBasedLabelSelectors []*storage.SetBasedLabelSelector
+	setBasedLabelSelectors := make([]*storage.SetBasedLabelSelector, 0, len(labelSelectors))
 	var labelSelectorErrs *multierror.Error
 	for _, ls := range labelSelectors {
 		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(ls.Requirements))

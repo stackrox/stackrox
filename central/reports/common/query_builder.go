@@ -178,39 +178,9 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 			fieldLabel == search.NamespaceAnnotation
 
 		if isMapField {
-			mapQueries := make([]*v1.Query, 0, len(rule.GetValues()))
-			for _, rv := range rule.GetValues() {
-				val := rv.GetValue()
-				key, value := splitLabelValue(val)
-				if rv.GetMatchType() == storage.MatchType_REGEX {
-					// For regex match, only apply the r/ prefix to parts that contain
-					// regex metacharacters. Literal parts stay quoted for exact matching.
-					rawParts := strings.SplitN(val, "=", 2)
-					rawValue := ""
-					if len(rawParts) == 2 {
-						rawValue = rawParts[1]
-					}
-					key = mapPartQueryString(rawParts[0])
-					value = mapPartQueryString(rawValue)
-				}
-				mapQueries = append(mapQueries,
-					search.NewQueryBuilder().AddMapQuery(fieldLabel, key, value).ProtoQuery())
-			}
-			conjuncts = append(conjuncts, search.DisjunctionQuery(mapQueries...))
+			conjuncts = append(conjuncts, MapFieldQuery(fieldLabel, rule))
 		} else {
-			var ruleQueries []*v1.Query
-			for _, rv := range rule.GetValues() {
-				val := rv.GetValue()
-				if rv.GetMatchType() == storage.MatchType_REGEX {
-					val = search.RegexPrefix + val
-					ruleQueries = append(ruleQueries,
-						search.NewQueryBuilder().AddStrings(fieldLabel, val).ProtoQuery())
-				} else {
-					ruleQueries = append(ruleQueries,
-						search.NewQueryBuilder().AddExactMatches(fieldLabel, val).ProtoQuery())
-				}
-			}
-			conjuncts = append(conjuncts, search.DisjunctionQuery(ruleQueries...))
+			conjuncts = append(conjuncts, ScalarFieldQuery(fieldLabel, rule))
 		}
 	}
 
@@ -218,6 +188,46 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 		return search.EmptyQuery(), nil
 	}
 	return search.ConjunctionQuery(conjuncts...), nil
+}
+
+// MapFieldQuery builds a disjunction query for a map-type search field
+// (labels/annotations) from the values in an entity scope rule.
+func MapFieldQuery(fieldLabel search.FieldLabel, rule *storage.EntityScopeRule) *v1.Query {
+	mapQueries := make([]*v1.Query, 0, len(rule.GetValues()))
+	for _, rv := range rule.GetValues() {
+		val := rv.GetValue()
+		key, value := splitLabelValue(val)
+		if rv.GetMatchType() == storage.MatchType_REGEX {
+			rawParts := strings.SplitN(val, "=", 2)
+			rawValue := ""
+			if len(rawParts) == 2 {
+				rawValue = rawParts[1]
+			}
+			key = mapPartQueryString(rawParts[0])
+			value = mapPartQueryString(rawValue)
+		}
+		mapQueries = append(mapQueries,
+			search.NewQueryBuilder().AddMapQuery(fieldLabel, key, value).ProtoQuery())
+	}
+	return search.DisjunctionQuery(mapQueries...)
+}
+
+// ScalarFieldQuery builds a disjunction query for a scalar-type search field
+// (names, IDs) from the values in an entity scope rule.
+func ScalarFieldQuery(fieldLabel search.FieldLabel, rule *storage.EntityScopeRule) *v1.Query {
+	values := rule.GetValues()
+	ruleQueries := make([]*v1.Query, 0, len(values))
+	for _, rv := range values {
+		val := rv.GetValue()
+		if rv.GetMatchType() == storage.MatchType_REGEX {
+			ruleQueries = append(ruleQueries,
+				search.NewQueryBuilder().AddRegexes(fieldLabel, val).ProtoQuery())
+		} else {
+			ruleQueries = append(ruleQueries,
+				search.NewQueryBuilder().AddExactMatches(fieldLabel, val).ProtoQuery())
+		}
+	}
+	return search.DisjunctionQuery(ruleQueries...)
 }
 
 // entityScopeRuleToFieldLabel returns search filter for given entity field pair

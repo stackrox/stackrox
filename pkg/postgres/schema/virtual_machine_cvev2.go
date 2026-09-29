@@ -68,24 +68,25 @@ const (
 
 // VirtualMachineCvev2 holds the Gorm model for Postgres table `virtual_machine_cvev2`.
 type VirtualMachineCvev2 struct {
-	ID                             string                        `gorm:"column:id;type:uuid;primaryKey"`
-	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid"`
-	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
-	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
-	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
-	CveBaseInfoCisaKev             bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
-	PreferredCvss                  float32                       `gorm:"column:preferredcvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
-	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
-	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
-	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
-	EpssProbability                float32                       `gorm:"column:epssprobability;type:numeric"`
-	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
-	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
-	VirtualMachineV2Ref            VirtualMachineV2              `gorm:"foreignKey:vmv2id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	VirtualMachineComponentV2Ref   VirtualMachineComponentV2     `gorm:"foreignKey:vmcomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ID                                 string                        `gorm:"column:id;type:uuid;primaryKey"`
+	VmV2ID                             string                        `gorm:"column:vmv2id;type:uuid"`
+	VmComponentID                      string                        `gorm:"column:vmcomponentid;type:uuid"`
+	CveBaseInfoCve                     string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoPublishedOn             *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
+	CveBaseInfoCreatedAt               *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	CveBaseInfoEpssEpssProbability     float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoCisaKev                 bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
+	CveBaseInfoKnownRansomwareCampaign bool                          `gorm:"column:cvebaseinfo_knownransomwarecampaign;type:bool"`
+	PreferredCvss                      float32                       `gorm:"column:preferredcvss;type:numeric"`
+	Severity                           storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	ImpactScore                        float32                       `gorm:"column:impactscore;type:numeric"`
+	Nvdcvss                            float32                       `gorm:"column:nvdcvss;type:numeric"`
+	IsFixable                          bool                          `gorm:"column:isfixable;type:bool"`
+	FixedBy                            string                        `gorm:"column:fixedby;type:varchar"`
+	EpssProbability                    float32                       `gorm:"column:epssprobability;type:numeric"`
+	AdvisoryName                       string                        `gorm:"column:advisory_name;type:varchar"`
+	AdvisoryLink                       string                        `gorm:"column:advisory_link;type:varchar"`
+	Serialized                         []byte                        `gorm:"column:serialized;type:bytea"`
+	VirtualMachineV2Ref                VirtualMachineV2              `gorm:"foreignKey:vmv2id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	VirtualMachineComponentV2Ref       VirtualMachineComponentV2     `gorm:"foreignKey:vmcomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

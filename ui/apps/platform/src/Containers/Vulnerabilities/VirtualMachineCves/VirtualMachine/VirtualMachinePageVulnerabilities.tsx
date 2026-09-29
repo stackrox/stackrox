@@ -12,16 +12,24 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { listVMCVEsByVM } from 'services/VirtualMachineService';
+import { getVMVulnSummary, listVMCVEsByVM } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
+import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
+import AffectedComponentsTable from '../components/AffectedComponentsTable';
 import {
     virtualMachineCVESearchFilterConfig,
     virtualMachineComponentSearchFilterConfig,
 } from '../../searchFilterConfig';
+import {
+    getHiddenSeverities,
+    getHiddenStatuses,
+    parseQuerySearchFilter,
+} from '../../utils/searchUtils';
 import {
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
@@ -55,6 +63,7 @@ function VirtualMachinePageVulnerabilities({
 }: VirtualMachinePageVulnerabilitiesProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
@@ -62,6 +71,16 @@ function VirtualMachinePageVulnerabilities({
     });
     const expandedRowSet = useSet<string>();
     const colSpan = 7;
+
+    const fetchSummary = useCallback(
+        () => getVMVulnSummary(virtualMachineId, parseQuerySearchFilter(searchFilter)),
+        [virtualMachineId, searchFilter]
+    );
+    const {
+        data: summary,
+        isLoading: isLoadingSummary,
+        error: summaryError,
+    } = useRestQuery(fetchSummary);
 
     const fetchCVEs = useCallback(
         () => listVMCVEsByVM(virtualMachineId, { searchFilter, page, perPage, sortOption }),
@@ -83,7 +102,6 @@ function VirtualMachinePageVulnerabilities({
 
     return (
         <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
-            <VirtualMachineScanScopeAlert />
             <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
                 <FlexItem fullWidth={{ default: 'fullWidth' }}>
                     <AdvancedFiltersToolbar
@@ -107,14 +125,37 @@ function VirtualMachinePageVulnerabilities({
                     }}
                 />
             </Flex>
+            <SummaryCardLayout error={summaryError} isLoading={isLoadingSummary}>
+                <SummaryCard
+                    data={summary}
+                    loadingText="Loading virtual machine vulnerabilities by severity summary"
+                    renderer={({ data }) => (
+                        <BySeveritySummaryCard
+                            title="CVEs by severity"
+                            severityCounts={data.severityCounts}
+                            hiddenSeverities={getHiddenSeverities(querySearchFilter)}
+                        />
+                    )}
+                />
+                <SummaryCard
+                    data={summary}
+                    loadingText="Loading virtual machine vulnerabilities by status summary"
+                    renderer={({ data }) => (
+                        <CvesByStatusSummaryCard
+                            cveStatusCounts={data.severityCounts}
+                            hiddenStatuses={getHiddenStatuses(querySearchFilter)}
+                        />
+                    )}
+                />
+            </SummaryCardLayout>
             <Table borders={tableState.type === 'COMPLETE'} variant="compact" aria-live="polite">
                 <Thead noWrap>
                     <Tr>
                         <Th screenReaderText="Row expansion" />
                         <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                        <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
+                        <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top CVE severity</Th>
                         <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
-                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>Top CVSS</Th>
                         <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>
                             EPSS probability
                         </Th>
@@ -144,7 +185,7 @@ function VirtualMachinePageVulnerabilities({
                                         <Td dataLabel="CVE">
                                             <Truncate position="middle" content={cve.cve} />
                                         </Td>
-                                        <Td dataLabel="CVE severity" modifier="nowrap">
+                                        <Td dataLabel="Top CVE severity" modifier="nowrap">
                                             <VulnerabilitySeverityIconText
                                                 severity={cve.severity}
                                             />
@@ -154,7 +195,7 @@ function VirtualMachinePageVulnerabilities({
                                                 isFixable={cve.isFixable}
                                             />
                                         </Td>
-                                        <Td dataLabel="CVSS" modifier="nowrap">
+                                        <Td dataLabel="Top CVSS" modifier="nowrap">
                                             <CvssFormatted cvss={cve.cvss} />
                                         </Td>
                                         <Td dataLabel="EPSS probability">
@@ -168,7 +209,12 @@ function VirtualMachinePageVulnerabilities({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                Affected component details coming soon
+                                                {isExpanded && (
+                                                    <AffectedComponentsTable
+                                                        virtualMachineId={virtualMachineId}
+                                                        cveId={cve.cve}
+                                                    />
+                                                )}
                                             </ExpandableRowContent>
                                         </Td>
                                     </Tr>

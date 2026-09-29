@@ -33,22 +33,21 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-nongroovy-e2e-tests
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
-      SENSOR_SCANNER_SUPPORT: "true"
+      SENSOR_SCANNER_V4_SUPPORT: "true"
       ROX_DEPLOY_SENSOR_WITH_CRS: "true"
       SENSOR_HELM_MANAGED: "true"
       SCANNER_V4_DB_STORAGE_CLASS: faster
       STORAGE: pvc
       STORAGE_CLASS: faster
-      ROX_SCANNER_V4: "false"
+      ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 120
+    timeout-minutes: 361
     steps:
 
     - name: Checkout repo
@@ -80,18 +79,20 @@ jobs:
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster nongroovy
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster nongroovy
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
-      # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
-      # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/
+      # roxctl is used for generate (deploy) and CLI e2e tests (token-file, etc).
+      # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/.
+      # A release Central must be generated with a release roxctl; otherwise generate
+      # copies ROX_* into the bundle and TestFeatureFlagSettings cannot fail the way
+      # nightlies do.
       run: |
+        if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]] || [[ "${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-release-build') }}" == "true" ]]; then
+          export GOTAGS=release
+          echo "Building release roxctl (tag or ci-release-build)"
+        fi
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
@@ -149,16 +150,14 @@ jobs:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      timeout-minutes: 90
+      timeout-minutes: 245
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
-    - name: Persist env vars for post-test
+    - name: Ensure central stability before post-test
       if: always()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
       if: always()
@@ -198,12 +197,18 @@ jobs:
           exit 6
         fi
 
-    - name: Publish test summary
+    - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        show: "fail"
+    - name: Publish summary for passed and skipped tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: "pass, skip"
 
     - name: Report junit failures in jira
       if: (!cancelled())

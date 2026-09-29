@@ -34,7 +34,9 @@ import type { SearchFilter } from 'types/search';
 import { useIsFirstRender } from 'hooks/useIsFirstRender';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
+import { runImageViewBasedReport } from 'services/ReportsService';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
@@ -63,9 +65,9 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
 
@@ -483,6 +485,8 @@ function WorkloadCvesOverviewPage() {
                         setIsOpen={setIsCreateViewBasedReportModalOpen}
                         query={workloadCvesScopedQueryString}
                         areaOfConcern={viewContext}
+                        runViewBasedReport={runImageViewBasedReport}
+                        vulnerabilityViewBasedJobsPath={vulnerabilityImageViewBasedJobsPath}
                     />
                 )}
             </PageSection>

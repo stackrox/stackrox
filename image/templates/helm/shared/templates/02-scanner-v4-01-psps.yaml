@@ -24,7 +24,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: stackrox-scanner-v4-psp
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "stackrox-scanner-v4-psp") | nindent 4 }}
   annotations:
@@ -36,7 +36,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: scanner-v4
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
 
 ---
 

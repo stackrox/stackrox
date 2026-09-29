@@ -64,7 +64,12 @@ type pipelineImpl struct {
 
 func (p *pipelineImpl) OnFinish(string) {}
 
+// Capabilities omits VirtualMachinesSupported when ROX_VIRTUAL_MACHINES is
+// off so Sensor treats this Central like a pre-VM build.
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
 }
 
@@ -205,6 +210,8 @@ func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *st
 	return nil
 }
 
+// lookupGuestOS returns facts["guestOS"] so scan identity stays on the KubeVirt
+// family name rather than the versioned display string in guest_os.
 func (p *pipelineImpl) lookupGuestOS(ctx context.Context, vmID string) string {
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		vm, found, err := p.virtualMachineV2Store.GetVirtualMachine(ctx, vmID)
@@ -215,7 +222,7 @@ func (p *pipelineImpl) lookupGuestOS(ctx context.Context, vmID string) string {
 		if !found {
 			return ""
 		}
-		return vm.GetGuestOs()
+		return vm.GetFacts()[pkgVM.GuestOSKey]
 	}
 	vm, found, err := p.virtualMachineStore.GetVirtualMachine(ctx, vmID)
 	if err != nil {

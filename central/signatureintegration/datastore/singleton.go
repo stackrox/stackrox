@@ -71,7 +71,7 @@ func startKeyBundleUpdater() {
 
 	rawURL := env.RedHatSigningKeyBundleURL.Setting()
 	if rawURL == "" {
-		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
+		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL is empty, key bundle updater will not start")
 		return
 	}
 	bundleURL := urlfmt.FormatURL(rawURL, urlfmt.HTTPS, urlfmt.HonorInputSlash)
@@ -104,8 +104,6 @@ func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
 		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
-		ensureKeyBundleDirectory()
-		writeExampleBundle()
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 		startKeyBundleUpdater()

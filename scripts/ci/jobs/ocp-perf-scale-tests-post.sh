@@ -53,7 +53,7 @@ fi
 # Set API_ENDPOINT since we know it from the port-forward
 export API_ENDPOINT="localhost:8000"
 
-# Get admin password from SHARED_DIR (saved by stackrox-install-helm step)
+# Get admin password from SHARED_DIR (saved by stackrox-install-roxie step)
 if [[ -n "${SHARED_DIR:-}" && -f "${SHARED_DIR}/rox_admin_password" ]]; then
     export ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
     info "Retrieved admin password from SHARED_DIR"

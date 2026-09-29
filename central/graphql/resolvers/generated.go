@@ -199,6 +199,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssV3: CVSSV3",
 		"epss: EPSS",
 		"exploit: Exploit",
+		"knownRansomwareCampaign: Boolean!",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -1575,6 +1576,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnOrigin(0)))
 	utils.Must(builder.AddInput("VulnReqGlobalScope", []string{
 		"images: VulnReqImageScope",
 	}))
@@ -3433,6 +3435,11 @@ func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error
 func (resolver *cVEInfoResolver) Exploit(ctx context.Context) (*exploitResolver, error) {
 	value := resolver.data.GetExploit()
 	return resolver.root.wrapExploit(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) KnownRansomwareCampaign(ctx context.Context) bool {
+	value := resolver.data.GetKnownRansomwareCampaign()
+	return value
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -16912,6 +16919,24 @@ func toVolume_MountPropagations(values *[]string) []storage.Volume_MountPropagat
 	output := make([]storage.Volume_MountPropagation, len(*values))
 	for i, v := range *values {
 		output[i] = toVolume_MountPropagation(&v)
+	}
+	return output
+}
+
+func toVulnOrigin(value *string) storage.VulnOrigin {
+	if value != nil {
+		return storage.VulnOrigin(storage.VulnOrigin_value[*value])
+	}
+	return storage.VulnOrigin(0)
+}
+
+func toVulnOrigins(values *[]string) []storage.VulnOrigin {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VulnOrigin, len(*values))
+	for i, v := range *values {
+		output[i] = toVulnOrigin(&v)
 	}
 	return output
 }

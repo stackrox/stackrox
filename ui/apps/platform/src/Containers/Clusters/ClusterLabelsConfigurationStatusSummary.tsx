@@ -3,7 +3,6 @@ import { Alert, Content, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMetadata from 'hooks/useMetadata';
 import type { Cluster, ClusterManagerType, CompleteClusterConfig } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
@@ -41,8 +40,6 @@ function ClusterLabelsConfigurationStatusSummary({
     handleChange,
     handleChangeAdmissionControllerEnforcementBehavior,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
     const metadata = useMetadata();
     const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
 
@@ -165,14 +162,13 @@ function ClusterLabelsConfigurationStatusSummary({
                     >
                         <ClusterStatusGrid healthStatus={selectedCluster.healthStatus} />
                         <ClusterSummaryGrid
-                            centralVersion={centralVersion}
                             clusterInfo={selectedCluster}
                             clusterRetentionInfo={clusterRetentionInfo}
                         />
                     </Flex>
                 </Flex>
             )}
-            {selectedCluster.id && selectedCluster.status && isSensorCompatStatusEnabled && (
+            {selectedCluster.id && selectedCluster.status && (
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                     <Title headingLevel="h2">Compatibility status</Title>
                     <SensorCompatibilityPanel

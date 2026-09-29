@@ -2,6 +2,7 @@ package netutil
 
 import (
 	"net"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -16,9 +17,7 @@ func MustParseCIDR(cidr string) *net.IPNet {
 
 // IsIPNetOverlapingPrivateRange checks if network overlaps with private subnets
 func IsIPNetOverlapingPrivateRange(ipNet *net.IPNet) bool {
-	var privateSubnets []*net.IPNet
-	privateSubnets = append(privateSubnets, IPv4PrivateNetworks...)
-	privateSubnets = append(privateSubnets, IPv6PrivateNetworks...)
+	privateSubnets := slices.Concat(IPv4PrivateNetworks, IPv6PrivateNetworks)
 	return AnyOverlap(ipNet, privateSubnets)
 }
 

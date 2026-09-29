@@ -2,10 +2,13 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	flowMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -96,6 +99,50 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.Equal(int64(1), deploymentRanker.GetRankForID("2"))
 	suite.Equal(int64(2), deploymentRanker.GetRankForID("1"))
 	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
+}
+
+// Regression: a failed flow store lookup must not block the row delete, else
+// deployments of an already-deleted cluster could never be pruned.
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeploymentDeletesRowWhenFlowStoreLookupFails() {
+	baselines := baselineMocks.NewMockDataStore(suite.mockCtrl)
+	flows := flowMocks.NewMockClusterDataStore(suite.mockCtrl)
+
+	ds := newDatastoreImpl(suite.storage, nil, nil, baselines, flows, suite.riskStore, nil, suite.filter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), suite.matcher)
+
+	const clusterID = "c1"
+	const deploymentID = "d1"
+
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, gomock.Any()).Return(nil)
+	baselines.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	flows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(nil, errors.New("flow store gone"))
+	// The deployment row must still be deleted despite the flow-store failure.
+	suite.storage.EXPECT().Delete(gomock.Any(), deploymentID).Return(nil)
+
+	err := ds.RemoveDeployment(suite.ctx, clusterID, deploymentID)
+	suite.Require().Error(err)
+	suite.ErrorContains(err, "flow store gone")
+}
+
+// An empty clusterID (e.g. an orphaned deployment whose clusterid column is NULL) has no
+// flow partition, so the flow store lookup must be skipped rather than dereferencing a nil
+// store, while the row is still deleted.
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeploymentSkipsFlowStoreWhenClusterIDEmpty() {
+	baselines := baselineMocks.NewMockDataStore(suite.mockCtrl)
+	flows := flowMocks.NewMockClusterDataStore(suite.mockCtrl)
+
+	ds := newDatastoreImpl(suite.storage, nil, nil, baselines, flows, suite.riskStore, nil, suite.filter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), suite.matcher)
+
+	const deploymentID = "d1"
+
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, gomock.Any()).Return(nil)
+	baselines.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	// flows.GetFlowStore must not be called for an empty clusterID; the mock has no
+	// expectation set, so any call would fail the test.
+	suite.storage.EXPECT().Delete(gomock.Any(), deploymentID).Return(nil)
+
+	suite.Require().NoError(ds.RemoveDeployment(suite.ctx, "", deploymentID))
 }
 
 func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *v1.Query, fn func(group *storage.Deployment) error) error {

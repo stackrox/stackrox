@@ -9,6 +9,9 @@ import {
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
+import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -30,9 +33,11 @@ import TableEntityToolbar from '../../components/TableEntityToolbar';
 
 import { parseQuerySearchFilter } from '../../utils/searchUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
-import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
-import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
+import {
+    attributeForSnoozed,
+    clusterSearchFilterConfig,
+    platformCVESearchFilterConfig,
+} from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { platformEntityTabValues } from '../../types';
@@ -65,14 +70,17 @@ function PlatformCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    // Default to Observed tab in UI and corresponding search filter in API when unspecified.
+    const querySearchFilter = parseQuerySearchFilter({
+        [attributeForSnoozed.searchTerm]: attributeForSnoozed.inputProps.options[0].value,
+        ...searchFilter,
+    });
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
-    const snoozedCveCount = useSnoozedCveCount('Platform');
 
     function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
@@ -105,6 +113,11 @@ function PlatformCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
+        pagination.setPage(1);
+    }
+
+    function onSelectSnoozedTab(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         pagination.setPage(1);
     }
 
@@ -158,14 +171,15 @@ function PlatformCvesOverviewPage() {
                         <Title headingLevel="h1">Kubernetes components</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                     </Flex>
-                    <FlexItem>
-                        <SnoozedCveToggleButton
-                            searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
-                            snoozedCveCount={snoozedCveCount}
-                        />
-                    </FlexItem>
                 </Flex>
+            </PageSection>
+            <PageSection type="tabs">
+                <SelectExclusiveSingleTabs
+                    attribute={attributeForSnoozed}
+                    onSelectTab={onSelectSnoozedTab}
+                    searchFilter={searchFilter}
+                    tabContentId="TODO"
+                />
             </PageSection>
             <PageSection isFilled>
                 <TableEntityToolbar

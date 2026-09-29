@@ -913,7 +913,6 @@ module.exports = [
             'src/Components/visuals/**', // deprecated
             'src/Components/workflow/**', // deprecated
 
-            'src/Containers/Clusters/**', // fix errors, and then delete; also in tailwind.config.js file
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated

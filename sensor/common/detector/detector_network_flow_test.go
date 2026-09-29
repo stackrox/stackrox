@@ -208,7 +208,7 @@ func TestNetworkFlowPipelineDropsWhenFull(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				for i := range totalEvents {
+				sendFlow := func(idSuffix int) {
 					d.ProcessNetworkFlow(context.Background(), &storage.NetworkFlow{
 						Props: &storage.NetworkFlowProperties{
 							SrcEntity: &storage.NetworkEntityInfo{
@@ -217,12 +217,21 @@ func TestNetworkFlowPipelineDropsWhenFull(t *testing.T) {
 							},
 							DstEntity: &storage.NetworkEntityInfo{
 								Type: storage.NetworkEntityInfo_INTERNET,
-								Id:   fmt.Sprintf("internet-%d", i),
+								Id:   fmt.Sprintf("internet-%d", idSuffix),
 							},
 							DstPort:    80,
 							L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 						},
 					})
+				}
+
+				// PubSub: the BufferedConsumer's run() goroutine pulls this one
+				// event and PARKS in handleEvent. That makes count deterministic.
+				sendFlow(totalEvents + 1)
+				synctest.Wait()
+
+				for i := range totalEvents {
+					sendFlow(i)
 				}
 				synctest.Wait()
 

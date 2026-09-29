@@ -79,7 +79,6 @@ const sensorCompatibilityStatusAttribute: CompoundSearchFilterAttribute = {
     searchTerm: 'Sensor Version Compatibility',
     inputType: 'select',
     inputProps: { options: sensorCompatibilityStatusOptions },
-    featureFlagDependency: ['ROX_SENSOR_COMPATIBILITY_STATUS'],
 };
 
 const lastContactAttributes: CompoundSearchFilterAttribute = {

@@ -39,18 +39,15 @@ POD_CONTAINERS_MAP["pod: central - container: central"]="central-[A-Za-z0-9]+-[A
 POD_CONTAINERS_MAP["pod: central-db - container: init-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: central-db - container: central-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-central-db-previous.log"
 POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-controller-[A-Za-z0-9]+-[A-Za-z0-9]+-manager-previous.log"
-POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
-POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
+# Matcher and indexer are separate deployments: scanner-v4-matcher-*, scanner-v4-indexer-*.
+POD_CONTAINERS_MAP["pod: scanner-v4-matcher - container: matcher"]="scanner-v4-matcher-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-indexer - container: indexer"]="scanner-v4-indexer-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
 POD_CONTAINERS_MAP["pod: scanner-v4-db - container: db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
 POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za-z0-9]+-sensor-previous.log"
 POD_CONTAINERS_MAP["pod: admission-control - container: admission-control"]="admission-control-[A-Za-z0-9]+-[A-Za-z0-9]+-admission-control-previous.log"
 POD_CONTAINERS_MAP["pod: collector - container: collector"]="collector-[A-Za-z0-9]+-collector-previous.log"
 POD_CONTAINERS_MAP["pod: collector - container: compliance"]="collector-[A-Za-z0-9]+-compliance-previous.log"
-POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
 
 # Note: the caller must make sure to redirect stdin to /dev/null where needed.
 retrying_kubectl() {
@@ -93,6 +90,38 @@ deploy_stackrox() {
     fi
 
     touch "${STATE_DEPLOYED}"
+}
+
+# Ensure the roxie CLI is installed and on PATH. run.sh runs under both GitHub Actions and
+# OpenShift CI (Prow); on Prow the GHA roxie/install-cli action is unavailable and the test
+# image may ship an older roxie, so we rely on the self-installing scripts/roxie.sh wrapper,
+# which downloads the version pinned in ROXIE_VERSION into bin/<os>_<arch>/roxie and put it
+# ahead of any pre-installed roxie on PATH.
+ensure_roxie_on_path() {
+    local os arch
+    case "$(uname -s)" in
+        Linux*) os="linux" ;;
+        Darwin*) os="darwin" ;;
+        *) die "Unsupported operating system: $(uname -s)" ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        arm64|aarch64) arch="arm64" ;;
+        *) die "Unsupported architecture: $(uname -m)" ;;
+    esac
+
+    # Triggers the download/install of the pinned roxie version if it is not present yet.
+    "$ROOT/scripts/roxie.sh" version
+
+    # Put ONLY roxie at the front of PATH, via a dedicated directory. We must not prepend
+    # "$ROOT/bin/${os}_${arch}" directly: it also contains roxctl, which the bats tests move out
+    # of that directory mid-run, after which bare `roxctl` would resolve to the now-missing path
+    # (instead of the stable /usr/local/bin/roxctl copy) and later phases (e.g. proxy tests) fail.
+    local roxie_bindir; roxie_bindir="$(mktemp -d)"
+    ln -sf "$ROOT/bin/${os}_${arch}/roxie" "${roxie_bindir}/roxie"
+    export PATH="${roxie_bindir}:$PATH"
+
+    check_for_roxie
 }
 
 # Deploy StackRox using roxie.
@@ -148,30 +177,30 @@ deploy_stackrox_with_roxie() {
     # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
+    # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
+    # For Scanner V4 this means that it will also wait until vulnerabilities are loaded into the DB.
     roxie deploy \
+        --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
         --envrc "$roxie_envrc" \
         --config "$config_file"
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
-    if [[ -n "${BASH_ENV:-}" ]]; then
-        cat "$roxie_envrc" >> "$BASH_ENV"
-    fi
     # shellcheck source=/dev/null
     source "$roxie_envrc"
 
+    # Re-export every variable from the envrc via ci_export so that it is
+    # persisted correctly for subsequent GHA steps (GITHUB_ENV) or Prow
+    # (BASH_ENV).  The envrc has already been sourced above, so we read
+    # the properly unquoted values from the current shell environment
+    # instead of trying to strip Go %q quoting from the file.
+    local var_name
+    while IFS= read -r envrc_line; do
+        var_name="${envrc_line#export }"  # strip "export " prefix
+        var_name="${var_name%%=*}"      # strip "=value" suffix
+        ci_export "$var_name" "${!var_name}"
+    done < <(grep '^export ' "$roxie_envrc")
     record_build_info "${central_namespace}"
-
-    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
-    # It just waits for sensor and collector workloads to be up and running.
-    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
-    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
-    # and we don't want to slow down this deployment path using roxie.
-    sensor_wait "$securedcluster_namespace"
-    wait_for_collectors_to_be_operational "$securedcluster_namespace"
-    if retrying_kubectl </dev/null -n "$central_namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "$central_namespace"
-    fi
 
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
@@ -268,6 +297,7 @@ extend_roxie_envrc() {
 export CLUSTER="${CLUSTER}"
 export API_HOSTNAME="${API_HOSTNAME}"
 export API_PORT="${API_PORT}"
+export ROX_USERNAME="admin"
 EOF
 }
 
@@ -275,75 +305,107 @@ gen_admin_password() {
     head -c 20 </dev/urandom | base64
 }
 
-# shellcheck disable=SC2120
+# Deploy StackRox for compatibility testing using roxie.
+# Deploys central at central_version and secured cluster at sensor_version.
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
-        die "expected central chart version and sensor chart version as parameters in \
-          deploy_stackrox_with_custom_central_and_sensor_versions: \
-          deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
+        die "usage: deploy_stackrox_with_custom_central_and_sensor_versions <central_version> <sensor_version>"
     fi
     local central_version="$1"
     local sensor_version="$2"
 
-    ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
-    ci_export OUTPUT_FORMAT "helm"
+    local roxie="${TEST_ROOT}/scripts/roxie.sh"
 
-    # Repo name can't be too long or `helm search repo [REPO_NAME] -l` cuts off part of the name and the regex below fails.
-    local helm_repo_name="tmp-srox-compat"
-    local helm_chart_url="https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"
-    if ! helm repo list -o json | jq -e --arg name "$helm_repo_name" --arg url "$helm_chart_url" \
-        'any(.[]; .name == $name and .url == $url)'; then
-        helm repo add --force-update "${helm_repo_name}" "${helm_chart_url}"
+    info "Deploying for compatibility test: Central ${central_version}, Sensor ${sensor_version}"
+
+    local namespace="stackrox"
+    local config_file; config_file="$(mktemp)"
+    local roxie_envrc; roxie_envrc="$(mktemp)"
+
+    # Fix the cluster name so setup_generated_certs_for_test can look it up by name.
+    merge_yaml "$config_file" <<EOF
+securedCluster:
+  spec:
+    clusterName: remote
+EOF
+
+    # Scan every 9-11 minutes during compatibility tests.
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL" "10m"
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL_DEVIATION" "60s"
+
+    # Configure the endpoints required by endpoints_test.go.
+    handle_endpoints_for_test "$config_file"
+
+    # Speed up baseline generation so TestPod can observe process events within the test window.
+    # The default is 1h; tests time out long before baselines would be generated.
+    set_custom_env "$config_file" "central" "ROX_BASELINE_GENERATION_DURATION" "1m"
+    set_custom_env "$config_file" "central" "ROX_NETWORK_BASELINE_OBSERVATION_PERIOD" "2m"
+
+    # Add the test CA so Central accepts client-cert auth during endpoints_test.go.
+    if [[ -n "${TRUSTED_CA_FILE:-}" && -f "${TRUSTED_CA_FILE}" ]]; then
+        local trusted_ca_content
+        trusted_ca_content="$(jq -Rs . < "${TRUSTED_CA_FILE}")"
+        merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    tls:
+      additionalCAs:
+      - name: additional-ca
+        content: ${trusted_ca_content}
+EOF
     fi
 
-    current_tag="$(make tag --quiet --no-print-directory)"
+    # Create a TLS secret and reference it in the Central CR (for TLS cert tests).
+    if [[ -n "${ROX_DEFAULT_TLS_KEY_FILE:-}" && -n "${ROX_DEFAULT_TLS_CERT_FILE:-}" ]]; then
+        local tls_secret_name="central-default-tls-secret"
 
-    helm_charts="$(helm search repo "${helm_repo_name}" -l)"
-    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${central_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${sensor_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+        # Ensure the namespace exists.
+        retrying_kubectl create ns "$namespace" --dry-run=client -o yaml </dev/null \
+            | retrying_kubectl apply -f -
 
-    charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
-
-    # If the central version is the same as the current_tag, the default behavior of deploy_central() is correct for compatibility tests
-    chart_name="stackrox-central-services"
-    if  [[ $helm_charts =~ $central_regex ]]; then
-        central_chart="${helm_repo_name}/${chart_name}"
-        ci_export CENTRAL_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${central_chart}" --version "${central_version}" --untar --untardir "${charts_dir}"
-        echo "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" != "${central_version}" ]]; then
-        echo >&2 "${chart_name} helm chart for version ${central_version} not found in ${helm_repo_name} repo nor is it the current tag."
-        exit 1
+        retrying_kubectl -n "$namespace" create secret tls "$tls_secret_name" \
+            --cert="$ROX_DEFAULT_TLS_CERT_FILE" \
+            --key="$ROX_DEFAULT_TLS_KEY_FILE" \
+            --dry-run=client -o yaml </dev/null \
+            | retrying_kubectl -n "$namespace" apply -f -
+        merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      defaultTLSSecret:
+        name: "${tls_secret_name}"
+EOF
     fi
 
-    # If the sensor version is the same as the current_tag the default behavior of deploy_sensor() is incorrect, because it will deploy
-    # a sensor version to match the central version. In our tests we want to test current sensor vs older central too,
-    # and since current sensor is not available in the repo either the chart is created here in the elif case.
-    chart_name="stackrox-secured-cluster-services"
-    if [[ $helm_charts =~ $sensor_regex ]]; then
-        sensor_chart="${helm_repo_name}/${chart_name}"
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${sensor_chart}" --version "${sensor_version}" --untar --untardir "${charts_dir}"
-        echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" == "${sensor_version}" ]]; then
-        if [[ $(roxctl version) != "$current_tag" ]]; then
-            echo >&2 "Reported roxctl version $(roxctl version) is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
-            exit 1
-        fi
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE}"
-    else
-        echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
-        exit 1
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
+
+    "$roxie" --verbose deploy \
+        --single-namespace \
+        --tag "${central_version}" \
+        --secured-cluster-tag "${sensor_version}" \
+        --resources ci \
+        --pause-reconciliation \
+        --config "$config_file" \
+        --envrc "$roxie_envrc"
+
+
+    extend_roxie_envrc "$roxie_envrc"
+    if [[ -n "${BASH_ENV:-}" ]]; then
+        cat "$roxie_envrc" >> "$BASH_ENV"
     fi
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+    ci_export API_ENDPOINT "$API_ENDPOINT"
+    ci_export ROX_ADMIN_PASSWORD "$ROX_ADMIN_PASSWORD"
 
-    deploy_stackrox
+    rm -f "$config_file" "$roxie_envrc"
 
-    rm -rf "$charts_dir"
+    # TODO(https://github.com/stackrox/roxie/issues/269): replace with --early-readiness=false roxie flag,
+    # once we no longer need to deploy 4.9
+    wait_for_collectors_to_be_operational stackrox
 
-    ci_export CENTRAL_CHART_DIR_OVERRIDE ""
-    ci_export SENSOR_CHART_DIR_OVERRIDE ""
+    info "Stackrox deployed with Central version: ${central_version}, Sensor version: ${sensor_version}"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -392,7 +454,11 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-true}"
+    ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
+    ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
+    ci_export ROX_LIGHTSPEED_RISK_SUMMARY "${ROX_LIGHTSPEED_RISK_SUMMARY:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -521,6 +587,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
     customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
     customize_envVars+=$'\n        value: "15s"'
+    customize_envVars+=$'\n      - name: ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL'
+    customize_envVars+=$'\n        value: "5s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
@@ -567,8 +635,16 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
+    customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
     customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
+    customize_envVars+=$'\n      - name: ROX_AI_INTEGRATIONS'
+    customize_envVars+=$'\n        value: "'"${ROX_AI_INTEGRATIONS}"'"'
+    customize_envVars+=$'\n      - name: ROX_LIGHTSPEED_RISK_SUMMARY'
+    customize_envVars+=$'\n        value: "'"${ROX_LIGHTSPEED_RISK_SUMMARY}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
@@ -651,14 +727,6 @@ deploy_sensor() {
         ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
         CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
-
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
-        # Sensor is CPU starved under OpenShift causing all manner of test failures:
-        # https://stack-rox.atlassian.net/browse/ROX-5334
-        # https://stack-rox.atlassian.net/browse/ROX-6891
-        # et al.
-        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
-    fi
 }
 
 # shellcheck disable=SC2120
@@ -668,8 +736,7 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
-    local vm_mode_setting="Disabled"
-    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 4h.
     local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
@@ -688,10 +755,6 @@ deploy_sensor_via_operator() {
         --output -' \
     | retrying_kubectl -n "${sensor_namespace}" apply -f -
 
-    if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
-        scanner_component_setting="AutoSense"
-    fi
-
     local secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr.envsubst.yaml"
     if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
@@ -702,11 +765,12 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        vm_mode_setting="Enabled"
-    fi
-
     customize_envVars=""
+    # Scan every 9-11 minutes during operator-deployed e2e tests.
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
+    customize_envVars+=$'\n      value: "10m"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL_DEVIATION'
+    customize_envVars+=$'\n      value: "60s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -724,6 +788,10 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
         customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
     fi
+    if [[ -n "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+        customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION}"'"'
+    fi
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
@@ -731,7 +799,6 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
-      vm_mode_setting="$vm_mode_setting" \
       vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
@@ -1592,7 +1659,8 @@ wait_for_scanner_V4() {
         info "Listing available storage classes:"
         kubectl describe storageclasses 2>/dev/null || true
 
-        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-3600}
+        # (todo) re-visit the default timeout of 2h and make vuln loading more performant
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}
         info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 
@@ -1754,17 +1822,21 @@ _record_build_info() {
     set_ci_shared_export "build" "${build_info}"
 }
 
-restore_4_6_postgres_backup() {
-    info "Restoring a 4.6 postgres backup"
+restore_postgres_backup() {
+    info "Restoring a postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    setup_gcp
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
+    # CI activates the stackrox SA via setup_gcp. Local runs keep the caller's
+    # gcloud credentials; this bucket is readable with typical ACS engineer ADC.
+    if is_CI; then
+        setup_gcp
+    fi
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4.10.0.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-            central db restore --timeout 5m postgres_db_4_6.sql.zip
+            central db restore --timeout 5m postgres_db_4.10.0.sql.zip
 }
 
 update_public_config() {
@@ -1820,31 +1892,19 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
-    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox deployed to the cluster?")
 
     local check_deployment=false
 
     if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}"
         check_deployment=true
-    else
-        local build_results="build results are unknown"
-        if [[ -f "${STATE_BUILD_RESULTS}" ]]; then
-            build_results="$(cat "${STATE_BUILD_RESULTS}")"
-        fi
-        read -r -d '' build_details <<- _EO_DETAILS_ || true
-Check the build workflow runs on GitHub:
-${build_results}
-_EO_DETAILS_
-        save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
     case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
+    *gke-upgrade-tests*)
         record_upgrade_test_progess
         ;;
-    *operator-e2e-tests)
+    *operator-e2e-tests|*-version-compatibility-tests|*-nongroovy-compatibility-tests)
         check_deployment=false
         ;;
     *)
@@ -1874,13 +1934,16 @@ record_upgrade_test_progess() {
     # tracking files that the upgrade test leaves in its wake as it progresses.
 
     # tests/upgrade/postgres_sensor_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
-        "postgres_sensor_run" "roxctl sensor bundle test"
-    record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
-        "postgres_sensor_run" "bin/upgrader tests"
+    if [[ "$CI_JOB_NAME" == "gke-upgrade-tests-sensor" ]]; then
+        record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
+            "postgres_sensor_run" "roxctl sensor bundle test"
+        record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
+            "postgres_sensor_run" "bin/upgrader tests"
+        return
+    fi
 
-    # tests/upgrade/postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
+    # tests/upgrade/postgres_run.sh and tests/upgrade/postgres_upgrade_run.sh
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${STATE_DEPLOYED}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
         "postgres_run" "Deployed earlier postgres central"
@@ -1888,6 +1951,9 @@ record_upgrade_test_progess() {
         "postgres_run" "Bounced central"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}" \
         "postgres_run" "Bounced central-db"
+
+    # tests/upgrade/postgres_run.sh only
+    [[ "$CI_JOB_NAME" == "gke-upgrade-tests-central" ]] || return
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}" \
         "postgres_run" "Test migrations with an upgrade to current"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}" "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}" \

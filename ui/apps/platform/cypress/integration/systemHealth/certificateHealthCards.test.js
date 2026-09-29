@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import {
     credentialForCentralDbExpiryAlias,
     credentialForCentralExpiryAlias,
-    credentialForScannerExpiryAlias,
+    credentialForScannerV4ExpiryAlias,
     setClock,
     visitSystemHealth,
 } from '../../helpers/systemHealth';
@@ -10,8 +10,7 @@ import {
 const statusSelectorCentral = 'div:has(.pf-v6-c-card__header:contains("Central certificate"))';
 const statusSelectorCentralDb =
     'div:has(.pf-v6-c-card__header:contains("Central Database certificate"))';
-const statusSelectorScanner =
-    'div:has(.pf-v6-c-card__header:contains("StackRox Scanner certificate"))';
+const statusSelectorScannerV4 = 'div:has(.pf-v6-c-card__header:contains("Scanner V4 certificate"))';
 
 describe('System Health Certificate Health Cards', () => {
     withAuth();
@@ -104,19 +103,19 @@ describe('System Health Certificate Health Cards', () => {
         });
     });
 
-    describe('StackRox Scanner certificate', () => {
+    describe('Scanner V4 certificate', () => {
         it('should have widget and up to date text', () => {
             const currentDatetime = new Date('2025-05-21T02:04:59.377369440Z'); // about 355 days until expiry
             const expiry = '2026-05-20T03:04:59.377369440Z';
 
             const staticResponseMap = {
-                [credentialForScannerExpiryAlias]: { body: { expiry } },
+                [credentialForScannerV4ExpiryAlias]: { body: { expiry } },
             };
 
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains("expires in 12 months")`);
+            cy.get(`${statusSelectorScannerV4}:contains("expires in 12 months")`);
         });
 
         it('should have widget with warning text for less than 2 weeks', () => {
@@ -124,13 +123,13 @@ describe('System Health Certificate Health Cards', () => {
             const expiry = '2026-05-20T03:04:59.377369440Z';
 
             const staticResponseMap = {
-                [credentialForScannerExpiryAlias]: { body: { expiry } },
+                [credentialForScannerV4ExpiryAlias]: { body: { expiry } },
             };
 
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains("expires in 13 days")`);
+            cy.get(`${statusSelectorScannerV4}:contains("expires in 13 days")`);
         });
 
         it('should have widget with error text for less than 24 hours', () => {
@@ -138,13 +137,13 @@ describe('System Health Certificate Health Cards', () => {
             const expiry = '2026-05-20T03:04:59.377369440Z';
 
             const staticResponseMap = {
-                [credentialForScannerExpiryAlias]: { body: { expiry } },
+                [credentialForScannerV4ExpiryAlias]: { body: { expiry } },
             };
 
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains("expires in 1 day")`);
+            cy.get(`${statusSelectorScannerV4}:contains("expires in 1 day")`);
         });
     });
 });

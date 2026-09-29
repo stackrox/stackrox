@@ -56,10 +56,6 @@ describe('Vulnerability Management Dashboard', () => {
         verifyVulnerabilityManagementDashboardCVEs('node-cves', /^\d+ Node CVEs?$/);
     });
 
-    it('should navigate from menu item Cluster (Platform) CVEs to entities list', () => {
-        verifyVulnerabilityManagementDashboardCVEs('cluster-cves', /^\d+ Platform CVEs?$/);
-    });
-
     it('should navigate from images link to images list', () => {
         visitVulnerabilityManagementDashboard();
 
@@ -176,19 +172,6 @@ describe('Vulnerability Management Dashboard', () => {
             'eq',
             '?sort[0][id]=Deployment%20Count&sort[0][desc]=true&sort[1][id]=CVSS&sort[1][desc]=true'
         );
-    });
-
-    it('should go to clusters list from View all link of Clusters with most orchestrator and Istio vulnerabilities', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'clusters';
-        const widgetHeading = 'Clusters with most orchestrator and Istio vulnerabilities';
-
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
-        }, entitiesKey);
-
-        cy.location('search').should('eq', '');
     });
 
     it('should to to deployments list from View all link of Top risky deployments by CVE count and CVSS score', () => {

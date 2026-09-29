@@ -28,6 +28,13 @@ type Lane interface {
 type NewConsumer func(laneID LaneID, topic Topic, consumerID ConsumerID, callback EventCallback) (Consumer, error)
 
 type Consumer interface {
+	// Consume processes event and reports the outcome on the returned channel.
+	// Implementations must not rely on that channel being read: concurrentLane
+	// dispatches Consume() without waiting on or draining the result, so a
+	// consumer that only reports errors through this channel will have them
+	// silently dropped there. Implementations should report their own errors
+	// (e.g. logging/metrics) rather than depending solely on the caller reading
+	// this channel.
 	Consume(concurrency.Waitable, Event) <-chan error
 	Stop()
 }

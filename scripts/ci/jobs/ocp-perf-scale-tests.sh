@@ -19,7 +19,7 @@ info "Will poll for: $(awk '{print $1}' "${image_list}")"
 
 poll_for_system_test_images 3600
 
-# Export the tag for stackrox-install-helm to use
+# Export the tag for stackrox-install-roxie to use
 if [[ -n "${SHARED_DIR:-}" ]]; then
   echo "${MAIN_IMAGE_TAG}" > "${SHARED_DIR}/acs_image_tag"
   info "Exported ACS_IMAGE_TAG=${MAIN_IMAGE_TAG} to ${SHARED_DIR}/acs_image_tag"

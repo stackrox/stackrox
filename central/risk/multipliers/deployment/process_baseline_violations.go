@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	processBaselineHeading = `Suspicious Process Executions`
+	// ProcessBaselineHeading is the risk result name for process baseline violations.
+	// Exported for use in risk data sanitization.
+	ProcessBaselineHeading = `Suspicious Process Executions`
 
 	processBaselineSaturation = 10
 	processBaselineValue      = 4
@@ -56,7 +58,9 @@ func NewProcessBaselines(evaluator evaluator.Evaluator) Multiplier {
 	}
 }
 
-func formatProcess(process *views.ProcessIndicatorRiskView) string {
+// FormatProcess formats a process indicator into a human-readable message for risk factors.
+// Exported for use in tests to ensure sanitization regex stays in sync with format changes.
+func FormatProcess(process *views.ProcessIndicatorRiskView) string {
 	sb := strings.Builder{}
 	sb.Grow(128)
 	sb.WriteString("Detected execution of suspicious process ")
@@ -82,13 +86,13 @@ func (p *processBaselineMultiplier) Score(_ context.Context, deployment *storage
 
 	scorer := newScorer()
 	riskResult := &storage.Risk_Result{
-		Name: processBaselineHeading,
+		Name: ProcessBaselineHeading,
 	}
 
 	for _, process := range violatingProcesses {
 		scorer.addProcess()
 		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{
-			Message: formatProcess(process),
+			Message: FormatProcess(process),
 		})
 	}
 

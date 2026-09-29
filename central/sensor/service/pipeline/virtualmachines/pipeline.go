@@ -52,7 +52,12 @@ type pipelineImpl struct {
 
 func (p *pipelineImpl) OnFinish(_ string) {}
 
+// Capabilities omits VirtualMachinesSupported when ROX_VIRTUAL_MACHINES is
+// off so Sensor treats this Central like a pre-VM build.
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
 }
 
@@ -61,6 +66,10 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+	if !features.VirtualMachines.Enabled() {
+		// An empty Sensor snapshot would otherwise delete every VM row for the cluster.
+		return nil
+	}
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		return p.reconcileV2(ctx, clusterID, storeMap)
 	}
@@ -101,6 +110,11 @@ func (p *pipelineImpl) reconcileV2(ctx context.Context, clusterID string, storeM
 
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachine)
+
+	if !features.VirtualMachines.Enabled() {
+		// Returning nil avoids Sensor retries; the rows stay untouched.
+		return nil
+	}
 
 	event := msg.GetEvent()
 	virtualMachine := event.GetVirtualMachine()

@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/common.proto";
+import "api/v2/report_service.proto";
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+service NodeReportService {
+  rpc PostNodeReportConfiguration(ReportConfiguration) returns (ReportConfiguration) {
+    option (google.api.http) = {
+      post: "/v2/reports/node/configurations"
+      body: "*"
+    };
+  }
+
+  rpc UpdateNodeReportConfiguration(ReportConfiguration) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/reports/node/configurations/{id}"
+      body: "*"
+    };
+  }
+
+  rpc ListNodeReportConfigurations(RawQuery) returns (ListReportConfigurationsResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/configurations"};
+  }
+
+  rpc CountNodeReportConfigurations(RawQuery) returns (CountReportConfigurationsResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/configuration-count"};
+  }
+
+  rpc GetNodeReportConfiguration(ResourceByID) returns (ReportConfiguration) {
+    option (google.api.http) = {get: "/v2/reports/node/configurations/{id}"};
+  }
+
+  rpc DeleteNodeReportConfiguration(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/reports/node/configurations/{id}"};
+  }
+
+  rpc RunNodeReport(RunReportRequest) returns (RunReportResponse) {
+    option (google.api.http) = {
+      post: "/v2/reports/node/run"
+      body: "*"
+    };
+  }
+
+  rpc GetNodeReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/configurations/{id}/history"};
+  }
+
+  rpc GetMyNodeReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/configurations/{id}/my-history"};
+  }
+
+  rpc GetNodeReportStatus(ResourceByID) returns (ReportStatusResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/jobs/{id}/status"};
+  }
+
+  rpc CancelNodeReport(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/reports/node/jobs/{id}/cancel"};
+  }
+
+  rpc DeleteNodeReport(DeleteReportRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/reports/node/jobs/{id}/delete"};
+  }
+
+  rpc PostViewBasedNodeReport(ReportRequestViewBased) returns (RunReportResponseViewBased) {
+    option (google.api.http) = {
+      post: "/v2/reports/node/view-based/run"
+      body: "*"
+    };
+  }
+
+  rpc GetViewBasedNodeReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/view-based/history"};
+  }
+
+  rpc GetViewBasedMyNodeReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/node/view-based/my-history"};
+  }
+}

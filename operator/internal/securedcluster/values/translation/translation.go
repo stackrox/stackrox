@@ -100,8 +100,6 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if err := platform.MergeSecuredClusterDefaultsIntoSpec(&sc); err != nil {
 		return nil, err
 	}
-	scanner.SetScannerDefaults(&sc.Spec)
-
 	v := translation.NewValuesBuilder()
 
 	if sc.Spec.ClusterName != nil {
@@ -123,17 +121,12 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
-	if err != nil {
-		return nil, err
-	}
-
 	scannerV4AutoSenseConfig, err := scanner.AutoSenseLocalScannerV4Config(ctx, t.client, sc)
 	if err != nil {
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig, deploymentDefaults))
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerV4AutoSenseConfig, deploymentDefaults))
 	v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl, deploymentDefaults))
 
 	if sc.Spec.AuditLogs != nil {
@@ -144,7 +137,6 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, deploymentDefaults))
 	v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, deploymentDefaults))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -303,10 +295,10 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerV4Autosense scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
+	if scannerV4Autosense.EnableLocalImageScanning {
 		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(true))
 	}
 
@@ -500,17 +492,6 @@ func (t Translator) getFAMContainerValues(famContainerSpec *platform.FAMContaine
 	return &cv
 }
 
-func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
-	s := securedCluster.Spec.Scanner
-
-	sv.SetBoolValue("disable", !config.DeployScannerResources)
-	translation.SetScannerAnalyzerValues(&sv, s.Analyzer, defaults)
-	translation.SetScannerDBValues(&sv, s.DB, defaults)
-
-	return &sv
-}
-
 func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
 	s := securedCluster.Spec.ScannerV4
 	if s == nil && !defaults.IsSet() {
@@ -623,16 +604,6 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 		return nil
 	}
 	cv := translation.NewValuesBuilder()
-	if vm.Mode != nil {
-		switch *vm.Mode {
-		case platform.VirtualMachinesModeEnabled:
-			cv.SetBoolValue("enabled", true)
-		case platform.VirtualMachinesModeDisabled:
-			cv.SetBoolValue("enabled", false)
-		default:
-			return cv.SetError(fmt.Errorf("invalid virtual machines mode %q", *vm.Mode))
-		}
-	}
 	// Scraper is always set by static defaulting; omit helm values when unset.
 	if vm.Scraper != nil {
 		sv := translation.NewValuesBuilder()

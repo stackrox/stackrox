@@ -4,12 +4,16 @@ import useAnalytics, {
     VULNERABILITY_REPORT_DOWNLOAD_GENERATED,
     VULNERABILITY_REPORT_SENT_MANUALLY,
 } from 'hooks/useAnalytics';
-import { runReportRequest } from 'services/ReportsService';
+import type { RunReportResponse } from 'services/ReportsService.types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { ReportNotificationMethod } from 'types/reportJob';
 
 export type UseSaveReportProps = {
     onCompleted: (context: { reportNotificationMethod: ReportNotificationMethod }) => void;
+    runReportRequest: (
+        reportConfigId: string,
+        reportNotificationMethod: ReportNotificationMethod
+    ) => Promise<RunReportResponse>;
 };
 
 type Result = {
@@ -28,7 +32,7 @@ const defaultResult = {
     runError: null,
 };
 
-function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
+function useRunReport({ onCompleted, runReportRequest }: UseSaveReportProps): SaveReportResult {
     const { analyticsTrack } = useAnalytics();
     const [result, setResult] = useState<Result>(defaultResult);
 
@@ -63,7 +67,7 @@ function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                     });
                 });
         },
-        [analyticsTrack, onCompleted]
+        [analyticsTrack, onCompleted, runReportRequest]
     );
 
     return {

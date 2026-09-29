@@ -4,6 +4,8 @@
   "shortName": "CIS-OCP",
   "profiles": [
     { "profileName": "ocp4-cis-1-4" },
-    { "profileName": "ocp4-cis-node-1-4" }
+    { "profileName": "ocp4-cis-node-1-4" },
+    { "profileName": "ocp5-cis-1-4" },
+    { "profileName": "ocp5-cis-node-1-4" }
   ]
 }

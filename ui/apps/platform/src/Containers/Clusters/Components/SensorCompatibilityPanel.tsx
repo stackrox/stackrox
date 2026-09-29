@@ -135,7 +135,7 @@ function SensorCompatibilityPanel({
             <SensorCompatibilitySubPanel
                 header="Sensor version"
                 bodyItems={{
-                    version: ['Version', sensorVersion],
+                    version: ['Version', sensorVersion ?? 'Unknown'],
                     range: [
                         'Version range',
                         shouldShowSensorVersionRangeChart(compatibility, compatibleVersions) ? (

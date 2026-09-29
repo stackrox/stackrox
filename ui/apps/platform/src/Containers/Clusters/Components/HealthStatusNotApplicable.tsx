@@ -7,7 +7,7 @@ function HealthStatusNotApplicable({
     isList = false,
 }: HealthStatusNotApplicableProps): ReactElement {
     return (
-        <div className={`${isList ? 'inline' : ''} leading-normal`} data-testid={testId}>
+        <div className={isList ? 'pf-v6-u-display-inline' : ''} data-testid={testId}>
             <span className="pf-v6-u-text-nowrap">Not applicable</span>
         </div>
     );

@@ -44,6 +44,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.handler = &downloadHandler{
 		snapshotStore: s.reportSnapshotDataStore,
 		blobStore:     s.blobStore,
+		expectedType:  storage.ReportSnapshot_VULNERABILITY,
 	}
 }
 
@@ -111,6 +112,18 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			desc: "Node vulnerability snapshot is rejected",
+			id:   reportSnapshot.GetReportId(),
+			ctx:  userContext,
+			mockGen: func() {
+				snap := reportSnapshot.CloneVT()
+				snap.Type = storage.ReportSnapshot_NODE_VULNERABILITY
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -199,6 +212,23 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			s.downloadAndVerify(tc.ctx, tc.id, tc.statusCode, blobData.Bytes())
 		})
 	}
+}
+
+func (s *handlerTestSuite) TestDownloadNodeReport_RejectsImageType() {
+	orig := s.handler.expectedType
+	s.handler.expectedType = storage.ReportSnapshot_NODE_VULNERABILITY
+	defer func() { s.handler.expectedType = orig }()
+
+	reportSnapshot := fixtures.GetReportSnapshot()
+	reportSnapshot.ReportId = uuid.NewV4().String()
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
+	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	userContext := s.getContextForUser(reportSnapshot.GetRequester())
+
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+		Return(reportSnapshot, true, nil).Times(1)
+
+	s.downloadAndVerify(userContext, reportSnapshot.GetReportId(), http.StatusBadRequest, nil)
 }
 
 func (s *handlerTestSuite) downloadAndVerify(ctx context.Context, id string, code int, expectData []byte) {

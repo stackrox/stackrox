@@ -2241,7 +2241,13 @@
               {
                 "id": 3,
                 "name": "scan_inline",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -2251,7 +2257,13 @@
               {
                 "id": 5,
                 "name": "enforce_on_updates",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           },
@@ -6071,6 +6083,50 @@
             ]
           },
           {
+            "name": "VulnOrigin",
+            "enum_fields": [
+              {
+                "name": "VULN_ORIGIN_OTHER"
+              },
+              {
+                "name": "VULN_ORIGIN_OSV",
+                "integer": 1
+              },
+              {
+                "name": "VULN_ORIGIN_ALPINE",
+                "integer": 2
+              },
+              {
+                "name": "VULN_ORIGIN_AMAZON",
+                "integer": 3
+              },
+              {
+                "name": "VULN_ORIGIN_DEBIAN",
+                "integer": 4
+              },
+              {
+                "name": "VULN_ORIGIN_ORACLE",
+                "integer": 5
+              },
+              {
+                "name": "VULN_ORIGIN_PHOTON",
+                "integer": 6
+              },
+              {
+                "name": "VULN_ORIGIN_RED_HAT",
+                "integer": 7
+              },
+              {
+                "name": "VULN_ORIGIN_SUSE",
+                "integer": 8
+              },
+              {
+                "name": "VULN_ORIGIN_UBUNTU",
+                "integer": 9
+              }
+            ]
+          },
+          {
             "name": "CvssScoreVersion",
             "enum_fields": [
               {
@@ -6626,6 +6682,11 @@
                 "id": 14,
                 "name": "cisa_kev",
                 "type": "bool"
+              },
+              {
+                "id": 15,
+                "name": "known_ransomware_campaign",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -6846,6 +6907,11 @@
                 "id": 17,
                 "name": "datasource",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "origin",
+                "type": "VulnOrigin"
               }
             ]
           },
@@ -15605,6 +15671,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -15721,6 +15791,12 @@
                 "id": 5,
                 "name": "vuln_report_filters",
                 "type": "VulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
@@ -15961,6 +16037,28 @@
             ]
           },
           {
+            "name": "NodeVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 1,
+                "name": "all_vuln",
+                "type": "bool",
+                "oneof_parent": "cves_since"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "query",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "ViewBasedVulnerabilityReportFilters",
             "fields": [
               {
@@ -16087,6 +16185,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -16182,6 +16284,12 @@
                 "id": 12,
                 "name": "view_based_vuln_report_filters",
                 "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
@@ -20398,6 +20506,11 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
+                "id": 13,
+                "name": "last_agent_contact",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
                 "id": 10,
                 "name": "notes",
                 "type": "Note",
@@ -21006,6 +21119,11 @@
                 "id": 28,
                 "name": "cisa_kev",
                 "type": "bool"
+              },
+              {
+                "id": 29,
+                "name": "origin",
+                "type": "VulnOrigin"
               }
             ],
             "reserved_ids": [

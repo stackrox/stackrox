@@ -1,12 +1,10 @@
 package fake
 
 import (
-	"fmt"
 	"math"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,32 +103,16 @@ func TestValidateVMWorkload(t *testing.T) {
 				`Setting "updateInterval"=1m40s causes none of the VMs to ever receive an update. ` +
 				`Lower the value of "updateInterval" or increase the 'lifecycleDuration'.`,
 		},
-		"reportInterval in jitter range warns": {
+		"reportInterval does not affect lifecycle validation": {
 			input: VirtualMachineWorkload{
 				PoolSize:          5,
 				LifecycleDuration: 60 * time.Second, // bounds: 30s-90s
 				UpdateInterval:    20 * time.Second, // < lower bound, OK
-				ReportInterval:    45 * time.Second, // in range
+				ReportInterval:    45 * time.Second,
 			},
 			wantLifecycleDuration: 60 * time.Second,
 			wantUpdateInterval:    20 * time.Second,
-			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
-				`Setting "reportInterval"=45s may cause some VMs to never send any index reports. ` +
-				`Lower the value of "reportInterval" or increase the 'lifecycleDuration'.`,
-		},
-		"initialReportDelay in jitter range warns": {
-			input: VirtualMachineWorkload{
-				PoolSize:           5,
-				LifecycleDuration:  60 * time.Second, // bounds: 30s-90s
-				UpdateInterval:     20 * time.Second, // < lower bound, OK
-				ReportInterval:     20 * time.Second, // < lower bound, OK
-				InitialReportDelay: 45 * time.Second, // in range
-			},
-			wantLifecycleDuration: 60 * time.Second,
-			wantUpdateInterval:    20 * time.Second,
-			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
-				`Setting "initialReportDelay"=45s may cause some VMs to never send any index reports. ` +
-				`Lower the value of "initialReportDelay" or increase the 'lifecycleDuration'.`,
+			wantErr:               "",
 		},
 	}
 
@@ -146,41 +128,6 @@ func TestValidateVMWorkload(t *testing.T) {
 				assert.NoError(t, err, "expected no error")
 			} else {
 				assert.EqualError(t, err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
-	tests := map[string]uint32{
-		"basic report": 1234,
-		"different VM": 9999,
-	}
-	for name, vsockCID := range tests {
-		t.Run(name, func(t *testing.T) {
-			report := gen.GenerateV1IndexReport(vsockCID)
-
-			// Verify vsockCID is set as string
-			assert.Equal(t, fmt.Sprintf("%d", vsockCID), report.GetVsockCid(), "vsockCID mismatch")
-
-			// Verify index report structure
-			require.NotNil(t, report.GetIndexV4(), "IndexV4 should not be nil")
-			assert.Equal(t, "IndexFinished", report.GetIndexV4().GetState(), "State mismatch")
-			assert.True(t, report.GetIndexV4().GetSuccess(), "Success should be true")
-
-			// Verify contents
-			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
-			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
-			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 real repositories")
-
-			// Verify packages have valid CPEs (regression test for WFN error)
-			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {
-				assert.NotEmpty(t, pkg.GetCpe(), "package CPE should not be empty")
-				assert.Contains(t, pkg.GetCpe(), "cpe:2.3:", "package CPE should be valid format")
-				if pkg.GetSource() != nil {
-					assert.NotEmpty(t, pkg.GetSource().GetCpe(), "source package CPE should not be empty")
-				}
 			}
 		})
 	}
@@ -250,6 +197,92 @@ func TestToUnstructuredVMI(t *testing.T) {
 			} else {
 				assert.False(t, found, "did not expect vsockCID but found value %d", value)
 			}
+		})
+	}
+}
+
+func TestGetRandomVMPair_OmitsVSOCKCID(t *testing.T) {
+	_, vmi := getRandomVMPair(3, defaultGuestOSPool)
+	_, found, err := unstructured.NestedInt64(vmi.Object, "status", "vsockCID")
+	require.NoError(t, err)
+	assert.False(t, found)
+}
+
+func TestGetRandomVMPair_NewUIDEachLifecycle(t *testing.T) {
+	vm1, vmi1 := getRandomVMPair(3, defaultGuestOSPool)
+	vm2, vmi2 := getRandomVMPair(3, defaultGuestOSPool)
+
+	require.NotEmpty(t, vm1.GetUID())
+	require.Len(t, vmi1.GetOwnerReferences(), 1)
+	assert.Equal(t, vm1.GetUID(), vmi1.GetOwnerReferences()[0].UID)
+	assert.NotEqual(t, vm1.GetUID(), vmi1.GetUID())
+
+	assert.NotEqual(t, vm1.GetUID(), vm2.GetUID(), "same slot must not reuse a VM UID across lifecycles")
+	assert.NotEqual(t, vmi1.GetUID(), vmi2.GetUID(), "same slot must not reuse a VMI UID across lifecycles")
+}
+
+func TestWorkloadManager_HasFakeVMWorkload(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want bool
+	}{
+		"nil manager": {},
+		"nil workload": {
+			mgr: &WorkloadManager{},
+		},
+		"zero pool": {
+			mgr: &WorkloadManager{workload: &Workload{}},
+		},
+		"pool set": {
+			mgr:  &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{PoolSize: 3}}},
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.HasFakeVMWorkload())
+		})
+	}
+}
+
+func TestWorkloadManager_HasFakeVMIndexReports(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want bool
+	}{
+		"nil manager": {},
+		"pool without reports": {
+			mgr: &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{PoolSize: 3}}},
+		},
+		"pool with reports": {
+			mgr: &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{
+				PoolSize:       3,
+				ReportInterval: time.Minute,
+			}}},
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.HasFakeVMIndexReports())
+		})
+	}
+}
+
+func TestWorkloadManager_FakeVMNumPackages(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want int
+	}{
+		"nil manager": {},
+		"packages set": {
+			mgr:  &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{NumPackages: 700}}},
+			want: 700,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.FakeVMNumPackages())
 		})
 	}
 }

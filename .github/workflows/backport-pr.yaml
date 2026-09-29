@@ -1,9 +1,17 @@
 name: Backport PR to release branch
 on:
-  pull_request_target:
+  # From security considerations, it will not be possible for PRs from forks to be backported with this workflow.
+  pull_request:
     types:
       - closed
       - labeled
+
+# Disables permissions of the default GITHUB_TOKEN, it's not used anyway.
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   backport:
@@ -17,11 +25,40 @@ jobs:
         github.event.action == 'closed'
         || (
           github.event.action == 'labeled'
-          && contains(github.event.label.name, 'backport')
+          && startsWith(github.event.label.name, 'backport release-')
         )
       )
     steps:
       - uses: tibdex/backport@9565281eda0731b1d20c4025c43339fb0a23812e # ratchet:tibdex/backport@v2.0.4
+        id: backport
         with:
           github_token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-          title_template: "<%= title %>"
+          title_template: "<%= title %> (<%= base %>)"
+          label_pattern: '^backport (?<base>(release-[0-9]+\.[0-9]+))$'
+          labels_template: '["backport"]'
+
+      - name: Assign backport PRs to original author
+        if: steps.backport.outcome == 'success' && steps.backport.outputs.created_pull_requests != '{}'
+        env:
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          CREATED_PRS: ${{ steps.backport.outputs.created_pull_requests }}
+          ORIGINAL_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -u
+          echo "Created PRs: ${CREATED_PRS}"
+          echo "Original author: ${ORIGINAL_AUTHOR}"
+
+          # Check if the original author can be assigned
+          if gh api --silent "repos/${{ github.repository }}/assignees/${ORIGINAL_AUTHOR}" 2>/dev/null; then
+            echo "Author ${ORIGINAL_AUTHOR} is eligible for assignment"
+
+            # Parse the JSON object and extract PR numbers
+            for pr_number in $(echo "${CREATED_PRS}" | jq -r '.[]'); do
+              echo "Assigning PR #${pr_number} to ${ORIGINAL_AUTHOR}"
+              if ! gh pr edit "${pr_number}" --add-assignee "${ORIGINAL_AUTHOR}" --repo "${{ github.repository }}"; then
+                >&2 echo "Warning: Failed to assign PR #${pr_number} to ${ORIGINAL_AUTHOR}"
+              fi
+            done
+          else
+            >&2 echo "Warning: Author ${ORIGINAL_AUTHOR} cannot be assigned to PRs in this repository"
+          fi

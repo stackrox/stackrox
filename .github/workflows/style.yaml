@@ -205,7 +205,7 @@ jobs:
   check-dependent-images-exist:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
-    # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
+    # This job ensures that COLLECTOR_VERSION or FACT_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
     runs-on: ubuntu-latest
@@ -217,12 +217,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Get image tags from COLLECTOR|FACT|SCANNER_VERSION file
+      - name: Get image tags from COLLECTOR_|FACT_VERSION file
         run: |
           {
             echo "collector_tag=$(make --quiet --no-print-directory collector-tag)"
             echo "fact_tag=$(make --quiet --no-print-directory fact-tag)"
-            echo "scanner_tag=$(make --quiet --no-print-directory scanner-tag)"
           } >> "$GITHUB_ENV"
 
       - name: Check GHA-built image exists
@@ -236,10 +235,6 @@ jobs:
           image: |
             rhacs-eng/collector:${{ env.collector_tag }}
             rhacs-eng/fact:${{ env.fact_tag }}
-            rhacs-eng/scanner:${{ env.scanner_tag }}
-            rhacs-eng/scanner-slim:${{ env.scanner_tag }}
-            rhacs-eng/scanner-db:${{ env.scanner_tag }}
-            rhacs-eng/scanner-db-slim:${{ env.scanner_tag }}
 
       - name: Check Konflux-built image exists
         uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
@@ -252,10 +247,6 @@ jobs:
           image: |
             rhacs-eng/release-collector:${{ env.collector_tag }}-fast
             rhacs-eng/release-fact:${{ env.fact_tag }}-fast
-            rhacs-eng/release-scanner:${{ env.scanner_tag }}-fast
-            rhacs-eng/release-scanner-slim:${{ env.scanner_tag }}-fast
-            rhacs-eng/release-scanner-db:${{ env.scanner_tag }}-fast
-            rhacs-eng/release-scanner-db-slim:${{ env.scanner_tag }}-fast
 
   github-actions-lint:
     needs: detect-changes

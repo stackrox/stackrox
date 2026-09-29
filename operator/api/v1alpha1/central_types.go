@@ -33,12 +33,13 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Central Component Settings"
 	Central *CentralComponentSpec `json:"central,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
+	// Obsolete field. This field will be removed in a future release.
+	// The legacy Scanner has been removed. This field is ignored.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
 
@@ -168,13 +169,20 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
+	// References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+	// This allows air-gapped customers to provide or update the signing keys used for
+	// signature verification of Red Hat container images. The ConfigMap is managed
+	// externally; key rotation requires only editing the ConfigMap, not a CR update.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	SigningKeyBundle *LocalConfigMapReference `json:"signingKeyBundle,omitempty"`
+
 	// Configures the encryption of notifier secrets stored in the Central DB.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
 
 	// Configures the rollout strategy for the Central deployment.
 	// The default is: Recreate.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=9
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=10
 	RolloutStrategy *RolloutStrategy `json:"rolloutStrategy,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -569,9 +577,7 @@ type ScannerComponentSpec struct {
 // ScannerV4Spec defines settings for the central "Scanner V4" component.
 type ScannerV4Spec struct {
 	// Can be specified as "Enabled" or "Disabled".
-	// If this field is not specified, the following defaulting takes place:
-	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
-	// * for new installations starting with ACS 4.8, the default is: Enabled.
+	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -608,14 +614,6 @@ func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
 		return nil
 	}
 	return s.Analyzer
-}
-
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (s *ScannerComponentSpec) IsEnabled() bool {
-	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
-	}
-	return *s.ScannerComponent == ScannerComponentEnabled
 }
 
 // ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
@@ -788,7 +786,7 @@ var (
 
 // IsScannerEnabled returns true if scanner is enabled.
 func (c *Central) IsScannerEnabled() bool {
-	return c.Spec.Scanner.IsEnabled()
+	return false
 }
 
 // IsScannerV4Enabled returns true if Scanner V4 is enabled.

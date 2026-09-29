@@ -243,6 +243,41 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"signing key bundle with empty name is not emitted": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							SigningKeyBundle: &platform.LocalConfigMapReference{
+								Name: "",
+							},
+						},
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"empty spec no pvc": {
 			args: args{
 				c: platform.Central{
@@ -388,6 +423,9 @@ func TestTranslate(t *testing.T) {
 										Name: "secret-2",
 									},
 								},
+							},
+							SigningKeyBundle: &platform.LocalConfigMapReference{
+								Name: "redhat-signing-key-bundle",
 							},
 							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 								Enabled: pointer.Bool(true),
@@ -652,6 +690,9 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
+					"signingKeyBundle": map[string]interface{}{
+						"configMapName": "redhat-signing-key-bundle",
+					},
 					"notifierSecretsEncryption": map[string]interface{}{
 						"enabled": true,
 					},
@@ -682,64 +723,6 @@ func TestTranslate(t *testing.T) {
 							"value": "customize-env-var2-value",
 						},
 					},
-				},
-				"scanner": map[string]interface{}{
-					"disable":  false,
-					"replicas": int32(7),
-					"autoscaling": map[string]interface{}{
-						"disable":     false,
-						"minReplicas": int32(6),
-						"maxReplicas": int32(8),
-					},
-					"nodeSelector": map[string]string{
-						"scanner-node-selector-label1": "scanner-node-selector-value1",
-						"scanner-node-selector-label2": "scanner-node-selector-value2",
-					},
-					"tolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"dbNodeSelector": map[string]string{
-						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
-						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
-					},
-					"dbTolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "50",
-							"memory": "60",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "70",
-							"memory": "80",
-						},
-					},
-					"dbResources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "90",
-							"memory": "100",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "110",
-							"memory": "120",
-						},
-					},
-					"exposeMonitoring": true,
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
@@ -1274,9 +1257,6 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
-				},
-				"scanner": map[string]interface{}{
-					"exposeMonitoring": false,
 				},
 			},
 		},

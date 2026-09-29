@@ -69,12 +69,13 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process Baselines Settings"
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images stored in a cluster-local image repository.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner Component Settings"
+	// Obsolete field. This field will be removed in a future release.
+	// The legacy Scanner has been removed. This field is ignored.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
+	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
@@ -116,7 +117,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=ProcessIndicators,order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ProcessIndicators *ProcessIndicatorsSpec `json:"processIndicators,omitempty"`
 
-	// Settings for virtual machine scanning (VSOCK RBAC and scraper).
+	// Settings for the virtual machine scraper.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=18,displayName="Virtual Machines Settings"
 	VirtualMachines *VirtualMachinesSpec `json:"virtualMachines,omitempty"`
 }
@@ -427,10 +428,7 @@ const (
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	// The default is: AutoSense.
+	// Obsolete: The legacy Scanner has been removed. This field is ignored.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -450,9 +448,7 @@ type LocalScannerV4ComponentSpec struct {
 	// unless there is a Central resource in the same namespace.
 	// In that case typically a central Scanner V4 will be deployed as a component of Central.
 	// A value of "Disabled" means that Scanner V4 should not be installed.
-	// If this field is not specified or set to "Default", the following defaulting takes place:
-	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
-	// * for new installations starting with ACS 4.8, the default is: AutoSense.
+	// The default is: AutoSense.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -545,30 +541,11 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 	return &v
 }
 
-// VirtualMachinesSpec configures VM scanning and VSOCK RBAC.
+// VirtualMachinesSpec configures virtual machine scanning.
 type VirtualMachinesSpec struct {
-	// Whether virtual machine scanning and VSOCK RBAC are enabled.
-	// The default is: Disabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled","urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
-	Mode *VirtualMachinesMode `json:"mode,omitempty"`
-
 	// Settings for the virtual machine scraper running in Sensor.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Scraper *VirtualMachinesScraperSpec `json:"scraper,omitempty"`
-}
-
-// VirtualMachinesMode is the type for spec.virtualMachines.mode.
-// +kubebuilder:validation:Enum=Enabled;Disabled
-type VirtualMachinesMode string
-
-const (
-	VirtualMachinesModeEnabled  VirtualMachinesMode = "Enabled"
-	VirtualMachinesModeDisabled VirtualMachinesMode = "Disabled"
-)
-
-// Pointer returns the given mode value as a pointer, needed in k8s resource structs.
-func (v VirtualMachinesMode) Pointer() *VirtualMachinesMode {
-	return &v
 }
 
 // VirtualMachinesScraperSpec tunes the virtual machine scraper.
@@ -589,7 +566,7 @@ type VirtualMachinesScraperSpec struct {
 	// How often the scraper polls virtual machines for new reports.
 	// Minimum interval is 1m; shorter values are rounded up.
 	// Shorter intervals refresh scans more often but increase the load on kubevirt API server.
-	// The default is: 5m.
+	// The default is: 4h.
 	//+kubebuilder:validation:Pattern=`^[0-9]+(m|h)$`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	PollInterval *string `json:"pollInterval,omitempty"`

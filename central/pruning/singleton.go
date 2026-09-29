@@ -23,6 +23,7 @@ import (
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
+	watchedImageDatastore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -56,6 +57,7 @@ func Singleton() GarbageCollector {
 			blobDS.Singleton(),
 			nodeCVEDS.Singleton(),
 			roleDataStore.Singleton(),
+			watchedImageDatastore.Singleton(),
 		)
 	})
 	return gc

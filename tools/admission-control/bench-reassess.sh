@@ -79,7 +79,7 @@ read_metric() {
 
 # metric_delta <phase_a> <phase_b> <component-short> <metric> [labels]
 metric_delta() {
-    echo "$(read_metric "$2" "$3" "$4" "${5:-}") - $(read_metric "$1" "$3" "$4" "${5:-}")" | bc
+    delta "$(read_metric "$1" "$3" "$4" "${5:-}")" "$(read_metric "$2" "$3" "$4" "${5:-}")"
 }
 
 # trigger_and_wait_for_reprocessor is now in lib.sh

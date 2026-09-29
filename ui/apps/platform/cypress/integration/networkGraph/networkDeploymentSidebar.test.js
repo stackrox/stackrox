@@ -33,7 +33,7 @@ describe('Network Graph deployment sidebar', () => {
         //  `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("central")`
         // ).should('not.exist');
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("scanner")`
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("scanner-v4-indexer")`
         ).should('not.exist');
         cy.get(
             `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("admission-controller")`
