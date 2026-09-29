@@ -703,7 +703,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         defaultValue: true,
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_CISA_KEV'],
     },
     {
         label: 'Fixed by',

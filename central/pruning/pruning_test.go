@@ -2406,6 +2406,94 @@ func (s *PruningTestSuite) TestRemoveOrphanedPods() {
 	s.Equal(updatedCount, podCount-cluster2PodCount)
 }
 
+func (s *PruningTestSuite) TestRemoveOrphanedDeployments() {
+	ctrl := gomock.NewController(s.T())
+
+	mockRisk := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRisk.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockBaseline := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
+	mockBaseline.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockFilter := filterMocks.NewMockFilter(ctrl)
+	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
+
+	flowStore := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
+	flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	flows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
+	flows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(flowStore, nil)
+
+	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaseline, flows, mockRisk, nil, mockFilter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
+	s.Require().NoError(err)
+
+	_, _, clusterDS := s.generateClusterDataStructures()
+	liveClusterID, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanDeploymentCluster", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Require().NoError(err)
+
+	// Deployment on a live (healthy) cluster - must survive the sweep.
+	liveDeployment := newDeployment("id1")
+	liveDeployment.Id = fixtureconsts.Deployment2
+	liveDeployment.ClusterId = liveClusterID
+	s.Require().NoError(deployments.UpsertDeployment(s.ctx, liveDeployment))
+
+	// Clusters still in the DB but unhealthy/disconnected must keep their deployments -
+	// the sweep keys on the cluster row existing, not on health.
+	unhealthyClusters := []struct {
+		name         string
+		deploymentID string
+		status       storage.ClusterHealthStatus_HealthStatusLabel
+	}{
+		{"testUnhealthyDeploymentCluster", fixtureconsts.Deployment3, storage.ClusterHealthStatus_UNHEALTHY},
+		{"testDisconnectedDeploymentCluster", fixtureconsts.Deployment4, storage.ClusterHealthStatus_UNAVAILABLE},
+	}
+	var unhealthyDeployments []*storage.Deployment
+	for _, c := range unhealthyClusters {
+		clusterID, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: c.name, MainImage: "docker.io/stackrox/rox:latest"})
+		s.Require().NoError(err)
+		s.Require().NoError(clusterDS.UpdateClusterHealth(s.ctx, clusterID,
+			&storage.ClusterHealthStatus{SensorHealthStatus: c.status}))
+
+		dep := newDeployment("img")
+		dep.Id = c.deploymentID
+		dep.ClusterId = clusterID
+		s.Require().NoError(deployments.UpsertDeployment(s.ctx, dep))
+		unhealthyDeployments = append(unhealthyDeployments, dep)
+	}
+
+	// Deployment whose clusterid has no cluster row - orphaned.
+	orphanedDeployment := newDeployment("id2")
+	orphanedDeployment.ClusterId = fixtureconsts.Cluster1
+	s.Require().NoError(deployments.UpsertDeployment(s.ctx, orphanedDeployment))
+
+	gci := &garbageCollectorImpl{
+		deployments: deployments,
+		postgres:    s.pool,
+	}
+
+	gci.removeOrphanedDeployments()
+
+	_, exists, err := deployments.GetDeployment(s.ctx, orphanedDeployment.GetId())
+	s.Require().NoError(err)
+	s.False(exists, "orphaned deployment should be pruned")
+
+	_, exists, err = deployments.GetDeployment(s.ctx, liveDeployment.GetId())
+	s.Require().NoError(err)
+	s.True(exists, "deployment of a live cluster must not be pruned")
+
+	for _, dep := range unhealthyDeployments {
+		_, exists, err = deployments.GetDeployment(s.ctx, dep.GetId())
+		s.Require().NoError(err)
+		s.True(exists, "deployment of a cluster still in the DB must not be pruned")
+	}
+
+	// Cascaded deletion of deployments_containers rows is what makes the referenced
+	// image prunable - assert none remain.
+	var containerCount int
+	err = s.pool.QueryRow(s.ctx, "SELECT count(*) FROM deployments_containers WHERE deployments_id = $1", orphanedDeployment.GetId()).Scan(&containerCount)
+	s.Require().NoError(err)
+	s.Zero(containerCount)
+}
+
 func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
 	_, _, clusterDS := s.generateClusterDataStructures()
 
