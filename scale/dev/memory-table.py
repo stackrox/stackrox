@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Print average memory per component for each workload in a results directory,
-without vs with policy, for two memory metrics side by side:
+across the three berserker test modes (baseline / alerting / idlepolicy), for two
+memory metrics side by side:
 
   - usage:  container_memory_usage_bytes (cgroup total; includes reclaimable
             page cache and freed-but-not-returned pages)
@@ -26,6 +27,9 @@ import sys
 START_OFFSET = 60.0
 DEFAULT_RATES = [100, 500, 1000, 2500, 5000]
 COMPONENTS = ['central', 'central-db', 'sensor', 'collector', 'fact']
+# Berserker test modes (see plot_utils.BERSERKER_MODES): (dir suffix, short label).
+# Each table cell reports one value per mode in this order.
+MODES = [('_baseline', 'base'), ('_alerting', 'alert'), ('_idlepolicy', 'idle')]
 
 
 def load_plot_helpers():
@@ -60,28 +64,28 @@ def main():
     rates = [int(a) for a in sys.argv[2:]] or DEFAULT_RATES
     mod = load_plot_helpers()
 
-    def find_run_dir(rate, policy):
+    def find_run_dir(rate, mode_suffix):
         matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}_policy_{policy}"))
+            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
         return matches[0] if matches else None
 
     def fmt(v):
         return 'n/a' if v is None else f"{v:.2f}"
 
+    order = "/".join(label for _, label in MODES)
     print(f"Results dir: {base}")
-    print("Average GB over the test-length window. Cells are without/with policy.")
+    print(f"Average GB over the test-length window. Cells are {order}.")
     print("usage = container_memory_usage_bytes; wset = container_memory_working_set_bytes.\n")
 
-    col_w = 15
+    col_w = 22
     for metric, header in [('mem', 'Usage (GB)'), ('mem_workingset', 'Working Set (GB)')]:
         print(f"=== {header} ===")
         print(f"{'rate':>6} " + " ".join(f"{c:>{col_w}}" for c in COMPONENTS))
         for r in rates:
-            wd = find_run_dir(r, 'false')
-            wpd = find_run_dir(r, 'true')
+            run_dirs = [find_run_dir(r, suffix) for suffix, _ in MODES]
             cells = []
             for c in COMPONENTS:
-                cell = f"{fmt(avg_gb(mod, wd, c, metric))}/{fmt(avg_gb(mod, wpd, c, metric))}"
+                cell = "/".join(fmt(avg_gb(mod, rd, c, metric)) for rd in run_dirs)
                 cells.append(f"{cell:>{col_w}}")
             print(f"{r:>6} " + " ".join(cells))
         print()

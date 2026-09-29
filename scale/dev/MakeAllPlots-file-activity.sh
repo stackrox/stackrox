@@ -16,11 +16,22 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 # Batch sizes to process
 batch_sizes=(10 50 100 250 500)
 
-# Result-dir prefix differs between the two workloads.
+# Result-dir prefix and the set of test modes differ between the two workloads.
+# Modes are "<dir-suffix>:<legend label>" and must mirror plot_utils.py
+# (BERSERKER_MODES / FAKE_MODES).
 if [[ "$workload_type" == "berserker" ]]; then
     dir_prefix="berserker_file_activity_results"
+    modes=(
+        "_baseline:Baseline (no policy)"
+        "_alerting:Alerting policy"
+        "_idlepolicy:Idle policy"
+    )
 else
     dir_prefix="file_activity_results"
+    modes=(
+        "_policy_false:Without Policy"
+        "_policy_true:With Policy"
+    )
 fi
 
 # Map a batch size to its workload name. Berserker names by event rate
@@ -40,21 +51,25 @@ echo "Workload type: ${workload_type}"
 
 for batch in "${batch_sizes[@]}"; do
     workload="$(workload_name_for "$batch")"
-
-    without_policy_dir="${base_results_dir}/${dir_prefix}_${num_sensors}_${run_time}_${workload}_policy_false"
-    with_policy_dir="${base_results_dir}/${dir_prefix}_${num_sensors}_${run_time}_${workload}_policy_true"
     output_dir="${base_results_dir}/plots_${workload}"
 
-    # Check if directories exist
-    if [ ! -d "$without_policy_dir" ]; then
-        echo "WARNING: Directory not found: ${without_policy_dir}"
-        echo "Skipping batch size ${batch}"
-        continue
-    fi
+    # Build the (dir, label) pairs for the modes that actually have a results dir.
+    # Missing modes are warned about but do not abort the batch; the batch is only
+    # skipped when none of its modes were run.
+    pair_args=()
+    for mode in "${modes[@]}"; do
+        suffix="${mode%%:*}"
+        label="${mode#*:}"
+        mode_dir="${base_results_dir}/${dir_prefix}_${num_sensors}_${run_time}_${workload}${suffix}"
+        if [ -d "$mode_dir" ]; then
+            pair_args+=("$mode_dir" "$label")
+        else
+            echo "WARNING: Directory not found: ${mode_dir}"
+        fi
+    done
 
-    if [ ! -d "$with_policy_dir" ]; then
-        echo "WARNING: Directory not found: ${with_policy_dir}"
-        echo "Skipping batch size ${batch}"
+    if [ ${#pair_args[@]} -eq 0 ]; then
+        echo "No result dirs for batch size ${batch}; skipping"
         continue
     fi
 
@@ -65,9 +80,8 @@ for batch in "${batch_sizes[@]}"; do
     echo "=========================================="
 
     "${DIR}/MakePlots-file-activity.sh" \
-        "$without_policy_dir" \
-        "$with_policy_dir" \
-        "$output_dir"
+        "$output_dir" \
+        "${pair_args[@]}"
 
     echo "Plots for batch ${batch} saved to ${output_dir}"
 done

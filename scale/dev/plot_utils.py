@@ -21,6 +21,50 @@ TREND_START = 60.0
 # Fallback test duration (seconds) when the run_time can't be parsed from a path.
 DEFAULT_RUN_DURATION = 600.0
 
+# Test modes, per workload. Each entry is (key, results-dir suffix, display label).
+# The berserker workload runs three scenarios (see
+# perf-test-file-activity-berserker.sh):
+#   baseline   - no file-activity policy; fact monitors nothing (control).
+#   alerting   - policy on berserker's dir (/tmp/data/**); fact busy, alerts fire.
+#   idlepolicy - policy on an empty dir (/tmp/quiet/**); fact configured, no events.
+# The fake workload keeps the original with/without-policy pair.
+# Suffixes are matched with endswith (never substring), so none may be a suffix of
+# another -- currently true (_baseline / _alerting / _idlepolicy / _policy_false /
+# _policy_true are mutually non-suffixing).
+BERSERKER_MODES = [
+    ('baseline',   '_baseline',   'Baseline (no policy)'),
+    ('alerting',   '_alerting',   'Alerting policy'),
+    ('idlepolicy', '_idlepolicy', 'Idle policy'),
+]
+FAKE_MODES = [
+    ('without', '_policy_false', 'Without Policy'),
+    ('with',    '_policy_true',  'With Policy'),
+]
+ALL_MODES = BERSERKER_MODES + FAKE_MODES
+
+# Marker cycle for overlaying multiple test-mode series on one plot (colors use the
+# matplotlib C0/C1/... cycle by series index).
+SERIES_MARKERS = ['o', 's', '^', 'x', 'd']
+
+
+def series_style(index):
+    """Return (color, marker) for the Nth series overlaid on a plot."""
+    return f'C{index}', SERIES_MARKERS[index % len(SERIES_MARKERS)]
+
+
+def mode_for_dir(dir_path):
+    """
+    Identify the test mode of a results directory from its name suffix.
+
+    Returns (key, label) for the matching mode, or None if the dir doesn't end
+    with any known mode suffix (e.g. an unrelated directory).
+    """
+    base = os.path.basename(dir_path.rstrip('/'))
+    for key, suffix, label in ALL_MODES:
+        if base.endswith(suffix):
+            return key, label
+    return None
+
 
 def run_duration_seconds(path, default=DEFAULT_RUN_DURATION):
     """

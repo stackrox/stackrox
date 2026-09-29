@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Print file-activity event drops per pipeline stage for each workload in a results
-directory, without vs with policy.
+directory, across the three berserker test modes (baseline / alerting / idlepolicy).
 
 Events flow: kernel -> fact (bpf ring buffer -> rate limiter -> gRPC output) ->
 sensor (detector queue / activity buffer) -> central. A drop anywhere means the
@@ -31,6 +31,9 @@ import os
 import sys
 
 DEFAULT_RATES = [100, 500, 1000, 2500, 5000]
+# Berserker test modes (see plot_utils.BERSERKER_MODES): (dir suffix, short label).
+# Each table cell reports one value per mode in this order.
+MODES = [('_baseline', 'base'), ('_alerting', 'alert'), ('_idlepolicy', 'idle')]
 # (column header, metric-file suffix). The suffix matches metrics_<suffix>.txt as
 # written by prometheus-query-file-activity.sh.
 STAGES = [
@@ -70,29 +73,30 @@ def main():
     rates = [int(a) for a in sys.argv[2:]] or DEFAULT_RATES
     mod = load_plot_helpers()
 
-    def find_run_dir(rate, policy):
-        # Resolve the run dir for a rate/policy without hardcoding num_sensors or
-        # run_time; the trailing _policy_<policy> keeps the rate match exact.
+    def find_run_dir(rate, mode_suffix):
+        # Resolve the run dir for a rate/mode without hardcoding num_sensors or
+        # run_time; the trailing mode suffix keeps the rate match exact.
         matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}_policy_{policy}"))
+            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
         return matches[0] if matches else None
 
-    def cell(v_without, v_with):
+    def cell(values):
         def fmt(v):
             return 'n/a' if v is None else str(int(v))
-        return f"{fmt(v_without)}/{fmt(v_with)}"
+        return "/".join(fmt(v) for v in values)
 
+    order = "/".join(label for _, label in MODES)
     print(f"Results dir: {base}")
-    print("Event drops per stage (total over the run). Each cell is without/with policy.\n")
+    print(f"Event drops per stage (total over the run). Each cell is {order}.\n")
 
-    col_w = 17
+    col_w = 22
     print(f"{'rate':>6} " + " ".join(f"{h:>{col_w}}" for h, _ in STAGES))
     for r in rates:
-        wd = find_run_dir(r, 'false')
-        wpd = find_run_dir(r, 'true')
+        run_dirs = [find_run_dir(r, suffix) for suffix, _ in MODES]
         cells = []
         for _, suffix in STAGES:
-            cells.append(f"{cell(count(mod, wd, suffix), count(mod, wpd, suffix)):>{col_w}}")
+            values = [count(mod, rd, suffix) for rd in run_dirs]
+            cells.append(f"{cell(values):>{col_w}}")
         print(f"{r:>6} " + " ".join(cells))
 
 

@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-Plot file activity performance test results.
+Plot a single file-activity metric over time, overlaying one line per test mode.
 
-This script compares metrics between two test runs (typically without policy vs with policy)
-and generates comparison plots for CPU, memory, and database table sizes.
+Supports any number of series so it works for both the fake workload (two modes:
+without/with policy) and the berserker workload (three modes: baseline / alerting
+/ idlepolicy). Each series is a (metric file, label, results dir) triple; the
+results dir is used only to resolve the component-specific t=0 baseline.
 """
 
-import matplotlib.pyplot as plt
-import sys
+import argparse
 import os
+
+import matplotlib.pyplot as plt
+
 from plot_utils import (
     determine_baseline_timestamp,
     add_trendline,
@@ -16,6 +20,7 @@ from plot_utils import (
     read_metric_series,
     write_equation_table,
     trend_window,
+    series_style,
 )
 
 
@@ -28,16 +33,12 @@ def window_points(x, y, start, end):
             yw.append(yi)
     return xw, yw
 
+
 def read_file(file_path, base_time=None):
     """
-    Read metric file and return timestamps and values.
+    Read metric file and return (relative_times_seconds, values).
 
-    Args:
-        file_path: Path to metrics file
-        base_time: Optional baseline timestamp (in milliseconds)
-
-    Returns:
-        Tuple of (relative_times, values)
+    base_time (ms) sets t=0; when None/empty the first timestamp is used.
     """
     if not os.path.exists(file_path):
         print(f"Warning: File {file_path} does not exist, returning empty data")
@@ -60,56 +61,51 @@ def read_file(file_path, base_time=None):
 
     return rel_time, values
 
-def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, results_dir2=None,
-              component=None, base_time1=None, base_time2=None, output_file=None):
+
+def plot_data(series, title, ylabel, component=None, output_file=None):
     """
-    Plot comparison of two metric files.
+    Overlay one line (with a trend line) per series onto a single plot.
 
     Args:
-        file1: Path to first metrics file
-        label1: Label for first dataset
-        file2: Path to second metrics file
-        label2: Label for second dataset
-        title: Plot title
-        ylabel: Y-axis label
-        results_dir1: Directory containing first result set (for component-specific baseline)
-        results_dir2: Directory containing second result set (for component-specific baseline)
-        component: Component name for determining baseline (e.g., 'sensor', 'central', 'central-db')
-        base_time1: Optional baseline timestamp for first dataset (legacy, overrides component-based)
-        base_time2: Optional baseline timestamp for second dataset (legacy, overrides component-based)
-        output_file: Output PNG file path
+        series: list of (file, label, results_dir) triples. results_dir may be
+            None/'' to fall back to the metric file's own directory for the
+            baseline and trend window.
+        title: Plot title.
+        ylabel: Y-axis label.
+        component: Component name for the component-specific t=0 baseline
+            (e.g. 'sensor', 'central', 'central-db'); when set, each series'
+            results_dir resolves its own baseline.
+        output_file: Output PNG path (shows interactively when None).
     """
-    # Determine baselines using component-specific logic if component is provided
-    if component and results_dir1 and (base_time1 is None or base_time1 == ''):
-        base_time1 = determine_baseline_timestamp(results_dir1, component)
-        if base_time1:
-            print(f"  Using component-specific baseline for {component} (dir1): t=0 at {base_time1}ms")
-
-    if component and results_dir2 and (base_time2 is None or base_time2 == ''):
-        base_time2 = determine_baseline_timestamp(results_dir2, component)
-        if base_time2:
-            print(f"  Using component-specific baseline for {component} (dir2): t=0 at {base_time2}ms")
-
-    x1, y1 = read_file(file1, base_time1)
-    x2, y2 = read_file(file2, base_time2)
-
-    # Match the trend window to the test length: [60s, 60s + run duration],
-    # parsed from the results dir name (falls back to the metric file's own
-    # directory for legacy invocations without a results_dir).
-    run_ref = results_dir1 or os.path.dirname(file1) or results_dir2 or os.path.dirname(file2)
+    # The trend window (test length) comes from the first series' results dir,
+    # falling back to the first metric file's directory for legacy layouts.
+    first_file = series[0][0] if series else ''
+    first_dir = series[0][2] if series else ''
+    run_ref = first_dir or os.path.dirname(first_file) or '.'
     trend_start, trend_end = trend_window(run_ref)
 
     plt.figure(figsize=(12, 7))
 
-    eq1 = eq2 = None
-    if x1 and y1:
-        plt.plot(x1, y1, label=label1, marker='o', markersize=3, linewidth=1.5, color='C0')
-        xw1, yw1 = window_points(x1, y1, trend_start, trend_end)
-        eq1 = add_trendline(xw1, yw1, f'Trend ({label1}, {int(trend_start)}-{int(trend_end)}s)', 'C0')
-    if x2 and y2:
-        plt.plot(x2, y2, label=label2, marker='x', markersize=3, linewidth=1.5, color='C1')
-        xw2, yw2 = window_points(x2, y2, trend_start, trend_end)
-        eq2 = add_trendline(xw2, yw2, f'Trend ({label2}, {int(trend_start)}-{int(trend_end)}s)', 'C1')
+    equations = []
+    for i, (file_path, label, results_dir) in enumerate(series):
+        base_time = None
+        if component and results_dir:
+            base_time = determine_baseline_timestamp(results_dir, component)
+            if base_time:
+                print(f"  Using component-specific baseline for {component} "
+                      f"({label}): t=0 at {base_time}ms")
+
+        x, y = read_file(file_path, base_time)
+        if not (x and y):
+            continue
+
+        color, marker = series_style(i)
+        plt.plot(x, y, label=label, marker=marker, markersize=3, linewidth=1.5, color=color)
+        xw, yw = window_points(x, y, trend_start, trend_end)
+        eq = add_trendline(
+            xw, yw, f'Trend ({label}, {int(trend_start)}-{int(trend_end)}s)', color)
+        if eq:
+            equations.append((label, eq[0], eq[1], color))
 
     plt.xlabel('Time (seconds)', fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
@@ -117,11 +113,6 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
 
-    equations = []
-    if eq1:
-        equations.append((label1, eq1[0], eq1[1], 'C0'))
-    if eq2:
-        equations.append((label2, eq2[0], eq2[1], 'C1'))
     add_equation_text(equations)
 
     plt.ylim(bottom=0)  # Anchor the y-axis at 0 so magnitudes are comparable across plots
@@ -145,50 +136,25 @@ def plot_data(file1, label1, file2, label2, title, ylabel, results_dir1=None, re
 
     plt.close()
 
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Overlay one metric over time across test modes.")
+    parser.add_argument('--title', required=True)
+    parser.add_argument('--ylabel', required=True)
+    parser.add_argument('--component', default=None,
+                        help="Component for the t=0 baseline (central, central-db, sensor, collector).")
+    parser.add_argument('--output', default=None, help="Output PNG path.")
+    parser.add_argument('--series', action='append', nargs=3, required=True,
+                        metavar=('FILE', 'LABEL', 'DIR'),
+                        help="A metric file, its legend label, and its results dir "
+                             "(pass '' for DIR to use the file's own directory). Repeatable.")
+    args = parser.parse_args()
+
+    # Normalize empty DIR to None.
+    series = [(f, label, (d or None)) for f, label, d in args.series]
+    plot_data(series, args.title, args.ylabel, args.component, args.output)
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 7:
-        print("Usage: python plot-file-activity.py <file1> <label1> <file2> <label2> <title> <y_label> [results_dir1] [results_dir2] [component] [output_png]")
-        print("\nExample (with component-specific baselines):")
-        print("  python plot-file-activity.py \\")
-        print("    results1/metrics_central_cpu.txt 'Without Policy' \\")
-        print("    results2/metrics_central_cpu.txt 'With Policy' \\")
-        print("    'Central CPU Usage' 'CPU Cores' \\")
-        print("    results1 results2 central \\")
-        print("    output.png")
-        print("\nLegacy usage (with explicit base times):")
-        print("  python plot-file-activity.py <file1> <label1> <file2> <label2> <title> <y_label> <base_time1> <base_time2> <output_png>")
-        sys.exit(1)
-
-    file1 = sys.argv[1]
-    label1 = sys.argv[2]
-    file2 = sys.argv[3]
-    label2 = sys.argv[4]
-    title = sys.argv[5]
-    y_label = sys.argv[6]
-
-    # Optional parameters - support both new (component-based) and legacy (explicit base_time) modes
-    results_dir1 = None
-    results_dir2 = None
-    component = None
-    base_time1 = None
-    base_time2 = None
-    output_png = None
-
-    if len(sys.argv) > 7:
-        arg7 = sys.argv[7]
-        # Check if arg7 looks like a directory path or a base time (number)
-        if arg7 and not arg7.isdigit():
-            # New mode: results_dir1
-            results_dir1 = arg7
-            results_dir2 = sys.argv[8] if len(sys.argv) > 8 else None
-            component = sys.argv[9] if len(sys.argv) > 9 else None
-            output_png = sys.argv[10] if len(sys.argv) > 10 else None
-        else:
-            # Legacy mode: base_time1
-            base_time1 = arg7
-            base_time2 = sys.argv[8] if len(sys.argv) > 8 else None
-            output_png = sys.argv[9] if len(sys.argv) > 9 else None
-
-    plot_data(file1, label1, file2, label2, title, y_label,
-              results_dir1, results_dir2, component,
-              base_time1, base_time2, output_png)
+    main()

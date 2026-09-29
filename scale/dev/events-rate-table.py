@@ -27,6 +27,8 @@ import sys
 START_OFFSET = 60.0
 DEFAULT_RATES = [100, 500, 1000, 2500, 5000]
 EVENTS_FILE = 'metrics_rox_sensor_file_access_events_received_total.txt'
+# Berserker test modes (see plot_utils.BERSERKER_MODES): (dir suffix, column label).
+MODES = [('_baseline', 'base'), ('_alerting', 'alert'), ('_idlepolicy', 'idle')]
 
 
 def load_plot_helpers():
@@ -68,22 +70,28 @@ def main():
     def pct(v, r):
         return f"{100 * v / r:7.0f}%" if v is not None else f"{'n/a':>8}"
 
-    def find_run_dir(rate, policy):
-        # Resolve the run dir for a rate/policy without hardcoding num_sensors or
-        # run_time; the trailing _policy_<policy> keeps the rate match exact
+    def find_run_dir(rate, mode_suffix):
+        # Resolve the run dir for a rate/mode without hardcoding num_sensors or
+        # run_time; the trailing mode suffix keeps the rate match exact
         # (file-activity-100 vs file-activity-1000 don't collide).
         matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}_policy_{policy}"))
+            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
         return matches[0] if matches else None
 
     print(f"Results dir: {base}")
-    print(f"{'rate':>6} {'without':>9} {'with':>9} {'w %ideal':>8} {'wp %ideal':>9}")
+    # Observed events/sec at the sensor per mode, then that as a % of the ideal
+    # (configured) rate per mode.
+    obs_hdr = " ".join(f"{label:>9}" for _, label in MODES)
+    pct_hdr = " ".join(f"{label + '%':>8}" for _, label in MODES)
+    print(f"{'rate':>6} {obs_hdr} {pct_hdr}")
     for r in rates:
-        wd = find_run_dir(r, 'false')
-        wpd = find_run_dir(r, 'true')
-        v = observed_rate(mod, wd) if wd else None
-        vp = observed_rate(mod, wpd) if wpd else None
-        print(f"{r:>6} {fmt(v)} {fmt(vp)} {pct(v, r)} {pct(vp, r)}")
+        observed = []
+        for suffix, _ in MODES:
+            rd = find_run_dir(r, suffix)
+            observed.append(observed_rate(mod, rd) if rd else None)
+        obs_cells = " ".join(fmt(v) for v in observed)
+        pct_cells = " ".join(pct(v, r) for v in observed)
+        print(f"{r:>6} {obs_cells} {pct_cells}")
 
 
 if __name__ == "__main__":

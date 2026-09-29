@@ -1,12 +1,32 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
-# Generate comparison plots for file activity performance tests
-# Compares results without policy vs with policy
+# Generate per-run comparison plots for file activity performance tests, overlaying
+# one line per test mode on each metric plot. Works for any number of modes:
+#   fake workload:      Without Policy / With Policy               (2 series)
+#   berserker workload: Baseline / Alerting policy / Idle policy   (3 series)
+#
+# Usage:
+#   MakePlots-file-activity.sh <output_dir> <dir1> <label1> [<dir2> <label2> ...]
+#
+# Each (dir, label) pair is one test-mode run directory and its legend label.
 
-without_policy_dir=$1
-with_policy_dir=$2
-output_dir=$3
+output_dir=$1
+shift
+
+# Collect the (dir, label) pairs into parallel arrays.
+DIRS=()
+LABELS=()
+while [[ $# -gt 0 ]]; do
+    DIRS+=("$1")
+    LABELS+=("$2")
+    shift 2
+done
+
+if [[ ${#DIRS[@]} -eq 0 ]]; then
+    echo "Error: at least one <dir> <label> pair is required"
+    exit 1
+fi
 
 # Find python (try common locations)
 python_bin=""
@@ -21,12 +41,15 @@ else
     exit 1
 fi
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
 # Create output directory
 mkdir -p "$output_dir"
 
 echo "Generating plots with component-specific baselines..."
-echo "  Without policy dir: ${without_policy_dir}"
-echo "  With policy dir: ${with_policy_dir}"
+for i in "${!DIRS[@]}"; do
+    echo "  ${LABELS[$i]}: ${DIRS[$i]}"
+done
 echo "  Output dir: ${output_dir}"
 echo ""
 echo "Baseline logic:"
@@ -35,84 +58,68 @@ echo "  - central/central-db: t=0 = when deployments >= 100 (or 90% of max)"
 echo "  - berserker runs: t=0 = recorded berserker-ready time (all components)"
 echo ""
 
+# Plot one metric across all modes. Builds a --series triple (file, label, dir) for
+# every mode and only invokes the plotter when at least one mode has the metric file
+# (series added later, older runs, or metric not scraped in a cluster otherwise
+# yield an empty plot).
+#   $1 output png   $2 title   $3 ylabel   $4 component (may be empty)   $5 file suffix
+plot_metric() {
+    local out=$1 title=$2 ylabel=$3 component=$4 suffix=$5
+    local series_args=() any=0 i f
+    for i in "${!DIRS[@]}"; do
+        f="${DIRS[$i]}/metrics_${suffix}.txt"
+        series_args+=(--series "$f" "${LABELS[$i]}" "${DIRS[$i]}")
+        [[ -f "$f" ]] && any=1
+    done
+    if [[ "$any" -eq 1 ]]; then
+        echo "Plotting ${title}..."
+        local comp_args=()
+        [[ -n "$component" ]] && comp_args=(--component "$component")
+        # Invoke by absolute path so plot_utils imports (script dir is added to
+        # sys.path) while relative metric-file paths stay relative to the caller CWD.
+        "$python_bin" "${DIR}/plot-file-activity.py" \
+            --title "$title" --ylabel "$ylabel" \
+            "${comp_args[@]}" --output "$out" "${series_args[@]}"
+    fi
+}
+
 # CPU and Memory plots for each component. collector and fact are containers in
 # the collector DaemonSet pod (fact monitors file activity); their metric files
 # only exist when collector metrics were collected, otherwise the plot is skipped.
 for container in central central-db sensor collector fact; do
-    echo "Plotting ${container} metrics..."
-
     # Memory usage (container_memory_usage_bytes: cgroup total, incl. reclaimable)
-    $python_bin plot-file-activity.py \
-        "${without_policy_dir}/metrics_${container}_mem.txt" "Without Policy" \
-        "${with_policy_dir}/metrics_${container}_mem.txt" "With Policy" \
-        "${container} Memory Usage" "Memory (bytes)" \
-        "${without_policy_dir}" "${with_policy_dir}" "${container}" \
-        "${output_dir}/${container}_mem_usage.png"
+    plot_metric "${output_dir}/${container}_mem_usage.png" \
+        "${container} Memory Usage" "Memory (bytes)" "${container}" "${container}_mem"
 
     # Working set memory (usage minus reclaimable cache; the OOM-relevant number).
-    # Only produced for runs scraped after this series was added; skip otherwise.
-    if [[ -f "${without_policy_dir}/metrics_${container}_mem_workingset.txt" || \
-          -f "${with_policy_dir}/metrics_${container}_mem_workingset.txt" ]]; then
-        $python_bin plot-file-activity.py \
-            "${without_policy_dir}/metrics_${container}_mem_workingset.txt" "Without Policy" \
-            "${with_policy_dir}/metrics_${container}_mem_workingset.txt" "With Policy" \
-            "${container} Working Set Memory" "Memory (bytes)" \
-            "${without_policy_dir}" "${with_policy_dir}" "${container}" \
-            "${output_dir}/${container}_mem_workingset.png"
-    fi
+    plot_metric "${output_dir}/${container}_mem_workingset.png" \
+        "${container} Working Set Memory" "Memory (bytes)" "${container}" "${container}_mem_workingset"
 
     # CPU usage
-    $python_bin plot-file-activity.py \
-        "${without_policy_dir}/metrics_${container}_cpu.txt" "Without Policy" \
-        "${with_policy_dir}/metrics_${container}_cpu.txt" "With Policy" \
-        "${container} CPU Usage" "CPU Cores" \
-        "${without_policy_dir}" "${with_policy_dir}" "${container}" \
-        "${output_dir}/${container}_cpu_usage.png"
+    plot_metric "${output_dir}/${container}_cpu_usage.png" \
+        "${container} CPU Usage" "CPU Cores" "${container}" "${container}_cpu"
 done
 
 # Live Go heap (go_memstats_heap_inuse_bytes), the clearest "real, actively used"
-# memory number. Only the Go services export it (central, sensor); skip when the
-# series is absent (older runs / non-Go components).
+# memory number. Only the Go services export it (central, sensor).
 for container in central sensor; do
-    if [[ -f "${without_policy_dir}/metrics_${container}_heap_inuse.txt" || \
-          -f "${with_policy_dir}/metrics_${container}_heap_inuse.txt" ]]; then
-        echo "Plotting ${container} Go heap..."
-        $python_bin plot-file-activity.py \
-            "${without_policy_dir}/metrics_${container}_heap_inuse.txt" "Without Policy" \
-            "${with_policy_dir}/metrics_${container}_heap_inuse.txt" "With Policy" \
-            "${container} Go Heap In-Use" "Memory (bytes)" \
-            "${without_policy_dir}" "${with_policy_dir}" "${container}" \
-            "${output_dir}/${container}_heap_inuse.png"
-    fi
+    plot_metric "${output_dir}/${container}_heap_inuse.png" \
+        "${container} Go Heap In-Use" "Memory (bytes)" "${container}" "${container}_heap_inuse"
 done
 
 # Restart and OOM counts per component (cumulative counters; the final value is
 # the total). berserker is included so an OOM-killed workload -- which would drag
-# down the observed event rate -- is visible. Series only exist for runs scraped
-# after these were added, and only for components the metric source covers; skip
-# otherwise.
+# down the observed event rate -- is visible.
 for container in central central-db sensor collector fact berserker; do
-    for kind in restarts:Restarts ooms:OOM-Kills; do
-        metric="${kind%%:*}"
-        label="${kind##*:}"
-        if [[ -f "${without_policy_dir}/metrics_${container}_${metric}.txt" || \
-              -f "${with_policy_dir}/metrics_${container}_${metric}.txt" ]]; then
-            echo "Plotting ${container} ${label}..."
-            $python_bin plot-file-activity.py \
-                "${without_policy_dir}/metrics_${container}_${metric}.txt" "Without Policy" \
-                "${with_policy_dir}/metrics_${container}_${metric}.txt" "With Policy" \
-                "${container} ${label} (cumulative)" "Count" \
-                "${without_policy_dir}" "${with_policy_dir}" "${container}" \
-                "${output_dir}/${container}_${metric}.png"
-        fi
-    done
+    plot_metric "${output_dir}/${container}_restarts.png" \
+        "${container} Restarts (cumulative)" "Count" "${container}" "${container}_restarts"
+    plot_metric "${output_dir}/${container}_ooms.png" \
+        "${container} OOM-Kills (cumulative)" "Count" "${container}" "${container}_ooms"
 done
 
 # Event drops along the pipeline (cumulative counters; the curve shows when drops
 # start and the final value is the total). fact stages come from the fact agent's
 # own /metrics (stackrox_fact_*), sensor stages from the sensor detector/buffer.
-# Series only exist for runs scraped after these were added (and, for fact, only
-# when fact monitoring is exposed); skip otherwise.
 #   "<file-suffix>:<component>:<title>"
 for drop in \
     "fact_bpf_dropped:fact:fact BPF Events Dropped" \
@@ -124,38 +131,26 @@ for drop in \
     rest="${drop#*:}"
     comp="${rest%%:*}"
     title="${rest#*:}"
-    if [[ -f "${without_policy_dir}/metrics_${suffix}.txt" || \
-          -f "${with_policy_dir}/metrics_${suffix}.txt" ]]; then
-        echo "Plotting ${title}..."
-        $python_bin plot-file-activity.py \
-            "${without_policy_dir}/metrics_${suffix}.txt" "Without Policy" \
-            "${with_policy_dir}/metrics_${suffix}.txt" "With Policy" \
-            "${title} (cumulative)" "Events" \
-            "${without_policy_dir}" "${with_policy_dir}" "${comp}" \
-            "${output_dir}/${suffix}.png"
-    fi
+    plot_metric "${output_dir}/${suffix}.png" \
+        "${title} (cumulative)" "Events" "${comp}" "${suffix}"
 done
 
-# Database table sizes (only alerts and deployments are relevant for file activity)
-# Tables use central-db baseline since they're part of the database
-for table in alerts deployments; do
-    echo "Plotting ${table} table metrics..."
+# Process and network event volume received by Sensor (cumulative counters). These
+# gauge the non-file-activity load Sensor carries in each mode; compare across modes
+# and against the file-activity rate.
+plot_metric "${output_dir}/network_flows_received.png" \
+    "Sensor Network Flows Received (cumulative)" "Network Flows" "sensor" "network_flows_received"
+plot_metric "${output_dir}/process_indicators_received.png" \
+    "Sensor Process Indicators Received (cumulative)" "Process Indicators" "sensor" "process_indicators_received"
 
-    # Row count
-    $python_bin plot-file-activity.py \
-        "${without_policy_dir}/metrics_${table}.txt" "Without Policy" \
-        "${with_policy_dir}/metrics_${table}.txt" "With Policy" \
-        "${table} Table Row Count" "Number of Rows" \
-        "${without_policy_dir}" "${with_policy_dir}" "central-db" \
-        "${output_dir}/${table}_row_count.png"
-
-    # Size in bytes
-    $python_bin plot-file-activity.py \
-        "${without_policy_dir}/metrics_${table}_bytes.txt" "Without Policy" \
-        "${with_policy_dir}/metrics_${table}_bytes.txt" "With Policy" \
-        "${table} Table Size" "Size (bytes)" \
-        "${without_policy_dir}" "${with_policy_dir}" "central-db" \
-        "${output_dir}/${table}_size_bytes.png"
+# Database table sizes. alerts and deployments are the file-activity-relevant
+# tables; process_indicators is the storage-side view of process-event volume.
+# Tables use the central-db baseline since they're part of the database.
+for table in alerts deployments process_indicators; do
+    plot_metric "${output_dir}/${table}_row_count.png" \
+        "${table} Table Row Count" "Number of Rows" "central-db" "${table}"
+    plot_metric "${output_dir}/${table}_size_bytes.png" \
+        "${table} Table Size" "Size (bytes)" "central-db" "${table}_bytes"
 done
 
 echo "All plots generated in ${output_dir}"

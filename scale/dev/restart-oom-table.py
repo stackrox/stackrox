@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Print the number of container restarts and OOM-kills per component for each
-workload in a results directory, without vs with policy.
+workload in a results directory, across the three berserker test modes
+(baseline / alerting / idlepolicy).
 
 Restarts (kube_pod_container_status_restarts_total) and OOM-kills
 (container_oom_events_total) are cumulative counters, so the maximum over the
@@ -21,6 +22,9 @@ import os
 import sys
 
 DEFAULT_RATES = [100, 500, 1000, 2500, 5000]
+# Berserker test modes (see plot_utils.BERSERKER_MODES): (dir suffix, short label).
+# Each table cell reports one value per mode in this order.
+MODES = [('_baseline', 'base'), ('_alerting', 'alert'), ('_idlepolicy', 'idle')]
 # Every component we scrape restart/OOM counts for (see the scraper).
 COMPONENTS = ['central', 'central-db', 'sensor', 'collector', 'fact', 'berserker']
 # (suffix, header) for each counter we report.
@@ -56,32 +60,33 @@ def main():
     rates = [int(a) for a in sys.argv[2:]] or DEFAULT_RATES
     mod = load_plot_helpers()
 
-    def find_run_dir(rate, policy):
-        # Resolve the run dir for a rate/policy without hardcoding num_sensors or
-        # run_time; the trailing _policy_<policy> keeps the rate match exact.
+    def find_run_dir(rate, mode_suffix):
+        # Resolve the run dir for a rate/mode without hardcoding num_sensors or
+        # run_time; the trailing mode suffix keeps the rate match exact.
         matches = sorted(glob.glob(
-            f"{base}/berserker_file_activity_results_*_file-activity-{rate}_policy_{policy}"))
+            f"{base}/berserker_file_activity_results_*_file-activity-{rate}{mode_suffix}"))
         return matches[0] if matches else None
 
-    def cell(v_without, v_with):
+    def cell(values):
         def fmt(v):
             return 'n/a' if v is None else str(int(v))
-        return f"{fmt(v_without)}/{fmt(v_with)}"
+        return "/".join(fmt(v) for v in values)
 
+    order = "/".join(label for _, label in MODES)
     print(f"Results dir: {base}")
-    print("Each cell is without-policy/with-policy (total over the run).\n")
+    print(f"Each cell is {order} (total over the run).\n")
 
-    col_w = 13
+    col_w = 18
     for kind, header in KINDS:
         print(f"=== {header} ===")
         heading = f"{'rate':>6} " + " ".join(f"{c:>{col_w}}" for c in COMPONENTS)
         print(heading)
         for r in rates:
-            wd = find_run_dir(r, 'false')
-            wpd = find_run_dir(r, 'true')
+            run_dirs = [find_run_dir(r, suffix) for suffix, _ in MODES]
             cells = []
             for c in COMPONENTS:
-                cells.append(f"{cell(count(mod, wd, c, kind), count(mod, wpd, c, kind)):>{col_w}}")
+                values = [count(mod, rd, c, kind) for rd in run_dirs]
+                cells.append(f"{cell(values):>{col_w}}")
             print(f"{r:>6} " + " ".join(cells))
         print()
 
