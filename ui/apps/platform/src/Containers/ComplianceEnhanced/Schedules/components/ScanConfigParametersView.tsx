@@ -1,22 +1,15 @@
-import type { ReactElement, ReactNode } from 'react';
-import {
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
-    Flex,
-    Title,
-} from '@patternfly/react-core';
+import type { ReactElement } from 'react';
+import { DescriptionList, Flex, Title } from '@patternfly/react-core';
 
+import DetailsDescriptionListGroups from 'Components/Reports/View/DetailsDescriptionListGroups';
+import ScheduleDescriptionListGroup from 'Components/Reports/View/ScheduleDescriptionListGroup';
 import type { Schedule } from 'types/schedule.proto';
-import { formatRecurringSchedule } from 'utils/dateUtils';
 
 type ScanConfigParametersViewProps = {
     headingLevel: 'h2' | 'h3';
     scanName: string;
     description?: string;
     scanSchedule: Schedule;
-    children?: ReactNode;
 };
 
 function ScanConfigParametersView({
@@ -24,29 +17,13 @@ function ScanConfigParametersView({
     headingLevel,
     scanName,
     scanSchedule,
-    children,
 }: ScanConfigParametersViewProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel={headingLevel}>Parameters</Title>
             <DescriptionList isCompact isHorizontal>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Name</DescriptionListTerm>
-                    <DescriptionListDescription>{scanName}</DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Description</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {description || <em>No description</em>}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Schedule</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {formatRecurringSchedule(scanSchedule)}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-                {children}
+                <DetailsDescriptionListGroups description={description ?? ''} name={scanName} />
+                <ScheduleDescriptionListGroup schedule={scanSchedule} />
             </DescriptionList>
         </Flex>
     );
