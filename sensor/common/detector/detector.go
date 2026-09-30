@@ -76,11 +76,18 @@ type Detector interface {
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
 }
 
+// AuditLogUpdater is the audit log collection component the detector keeps updated.
+type AuditLogUpdater interface {
+	updater.Component
+	// UpdatePolicies updates the resources to collect based on the given policies.
+	UpdatePolicies(policies []*storage.Policy)
+}
+
 // New returns a new detector
 // TODO(ROX-33799): Refactor to use builder pattern to reduce parameter count
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore,
+	auditLogUpdater AuditLogUpdater, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore,
 	clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider, factSettingsMgr *filesystem.FactSettingsManager,
 	pubSubDispatcher common.PubSubDispatcher) Detector {
 	detectorStopper := concurrency.NewStopper()
@@ -189,7 +196,7 @@ type detectorImpl struct {
 	deduper             *deduper
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
-	auditLogUpdater    updater.Component
+	auditLogUpdater    AuditLogUpdater
 	factSettingsMgr    *filesystem.FactSettingsManager
 
 	detectorStopper   concurrency.Stopper
@@ -454,6 +461,10 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 
 	if d.factSettingsMgr != nil {
 		d.factSettingsMgr.UpdateFactSettings(sync.GetPolicies())
+	}
+
+	if d.auditLogUpdater != nil {
+		d.auditLogUpdater.UpdatePolicies(sync.GetPolicies())
 	}
 	return nil
 }

@@ -1,7 +1,10 @@
 package booleanpolicy
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -179,4 +182,22 @@ func FilterPolicySections(policy *storage.Policy, pred func(section *storage.Pol
 		}
 	}
 	return cloned
+}
+
+// AuditLogAPIResources returns the sorted, de-duplicated "<plural>[.<group>]" API resources referenced by the
+// enabled audit log event policies. These are the resources that need to be collected in addition to the built-in ones.
+func AuditLogAPIResources(policies []*storage.Policy) []string {
+	resources := set.NewStringSet()
+	for _, policy := range policies {
+		if policy.GetDisabled() || policy.GetEventSource() != storage.EventSource_AUDIT_LOG_EVENT {
+			continue
+		}
+		ForEachValueWithFieldName(policy, fieldnames.KubeAPIResource, func(value string) bool {
+			resources.Add(value)
+			return true
+		})
+	}
+	sorted := resources.AsSlice()
+	slices.Sort(sorted)
+	return sorted
 }

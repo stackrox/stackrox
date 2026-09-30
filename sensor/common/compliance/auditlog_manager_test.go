@@ -558,3 +558,67 @@ type fakeClusterIDWaiter struct{}
 func (f *fakeClusterIDWaiter) Get() string {
 	return "FAKECLUSTERID"
 }
+
+func apiResourcePolicy(disabled bool, resources ...string) *storage.Policy {
+	group := &storage.PolicyGroup{FieldName: "Kubernetes API Resource"}
+	for _, r := range resources {
+		group.Values = append(group.Values, &storage.PolicyValue{Value: r})
+	}
+	return &storage.Policy{
+		Disabled:       disabled,
+		EventSource:    storage.EventSource_AUDIT_LOG_EVENT,
+		PolicySections: []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{group}}},
+	}
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestUpdatePoliciesRestartsCollectionWithAPIResources() {
+	servers, fileStates := s.getFakeServersAndStates()
+	manager := s.getManager(servers, fileStates)
+	manager.EnableCollection()
+
+	manager.UpdatePolicies([]*storage.Policy{
+		apiResourcePolicy(false, "applications.argoproj.io"),
+		apiResourcePolicy(true, "routes.route.openshift.io"),
+	})
+
+	for node, server := range servers {
+		sentMsgs := server.(*mockServer).sentList
+		s.Lenf(sentMsgs, 2, "Server for node %s should have gotten a start and a restart message", node)
+		startReq := sentMsgs[1].GetAuditLogCollectionRequest().GetStartReq()
+		s.Equal([]string{"applications.argoproj.io"}, startReq.GetApiResources())
+	}
+	protoassert.Equal(s.T(), fileStates["node-a"],
+		servers["node-a"].(*mockServer).sentList[1].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestUpdatePoliciesDoesNotRestartIfUnchanged() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := s.getManager(servers, nil)
+	manager.EnableCollection()
+
+	// Policies without API resources don't change anything compared to the initial state.
+	manager.UpdatePolicies(nil)
+	manager.UpdatePolicies([]*storage.Policy{apiResourcePolicy(false, "limitranges")})
+	manager.UpdatePolicies([]*storage.Policy{apiResourcePolicy(false, "limitranges")})
+
+	for node, server := range servers {
+		s.Lenf(server.(*mockServer).sentList, 2, "Server for node %s should only have been restarted once", node)
+	}
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestUpdatePoliciesDoesNotSendIfDisabled() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := s.getManager(servers, nil)
+
+	manager.UpdatePolicies([]*storage.Policy{apiResourcePolicy(false, "limitranges")})
+	for _, server := range servers {
+		s.Empty(server.(*mockServer).sentList)
+	}
+
+	manager.EnableCollection()
+	for _, server := range servers {
+		sentMsgs := server.(*mockServer).sentList
+		s.Len(sentMsgs, 1)
+		s.Equal([]string{"limitranges"}, sentMsgs[0].GetAuditLogCollectionRequest().GetStartReq().GetApiResources())
+	}
+}

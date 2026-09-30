@@ -2,11 +2,13 @@ package compliance
 
 import (
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -32,8 +34,10 @@ type auditLogCollectionManagerImpl struct {
 	enabled                         concurrency.Flag
 	receivedInitialStateFromCentral concurrency.Flag
 	fileStates                      map[string]*storage.AuditLogFileState
-	eligibleComplianceNodes         map[string]sensor.ComplianceService_CommunicateServer
-	updaterTicker                   *time.Ticker
+	// apiResources are the "<plural>[.<group>]" resources to collect in addition to the built-in ones. Guarded by fileStateLock.
+	apiResources            []string
+	eligibleComplianceNodes map[string]sensor.ComplianceService_CommunicateServer
+	updaterTicker           *time.Ticker
 
 	auditEventMsgs   chan *sensor.MsgFromCompliance
 	fileStateUpdates chan *message.ExpiringMessage
@@ -237,7 +241,8 @@ func (a *auditLogCollectionManagerImpl) startCollectionOnNodeNoFileStateLock(nod
 			AuditLogCollectionRequest: &sensor.MsgToCompliance_AuditLogCollectionRequest{
 				Req: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq{
 					StartReq: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest{
-						ClusterId: a.clusterID.Get(),
+						ClusterId:    a.clusterID.Get(),
+						ApiResources: a.apiResources,
 					},
 				},
 			},
@@ -297,6 +302,27 @@ func (a *auditLogCollectionManagerImpl) SetAuditLogFileStateFromCentral(fileStat
 	})
 
 	if a.enabled.Get() {
+		a.startAuditLogCollectionOnAllNodes()
+	}
+}
+
+// UpdatePolicies updates the additional API resources to collect based on the given audit log policies.
+// If collection is enabled and the resources changed, then collection is restarted on all eligible nodes.
+func (a *auditLogCollectionManagerImpl) UpdatePolicies(policies []*storage.Policy) {
+	apiResources := booleanpolicy.AuditLogAPIResources(policies)
+
+	var changed bool
+	concurrency.WithLock(&a.fileStateLock, func() {
+		if slices.Equal(a.apiResources, apiResources) {
+			return
+		}
+		a.apiResources = apiResources
+		changed = true
+	})
+
+	if changed && a.enabled.Get() {
+		log.Infof("Restarting audit log collection with additional API resources %v", apiResources)
+		// Compliance restarts the reader from the latest file state, so no events are re-sent.
 		a.startAuditLogCollectionOnAllNodes()
 	}
 }

@@ -332,3 +332,33 @@ func TestDiscreteRuntimeSections(t *testing.T) {
 		})
 	}
 }
+
+func TestAuditLogAPIResources(t *testing.T) {
+	apiResourcePolicy := func(disabled bool, eventSource storage.EventSource, values ...string) *storage.Policy {
+		group := &storage.PolicyGroup{FieldName: fieldnames.KubeAPIResource}
+		for _, v := range values {
+			group.Values = append(group.Values, &storage.PolicyValue{Value: v})
+		}
+		return &storage.Policy{
+			Disabled:       disabled,
+			EventSource:    eventSource,
+			PolicySections: []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{group}}},
+		}
+	}
+	enumPolicy := &storage.Policy{
+		EventSource: storage.EventSource_AUDIT_LOG_EVENT,
+		PolicySections: []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{
+			{FieldName: fieldnames.KubeResource, Values: []*storage.PolicyValue{{Value: "SECRETS"}}},
+		}}},
+	}
+
+	assert.Empty(t, AuditLogAPIResources(nil))
+	assert.Empty(t, AuditLogAPIResources([]*storage.Policy{enumPolicy}))
+	assert.Equal(t, []string{"applications.argoproj.io", "limitranges", "routes.route.openshift.io"}, AuditLogAPIResources([]*storage.Policy{
+		enumPolicy,
+		apiResourcePolicy(false, storage.EventSource_AUDIT_LOG_EVENT, "routes.route.openshift.io", "applications.argoproj.io"),
+		apiResourcePolicy(false, storage.EventSource_AUDIT_LOG_EVENT, "limitranges", "applications.argoproj.io"),
+		apiResourcePolicy(true, storage.EventSource_AUDIT_LOG_EVENT, "issuers.cert-manager.io"),
+		apiResourcePolicy(false, storage.EventSource_DEPLOYMENT_EVENT, "nodes"),
+	}))
+}

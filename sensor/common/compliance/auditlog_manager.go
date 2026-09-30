@@ -32,6 +32,10 @@ type AuditLogCollectionManager interface {
 	// If the feature is already enabled and there are eligible nodes, then this will restart collection on those nodes from this state
 	SetAuditLogFileStateFromCentral(fileStates map[string]*storage.AuditLogFileState)
 
+	// UpdatePolicies updates the additional API resources to collect based on the given audit log policies.
+	// If collection is enabled and the resources changed, then collection is restarted on all eligible nodes.
+	UpdatePolicies(policies []*storage.Policy)
+
 	// AuditMessagesChan returns a send-only channel that can be used to notify the manager of the latest received audit log message from a compliance node. It used to maintain the latest file states
 	AuditMessagesChan() chan<- *sensor.MsgFromCompliance
 
