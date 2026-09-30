@@ -30,15 +30,15 @@ from decisionlib import (  # noqa: E402
 
 _WHEN = frozenset(
     {
-        "all-files-changed",
-        "any-file-changed",
+        "every-file-matches",
+        "any-file-matches",
         "always",
         "label-exists",
         "no-file-changed",
         "remaining",
     }
 )
-_PATH_WHEN = frozenset({"all-files-changed", "any-file-changed"})
+_PATH_WHEN = frozenset({"every-file-matches", "any-file-matches"})
 _OPINIONS = ("run", "skip", "default")
 
 
@@ -364,12 +364,12 @@ def _match_reasons(rule: Rule, files: list[str], labels: set[str]) -> list[str] 
         if rule.label not in labels:
             return None
         return [f"because label {_q(rule.label)} is set"]
-    if rule.when == "any-file-changed":
+    if rule.when == "any-file-matches":
         matched = [path for path in files if _matches(path, rule.paths)]
         if not matched:
             return None
         return [f"because file {_q(path)} changed" for path in matched]
-    if rule.when == "all-files-changed":
+    if rule.when == "every-file-matches":
         if not files or not all(_matches(path, rule.paths) for path in files):
             return None
         return [f"because file {_q(path)} changed" for path in files]

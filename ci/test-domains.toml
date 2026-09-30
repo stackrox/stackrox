@@ -36,7 +36,7 @@ run = ["*"]
 # These files can change code the path rules do not name.
 [[rules]]
 name = "tree-may-have-changed"
-when = "any-file-changed"
+when = "any-file-matches"
 paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
 run = ["*"]
 
@@ -44,7 +44,7 @@ run = ["*"]
 # style-check, so that job clashes and takes its default.
 [[rules]]
 name = "docs-only"
-when = "all-files-changed"
+when = "every-file-matches"
 paths = ['\.md$', '^docs/', '^CHANGELOG']
 skip = ["*"]
 
@@ -52,7 +52,7 @@ skip = ["*"]
 # The rule applies only when every changed file is one of these paths.
 [[rules]]
 name = "ci-tooling"
-when = "all-files-changed"
+when = "every-file-matches"
 paths = [
   '^\.github/workflows/',
   '^\.openshift-ci/',
@@ -76,26 +76,26 @@ skip = [
 
 [[rules]]
 name = "go-sources"
-when = "any-file-changed"
+when = "any-file-matches"
 paths = ['\.go$']
 run = ["go"]
 
 [[rules]]
 name = "style"
-when = "any-file-changed"
+when = "any-file-matches"
 paths = ['.*']
 run = ["style-check"]
 
 [[rules]]
 name = "sensor"
-when = "any-file-changed"
+when = "any-file-matches"
 paths = ['^sensor/']
 run = ["sensor-integration-tests"]
 skip = ["go-postgres"]
 
 [[rules]]
 name = "central-policy"
-when = "any-file-changed"
+when = "any-file-matches"
 paths = ['^central/policy/']
 run = ["go-postgres"]
 skip = ["sensor-integration-tests"]
