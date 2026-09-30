@@ -216,21 +216,20 @@ def resolve(
             f"added target {_q(needed)} because target {_q(because)} requires it"
         )
 
-    items: list[tuple[str, str]] = []
+    chosen: list[str] = []
     for job in mapping.jobs:
         if job not in originally_run:
             continue
-        items.append((_run_comment(job, votes[job], clashes, from_default), job))
+        chosen.append(job)
     seen_added: set[str] = set()
     for needed, _because in added:
         if needed in originally_run or needed in seen_added:
             continue
         seen_added.add(needed)
-        sources = ", ".join(added_by[needed])
-        items.append((f"prerequisite of {sources}", needed))
+        chosen.append(needed)
 
-    decision_text = format_decision(items)
-    log_text = f"# {repo} PR {pr}\n" + "".join(f"{event}\n" for event in events)
+    decision_text = format_decision(chosen)
+    log_text = _format_log(repo, pr, commit, events)
     return Result(decision_text=decision_text, log_text=log_text, jobs=frozenset(running))
 
 
@@ -412,13 +411,6 @@ def _says(names: list[str], opinion: str) -> str:
     quoted = " and ".join(f"rule {_q(name)}" for name in names)
     verb = "says" if len(names) == 1 else "say"
     return f"{quoted} {verb} {opinion}"
-
-
-def _run_comment(job: str, vote: _Vote, clashes: list[str], from_default: list[str]) -> str:
-    """_run_comment is the note above a job in the decision file."""
-    if job in clashes or job in from_default:
-        return "default decision"
-    return " and ".join(_rule_names(vote.run))
 
 
 def _q(value: str) -> str:

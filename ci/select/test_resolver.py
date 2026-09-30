@@ -41,11 +41,8 @@ class ResolverTest(unittest.TestCase):
             result.decision_text,
             "\n".join(
                 [
-                    "# default decision",
                     "style-check",
-                    "# default decision",
                     "wait-for-images",
-                    "# prerequisite of wait-for-images",
                     "should-dispatch",
                     "",
                 ]

@@ -14,7 +14,7 @@ The resolver reads three things:
 - A text file of labels, one label on each line. An empty file means there are no labels.
 - The rules in `ci/test-domains.toml`, and the per-target defaults in `ci/decision-defaults`.
 
-It writes two files. The decision file is the list of jobs to run, one name on each line. A line that starts with `#` is a comment. A comment does not share a line with a job name. The log is the story of how the rules were applied. The decision file does not contain that story.
+It writes two files. The decision file is the list of jobs to run, one name on each line. The resolver does not write comments. A person may add a line that starts with `#`. A comment does not share a line with a job name. The log is the story of how the rules were applied.
 
 A job that is not on the decision list is skipped. A target that `ci/decision-defaults` does not name is skipped. An empty decision file is logged, and the dispatcher follows that defaults file instead.
 
@@ -97,15 +97,12 @@ python3 ci/select/resolver.py \
 Exit status 0 means both output files were written. The decision file is:
 
 ```text
-# default decision
 style-check
-# default decision
 wait-for-images
-# prerequisite of wait-for-images
 should-dispatch
 ```
 
-`style-check` and `wait-for-images` each have a run and a skip, so the note says default decision. `should-dispatch` was skipped, then added because `wait-for-images` requires it. The end-to-end jobs are absent. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. Lines 002 through 015 are the other skips.
+The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. Lines 002 through 015 are the other skips.
 
 ```text
 # stackrox/stackrox PR 23035 a1b2c3d
