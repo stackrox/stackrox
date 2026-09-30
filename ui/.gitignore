@@ -14,6 +14,7 @@ npm-debug.log*
 /apps/platform/cypress/downloads/
 /apps/platform/cypress/test-results
 /apps/platform/test-results
+/apps/platform/verify-evidence
 
 # misc
 .DS_Store

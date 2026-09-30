@@ -553,6 +553,7 @@ module.exports = [
     {
         files: [
             'cypress/integration/**/*.test.{js,ts}', // integration tests
+            'cypress/verify/**/*.test.{js,ts}', // verification harness specs, see scripts/verify.sh
             'src/**/*.cy.jsx', // component tests
         ],
 

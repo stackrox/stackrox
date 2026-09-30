@@ -192,6 +192,8 @@ Three test levels, in order of preference:
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
 
+**Verify changes in the running app** before reporting UI work done. Follow the `verify-ui` skill (`.claude/skills/verify-ui/SKILL.md` at the repo root), which drives `apps/platform/scripts/verify.sh` (`doctor`, `static`, `open <route>`, `prove <feature>`).
+
 **For detailed testing guidance:**
 
 - [apps/platform/TESTING.md](./apps/platform/TESTING.md) — Shared testing principles and anti-patterns
