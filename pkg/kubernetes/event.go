@@ -36,6 +36,9 @@ var (
 // EventAsString returns the kubernetes resources as string, such as, namespace/default/pod/nginx-86c57db685-nqq97/portforward.
 func EventAsString(event *storage.KubernetesEvent) string {
 	resource, subresource := stringutils.Split2(strings.ToLower(event.GetObject().GetResource().String()), "_")
+	if apiResource := event.GetObject().GetApiResource(); apiResource != "" {
+		resource, subresource = apiResource, ""
+	}
 	suffix := resource + "/" + event.GetObject().GetName()
 	if subresource != "" {
 		suffix = suffix + "/" + subresource

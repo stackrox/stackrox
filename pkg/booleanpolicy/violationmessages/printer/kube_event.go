@@ -98,6 +98,12 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	singularResourceName = strings.ReplaceAll(singularResourceName, "_", " ")
 	readableResourceName = strings.ReplaceAll(readableResourceName, "_", " ")
 
+	// Resources that are not covered by the enum are shown by their "<plural>[.<group>]" name as is.
+	if apiResource := object.GetApiResource(); apiResource != "" {
+		readableResourceName = apiResource
+		singularResourceName = apiResource
+	}
+
 	var header string
 	if object.GetName() == "" {
 		header = fmt.Sprintf("Access to %s", readableResourceName)

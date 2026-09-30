@@ -642,9 +642,12 @@ func (w alertAdapter) GetResourceType() storage.Alert_Resource_ResourceType {
 	return w.a.GetResource().GetResourceType()
 }
 func (w alertAdapter) GetResourceName() string { return w.a.GetResource().GetName() }
-func (w alertAdapter) HasNode() bool           { return w.a.GetNode() != nil }
-func (w alertAdapter) GetNodeId() string       { return w.a.GetNode().GetId() }
-func (w alertAdapter) GetNodeName() string     { return w.a.GetNode().GetName() }
+func (w alertAdapter) GetResourceAPIResource() string {
+	return w.a.GetResource().GetApiResource()
+}
+func (w alertAdapter) HasNode() bool       { return w.a.GetNode() != nil }
+func (w alertAdapter) GetNodeId() string   { return w.a.GetNode().GetId() }
+func (w alertAdapter) GetNodeName() string { return w.a.GetNode().GetName() }
 
 // GetClusterId returns the entity-specific cluster ID to match the original
 // comparison behavior. Resource and node alerts store the cluster ID on their
@@ -698,6 +701,7 @@ func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
 	} else if a1.HasResource() && a2.HasResource() {
 		return a1.GetResourceType() == a2.GetResourceType() &&
 			a1.GetResourceName() == a2.GetResourceName() &&
+			a1.GetResourceAPIResource() == a2.GetResourceAPIResource() &&
 			a1.GetClusterId() == a2.GetClusterId() &&
 			a1.GetNamespace() == a2.GetNamespace()
 	} else if a1.HasNode() && a2.HasNode() {

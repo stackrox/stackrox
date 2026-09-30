@@ -207,6 +207,8 @@ message ListAlert {
 
   message ResourceEntity {
     string name = 1;
+    // api_resource is the canonical "<plural>[.<group>]" name of the resource. Only set when the resource type is CUSTOM.
+    string api_resource = 2;
   }
 
   message NodeEntity {

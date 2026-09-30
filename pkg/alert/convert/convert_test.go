@@ -44,3 +44,25 @@ func TestAlertAndListAlertResourceTypesAreInSync(t *testing.T) {
 		assert.Equal(t, at, storage.ListAlert_ResourceType_name[i])
 	}
 }
+
+func TestToAlertResource(t *testing.T) {
+	builtIn := ToAlertResource(&storage.KubernetesEvent{Object: &storage.KubernetesEvent_Object{
+		Name:     "my-secret",
+		Resource: storage.KubernetesEvent_Object_SECRETS,
+	}}).Resource
+	assert.Equal(t, storage.Alert_Resource_SECRETS, builtIn.GetResourceType())
+	assert.Empty(t, builtIn.GetApiResource())
+
+	custom := ToAlertResource(&storage.KubernetesEvent{Object: &storage.KubernetesEvent_Object{
+		Name:        "my-app",
+		Resource:    storage.KubernetesEvent_Object_UNKNOWN,
+		ApiGroup:    "argoproj.io",
+		ApiResource: "applications.argoproj.io",
+	}}).Resource
+	assert.Equal(t, storage.Alert_Resource_CUSTOM, custom.GetResourceType())
+	assert.Equal(t, "applications.argoproj.io", custom.GetApiResource())
+
+	listAlert := AlertToListAlert(&storage.Alert{Entity: &storage.Alert_Resource_{Resource: custom}})
+	assert.Equal(t, storage.ListAlert_CUSTOM, listAlert.GetCommonEntityInfo().GetResourceType())
+	assert.Equal(t, "applications.argoproj.io", listAlert.GetResource().GetApiResource())
+}

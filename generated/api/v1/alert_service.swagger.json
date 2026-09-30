@@ -917,6 +917,10 @@
       "properties": {
         "name": {
           "type": "string"
+        },
+        "apiResource": {
+          "type": "string",
+          "description": "api_resource is the canonical \"<plural>[.<group>]\" name of the resource. Only set when the resource type is CUSTOM."
         }
       }
     },

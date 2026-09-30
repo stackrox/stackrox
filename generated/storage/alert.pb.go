@@ -1834,8 +1834,10 @@ func (x *ListAlert_CommonEntityInfo) GetResourceType() ListAlert_ResourceType {
 }
 
 type ListAlert_ResourceEntity struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// api_resource is the canonical "<plural>[.<group>]" name of the resource. Only set when the resource type is CUSTOM.
+	ApiResource   string `protobuf:"bytes,2,opt,name=api_resource,json=apiResource,proto3" json:"api_resource,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1873,6 +1875,13 @@ func (*ListAlert_ResourceEntity) Descriptor() ([]byte, []int) {
 func (x *ListAlert_ResourceEntity) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *ListAlert_ResourceEntity) GetApiResource() string {
+	if x != nil {
+		return x.ApiResource
 	}
 	return ""
 }
@@ -2099,7 +2108,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x0fCONTAINER_IMAGE\x10\x02\x12\f\n" +
 	"\bRESOURCE\x10\x03\x12\b\n" +
 	"\x04NODE\x10\x04B\b\n" +
-	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xf5\b\n" +
+	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\x98\t\n" +
 	"\tListAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12.\n" +
@@ -2121,9 +2130,10 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
 	"\fnamespace_id\x18\x04 \x01(\tR\vnamespaceId\x12D\n" +
-	"\rresource_type\x18\x05 \x01(\x0e2\x1f.storage.ListAlert.ResourceTypeR\fresourceType\x1a$\n" +
+	"\rresource_type\x18\x05 \x01(\x0e2\x1f.storage.ListAlert.ResourceTypeR\fresourceType\x1aG\n" +
 	"\x0eResourceEntity\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x1a \n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fapi_resource\x18\x02 \x01(\tR\vapiResource\x1a \n" +
 	"\n" +
 	"NodeEntity\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\xcd\x01\n" +

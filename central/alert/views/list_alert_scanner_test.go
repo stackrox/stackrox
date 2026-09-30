@@ -41,6 +41,7 @@ func TestListAlertSelectProtosMatchDests(t *testing.T) {
 		search.Node,
 		search.ResourceName,
 		search.ResourceType,
+		search.ResourceAPIResource,
 	}
 
 	require.Equal(t, len(expectedOrder), len(ListAlertSelectProtos),
