@@ -34,7 +34,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:ae3dba2b9fe0dcef5dae15812a8d2b4ea55082dab2ee79dbae42376baa9db180
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:53b3c5ae9fd5d632d03d16a11b3f85842f86123b52d5a72488204649386f9df8
       - name: kind
         value: task
       resolver: bundles
@@ -135,7 +135,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:ae3dba2b9fe0dcef5dae15812a8d2b4ea55082dab2ee79dbae42376baa9db180
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:53b3c5ae9fd5d632d03d16a11b3f85842f86123b52d5a72488204649386f9df8
       - name: kind
         value: task
       resolver: bundles
@@ -153,7 +153,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:ae3dba2b9fe0dcef5dae15812a8d2b4ea55082dab2ee79dbae42376baa9db180
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:53b3c5ae9fd5d632d03d16a11b3f85842f86123b52d5a72488204649386f9df8
       - name: kind
         value: task
       resolver: bundles
@@ -169,7 +169,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:ae3dba2b9fe0dcef5dae15812a8d2b4ea55082dab2ee79dbae42376baa9db180
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:53b3c5ae9fd5d632d03d16a11b3f85842f86123b52d5a72488204649386f9df8
       - name: kind
         value: task
       resolver: bundles
@@ -194,7 +194,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:ae3dba2b9fe0dcef5dae15812a8d2b4ea55082dab2ee79dbae42376baa9db180
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:53b3c5ae9fd5d632d03d16a11b3f85842f86123b52d5a72488204649386f9df8
       - name: kind
         value: task
       resolver: bundles
