@@ -1,7 +1,7 @@
-# Rules are walked in number order. A later run overrides an earlier skip.
+# Rules are walked from top to bottom. A later run overrides an earlier skip.
 # A later skip does not override an earlier run: the plan warns, and the
-# job runs. A job no rule has mentioned stays unsure until rule 12, which
-# skips whatever is left. Rules do not say unsure.
+# job runs. A job no rule has mentioned stays unsure until the last rule,
+# which skips whatever is left. Rules do not say unsure.
 #
 # The jobs list is every target a pull request can hit: GitHub Actions
 # job ids, then Prow job names. A prerequisite is a target too.
@@ -70,99 +70,87 @@ jobs = [
   "ui-component-tests",
 ]
 
-# 1. The run-all label starts every job. A later skip does not undo that.
+# The run-all label starts every job. A later skip does not undo that.
 [[rules]]
-number = 1
 name = "run-all-label"
-when = "label"
+when = "label-exists"
 label = "ci-run-all-tests"
 run = ["*"]
 
-# 2. A missing diff may be the whole tree.
+# A missing diff may be the whole tree.
 [[rules]]
-number = 2
 name = "no-files"
-when = "no-files"
+when = "no-file-changed"
 run = ["*"]
 
-# 3. One of these files means the whole tree may have changed.
+# One of these files means the whole tree may have changed.
 [[rules]]
-number = 3
 name = "tree-may-have-changed"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
 run = ["*"]
 
-# 4. Every changed file is documentation. Go tests do not run.
+# Every changed file is documentation. Go tests do not run.
 [[rules]]
-number = 4
 name = "docs-only"
-when = "all-files"
+when = "all-files-changed"
 paths = ['\.md$', '^docs/', '^CHANGELOG']
 run = ["style-check"]
 skip = ["go"]
 
-# 5. Any Go source runs the Go unit tests. A directory rule does not hide this.
+# Any Go source runs the Go unit tests. A directory rule does not hide this.
 [[rules]]
-number = 5
 name = "go-sources"
-when = "any-file"
+when = "any-file-changed"
 paths = ['\.go$']
 run = ["go"]
 
-# 6. Any diff that has a file runs style.
+# Any diff that has a file runs style.
 [[rules]]
-number = 6
 name = "style"
-when = "any-file"
+when = "any-file-changed"
 paths = ['.*']
 run = ["style-check"]
 
-# 7. Sensor changes run the Sensor integration job and skip Central Postgres.
+# Sensor changes run the Sensor integration job and skip Central Postgres.
 [[rules]]
-number = 7
 name = "sensor"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^sensor/']
 run = ["sensor-integration-tests"]
 skip = ["go-postgres"]
 
-# 8. Policy package changes run Central Postgres and skip Sensor integration.
+# Policy package changes run Central Postgres and skip Sensor integration.
 [[rules]]
-number = 8
 name = "central-policy"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^central/policy/']
 run = ["go-postgres"]
 skip = ["sensor-integration-tests"]
 
-# 9. The image wait has to pass before an image-backed test can start.
+# The image wait has to pass before an image-backed test can start.
 [[rules]]
-number = 9
 name = "image-wait"
 when = "always"
 run = ["wait-for-images"]
 
-# 10. A change to the Prow entrypoint keeps one suite, so a pull request
-# that edits it can show a job the resolver runs.
+# A change to the Prow entrypoint keeps two suites: one Prow starts on
+# every pull request, and vm-scanning, which stays off unless someone asks.
 [[rules]]
-number = 10
 name = "prow-demo-run"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^\.openshift-ci/dispatch\.sh$']
-run = ["gke-nongroovy-e2e-tests"]
+run = ["gke-nongroovy-e2e-tests", "ocp-vm-scanning-e2e-tests"]
 
-# 11. That same change skips the other suites Prow starts on every pull request.
+# That same change skips the other suites Prow starts on every pull request.
 [[rules]]
-number = 11
 name = "prow-demo-skip"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^\.openshift-ci/dispatch\.sh$']
 skip = ["gke-ui-e2e-tests", "gke-qa-e2e-tests"]
 
-# 12. Mandatory. Skips every job that is still unsure.
+# Mandatory. Skips every job that is still unsure.
 [[rules]]
-number = 12
 name = "remaining"
 when = "remaining"
 skip = ["*"]

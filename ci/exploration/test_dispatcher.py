@@ -217,6 +217,7 @@ def test_plan_text_includes_prow_jobs_when_dispatch_changes():
     run = _between(text, "Will run (", "Will skip (")
     skip = _between(text, "Will skip (", "Unsure (")
     assert "gke-nongroovy-e2e-tests" in run
+    assert "ocp-vm-scanning-e2e-tests" in run
     assert "rule 10 prow-demo-run" in run
     assert "gke-nongroovy-e2e-tests\n    rule 10 prow-demo-run\n    default:" not in text
     assert "gke-ui-e2e-tests" in skip

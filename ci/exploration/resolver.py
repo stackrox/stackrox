@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Classify CI jobs for one diff by walking a numbered rule list.
+"""Classify CI jobs for one diff by walking an ordered rule list.
 
 Rules are data in a TOML file. The list is walked from top to bottom.
 A later run replaces an earlier skip. A later skip does not replace an
@@ -19,7 +19,17 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_WHEN = frozenset({"all-files", "any-file", "always", "label", "no-files", "remaining"})
+_WHEN = frozenset(
+    {
+        "all-files-changed",
+        "any-file-changed",
+        "always",
+        "label-exists",
+        "no-file-changed",
+        "remaining",
+    }
+)
+_PATH_WHEN = frozenset({"all-files-changed", "any-file-changed"})
 
 
 @dataclass(frozen=True)
@@ -38,13 +48,13 @@ class Rule:
     def condition(self) -> str:
         if self.when == "always":
             return "every pull request"
-        if self.when == "no-files":
+        if self.when == "no-file-changed":
             return "the diff has no files"
-        if self.when == "label":
+        if self.when == "label-exists":
             return f"label {self.label} is set"
-        if self.when == "all-files":
+        if self.when == "all-files-changed":
             return "every changed file matches"
-        if self.when == "any-file":
+        if self.when == "any-file-changed":
             return "any changed file matches"
         return "every job no earlier rule decided"
 
@@ -329,13 +339,13 @@ def _targets(rule: Rule, opinion: str, jobs: frozenset[str]) -> frozenset[str]:
 def _rule_matches(rule: Rule, files: list[str], labels: set[str]) -> bool:
     if rule.when == "always":
         return True
-    if rule.when == "no-files":
+    if rule.when == "no-file-changed":
         return not files
-    if rule.when == "label":
+    if rule.when == "label-exists":
         return rule.label in labels
-    if rule.when == "any-file":
+    if rule.when == "any-file-changed":
         return any(_matches(path, rule.paths) for path in files)
-    if rule.when == "all-files":
+    if rule.when == "all-files-changed":
         return bool(files) and all(_matches(path, rule.paths) for path in files)
     return False
 
@@ -390,12 +400,12 @@ def _parse_rules(raw: object, jobs: frozenset[str]) -> tuple[Rule, ...]:
 
 
 def _parse_rule(body: dict, index: int, jobs: frozenset[str]) -> Rule:
-    number = body.get("number")
-    if number != index:
-        raise ValueError(f"rule {index} must be numbered {index}")
     name = body.get("name")
     if not isinstance(name, str) or not name:
         raise ValueError(f"rule {index} needs a name")
+    if "number" in body:
+        raise ValueError(f"rule {index} {name} does not take number")
+    number = index
     when = body.get("when")
     if when not in _WHEN:
         raise ValueError(f"rule {number} {name} has unknown when: {when!r}")
@@ -437,13 +447,13 @@ def _check_when_fields(
     name: str,
 ) -> None:
     where = f"rule {number} {name}"
-    if when in {"any-file", "all-files"} and not patterns:
+    if when in _PATH_WHEN and not patterns:
         raise ValueError(f"{where} needs paths")
-    if when == "label" and not label:
+    if when == "label-exists" and not label:
         raise ValueError(f"{where} needs a label")
-    if when not in {"any-file", "all-files"} and patterns:
+    if when not in _PATH_WHEN and patterns:
         raise ValueError(f"{where} does not take paths")
-    if when != "label" and label:
+    if when != "label-exists" and label:
         raise ValueError(f"{where} does not take a label")
 
 

@@ -50,6 +50,8 @@ def test_dispatch_change_runs_one_prow_suite_and_skips_the_others():
     _mapping, result = decide([".openshift-ci/dispatch.sh"])
     assert "gke-nongroovy-e2e-tests" in result.run
     assert result.decision_for("gke-nongroovy-e2e-tests").rules == (10,)
+    assert "ocp-vm-scanning-e2e-tests" in result.run
+    assert result.decision_for("ocp-vm-scanning-e2e-tests").rules == (10,)
     assert "gke-ui-e2e-tests" in result.skip
     assert result.decision_for("gke-ui-e2e-tests").rules == (11,)
     assert "gke-qa-e2e-tests" in result.skip
@@ -81,6 +83,18 @@ def test_job_flag_exits_for_the_prow_demonstration(capsys):
     )
     assert run == 0
     assert "prow-demo-run" in capsys.readouterr().err
+    vm = main(
+        [
+            "--mapping",
+            str(PRODUCTION),
+            "--job",
+            "ocp-vm-scanning-e2e-tests",
+            "--enforce",
+            ".openshift-ci/dispatch.sh",
+        ]
+    )
+    assert vm == 0
+    assert "ocp-vm-scanning-e2e-tests run" in capsys.readouterr().err
     outside = main(
         [
             "--mapping",

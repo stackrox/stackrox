@@ -13,57 +13,49 @@ jobs = [
 ]
 
 [[rules]]
-number = 1
 name = "run-all-label"
-when = "label"
+when = "label-exists"
 label = "ci-run-all-tests"
 run = ["*"]
 
 [[rules]]
-number = 2
 name = "no-files"
-when = "no-files"
+when = "no-file-changed"
 run = ["*"]
 
 [[rules]]
-number = 3
 name = "docs-only"
-when = "all-files"
+when = "all-files-changed"
 paths = ['\.md$', '^docs/']
 run = ["style"]
 skip = ["go"]
 
 [[rules]]
-number = 4
 name = "go-sources"
-when = "any-file"
+when = "any-file-changed"
 paths = ['\.go$']
 run = ["go"]
 
 [[rules]]
-number = 5
 name = "sensor"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^sensor/']
 run = ["sensor-integration-tests"]
 skip = ["go-postgres"]
 
 [[rules]]
-number = 6
 name = "central-policy"
-when = "any-file"
+when = "any-file-changed"
 paths = ['^central/policy/']
 run = ["go-postgres"]
 skip = ["sensor-integration-tests"]
 
 [[rules]]
-number = 7
 name = "image-wait"
 when = "always"
 run = ["wait-for-images"]
 
 [[rules]]
-number = 8
 name = "remaining"
 when = "remaining"
 skip = ["*"]

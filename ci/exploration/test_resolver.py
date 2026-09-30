@@ -107,10 +107,10 @@ def test_last_rule_must_skip_what_remains():
         parse_mapping(data)
 
 
-def test_numbers_must_follow_the_list():
+def test_a_rule_does_not_take_number():
     data = _rules()
-    data["rules"][1]["number"] = 9
-    with pytest.raises(ValueError, match="numbered"):
+    data["rules"][0]["number"] = 1
+    with pytest.raises(ValueError, match="number"):
         parse_mapping(data)
 
 
@@ -157,7 +157,7 @@ def _rules():
         "version": 1,
         "jobs": ["style", "other"],
         "rules": [
-            {"number": 1, "name": "style", "when": "always", "run": ["style"]},
-            {"number": 2, "name": "remaining", "when": "remaining", "skip": ["*"]},
+            {"name": "style", "when": "always", "run": ["style"]},
+            {"name": "remaining", "when": "remaining", "skip": ["*"]},
         ],
     }
