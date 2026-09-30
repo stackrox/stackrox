@@ -133,7 +133,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
 
-		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
+		capabilities := sliceutils.SortedStringSlice(eventPipeline.Capabilities()...)
 		capabilities = append(capabilities, centralsensor.SecuredClusterCertificatesReissue)
 		capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
 		if features.ComplianceEnhancements.Enabled() {

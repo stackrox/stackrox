@@ -121,11 +121,11 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 	if levels := filter.GetLevel(); len(levels) != 0 {
 
 		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel,
-			sliceutils.Unique(sliceutils.StringSlice(levels...))...)
+			sliceutils.Unique(sliceutils.SortedStringSlice(levels...))...)
 	}
 	if eventTypes := filter.GetType(); len(eventTypes) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.EventType,
-			sliceutils.Unique(sliceutils.StringSlice(eventTypes...))...)
+			sliceutils.Unique(sliceutils.SortedStringSlice(eventTypes...))...)
 	}
 	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, sliceutils.Unique(resourceTypes)...)
