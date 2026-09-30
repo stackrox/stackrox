@@ -395,14 +395,64 @@ func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
 	}
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
-	// Init uses :latest (would violate), regular uses tagged image (no violation).
-	// With skip-init filter, the only violating container is skipped — expect 0 alerts.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	storedPolicy, err := s.policyService.GetPolicy(ctx, &v1.ResourceByID{Id: createdPolicy.GetId()})
+	cancel()
+	s.Require().NoError(err)
+	s.Require().Equal(
+		[]storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+		storedPolicy.GetEvaluationFilter().GetSkipContainerTypes(),
+	)
+
+	// Both containers use :latest. The alert must name the regular container, which
+	// shows detection ran, and must not name the init container, which shows it was skipped.
 	deployName := fmt.Sprintf("init-filter-skip-%d", rand.IntN(10000))
-	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxTagged)
+	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
 
-	s.waitForDeploymentWithContainers(deployName, 2)
+	dep := s.waitForDeploymentWithContainers(deployName, 2)
+	var initContainer, regularContainer *storage.Container
+	for _, c := range dep.GetContainers() {
+		switch c.GetType() {
+		case storage.ContainerType_INIT:
+			initContainer = c
+		case storage.ContainerType_REGULAR:
+			regularContainer = c
+		}
+	}
+	s.Require().NotNil(initContainer, "expected an init container")
+	s.Require().NotNil(regularContainer, "expected a regular container")
+	s.Equal("init-0", initContainer.GetName())
+	s.Equal(deployName, regularContainer.GetName())
+	s.Contains(initContainer.GetImage().GetName().GetFullName(), "busybox")
+	s.Contains(regularContainer.GetImage().GetName().GetFullName(), "nginx")
 
-	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 0)
-	t.Logf("Verified: policy with skip init filter produced no violations")
+	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
+
+	query := search.NewQueryBuilder().
+		AddStrings(search.DeploymentName, deployName).
+		AddStrings(search.PolicyName, createdPolicy.GetName()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	listResp, err := s.alertService.ListAlerts(ctx, &v1.ListAlertsRequest{Query: query.Query()})
+	cancel()
+	s.Require().NoError(err)
+	s.Require().Len(listResp.GetAlerts(), 1)
+
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	alert, err := s.alertService.GetAlert(ctx, &v1.ResourceByID{Id: listResp.GetAlerts()[0].GetId()})
+	cancel()
+	s.Require().NoError(err)
+	s.Require().NotEmpty(alert.GetViolations())
+
+	messages := make([]string, 0, len(alert.GetViolations()))
+	for _, violation := range alert.GetViolations() {
+		messages = append(messages, violation.GetMessage())
+	}
+	combined := strings.Join(messages, "\n")
+	s.Require().Contains(combined, fmt.Sprintf("Container '%s'", deployName))
+	s.Require().Contains(combined, "tag 'latest'")
+	s.Require().NotContains(combined, "init-0")
+	s.Require().NotContains(combined, "busybox")
+	t.Logf("Verified skip-init alert names %q and omits the init container: %s", deployName, combined)
 }
