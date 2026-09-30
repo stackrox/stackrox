@@ -94,6 +94,13 @@ jobs:
         ant -f build.xml
         ls -la my-ant-report
 
+    - name: Upload junit xml file
+      uses: actions/upload-artifact@v7
+      with:
+        name: raw xml
+        path: junit-reports/report.xml
+        archive: false
+
     - name: Upload Ant report
       uses: actions/upload-artifact@v7
       with:
