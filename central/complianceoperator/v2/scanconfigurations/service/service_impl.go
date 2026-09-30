@@ -508,9 +508,10 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 
 // nodeRoleRegexp approximates the Compliance Operator's role naming rules for a single
 // role value: lowercase alphanumeric characters and hyphens, 1-39 characters, must start
-// and end with an alphanumeric character. Roles are normalized to lowercase before being
-// matched (see validateNodeRoles), so this regexp is intentionally lowercase-only. The
-// Compliance Operator's own validation (roleValRegexp in
+// and end with an alphanumeric character. This regexp is intentionally lowercase-only:
+// CO turns each role into a "node-role.kubernetes.io/<role>" label key and an RFC1123
+// object name, both of which are lowercase, so an uppercase role is rejected here rather
+// than silently fixed up. The Compliance Operator's own validation (roleValRegexp in
 // pkg/controller/scansettingbinding/scansettingbinding_controller.go) is more permissive
 // and allows leading/trailing hyphens, but such a role produces an invalid
 // "node-role.kubernetes.io/<role>" label key, so the resulting per-role ComplianceScan's
@@ -531,66 +532,55 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 		return errors.Wrap(errox.InvalidArgs, "At least one profile is required for a scan configuration")
 	}
 
-	normalizedRoles, err := validateNodeRoles(req.GetScanConfig().GetNodeRoles())
-	if err != nil {
+	if err := validateNodeRoles(req.GetScanConfig().GetNodeRoles()); err != nil {
 		return err
 	}
-	// Persist the normalized (lowercased) roles so both storage and the CO
-	// ScanSetting downstream use the canonical values. req.GetScanConfig() is
-	// guaranteed non-nil by the check above.
-	req.GetScanConfig().NodeRoles = normalizedRoles
 
 	return nil
 }
 
-// validateNodeRoles normalizes and validates the node roles following the Compliance
-// Operator rules. It returns the normalized roles (lowercased, order preserved) on
-// success:
-//   - Each role is lowercased before validation and storage: Central is the enforcing
-//     boundary, and CO turns each role into a lowercase "node-role.kubernetes.io/<role>"
-//     label key, so an uppercase role would otherwise be accepted here yet hard-fail at CO
+// validateNodeRoles validates the node roles following the Compliance Operator rules.
+// It rejects invalid roles rather than normalizing them:
 //   - Each role must be "@all" or match nodeRoleRegexp: lowercase alphanumeric characters
-//     and hyphens, 1-39 characters, starting and ending with an alphanumeric character
+//     and hyphens, 1-39 characters, starting and ending with an alphanumeric character.
+//     A role is rejected as-is (not lowercased and retried) because CO turns each role
+//     into a lowercase "node-role.kubernetes.io/<role>" label key and an RFC1123 object
+//     name; requiring the caller to submit lowercase roles keeps storage and CO canonical
+//     without any mutation of the request.
 //   - "@all" cannot be mixed with other roles
-//   - Duplicates (after normalization) are rejected
+//   - Exact duplicates are rejected
 //   - Empty list is valid (defaults to ["master", "worker"] during conversion)
-//
-// Normalization and validation are a service-layer invariant: convertV2ScanConfigToStorage
-// does not re-validate, so every write path must run through validateScanConfiguration.
-func validateNodeRoles(roles []string) ([]string, error) {
+func validateNodeRoles(roles []string) error {
 	if len(roles) == 0 {
-		return roles, nil
+		return nil
 	}
 
 	hasAll := false
 	seen := make(map[string]struct{}, len(roles))
-	normalized := make([]string, 0, len(roles))
 	for _, role := range roles {
 		if role == "" {
-			return nil, errors.Wrap(errox.InvalidArgs, "Node role must not be empty")
+			return errors.Wrap(errox.InvalidArgs, "Node role must not be empty")
 		}
-		role = strings.ToLower(role)
 		if _, dup := seen[role]; dup {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Duplicate node role %q", role)
+			return errors.Wrapf(errox.InvalidArgs, "Duplicate node role %q", role)
 		}
 		seen[role] = struct{}{}
-		normalized = append(normalized, role)
 		if role == allNodesRole {
 			hasAll = true
 			continue
 		}
 		if !nodeRoleRegexp.MatchString(role) {
-			return nil, errors.Wrapf(errox.InvalidArgs,
+			return errors.Wrapf(errox.InvalidArgs,
 				"Node role %q is invalid: must contain only lowercase alphanumeric characters and hyphens, 1-39 characters, and start and end with an alphanumeric character", role)
 		}
 	}
 
-	if hasAll && len(normalized) > 1 {
-		return nil, errors.Wrap(errox.InvalidArgs,
+	if hasAll && len(seen) > 1 {
+		return errors.Wrap(errox.InvalidArgs,
 			"The \"@all\" node role targets all nodes and cannot be combined with other roles")
 	}
 
-	return normalized, nil
+	return nil
 }
 
 func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.ComplianceOperatorProfileV2) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {
