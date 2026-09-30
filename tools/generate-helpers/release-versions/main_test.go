@@ -20,7 +20,7 @@ func repository(t *testing.T) (string, func(...string), func(int, string)) {
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err, "%s", output)
 	}
-	git("init", "-q")
+	git("init", "-q", "--initial-branch=master")
 	git("config", "core.hooksPath", "/dev/null")
 	git("config", "user.email", "test@example.com")
 	git("config", "user.name", "Test")
@@ -148,13 +148,12 @@ func TestReleaseBranchLifecycle(t *testing.T) {
 	write(220, "4.10.0")
 	write(225, "4.11.0")
 	write(227, "5.0.0")
-	git("checkout", "-qb", "main")
 	git("tag", "-a", "5.1.x", "-m", "development")
 	write(228, "")
 	git("checkout", "-qb", "release-5.1")
 	write(228, "")
 	git("tag", "-a", "5.1.0-rc.0", "-m", "release candidate")
-	git("checkout", "main")
+	git("checkout", "master")
 	write(230, "")
 	git("tag", "-a", "5.2.x", "-m", "next development stream")
 	git("checkout", "release-5.1")
@@ -172,7 +171,7 @@ func TestReleaseBranchLifecycle(t *testing.T) {
 	require.Contains(t, string(before), `Version: "5.1", Sequence: 229`)
 	require.NotContains(t, string(before), `Version: "5.2"`)
 	git("tag", "-a", "5.1.0", "-m", "GA")
-	git("branch", "5.1.0", "main") // A branch name must not shadow the GA tag.
+	git("branch", "5.1.0", "master") // A branch name must not shadow the GA tag.
 	require.Equal(t, before, readOutput())
 	git("checkout", "--detach", "refs/tags/5.1.0")
 	require.Equal(t, before, readOutput(), "detached release CI checkout")
@@ -183,7 +182,7 @@ func TestReleaseBranchLifecycle(t *testing.T) {
 	git("tag", "-a", "5.1.1", "-m", "patch GA")
 	require.Equal(t, before, readOutput())
 
-	git("checkout", "main")
+	git("checkout", "master")
 	write(240, "")
 	git("tag", "-a", "5.2.0", "-m", "newer GA")
 	after := readOutput()
