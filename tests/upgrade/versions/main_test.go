@@ -62,7 +62,7 @@ func TestReadRelease(t *testing.T) {
 			t.Chdir(t.TempDir())
 			git := func(args ...string) string {
 				t.Helper()
-				out, err := exec.Command("git", append([]string{"-c", "user.name=Test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false"}, args...)...).CombinedOutput()
+				out, err := exec.Command("git", append([]string{"-c", "user.name=Test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false"}, args...)...).CombinedOutput()
 				require.NoError(t, err, "%s", out)
 				return string(out)
 			}
