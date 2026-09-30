@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Carry out a decision for one OpenShift CI job.
 
-This does not decide again. A /test comment runs the job even when the
-decision left it off the list. A comment cannot take a job off the list.
-Without ci-dispatcher-enforce the job runs the way it does today.
+An explicit /test comment for this job runs it even when the decision
+skipped it. The comment does not remove a job the decision listed.
 """
 
 from __future__ import annotations

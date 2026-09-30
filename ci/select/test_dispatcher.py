@@ -49,13 +49,7 @@ class GhaTest(unittest.TestCase):
 
 
 class ProwTest(unittest.TestCase):
-    def test_test_comment_runs_a_job_the_decision_skipped(self):
-        self.assertEqual(
-            prow_action("go", decision(), DEFAULTS, enforce=True, forced=True),
-            "run",
-        )
-
-    def test_a_comment_does_not_skip_a_listed_job(self):
+    def test_a_listed_job_runs_when_enforced(self):
         self.assertEqual(
             prow_action("go", decision("go"), DEFAULTS, enforce=True, forced=False),
             "run",
@@ -67,9 +61,21 @@ class ProwTest(unittest.TestCase):
             "skip",
         )
 
+    def test_test_comment_runs_a_job_the_decision_skipped(self):
+        self.assertEqual(
+            prow_action("go", decision(), DEFAULTS, enforce=True, forced=True),
+            "run",
+        )
+
     def test_without_the_label_the_job_runs(self):
         self.assertEqual(
             prow_action("go", decision(), DEFAULTS, enforce=False, forced=False),
+            "run",
+        )
+
+    def test_a_job_with_no_default_stays_outside(self):
+        self.assertEqual(
+            prow_action("not-enrolled", decision(), DEFAULTS, enforce=True, forced=False),
             "run",
         )
 
