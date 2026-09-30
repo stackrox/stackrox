@@ -85,8 +85,8 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 		return "", true, delegatedregistry.ErrNoClusterSpecified
 	}
 
-	if err := d.ValidateCluster(ctx, clusterID); err != nil {
-		return "", true, err
+	if err := d.ValidateCluster(clusterID); err != nil {
+		return "", true, errors.Wrapf(err, "failed to validate cluster %q", d.clusterName(ctx, clusterID))
 	}
 
 	return clusterID, true, nil
@@ -270,14 +270,14 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 }
 
 // ValidateCluster returns nil if a cluster is a valid target for delegation, otherwise returns an error.
-func (d *delegatorImpl) ValidateCluster(ctx context.Context, clusterID string) error {
+func (d *delegatorImpl) ValidateCluster(clusterID string) error {
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
-		return errors.Errorf("no connection to cluster %q, verify the cluster is healthy and connected", d.clusterName(ctx, clusterID))
+		return errors.New("no connection, verify the cluster is healthy and connected")
 	}
 
 	if !deleConnection.ValidForDelegation(conn) {
-		return errors.Errorf("cluster %q does not support delegated scanning", d.clusterName(ctx, clusterID))
+		return errors.New("cluster does not support delegated scanning")
 	}
 
 	return nil

@@ -168,7 +168,9 @@ func (e *enricherV2Impl) delegateEnrichImage(ctx context.Context, enrichCtx Enri
 		clusterID, shouldDelegate, err = e.scanDelegator.GetDelegateClusterID(ctx, imageV2.GetName())
 	} else {
 		// A cluster ID has been passed to the enricher, determine if it's valid for delegation.
-		err = e.scanDelegator.ValidateCluster(ctx, enrichCtx.ClusterID)
+		if validationErr := e.scanDelegator.ValidateCluster(clusterID); validationErr != nil {
+			err = errors.Wrapf(validationErr, "failed to validate cluster %q", clusterID)
+		}
 		shouldDelegate = true
 	}
 

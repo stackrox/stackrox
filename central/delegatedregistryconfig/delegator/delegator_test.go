@@ -38,6 +38,7 @@ var (
 func TestGetDelegateClusterID(t *testing.T) {
 	var deleClusterDS *deleDSMocks.MockDataStore
 	var connMgr *connMocks.MockManager
+	var clusterDS *clusterDSMocks.MockDataStore
 	var waiterMgr *waiterMocks.MockManager[*storage.Image]
 	var d *delegatorImpl
 
@@ -52,8 +53,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr = connMocks.NewMockManager(ctrl)
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-		clusterDS := clusterDSMocks.NewMockDataStore(ctrl)
-		clusterDS.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("fake-cluster-name", true, nil).AnyTimes()
+		clusterDS = clusterDSMocks.NewMockDataStore(ctrl)
 		d = New(deleClusterDS, connMgr, waiterMgr, nil, nil, clusterDS)
 	}
 
@@ -112,9 +112,10 @@ func TestGetDelegateClusterID(t *testing.T) {
 		}
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
+		clusterDS.EXPECT().GetClusterName(ctxBG, fakeClusterID).Return("fake-cluster-name", true, nil)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
-		assert.ErrorContains(t, err, "no connection to cluster")
+		assert.EqualError(t, err, "failed to validate cluster \"fake-cluster-name\": no connection, verify the cluster is healthy and connected")
 	})
 
 	t.Run("all def cluster id conn no cap", func(t *testing.T) {
@@ -125,9 +126,10 @@ func TestGetDelegateClusterID(t *testing.T) {
 		}
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
+		clusterDS.EXPECT().GetClusterName(ctxBG, fakeClusterID).Return("fake-cluster-name", true, nil)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
-		assert.ErrorContains(t, err, "does not support")
+		assert.EqualError(t, err, "failed to validate cluster \"fake-cluster-name\": cluster does not support delegated scanning")
 	})
 
 	t.Run("all def cluster id conn with cap", func(t *testing.T) {
@@ -154,6 +156,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 		}
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
+		clusterDS.EXPECT().GetClusterName(ctxBG, fakeClusterID).Return("fake-cluster-name", true, nil)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
 		assert.ErrorContains(t, err, "does not support")
@@ -244,6 +247,49 @@ func TestGetDelegateClusterID(t *testing.T) {
 		assert.True(t, shouldDelegate)
 		assert.Nil(t, err)
 	})
+}
+
+func TestValidateCluster(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	connMgr := connMocks.NewMockManager(ctrl)
+	d := New(nil, connMgr, nil, nil, nil, nil)
+
+	connMgr.EXPECT().GetConnection(fakeClusterID).Return(nil)
+	assert.EqualError(t, d.ValidateCluster(fakeClusterID), "no connection, verify the cluster is healthy and connected")
+
+	connWithoutCap := connMocks.NewMockSensorConnection(ctrl)
+	connWithoutCap.EXPECT().HasCapability(gomock.Any()).Return(false).AnyTimes()
+	connMgr.EXPECT().GetConnection(fakeClusterID).Return(connWithoutCap)
+	assert.EqualError(t, d.ValidateCluster(fakeClusterID), "cluster does not support delegated scanning")
+}
+
+func TestGetDelegateClusterIDFallsBackToID(t *testing.T) {
+	tests := map[string]struct {
+		name   string
+		exists bool
+		err    error
+	}{
+		"not visible":  {exists: false},
+		"lookup error": {err: errBroken},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			configDS := deleDSMocks.NewMockDataStore(ctrl)
+			connMgr := connMocks.NewMockManager(ctrl)
+			clusterDS := clusterDSMocks.NewMockDataStore(ctrl)
+			d := New(configDS, connMgr, nil, nil, nil, clusterDS)
+			configDS.EXPECT().GetConfig(gomock.Any()).Return(&storage.DelegatedRegistryConfig{
+				EnabledFor: storage.DelegatedRegistryConfig_ALL, DefaultClusterId: fakeClusterID,
+			}, true, nil)
+			connMgr.EXPECT().GetConnection(fakeClusterID).Return(nil)
+			clusterDS.EXPECT().GetClusterName(ctxBG, fakeClusterID).Return(tc.name, tc.exists, tc.err)
+
+			_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
+			assert.True(t, shouldDelegate)
+			assert.ErrorContains(t, err, "failed to validate cluster \"fake-cluster-id\": no connection")
+		})
+	}
 }
 
 func TestDelegateEnrichImage(t *testing.T) {

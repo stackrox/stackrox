@@ -1209,7 +1209,7 @@ func TestDelegateEnrichImageV2(t *testing.T) {
 	t.Run("delegate enrich success with cluster id provided", func(t *testing.T) {
 		setup(t)
 		fakeImage := &storage.ImageV2{}
-		dele.EXPECT().ValidateCluster(emptyCtx, "cluster-id").Return(nil)
+		dele.EXPECT().ValidateCluster("cluster-id").Return(nil)
 		dele.EXPECT().DelegateScanImageV2(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		deleEnrichCtx := EnrichmentContext{Delegable: true, ClusterID: "cluster-id"}
@@ -1222,12 +1222,13 @@ func TestDelegateEnrichImageV2(t *testing.T) {
 	t.Run("delegate enrich error with cluster id provided", func(t *testing.T) {
 		setup(t)
 		fakeImage := &storage.ImageV2{}
-		dele.EXPECT().ValidateCluster(emptyCtx, "cluster-id").Return(errBroken)
+		dele.EXPECT().ValidateCluster("cluster-id").Return(errBroken)
 		deleEnrichCtx := EnrichmentContext{Delegable: true, ClusterID: "cluster-id"}
 
 		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
 		assert.True(t, should)
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed to validate cluster \"cluster-id\": broken")
+		assert.ErrorIs(t, err, errBroken)
 	})
 }
 

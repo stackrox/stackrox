@@ -28,5 +28,5 @@ type Delegator interface {
 
 	// ValidateCluster returns nil if a cluster is a valid target for delegation, returns an
 	// error otherwise.
-	ValidateCluster(ctx context.Context, clusterID string) error
+	ValidateCluster(clusterID string) error
 }
