@@ -10,9 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/pkg/version/productstreams"
-	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -24,16 +21,6 @@ type centralVersionCommand struct {
 	env          environment.Environment
 	timeout      time.Duration
 	retryTimeout time.Duration
-}
-
-type versionResult struct {
-	RoxctlVersion             string   `json:"RoxctlVersion"`
-	CentralVersion            string   `json:"CentralVersion"`
-	CompatibleCentralVersions []string `json:"CompatibleCentralVersions"`
-	Compatibility             string   `json:"Compatibility"`
-	Guidance                  string   `json:"Guidance"`
-
-	compatibility versioncompatibility.Compatibility
 }
 
 // Command defines the central version command.
@@ -81,9 +68,7 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 	return nil
 }
 
-func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
-	roxctlVersion := version.GetMainVersion()
-
+func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionResult, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing gRPC connection to Central")
@@ -108,49 +93,22 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 				"Run \"roxctl central login\" first")
 	}
 
-	centralXY, err := productstreams.ParseXYFromVersionString(centralVersion)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing Central version %q", centralVersion)
-	}
-
-	compat, err := versioncompatibility.ClassifyVersion(centralXY)
-	if err != nil {
-		return nil, errors.Wrap(err, "classifying Central version")
-	}
-
-	compatVersions, err := versioncompatibility.CompatibleVersions()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting compatible versions")
-	}
-	compatStrs := make([]string, 0, len(compatVersions))
-	for _, v := range compatVersions {
-		compatStrs = append(compatStrs, v.String())
-	}
-
-	return &versionResult{
-		RoxctlVersion:             roxctlVersion,
-		CentralVersion:            centralVersion,
-		CompatibleCentralVersions: compatStrs,
-		Compatibility:             compat.String(),
-		Guidance:                  versioncheck.Guidance(compat).String(),
-		compatibility:             compat,
-	}, nil
+	return versioncheck.ClassifyCentralVersion(centralVersion)
 }
 
-func (cmd *centralVersionCommand) printText(r *versionResult) {
+func (cmd *centralVersionCommand) printText(r *versioncheck.VersionResult) {
 	const labelFmt = "%-35s%s"
 	cmd.env.Logger().PrintfLn(labelFmt, "Central version:", r.CentralVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "roxctl version:", r.RoxctlVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "  Compatible Central versions:", strings.Join(r.CompatibleCentralVersions, ", "))
-	cmd.env.Logger().PrintfLn(labelFmt, "Compatibility:", r.compatibility.DisplayName())
-	g := versioncheck.Guidance(r.compatibility)
-	cmd.env.Logger().PrintfLn("  %s", g.Summary)
-	if g.Recommendation != "" {
-		cmd.env.Logger().PrintfLn("  %s", g.Recommendation)
+	cmd.env.Logger().PrintfLn(labelFmt, "Compatibility:", r.DisplayName)
+	cmd.env.Logger().PrintfLn("  %s", r.Summary)
+	if r.Recommendation != "" {
+		cmd.env.Logger().PrintfLn("  %s", r.Recommendation)
 	}
 }
 
-func (cmd *centralVersionCommand) printJSON(r *versionResult) error {
+func (cmd *centralVersionCommand) printJSON(r *versioncheck.VersionResult) error {
 	enc := json.NewEncoder(cmd.env.InputOutput().Out())
 	enc.SetIndent("", "  ")
 	return errors.Wrap(enc.Encode(r), "encoding version information as JSON")

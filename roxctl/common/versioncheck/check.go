@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
@@ -40,6 +41,63 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 		}
 		return err
 	}
+}
+
+// VersionResult holds structured version and compatibility information
+// for the running roxctl and a given Central.
+type VersionResult struct {
+	CentralVersion            string   `json:"CentralVersion"`
+	RoxctlVersion             string   `json:"RoxctlVersion"`
+	CompatibleCentralVersions []string `json:"CompatibleCentralVersions"`
+	Compatibility             string   `json:"Compatibility"`
+	DisplayName               string   `json:"-"`
+	Guidance                  string   `json:"Guidance"`
+	Summary                   string   `json:"-"`
+	Recommendation            string   `json:"-"`
+
+	compatibility versioncompatibility.Compatibility
+}
+
+// ClassifyCentralVersion classifies the given Central version against
+// the running roxctl version and returns structured version info.
+func ClassifyCentralVersion(centralVersion string) (*VersionResult, error) {
+	roxctlVersion := version.GetMainVersion()
+	_, err := productstreams.ParseXYFromVersionString(roxctlVersion)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing roxctl version %q", roxctlVersion)
+	}
+	centralXY, err := productstreams.ParseXYFromVersionString(centralVersion)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing Central version %q", centralVersion)
+	}
+
+	compat, err := versioncompatibility.ClassifyVersion(centralXY)
+	if err != nil {
+		return nil, errors.Wrap(err, "classifying Central version")
+	}
+
+	compatVersions, err := versioncompatibility.CompatibleVersions()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting compatible versions")
+	}
+	compatStrs := make([]string, 0, len(compatVersions))
+	for _, v := range compatVersions {
+		compatStrs = append(compatStrs, v.String())
+	}
+
+	g := Guidance(compat)
+
+	return &VersionResult{
+		CentralVersion:            centralVersion,
+		RoxctlVersion:             roxctlVersion,
+		CompatibleCentralVersions: compatStrs,
+		Compatibility:             compat.String(),
+		DisplayName:               compat.DisplayName(),
+		Guidance:                  g.String(),
+		Summary:                   g.Summary,
+		Recommendation:            g.Recommendation,
+		compatibility:             compat,
+	}, nil
 }
 
 // VersionGuidance holds structured guidance about version compatibility.
@@ -90,48 +148,20 @@ func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
 }
 
 func checkAndWarn(centralVersion string, w io.Writer) bool {
-	remoteXY, err := productstreams.ParseXYFromVersionString(centralVersion)
+	result, err := ClassifyCentralVersion(centralVersion)
 	if err != nil {
 		return false
 	}
-	roxctlVersion := version.GetMainVersion()
-	localXY, err := productstreams.ParseXYFromVersionString(roxctlVersion)
-	if err != nil {
-		return false
-	}
-	if localXY == remoteXY {
+	if result.compatibility != versioncompatibility.IncompatibleAhead && result.compatibility != versioncompatibility.IncompatibleBehind {
 		return false
 	}
 
-	compat, err := versioncompatibility.ClassifyVersion(remoteXY)
-	if err != nil {
-		return false
-	}
-	if compat != versioncompatibility.IncompatibleAhead && compat != versioncompatibility.IncompatibleBehind {
-		return false
-	}
-
-	versionRange, err := versioncompatibility.CompatibleVersions()
-	if err != nil {
-		return false
-	}
-	compatRange := formatVersionRange(versionRange)
-
-	g := Guidance(compat)
-	fmt.Fprintf(w, "Warning: roxctl %s and Central %s are incompatible.\n", roxctlVersion, centralVersion)
-	fmt.Fprintf(w, "         %s\n", g.Summary)
-	if g.Recommendation != "" {
-		fmt.Fprintf(w, "         %s\n", g.Recommendation)
+	fmt.Fprintf(w, "Warning: roxctl %s and Central %s are incompatible.\n", result.RoxctlVersion, centralVersion)
+	fmt.Fprintf(w, "         %s\n", result.Summary)
+	if result.Recommendation != "" {
+		fmt.Fprintf(w, "         %s\n", result.Recommendation)
 	}
 	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
-		roxctlVersion, centralVersion, compatRange)
+		result.RoxctlVersion, centralVersion, strings.Join(result.CompatibleCentralVersions, ", "))
 	return true
-}
-
-func formatVersionRange(versions []productstreams.XYVersion) string {
-	strs := make([]string, len(versions))
-	for i, v := range versions {
-		strs[i] = v.String()
-	}
-	return strings.Join(strs, ", ")
 }
