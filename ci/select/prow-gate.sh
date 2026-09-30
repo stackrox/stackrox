@@ -50,11 +50,14 @@ ci_decision_allows() {
         return 0
     fi
 
-    local repo pr commit commit_time action
+    local repo pr commit commit_time head_ref action
     repo="$(jq -r '.base.repo.full_name // "stackrox/stackrox"' <<<"$pr_json")"
     pr="$(jq -r '.number // 0' <<<"$pr_json")"
-    commit="$(git -C "$ROOT" rev-parse --short=7 HEAD 2>/dev/null || echo unknown)"
-    commit_time="$(git -C "$ROOT" show -s --format=%cI HEAD 2>/dev/null || true)"
+    # Prow checks out a synthetic merge. Its committer date can be later
+    # than a /test comment on the pull-request head.
+    head_ref="${PULL_PULL_SHA:-HEAD}"
+    commit="$(git -C "$ROOT" rev-parse --short=7 "$head_ref" 2>/dev/null || echo unknown)"
+    commit_time="$(git -C "$ROOT" show -s --format=%cI "$head_ref" 2>/dev/null || true)"
 
     local -a cmd
     cmd=(
