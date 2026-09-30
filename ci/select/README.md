@@ -67,6 +67,7 @@ The sample rules do the following:
 - The checked-in `ci-run-all-tests` rule asks every target to run, and a skip from another rule still clashes. The requirement is a second default: the wider set of checks that label runs today.
 - `go.mod`, `go.sum`, `proto/`, or `generated/` runs every target.
 - A change that is only docs skips every target. The style rule still runs `style-check`, and that clash takes the default `run`. The same clash keeps `wait-for-images`, which pulls `should-dispatch` back on.
+- A change that stays inside the workflow hooks, `.openshift-ci/`, or `ci/select/` skips the end-to-end jobs. One file outside those paths, including a Python file elsewhere, leaves the rule unmatched.
 - Any `.go` file runs `go`.
 - Any changed file runs `style-check`.
 - A `sensor/` file runs `sensor-integration-tests` and skips `go-postgres`.

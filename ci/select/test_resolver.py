@@ -122,6 +122,32 @@ class ResolverTest(unittest.TestCase):
             result.log_text,
         )
 
+    def test_ci_tooling_skips_end_to_end_jobs(self):
+        files = [
+            ".github/workflows/ci-decision.yaml",
+            ".github/workflows/e2e-dispatch.yaml",
+            ".openshift-ci/dispatch.sh",
+            "ci/decision-defaults",
+            "ci/select/resolver.py",
+            "ci/test-domains.toml",
+        ]
+        result = decide(files)
+        for job in (
+            "e2e-byodb-tests",
+            "e2e-nongroovy-tests",
+            "gke-nongroovy-e2e-tests",
+            "gke-ui-e2e-tests",
+            "ocp-vm-scanning-e2e-tests",
+        ):
+            self.assertNotIn(job, result.jobs)
+        self.assertIn("style-check", result.jobs)
+        self.assertIn("go", result.jobs)
+        self.assertIn('rule "ci-tooling" skips target "e2e-byodb-tests"', result.log_text)
+
+    def test_one_product_file_keeps_end_to_end_jobs(self):
+        result = decide([".github/workflows/style.yaml", "sensor/common/foo.go"])
+        self.assertIn("e2e-byodb-tests", result.jobs)
+
     def test_go_mod_runs_every_target(self):
         result = decide(["go.mod"])
         self.assertEqual(result.jobs, frozenset(load_mapping(RULES).jobs))
