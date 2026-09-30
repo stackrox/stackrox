@@ -72,7 +72,7 @@ jobs:
 
     - name: Make ant report
       run: |
-        cat << EOF > build.xml
+        echo '
           <project name="junit-report" default="report" basedir=".">
             <property name="in.dir"  value="junit-reports"/>
             <property name="out.dir" value="my-ant-report"/>
@@ -86,8 +86,7 @@ jobs:
                 <report format="noframes" todir="${out.dir}"/>
               </junitreport>
             </target>
-          </project>
-        EOF
+          </project>' > build.xml
         ant -f build.xml
         ls -la my-ant-report
 
