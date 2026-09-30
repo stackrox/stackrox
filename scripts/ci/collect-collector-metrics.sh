@@ -53,6 +53,7 @@ main() {
         exit 0
     fi
 
+    exit_code=0
     for pod in ${pods}; do
         remote="${pod}:${pod_port}"
         metrics_file="${pod}.txt"
@@ -73,11 +74,17 @@ main() {
         done
         echo
         echo "set up port-forwarding from $remote to $local"
-        curl --silent --fail -k "${local}/${metrics_path}" > "${metrics_dir}/${metrics_file}"
-        echo "finished download ${metrics_file}"
+        if curl --silent --fail -k "${local}/${metrics_path}" > "${metrics_dir}/${metrics_file}"; then
+            echo "finished download ${metrics_file}"
+        else
+            echo >&2 "failed to download metrics from $pod"
+            exit_code=1
+        fi
         kill ${PID}
         echo "finished tear down of port-forwarding from $remote to $local"
     done
+
+    return "${exit_code}"
 }
 
 main "$@"
