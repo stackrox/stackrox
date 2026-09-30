@@ -149,8 +149,8 @@ seconds_left() {
 }
 
 # collect_roxagent_container_journal writes container stdout that RHEL 8
-# Podman does not file on roxagent.service. Those entries are tagged
-# systemd-roxagent.
+# Podman stores in its own log, not the journal. Quadlet names that
+# container systemd-roxagent.
 collect_roxagent_container_journal() {
     local virtctl_bin="$1"
     local identity="$2"
@@ -163,7 +163,7 @@ collect_roxagent_container_journal() {
 
     stderr_file="$(mktemp)"
     if ! guest_ssh "$virtctl_bin" "$identity" "$guest_user" "$ns" "$vmi" "$ssh_timeout" \
-        "sudo journalctl -b --no-pager -o short-iso -t systemd-roxagent || true; sudo journalctl -b --no-pager -o short-iso CONTAINER_NAME=systemd-roxagent || true" \
+        "sudo podman logs --timestamps systemd-roxagent || true" \
         > "$out_file" 2>"$stderr_file"; then
         {
             echo "roxagent container journal collection failed for ${ns}/${vmi}"
