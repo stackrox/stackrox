@@ -13,7 +13,7 @@ Rejection requires a non-ready Central, a nonzero exit, the expected compatibili
 diagnostic, and an unchanged database version record. Evidence is saved separately
 under `rollback-rejection`; it does not weaken the normal log checks.
 
-Local checks: `go test ./tests/upgrade/versions` and
+Local checks: `go test -tags test ./tests/upgrade/versions` and
 `bats tests/upgrade/rollback.bats`. Run the full journey through the existing
 `e2e-gke-upgrade-tests` job; local checks do not validate historical image or chart
 compatibility with the cluster.

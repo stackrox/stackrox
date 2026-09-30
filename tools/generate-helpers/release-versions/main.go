@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -83,14 +84,14 @@ func generate(dir, target string) ([]byte, error) {
 		return nil, err
 	}
 	if strings.TrimSpace(string(shallow)) != "false" {
-		return nil, fmt.Errorf("release generation requires a full checkout with GA tags")
+		return nil, errors.New("release generation requires a full checkout with GA tags")
 	}
 	tags, err := command(dir, "git", "tag", "--list")
 	if err != nil {
 		return nil, err
 	}
 	sequences := make(map[productstreams.XYVersion]int)
-	for _, tag := range strings.Fields(string(tags)) {
+	for tag := range strings.FieldsSeq(string(tags)) {
 		if !initialRelease.MatchString(tag) {
 			continue
 		}
@@ -116,7 +117,7 @@ func generate(dir, target string) ([]byte, error) {
 		sequences[stream] = sequence
 	}
 	if _, exists := sequences[xy]; !exists {
-		patch := strings.SplitN(strings.Split(target, ".")[2], "-", 2)[0]
+		patch, _, _ := strings.Cut(strings.Split(target, ".")[2], "-")
 		if patch != "0" && patch != "x" {
 			return nil, fmt.Errorf("missing initial GA tag %s.0 for patch target %s", xy, target)
 		}
@@ -181,7 +182,7 @@ func parseSequence(data []byte) (int, error) {
 		return true
 	})
 	if sequence <= 0 {
-		return 0, fmt.Errorf("missing positive CurrentDBVersionSeqNum in seq_num.go")
+		return 0, errors.New("missing positive CurrentDBVersionSeqNum in seq_num.go")
 	}
 	return sequence, nil
 }

@@ -4,7 +4,7 @@ package runner
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -39,7 +39,7 @@ func TestInterruptedMigrationResumes(t *testing.T) {
 	lookup := func(seq int) (types.Migration, bool) {
 		return types.Migration{StartingSeqNum: seq, VersionAfter: &storage.Version{SeqNum: int32(seq + 1)}, Run: func(*types.Databases) error {
 			if interrupt && seq == 222 {
-				return fmt.Errorf("interrupted")
+				return errors.New("interrupted")
 			}
 			return nil
 		}}, true
