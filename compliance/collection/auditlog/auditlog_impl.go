@@ -43,6 +43,9 @@ var (
 		"securitycontextconstraints": verbsDenyListWithGet,
 		"egressfirewalls":            verbsDenyListWithGet,
 	}
+
+	// apiResourceVerbsDenyList is the set of verbs that will NOT be sent for resources requested via apiResources.
+	apiResourceVerbsDenyList = verbsDenyListWithGet
 )
 
 type auditLogReaderImpl struct {
@@ -50,6 +53,8 @@ type auditLogReaderImpl struct {
 	stopper    concurrency.Stopper
 	sender     auditLogSender
 	startState *storage.AuditLogFileState
+	// apiResources are additional "<plural>[.<group>]" resources to send on top of resourceTypesAllowList.
+	apiResources set.FrozenStringSet
 }
 
 func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
@@ -165,11 +170,20 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 		s.startState = nil
 	}
 
-	// Only send when both the stage and resource type are in their corresponding allow-list
-	// and when verb is not disallowed
-	return stagesAllowList.Contains(event.Stage) &&
-		resourceTypesAllowList.Contains(event.ObjectRef.Resource) &&
-		!verbsDenyListPerResource[event.ObjectRef.Resource].Contains(strings.ToUpper(event.Verb))
+	if !stagesAllowList.Contains(event.Stage) {
+		return false
+	}
+
+	// Only send when the resource type is in the allow-list and when verb is not disallowed
+	if resourceTypesAllowList.Contains(event.ObjectRef.Resource) {
+		return !verbsDenyListPerResource[event.ObjectRef.Resource].Contains(strings.ToUpper(event.Verb))
+	}
+
+	// Otherwise send when the resource was explicitly requested. Subresources (e.g. status updates) are never sent
+	// for these, as they are typically high volume controller updates.
+	return event.ObjectRef.Subresource == "" &&
+		s.apiResources.Contains(event.ObjectRef.apiResourceName()) &&
+		!apiResourceVerbsDenyList.Contains(strings.ToUpper(event.Verb))
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {

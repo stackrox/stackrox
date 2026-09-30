@@ -387,7 +387,7 @@ func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.
 			c.nodeNameProvider.GetNodeName(), request.GetClusterId(), protoutils.NewWrapper(request.GetCollectStartState()))
 	}
 
-	auditReader := auditlog.NewReader(client, c.nodeNameProvider.GetNodeName(), request.GetClusterId(), request.GetCollectStartState())
+	auditReader := auditlog.NewReader(client, c.nodeNameProvider.GetNodeName(), request.GetClusterId(), request.GetCollectStartState(), request.GetApiResources())
 	start, err := auditReader.StartReader(ctx)
 	if err != nil {
 		log.Errorf("Failed to start audit log reader %v", err)
