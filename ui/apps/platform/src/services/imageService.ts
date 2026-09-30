@@ -59,7 +59,7 @@ export function watchImage(name: string): Promise<string> {
             if (errorType !== 'NO_ERROR') {
                 // Backend errors follow Go conventions (lower-case first letter); capitalize
                 // for display. upperFirst (not capitalize) preserves the rest of the message,
-                // e.g. the cluster name in "failed to validate cluster ...".
+                // e.g. the cluster name in "no connection to cluster ...".
                 throw new Error(upperFirst(errorMessage));
             }
 
