@@ -82,6 +82,8 @@ func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {
 	}
 }
 
+// ToKubernetesEvent converts the audit event into a KubernetesEvent. Resources not covered by the
+// resource type enum are identified by their API resource name.
 func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
 	protoTime, err := protocompat.ParseRFC3339NanoTimestamp(e.StageTimestamp)
 	if err != nil {

@@ -84,6 +84,7 @@ func podAttachViolationMsg(event *storage.KubernetesEvent) (string, []*storage.A
 	return getAttachMsgHeader(event), getAttachMsgViolationAttr(event)
 }
 
+// getDefaultViolationMsgHeader builds a human readable header describing the accessed resource.
 func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	object := event.GetObject()
 	readableResourceName := strings.ToLower(object.GetResource().String())

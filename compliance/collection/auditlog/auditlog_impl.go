@@ -141,6 +141,8 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 	}
 }
 
+// shouldSendEvent reports whether the event is past the start state and matches either the built-in
+// resource allow-list or one of the requested API resources.
 func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 	if s.startState != nil {
 		protoTime, err := protocompat.ParseRFC3339NanoTimestamp(event.StageTimestamp)

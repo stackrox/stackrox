@@ -91,6 +91,9 @@ function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
     return <span>{message}</span>;
 }
 
+/**
+ * Returns the violations table columns for the given workflow view.
+ */
 export function getViolationsTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
     return [
         {

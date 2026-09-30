@@ -379,6 +379,7 @@ func dispatchACK(umh handler.UnconfirmedMessageHandler, label string, action sen
 	}
 }
 
+// startAuditLogCollection starts an audit log reader for this node based on the start request.
 func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {
 	if request.GetCollectStartState() == nil {
 		log.Infof("Starting audit log reader on node %s in cluster %s with no saved state", c.nodeNameProvider.GetNodeName(), request.GetClusterId())

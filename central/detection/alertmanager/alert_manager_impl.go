@@ -642,6 +642,8 @@ func (w alertAdapter) GetResourceType() storage.Alert_Resource_ResourceType {
 	return w.a.GetResource().GetResourceType()
 }
 func (w alertAdapter) GetResourceName() string { return w.a.GetResource().GetName() }
+
+// GetResourceAPIResource returns the API resource name of resource alerts for non built-in resource types.
 func (w alertAdapter) GetResourceAPIResource() string {
 	return w.a.GetResource().GetApiResource()
 }
@@ -691,6 +693,8 @@ func findMatchingKey(toFind *storage.Alert, keys []*alertviews.AlertMatchKey) *a
 	return nil
 }
 
+// alertsAreForSamePolicyAndEntity reports whether both alerts share policy, state and the violating
+// entity (deployment, resource or node).
 func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
 	if a1.GetPolicyId() != a2.GetPolicyId() || a1.GetState() != a2.GetState() {
 		return false

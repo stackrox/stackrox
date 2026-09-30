@@ -156,6 +156,8 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 	}
 }
 
+// validateEventSource checks that the event source fits the lifecycle stages and that audit log
+// policies only use supported criteria, scopes and exclusions.
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
 		return s.eventSourceError()

@@ -14,6 +14,9 @@ export type MostRecentViolationsProps = {
     alerts: Alert[];
 };
 
+/**
+ * Lists the most recent critical severity violations with links to their details.
+ */
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>

@@ -38,6 +38,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 	return listAlert
 }
 
+// populateListAlertEntityInfoForResource sets the resource entity and common entity info on the list alert.
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
 	listAlert.Entity = &storage.ListAlert_Resource{
 		Resource: &storage.ListAlert_ResourceEntity{

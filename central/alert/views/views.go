@@ -262,6 +262,8 @@ func (k *AlertMatchKey) GetResourceName() string {
 	}
 	return *k.ResourceName
 }
+
+// GetResourceAPIResource returns the "<plural>[.<group>]" API resource name, or empty if unset.
 func (k *AlertMatchKey) GetResourceAPIResource() string {
 	if k.ResourceAPIResource == nil {
 		return ""

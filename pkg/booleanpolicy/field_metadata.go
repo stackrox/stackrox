@@ -240,6 +240,7 @@ func (f *FieldMetadata) registerFieldMetadata(fieldName string, qb querybuilders
 	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, validator, source, fieldTypes, options...)
 }
 
+// initializeFieldMetadata registers the query builder, validator and event source of every policy field.
 func initializeFieldMetadata() FieldMetadata {
 	f := FieldMetadata{
 		fieldsToQB: make(map[string]*metadataAndQB),
