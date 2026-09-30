@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
@@ -80,17 +81,13 @@ func ClassifyCentralVersion(centralVersion string) (*VersionResult, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getting compatible versions")
 	}
-	compatStrs := make([]string, 0, len(compatVersions))
-	for _, v := range compatVersions {
-		compatStrs = append(compatStrs, v.String())
-	}
 
 	g := Guidance(compat)
 
 	return &VersionResult{
 		CentralVersion:            centralVersion,
 		RoxctlVersion:             roxctlVersion,
-		CompatibleCentralVersions: compatStrs,
+		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
 		Compatibility:             compat.String(),
 		DisplayName:               compat.DisplayName(),
 		Guidance:                  g.String(),
