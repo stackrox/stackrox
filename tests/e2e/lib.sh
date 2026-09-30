@@ -182,34 +182,9 @@ deploy_stackrox_with_roxie() {
 
 prepare_for_konflux() {
     local config_file="$1"
-    local use_konflux
-    use_konflux=$(yq eval ".roxie.konfluxImages" "$config_file")
-    local main_image_tag
-    main_image_tag=$(yq eval ".roxie.version" "$config_file")
-    if [[ "$use_konflux" == "true" ]]; then
+    if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
         # We need to be able to pull operator bundle images.
         registry_ro_login "quay.io/rhacs-eng"
-
-        info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
-        if is_release_version "$main_image_tag" || is_RC_version "$main_image_tag"; then
-            info "On release tag (${main_image_tag}), skipping main image tag patching for Konflux usage"
-            return
-        fi
-        if is_CI; then
-            # get_branch_name() may only be called in CI context.
-            local branch_name
-            branch_name="$(get_branch_name)"
-            if [[ "$branch_name" =~ ^release- ]]; then
-                info "On release branch (${branch_name}), skipping main image tag patching for Konflux usage"
-                return
-            fi
-        fi
-        info "Patching main image tag for Konflux usage: using ${main_image_tag}"
-        if [[ "$main_image_tag" != *-fast ]]; then
-            main_image_tag="${main_image_tag}-fast"
-            patch_yaml "$config_file" ".roxie.version = \"${main_image_tag}\""
-            info "Main image tag patched for Konflux usage: ${main_image_tag}"
-        fi
     fi
 }
 

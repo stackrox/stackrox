@@ -6,8 +6,9 @@ load "../../../scripts/test_helpers.bats"
 function setup() {
     source "${BATS_TEST_DIRNAME}/../lib.sh"
     test_file="${BATS_TEST_TMPDIR}/roxie.yaml"
+    login_calls_file="${BATS_TEST_TMPDIR}/login-calls"
     # shellcheck disable=SC2317
-    registry_ro_login() { :; }
+    registry_ro_login() { printf '%s\n' "$1" >> "$login_calls_file"; }
 }
 
 write_roxie_config() {
@@ -20,27 +21,21 @@ roxie:
 EOF
 }
 
-set_github_ci_ref() {
-    export CI=true
-    export GITHUB_ACTION=true
-    unset GITHUB_HEAD_REF
-    export GITHUB_REF_NAME="$1"
-}
-
 @test "prepare_for_konflux preserves release candidate tags" {
     write_roxie_config "5.0.0-rc.1"
-    set_github_ci_ref "5.0.0-rc.1"
 
     prepare_for_konflux "$test_file"
 
     run yq eval ".roxie.version" "$test_file"
     assert_success
     assert_output "5.0.0-rc.1"
+    run cat "$login_calls_file"
+    assert_success
+    assert_output "quay.io/rhacs-eng"
 }
 
 @test "prepare_for_konflux preserves final release tags" {
     write_roxie_config "5.0.0"
-    set_github_ci_ref "5.0.0"
 
     prepare_for_konflux "$test_file"
 
@@ -49,9 +44,8 @@ set_github_ci_ref() {
     assert_output "5.0.0"
 }
 
-@test "prepare_for_konflux preserves tags on release branches" {
+@test "prepare_for_konflux preserves release branch tags" {
     write_roxie_config "5.0.x-123-gabcdef"
-    set_github_ci_ref "release-5.0"
 
     prepare_for_konflux "$test_file"
 
@@ -60,20 +54,18 @@ set_github_ci_ref() {
     assert_output "5.0.x-123-gabcdef"
 }
 
-@test "prepare_for_konflux adds the development suffix on non-release branches" {
+@test "prepare_for_konflux preserves unsuffixed development tags" {
     write_roxie_config "5.1.x-123-gabcdef"
-    set_github_ci_ref "master"
 
     prepare_for_konflux "$test_file"
 
     run yq eval ".roxie.version" "$test_file"
     assert_success
-    assert_output "5.1.x-123-gabcdef-fast"
+    assert_output "5.1.x-123-gabcdef"
 }
 
-@test "prepare_for_konflux preserves an existing development suffix" {
+@test "prepare_for_konflux preserves suffixed development tags" {
     write_roxie_config "5.1.x-123-gabcdef-fast"
-    set_github_ci_ref "master"
 
     prepare_for_konflux "$test_file"
 
@@ -84,11 +76,11 @@ set_github_ci_ref() {
 
 @test "prepare_for_konflux leaves the version unchanged when Konflux images are disabled" {
     write_roxie_config "5.1.x-123-gabcdef" false
-    set_github_ci_ref "master"
 
     prepare_for_konflux "$test_file"
 
     run yq eval ".roxie.version" "$test_file"
     assert_success
     assert_output "5.1.x-123-gabcdef"
+    [ ! -e "$login_calls_file" ]
 }
