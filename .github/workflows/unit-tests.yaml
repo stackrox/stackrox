@@ -73,7 +73,7 @@ jobs:
     - name: Make allure report
       run: |
         npm install -g allure
-        npx allure awesome junit-reports/ --single-file --output my-report
+        npx allure classic junit-reports/ --single-file --output my-report
         ls -la my-report
         ls -la my-report/
 
