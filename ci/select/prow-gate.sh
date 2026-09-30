@@ -61,7 +61,7 @@ ci_decision_allows() {
 
     local -a cmd
     cmd=(
-        "$python" "$ROOT/ci/select/prow.py" gate
+        "$python" "$ROOT/ci/select/prow_dispatcher.py" gate
         --job "$job"
         --rules "$ROOT/ci/test-domains.toml"
         --defaults "$ROOT/ci/decision-defaults"

@@ -76,6 +76,7 @@ class _Vote:
     default: list[Hit] = field(default_factory=list)
 
     def opinion(self, name: str) -> list[Hit]:
+        """opinion returns the run, skip, or default hits recorded for this target."""
         return getattr(self, name)
 
 
@@ -330,6 +331,7 @@ def _record_opinions(
     jobs: list[str],
     reasons: list[str],
 ) -> None:
+    """_record_opinions stores this rule's run, skip, or default on each named target."""
     for opinion in _OPINIONS:
         if opinion == "run":
             chosen = jobs if rule.run_all else [job for job in jobs if job in rule.run]
@@ -344,6 +346,7 @@ def _record_opinions(
 
 
 def _named_targets(rule: Rule, jobs: tuple[str, ...]) -> list[str]:
+    """_named_targets lists the jobs this rule mentions. A star means every job."""
     if rule.run_all or rule.skip_all or rule.default_all:
         return list(jobs)
     named = rule.run | rule.skip | rule.default
@@ -351,6 +354,7 @@ def _named_targets(rule: Rule, jobs: tuple[str, ...]) -> list[str]:
 
 
 def _match_reasons(rule: Rule, files: list[str], labels: set[str]) -> list[str] | None:
+    """_match_reasons explains why the rule applies, or returns None when it does not."""
     if rule.when == "always":
         return [""]
     if rule.when == "no-file-changed":
@@ -374,10 +378,12 @@ def _match_reasons(rule: Rule, files: list[str], labels: set[str]) -> list[str] 
 
 
 def _matches(path: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
+    """_matches reports whether one changed path matches any of the rule's patterns."""
     return any(pattern.search(path) for pattern in patterns)
 
 
 def _rule_event(commit: str, rule: str, verb: str, job: str, reason: str) -> str:
+    """_rule_event formats one log line for a rule that runs or skips a target."""
     line = f"{commit}: rule {_q(rule)} {verb} target {_q(job)}"
     if reason:
         return f"{line} {reason}"
@@ -385,6 +391,7 @@ def _rule_event(commit: str, rule: str, verb: str, job: str, reason: str) -> str
 
 
 def _rule_names(hits: list[Hit]) -> list[str]:
+    """_rule_names lists the rule names behind these hits, once each, in order."""
     names: list[str] = []
     for hit in hits:
         if hit.rule not in names:
@@ -393,23 +400,27 @@ def _rule_names(hits: list[Hit]) -> list[str]:
 
 
 def _says(names: list[str], opinion: str) -> str:
+    """_says joins rule names into a clash phrase, such as rule "docs-only" says skip."""
     quoted = " and ".join(f"rule {_q(name)}" for name in names)
     verb = "says" if len(names) == 1 else "say"
     return f"{quoted} {verb} {opinion}"
 
 
 def _run_comment(job: str, vote: _Vote, clashes: list[str], from_default: list[str]) -> str:
+    """_run_comment is the note above a job in the decision file."""
     if job in clashes or job in from_default:
         return "default decision"
     return " and ".join(_rule_names(vote.run))
 
 
 def _q(value: str) -> str:
+    """_q wraps a value in quotes for the log."""
     escaped = value.replace("\\", "\\\\").replace('"', '\\"')
     return f'"{escaped}"'
 
 
 def _parse_rules(raw: object, jobs: set[str]) -> tuple[Rule, ...]:
+    """_parse_rules reads the rules in order and requires a catch-all last rule."""
     if not isinstance(raw, list) or not raw:
         raise DecisionError("rules must be a non-empty list")
     rules: list[Rule] = []
@@ -432,6 +443,7 @@ def _parse_rules(raw: object, jobs: set[str]) -> tuple[Rule, ...]:
 
 
 def _parse_rule(body: dict, index: int, jobs: set[str]) -> Rule:
+    """_parse_rule turns one TOML rule table into a Rule."""
     name = body.get("name")
     if not isinstance(name, str) or not name:
         raise DecisionError(f"rule {index} needs a name")
@@ -474,6 +486,7 @@ def _reject_overlap(
     index: int,
     name: str,
 ) -> None:
+    """_reject_overlap rejects a rule that gives one job two opinions, or mixes * with names."""
     starred = sum((run_all, skip_all, default_all))
     if starred > 1:
         raise DecisionError(f"rule {index} {name} uses * more than once")
@@ -490,6 +503,7 @@ def _check_when_fields(
     index: int,
     name: str,
 ) -> None:
+    """_check_when_fields requires paths or a label only for the when values that use them."""
     where = f"rule {index} {name}"
     if when in _PATH_WHEN and not patterns:
         raise DecisionError(f"{where} needs paths")
@@ -504,6 +518,7 @@ def _check_when_fields(
 def _job_list(
     body: dict, key: str, index: int, name: str, jobs: set[str]
 ) -> tuple[frozenset[str], bool]:
+    """_job_list reads a run, skip, or default list. The second value is true when the list is *."""
     raw = body.get(key, [])
     if raw is None:
         raw = []
@@ -527,6 +542,7 @@ def _job_list(
 
 
 def _parse_requires(data: dict, jobs: set[str]) -> dict[str, tuple[str, ...]]:
+    """_parse_requires reads which running job pulls other jobs onto the list."""
     raw = data.get("requires", {})
     if raw is None:
         raw = {}
@@ -552,10 +568,12 @@ def _parse_requires(data: dict, jobs: set[str]) -> dict[str, tuple[str, ...]]:
 
 
 def _detect_cycles(requires: dict[str, tuple[str, ...]]) -> None:
+    """_detect_cycles rejects a requires graph that loops."""
     visiting: set[str] = set()
     visited: set[str] = set()
 
     def walk(name: str) -> None:
+        """walk rejects a requires path that returns to a job already on the path."""
         if name in visited:
             return
         if name in visiting:
@@ -571,6 +589,7 @@ def _detect_cycles(requires: dict[str, tuple[str, ...]]) -> None:
 
 
 def _optional_strings(body: dict, key: str, index: int, name: str) -> tuple[str, ...]:
+    """_optional_strings reads a string list that may be absent, such as paths."""
     raw = body.get(key, [])
     if raw is None:
         raw = []
@@ -580,6 +599,7 @@ def _optional_strings(body: dict, key: str, index: int, name: str) -> tuple[str,
 
 
 def _string_list(data: dict, key: str) -> list[str]:
+    """_string_list reads a required list of strings, such as jobs."""
     value = data.get(key)
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise DecisionError(f"{key} must be a list of strings")
@@ -587,6 +607,7 @@ def _string_list(data: dict, key: str) -> list[str]:
 
 
 def _compile(pattern: str, where: str) -> re.Pattern[str]:
+    """_compile turns one path pattern into a regular expression."""
     try:
         return re.compile(pattern)
     except re.error as exc:
@@ -594,6 +615,7 @@ def _compile(pattern: str, where: str) -> re.Pattern[str]:
 
 
 def _dedupe(files: list[str]) -> list[str]:
+    """_dedupe drops repeated paths and keeps the first occurrence."""
     seen: set[str] = set()
     unique: list[str] = []
     for name in files:

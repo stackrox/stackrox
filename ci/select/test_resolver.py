@@ -43,10 +43,26 @@ class ResolverTest(unittest.TestCase):
                 [
                     "# docs-only and style",
                     "style-check",
+                    "# default decision",
+                    "go-postgres",
+                    "# default decision",
+                    "sensor-integration-tests",
+                    "# default decision",
+                    "should-dispatch",
                     "# image-wait",
                     "wait-for-images",
-                    "# prerequisite of wait-for-images",
-                    "should-dispatch",
+                    "# default decision",
+                    "e2e-byodb-tests",
+                    "# default decision",
+                    "e2e-db-backup-restore-tests",
+                    "# default decision",
+                    "e2e-gke-upgrade-tests",
+                    "# default decision",
+                    "e2e-nongroovy-tests",
+                    "# default decision",
+                    "gke-nongroovy-e2e-tests",
+                    "# default decision",
+                    "gke-ui-e2e-tests",
                     "",
                 ]
             ),
@@ -70,59 +86,59 @@ class ResolverTest(unittest.TestCase):
             log,
         )
         self.assertIn(
-            'a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it',
+            'a1b2c3d: rule "remaining" takes default "run" for target "should-dispatch"',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "remaining" takes default "skip" for target "go-postgres"',
+            'a1b2c3d: rule "remaining" takes default "run" for target "go-postgres"',
             log,
         )
         self.assertNotIn("go\n", result.decision_text)
 
-    def test_clash_takes_the_default_skip(self):
+    def test_clash_takes_the_default_run(self):
         result = decide(["sensor/common/foo.go", "central/policy/service.go"])
-        self.assertNotIn("go-postgres", result.jobs)
-        self.assertNotIn("sensor-integration-tests", result.jobs)
+        self.assertIn("go-postgres", result.jobs)
+        self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn("go", result.jobs)
         self.assertIn(
             'a1b2c3d: clash on target "go-postgres"; '
-            'rule "central-policy" says run, rule "sensor" says skip; default "skip"',
+            'rule "central-policy" says run, rule "sensor" says skip; default "run"',
             result.log_text,
         )
         self.assertIn(
             'a1b2c3d: clash on target "sensor-integration-tests"; '
-            'rule "sensor" says run, rule "central-policy" says skip; default "skip"',
+            'rule "sensor" says run, rule "central-policy" says skip; default "run"',
             result.log_text,
         )
 
-    def test_clash_takes_a_run_default_when_the_file_says_run(self):
+    def test_clash_takes_a_skip_default_when_the_file_says_skip(self):
         defaults = parse_defaults(DEFAULTS.read_text(encoding="utf-8"))
-        defaults["go-postgres"] = "run"
+        defaults["go-postgres"] = "skip"
         result = decide(
             ["sensor/common/foo.go", "central/policy/service.go"],
             defaults=defaults,
         )
-        self.assertIn("go-postgres", result.jobs)
-        self.assertIn('default "run"', result.log_text)
+        self.assertNotIn("go-postgres", result.jobs)
+        self.assertIn('default "skip"', result.log_text)
 
     def test_run_all_label_and_a_skip_take_the_default(self):
         # docs-only skips go, and the label runs go. That clash uses the default.
         result = decide(["README.md"], labels=["ci-run-all-tests"])
-        self.assertNotIn("go", result.jobs)
+        self.assertIn("go", result.jobs)
         self.assertIn("style-check", result.jobs)
         self.assertIn("gke-qa-e2e-tests", result.jobs)
         self.assertIn('clash on target "go"', result.log_text)
+        self.assertIn('default "run"', result.log_text)
 
     def test_go_mod_runs_every_target(self):
         result = decide(["go.mod"])
         self.assertEqual(result.jobs, frozenset(load_mapping(RULES).jobs))
 
-    def test_unmatched_file_does_not_run_the_go_job(self):
+    def test_unmatched_file_runs_the_ready_pull_request_defaults(self):
         result = decide(["notes/todo.txt"])
-        self.assertEqual(
-            result.jobs,
-            frozenset({"style-check", "wait-for-images", "should-dispatch"}),
-        )
+        defaults = parse_defaults(DEFAULTS.read_text(encoding="utf-8"))
+        expected = {name for name, opinion in defaults.items() if opinion == "run"}
+        self.assertEqual(result.jobs, frozenset(expected))
 
     def test_check_name_pulls_in_the_job_it_requires(self):
         mapping = load_mapping_text(

@@ -105,6 +105,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _print_plan(decision_text: str, log_text: str, enforce: bool) -> None:
+    """_print_plan writes the decision and the log, and appends them to the GitHub step summary when that file is set."""
     label = "set" if enforce else "absent"
     body = (
         f"ci-dispatcher-enforce is {label}.\n\n"
@@ -119,6 +120,7 @@ def _print_plan(decision_text: str, log_text: str, enforce: bool) -> None:
 
 
 def _read_lines(path: str) -> list[str]:
+    """_read_lines reads one path or label per line from a text file."""
     return read_list(Path(path).read_text(encoding="utf-8"))
 
 
