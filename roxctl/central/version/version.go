@@ -75,9 +75,9 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 			cmd.env.Logger().ErrfLn("%v", err)
 			return err
 		}
-	} else {
-		cmd.printText(result)
+		return nil
 	}
+	cmd.printText(result)
 	return nil
 }
 
@@ -90,9 +90,10 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	versioncheck.SuppressWarning()
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
+
+	versioncheck.SuppressWarning() // Don't print another warning if versions
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
 	if err != nil {
