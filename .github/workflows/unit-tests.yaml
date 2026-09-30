@@ -70,6 +70,19 @@ jobs:
       if: always()
       run: make generate-junit-reports
 
+    - name: Make allure report
+      run: |
+        npm install -g allure
+        npx allure awesome junit-reports/ --single-file --output my-report
+        ls -la my-report
+        ls -la my-report/
+
+    - name: Upload allure report
+      uses: actions/upload-artifact@v7
+      with:
+        name: unit test report
+        path: my-report/
+
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
