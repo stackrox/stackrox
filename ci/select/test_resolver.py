@@ -55,25 +55,24 @@ class ResolverTest(unittest.TestCase):
             r"# \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}\n",
         )
         self.assertIn(
-            '001. rule "docs-only" skips target "go" because file "README.md" changed',
+            '001. rule "docs-only" matches every changed file\n     README.md\n',
             log,
         )
+        self.assertIn('002. rule "docs-only" skips target "go"', log)
+        self.assertIn('009. rule "docs-only" skips target "e2e-nongroovy-tests"', log)
+        self.assertNotIn("because file", log)
         self.assertIn(
-            '008. rule "docs-only" skips target "e2e-nongroovy-tests" because file "README.md" changed',
-            log,
-        )
-        self.assertIn(
-            '016. clash on target "style-check"; '
+            '017. clash on target "style-check"; '
             'rule "style" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            '017. clash on target "wait-for-images"; '
+            '018. clash on target "wait-for-images"; '
             'rule "image-wait" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            '018. added target "should-dispatch" because target "wait-for-images" requires it',
+            '019. added target "should-dispatch" because target "wait-for-images" requires it',
             log,
         )
         self.assertNotIn("e2e-nongroovy-tests\n", result.decision_text)
@@ -142,11 +141,31 @@ class ResolverTest(unittest.TestCase):
             self.assertNotIn(job, result.jobs)
         self.assertIn("style-check", result.jobs)
         self.assertIn("go", result.jobs)
-        self.assertIn('rule "ci-tooling" skips target "e2e-byodb-tests"', result.log_text)
+        self.assertIn(
+            "001. rule \"ci-tooling\" matches every changed file\n"
+            "     .github/workflows/ (2)\n"
+            "     .openshift-ci/ (1)\n"
+            "     ci/select/ (1)\n"
+            "     ci/decision-defaults\n"
+            "     ci/test-domains.toml\n",
+            result.log_text,
+        )
+        self.assertIn('002. rule "ci-tooling" skips target "e2e-byodb-tests"', result.log_text)
+        self.assertNotIn('skips target "e2e-byodb-tests" because file', result.log_text)
 
     def test_one_product_file_keeps_end_to_end_jobs(self):
         result = decide([".github/workflows/style.yaml", "sensor/common/foo.go"])
         self.assertIn("e2e-byodb-tests", result.jobs)
+        self.assertIn(
+            'rule "sensor" matches\n     sensor/common/foo.go\n',
+            result.log_text,
+        )
+        self.assertIn(
+            'rule "style" matches every changed file (2)\n'
+            "     .github/workflows/style.yaml\n"
+            "     sensor/common/foo.go\n",
+            result.log_text,
+        )
 
     def test_go_mod_runs_every_target(self):
         result = decide(["go.mod"])

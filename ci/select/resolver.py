@@ -183,14 +183,13 @@ def resolve(
     for rule in mapping.rules:
         if rule.when == "remaining":
             continue
-        for job in mapping.jobs:
-            if job in clashes:
-                continue
-            for opinion, verb in (("run", "runs"), ("skip", "skips")):
-                for hit in votes[job].opinion(opinion):
-                    if hit.rule != rule.name:
-                        continue
-                    events.append(_rule_event(rule.name, verb, job, hit.reason))
+        actions = _rule_actions(rule, mapping.jobs, votes, clashes)
+        if not actions:
+            continue
+        matched = _match_event(rule, paths)
+        if matched:
+            events.append(matched)
+        events.extend(_rule_event(rule.name, verb, job) for verb, job in actions)
 
     for job in clashes:
         vote = votes[job]
@@ -353,26 +352,28 @@ def _named_targets(rule: Rule, jobs: tuple[str, ...]) -> list[str]:
 
 
 def _match_reasons(rule: Rule, files: list[str], labels: set[str]) -> list[str] | None:
-    """_match_reasons explains why the rule applies, or returns None when it does not."""
+    """_match_reasons returns a hit when the rule applies, or None when it does not.
+
+    The log prints the files once, so this does not repeat them onto each target.
+    """
     if rule.when == "always":
         return [""]
     if rule.when == "no-file-changed":
         if files:
             return None
-        return ["because the diff has no files"]
+        return [""]
     if rule.when == "label-exists":
         if rule.label not in labels:
             return None
-        return [f"because label {_q(rule.label)} is set"]
+        return [""]
     if rule.when == "any-file-matches":
-        matched = [path for path in files if _matches(path, rule.paths)]
-        if not matched:
-            return None
-        return [f"because file {_q(path)} changed" for path in matched]
+        if any(_matches(path, rule.paths) for path in files):
+            return [""]
+        return None
     if rule.when == "every-file-matches":
-        if not files or not all(_matches(path, rule.paths) for path in files):
-            return None
-        return [f"because file {_q(path)} changed" for path in files]
+        if files and all(_matches(path, rule.paths) for path in files):
+            return [""]
+        return None
     return None
 
 
@@ -389,12 +390,109 @@ def _format_log(repo: str, pr: str, commit: str, events: list[str]) -> str:
     return f"# {repo} PR {pr} {commit[:7]}\n# {when}\n{body}"
 
 
-def _rule_event(rule: str, verb: str, job: str, reason: str) -> str:
+def _rule_actions(
+    rule: Rule,
+    jobs: tuple[str, ...],
+    votes: dict[str, _Vote],
+    clashes: list[str],
+) -> list[tuple[str, str]]:
+    """_rule_actions lists this rule's run and skip lines, leaving clashes to their own lines."""
+    actions: list[tuple[str, str]] = []
+    for job in jobs:
+        if job in clashes:
+            continue
+        for opinion, verb in (("run", "runs"), ("skip", "skips")):
+            if any(hit.rule == rule.name for hit in votes[job].opinion(opinion)):
+                actions.append((verb, job))
+    return actions
+
+
+def _match_event(rule: Rule, files: list[str]) -> str | None:
+    """_match_event states why the rule matched, once, with files grouped by pattern."""
+    if rule.when == "label-exists":
+        return f"rule {_q(rule.name)} matches because label {_q(rule.label)} is set"
+    if rule.when == "no-file-changed":
+        return f"rule {_q(rule.name)} matches because the diff has no files"
+    if rule.when not in _PATH_WHEN:
+        return None
+    groups, matched = _file_groups(rule, files)
+    if not groups:
+        return None
+    header = f"rule {_q(rule.name)} matches"
+    if rule.when == "every-file-matches":
+        header += " every changed file"
+    elif matched > 1 and matched == len(files):
+        header += f" every changed file ({matched})"
+    return header + "\n" + "\n".join(f"     {group}" for group in groups)
+
+
+def _file_groups(rule: Rule, files: list[str]) -> tuple[list[str], int]:
+    """_file_groups buckets matched paths under the first pattern each one hits.
+
+    A lone file is its path. A directory prefix with other files beside it is
+    the prefix and a count, including a count of one.
+    """
+    assigned: list[list[str]] = [[] for _ in rule.paths]
+    for path in files:
+        for index, pattern in enumerate(rule.paths):
+            if pattern.search(path):
+                assigned[index].append(path)
+                break
+    matched = sum(len(paths) for paths in assigned)
+    lines: list[str] = []
+    for pattern, paths in zip(rule.paths, assigned, strict=True):
+        if not paths:
+            continue
+        kind, label = _pattern_kind(pattern.pattern)
+        if kind == "exact":
+            lines.append(label)
+        elif kind == "prefix" and matched != 1:
+            lines.append(f"{label} ({len(paths)})")
+        elif len(paths) == 1:
+            lines.append(paths[0])
+        else:
+            lines.extend(paths)
+    return lines, matched
+
+
+def _pattern_kind(source: str) -> tuple[str, str]:
+    """_pattern_kind classifies a path pattern as prefix, exact, or other."""
+    anchored_end = source.endswith("$")
+    body = source[1:] if source.startswith("^") else source
+    if anchored_end:
+        body = body[:-1]
+    literal = _regex_literal(body)
+    if literal is None:
+        return "other", source
+    if source.startswith("^") and anchored_end:
+        return "exact", literal
+    if source.startswith("^"):
+        return "prefix", literal
+    return "other", literal
+
+
+def _regex_literal(body: str) -> str | None:
+    """_regex_literal returns the path text when the pattern has no wildcards."""
+    out: list[str] = []
+    index = 0
+    while index < len(body):
+        char = body[index]
+        if char == "\\":
+            if index + 1 >= len(body):
+                return None
+            out.append(body[index + 1])
+            index += 2
+            continue
+        if char in ".+*?[](){}|":
+            return None
+        out.append(char)
+        index += 1
+    return "".join(out)
+
+
+def _rule_event(rule: str, verb: str, job: str) -> str:
     """_rule_event formats one log line for a rule that runs or skips a target."""
-    line = f"rule {_q(rule)} {verb} target {_q(job)}"
-    if reason:
-        return f"{line} {reason}"
-    return line
+    return f"rule {_q(rule)} {verb} target {_q(job)}"
 
 
 def _rule_names(hits: list[Hit]) -> list[str]:

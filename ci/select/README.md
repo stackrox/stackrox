@@ -103,15 +103,17 @@ wait-for-images
 should-dispatch
 ```
 
-The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. Lines 002 through 015 are the other skips.
+The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. A rule that matched files says so once. The files are indented under that line, and they are not repeated on the job lines. A directory pattern is the prefix and a count. An exact path is the file name. One file on any other pattern is that path. Lines 002 through 016 are the skips, one target each.
 
 ```text
 # stackrox/stackrox PR 23035 a1b2c3d
 # 2026-09-30T15:34:25+02:00
-001. rule "docs-only" skips target "go" because file "README.md" changed
-016. clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
-017. clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
-018. added target "should-dispatch" because target "wait-for-images" requires it
+001. rule "docs-only" matches every changed file
+     README.md
+002. rule "docs-only" skips target "go"
+017. clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
+018. clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
+019. added target "should-dispatch" because target "wait-for-images" requires it
 ```
 
 A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `run`, so both names stay on the decision list. `go` is on the list because the paths end in `.go`.
