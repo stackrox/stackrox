@@ -29,6 +29,18 @@ case "$ci_job" in
         ;;
 esac
 
+# On a pull request, skip before credentials and cluster setup when the
+# decision leaves this job off the list. The label ci-dispatcher-enforce
+# is what makes that skip real. Without it the job runs as it does today.
+if is_in_PR_context; then
+    # shellcheck source=../ci/select/prow-gate.sh
+    source "$ROOT/ci/select/prow-gate.sh"
+    if ! ci_decision_allows "$ci_job"; then
+        info "CI decision skips ${ci_job}"
+        exit 0
+    fi
+fi
+
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
     source "${SHARED_DIR:-}/shared_env"

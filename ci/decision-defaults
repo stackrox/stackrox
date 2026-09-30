@@ -1,0 +1,22 @@
+# One target per line. The last word is the default decision for that target.
+# The resolver uses this line when rules clash, when the catch-all rule says
+# default, and the dispatcher uses the whole file when the resolver fails.
+# Today every default is skip.
+
+style-check skip
+go skip
+go-postgres skip
+sensor-integration-tests skip
+should-dispatch skip
+wait-for-images skip
+e2e-byodb-tests skip
+e2e-db-backup-restore-tests skip
+e2e-gke-upgrade-tests skip
+e2e-nongroovy-tests skip
+e2e-qa-tests-gke skip
+e2e-qa-tests-gke-konflux skip
+e2e-qa-tests-ocp-4-22 skip
+gke-nongroovy-e2e-tests skip
+gke-qa-e2e-tests skip
+gke-ui-e2e-tests skip
+ocp-vm-scanning-e2e-tests skip

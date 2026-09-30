@@ -1,0 +1,38 @@
+name: CI decision
+
+# Prints the decision for a pull request. It does not start or stop other
+# jobs. The label ci-dispatcher-enforce is read by the jobs that follow
+# the decision.
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - labeled
+    - unlabeled
+
+permissions:
+  contents: read
+
+jobs:
+  decision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Print the CI decision
+        env:
+          CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+          CI_REPO: ${{ github.repository }}
+          CI_PR: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ci/select/gha-gate.sh

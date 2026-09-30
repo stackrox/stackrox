@@ -1,0 +1,94 @@
+# Rules are walked from top to bottom.
+# One rule saying run and another saying skip takes that target's line
+# from ci/decision-defaults. The last rule covers every target that no
+# earlier rule decided. default = ["*"] reads that same file.
+
+version = 1
+
+jobs = [
+  "style-check",
+  "go",
+  "go-postgres",
+  "sensor-integration-tests",
+  "should-dispatch",
+  "wait-for-images",
+  "e2e-byodb-tests",
+  "e2e-db-backup-restore-tests",
+  "e2e-gke-upgrade-tests",
+  "e2e-nongroovy-tests",
+  "e2e-qa-tests-gke",
+  "e2e-qa-tests-gke-konflux",
+  "e2e-qa-tests-ocp-4-22",
+  "gke-nongroovy-e2e-tests",
+  "gke-qa-e2e-tests",
+  "gke-ui-e2e-tests",
+  "ocp-vm-scanning-e2e-tests",
+]
+
+# The label asks for every target. A skip from another rule still clashes,
+# and the clash takes the target's default.
+[[rules]]
+name = "run-all-label"
+when = "label-exists"
+label = "ci-run-all-tests"
+run = ["*"]
+
+# These files can change code the path rules do not name.
+[[rules]]
+name = "tree-may-have-changed"
+when = "any-file-changed"
+paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
+run = ["*"]
+
+[[rules]]
+name = "docs-only"
+when = "all-files-changed"
+paths = ['\.md$', '^docs/', '^CHANGELOG']
+run = ["style-check"]
+skip = ["go"]
+
+[[rules]]
+name = "go-sources"
+when = "any-file-changed"
+paths = ['\.go$']
+run = ["go"]
+
+[[rules]]
+name = "style"
+when = "any-file-changed"
+paths = ['.*']
+run = ["style-check"]
+
+[[rules]]
+name = "sensor"
+when = "any-file-changed"
+paths = ['^sensor/']
+run = ["sensor-integration-tests"]
+skip = ["go-postgres"]
+
+[[rules]]
+name = "central-policy"
+when = "any-file-changed"
+paths = ['^central/policy/']
+run = ["go-postgres"]
+skip = ["sensor-integration-tests"]
+
+[[rules]]
+name = "image-wait"
+when = "always"
+run = ["wait-for-images"]
+
+[[rules]]
+name = "remaining"
+when = "remaining"
+default = ["*"]
+
+[requires]
+wait-for-images = ["should-dispatch"]
+e2e-byodb-tests = ["wait-for-images"]
+e2e-db-backup-restore-tests = ["wait-for-images"]
+e2e-gke-upgrade-tests = ["wait-for-images"]
+e2e-nongroovy-tests = ["wait-for-images"]
+e2e-qa-tests-gke = ["wait-for-images"]
+e2e-qa-tests-ocp-4-22 = ["wait-for-images"]
+e2e-qa-tests-gke-konflux = ["wait-for-images"]

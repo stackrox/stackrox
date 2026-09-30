@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -96,6 +98,8 @@ jobs:
     - name: Check dependabot gomod configurations match go.mod files
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
+  # The label ci-dispatcher-enforce makes this job follow the decision.
+  # Without the label the job runs as it does today.
   style-check:
     runs-on: ubuntu-24.04
     steps:
@@ -105,54 +109,78 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Read the CI decision
+        id: ci-decision
+        if: github.event_name == 'pull_request'
+        env:
+          CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+          CI_REPO: ${{ github.repository }}
+          CI_PR: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ci/select/gha-gate.sh style-check
+
       - uses: ./.github/actions/job-preamble
+        if: steps.ci-decision.outputs.action != 'skip'
         with:
           free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
+        if: steps.ci-decision.outputs.action != 'skip'
         with:
           node-version-file: ui/package.json
 
       - name: Install xmlstarlet for shellcheck output to junit
+        if: steps.ci-decision.outputs.action != 'skip'
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
 
       - name: Install pycodestyle
+        if: steps.ci-decision.outputs.action != 'skip'
         run: |
           python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: Verify tools
+        if: steps.ci-decision.outputs.action != 'skip'
         run: |
           yq --version
           xmlstarlet --version
           pycodestyle --version
 
       - name: Cache Go dependencies
+        if: steps.ci-decision.outputs.action != 'skip'
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Download scanner module for proto generation
+        if: steps.ci-decision.outputs.action != 'skip'
         run: go mod download github.com/stackrox/scanner
 
       - name: Cache UI dependencies
         id: cache-ui
+        if: steps.ci-decision.outputs.action != 'skip'
         uses: ./.github/actions/cache-ui-dependencies
 
       - name: Cache QA Test dependencies
+        if: steps.ci-decision.outputs.action != 'skip'
         uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
-        if: steps.cache-ui.outputs.cache-hit != 'true'
+        if: steps.ci-decision.outputs.action != 'skip' && steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
 
       - name: Skip UI deps on cache hit
-        if: steps.cache-ui.outputs.cache-hit == 'true'
+        if: steps.ci-decision.outputs.action != 'skip' && steps.cache-ui.outputs.cache-hit == 'true'
         run: touch ui/deps
 
       - name: Cache ESLint results
+        if: steps.ci-decision.outputs.action != 'skip'
         uses: ./.github/actions/cache-eslint
 
       - name: make style-slim
+        if: steps.ci-decision.outputs.action != 'skip'
         run: make style-slim
 
   golangci-lint:

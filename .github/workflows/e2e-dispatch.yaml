@@ -13,6 +13,8 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+    - labeled
+    - unlabeled
 
 permissions:
   contents: read
@@ -36,6 +38,26 @@ jobs:
       wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
       jobs: ${{ steps.determine.outputs.jobs }}
     steps:
+    - name: Checkout
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Resolve the CI decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        CI_DECISION_OUT: ${{ runner.temp }}/ci-decision.txt
+      run: ci/select/gha-gate.sh
+
     - name: Determine whether should dispatch workflows
       id: determine
       shell: python
@@ -48,6 +70,8 @@ jobs:
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
         input__repo: ${{ github.repository }}
         input__pr_number: ${{ github.event.pull_request.number }}
+        input__enforce: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        input__decision_file: ${{ github.event_name == 'pull_request' && format('{0}/ci-decision.txt', runner.temp) || '' }}
       run: |
         import json
         import os
@@ -120,12 +144,45 @@ jobs:
                 print(line)
                 file.write(line + '\n')
 
-            jobs = {job.name: job.should_run(input) for job in jobs_registry}
+            enforce = os.environ.get('input__enforce') == 'true'
+            decision_jobs = None
+            enrolled = set()
+            decision_path = os.environ.get('input__decision_file') or ''
+            if enforce and decision_path:
+                import sys
+                sys.path.insert(0, 'ci/select')
+                from decisionlib import DecisionError, parse_decision, parse_defaults
+                try:
+                    with open(decision_path, encoding='utf-8') as handle:
+                        decision_jobs = parse_decision(handle.read()).jobs
+                    with open('ci/decision-defaults', encoding='utf-8') as handle:
+                        enrolled = set(parse_defaults(handle.read()))
+                except (OSError, DecisionError) as exc:
+                    print(f'CI decision unreadable ({exc}); using decision-defaults')
+                    try:
+                        with open('ci/decision-defaults', encoding='utf-8') as handle:
+                            defaults = parse_defaults(handle.read())
+                    except (OSError, DecisionError) as fallback_error:
+                        print(f'decision-defaults unreadable ({fallback_error}); keeping the old dispatch rules')
+                    else:
+                        enrolled = set(defaults)
+                        decision_jobs = {name for name, opinion in defaults.items() if opinion == 'run'}
+
+            def follows_decision(job):
+                # A target this project does not list keeps the old dispatch rule.
+                if decision_jobs is None or job.name not in enrolled:
+                    return job.should_run(input)
+                return job.name in decision_jobs
+
+            jobs = {job.name: follows_decision(job) for job in jobs_registry}
 
             write('jobs', json.dumps(jobs))
 
             # Find out when we can complete the workflow early by not even waiting for GHA-built images.
-            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
+            if decision_jobs is not None and 'wait-for-images' in enrolled:
+                wait_for_gha_images = 'wait-for-images' in decision_jobs
+            else:
+                wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
             write('wait-for-gha-images', str(wait_for_gha_images).lower())
 
             # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
