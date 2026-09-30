@@ -72,6 +72,10 @@ jobs:
 
     - name: Make ant report
       run: |
+        find junit-reports -name '*.xml' -ls
+
+        cat junit-reports/report.xml
+
         echo '
           <project name="junit-report" default="report" basedir=".">
             <property name="in.dir"  value="junit-reports"/>
@@ -86,7 +90,7 @@ jobs:
                 <report format="noframes" todir="${out.dir}"/>
               </junitreport>
             </target>
-          </project>' > build.xml
+          </project>' | tee build.xml
         ant -f build.xml
         ls -la my-ant-report
 
@@ -103,12 +107,12 @@ jobs:
         npx allure awesome junit-reports/ --single-file --output my-report
         ls -la my-report
 
-    - name: Upload allure report
-      uses: actions/upload-artifact@v7
-      with:
-        name: unit test report
-        path: my-report/index.html
-        archive: false
+#    - name: Upload allure report
+#      uses: actions/upload-artifact@v7
+#      with:
+#        name: unit test report
+#        path: my-report/index.html
+#        archive: false
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
