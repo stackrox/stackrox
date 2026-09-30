@@ -209,8 +209,6 @@ collect_roxagent_journal() {
             echo "--- stderr ---"
             cat "$stderr_file"
         } >> "$out_file"
-        rm -f "$stderr_file"
-        return 0
     fi
     rm -f "$stderr_file"
     ssh_timeout="$(seconds_left)" || return 1
