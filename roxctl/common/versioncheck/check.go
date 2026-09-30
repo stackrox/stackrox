@@ -130,7 +130,7 @@ func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
 		return VersionGuidance{
 			Summary: "Central version is compatible with roxctl but is behind roxctl.",
 			Recommendation: "No immediate action is required. It is recommended to plan a Central upgrade. " +
-				"If you prefer not to upgrade Central, consider using an older roxctl version to match Central.",
+				"If you prefer not to upgrade Central, consider using an older roxctl version to match the Central's version.",
 		}
 	case versioncompatibility.IncompatibleAhead:
 		return VersionGuidance{
@@ -156,7 +156,7 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 		return false
 	}
 
-	fmt.Fprintf(w, "Warning: roxctl %s and Central %s are incompatible.\n", result.RoxctlVersion, centralVersion)
+	fmt.Fprintf(w, "Warning: roxctl %s and Central %s versions are outside the supported version skew range. Correct functioning is not guaranteed.\n", result.RoxctlVersion, centralVersion)
 	fmt.Fprintf(w, "         %s\n", result.Summary)
 	if result.Recommendation != "" {
 		fmt.Fprintf(w, "         %s\n", result.Recommendation)
