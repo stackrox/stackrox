@@ -97,6 +97,9 @@ def get_supported_versions(override):
 
 
 def process_branch(branch, master_content, dry_run):
+    # TODO(lvm): remove after verifying Slack notification works
+    return ":x: Simulated failure for Slack notification testing", False
+
     ref = f"origin/{branch}"
 
     if not branch_exists(ref):
