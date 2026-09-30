@@ -347,7 +347,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        policyDeletionFailure = deletePolicyWithCaution(policyId)
+        def policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
@@ -454,7 +454,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         // Delete policy first to avoid enforcement blocking cleanup,
         // and to prevent leftover policy from impacting later tests.
-        policyDeletionFailure = deletePolicyWithCaution(policyId)
+        def policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
