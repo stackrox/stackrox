@@ -27,9 +27,7 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
-permissions:
-  contents: read
-  pull-requests: read
+permissions: {}
 
 defaults:
   run:
@@ -44,6 +42,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: true
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -56,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
           GIT_AUTHOR_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
-        run: python3 .github/workflows/scripts/sync-major-version-bumps.py
+        run: ./.github/workflows/scripts/sync-major-version-bumps.py
 
       - name: Notify Slack on failure
         if: failure() && github.event_name != 'pull_request'
@@ -65,7 +64,7 @@ jobs:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: "C05AZF8T7GW"
+            channel: "${{ fromJSON(format('["{0}","{1}"]', 'C03KSV3N6N8', 'C05AZF8T7GW'))[inputs.dry-run != true] }}"
             text: "Version bump sync to release branches has failed."
             blocks:
               - type: "section"
