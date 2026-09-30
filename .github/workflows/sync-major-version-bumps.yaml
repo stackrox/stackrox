@@ -58,14 +58,13 @@ jobs:
         run: ./.github/workflows/scripts/sync-major-version-bumps.py
 
       - name: Notify Slack on failure
-        # TODO(lvm): restore to `failure() && github.event_name != 'pull_request'` after testing
-        if: failure()
+        if: failure() && github.event_name != 'pull_request'
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: "${{ fromJSON(format('["{0}","{1}"]', 'C03KSV3N6N8', 'C05AZF8T7GW'))[inputs.dry-run != true && github.event_name != 'pull_request'] }}"
+            channel: "${{ fromJSON(format('["{0}","{1}"]', 'C03KSV3N6N8', 'C05AZF8T7GW'))[inputs.dry-run != true] }}"
             text: "Version bump sync to release branches has failed."
             blocks:
               - type: "section"
