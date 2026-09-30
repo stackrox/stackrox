@@ -510,6 +510,12 @@ var (
 	VirtualMachineTopCVSS          = newFieldLabel("Virtual Machine Top CVSS")
 	VirtualMachineLastAgentContact = newFieldLabel("Last Agent Contact")
 
+	// Custom resource and AI metadata fields.
+	CustomResourceID   = newFieldLabel("Custom Resource ID")
+	CustomResourceName = newFieldLabel("Custom Resource Name")
+	AIModelName        = newFieldLabel("AI Model Name")
+	AIModelFormat      = newFieldLabel("AI Model Format")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")

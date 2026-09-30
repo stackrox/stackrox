@@ -50,6 +50,7 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.HostPid = m.HostPid
 	r.HostIpc = m.HostIpc
 	r.RuntimeClass = m.RuntimeClass
+	r.OwnerCustomResourceId = m.OwnerCustomResourceId
 	r.StateTimestamp = m.StateTimestamp
 	r.RiskScore = m.RiskScore
 	r.PlatformComponent = m.PlatformComponent
@@ -760,6 +761,9 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if this.PlatformComponent != that.PlatformComponent {
+		return false
+	}
+	if this.OwnerCustomResourceId != that.OwnerCustomResourceId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1550,6 +1554,15 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.OwnerCustomResourceId) > 0 {
+		i -= len(m.OwnerCustomResourceId)
+		copy(dAtA[i:], m.OwnerCustomResourceId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OwnerCustomResourceId)))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa2
 	}
 	if m.PlatformComponent {
 		i--
@@ -3407,6 +3420,10 @@ func (m *Deployment) SizeVT() (n int) {
 	if m.PlatformComponent {
 		n += 3
 	}
+	l = len(m.OwnerCustomResourceId)
+	if l > 0 {
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5142,6 +5159,38 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerCustomResourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OwnerCustomResourceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10148,6 +10197,42 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerCustomResourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.OwnerCustomResourceId = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
