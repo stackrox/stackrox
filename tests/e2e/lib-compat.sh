@@ -225,7 +225,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: "${managed_by}"
 data:
-  password: $(base64 < "${EXTERNAL_DB_PASSWORD}" | tr -d '\n')
+  password: $(echo "${EXTERNAL_DB_PASSWORD}" | base64 | tr -d '\n')
 EOF
 }
 
