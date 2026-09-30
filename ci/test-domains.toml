@@ -82,8 +82,7 @@ run = ["go"]
 
 [[rules]]
 name = "style"
-when = "any-file-matches"
-paths = ['.*']
+when = "always"
 run = ["style-check"]
 
 [[rules]]
