@@ -42,7 +42,13 @@ ci_decision_allows() {
     if ! jq -r '(.labels // [])[].name' <<<"$pr_json" >"$labels_file"; then
         : >"$labels_file"
     fi
-    _ci_decision_write_comments "$comments_file" "$pr_json"
+    # A skip is wrong when this run was started by /test and the comment
+    # list could not be read. Run the job instead of hiding that command.
+    if ! _ci_decision_write_comments "$comments_file" "$pr_json"; then
+        info "CI decision: could not read /test comments, so ${job} runs"
+        rm -f "$files_file" "$labels_file" "$comments_file"
+        return 0
+    fi
 
     local repo pr commit commit_time action
     repo="$(jq -r '.base.repo.full_name // "stackrox/stackrox"' <<<"$pr_json")"
@@ -94,21 +100,19 @@ _ci_decision_write_comments() {
     repo="$(jq -r '.base.repo.name // empty' <<<"$pr_json")"
     number="$(jq -r '.number // empty' <<<"$pr_json")"
     if [[ ! "$org" =~ ^[A-Za-z0-9._-]+$ || ! "$repo" =~ ^[A-Za-z0-9._-]+$ || ! "$number" =~ ^[0-9]+$ ]]; then
-        return 0
+        return 1
     fi
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
         if ! payload="$(curl --retry 5 --retry-connrefused -fsS \
             -H "Authorization: token ${GITHUB_TOKEN}" \
             "https://api.github.com/repos/${org}/${repo}/issues/${number}/comments")"; then
-            info "CI decision: could not read pull request comments"
-            return 0
+            return 1
         fi
     elif ! payload="$(curl --retry 5 --retry-connrefused -fsS \
         "https://api.github.com/repos/${org}/${repo}/issues/${number}/comments")"; then
-        info "CI decision: could not read pull request comments"
-        return 0
+        return 1
     fi
     if ! jq -c 'if type == "array" then [.[] | {created_at, body}] else [] end' <<<"$payload" >"$dest"; then
-        echo '[]' >"$dest"
+        return 1
     fi
 }

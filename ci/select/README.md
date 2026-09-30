@@ -16,36 +16,41 @@ The resolver reads three things:
 
 It writes two files. The decision file is the list of jobs to run, one name on each line. A line that starts with `#` is a comment. A comment does not share a line with a job name. The log is the story of how the rules were applied. The decision file does not contain that story.
 
-A job that is not on the decision list is skipped. A job that is not listed in `ci/decision-defaults` is outside this tool. The dispatchers leave that job alone.
+A job that is not on the decision list is skipped. A target that `ci/decision-defaults` does not name is skipped. An empty decision file is logged, and the dispatcher follows that defaults file instead.
 
 ## Assumptions
 
-These are the choices the sample is built on. Several of them are temporary.
+This prototype relies on the surrounding CI for the following:
 
-- This tool decides for pull requests. A push to `master` or to a `release-*` branch keeps the triggers that already exist.
-- Every enrolled target has its own default, and today every default is `skip`. That keeps a half-finished rule file from starting the whole suite. Change a line in `ci/decision-defaults` when you want a different fallback for one target.
-- If one rule says run and another says skip, the job takes its line from `ci/decision-defaults`. With the current file, that job is skipped.
-- The label `ci-run-all-tests` asks every target to run. A skip from another rule is still a clash, so that target still takes its default. On a docs-only change, `go` stays off the list even when the label is present.
-- The last rule says `default` for every target that no earlier rule mentioned. Those targets also take `ci/decision-defaults`.
-- An empty changed-files file means no files changed. A diff that could not be read is a failure. The dispatcher then uses `ci/decision-defaults` and does not treat the failure as an empty diff.
-- An empty decision file is not a decision. A decision file that contains only comments runs no jobs.
-- A job the sample does not list keeps running the way its workflow already runs. The enforce label does not affect it.
-- The label `ci-dispatcher-enforce` is the switch. Without that label, GitHub Actions and Prow still start jobs the way they do today. The tools only print what they would have done.
-- A skipped GitHub Actions job in this sample still starts and exits successfully, so a required check can merge. The hooked jobs are `style-check` and `go`.
-- A `/test` comment can run a job the decision skipped. A comment cannot take a job off the list. The Prow dispatcher treats a comment as that request when the comment time is at or after the commit time. If the comment list cannot be read, the comment does not force the job.
-- Prow does not tell the pod that a comment started it. The dispatcher reads pull-request comments instead.
-- If `dispatch.sh` cannot run Python 3.11, the OpenShift CI job runs.
-- The `go` job is one target. Both of its matrix legs follow that one decision. The check name `go (GOTAGS="")` is not a separate target in the sample rules.
-- `image-wait` runs `wait-for-images` on every pull request. That job requires `should-dispatch`, so the resolver adds `should-dispatch` to the list.
-- The UI-only exit already in `dispatch.sh` runs before this decision. A job the decision wanted to run can still exit there when the change is only under `ui/`.
-- The sample rules are a way to try the mechanism. They are not the map of which product directory runs which suite.
-- The style, unit-test, and end-to-end dispatch workflows also run when any label is added or removed, so that `ci-dispatcher-enforce` takes effect without a new commit.
+- The rules are a TOML file, `ci/test-domains.toml`.
+- GitHub Actions triggers the hooked workflows, so the dispatcher runs inside a job that has already started.
+- Each enrolled Prow job has `always_run` set to `true`. Prow starts the job, and this tool can then skip the test. That flag lives in `openshift/release`, outside this repository.
+- When one rule says run and another says skip, the target takes its line from `ci/decision-defaults`.
+- The last rule says `default` for every target that no earlier rule mentioned. Those targets take `ci/decision-defaults`.
+- Adding or removing any label reruns the style, unit-test, and end-to-end dispatch workflows, so `ci-dispatcher-enforce` takes effect without a new commit. Whether a label change is a legitimate trigger is open for review.
+
+## Requirements
+
+The tool must follow these rules:
+
+- Decide for pull requests. A push to `master` or to a `release-*` branch can later use the same decision. Until that port, those pushes keep the triggers they have now.
+- Let `ci/decision-defaults` record which checks run on a pull request today, and which do not. Derive each run and each skip from that file. A target the file does not name is skipped.
+- When the label `ci-run-all-tests` is set, use a second default: the wider set of checks that label runs today. That set is not the pull-request default above.
+- Treat an empty changed-files file as a pull request that changed no files. Treat a diff that could not be read as a failure, and then use `ci/decision-defaults`.
+- When the decision file is empty, or contains only comments, log that and follow `ci/decision-defaults`. When a job has no line in that file, log that and skip the job.
+- Use the label `ci-dispatcher-enforce` as the switch. Without that label, GitHub Actions and Prow still start jobs the way they do today. The tools only print what they would have done.
+- When a hooked GitHub Actions job is skipped, start the job and exit successfully, so a required check can merge. The hooked jobs are `style-check` and `go`.
+- Give an explicit `/test` priority over the decision. The Prow dispatcher runs that job when a comment at or after the commit says `/test` and names the job or `all`, even when the decision skipped it. The comment does not remove a job the decision listed. The resolver does not issue these commands and does not use them when it builds the list. If the comment list cannot be read, the job runs, so a missing list cannot hide a command.
+- Treat `go` as one target, so both matrix legs follow one decision. `go (GOTAGS="")` is only the GitHub check name.
+- Run `wait-for-images` on every pull request, through the `image-wait` rule. That job requires `should-dispatch`, so the resolver adds `should-dispatch`. In production, `should-dispatch` is boilerplate: the resolver and the dispatchers replace it.
+- Let the resolver decide every job, including a change that only touches `ui/`. There is no separate UI-only exit.
+- Keep the checked-in rules as a sample for trying the mechanism. The map from each product directory to its suite comes later.
 
 ## Decisions
 
 The decision file is the contract. Both dispatchers read that list. They do not look at the rules again to change it. In the commands below, each dispatcher resolves from the same inputs so you can see `run` or `skip` without copying a file by hand. In a workflow, a failed resolver is replaced by `ci/decision-defaults`.
 
-A target ends up in one of these states:
+A target ends up in one of these states. A clash takes the default, and the last rule says `default`. Both of those are assumptions, listed earlier.
 
 - One or more rules say run, and none say skip. The job runs.
 - One or more rules say skip, and none say run. The job is skipped.
@@ -59,7 +64,7 @@ Paths are regular expressions. `all-files-changed` matches only when every chang
 
 The sample rules do the following:
 
-- `ci-run-all-tests` runs every target, subject to the clash rule above.
+- The checked-in `ci-run-all-tests` rule asks every target to run, and a skip from another rule still clashes. The requirement is a second default: the wider set of checks that label runs today.
 - `go.mod`, `go.sum`, `proto/`, or `generated/` runs every target.
 - A change that is only docs runs `style-check` and skips `go`.
 - Any `.go` file runs `go`.
@@ -137,7 +142,7 @@ a1b2c3d: clash on target "sensor-integration-tests"; rule "sensor" says run, rul
 
 To see a clash resolve to run, change the `go-postgres` line in a copy of `ci/decision-defaults` from `skip` to `run` and pass that copy with `--defaults`. The checked-in file stays all `skip`.
 
-The same docs-only files, plus the label, still leave `go` off the list:
+The checked-in rule still asks every target to run. On these docs-only files the label clashes with the skip for `go`, so `go` stays off the list. The requirement is a separate, wider default for this label:
 
 ```bash
 printf '%s\n' README.md > /tmp/ci-select/files.txt
@@ -228,7 +233,7 @@ python3 ci/select/gha.py print \
   --commit a1b2c3d
 ```
 
-A job name that is not in `ci/decision-defaults` prints `run` even with `--enforce`.
+A job name that is not in `ci/decision-defaults` prints `run` even with `--enforce`. The requirement is to log that name and skip it.
 
 ## Run the Prow dispatcher
 
@@ -258,7 +263,7 @@ Standard output:
 skip
 ```
 
-A `/test` comment at or after the commit forces `run`. The comments file is a JSON list of objects with `created_at` and `body`:
+An explicit `/test` for this job forces `run`, even with `--enforce`. The comments file is a JSON list of objects with `created_at` and `body`. A comment at or after `--commit-time` counts. `/test all` counts too.
 
 ```bash
 printf '%s\n' '[{"created_at":"2026-09-30T12:00:00Z","body":"/test gke-qa-e2e-tests"}]' \
@@ -284,9 +289,7 @@ Standard output:
 run
 ```
 
-`/test all` also forces the job. A comment whose time is before `--commit-time` does not. Omit `--enforce` and the answer is `run` either way.
-
-In a real OpenShift CI pod, `.openshift-ci/dispatch.sh` calls `ci/select/prow-gate.sh`. You do not need that script for a local try. It needs pull-request metadata that exists only in CI.
+In a real OpenShift CI pod, `.openshift-ci/dispatch.sh` calls `ci/select/prow-gate.sh`. You do not need that script for a local try. It needs pull-request metadata that exists only in CI. If that script cannot run Python, or cannot read the comment list, the job runs.
 
 ## What a pull request does today
 
@@ -298,9 +301,9 @@ With the label `ci-dispatcher-enforce` on the pull request:
 - The `go` job in `.github/workflows/unit-tests.yaml` does the same. Both matrix legs follow the one target named `go`.
 - `e2e-dispatch.yaml` follows the list for the enrolled end-to-end jobs and for `wait-for-images`.
 
-`dispatch.sh` does the same for an enrolled Prow job, and it exits before credentials and cluster setup when the answer is skip. The enrolled Prow names are `gke-nongroovy-e2e-tests`, `gke-qa-e2e-tests`, `gke-ui-e2e-tests`, and `ocp-vm-scanning-e2e-tests`.
+`dispatch.sh` does the same for an enrolled Prow job, and it exits before credentials and cluster setup when the answer is skip. The enrolled Prow names are `gke-nongroovy-e2e-tests`, `gke-qa-e2e-tests`, `gke-ui-e2e-tests`, and `ocp-vm-scanning-e2e-tests`. Before that decision, `dispatch.sh` still has its own exit for a change that is only under `ui/`, for job names matching `nongroovy` or `upgrade`. The requirement is to drop that exit and let the resolver decide those jobs too.
 
-Without the label, those jobs start as they do today.
+Without the label, those jobs start as they do today. With the label, an explicit `/test` for this job still runs it when the decision skipped it. The gate reads pull-request comments to see that command. If it cannot read them, the job runs.
 
 ## Run the tests
 
@@ -315,13 +318,12 @@ python3 -m unittest discover -s ci/select -p 'test_*.py'
 The commands above are enough to see whether a rule does what you expect. Shipping this for every pull request still needs the following:
 
 - Replace the sample rules with the real map from directories and labels to suites, including the build-and-test tags, the Go end-to-end tests, and the GKE or OpenShift jobs a subsystem change should run.
-- Choose a real default for each target. ROX-36969 asks an unmatched file to run the full pipeline. The file in the tree skips every target instead.
-- Decide whether `ci-run-all-tests` overrides a skip. Today it does not, because a skip is a clash and the clash takes the default.
+- Fill `ci/decision-defaults` with the checks a pull request runs today, and add a second default for `ci-run-all-tests`: the wider set that label runs today. The file in the tree skips every target instead, and the checked-in label rule asks every target to run.
 - Teach the remaining pull-request jobs to read the decision. `go-postgres` and `sensor-integration-tests` are in the rules, and their workflows do not consult the list, so a skip in the decision does not skip those jobs. The same is true for the other jobs in `style.yaml` and `unit-tests.yaml`, and for the scanner, CRD, and compatibility workflows.
-- Enroll the rest of the Prow jobs, or leave them out on purpose. A name missing from `ci/decision-defaults` always runs.
+- Log a job that `ci/decision-defaults` does not name, and skip it. The dispatcher still prints `run` for that name.
 - Keep a required GitHub check from sitting in the expected state. Skipping `style-check` and `go` starts the job and exits 0. The other required checks are not on that path.
-- Make a skip cheap. `image-wait` still waits for images on every pull request, and then the enrolled end-to-end jobs are skipped. Some OpenShift jobs create the cluster before `dispatch.sh`. Moving that creation next to the test is separate work, and it is what makes a Prow skip cheap. The UI-only exit in `dispatch.sh` can still drop a job the decision wanted to run.
+- Make a skip cheap. `image-wait` still waits for images on every pull request, and then the enrolled end-to-end jobs are skipped. Some OpenShift jobs create the cluster before `dispatch.sh`. Moving that creation next to the test is what makes a Prow skip cheap. `should-dispatch` becomes boilerplate once the resolver and the dispatchers replace it.
+- Remove the UI-only exit in `dispatch.sh` once the rules cover a change that is only under `ui/`. Deleting it before that would stop the current skip for every such pull request, including ones without `ci-dispatcher-enforce`.
 - Set `always_run: true` in `openshift/release` for each enrolled Prow job, on each branch whose pull requests should use this tool. Jobs left at `always_run: false` stay outside it. That flag does not by itself change what runs after a commit lands on a branch.
-- Replace the comment-time guess for `/test` with a signal that this pod was started by that comment, if Prow can provide one.
 - Add a check that fails when the rule file names a missing directory, a missing suite tag, or a job that no longer exists.
-- Watch a docs-only pull request and a subsystem pull request with `ci-dispatcher-enforce` before removing that label. Pushes to `master` and to release branches should keep running the full suite.
+- Watch a docs-only pull request and a subsystem pull request with `ci-dispatcher-enforce` before removing that label. A push to `master` or to a release branch can later use the same decision. Until then, those pushes keep the triggers they have now.
