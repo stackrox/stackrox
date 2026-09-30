@@ -47,19 +47,18 @@ def parse_decision(text: str) -> Decision:
     return Decision(jobs=frozenset(jobs))
 
 
-def format_decision(items: list[tuple[str, str]]) -> str:
-    """format_decision writes each comment on its own line, above the job.
+def format_decision(jobs: list[str]) -> str:
+    """format_decision writes one job name per line.
 
-    items is (comment, job). An empty list still writes one comment, so the
-    file is a real decision to run nothing rather than a missing file.
+    An empty list still writes one comment, so the file is a real decision
+    to run nothing. A blank file is not a decision. A person may add other
+    # comments; this writer does not.
     """
-    if not items:
+    if not jobs:
         return "# no job runs\n"
     lines: list[str] = []
-    for comment, job in items:
-        if comment:
-            lines.append(f"# {comment}")
-        if not job or "\n" in job:
+    for job in jobs:
+        if not job or "\n" in job or job.startswith("#"):
             raise DecisionError(f"bad job name {job!r}")
         lines.append(job)
     return "\n".join(lines) + "\n"
@@ -100,14 +99,8 @@ def decision_from_defaults(defaults: dict[str, str]) -> str:
     A target whose default is run is listed. A target whose default is skip
     is left off the list.
     """
-    items = [
-        ("decision-defaults", name)
-        for name, opinion in defaults.items()
-        if opinion == "run"
-    ]
-    if not items:
-        return "# decision-defaults\n"
-    return format_decision(items)
+    names = [name for name, opinion in defaults.items() if opinion == "run"]
+    return format_decision(names)
 
 
 def check_defaults(jobs: list[str], defaults: dict[str, str]) -> None:
