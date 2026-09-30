@@ -873,6 +873,15 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.KubeAPIResource,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIResourceCustomTag),
+		nil,
+		validateAuditEventAPIResource,
+		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{AuditLogEvent},
+		negationForbidden,
+	)
+
 	f.registerFieldMetadataRegex(fieldnames.KubeResource,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceCustomTag),
 		nil,

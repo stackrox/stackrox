@@ -1445,3 +1445,22 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 		})
 	}
 }
+
+func (s *PolicyValidatorTestSuite) TestValidateAuditEventSourceAPIResourceFeatureFlag() {
+	policy := booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_AUDIT_LOG_EVENT, map[string]string{
+		fieldnames.KubeAPIResource: "applications.argoproj.io",
+		fieldnames.KubeAPIVerb:     "PATCH",
+	})
+	enumPolicy := booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_AUDIT_LOG_EVENT, map[string]string{
+		fieldnames.KubeResource: "SECRETS",
+		fieldnames.KubeAPIVerb:  "PATCH",
+	})
+
+	s.T().Setenv(features.AuditLogCustomResources.EnvVar(), "false")
+	s.Error(s.validator.validateEventSource(policy))
+	s.NoError(s.validator.validateEventSource(enumPolicy))
+
+	s.T().Setenv(features.AuditLogCustomResources.EnvVar(), "true")
+	s.NoError(s.validator.validateEventSource(policy))
+	s.NoError(s.validator.validateEventSource(enumPolicy))
+}

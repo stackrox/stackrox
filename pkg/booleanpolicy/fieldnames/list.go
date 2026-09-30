@@ -51,6 +51,7 @@ var (
 	ImageUser                      = newFieldName("Image User")
 	IsImpersonatedUser             = newFieldName("Is Impersonated User")
 	KubeResource                   = newFieldName("Kubernetes Resource")
+	KubeAPIResource                = newFieldName("Kubernetes API Resource")
 	KubeAPIVerb                    = newFieldName("Kubernetes API Verb")
 	KubeResourceName               = newFieldName("Kubernetes Resource Name")
 	KubeUserName                   = newFieldName("Kubernetes User Name")

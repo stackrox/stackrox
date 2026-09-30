@@ -166,6 +166,11 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 		return errors.New("event source must not be set for build or deploy time policies")
 	}
 
+	if !features.AuditLogCustomResources.Enabled() && booleanpolicy.ContainsValueWithFieldName(policy, fieldnames.KubeAPIResource) {
+		// Such a policy can still be provided via the API (JSON import or CR) with the feature flag disabled.
+		return fmt.Errorf("%s is disabled, policy criteria %q is unavailable", features.AuditLogCustomResources.EnvVar(), fieldnames.KubeAPIResource)
+	}
+
 	if s.isAuditEventPolicy(policy) {
 		if len(policy.GetEnforcementActions()) != 0 {
 			return errors.New("enforcement actions are not applicable for runtime policies with audit log as the event source")
