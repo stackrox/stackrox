@@ -294,7 +294,9 @@ cmd_prove() {
     echo "Running e2e specs for ${feature}. Evidence goes to ${dir}"
 
     # cypress.sh uses UI_BASE_URL for both the API and the app, which works through the dev server proxy.
-    UI_BASE_URL="${UI_BASE_URL}" ROX_USERNAME="${ROX_USERNAME}" ROX_ADMIN_PASSWORD="${ROX_ADMIN_PASSWORD}" \
+    # It calls a bare `cypress`, which npm scripts find through node_modules/.bin, so add that to PATH here.
+    PATH="${PLATFORM_DIR}/node_modules/.bin:${PATH}" \
+        UI_BASE_URL="${UI_BASE_URL}" ROX_USERNAME="${ROX_USERNAME}" ROX_ADMIN_PASSWORD="${ROX_ADMIN_PASSWORD}" \
         TEST_RESULTS_OUTPUT_DIR="${dir}" TZ=UTC \
         "${SCRIPT_DIR}/cypress.sh" run --spec "${spec}"
 }
