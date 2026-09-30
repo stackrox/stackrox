@@ -169,6 +169,10 @@ jobs:
                         decision_jobs = {name for name, opinion in defaults.items() if opinion == 'run'}
 
             def follows_decision(job):
+                # Fork pull requests never run these jobs. The decision
+                # list must not bypass the rejection in should_run.
+                if input.is_fork == 'true':
+                    return False
                 # A target this project does not list keeps the old dispatch rule.
                 if decision_jobs is None or job.name not in enrolled:
                     return job.should_run(input)
@@ -179,7 +183,9 @@ jobs:
             write('jobs', json.dumps(jobs))
 
             # Find out when we can complete the workflow early by not even waiting for GHA-built images.
-            if decision_jobs is not None and 'wait-for-images' in enrolled:
+            if input.is_fork == 'true':
+                wait_for_gha_images = False
+            elif decision_jobs is not None and 'wait-for-images' in enrolled:
                 wait_for_gha_images = 'wait-for-images' in decision_jobs
             else:
                 wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
