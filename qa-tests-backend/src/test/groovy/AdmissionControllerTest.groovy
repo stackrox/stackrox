@@ -255,7 +255,7 @@ class AdmissionControllerTest extends BaseSpecification {
         log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
-    def deletePolicyWithCaution(String policyId) {
+    private Exception deletePolicyWithCaution(String policyId) {
         try {
             if (policyId) {
                 PolicyService.deletePolicy(policyId)
@@ -275,9 +275,6 @@ class AdmissionControllerTest extends BaseSpecification {
                 }
             }
         } catch (Exception e) {
-            log.warn "Failed to delete policy ${policyId}: ${e.message}"
-            return e
-        } catch (AssertionError e) {
             log.warn "Failed to delete policy ${policyId}: ${e.message}"
             return e
         }
