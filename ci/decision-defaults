@@ -1,22 +1,23 @@
-# One target per line. The last word is the default decision for that target.
+# One target per line. The last word is run or skip.
 # The resolver uses this line when rules clash, when the catch-all rule says
 # default, and the dispatcher uses the whole file when the resolver fails.
-# Today every default is skip.
+# These lines are a ready pull request: not a draft, not a fork, and no
+# opt-in label. A change that is only under ui/ is a separate filter.
 
-style-check skip
-go skip
-go-postgres skip
-sensor-integration-tests skip
-should-dispatch skip
-wait-for-images skip
-e2e-byodb-tests skip
-e2e-db-backup-restore-tests skip
-e2e-gke-upgrade-tests skip
-e2e-nongroovy-tests skip
+style-check run
+go run
+go-postgres run
+sensor-integration-tests run
+should-dispatch run
+wait-for-images run
+e2e-byodb-tests run
+e2e-db-backup-restore-tests run
+e2e-gke-upgrade-tests run
+e2e-nongroovy-tests run
 e2e-qa-tests-gke skip
 e2e-qa-tests-gke-konflux skip
 e2e-qa-tests-ocp-4-22 skip
-gke-nongroovy-e2e-tests skip
+gke-nongroovy-e2e-tests run
 gke-qa-e2e-tests skip
-gke-ui-e2e-tests skip
+gke-ui-e2e-tests run
 ocp-vm-scanning-e2e-tests skip
