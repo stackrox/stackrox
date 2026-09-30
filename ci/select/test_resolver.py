@@ -52,27 +52,31 @@ class ResolverTest(unittest.TestCase):
             ),
         )
         log = result.log_text
-        self.assertTrue(log.startswith("# stackrox/stackrox PR 23035\n"))
+        self.assertRegex(
+            log,
+            r"^# stackrox/stackrox PR 23035 a1b2c3d\n"
+            r"# \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}\n",
+        )
         self.assertIn(
-            'a1b2c3d: rule "docs-only" skips target "go" because file "README.md" changed',
+            '001. rule "docs-only" skips target "go" because file "README.md" changed',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "docs-only" skips target "e2e-nongroovy-tests" because file "README.md" changed',
+            '008. rule "docs-only" skips target "e2e-nongroovy-tests" because file "README.md" changed',
             log,
         )
         self.assertIn(
-            'a1b2c3d: clash on target "style-check"; '
+            '016. clash on target "style-check"; '
             'rule "style" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            'a1b2c3d: clash on target "wait-for-images"; '
+            '017. clash on target "wait-for-images"; '
             'rule "image-wait" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            'a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it',
+            '018. added target "should-dispatch" because target "wait-for-images" requires it',
             log,
         )
         self.assertNotIn("e2e-nongroovy-tests\n", result.decision_text)
@@ -84,12 +88,12 @@ class ResolverTest(unittest.TestCase):
         self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn("go", result.jobs)
         self.assertIn(
-            'a1b2c3d: clash on target "go-postgres"; '
+            '006. clash on target "go-postgres"; '
             'rule "central-policy" says run, rule "sensor" says skip; default "run"',
             result.log_text,
         )
         self.assertIn(
-            'a1b2c3d: clash on target "sensor-integration-tests"; '
+            '007. clash on target "sensor-integration-tests"; '
             'rule "sensor" says run, rule "central-policy" says skip; default "run"',
             result.log_text,
         )
@@ -152,7 +156,7 @@ go-check = ["go"]
         result = decide([], defaults=defaults, mapping=mapping)
         self.assertEqual(result.jobs, frozenset({"go", "go-check"}))
         self.assertIn(
-            'a1b2c3d: added target "go" because target "go-check" requires it',
+            '002. added target "go" because target "go-check" requires it',
             result.log_text,
         )
 

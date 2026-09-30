@@ -105,12 +105,15 @@ wait-for-images
 should-dispatch
 ```
 
-`style-check` and `wait-for-images` each have a run and a skip, so the note says default decision. `should-dispatch` was skipped, then added because `wait-for-images` requires it. The end-to-end jobs are absent. The log records a skip for every other target, then:
+`style-check` and `wait-for-images` each have a run and a skip, so the note says default decision. `should-dispatch` was skipped, then added because `wait-for-images` requires it. The end-to-end jobs are absent. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. Lines 002 through 015 are the other skips.
 
 ```text
-a1b2c3d: clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
-a1b2c3d: clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
-a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it
+# stackrox/stackrox PR 23035 a1b2c3d
+# 2026-09-30T15:34:25+02:00
+001. rule "docs-only" skips target "go" because file "README.md" changed
+016. clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
+017. clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
+018. added target "should-dispatch" because target "wait-for-images" requires it
 ```
 
 A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `run`, so both names stay on the decision list. `go` is on the list because the paths end in `.go`.
@@ -133,8 +136,8 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-a1b2c3d: clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; default "run"
-a1b2c3d: clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; default "run"
+006. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; default "run"
+007. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; default "run"
 ```
 
 To see a clash resolve to skip, change the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` and pass that copy with `--defaults`.
@@ -160,8 +163,8 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-a1b2c3d: clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"
-a1b2c3d: clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; default "skip"
+002. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"
+015. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; default "skip"
 ```
 
 If `ci/decision-defaults` is missing a target that the rules name, the resolver prints `resolver failed: ...` on standard error, exits 1, and writes neither file.
