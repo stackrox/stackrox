@@ -251,7 +251,7 @@ class Renderer:
             if message or body:
                 open_attr = " open" if status in ("failed", "error") else ""
                 summary = esc(message) if message else status
-                parts.append(f"<details{open_attr}><summary>{summary}</summary>")
+                parts.append(f'<details class="io"{open_attr}><summary>{summary}</summary>')
                 if body:
                     parts.append(f"<pre>{esc(body)}</pre>")
                 parts.append("</details>")
@@ -260,13 +260,13 @@ class Renderer:
             text = _text(el)
             if text.strip():
                 parts.append(
-                    f"<details><summary>{label}</summary><pre>{esc(text)}</pre></details>")
+                    f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
         return "".join(parts)
 
     def _write_output(self, label, text):
         if text.strip():
             self.out.write(
-                f"<details><summary>{label}</summary><pre>{esc(text)}</pre></details>")
+                f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
 
 
 def render_summary(out, totals):
@@ -282,6 +282,21 @@ def render_summary(out, totals):
     )
 
 
+def render_toolbar(out):
+    # Buttons toggle every collapsible block tagged <details class="io">:
+    # stdout/stderr and failure/error/skipped detail blocks. Plain JS, no libraries.
+    out.write(
+        '<div class="mb-4">'
+        '<button type="button" class="btn btn-sm btn-outline-secondary me-2" '
+        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = true)\">"
+        "Expand all</button>"
+        '<button type="button" class="btn btn-sm btn-outline-secondary" '
+        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = false)\">"
+        "Collapse all</button>"
+        "</div>"
+    )
+
+
 def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     out.write("<!DOCTYPE html>\n")
     out.write('<html lang="en"><head><meta charset="utf-8">')
@@ -292,6 +307,7 @@ def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     out.write('</head><body><div class="container-fluid py-4">')
     out.write(f'<h1 class="mb-4">{esc(title)}</h1>')
     render_summary(out, totals)
+    render_toolbar(out)
 
     r = Renderer(out, suite_counts)
     for path in valid_files:
