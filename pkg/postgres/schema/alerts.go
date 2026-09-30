@@ -84,6 +84,7 @@ type Alerts struct {
 	NodeName                 string                              `gorm:"column:node_name;type:varchar"`
 	ResourceResourceType     storage.Alert_Resource_ResourceType `gorm:"column:resource_resourcetype;type:integer"`
 	ResourceName             string                              `gorm:"column:resource_name;type:varchar"`
+	ResourceAPIResource      string                              `gorm:"column:resource_apiresource;type:varchar"`
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
 	Time                     *time.Time                          `gorm:"column:time;type:timestamp"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer"`

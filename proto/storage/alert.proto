@@ -43,6 +43,10 @@ message Alert {
       NETWORK_POLICIES = 5;
       SECURITY_CONTEXT_CONSTRAINTS = 6;
       EGRESS_FIREWALLS = 7;
+      // 8 is skipped to stay numerically aligned with ListAlert.ResourceType, where 8 is NODE.
+      reserved 8;
+      // CUSTOM is any resource not covered by the values above; see api_resource for the actual resource.
+      CUSTOM = 9;
     }
 
     ResourceType resource_type = 1; // @gotags: search:"Resource Type"
@@ -51,6 +55,8 @@ message Alert {
     string cluster_name = 4; // This field has to be duplicated in Alert for scope management and search.
     string namespace = 5; // This field has to be duplicated in Alert for scope management and search.
     string namespace_id = 6; // This field has to be duplicated in Alert for scope management and search.
+    // api_resource is the canonical "<plural>[.<group>]" name of the resource. Only set when resource_type is CUSTOM.
+    string api_resource = 7; // @gotags: search:"Resource API Resource"
   }
 
   message Node {
@@ -196,6 +202,7 @@ message ListAlert {
     SECURITY_CONTEXT_CONSTRAINTS = 6;
     EGRESS_FIREWALLS = 7;
     NODE = 8;
+    CUSTOM = 9;
   }
 
   message ResourceEntity {

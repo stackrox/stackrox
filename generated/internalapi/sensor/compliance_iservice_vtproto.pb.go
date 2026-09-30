@@ -203,6 +203,11 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) CloneVT() *MsgT
 			r.CollectStartState = proto.Clone(rhs).(*storage.AuditLogFileState)
 		}
 	}
+	if rhs := m.ApiResources; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.ApiResources = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -646,6 +651,15 @@ func (this *MsgToCompliance_AuditLogCollectionRequest_StartRequest) EqualVT(that
 		}
 	} else if !proto.Equal(this.CollectStartState, that.CollectStartState) {
 		return false
+	}
+	if len(this.ApiResources) != len(that.ApiResources) {
+		return false
+	}
+	for i, vx := range this.ApiResources {
+		vy := that.ApiResources[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1362,6 +1376,15 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) MarshalToSizedB
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.ApiResources) > 0 {
+		for iNdEx := len(m.ApiResources) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ApiResources[iNdEx])
+			copy(dAtA[i:], m.ApiResources[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ApiResources[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
 	if m.CollectStartState != nil {
 		if vtmsg, ok := interface{}(m.CollectStartState).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
@@ -1958,6 +1981,12 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SizeVT() (n int
 			l = proto.Size(m.CollectStartState)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.ApiResources) > 0 {
+		for _, s := range m.ApiResources {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2949,6 +2978,38 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) UnmarshalVT(dAt
 					return err
 				}
 			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApiResources", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApiResources = append(m.ApiResources, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4490,6 +4551,42 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) UnmarshalVTUnsa
 					return err
 				}
 			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApiResources", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ApiResources = append(m.ApiResources, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

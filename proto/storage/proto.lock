@@ -231,7 +231,14 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 7
+              },
+              {
+                "name": "CUSTOM",
+                "integer": 9
               }
+            ],
+            "reserved_ids": [
+              8
             ]
           },
           {
@@ -319,6 +326,10 @@
               {
                 "name": "NODE",
                 "integer": 8
+              },
+              {
+                "name": "CUSTOM",
+                "integer": 9
               }
             ]
           },
@@ -585,6 +596,11 @@
                   {
                     "id": 6,
                     "name": "namespace_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 7,
+                    "name": "api_resource",
                     "type": "string"
                   }
                 ]
@@ -11227,6 +11243,16 @@
                   {
                     "id": 4,
                     "name": "namespace",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "api_group",
+                    "type": "string"
+                  },
+                  {
+                    "id": 6,
+                    "name": "api_resource",
                     "type": "string"
                   }
                 ]

@@ -219,4 +219,7 @@ var (
 
 	// ScannerV4SuppressOSVWithRedHatVEX suppresses OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists.
 	ScannerV4SuppressOSVWithRedHatVEX = registerFeature("Scanner V4 will suppress OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists", "ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX", enabled)
+
+	// AuditLogCustomResources enables runtime policies on audit log events for arbitrary (custom) Kubernetes resources.
+	AuditLogCustomResources = registerFeature("Enable audit log policies on custom Kubernetes resources", "ROX_AUDIT_LOG_CUSTOM_RESOURCES")
 )

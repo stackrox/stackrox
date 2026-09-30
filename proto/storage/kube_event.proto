@@ -41,6 +41,11 @@ message KubernetesEvent {
     Resource resource = 2; // @gotags: policy:"Kubernetes Resource"
     string cluster_id = 3;
     string namespace = 4;
+    // api_group is the API group of the resource (empty for the core group).
+    string api_group = 5;
+    // api_resource is the canonical "<plural>[.<group>]" name of the resource, e.g. "applications.argoproj.io".
+    // It is only set for resources that are not covered by the Resource enum (i.e. resource is UNKNOWN).
+    string api_resource = 6; // @gotags: policy:"Kubernetes API Resource"
   }
 
   string id = 1;

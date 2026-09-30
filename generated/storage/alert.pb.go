@@ -137,6 +137,8 @@ const (
 	Alert_Resource_NETWORK_POLICIES             Alert_Resource_ResourceType = 5
 	Alert_Resource_SECURITY_CONTEXT_CONSTRAINTS Alert_Resource_ResourceType = 6
 	Alert_Resource_EGRESS_FIREWALLS             Alert_Resource_ResourceType = 7
+	// CUSTOM is any resource not covered by the values above; see api_resource for the actual resource.
+	Alert_Resource_CUSTOM Alert_Resource_ResourceType = 9
 )
 
 // Enum value maps for Alert_Resource_ResourceType.
@@ -150,6 +152,7 @@ var (
 		5: "NETWORK_POLICIES",
 		6: "SECURITY_CONTEXT_CONSTRAINTS",
 		7: "EGRESS_FIREWALLS",
+		9: "CUSTOM",
 	}
 	Alert_Resource_ResourceType_value = map[string]int32{
 		"UNKNOWN":                      0,
@@ -160,6 +163,7 @@ var (
 		"NETWORK_POLICIES":             5,
 		"SECURITY_CONTEXT_CONSTRAINTS": 6,
 		"EGRESS_FIREWALLS":             7,
+		"CUSTOM":                       9,
 	}
 )
 
@@ -259,6 +263,7 @@ const (
 	ListAlert_SECURITY_CONTEXT_CONSTRAINTS ListAlert_ResourceType = 6
 	ListAlert_EGRESS_FIREWALLS             ListAlert_ResourceType = 7
 	ListAlert_NODE                         ListAlert_ResourceType = 8
+	ListAlert_CUSTOM                       ListAlert_ResourceType = 9
 )
 
 // Enum value maps for ListAlert_ResourceType.
@@ -273,6 +278,7 @@ var (
 		6: "SECURITY_CONTEXT_CONSTRAINTS",
 		7: "EGRESS_FIREWALLS",
 		8: "NODE",
+		9: "CUSTOM",
 	}
 	ListAlert_ResourceType_value = map[string]int32{
 		"DEPLOYMENT":                   0,
@@ -284,6 +290,7 @@ var (
 		"SECURITY_CONTEXT_CONSTRAINTS": 6,
 		"EGRESS_FIREWALLS":             7,
 		"NODE":                         8,
+		"CUSTOM":                       9,
 	}
 )
 
@@ -1075,13 +1082,15 @@ func (x *Alert_Deployment) GetInactive() bool {
 
 // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
 type Alert_Resource struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	ResourceType  Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type"` // @gotags: search:"Resource Type"
-	Name          string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`                                                                               // @gotags: search:"Resource"
-	ClusterId     string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
-	Namespace     string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
+	state        protoimpl.MessageState      `protogen:"open.v1"`
+	ResourceType Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type"` // @gotags: search:"Resource Type"
+	Name         string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`                                                                               // @gotags: search:"Resource"
+	ClusterId    string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
+	ClusterName  string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
+	Namespace    string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
+	NamespaceId  string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
+	// api_resource is the canonical "<plural>[.<group>]" name of the resource. Only set when resource_type is CUSTOM.
+	ApiResource   string `protobuf:"bytes,7,opt,name=api_resource,json=apiResource,proto3" json:"api_resource,omitempty" search:"Resource API Resource"` // @gotags: search:"Resource API Resource"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1154,6 +1163,13 @@ func (x *Alert_Resource) GetNamespace() string {
 func (x *Alert_Resource) GetNamespaceId() string {
 	if x != nil {
 		return x.NamespaceId
+	}
+	return ""
+}
+
+func (x *Alert_Resource) GetApiResource() string {
+	if x != nil {
+		return x.ApiResource
 	}
 	return ""
 }
@@ -1953,7 +1969,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x96\x1c\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xcb\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -2010,7 +2026,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	" \x01(\tR\x04name\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\xa3\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\xd8\x03\n" +
 	"\bResource\x12I\n" +
 	"\rresource_type\x18\x01 \x01(\x0e2$.storage.Alert.Resource.ResourceTypeR\fresourceType\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2018,7 +2034,8 @@ const file_storage_alert_proto_rawDesc = "" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x12!\n" +
-	"\fnamespace_id\x18\x06 \x01(\tR\vnamespaceId\"\xb4\x01\n" +
+	"\fnamespace_id\x18\x06 \x01(\tR\vnamespaceId\x12!\n" +
+	"\fapi_resource\x18\a \x01(\tR\vapiResource\"\xc6\x01\n" +
 	"\fResourceType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSECRETS\x10\x01\x12\x0e\n" +
@@ -2028,7 +2045,9 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x04\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\a\x1al\n" +
+	"\x10EGRESS_FIREWALLS\x10\a\x12\n" +
+	"\n" +
+	"\x06CUSTOM\x10\t\"\x04\b\b\x10\b\x1al\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2080,7 +2099,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x0fCONTAINER_IMAGE\x10\x02\x12\f\n" +
 	"\bRESOURCE\x10\x03\x12\b\n" +
 	"\x04NODE\x10\x04B\b\n" +
-	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xe9\b\n" +
+	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xf5\b\n" +
 	"\tListAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12.\n" +
@@ -2107,7 +2126,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x1a \n" +
 	"\n" +
 	"NodeEntity\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xc1\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xcd\x01\n" +
 	"\fResourceType\x12\x0e\n" +
 	"\n" +
 	"DEPLOYMENT\x10\x00\x12\v\n" +
@@ -2119,7 +2138,9 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
 	"\x10EGRESS_FIREWALLS\x10\a\x12\b\n" +
-	"\x04NODE\x10\bB\b\n" +
+	"\x04NODE\x10\b\x12\n" +
+	"\n" +
+	"\x06CUSTOM\x10\tB\b\n" +
 	"\x06EntityJ\x04\b\b\x10\t\"\xb0\x02\n" +
 	"\x0fListAlertPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +

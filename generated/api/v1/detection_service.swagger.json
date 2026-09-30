@@ -481,9 +481,11 @@
         "CLUSTER_ROLE_BINDINGS",
         "NETWORK_POLICIES",
         "SECURITY_CONTEXT_CONSTRAINTS",
-        "EGRESS_FIREWALLS"
+        "EGRESS_FIREWALLS",
+        "CUSTOM"
       ],
-      "default": "UNKNOWN"
+      "default": "UNKNOWN",
+      "description": " - CUSTOM: CUSTOM is any resource not covered by the values above; see api_resource for the actual resource."
     },
     "SeccompProfileProfileType": {
       "type": "string",
@@ -776,6 +778,10 @@
         "namespaceId": {
           "type": "string",
           "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "apiResource": {
+          "type": "string",
+          "description": "api_resource is the canonical \"<plural>[.<group>]\" name of the resource. Only set when resource_type is CUSTOM."
         }
       },
       "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
