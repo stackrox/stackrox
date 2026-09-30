@@ -99,13 +99,29 @@ Exit status 0 means both output files were written. The decision file is:
 ```text
 # docs-only and style
 style-check
+# default decision
+go-postgres
+# default decision
+sensor-integration-tests
+# default decision
+should-dispatch
 # image-wait
 wait-for-images
-# prerequisite of wait-for-images
-should-dispatch
+# default decision
+e2e-byodb-tests
+# default decision
+e2e-db-backup-restore-tests
+# default decision
+e2e-gke-upgrade-tests
+# default decision
+e2e-nongroovy-tests
+# default decision
+gke-nongroovy-e2e-tests
+# default decision
+gke-ui-e2e-tests
 ```
 
-`go` is absent, so a dispatcher skips it. The log starts like this. Later lines record the default `skip` for every target the rules did not name:
+`go` is absent, because the docs-only rule skips it. The other names are the ready-pull-request defaults. The log starts like this. Later lines record the default for every target the rules did not name:
 
 ```text
 # stackrox/stackrox PR 23035
@@ -113,10 +129,10 @@ a1b2c3d: rule "docs-only" runs target "style-check" because file "README.md" cha
 a1b2c3d: rule "docs-only" skips target "go" because file "README.md" changed
 a1b2c3d: rule "style" runs target "style-check" because file "README.md" changed
 a1b2c3d: rule "image-wait" runs target "wait-for-images"
-a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it
+a1b2c3d: rule "remaining" takes default "run" for target "should-dispatch"
 ```
 
-A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `skip`, so neither name is in the decision file. `go` is on the list because the paths end in `.go`.
+A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `run`, so both names stay on the decision list. `go` is on the list because the paths end in `.go`.
 
 ```bash
 printf '%s\n' sensor/common/foo.go central/policy/service.go > /tmp/ci-select/files.txt
@@ -136,13 +152,13 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-a1b2c3d: clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; default "skip"
-a1b2c3d: clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; default "skip"
+a1b2c3d: clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; default "run"
+a1b2c3d: clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; default "run"
 ```
 
-To see a clash resolve to run, change the `go-postgres` line in a copy of `ci/decision-defaults` from `skip` to `run` and pass that copy with `--defaults`. The checked-in file stays all `skip`.
+To see a clash resolve to skip, change the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` and pass that copy with `--defaults`.
 
-The checked-in rule still asks every target to run. On these docs-only files the label clashes with the skip for `go`, so `go` stays off the list. The requirement is a separate, wider default for this label:
+The checked-in rule still asks every target to run. On these docs-only files the label clashes with the skip for `go`, and `go`'s default is `run`, so `go` stays on the list. The requirement is a separate, wider default for this label:
 
 ```bash
 printf '%s\n' README.md > /tmp/ci-select/files.txt
@@ -163,7 +179,7 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-a1b2c3d: clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "skip"
+a1b2c3d: clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"
 ```
 
 If `ci/decision-defaults` is missing a target that the rules name, the resolver prints `resolver failed: ...` on standard error, exits 1, and writes neither file.
@@ -178,7 +194,7 @@ This asks what would happen to `style-check` for the docs-only case when the pul
 : > /tmp/ci-select/labels.txt
 printf '%s\n' README.md > /tmp/ci-select/files.txt
 
-python3 ci/select/gha.py gate \
+python3 ci/select/gha_dispatcher.py gate \
   --job style-check \
   --rules ci/test-domains.toml \
   --defaults ci/decision-defaults \
@@ -199,7 +215,7 @@ run
 The same inputs for `go`, without `--enforce`. The decision would skip `go`. The missing label means the job still runs:
 
 ```bash
-python3 ci/select/gha.py gate \
+python3 ci/select/gha_dispatcher.py gate \
   --job go \
   --rules ci/test-domains.toml \
   --defaults ci/decision-defaults \
@@ -223,7 +239,7 @@ Add `--enforce` and standard output becomes `skip`.
 `print` writes the decision and the log to standard output. It does not answer for a single job:
 
 ```bash
-python3 ci/select/gha.py print \
+python3 ci/select/gha_dispatcher.py print \
   --rules ci/test-domains.toml \
   --defaults ci/decision-defaults \
   --labels-file /tmp/ci-select/labels.txt \
@@ -245,7 +261,7 @@ For the docs-only files, `gke-qa-e2e-tests` is enrolled and no rule runs it, so 
 : > /tmp/ci-select/labels.txt
 printf '%s\n' README.md > /tmp/ci-select/files.txt
 
-python3 ci/select/prow.py gate \
+python3 ci/select/prow_dispatcher.py gate \
   --job gke-qa-e2e-tests \
   --rules ci/test-domains.toml \
   --defaults ci/decision-defaults \
@@ -269,7 +285,7 @@ An explicit `/test` for this job forces `run`, even with `--enforce`. The commen
 printf '%s\n' '[{"created_at":"2026-09-30T12:00:00Z","body":"/test gke-qa-e2e-tests"}]' \
   > /tmp/ci-select/comments.json
 
-python3 ci/select/prow.py gate \
+python3 ci/select/prow_dispatcher.py gate \
   --job gke-qa-e2e-tests \
   --rules ci/test-domains.toml \
   --defaults ci/decision-defaults \
@@ -318,7 +334,7 @@ python3 -m unittest discover -s ci/select -p 'test_*.py'
 The commands above are enough to see whether a rule does what you expect. Shipping this for every pull request still needs the following:
 
 - Replace the sample rules with the real map from directories and labels to suites, including the build-and-test tags, the Go end-to-end tests, and the GKE or OpenShift jobs a subsystem change should run.
-- Fill `ci/decision-defaults` with the checks a pull request runs today, and add a second default for `ci-run-all-tests`: the wider set that label runs today. The file in the tree skips every target instead, and the checked-in label rule asks every target to run.
+- Add a second default for `ci-run-all-tests`: the wider set that label runs today. The checked-in label rule still asks every target to run.
 - Teach the remaining pull-request jobs to read the decision. `go-postgres` and `sensor-integration-tests` are in the rules, and their workflows do not consult the list, so a skip in the decision does not skip those jobs. The same is true for the other jobs in `style.yaml` and `unit-tests.yaml`, and for the scanner, CRD, and compatibility workflows.
 - Log a job that `ci/decision-defaults` does not name, and skip it. The dispatcher still prints `run` for that name.
 - Keep a required GitHub check from sitting in the expected state. Skipping `style-check` and `go` starts the job and exits 0. The other required checks are not on that path.

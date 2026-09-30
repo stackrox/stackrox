@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from decisionlib import Decision, parse_decision  # noqa: E402
-from gha import gha_action  # noqa: E402
-from prow import comment_requests, prow_action, requests_since  # noqa: E402
+from gha_dispatcher import gha_action  # noqa: E402
+from prow_dispatcher import comment_requests, prow_action, requests_since  # noqa: E402
 
 DEFAULTS = {
     "style-check": "skip",

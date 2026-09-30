@@ -31,7 +31,7 @@ elif ! git -C "$root" diff --name-only "${CI_BASE}...${CI_HEAD}" >"$files_file";
     files_unknown=1
 fi
 
-cmd=("$python" "$root/ci/select/gha.py")
+cmd=("$python" "$root/ci/select/gha_dispatcher.py")
 if [[ -n "$job" ]]; then
     cmd+=(gate --job "$job")
 else

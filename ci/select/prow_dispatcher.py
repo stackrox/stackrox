@@ -131,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _read_comments(path: str) -> list[dict[str, str]]:
+    """_read_comments loads /test comments. An empty path means there are none."""
     if not path:
         return []
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -145,6 +146,7 @@ def _read_comments(path: str) -> list[dict[str, str]]:
 
 
 def _parse_time(value: str) -> datetime:
+    """_parse_time reads a comment or commit timestamp."""
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
