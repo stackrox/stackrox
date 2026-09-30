@@ -6,11 +6,16 @@ import orchestratormanager.OrchestratorTypes
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
+import io.fabric8.kubernetes.api.model.LimitRangeBuilder
+
 import common.Constants
 import objects.Secret
 import services.AlertService
 import services.ClusterService
+import services.FeatureFlagService
 import services.PolicyService
+
+import org.junit.Assume
 
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
@@ -85,6 +90,49 @@ class AuditLogAlertsTest extends BaseSpecification {
         "CONFIGMAPS" | "CREATE"
         "CONFIGMAPS" | "GET"
         "CONFIGMAPS" | "DELETE"
+    }
+
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    def "Verify Audit Log Event Source Policies Trigger for API resources"() {
+        given:
+        "Policies on API resources are enabled"
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_AUDIT_LOG_CUSTOM_RESOURCES"))
+
+        when:
+        "Audit log collection is enabled"
+        def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
+        if (previouslyDisabled) {
+            assert ClusterService.updateAuditLogDynamicConfig(false)
+        }
+
+        and:
+        "An audit log event source policy on an API resource outside of the built-in resource types is created"
+        def resName = "e2e-test-rez" + UUID.randomUUID()
+        def policy = createAuditLogSourcePolicy(resName, "CREATE", "limitranges", "Kubernetes API Resource")
+        def policyId = PolicyService.createNewPolicy(policy)
+        assert policyId
+        sleep(5000) // wait 5s for the policy to propagate to sensor and the collection to restart
+
+        and:
+        "The resource is created and deleted"
+        createAndDeleteLimitRange(resName, Constants.ORCHESTRATOR_NAMESPACE)
+
+        then:
+        "Verify that policy was violated"
+        def violations = getResourceViolationsWithTimeout("CUSTOM", resName,
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
+        assert violations != null && violations.size() == 1
+        assert violations[0].getResource().getApiResource() == "limitranges"
+
+        cleanup:
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+        // set the feature back to what it was
+        if (previouslyDisabled != null) {
+            assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
+        }
     }
 
     @Unroll
@@ -255,7 +303,8 @@ class AuditLogAlertsTest extends BaseSpecification {
         assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
     }
 
-    def createAuditLogSourcePolicy(String resName, String verb, String resourceType) {
+    def createAuditLogSourcePolicy(String resName, String verb, String resourceType,
+                                   String resourceFieldName = "Kubernetes Resource") {
         return PolicyOuterClass.Policy.newBuilder()
                 .setName("e2e-test-detect-${verb}-${resourceType}")
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
@@ -269,7 +318,7 @@ class AuditLogAlertsTest extends BaseSpecification {
                 .addPolicySections(
                         PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
                                 PolicyOuterClass.PolicyGroup.newBuilder()
-                                        .setFieldName("Kubernetes Resource")
+                                        .setFieldName(resourceFieldName)
                                         .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(resourceType))
                         ).addPolicyGroups(
                                 PolicyOuterClass.PolicyGroup.newBuilder()
@@ -308,5 +357,20 @@ class AuditLogAlertsTest extends BaseSpecification {
         orchestrator.createConfigMap(name, ["value": "map me"], namespace)
         orchestrator.getConfigMap(name, namespace)
         orchestrator.deleteConfigMap(name, namespace)
+    }
+
+    def createAndDeleteLimitRange(String name, String namespace) {
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
+        def limitRange = new LimitRangeBuilder()
+                .withNewMetadata().withName(name).withNamespace(namespace).endMetadata()
+                .withNewSpec()
+                    .addNewLimit().withType("Container").endLimit()
+                .endSpec()
+                .build()
+        orchestrator.client.limitRanges().inNamespace(namespace).resource(limitRange).create()
+        orchestrator.client.limitRanges().inNamespace(namespace).withName(name).delete()
     }
 }
