@@ -37,7 +37,7 @@ BOOTSTRAP_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap
 # Small additions on top of Bootstrap (things Bootstrap does not provide).
 EXTRA_CSS = (
     ".suite{border-left:3px solid #dee2e6;padding-left:1rem}"
-    "pre{max-height:24rem;white-space:pre-wrap;word-break:break-word}"
+    "pre{white-space:pre-wrap;word-break:break-word}"
     ".summary-badges .badge{font-size:1rem;margin-right:.5rem}"
     "summary{cursor:pointer}"
 )
