@@ -27,8 +27,7 @@ func SuppressVersionMismatchWarning() {
 
 // CentralVersionClientInterceptor returns a gRPC unary client interceptor that reads
 // the Central version from response header and emits a warning if the
-// versions of Central and roxctl are incompatible. The warning is emitted at most once per
-// interceptor instance.
+// versions of Central and roxctl are incompatible. The warning is emitted at most once.
 func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		var md metadata.MD
@@ -121,7 +120,7 @@ func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
 	case versioncompatibility.CompatibleAhead:
 		return VersionGuidance{
 			Summary:        "Central version is compatible with roxctl but is ahead of roxctl.",
-			Recommendation: "No immediate action is required. Use newer roxctl version to match Central for optimal functionality.",
+			Recommendation: "No immediate action is required. Use newer roxctl version to match the Central's version for optimal functionality.",
 		}
 	case versioncompatibility.CompatibleBehind:
 		return VersionGuidance{
