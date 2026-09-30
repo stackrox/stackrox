@@ -70,12 +70,39 @@ jobs:
       if: always()
       run: make generate-junit-reports
 
+    - name: Make ant report
+      run: |
+        cat << EOF > build.xml
+          <project name="junit-report" default="report" basedir=".">
+            <property name="in.dir"  value="junit-reports"/>
+            <property name="out.dir" value="my-ant-report"/>
+
+            <target name="report">
+              <mkdir dir="${out.dir}"/>
+              <junitreport todir="${out.dir}">
+                <fileset dir="${in.dir}">
+                  <include name="**/*.xml"/>
+                </fileset>
+                <report format="noframes" todir="${out.dir}"/>
+              </junitreport>
+            </target>
+          </project>
+        EOF
+        ant -f build.xml
+        ls -la my-ant-report
+
+    - name: Upload Ant report
+      uses: actions/upload-artifact@v7
+      with:
+        name: unit test report
+        path: my-ant-report/junit-noframes.html
+        archive: false
+
     - name: Make allure report
       run: |
         npm install -g allure
-        npx allure classic junit-reports/ --single-file --output my-report
+        npx allure awesome junit-reports/ --single-file --output my-report
         ls -la my-report
-        ls -la my-report/
 
     - name: Upload allure report
       uses: actions/upload-artifact@v7
