@@ -10,6 +10,10 @@ import type { NotifierConfiguration } from 'services/ReportsService.types';
 
 import NotifierConfigurationDescriptionList from './NotifierConfigurationDescriptionList';
 
+// Generic component for use cases:
+// Delivery of compliance scan schedule configuration does not have schedules
+// Delivery of vulnerability report configuration does have schedules
+
 export type NotifierConfigurationsDescriptionListGroupProps = {
     notifiers: NotifierConfiguration[];
 };

@@ -7,10 +7,6 @@ import type { DeliveryType } from '../reports.types';
 import NotifierConfigurationsDescriptionListGroup from './NotifierConfigurationsDescriptionListGroup';
 import ScheduleDescriptionListGroup from './ScheduleDescriptionListGroup';
 
-// Generic component for use cases:
-// Delivery of compliance scan schedule configuration does not have schedules
-// Delivery of vulnerability report configuration does have schedules
-
 export type DeliveryViewProps = {
     headingLevel: 'h2' | 'h3';
     horizontalTermWidthModifier: BreakpointModifiers;
