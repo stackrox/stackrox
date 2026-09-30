@@ -124,6 +124,14 @@ export function getViolationsTableColumnDescriptors(filteredWorkflowView: Filter
                 ) {
                     return deployment.deploymentType as string;
                 }
+                const apiResource = original?.resource?.apiResource;
+                if (
+                    value === 'CUSTOM' &&
+                    typeof apiResource === 'string' &&
+                    apiResource.length > 0
+                ) {
+                    return apiResource;
+                }
                 return startCase(value.toLowerCase());
             },
         },

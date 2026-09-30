@@ -41,6 +41,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     NETWORK_POLICIES: 'NetworkPolicies',
                                     SECURITY_CONTEXT_CONSTRAINTS: 'SecurityContextConstraints',
                                     EGRESS_FIREWALLS: 'EgressFirewalls',
+                                    CUSTOM: 'CustomResource',
                                 } as const;
                                 const kind = resourceTypeToKind[alert.resource.resourceType];
                                 icon = <ResourceIcon className="pf-v6-u-mr-sm" kind={kind} />;

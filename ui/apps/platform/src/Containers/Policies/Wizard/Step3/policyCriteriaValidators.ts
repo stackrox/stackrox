@@ -27,7 +27,10 @@ export const policySectionValidators: PolicySectionValidator[] = [
         name: 'Audit log required fields',
         appliesTo: (context) => context.eventSource === 'AUDIT_LOG_EVENT',
         validate: ({ policyGroups }) => {
-            const hasResource = policyGroupsHasCriterion(policyGroups, 'Kubernetes Resource');
+            // Either a built-in resource type or an API resource identifies the resource.
+            const hasResource =
+                policyGroupsHasCriterion(policyGroups, 'Kubernetes Resource') ||
+                policyGroupsHasCriterion(policyGroups, 'Kubernetes API Resource');
             const hasVerb = policyGroupsHasCriterion(policyGroups, 'Kubernetes API Verb');
 
             if (!hasResource && !hasVerb) {
@@ -38,6 +41,19 @@ export const policySectionValidators: PolicySectionValidator[] = [
             }
             if (!hasVerb) {
                 return 'Criterion must be present for audit log policies: Kubernetes API verb';
+            }
+            return undefined;
+        },
+    },
+    {
+        name: 'Audit log resource criteria are mutually exclusive',
+        appliesTo: (context) => context.eventSource === 'AUDIT_LOG_EVENT',
+        validate: ({ policyGroups }) => {
+            if (
+                policyGroupsHasCriterion(policyGroups, 'Kubernetes Resource') &&
+                policyGroupsHasCriterion(policyGroups, 'Kubernetes API Resource')
+            ) {
+                return 'Criteria cannot be combined: Kubernetes resource type and Kubernetes API resource';
             }
             return undefined;
         },

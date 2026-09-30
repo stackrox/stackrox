@@ -41,6 +41,38 @@ const highChurnPrefixes: Record<string, string> = {
  * Returns a warning message when a file path glob pattern is structurally too broad,
  * such as root-level catch-alls or globs under high-churn directories.
  */
+// Resources covered by the Kubernetes resource type criterion for audit log events.
+const builtInAuditLogResources = [
+    'secrets',
+    'configmaps',
+    'clusterroles',
+    'clusterrolebindings',
+    'networkpolicies',
+    'securitycontextconstraints',
+    'egressfirewalls',
+];
+
+const apiResourceRegExp = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
+
+/**
+ * Validates a Kubernetes API resource of the form <plural>[.<group>], for example applications.argoproj.io.
+ * Returns an error message string if invalid, undefined if valid.
+ */
+export function validateKubernetesAPIResource(value: string): string | undefined {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+        return undefined;
+    }
+    if (!apiResourceRegExp.test(trimmed)) {
+        return 'API resource must be a lowercase <plural>.<group>, for example applications.argoproj.io, or <plural> for core resources';
+    }
+    const [plural] = trimmed.split('.');
+    if (builtInAuditLogResources.includes(plural)) {
+        return 'Use the Kubernetes resource type criterion for this resource';
+    }
+    return undefined;
+}
+
 export function warnBroadFilePath(value: string): string | undefined {
     const trimmed = value.trim();
 
@@ -1671,6 +1703,20 @@ export const auditLogDescriptor: Descriptor[] = [
         ],
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
+    },
+    {
+        label: 'Kubernetes API resource',
+        name: 'Kubernetes API Resource',
+        shortName: 'Kubernetes API resource',
+        category: policyCriteriaCategories.RESOURCE_OPERATION,
+        type: 'text',
+        placeholder: 'applications.argoproj.io',
+        helperText:
+            'Enter a resource that is not a Kubernetes resource type, as <plural>.<group> (or <plural> for core resources). Cannot be combined with Kubernetes resource type.',
+        validate: validateKubernetesAPIResource,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_AUDIT_LOG_CUSTOM_RESOURCES'],
     },
     {
         label: 'Kubernetes resource name',
