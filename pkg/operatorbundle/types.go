@@ -23,9 +23,15 @@ func (c CVE) IsFixable() bool {
 // (registry + repository, without tag or digest) and its digest.
 type ImageCVEs struct {
 	// Repository is the tag/digest-stripped image reference, e.g.
-	// "registry.redhat.io/albo/aws-load-balancer-controller-rhel9". It is the key used to
-	// pair installed and candidate images during diffing.
+	// "registry.redhat.io/albo/aws-load-balancer-controller-rhel9". Together with Name it is
+	// the key used to pair installed and candidate images during diffing.
 	Repository string
+	// Name is the bundle's logical name for the image (related_images[].name), e.g.
+	// "images_v1_27_9_cni" or "scanner_v4". Multi-version bundles ship many images sharing one
+	// repository (e.g. 12 istio-cni-rhel9 variants), distinguished only by Name; pairing must
+	// therefore key on (Repository, Name), not Repository alone. It is empty for the bundle
+	// image itself and for some operators that do not set it, where Repository disambiguates.
+	Name string
 	// Reference is the full reference the scan was obtained from (repository@digest), kept
 	// for reporting.
 	Reference string
@@ -40,6 +46,10 @@ type RelatedImage struct {
 	// "registry.redhat.io/albo/aws-load-balancer-controller-rhel9".
 	Image  string
 	Digest string
+	// Name is the bundle's logical name for this image (related_images[].name), e.g.
+	// "images_v1_27_9_cni". It is the discriminator for images that share a repository within a
+	// bundle. May be empty for the bundle image or operators that do not populate it.
+	Name string
 }
 
 // Bundle is a single operator bundle version from the catalog.
@@ -70,9 +80,12 @@ const (
 )
 
 // ImageDiff is the per-image CVE diff between the installed and update-candidate bundle for
-// a single repository.
+// a single (repository, name) image.
 type ImageDiff struct {
-	Repository      string
+	Repository string
+	// Name is the bundle logical name of the image (see ImageCVEs.Name). For multi-version
+	// bundles it identifies which variant of a shared repository this diff is about.
+	Name            string
 	Status          ImagePairStatus
 	InstalledDigest string
 	CandidateDigest string

@@ -4,38 +4,45 @@ import (
 	"sort"
 )
 
-// ComputeDiff pairs installed and candidate images by repository name and classifies their
-// CVEs. For a repository present in both bundles, each CVE is fixed (installed only), still
-// active (both), or new (candidate only). A repository present in only one bundle yields an
-// ImageDiff with ImageAdded or ImageRemoved status.
+// ComputeDiff pairs installed and candidate images by their (repository, name) key and
+// classifies their CVEs. For an image present in both bundles, each CVE is fixed (installed
+// only), still active (both), or new (candidate only). An image present in only one bundle
+// yields an ImageDiff with ImageAdded or ImageRemoved status.
 //
-// The returned diffs are sorted by repository for deterministic output.
+// Pairing keys on (repository, name) rather than repository alone because multi-version
+// bundles ship many images under one repository (e.g. 12 istio-cni-rhel9 variants), each with
+// a distinct related_images name; keying on repository alone would collapse them and diff the
+// wrong pair. See mt_nogit_image_remed/phase1_validation.md for the data behind this choice.
+//
+// The returned diffs are sorted by (repository, name) for deterministic output.
 func ComputeDiff(installed, candidate []ImageCVEs) []ImageDiff {
-	installedByRepo := indexByRepository(installed)
-	candidateByRepo := indexByRepository(candidate)
+	installedByKey := indexByPairKey(installed)
+	candidateByKey := indexByPairKey(candidate)
 
-	repos := unionRepositories(installedByRepo, candidateByRepo)
+	keys := unionKeys(installedByKey, candidateByKey)
 
-	diffs := make([]ImageDiff, 0, len(repos))
-	for _, repo := range repos {
-		inst, hasInst := installedByRepo[repo]
-		cand, hasCand := candidateByRepo[repo]
+	diffs := make([]ImageDiff, 0, len(keys))
+	for _, key := range keys {
+		inst, hasInst := installedByKey[key]
+		cand, hasCand := candidateByKey[key]
 
 		switch {
 		case hasInst && hasCand:
-			diffs = append(diffs, pairedDiff(repo, inst, cand))
+			diffs = append(diffs, pairedDiff(inst, cand))
 		case hasCand:
-			// Repository only in the candidate bundle: every CVE is newly introduced.
+			// Image only in the candidate bundle: every CVE is newly introduced.
 			diffs = append(diffs, ImageDiff{
-				Repository:      repo,
+				Repository:      cand.Repository,
+				Name:            cand.Name,
 				Status:          ImageAdded,
 				CandidateDigest: cand.Digest,
 				New:             sortedCVEs(cand.CVEs),
 			})
 		default:
-			// Repository only in the installed bundle: every CVE goes away with the upgrade.
+			// Image only in the installed bundle: every CVE goes away with the upgrade.
 			diffs = append(diffs, ImageDiff{
-				Repository:      repo,
+				Repository:      inst.Repository,
+				Name:            inst.Name,
 				Status:          ImageRemoved,
 				InstalledDigest: inst.Digest,
 				Fixed:           sortedCVEs(inst.CVEs),
@@ -45,12 +52,13 @@ func ComputeDiff(installed, candidate []ImageCVEs) []ImageDiff {
 	return diffs
 }
 
-func pairedDiff(repo string, installed, candidate ImageCVEs) ImageDiff {
+func pairedDiff(installed, candidate ImageCVEs) ImageDiff {
 	installedCVEs := indexCVEs(installed.CVEs)
 	candidateCVEs := indexCVEs(candidate.CVEs)
 
 	diff := ImageDiff{
-		Repository:      repo,
+		Repository:      candidate.Repository,
+		Name:            candidate.Name,
 		Status:          ImagePaired,
 		InstalledDigest: installed.Digest,
 		CandidateDigest: candidate.Digest,
@@ -73,14 +81,23 @@ func pairedDiff(repo string, installed, candidate ImageCVEs) ImageDiff {
 	return diff
 }
 
-// indexByRepository indexes images by repository. If multiple images share a repository the
-// last one wins; bundles are not expected to contain duplicate repositories.
-func indexByRepository(images []ImageCVEs) map[string]ImageCVEs {
-	byRepo := make(map[string]ImageCVEs, len(images))
+// pairKey is the diff pairing key for an image: (repository, name). The NUL separator cannot
+// occur in either component, so distinct (repository, name) pairs never collide. Images that
+// share a repository but differ in name (multi-version bundles) get distinct keys; images with
+// an empty name are disambiguated by repository. Validated unique across sampled operators (see
+// mt_nogit_image_remed/phase1_validation.md).
+func pairKey(img ImageCVEs) string {
+	return img.Repository + "\x00" + img.Name
+}
+
+// indexByPairKey indexes images by their (repository, name) key. If two images share a key the
+// last one wins; that pairing is validated not to occur within real bundles.
+func indexByPairKey(images []ImageCVEs) map[string]ImageCVEs {
+	byKey := make(map[string]ImageCVEs, len(images))
 	for _, img := range images {
-		byRepo[img.Repository] = img
+		byKey[pairKey(img)] = img
 	}
-	return byRepo
+	return byKey
 }
 
 // indexCVEs indexes CVEs by ID. If a CVE ID appears more than once the last one wins.
@@ -92,20 +109,21 @@ func indexCVEs(cves []CVE) map[string]CVE {
 	return byID
 }
 
-func unionRepositories(a, b map[string]ImageCVEs) []string {
+func unionKeys(a, b map[string]ImageCVEs) []string {
 	seen := make(map[string]struct{}, len(a)+len(b))
-	for repo := range a {
-		seen[repo] = struct{}{}
+	for key := range a {
+		seen[key] = struct{}{}
 	}
-	for repo := range b {
-		seen[repo] = struct{}{}
+	for key := range b {
+		seen[key] = struct{}{}
 	}
-	repos := make([]string, 0, len(seen))
-	for repo := range seen {
-		repos = append(repos, repo)
+	keys := make([]string, 0, len(seen))
+	for key := range seen {
+		keys = append(keys, key)
 	}
-	sort.Strings(repos)
-	return repos
+	// Keys are "repository\x00name"; sorting the raw key orders by repository then name.
+	sort.Strings(keys)
+	return keys
 }
 
 func sortedCVEs(cves []CVE) []CVE {

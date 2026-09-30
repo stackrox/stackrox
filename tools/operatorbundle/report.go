@@ -38,6 +38,7 @@ type cveView struct {
 
 type imageDiffView struct {
 	Repository      string    `json:"repository"`
+	Name            string    `json:"name,omitempty"`
 	Status          string    `json:"status"`
 	InstalledDigest string    `json:"installedDigest,omitempty"`
 	CandidateDigest string    `json:"candidateDigest,omitempty"`
@@ -80,6 +81,7 @@ func toReportViews(reports []operatorbundle.BundleDiffReport) []reportView {
 		for _, d := range r.ImageDiffs {
 			v.ImageDiffs = append(v.ImageDiffs, imageDiffView{
 				Repository:      d.Repository,
+				Name:            d.Name,
 				Status:          string(d.Status),
 				InstalledDigest: d.InstalledDigest,
 				CandidateDigest: d.CandidateDigest,
@@ -114,7 +116,11 @@ func renderTable(w io.Writer, reports []operatorbundle.BundleDiffReport, unresol
 
 		var totalFixed, totalActive, totalNew int
 		for _, d := range r.ImageDiffs {
-			fmt.Fprintf(w, "\n  Image: %s [%s]\n", d.Repository, d.Status)
+			imageLabel := d.Repository
+			if d.Name != "" {
+				imageLabel = fmt.Sprintf("%s (%s)", d.Repository, d.Name)
+			}
+			fmt.Fprintf(w, "\n  Image: %s [%s]\n", imageLabel, d.Status)
 			printCVELine(w, "fixed", d.Fixed)
 			printCVELine(w, "still active", d.StillActive)
 			printCVELine(w, "new", d.New)

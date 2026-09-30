@@ -152,7 +152,7 @@ func (a *Advisor) collectInstalledCVEs(ctx context.Context, images []RelatedImag
 			a.progress("      not found in Central, skipping")
 			continue
 		}
-		result = append(result, withRepositoryFallback(*cves, img.Image))
+		result = append(result, withCatalogMetadata(*cves, img))
 	}
 	return result, nil
 }
@@ -173,7 +173,7 @@ func (a *Advisor) collectCandidateCVEs(ctx context.Context, images []RelatedImag
 		if cves == nil {
 			continue
 		}
-		result = append(result, withRepositoryFallback(*cves, img.Image))
+		result = append(result, withCatalogMetadata(*cves, img))
 	}
 	return result, nil
 }
@@ -188,11 +188,14 @@ func candidateReference(img RelatedImage) string {
 	return img.Image
 }
 
-// withRepositoryFallback ensures the ImageCVEs has a repository set, deriving it from the
-// catalog reference when the data source did not populate one.
-func withRepositoryFallback(cves ImageCVEs, catalogImage string) ImageCVEs {
+// withCatalogMetadata attaches catalog-sourced identity to a scanned/looked-up ImageCVEs: the
+// bundle logical Name (used together with Repository as the diff pairing key) and, when the
+// data source did not populate one, a Repository derived from the catalog reference. The Name
+// is only known from the catalog RelatedImage, not from the scanned image itself.
+func withCatalogMetadata(cves ImageCVEs, img RelatedImage) ImageCVEs {
 	if cves.Repository == "" {
-		cves.Repository = RepositoryFromReference(catalogImage)
+		cves.Repository = RepositoryFromReference(img.Image)
 	}
+	cves.Name = img.Name
 	return cves
 }

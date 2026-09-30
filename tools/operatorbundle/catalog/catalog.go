@@ -55,6 +55,7 @@ type bundleData struct {
 	RelatedImages   []struct {
 		Image  string `json:"image"`
 		Digest string `json:"digest"`
+		Name   string `json:"name"`
 	} `json:"related_images"`
 }
 
@@ -73,7 +74,7 @@ type graphqlResponse struct {
 func (c *Client) FindInstalledBundle(ctx context.Context, digest string) (*operatorbundle.Bundle, error) {
 	query := fmt.Sprintf(`{ find_operator_bundles(filter: {related_images: {digest: {eq: %s}}}, page_size: 1) `+
 		`{ data { package channel_name version version_original csv_name csv_display_name creation_date `+
-		`related_images { image digest } } } }`, jsonString(digest))
+		`related_images { image digest name } } } }`, jsonString(digest))
 
 	bundles, err := c.query(ctx, query)
 	if err != nil {
@@ -92,7 +93,7 @@ func (c *Client) FindCandidateBundles(ctx context.Context, pkg, channel, sinceCr
 	query := fmt.Sprintf(`{ find_operator_bundles(filter: {and: [{package: {eq: %s}}, {creation_date: {ge: %s}}, {channel_name: {eq: %s}}]}, `+
 		`page_size: 50, sort_by: [{field: "creation_date", order: DESC}]) `+
 		`{ data { package channel_name version version_original csv_name csv_display_name creation_date `+
-		`related_images { image digest } } } }`,
+		`related_images { image digest name } } } }`,
 		jsonString(pkg), jsonString(sinceCreationDate), jsonString(channel))
 
 	bundles, err := c.query(ctx, query)
@@ -153,7 +154,7 @@ func (c *Client) query(ctx context.Context, query string) ([]bundleData, error) 
 func toBundle(b bundleData) operatorbundle.Bundle {
 	images := make([]operatorbundle.RelatedImage, 0, len(b.RelatedImages))
 	for _, ri := range b.RelatedImages {
-		images = append(images, operatorbundle.RelatedImage{Image: ri.Image, Digest: ri.Digest})
+		images = append(images, operatorbundle.RelatedImage{Image: ri.Image, Digest: ri.Digest, Name: ri.Name})
 	}
 	return operatorbundle.Bundle{
 		Package:         b.Package,

@@ -10,8 +10,9 @@
 //     release within the installed bundle's major.minor (the "update candidate").
 //  3. Obtain CVEs for every image of the update candidate (by scanning) and for every
 //     image of the installed bundle (from already-scanned data).
-//  4. Diff the CVEs per image, pairing images by repository name, classifying each CVE as
-//     fixed, still active, or newly introduced.
+//  4. Diff the CVEs per image, pairing images by their (repository, bundle name) key so that
+//     multi-version bundles (many images sharing one repository) diff correctly, classifying
+//     each CVE as fixed, still active, or newly introduced.
 //
 // All external data access is expressed through the CatalogClient, ImageScanner, and
 // InstalledImageSource interfaces so the package carries no transport dependencies; the
