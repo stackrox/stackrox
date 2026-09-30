@@ -172,6 +172,14 @@ func TestDataRaceAtCleanup(t *testing.T) {
 	s.Cleanup()
 	doneSignal.Signal()
 	wg.Wait()
+
+	// The stopped writers may still have a delayed updateConfigNow scheduled.
+	// One more update cancels those pending writes and lets us wait for the pipeline to flush,
+	// so no background write recreates the file after Cleanup().
+	source := icspA.Spec.RepositoryDigestMirrors[0].Source
+	require.NoError(t, s.UpsertImageContentSourcePolicy(icspA))
+	require.Eventually(t, func() bool { return fileContains(path, source) }, 5*time.Second, 10*time.Millisecond)
+	s.Cleanup()
 }
 
 func TestCleanup(t *testing.T) {
