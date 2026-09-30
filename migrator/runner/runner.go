@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	migVersion "github.com/stackrox/rox/migrator/version"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -45,10 +46,11 @@ func init() {
 func Run(databases *types.Databases) error {
 	log.WriteToStderrf("In runner.Run")
 
-	dbSeqNum, err := getCurrentSeqNum(databases)
+	source, err := migVersion.ReadVersionGormDB(sac.WithAllAccess(context.Background()), databases.GormDB)
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
 	}
+	dbSeqNum := source.SeqNum
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	if dbSeqNum == 0 {
 		log.WriteToStderr("Sequence number of 0 means starting fresh, no migrations to execute")
@@ -60,44 +62,68 @@ func Run(databases *types.Databases) error {
 	}
 	if dbSeqNum < currSeqNum {
 		log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...", dbSeqNum, currSeqNum)
-		if err := runMigrations(databases, dbSeqNum); err != nil {
+		if err := runMigrations(databases, *source, migrations.Get); err != nil {
 			return err
 		}
 	} else {
 		log.WriteToStderrf("DB is up to date at version %d. Nothing to do here.", dbSeqNum)
 	}
 
-	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
-	// there are no migrations executed.
-	return UpdateToCurrentVersion(databases)
+	// The caller publishes the target version only after applying all schemas.
+	return nil
+}
+
+// Preflight verifies the entire migration path before the first migration runs.
+// An unsafe override cannot recreate migrations that have been pruned.
+func Preflight(startingSeqNum int) error {
+	for seq := startingSeqNum; seq < pkgMigrations.CurrentDBVersionSeqNum(); seq++ {
+		if _, ok := migrations.Get(seq); !ok {
+			return &pkgMigrations.CompatibilityError{Message: fmt.Sprintf("Central upgrade blocked: no migration found starting at sequence %d. Use an intermediate Central release containing the missing migrations; the unsafe override cannot bypass this check.", seq)}
+		}
+	}
+	return nil
 }
 
 // UpdateToCurrentVersion updates the stored version to the current binary version
 func UpdateToCurrentVersion(databases *types.Databases) error {
+	ctx := sac.WithAllAccess(context.Background())
+	source, err := migVersion.ReadVersionGormDB(ctx, databases.GormDB)
+	if err != nil {
+		return errors.Wrap(err, "reading version before publishing completed migration")
+	}
 	currentVersion := &versionStorage.Version{
 		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(pkgMigrations.MinimumSupportedDBVersionSeqNum()),
+		MinSeqNum:     int32(max(source.MinimumSeqNum, pkgMigrations.MinimumSupportedDBVersionSeqNum())),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-	err := updateVersion(ctx, databases, currentVersion)
+	err = updateVersion(ctx, databases, currentVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.GetSeqNum())
 	}
 	return nil
 }
 
-func runMigrations(databases *types.Databases, startingSeqNum int) error {
-	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
+func migrationCheckpoint(source pkgMigrations.MigrationVersion, sequence, minimum int) *versionStorage.Version {
+	return &versionStorage.Version{
+		SeqNum:        int32(sequence),
+		Version:       source.MainVersion,
+		MinSeqNum:     int32(max(source.MinimumSeqNum, minimum)),
+		LastPersisted: protoconv.ConvertTimeToTimestampOrNil(source.LastPersisted),
+	}
+}
+
+func runMigrations(databases *types.Databases, source pkgMigrations.MigrationVersion, lookup func(int) (types.Migration, bool)) error {
+	minimum := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	for seqNum := source.SeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		// Add an outer transaction so migrations can be wrapped in a transaction.
 		ctx := sac.WithAllAccess(context.Background())
 
 		// Set the context with the databases so the wrapped transaction can be used
 		databases.DBCtx = ctx
 
-		migration, ok := migrations.Get(seqNum)
+		migration, ok := lookup(seqNum)
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
@@ -117,7 +143,7 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		}
 		ctx = pgPkg.ContextWithTx(ctx, tx)
 
-		err = updateVersion(ctx, databases, migration.VersionAfter)
+		err = updateVersion(ctx, databases, migrationCheckpoint(source, int(migration.VersionAfter.GetSeqNum()), minimum))
 		if err != nil {
 			return wrapRollback(ctx, tx, errors.Wrapf(err, "failed to update version after migration %d", seqNum))
 		}

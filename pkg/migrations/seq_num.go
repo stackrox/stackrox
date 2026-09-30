@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"github.com/stackrox/rox/pkg/migrations/internal"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 // CurrentDBVersionSeqNum is the current DB version number.
@@ -14,11 +15,19 @@ func CurrentDBVersionSeqNum() int {
 // MinimumSupportedDBVersionSeqNum is the oldest database version supported
 // by the schema at this point in time.
 func MinimumSupportedDBVersionSeqNum() int {
-	return internal.MinimumSupportedDBVersionSeqNum
+	return currentMinimum().Sequence
 }
 
 // MinimumSupportedDBVersion is the oldest database version supported
 // by the schema at this point in time.
 func MinimumSupportedDBVersion() string {
-	return internal.MinimumSupportedDBVersion
+	return currentMinimum().Version
+}
+
+func currentMinimum() ReleaseVersion {
+	minimum, err := MinimumSupportedForVersion(version.GetMainVersion())
+	if err != nil {
+		panic(err)
+	}
+	return minimum
 }

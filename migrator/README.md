@@ -15,9 +15,23 @@ GORM AutoMigrate enforces this by design: it will not remove unused columns or m
 breaking data type changes, though it will perform updates on precision.
 See [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration).
 
-When a previously-supported version can no longer tolerate the current schema, update
-`MinimumSupportedDBVersionSeqNum` in `pkg/migrations/internal/fallback_seq_num.go`.
-The migrator will reject upgrades from versions below this threshold.
+## Upgrade compatibility
+
+Upgrades support the three preceding X.Y streams, ignoring patches and suffixes.
+Sequence-based rollback protection remains unchanged. Rejections are logged and
+written to `/dev/termination-log`; migrator releases database resources, waits five
+minutes, and exits without starting Central. Pod shutdown may force termination.
+
+For support-assisted recovery only, `ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE=true`
+bypasses the product-version gate, not rollback/restore protections or database
+errors. Remove it after recovery. Operator downgrade may be unsafe for Scanner DB.
+
+After a startup migration or stream bump, run `make go-generated-srcs` with a full
+checkout and GA tags; commit `pkg/migrations/release_versions.go`, never edit it.
+The generator uses `make tag`: published streams retain their initial `X.Y.0`
+sequence; an unpublished current stream uses the working tree's sequence.
+GA tagging leaves output unchanged, and patch migrations cannot move the baseline.
+Keep `pkg/version/productstreams` major-transition metadata current.
 
 ## Do you need a migration?
 

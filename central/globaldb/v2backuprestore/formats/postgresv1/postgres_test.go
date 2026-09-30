@@ -6,12 +6,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/version"
+	versiontest "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
 func TestCheckMigrationVersion(t *testing.T) {
+	oldVersion := version.GetMainVersion()
+	t.Cleanup(func() { versiontest.SetMainVersion(t, oldVersion) })
+	versiontest.SetMainVersion(t, "5.1.0")
 	// Get the current minimum supported version to use in tests
 	minSupportedVersion := migrations.MinimumSupportedDBVersionSeqNum()
 
