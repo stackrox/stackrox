@@ -14,6 +14,7 @@ import re
 import sys
 import tomllib
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -125,7 +126,6 @@ def resolve(
     check_defaults(list(mapping.jobs), defaults)
     paths = _dedupe(files)
     label_set = set(labels)
-    short = commit[:7]
     votes = {job: _Vote() for job in mapping.jobs}
 
     for rule in mapping.rules:
@@ -190,12 +190,12 @@ def resolve(
                 for hit in votes[job].opinion(opinion):
                     if hit.rule != rule.name:
                         continue
-                    events.append(_rule_event(short, rule.name, verb, job, hit.reason))
+                    events.append(_rule_event(rule.name, verb, job, hit.reason))
 
     for job in clashes:
         vote = votes[job]
         events.append(
-            f"{short}: clash on target {_q(job)}; "
+            f"clash on target {_q(job)}; "
             f"{_says(_rule_names(vote.run), 'run')}, "
             f"{_says(_rule_names(vote.skip), 'skip')}; "
             f"default {_q(defaults[job])}"
@@ -206,14 +206,14 @@ def resolve(
             continue
         rule_name = _rule_names(votes[job].default)[0]
         events.append(
-            f"{short}: rule {_q(rule_name)} takes default {_q(outcomes[job])} for target {_q(job)}"
+            f"rule {_q(rule_name)} takes default {_q(outcomes[job])} for target {_q(job)}"
         )
 
     for needed, because in added:
         if needed in originally_run:
             continue
         events.append(
-            f"{short}: added target {_q(needed)} because target {_q(because)} requires it"
+            f"added target {_q(needed)} because target {_q(because)} requires it"
         )
 
     items: list[tuple[str, str]] = []
@@ -382,9 +382,17 @@ def _matches(path: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
     return any(pattern.search(path) for pattern in patterns)
 
 
-def _rule_event(commit: str, rule: str, verb: str, job: str, reason: str) -> str:
+def _format_log(repo: str, pr: str, commit: str, events: list[str]) -> str:
+    """_format_log keeps the commit and the run time in the header, and numbers events from 001."""
+    when = datetime.now().astimezone().isoformat(timespec="seconds")
+    width = max(3, len(str(len(events))))
+    body = "".join(f"{index:0{width}d}. {event}\n" for index, event in enumerate(events, start=1))
+    return f"# {repo} PR {pr} {commit[:7]}\n# {when}\n{body}"
+
+
+def _rule_event(rule: str, verb: str, job: str, reason: str) -> str:
     """_rule_event formats one log line for a rule that runs or skips a target."""
-    line = f"{commit}: rule {_q(rule)} {verb} target {_q(job)}"
+    line = f"rule {_q(rule)} {verb} target {_q(job)}"
     if reason:
         return f"{line} {reason}"
     return line
