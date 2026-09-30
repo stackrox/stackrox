@@ -161,12 +161,16 @@ deploy_earlier_postgres_central() {
 # upgrade_central_helm_to_head applies the HEAD chart to the existing
 # stackrox-central-services release so Scanner V4 is installed. kubectl set
 # image does not create V4, and HEAD Central does not use leftover Scanner V2.
+# Optional CLI and DB tag overrides support release-matched rollback smoke tests
+# without downgrading Central DB.
 upgrade_central_helm_to_head() {
     local namespace="${1:-stackrox}"
     local image_tag="${2:-$CURRENT_TAG}"
     local registry="${3:-$REGISTRY}"
+    local roxctl="${4:-$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl}"
+    local db_tag="${5:-$image_tag}"
 
-    info "Upgrading central Helm release to HEAD chart with Scanner V4"
+    info "Applying Central chart for $image_tag with Scanner V4 (Central DB: $db_tag)"
 
     if ! helm -n "$namespace" status stackrox-central-services >/dev/null 2>&1; then
         die "Helm release stackrox-central-services not found in namespace ${namespace}"
@@ -174,7 +178,7 @@ upgrade_central_helm_to_head() {
 
     local chart_dir
     chart_dir="$(mktemp -d)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" helm output central-services \
+    "$roxctl" helm output central-services \
         --image-defaults opensource \
         --output-dir "${chart_dir}" --remove
 
@@ -244,7 +248,7 @@ image:
 central:
   db:
     image:
-      tag: "${image_tag}"
+      tag: "${db_tag}"
   image:
     tag: "${image_tag}"
 scannerV4:
