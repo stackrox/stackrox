@@ -4,6 +4,6 @@ package versioncheck
 
 import "testing"
 
-func ResetSuppressWarningForTesting(_ testing.TB) {
-	suppressWarning.Store(false)
+func ResetSuppressVersionMismatchWarningForTesting(_ testing.TB) {
+	suppressVersionMismatchWarning.Store(false)
 }

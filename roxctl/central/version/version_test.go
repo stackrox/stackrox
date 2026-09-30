@@ -41,7 +41,7 @@ type centralVersionTestSuite struct {
 }
 
 func (c *centralVersionTestSuite) TearDownTest() {
-	versioncheck.ResetSuppressWarningForTesting(c.T())
+	versioncheck.ResetSuppressVersionMismatchWarningForTesting(c.T())
 }
 
 func (c *centralVersionTestSuite) TestCompatibilityStates() {
@@ -129,6 +129,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	c.Require().NoError(err)
 
 	var result versionResult
+	c.T().Log(stdout.String())
 	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
 
 	c.Assert().Equal("5.0.0-testing", result.RoxctlVersion)

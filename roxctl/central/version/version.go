@@ -93,7 +93,7 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versionResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
-	versioncheck.SuppressWarning() // Don't print another warning if versions
+	versioncheck.SuppressVersionMismatchWarning() // Don't print another warning if versions
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
 	if err != nil {

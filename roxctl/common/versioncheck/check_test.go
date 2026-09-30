@@ -102,7 +102,7 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
 			t.Cleanup(func() {
-				ResetSuppressWarningForTesting(t)
+				ResetSuppressVersionMismatchWarningForTesting(t)
 			})
 
 			var buf bytes.Buffer
@@ -113,7 +113,7 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 
 			client := v1.NewMetadataServiceClient(conn)
 			if tc.suppress {
-				SuppressWarning()
+				SuppressVersionMismatchWarning()
 			}
 			_, err := client.GetMetadata(context.Background(), &v1.Empty{})
 			require.NoError(t, err)
@@ -142,7 +142,7 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
 			t.Cleanup(func() {
-				ResetSuppressWarningForTesting(t)
+				ResetSuppressVersionMismatchWarningForTesting(t)
 			})
 
 			var serverInterceptors []grpc.UnaryServerInterceptor
@@ -169,7 +169,7 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
 	t.Cleanup(func() {
-		ResetSuppressWarningForTesting(t)
+		ResetSuppressVersionMismatchWarningForTesting(t)
 	})
 
 	var buf bytes.Buffer
