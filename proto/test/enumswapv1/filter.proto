@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package test.enumswapv1;
+
+option go_package = "./test/enumswapv1;enumswapv1";
+option java_package = "io.stackrox.proto.test.enumswapv1";
+
+// This file, together with test/enumswapv2/filter.proto, exists solely to pin down the
+// wire-compatibility behaviour of swapping the enum type of a repeated enum field.
+// The two messages are deliberately identical in message name, field name and field
+// number; only the enum type of the field differs. See pkg/protocompat/enum_swap_test.go.
+
+// Mirrors storage.ContainerType as of the 5.0 release.
+enum ContainerType {
+  REGULAR = 0;
+  INIT = 1;
+}
+
+message EvaluationFilter {
+  repeated ContainerType skip_container_types = 1;
+}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package test.enumswapv2;
+
+option go_package = "./test/enumswapv2;enumswapv2";
+option java_package = "io.stackrox.proto.test.enumswapv2";
+
+// The "after" side of the enum swap described in test/enumswapv1/filter.proto.
+// skip_container_types keeps its name and field number; only its enum type changes.
+//
+// The enum is nested inside EvaluationFilter on purpose: protobuf applies C++ scoping
+// rules to enum values, so a top-level enum in this package declaring UNSET/INIT would
+// collide with any other top-level enum in the same package declaring those names.
+
+message EvaluationFilter {
+  // Note the renumbering relative to enumswapv1.ContainerType: REGULAR is dropped and
+  // UNSET takes over tag 0, so previously stored REGULAR values decode as UNSET.
+  enum SkipContainerType {
+    UNSET = 0;
+    INIT = 1;
+  }
+
+  repeated SkipContainerType skip_container_types = 1;
+}
