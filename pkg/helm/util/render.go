@@ -17,8 +17,6 @@ type Options struct {
 	ReleaseOptions chartutil.ReleaseOptions
 	KubeVersion    string
 	HelmVersion    string
-
-	APIVersions chartutil.VersionSet
 }
 
 // Render renders a chart locally, like renderutil.Render, but its options struct allows specifying
@@ -36,10 +34,6 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 		APIVersions: chartutil.DefaultVersionSet,
 		KubeVersion: chartutil.DefaultCapabilities.KubeVersion,
 		HelmVersion: chartutil.DefaultCapabilities.HelmVersion,
-	}
-
-	if opts.APIVersions != nil {
-		caps.APIVersions = opts.APIVersions
 	}
 
 	if opts.KubeVersion != "" {
