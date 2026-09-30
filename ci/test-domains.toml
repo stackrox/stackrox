@@ -48,6 +48,32 @@ when = "all-files-changed"
 paths = ['\.md$', '^docs/', '^CHANGELOG']
 skip = ["*"]
 
+# Workflow hooks and the selector do not change the product under test.
+# The rule applies only when every changed file is one of these paths.
+[[rules]]
+name = "ci-tooling"
+when = "all-files-changed"
+paths = [
+  '^\.github/workflows/',
+  '^\.openshift-ci/',
+  '^ci/select/',
+  '^ci/decision-defaults$',
+  '^ci/test-domains\.toml$',
+]
+skip = [
+  "e2e-byodb-tests",
+  "e2e-db-backup-restore-tests",
+  "e2e-gke-upgrade-tests",
+  "e2e-nongroovy-tests",
+  "e2e-qa-tests-gke",
+  "e2e-qa-tests-gke-konflux",
+  "e2e-qa-tests-ocp-4-22",
+  "gke-nongroovy-e2e-tests",
+  "gke-qa-e2e-tests",
+  "gke-ui-e2e-tests",
+  "ocp-vm-scanning-e2e-tests",
+]
+
 [[rules]]
 name = "go-sources"
 when = "any-file-changed"
