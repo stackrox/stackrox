@@ -23,6 +23,7 @@ EOF
 set_github_ci_ref() {
     export CI=true
     export GITHUB_ACTION=true
+    unset GITHUB_HEAD_REF
     export GITHUB_REF_NAME="$1"
 }
 
