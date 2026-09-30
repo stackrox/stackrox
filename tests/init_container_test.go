@@ -391,7 +391,7 @@ func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
 		fmt.Sprintf("Test - Skip Init %d", rand.IntN(10000)), ns,
 	)
 	policy.EvaluationFilter = &storage.EvaluationFilter{
-		SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 	}
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
