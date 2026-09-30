@@ -66,7 +66,7 @@ The sample rules do the following:
 
 - The checked-in `ci-run-all-tests` rule asks every target to run, and a skip from another rule still clashes. The requirement is a second default: the wider set of checks that label runs today.
 - `go.mod`, `go.sum`, `proto/`, or `generated/` runs every target.
-- A change that is only docs runs `style-check` and skips `go`.
+- A change that is only docs skips every target. The style rule still runs `style-check`, and that clash takes the default `run`. The same clash keeps `wait-for-images`, which pulls `should-dispatch` back on.
 - Any `.go` file runs `go`.
 - Any changed file runs `style-check`.
 - A `sensor/` file runs `sensor-integration-tests` and skips `go-postgres`.
@@ -97,39 +97,20 @@ python3 ci/select/resolver.py \
 Exit status 0 means both output files were written. The decision file is:
 
 ```text
-# docs-only and style
+# default decision
 style-check
 # default decision
-go-postgres
-# default decision
-sensor-integration-tests
-# default decision
-should-dispatch
-# image-wait
 wait-for-images
-# default decision
-e2e-byodb-tests
-# default decision
-e2e-db-backup-restore-tests
-# default decision
-e2e-gke-upgrade-tests
-# default decision
-e2e-nongroovy-tests
-# default decision
-gke-nongroovy-e2e-tests
-# default decision
-gke-ui-e2e-tests
+# prerequisite of wait-for-images
+should-dispatch
 ```
 
-`go` is absent, because the docs-only rule skips it. The other names are the ready-pull-request defaults. The log starts like this. Later lines record the default for every target the rules did not name:
+`style-check` and `wait-for-images` each have a run and a skip, so the note says default decision. `should-dispatch` was skipped, then added because `wait-for-images` requires it. The end-to-end jobs are absent. The log records a skip for every other target, then:
 
 ```text
-# stackrox/stackrox PR 23035
-a1b2c3d: rule "docs-only" runs target "style-check" because file "README.md" changed
-a1b2c3d: rule "docs-only" skips target "go" because file "README.md" changed
-a1b2c3d: rule "style" runs target "style-check" because file "README.md" changed
-a1b2c3d: rule "image-wait" runs target "wait-for-images"
-a1b2c3d: rule "remaining" takes default "run" for target "should-dispatch"
+a1b2c3d: clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
+a1b2c3d: clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
+a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it
 ```
 
 A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `run`, so both names stay on the decision list. `go` is on the list because the paths end in `.go`.
@@ -158,7 +139,7 @@ a1b2c3d: clash on target "sensor-integration-tests"; rule "sensor" says run, rul
 
 To see a clash resolve to skip, change the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` and pass that copy with `--defaults`.
 
-The checked-in rule still asks every target to run. On these docs-only files the label clashes with the skip for `go`, and `go`'s default is `run`, so `go` stays on the list. The requirement is a separate, wider default for this label:
+The checked-in rule still asks every target to run. On these docs-only files that clashes with the skip for every target, and each target takes its default. `go` stays because its default is `run`. `gke-qa-e2e-tests` stays off because its default is `skip`. The requirement is a separate, wider default for this label:
 
 ```bash
 printf '%s\n' README.md > /tmp/ci-select/files.txt
@@ -180,6 +161,7 @@ grep clash /tmp/ci-select/resolver.log
 
 ```text
 a1b2c3d: clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"
+a1b2c3d: clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; default "skip"
 ```
 
 If `ci/decision-defaults` is missing a target that the rules name, the resolver prints `resolver failed: ...` on standard error, exits 1, and writes neither file.
@@ -255,7 +237,7 @@ A job name that is not in `ci/decision-defaults` prints `run` even with `--enfor
 
 The Prow command answers for one OpenShift CI job. Standard output is again `run` or `skip`.
 
-For the docs-only files, `gke-qa-e2e-tests` is enrolled and no rule runs it, so the enforced answer is skip:
+For the docs-only files, the docs-only rule skips `gke-qa-e2e-tests`, so the enforced answer is skip:
 
 ```bash
 : > /tmp/ci-select/labels.txt

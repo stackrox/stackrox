@@ -40,12 +40,13 @@ when = "any-file-changed"
 paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
 run = ["*"]
 
+# A docs-only change skips every target. The style rule still asks for
+# style-check, so that job clashes and takes its default.
 [[rules]]
 name = "docs-only"
 when = "all-files-changed"
 paths = ['\.md$', '^docs/', '^CHANGELOG']
-run = ["style-check"]
-skip = ["go"]
+skip = ["*"]
 
 [[rules]]
 name = "go-sources"

@@ -41,28 +41,12 @@ class ResolverTest(unittest.TestCase):
             result.decision_text,
             "\n".join(
                 [
-                    "# docs-only and style",
+                    "# default decision",
                     "style-check",
                     "# default decision",
-                    "go-postgres",
-                    "# default decision",
-                    "sensor-integration-tests",
-                    "# default decision",
-                    "should-dispatch",
-                    "# image-wait",
                     "wait-for-images",
-                    "# default decision",
-                    "e2e-byodb-tests",
-                    "# default decision",
-                    "e2e-db-backup-restore-tests",
-                    "# default decision",
-                    "e2e-gke-upgrade-tests",
-                    "# default decision",
-                    "e2e-nongroovy-tests",
-                    "# default decision",
-                    "gke-nongroovy-e2e-tests",
-                    "# default decision",
-                    "gke-ui-e2e-tests",
+                    "# prerequisite of wait-for-images",
+                    "should-dispatch",
                     "",
                 ]
             ),
@@ -70,29 +54,28 @@ class ResolverTest(unittest.TestCase):
         log = result.log_text
         self.assertTrue(log.startswith("# stackrox/stackrox PR 23035\n"))
         self.assertIn(
-            'a1b2c3d: rule "docs-only" runs target "style-check" because file "README.md" changed',
-            log,
-        )
-        self.assertIn(
             'a1b2c3d: rule "docs-only" skips target "go" because file "README.md" changed',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "style" runs target "style-check" because file "README.md" changed',
+            'a1b2c3d: rule "docs-only" skips target "e2e-nongroovy-tests" because file "README.md" changed',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "image-wait" runs target "wait-for-images"',
+            'a1b2c3d: clash on target "style-check"; '
+            'rule "style" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "remaining" takes default "run" for target "should-dispatch"',
+            'a1b2c3d: clash on target "wait-for-images"; '
+            'rule "image-wait" says run, rule "docs-only" says skip; default "run"',
             log,
         )
         self.assertIn(
-            'a1b2c3d: rule "remaining" takes default "run" for target "go-postgres"',
+            'a1b2c3d: added target "should-dispatch" because target "wait-for-images" requires it',
             log,
         )
+        self.assertNotIn("e2e-nongroovy-tests\n", result.decision_text)
         self.assertNotIn("go\n", result.decision_text)
 
     def test_clash_takes_the_default_run(self):
@@ -122,13 +105,21 @@ class ResolverTest(unittest.TestCase):
         self.assertIn('default "skip"', result.log_text)
 
     def test_run_all_label_and_a_skip_take_the_default(self):
-        # docs-only skips go, and the label runs go. That clash uses the default.
+        # docs-only skips every target, and the label runs every target.
+        # Each clash uses that target's default.
         result = decide(["README.md"], labels=["ci-run-all-tests"])
         self.assertIn("go", result.jobs)
         self.assertIn("style-check", result.jobs)
-        self.assertIn("gke-qa-e2e-tests", result.jobs)
-        self.assertIn('clash on target "go"', result.log_text)
-        self.assertIn('default "run"', result.log_text)
+        self.assertNotIn("gke-qa-e2e-tests", result.jobs)
+        self.assertIn(
+            'clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"',
+            result.log_text,
+        )
+        self.assertIn(
+            'clash on target "gke-qa-e2e-tests"; '
+            'rule "run-all-label" says run, rule "docs-only" says skip; default "skip"',
+            result.log_text,
+        )
 
     def test_go_mod_runs_every_target(self):
         result = decide(["go.mod"])
