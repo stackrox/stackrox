@@ -58,6 +58,12 @@ TABLE_CLOSE = "</tbody></table>"
 esc = html.escape
 
 
+def _count_bg(count, color_class):
+    """Bootstrap text-bg class for a count badge: neutral (light) when the count
+    is zero, coloured only when it is non-zero."""
+    return color_class if count else "text-bg-light"
+
+
 class NotJUnit(Exception):
     def __init__(self, tag):
         super().__init__(tag)
@@ -202,9 +208,9 @@ class Renderer:
         self.out.write(
             '<div class="mb-2">'
             f'<span class="badge text-bg-dark me-2">{counts.get("total", 0)} tests</span>'
-            f'<span class="badge text-bg-success me-2">{counts.get("passed", 0)} passed</span>'
-            f'<span class="badge text-bg-danger me-2">{failed} failed</span>'
-            f'<span class="badge text-bg-secondary me-2">{counts.get("skipped", 0)} skipped</span>'
+            f'<span class="badge {_count_bg(counts.get("passed", 0), "text-bg-success")} me-2">{counts.get("passed", 0)} passed</span>'
+            f'<span class="badge {_count_bg(failed, "text-bg-danger")} me-2">{failed} failed</span>'
+            f'<span class="badge {_count_bg(counts.get("skipped", 0), "text-bg-secondary")} me-2">{counts.get("skipped", 0)} skipped</span>'
         )
         if time:
             self.out.write(f'<span class="small">{esc(time)}s</span>')
@@ -268,10 +274,10 @@ def render_summary(out, totals):
         '<div class="card summary-badges">'
         '<h2 class="mb-2">Summary</h2>'
         f'<span class="badge text-bg-dark">Total: {totals.get("total", 0)}</span>'
-        f'<span class="badge text-bg-success">Passed: {totals.get("passed", 0)}</span>'
-        f'<span class="badge text-bg-danger">Failed: {totals.get("failed", 0)}</span>'
-        f'<span class="badge text-bg-warning">Errors: {totals.get("error", 0)}</span>'
-        f'<span class="badge text-bg-secondary">Skipped: {totals.get("skipped", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("passed", 0), "text-bg-success")}">Passed: {totals.get("passed", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("failed", 0), "text-bg-danger")}">Failed: {totals.get("failed", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("error", 0), "text-bg-warning")}">Errors: {totals.get("error", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("skipped", 0), "text-bg-secondary")}">Skipped: {totals.get("skipped", 0)}</span>'
         "</div>"
     )
 
