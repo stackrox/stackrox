@@ -159,7 +159,6 @@ export type PolicyMitreAttackVector = {
     techniques: string[]; // technique ids
 };
 
-// Will match proto enum SkipContainerType in storage/policy.proto
 export type SkipContainerType = 'SKIP_INIT';
 
 export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';

@@ -180,12 +180,38 @@ func (s *InitContainerSuite) createPolicyWithCleanup(policy *storage.Policy) *st
 }
 
 func (s *InitContainerSuite) waitForViolationAlert(deploymentName, policyName string, expectedCount int) {
+	waitForAlert(s.T(), s.alertService, s.violationAlertRequest(deploymentName, policyName), expectedCount)
+}
+
+// activeViolationText waits until one active alert exists and returns its violation messages.
+func (s *InitContainerSuite) activeViolationText(deploymentName, policyName string) string {
+	s.waitForViolationAlert(deploymentName, policyName, 1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	listResp, err := s.alertService.ListAlerts(ctx, s.violationAlertRequest(deploymentName, policyName))
+	cancel()
+	s.Require().NoError(err)
+	s.Require().Len(listResp.GetAlerts(), 1)
+
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	alert, err := s.alertService.GetAlert(ctx, &v1.ResourceByID{Id: listResp.GetAlerts()[0].GetId()})
+	cancel()
+	s.Require().NoError(err)
+	s.Require().NotEmpty(alert.GetViolations())
+
+	messages := make([]string, 0, len(alert.GetViolations()))
+	for _, violation := range alert.GetViolations() {
+		messages = append(messages, violation.GetMessage())
+	}
+	return strings.Join(messages, "\n")
+}
+
+func (s *InitContainerSuite) violationAlertRequest(deploymentName, policyName string) *v1.ListAlertsRequest {
 	query := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deploymentName).
 		AddStrings(search.PolicyName, policyName).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
-
-	waitForAlert(s.T(), s.alertService, &v1.ListAlertsRequest{Query: query.Query()}, expectedCount)
+	return &v1.ListAlertsRequest{Query: query.Query()}
 }
 
 func (s *InitContainerSuite) TestInitContainerExtraction() {
@@ -387,25 +413,30 @@ func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
 	createNamespaceWithLabels(t, ns, nil)
 	defer deleteNamespace(t, ns)
 
-	policy := s.newLatestTagPolicy(
+	unfiltered := s.createPolicyWithCleanup(s.newLatestTagPolicy(
+		fmt.Sprintf("Test - Evaluate Init %d", rand.IntN(10000)), ns,
+	))
+
+	filteredPolicy := s.newLatestTagPolicy(
 		fmt.Sprintf("Test - Skip Init %d", rand.IntN(10000)), ns,
 	)
-	policy.EvaluationFilter = &storage.EvaluationFilter{
+	filteredPolicy.EvaluationFilter = &storage.EvaluationFilter{
 		SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 	}
-	createdPolicy := s.createPolicyWithCleanup(policy)
+	filtered := s.createPolicyWithCleanup(filteredPolicy)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	storedPolicy, err := s.policyService.GetPolicy(ctx, &v1.ResourceByID{Id: createdPolicy.GetId()})
+	storedPolicy, err := s.policyService.GetPolicy(ctx, &v1.ResourceByID{Id: filtered.GetId()})
 	cancel()
 	s.Require().NoError(err)
 	s.Require().Equal(
 		[]storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 		storedPolicy.GetEvaluationFilter().GetSkipContainerTypes(),
 	)
+	s.Require().Empty(unfiltered.GetEvaluationFilter().GetSkipContainerTypes())
 
-	// Both containers use :latest. The alert must name the regular container, which
-	// shows detection ran, and must not name the init container, which shows it was skipped.
+	// Both containers use :latest. The unfiltered policy must name both containers.
+	// The filtered policy must name the regular container and omit the init container.
 	deployName := fmt.Sprintf("init-filter-skip-%d", rand.IntN(10000))
 	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
@@ -427,32 +458,17 @@ func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
 	s.Contains(initContainer.GetImage().GetName().GetFullName(), "busybox")
 	s.Contains(regularContainer.GetImage().GetName().GetFullName(), "nginx")
 
-	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
+	regularContainerRef := fmt.Sprintf("Container '%s'", deployName)
+	unfilteredText := s.activeViolationText(deployName, unfiltered.GetName())
+	s.Require().Contains(unfilteredText, regularContainerRef)
+	s.Require().Contains(unfilteredText, "Container 'init-0'")
+	s.Require().Contains(unfilteredText, "tag 'latest'")
+	t.Logf("Verified unfiltered alert names both containers: %s", unfilteredText)
 
-	query := search.NewQueryBuilder().
-		AddStrings(search.DeploymentName, deployName).
-		AddStrings(search.PolicyName, createdPolicy.GetName()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	listResp, err := s.alertService.ListAlerts(ctx, &v1.ListAlertsRequest{Query: query.Query()})
-	cancel()
-	s.Require().NoError(err)
-	s.Require().Len(listResp.GetAlerts(), 1)
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	alert, err := s.alertService.GetAlert(ctx, &v1.ResourceByID{Id: listResp.GetAlerts()[0].GetId()})
-	cancel()
-	s.Require().NoError(err)
-	s.Require().NotEmpty(alert.GetViolations())
-
-	messages := make([]string, 0, len(alert.GetViolations()))
-	for _, violation := range alert.GetViolations() {
-		messages = append(messages, violation.GetMessage())
-	}
-	combined := strings.Join(messages, "\n")
-	s.Require().Contains(combined, fmt.Sprintf("Container '%s'", deployName))
-	s.Require().Contains(combined, "tag 'latest'")
-	s.Require().NotContains(combined, "init-0")
-	s.Require().NotContains(combined, "busybox")
-	t.Logf("Verified skip-init alert names %q and omits the init container: %s", deployName, combined)
+	filteredText := s.activeViolationText(deployName, filtered.GetName())
+	s.Require().Contains(filteredText, regularContainerRef)
+	s.Require().Contains(filteredText, "tag 'latest'")
+	s.Require().NotContains(filteredText, "init-0")
+	s.Require().NotContains(filteredText, "busybox")
+	t.Logf("Verified skip-init alert names %q and omits the init container: %s", deployName, filteredText)
 }
