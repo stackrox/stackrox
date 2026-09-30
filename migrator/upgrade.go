@@ -108,8 +108,7 @@ func upgradeWithLockAndSchema(ctx context.Context, pgPool postgres.DB, gormDB *g
 		// version metadata, which is indistinguishable from a damaged database.
 		return gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			applySchemas(ctx, tx)
-			migVer.SetCurrentVersion(ctx, tx)
-			return nil
+			return migVer.SetCurrentVersion(ctx, tx)
 		})
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)

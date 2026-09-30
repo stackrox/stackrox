@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/version"
+	versiontest "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,4 +28,21 @@ func TestPreflightMissingMigration(t *testing.T) {
 	require.NoError(t, Preflight(220))
 	require.NoError(t, Preflight(migrations.CurrentDBVersionSeqNum()))
 	require.NoError(t, Preflight(migrations.CurrentDBVersionSeqNum()+1))
+}
+
+func TestInvalidTargetStopsMigrationWrites(t *testing.T) {
+	old := version.GetMainVersion()
+	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
+	for name, target := range map[string]string{
+		"invalid version":  "garbage",
+		"missing metadata": "5.5.0",
+	} {
+		t.Run(name, func(t *testing.T) {
+			versiontest.SetMainVersion(t, target)
+			_, expectedErr := migrations.MinimumSupportedForVersion(target)
+			require.Error(t, expectedErr)
+			require.EqualError(t, runMigrations(nil, migrations.MigrationVersion{SeqNum: 220}, nil), expectedErr.Error())
+			require.EqualError(t, UpdateToCurrentVersion(nil), expectedErr.Error())
+		})
+	}
 }

@@ -36,8 +36,34 @@ func TestMinimumGettersStayInSync(t *testing.T) {
 	old := version.GetMainVersion()
 	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
 	versiontest.SetMainVersion(t, "5.1.0")
-	assert.Equal(t, "4.10", MinimumSupportedDBVersion())
-	assert.Equal(t, 220, MinimumSupportedDBVersionSeqNum())
+	minimum, err := MinimumSupportedDBVersion()
+	require.NoError(t, err)
+	assert.Equal(t, "4.10", minimum)
+	sequence, err := MinimumSupportedDBVersionSeqNum()
+	require.NoError(t, err)
+	assert.Equal(t, 220, sequence)
+}
+
+func TestMinimumGettersInvalidTarget(t *testing.T) {
+	old := version.GetMainVersion()
+	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
+	for name, target := range map[string]string{
+		"missing version":  "",
+		"invalid version":  "garbage",
+		"missing metadata": "5.5.0",
+	} {
+		t.Run(name, func(t *testing.T) {
+			versiontest.SetMainVersion(t, target)
+			_, expectedErr := MinimumSupportedForVersion(target)
+			require.Error(t, expectedErr)
+			minimum, err := MinimumSupportedDBVersion()
+			require.EqualError(t, err, expectedErr.Error())
+			assert.Empty(t, minimum)
+			sequence, err := MinimumSupportedDBVersionSeqNum()
+			require.EqualError(t, err, expectedErr.Error())
+			assert.Zero(t, sequence)
+		})
+	}
 }
 
 func TestCheckUpgradeCompatibility(t *testing.T) {

@@ -112,9 +112,13 @@ func (d *dbCloneManagerImpl) Scan() error {
 			return &migrations.CompatibilityError{Message: fmt.Sprintf(metadata.ErrUnableToRestore, restoreClone.GetVersion(), version.GetMainVersion())}
 		}
 		// Restore from an unsupported old version (but skip check for seqNum 0 which represents a fresh/empty database)
-		if restoreClone.GetSeqNum() > 0 && restoreClone.GetSeqNum() < migrations.MinimumSupportedDBVersionSeqNum() {
+		minimum, err := migrations.MinimumSupportedForVersion(version.GetMainVersion())
+		if err != nil {
+			return err
+		}
+		if restoreClone.GetSeqNum() > 0 && restoreClone.GetSeqNum() < minimum.Sequence {
 			return &migrations.CompatibilityError{Message: fmt.Sprintf("Restoring from version %q (sequence number %d) is not supported. The minimum supported version is %s (sequence number %d)",
-				restoreClone.GetVersion(), restoreClone.GetSeqNum(), migrations.MinimumSupportedDBVersion(), migrations.MinimumSupportedDBVersionSeqNum())}
+				restoreClone.GetVersion(), restoreClone.GetSeqNum(), minimum.Version, minimum.Sequence)}
 		}
 	}
 	selected := ver

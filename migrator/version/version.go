@@ -131,12 +131,17 @@ func SetVersion(ctx context.Context, db *gorm.DB, updatedVersion *storage.Versio
 }
 
 // SetCurrentVersion - sets the current version via gormDB database
-func SetCurrentVersion(ctx context.Context, gormDB *gorm.DB) {
+func SetCurrentVersion(ctx context.Context, gormDB *gorm.DB) error {
+	minimum, err := migrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return err
+	}
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
+		MinSeqNum:     int32(minimum),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	SetVersion(ctx, gormDB, newVersion, false)
+	return nil
 }

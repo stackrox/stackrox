@@ -86,6 +86,10 @@ func Preflight(startingSeqNum int) error {
 
 // UpdateToCurrentVersion updates the stored version to the current binary version
 func UpdateToCurrentVersion(databases *types.Databases) error {
+	minimum, err := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return err
+	}
 	ctx := sac.WithAllAccess(context.Background())
 	source, err := migVersion.ReadVersionGormDB(ctx, databases.GormDB)
 	if err != nil {
@@ -94,7 +98,7 @@ func UpdateToCurrentVersion(databases *types.Databases) error {
 	currentVersion := &versionStorage.Version{
 		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(max(source.MinimumSeqNum, pkgMigrations.MinimumSupportedDBVersionSeqNum())),
+		MinSeqNum:     int32(max(source.MinimumSeqNum, minimum)),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 
@@ -115,7 +119,10 @@ func migrationCheckpoint(source pkgMigrations.MigrationVersion, sequence, minimu
 }
 
 func runMigrations(databases *types.Databases, source pkgMigrations.MigrationVersion, lookup func(int) (types.Migration, bool)) error {
-	minimum := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	minimum, err := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return err
+	}
 	for seqNum := source.SeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		// Add an outer transaction so migrations can be wrapped in a transaction.
 		ctx := sac.WithAllAccess(context.Background())

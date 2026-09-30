@@ -14,20 +14,18 @@ func CurrentDBVersionSeqNum() int {
 
 // MinimumSupportedDBVersionSeqNum is the oldest database version supported
 // by the schema at this point in time.
-func MinimumSupportedDBVersionSeqNum() int {
-	return currentMinimum().Sequence
+func MinimumSupportedDBVersionSeqNum() (int, error) {
+	minimum, err := currentMinimum()
+	return minimum.Sequence, err
 }
 
 // MinimumSupportedDBVersion is the oldest database version supported
 // by the schema at this point in time.
-func MinimumSupportedDBVersion() string {
-	return currentMinimum().Version
+func MinimumSupportedDBVersion() (string, error) {
+	minimum, err := currentMinimum()
+	return minimum.Version, err
 }
 
-func currentMinimum() ReleaseVersion {
-	minimum, err := MinimumSupportedForVersion(version.GetMainVersion())
-	if err != nil {
-		panic(err)
-	}
-	return minimum
+func currentMinimum() (ReleaseVersion, error) {
+	return MinimumSupportedForVersion(version.GetMainVersion())
 }

@@ -10,6 +10,8 @@ import (
 	versiontest "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,7 +20,8 @@ func TestCheckMigrationVersion(t *testing.T) {
 	t.Cleanup(func() { versiontest.SetMainVersion(t, oldVersion) })
 	versiontest.SetMainVersion(t, "5.1.0")
 	// Get the current minimum supported version to use in tests
-	minSupportedVersion := migrations.MinimumSupportedDBVersionSeqNum()
+	minSupportedVersion, err := migrations.MinimumSupportedDBVersionSeqNum()
+	require.NoError(t, err)
 
 	tests := []struct {
 		name        string
@@ -92,6 +95,24 @@ func TestCheckMigrationVersion(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestCheckMigrationVersionInvalidTarget(t *testing.T) {
+	old := version.GetMainVersion()
+	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
+	data, err := yaml.Marshal(migrations.MigrationVersion{MainVersion: "5.1.0", SeqNum: 227})
+	require.NoError(t, err)
+	for name, target := range map[string]string{
+		"invalid version":  "garbage",
+		"missing metadata": "5.5.0",
+	} {
+		t.Run(name, func(t *testing.T) {
+			versiontest.SetMainVersion(t, target)
+			err := checkMigrationVersion(nil, bytes.NewReader(data), int64(len(data)))
+			require.Error(t, err)
+			assert.Equal(t, codes.Internal, status.Code(err))
 		})
 	}
 }
