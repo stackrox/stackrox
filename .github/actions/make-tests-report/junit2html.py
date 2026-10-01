@@ -121,8 +121,10 @@ def _classify(case_elem):
 # --------------------------------------------------------------------------- #
 def count_file(path):
     suites = []  # aggregated Counter per suite, in start order
-    stack = []  # counters of currently open suites
+    suite_io = []  # {"stdout":.., "stderr":..} per suite, in start order
+    stack = []  # (counter, io) for currently open suites
     file_totals = Counter()
+    depth_tc = 0  # testcase nesting; only suite-direct output is captured
 
     it = ET.iterparse(path, events=("start", "end"))
     try:
@@ -133,33 +135,48 @@ def count_file(path):
         raise NotJUnit(root.tag)
 
     def on_start(elem):
+        nonlocal depth_tc
         if elem.tag == "testsuite":
-            c = Counter()
+            c, io = Counter(), {}
             suites.append(c)
-            stack.append(c)
+            suite_io.append(io)
+            stack.append((c, io))
+        elif elem.tag == "testcase":
+            depth_tc += 1
 
     def on_end(elem):
+        nonlocal depth_tc
         if elem.tag == "testcase":
             if stack:
-                stack[-1]["total"] += 1
-                stack[-1][_classify(elem)] += 1
+                stack[-1][0]["total"] += 1
+                stack[-1][0][_classify(elem)] += 1
+            depth_tc -= 1
             elem.clear()
         elif elem.tag == "testsuite":
-            c = stack.pop()
-            (stack[-1] if stack else file_totals).update(c)
+            c, _ = stack.pop()
+            (stack[-1][0] if stack else file_totals).update(c)
+            elem.clear()
+        elif elem.tag in ("system-out", "system-err") and not depth_tc and stack:
+            # Suite-level output appears after the cases; capture it here so pass 2
+            # can render it before the table. Testcase output (depth_tc>0) is left
+            # for pass 2's per-case rendering.
+            text = _text(elem)
+            if text.strip():
+                key = "stdout" if elem.tag == "system-out" else "stderr"
+                stack[-1][1][key] = text
             elem.clear()
 
     on_start(root)
     for event, elem in it:
         (on_start if event == "start" else on_end)(elem)
-    return suites, file_totals
+    return suites, suite_io, file_totals
 
 
 def pass1(files):
-    valid_files, suite_counts, totals = [], [], Counter()
+    valid_files, suite_counts, suite_io, totals = [], [], [], Counter()
     for path in files:
         try:
-            suites, file_totals = count_file(path)
+            suites, ios, file_totals = count_file(path)
         except NotJUnit as e:
             print(f"{path}: not a JUnit report (root <{e.tag}>); skipping",
                   file=sys.stderr)
@@ -169,17 +186,19 @@ def pass1(files):
             continue
         valid_files.append(path)
         suite_counts.extend(suites)  # global order == pass-2 suite-start order
+        suite_io.extend(ios)  # parallel to suite_counts
         totals.update(file_totals)
-    return valid_files, suite_counts, totals
+    return valid_files, suite_counts, suite_io, totals
 
 
 # --------------------------------------------------------------------------- #
 # Pass 2: render, streaming to the output file object.
 # --------------------------------------------------------------------------- #
 class Renderer:
-    def __init__(self, out, suite_counts):
+    def __init__(self, out, suite_counts, suite_io):
         self.out = out
         self.suite_counts = suite_counts
+        self.suite_io = suite_io
         self.sid = 0  # next suite id (matches pass-1 start order)
         self.stack = []  # frames: {"table_open": bool}
         self.in_testcase = False
@@ -189,18 +208,22 @@ class Renderer:
     def handle_start(self, elem):
         if elem.tag == "testsuite":
             counts = self.suite_counts[self.sid]
+            io = self.suite_io[self.sid]
             self.sid += 1
             if self.stack:  # a nested suite is a non-row child of parent
-                self._flush_meta(self.stack[-1])
+                self._flush_preamble(self.stack[-1])
                 self._close_table(self.stack[-1])
             self._write_suite_header(elem, counts, depth=len(self.stack))
             # Attributes are known now; <property> children stream in before the
-            # cases and get appended to "props". _flush_meta renders both, once.
+            # cases and get appended to "props". Suite-level stdout/stderr were
+            # captured in pass 1 (they follow the cases in the XML). The preamble
+            # renders Meta then output, once, before the table.
             self.stack.append({
                 "table_open": False,
-                "meta_written": False,
+                "preamble_written": False,
                 "attr_rows": _suite_attr_rows(elem),
                 "props": [],
+                "io": io,
             })
         elif elem.tag == "testcase":
             self.in_testcase = True
@@ -217,7 +240,8 @@ class Renderer:
         tag = elem.tag
         if tag == "testsuite":
             frame = self.stack.pop()
-            self._flush_meta(frame)  # suites with only properties still show Meta
+            # A suite with only Meta/output and no cases still gets its preamble.
+            self._flush_preamble(frame)
             self._close_table(frame)
             self.out.write("</section>")
             elem.clear()
@@ -228,14 +252,6 @@ class Renderer:
                 value = _text(elem)
             self.stack[-1]["props"].append((elem.get("name", ""), (value or "").strip()))
             elem.clear()
-        elif tag == "system-out" and self.stack:
-            self._flush_meta(self.stack[-1])
-            self._close_table(self.stack[-1])
-            self._write_output("stdout", _text(elem))
-        elif tag == "system-err" and self.stack:
-            self._flush_meta(self.stack[-1])
-            self._close_table(self.stack[-1])
-            self._write_output("stderr", _text(elem))
 
     # -- writers -----------------------------------------------------------
     def _close_table(self, frame):
@@ -243,12 +259,16 @@ class Renderer:
             self.out.write(TABLE_CLOSE)
             frame["table_open"] = False
 
-    def _flush_meta(self, frame):
-        """Render the suite's Meta block once, before any suite body content."""
-        if frame["meta_written"]:
+    def _flush_preamble(self, frame):
+        """Render, once and before any table, the suite's Meta block followed by
+        its suite-level stdout/stderr."""
+        if frame["preamble_written"]:
             return
-        frame["meta_written"] = True
+        frame["preamble_written"] = True
         render_metadata(self.out, frame["attr_rows"] + frame["props"])
+        io = frame["io"]
+        self._write_output("stdout", io.get("stdout", ""))
+        self._write_output("stderr", io.get("stderr", ""))
 
     def _write_suite_header(self, elem, counts, depth):
         lvl = min(2 + depth, 6)
@@ -285,7 +305,7 @@ class Renderer:
         if not self.stack:
             return
         frame = self.stack[-1]
-        self._flush_meta(frame)  # Meta goes before the tests table
+        self._flush_preamble(frame)  # Meta + suite output go before the tests table
         if not frame["table_open"]:
             self.out.write(TABLE_OPEN)
             frame["table_open"] = True
@@ -386,7 +406,7 @@ def render_buttons(out):
     )
 
 
-def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
+def pass2(valid_files, suite_counts, suite_io, totals, out, title, bootstrap_url):
     out.write("<!DOCTYPE html>\n")
     out.write('<html lang="en"><head><meta charset="utf-8">')
     out.write('<meta name="viewport" content="width=device-width, initial-scale=1">')
@@ -398,7 +418,7 @@ def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     render_summary(out, totals)
     render_buttons(out)
 
-    r = Renderer(out, suite_counts)
+    r = Renderer(out, suite_counts, suite_io)
     for path in valid_files:
         # Files were validated in pass 1, so re-parsing here is expected to succeed.
         it = ET.iterparse(path, events=("start", "end"))
@@ -426,13 +446,14 @@ def main(argv=None):
         return 2
 
     files = sorted(in_dir.rglob("*.xml"))
-    valid_files, suite_counts, totals = pass1(files)
+    valid_files, suite_counts, suite_io, totals = pass1(files)
     if not valid_files:
         print("error: no JUnit reports found", file=sys.stderr)
         return 1
 
     with open(args.output_file, "w", encoding="utf-8") as out:
-        pass2(valid_files, suite_counts, totals, out, args.title, args.bootstrap_url)
+        pass2(valid_files, suite_counts, suite_io, totals, out, args.title,
+              args.bootstrap_url)
 
     size_mb = Path(args.output_file).stat().st_size / 1024.0 / 1024.0
     print(f"wrote {args.output_file} "
