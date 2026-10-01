@@ -6,8 +6,9 @@
  * - VERIFY_EVIDENCE_DIR: absolute path of the directory for report.json
  *
  * The test fails on failed API requests, uncaught exceptions, no API requests at all,
- * a "Cannot find the page" result, or a redirect to login. Console errors and accessibility
- * violations are recorded in the report as warnings, because some pages already have them.
+ * a loading indicator that never goes away, a "Cannot find the page" result, or a redirect
+ * to login. Console errors and accessibility violations are recorded in the report as
+ * warnings, because some pages already have them.
  *
  * It uses cy.visit instead of the visit helper, because the helper fails as soon as a
  * page-level request is missing, before any evidence is written.
@@ -20,28 +21,39 @@ const apiPathnamePattern = /^\/(v1|v2|api)\//;
 const settleTimeoutMs = 30000;
 const settleQuietMs = 1000;
 const settlePollMs = 250;
+// PatternFly spinners and skeletons, matched without the version prefix (pf-v6-c-spinner).
+const loadingIndicatorSelector = '[class*="-c-spinner"], [class*="-c-skeleton"]';
 
 /**
- * Waits until the page has made API requests and none has been in flight for a moment,
- * or the timeout passes. Resolves either way, so evidence is still written when the app
- * does not boot or a request hangs.
+ * Waits until the page has made API requests, no request of any kind has been in flight
+ * for a moment, and no loading indicator is visible, or the timeout passes.
  *
- * @param {{ startedCount: number, pendingCount: number, lastActivityAt: number }} network
- * @returns {Cypress.Chainable<null>}
+ * All requests count, not only API calls: the dev server loads a route's code in chunks
+ * after the first API calls finish, and the page only asks for its data once that code
+ * runs. Counting only API calls let the check pass before the page requested its data.
+ *
+ * Resolves either way, so evidence is still written when the app does not boot or a
+ * request hangs. Resolves with whether a loading indicator was still visible.
+ *
+ * @param {{ apiStartedCount: number, pendingCount: number, lastActivityAt: number }} network
+ * @returns {Cypress.Chainable<boolean>}
  */
-function waitForNetworkToSettle(network) {
+function waitForPageToSettle(network) {
     const startedAt = Date.now();
 
     function check() {
-        const now = Date.now();
-        const isQuiet =
-            network.startedCount !== 0 &&
-            network.pendingCount === 0 &&
-            now - network.lastActivityAt >= settleQuietMs;
-        if (isQuiet || now - startedAt > settleTimeoutMs) {
-            return cy.wrap(null, { log: false });
-        }
-        return cy.wait(settlePollMs, { log: false }).then(check);
+        return cy.get('body', { log: false }).then(($body) => {
+            const now = Date.now();
+            const isLoading = $body.find(loadingIndicatorSelector).length !== 0;
+            const isQuiet =
+                network.apiStartedCount !== 0 &&
+                network.pendingCount === 0 &&
+                now - network.lastActivityAt >= settleQuietMs;
+            if ((isQuiet && !isLoading) || now - startedAt > settleTimeoutMs) {
+                return cy.wrap(isLoading, { log: false });
+            }
+            return cy.wait(settlePollMs, { log: false }).then(check);
+        });
     }
 
     return check();
@@ -66,6 +78,9 @@ function getFailures(evidence) {
     }
     if (evidence.pendingRequestsAfterTimeout !== 0) {
         failures.push(`${evidence.pendingRequestsAfterTimeout} request(s) still pending`);
+    }
+    if (evidence.stillLoading) {
+        failures.push('a loading indicator was still visible after the timeout');
     }
     if (evidence.notFound) {
         failures.push('page rendered "Cannot find the page"');
@@ -95,11 +110,12 @@ describe('Verify: open route', () => {
                     uncaughtExceptions: [],
                     apiRequestCount: 0,
                     pendingRequestsAfterTimeout: 0,
+                    stillLoading: false,
                     notFound: false,
                     redirectedToLogin: false,
                     warnings: { consoleErrors: [], a11yViolations: [] },
                 };
-                const network = { startedCount: 0, pendingCount: 0, lastActivityAt: 0 };
+                const network = { apiStartedCount: 0, pendingCount: 0, lastActivityAt: 0 };
 
                 cy.on('uncaught:exception', (err) => {
                     if (!isBenignUncaughtException(err)) {
@@ -118,14 +134,18 @@ describe('Verify: open route', () => {
                     };
                 });
 
-                cy.intercept({ pathname: apiPathnamePattern }, (req) => {
-                    network.startedCount += 1;
+                // Every request counts toward settling; only API responses can fail the run.
+                cy.intercept({ url: '**' }, (req) => {
+                    const isApiRequest = apiPathnamePattern.test(new URL(req.url).pathname);
+                    if (isApiRequest) {
+                        network.apiStartedCount += 1;
+                    }
                     network.pendingCount += 1;
                     network.lastActivityAt = Date.now();
                     req.on('after:response', (res) => {
                         network.pendingCount -= 1;
                         network.lastActivityAt = Date.now();
-                        if (res.statusCode >= 400) {
+                        if (isApiRequest && res.statusCode >= 400) {
                             evidence.failedRequests.push({
                                 method: req.method,
                                 url: req.url,
@@ -137,9 +157,10 @@ describe('Verify: open route', () => {
 
                 cy.visit(VERIFY_ROUTE);
 
-                waitForNetworkToSettle(network).then(() => {
-                    evidence.apiRequestCount = network.startedCount;
+                waitForPageToSettle(network).then((isLoading) => {
+                    evidence.apiRequestCount = network.apiStartedCount;
                     evidence.pendingRequestsAfterTimeout = network.pendingCount;
+                    evidence.stillLoading = isLoading;
                 });
 
                 cy.location().then((location) => {

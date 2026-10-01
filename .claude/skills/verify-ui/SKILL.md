@@ -35,7 +35,10 @@ All commands run from `ui/apps/platform`.
 screenshot next to it. The folder is gitignored and `npm run clean` does not delete it.
 
 - **Failures** fail the run: API responses of 400 or higher, uncaught exceptions, requests
-  still pending after 30 seconds, "Cannot find the page", or a redirect to login.
+  still pending after 30 seconds, a spinner or skeleton still visible after 30 seconds,
+  "Cannot find the page", or a redirect to login.
+- The screenshot is taken once no request of any kind has been in flight for a second and
+  no spinner or skeleton is visible.
 - **Warnings** do not fail the run: console errors and axe accessibility violations. Some
   pages already have them. Treat any warning that comes from code you touched as a failure.
   If you are not sure, run `open` on the same route on `origin/master` and compare.
