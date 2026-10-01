@@ -2757,6 +2757,26 @@ _record_cluster_info() {
     set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
+# list_vm_scan_namespaces prints VM-scanning e2e namespace names, one per line.
+# Returns 1 when kubectl cannot list namespaces, distinct from zero matches.
+list_vm_scan_namespaces() {
+    local prefix="${VM_SCAN_NAMESPACE_PREFIX:-vm-scan-e2e}"
+    local out err
+    out="$(mktemp)"
+    err="$(mktemp)"
+    if ! kubectl --request-timeout=30s get ns \
+        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
+        > "$out" 2>"$err"; then
+        info "kubectl get ns failed: $(<"$err")" >&2
+        rm -f "$out" "$err"
+        return 1
+    fi
+    rm -f "$err"
+    grep -E "^${prefix}(-|$)" "$out" || true
+    rm -f "$out"
+    return 0
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."

@@ -25,7 +25,7 @@ import ReportConfiguration from './ReportConfiguration';
 import ReviewConfig from './ReviewConfig';
 import useFormikScanConfig from './useFormikScanConfig';
 import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
-import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set parameters';
 const PARAMETERS_ID = 'parameters';
@@ -40,6 +40,7 @@ const REVIEW_CONFIG_ID = 'review';
 
 type ScanConfigWizardFormProps = {
     initialFormValues?: ScanConfigFormValues;
+    pageAction: SchedulePageAction;
 };
 
 type CustomWizardFooterProps = {
@@ -115,7 +116,10 @@ function CustomWizardFooter({
     );
 }
 
-function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
+function ScanConfigWizardForm({
+    initialFormValues,
+    pageAction,
+}: ScanConfigWizardFormProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
@@ -133,6 +137,8 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         setIsCreating(true);
         setCreateScanConfigError('');
         const complianceScanConfig = convertFormikToScanConfig(formik.values);
+        const { clusters, scanConfig } = complianceScanConfig;
+        const { notifiers, profiles, scanSchedule } = scanConfig;
 
         try {
             await saveScanConfig(complianceScanConfig);
@@ -141,6 +147,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 properties: {
                     success: true,
                     errorMessage: '',
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
                 },
             });
             navigate(complianceEnhancedSchedulesPath);
@@ -150,6 +161,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 properties: {
                     success: false,
                     errorMessage: getAxiosErrorMessage(error),
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
                 },
             });
             setCreateScanConfigError(getAxiosErrorMessage(error));

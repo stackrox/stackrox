@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "MitreAttackService"
+      "name": "MitreAttackService",
+      "description": "MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix."
     }
   ],
   "consumes": [

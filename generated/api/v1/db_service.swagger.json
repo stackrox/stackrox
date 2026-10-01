@@ -323,7 +323,7 @@
         "COMPLETED"
       ],
       "default": "UNKNOWN",
-      "title": "- COMPLETED: successful if error is empty, unsuccessful otherwise"
+      "description": "- COMPLETED: successful if error is empty, unsuccessful otherwise"
     },
     "v1DBRestoreRequestHeader": {
       "type": "object",

@@ -871,14 +871,6 @@ roxvet: $(ROXVET_BIN)
 ##########
 ## Misc ##
 ##########
-.PHONY: clean-offline-bundle
-clean-offline-bundle:
-	$(SILENT)find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
-
-.PHONY: offline-bundle
-offline-bundle: clean-offline-bundle
-	$(SILENT)./scripts/offline-bundle/create.sh
-
 .PHONY: check-debugger
 check-debugger:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
