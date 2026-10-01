@@ -60,6 +60,12 @@ test_ui_e2e() {
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
+    # The UI e2e Cypress specs (e.g. policies/policyCreateWorkflow) target the drag-and-drop
+    # policy criteria UI, which Central renders only when ROX_POLICY_CRITERIA_MODAL is disabled.
+    # The helm-based deploy this suite used never enabled the flag, but the roxie compat layer's
+    # collect_feature_flags() turns it on by default. Force it off here to preserve the
+    # pre-migration behavior the tests expect.
+    export ROX_POLICY_CRITERIA_MODAL=false
 
     setup_deployment_env false false
     remove_existing_stackrox_resources
@@ -67,7 +73,20 @@ test_ui_e2e() {
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
-    deploy_stackrox
+    ensure_roxie_on_path
+    local roxie_config; roxie_config="$(mktemp)"
+    cat <<EOF > "${roxie_config}"
+central:
+  pauseReconciliation: true
+  namespace: stackrox
+  resourceProfile: ci
+securedCluster:
+  pauseReconciliation: true
+  namespace: stackrox
+  resourceProfile: ci
+EOF
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
