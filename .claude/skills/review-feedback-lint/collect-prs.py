@@ -87,10 +87,22 @@ def get_cache_dir(since: str, until: str) -> Path:
     return cache_dir
 
 
+GO_REVIEW_FILE_EXTENSIONS = (".go", ".proto")
+GO_REVIEW_FILENAMES = {"go.mod", "go.sum"}
+
+
+def is_go_review_path(path: str) -> bool:
+    """Return whether a path is relevant to Go/backend review mining."""
+    name = Path(path).name
+    return name in GO_REVIEW_FILENAMES or path.endswith(GO_REVIEW_FILE_EXTENSIONS)
+
+
 def scope_matches_files(files: List[str], scope: str) -> bool:
     """Check if any file matches the requested scope."""
     if scope == "all":
         return True
+    if scope == "go":
+        return any(is_go_review_path(f) for f in files)
 
     scope_prefix = f"{scope}/"
     return any(f.startswith(scope_prefix) for f in files)
