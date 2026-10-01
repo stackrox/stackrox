@@ -18,6 +18,7 @@ jobs:
   build:
     permissions:
       actions: read
+      contents: read
       pull-requests: write
     name: Build
     uses: ./.github/workflows/build.yaml
