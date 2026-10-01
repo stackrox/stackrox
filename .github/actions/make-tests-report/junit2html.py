@@ -18,7 +18,7 @@ so the output is small but needs network to style itself when viewed.
 Standard library only.
 
 Usage:
-    junit2html_streaming.py INPUT_DIR OUTPUT_HTML [--title TITLE] [--bootstrap-url URL]
+    junit2html_streaming.py INPUT_DIR OUTPUT_HTML [--title TITLE]
 
 On CDATA: the content of <system-out>/<system-err> (which JUnit stores as CDATA)
 is preserved verbatim and HTML-escaped into <pre>, the HTML equivalent of "treat
@@ -401,12 +401,12 @@ def render_buttons(out):
     )
 
 
-def pass2(valid_files, suite_counts, suite_io, totals, out, title, bootstrap_url):
+def pass2(valid_files, suite_counts, suite_io, totals, out, title):
     out.write("<!DOCTYPE html>\n")
     out.write('<html lang="en"><head><meta charset="utf-8">')
     out.write('<meta name="viewport" content="width=device-width, initial-scale=1">')
     out.write(f"<title>{esc(title)}</title>")
-    out.write(f'<link rel="stylesheet" href="{esc(bootstrap_url)}">')
+    out.write(f'<link rel="stylesheet" href="{esc(BOOTSTRAP_URL)}">')
     out.write(f"<style>{EXTRA_CSS}</style>")
     out.write('</head><body><div class="container-fluid py-4">')
     out.write(f'<h1 class="mb-4">{esc(title)}</h1>')
@@ -431,8 +431,6 @@ def main(argv=None):
     ap.add_argument("input_dir", help="directory searched recursively for *.xml")
     ap.add_argument("output_file", help="HTML file to write")
     ap.add_argument("--title", default="Test Report", help="report title")
-    ap.add_argument("--bootstrap-url", default=BOOTSTRAP_URL,
-                    help="URL of the Bootstrap CSS referenced by the report")
     args = ap.parse_args(argv)
 
     in_dir = Path(args.input_dir)
@@ -447,8 +445,7 @@ def main(argv=None):
         return 1
 
     with open(args.output_file, "w", encoding="utf-8") as out:
-        pass2(valid_files, suite_counts, suite_io, totals, out, args.title,
-              args.bootstrap_url)
+        pass2(valid_files, suite_counts, suite_io, totals, out, args.title)
 
     size_mb = Path(args.output_file).stat().st_size / 1024.0 / 1024.0
     print(f"wrote {args.output_file} "
