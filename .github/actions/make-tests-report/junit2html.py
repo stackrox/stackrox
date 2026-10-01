@@ -28,9 +28,9 @@ this text literally".
 import argparse
 import html
 import sys
+import xml.etree.ElementTree as ET
 from collections import Counter
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 BOOTSTRAP_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 
@@ -44,10 +44,10 @@ EXTRA_CSS = (
 
 # status -> (row class, badge class, label). Errors are treated as failures (red).
 STATUS = {
-    "passed": ("table-success", "text-bg-success", "PASSED"),
-    "failed": ("table-danger", "text-bg-danger", "FAILED"),
-    "error": ("table-danger", "text-bg-danger", "ERROR"),
-    "skipped": ("table-secondary", "text-bg-secondary", "SKIPPED"),
+    "passed": ("table-success", "text-bg-success", "TEST PASSED"),
+    "failed": ("table-danger", "text-bg-danger", "TEST FAILED"),
+    "error": ("table-danger", "text-bg-danger", "TEST ERROR"),
+    "skipped": ("table-secondary", "text-bg-secondary", "TEST SKIPPED"),
 }
 
 TABLE_OPEN = ('<table class="table table-sm table-hover align-middle"><thead><tr>'
@@ -92,8 +92,8 @@ def _classify(case_elem):
 # suite-start order) and the file totals, or raises on a bad/foreign file.
 # --------------------------------------------------------------------------- #
 def count_file(path):
-    suites = []          # aggregated Counter per suite, in start order
-    stack = []           # counters of currently open suites
+    suites = []  # aggregated Counter per suite, in start order
+    stack = []  # counters of currently open suites
     file_totals = Counter()
 
     it = ET.iterparse(path, events=("start", "end"))
@@ -140,7 +140,7 @@ def pass1(files):
             print(f"{path}: not well-formed XML ({e}); skipping", file=sys.stderr)
             continue
         valid_files.append(path)
-        suite_counts.extend(suites)   # global order == pass-2 suite-start order
+        suite_counts.extend(suites)  # global order == pass-2 suite-start order
         totals.update(file_totals)
     return valid_files, suite_counts, totals
 
@@ -152,15 +152,15 @@ class Renderer:
     def __init__(self, out, suite_counts):
         self.out = out
         self.suite_counts = suite_counts
-        self.sid = 0                 # next suite id (matches pass-1 start order)
-        self.stack = []              # frames: {"table_open": bool}
+        self.sid = 0  # next suite id (matches pass-1 start order)
+        self.stack = []  # frames: {"table_open": bool}
         self.in_testcase = False
 
     def handle_start(self, elem):
         if elem.tag == "testsuite":
             counts = self.suite_counts[self.sid]
             self.sid += 1
-            if self.stack:           # a nested suite is a non-row child of parent
+            if self.stack:  # a nested suite is a non-row child of parent
                 self._close_table(self.stack[-1])
             self._write_suite_header(elem, counts, depth=len(self.stack))
             self.stack.append({"table_open": False})
@@ -277,11 +277,11 @@ def render_summary(out, totals):
         '<div class="card shadow-sm mb-3"><div class="card-body">'
         '<h2 class="h6 text-uppercase text-body-secondary mb-3">Summary</h2>'
         '<div class="d-flex flex-wrap gap-2 summary-badges">'
-        f'<span class="badge text-bg-dark">Total: {totals.get("total", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("passed", 0), "text-bg-success")}">Passed: {totals.get("passed", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("failed", 0), "text-bg-danger")}">Failed: {totals.get("failed", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("error", 0), "text-bg-warning")}">Errors: {totals.get("error", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("skipped", 0), "text-bg-secondary")}">Skipped: {totals.get("skipped", 0)}</span>'
+        f'<span class="badge text-bg-dark">{totals.get("total", 0)} tests</span>'
+        f'<span class="badge {_count_bg(totals.get("passed", 0), "text-bg-success")}">{totals.get("passed", 0)} passed</span>'
+        f'<span class="badge {_count_bg(totals.get("failed", 0), "text-bg-danger")}">{totals.get("failed", 0)} failed</span>'
+        f'<span class="badge {_count_bg(totals.get("error", 0), "text-bg-warning")}">{totals.get("error", 0)} errored</span>'
+        f'<span class="badge {_count_bg(totals.get("skipped", 0), "text-bg-secondary")}">{totals.get("skipped", 0)} skipped</span>'
         "</div></div></div>"
     )
 
@@ -347,9 +347,9 @@ def main(argv=None):
     with open(args.output_file, "w", encoding="utf-8") as out:
         pass2(valid_files, suite_counts, totals, out, args.title, args.bootstrap_url)
 
-    size_mb = Path(args.output_file).stat().st_size / 1e6
+    size_mb = Path(args.output_file).stat().st_size / 1024.0 / 1024.0
     print(f"wrote {args.output_file} "
-          f"({size_mb:.2f} MB, {totals.get('total', 0)} tests, "
+          f"({size_mb:.2f} MiB, {totals.get('total', 0)} tests, "
           f"{len(valid_files)} files, {len(suite_counts)} suites)")
     return 0
 
