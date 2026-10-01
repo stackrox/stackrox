@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, Title, Truncate } from '@patternfly/react-core';
+import { Flex, Label, Title, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
@@ -49,6 +49,20 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                 const kind = resourceTypeToKind[alert.resource.resourceType];
                                 icon = <ResourceIcon className="pf-v6-u-mr-sm" kind={kind} />;
                                 name = <Truncate content={alert.resource.name} />;
+                                // The icon only shows CustomResource, so name the API resource separately.
+                                if (
+                                    alert.resource.resourceType === 'CUSTOM' &&
+                                    alert.resource.apiResource
+                                ) {
+                                    name = (
+                                        <>
+                                            {name}
+                                            <Label isCompact className="pf-v6-u-ml-sm">
+                                                {alert.resource.apiResource}
+                                            </Label>
+                                        </>
+                                    );
+                                }
                             }
 
                             const PolicySeverityIcon = policySeverityIconMap[policy.severity];

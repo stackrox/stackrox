@@ -300,6 +300,7 @@ const subComponentsForContainerMemory: SubComponent[] = [
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
 export const mountPropagationCriteriaName = 'Mount Propagation';
+export const kubernetesAPIResourceCriteriaName = 'Kubernetes API Resource';
 
 // A form descriptor for every option (key) on the policy criteria form page.
 /*
@@ -1706,7 +1707,7 @@ export const auditLogDescriptor: Descriptor[] = [
     },
     {
         label: 'Kubernetes API resource',
-        name: 'Kubernetes API Resource',
+        name: kubernetesAPIResourceCriteriaName,
         shortName: 'Kubernetes API resource',
         category: policyCriteriaCategories.RESOURCE_OPERATION,
         type: 'text',
