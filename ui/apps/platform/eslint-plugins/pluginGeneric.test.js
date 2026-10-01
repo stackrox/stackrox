@@ -7,10 +7,11 @@
 /* global require, console */
 /* eslint-disable no-console */
 
-const { createRuleTester } = require('./test-utils');
+const { createRuleTester, createTypeScriptRuleTester } = require('./test-utils');
 const plugin = require('./pluginGeneric');
 
 const ruleTester = createRuleTester();
+const typeScriptRuleTester = createTypeScriptRuleTester();
 
 // Test the Button-LinkShim-href rule
 ruleTester.run('Button-LinkShim-href', plugin.rules['Button-LinkShim-href'], {
@@ -100,6 +101,47 @@ ruleTester.run('JSX-nullish-display-fallback', plugin.rules['JSX-nullish-display
                 {
                     message:
                         'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                },
+            ],
+        },
+    ],
+});
+
+// Test the Partial-Record-sparse-map rule
+typeScriptRuleTester.run('Partial-Record-sparse-map', plugin.rules['Partial-Record-sparse-map'], {
+    valid: [
+        {
+            name: 'partial record explicitly models missing keys',
+            code: `const labels: Partial<Record<string, string>> = { critical: 'Critical' };`,
+        },
+        {
+            name: 'record value can be undefined',
+            code: `const labels: Record<string, string | undefined> = { critical: 'Critical' };`,
+        },
+        {
+            name: 'finite key union models total keys',
+            code: `const labels: Record<'critical' | 'important', string> = { critical: 'Critical', important: 'Important' };`,
+        },
+    ],
+
+    invalid: [
+        {
+            name: 'string record object literal is a sparse map',
+            code: `const labels: Record<string, string> = { critical: 'Critical' };`,
+            errors: [
+                {
+                    message:
+                        'Use Partial<Record<string, T>> or Record<string, T | undefined> for sparse lookup maps',
+                },
+            ],
+        },
+        {
+            name: 'string record number map is also sparse',
+            code: `const scores: Record<string, number> = {};`,
+            errors: [
+                {
+                    message:
+                        'Use Partial<Record<string, T>> or Record<string, T | undefined> for sparse lookup maps',
                 },
             ],
         },
