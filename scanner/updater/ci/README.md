@@ -1,135 +1,147 @@
-# CI-minimal vulnerability bundle
+# Offline E2E vulnerability fixtures
 
-This is test data, not a production vulnerability feed. Keep native importer
-records: an NVD enrichment is not a matching vulnerability.
+Regular E2E uses an immutable CI bundle. Nightly E2E omits the CI URL override so
+that the **deployed Scanner version** chooses its production feed. Normal product
+and local-development defaults are unchanged. Supported explicit caller values
+retain precedence; disabling Scanner does not enable it implicitly.
 
-## Coverage
-
-The generator retains test CVEs and advisories (including decorated Ubuntu names,
-OSV aliases, and identities in advisory links), the existing Alpine 3.9 package
-selection, and the package identities in `qa-packages.json`. The latter contains
-the four Ubuntu packages contributing Struts findings (`curl`, `libexpat1`,
-`openssl`, and source package `expat`) plus the required Maven package
-`org.apache.struts:struts2-core`, indexed from the amd64 Struts image
-`quay.io/rhacs-eng/qa-multi-arch@sha256:4dd78f23f89cc7e6da2efe939b14d8f855adbfa7eb62ffd5d508ec57cdf30873`.
-All records for those identities are retained, so aggregate QA assertions are not
-reduced to a list of named CVEs. Manual records are retained in full. NVD and Red Hat CSAF enrichment
-is selected by the identifiers and advisory links of the retained records.
-RHEL advisory selection is closed over native CVE identities so unaffected
-(`Invert`) ranges are retained even when they do not carry an advisory link.
-
-The Scanner corpus is `scanner/e2etests/testdata/image_tests.json`, which
-`TestImage` actually loads; `image_tests.orig.json` is not an additional suite.
-Native sources also include Amazon Linux, Oracle Linux, and Photon, required by
-the active Scanner cases. ALAS, RHSA, RHBA, GO, and GHSA identifiers are selected
-as well as CVEs. A CVE may appear only in an Oracle or Photon advisory link.
-Mocked UI data is not a source of bundle requirements.
-`TestCIMinimalBundle` reads the active Scanner corpus and checks that every
-expected vulnerability/advisory has native records, in addition to the explicit
-package/distribution and backend QA checks. This does not replace image matching.
-
-The required QA cases are:
-
-| Image/component | Expectation |
-| --- | --- |
-| `qa-multi-arch:struts-app` | At least 138 findings; `CVE-2017-5638` on `org.apache.struts:struts2-core`; vulnerability risk factor |
-| `qa-multi-arch:ubi9-minimal-9.6-1760515502`, `openssl-libs` | `CVE-2025-15467` |
-| `qa:oci-manifest`, Ubuntu 16.04 `systemd` | `CVE-2021-33910` |
-| `qa:list-image-oci-manifest`, Ubuntu 22.04 `libc6` | `CVE-2023-4911` |
-| `qa:ubi9-9.7-1769417801-amd64`, `python3` | `CVE-2025-11468`, Moderate, CVSS 4.5 |
-| `qa:ubuntu-22.04-amd64`, `gpgv` | `CVE-2022-3219`, Low, CVSS 3.3 |
-| Amazon Linux 2, `nss-sysinit` | `ALAS2-2024-2442` |
-| Oracle Linux 8, `libgcrypt` | `CVE-2021-33560`, `CVE-2021-40528` |
-| Photon 3.0, `curl` | `CVE-2023-38546` |
-
-QA image names above use `quay.io/rhacs-eng/`. The backend QA and Scanner tests
-are the authority for these expectations. Do not lower counts, change scores, or fabricate records
-to make a reduced bundle pass. Validate against the same full-source snapshot
-when an expectation fails.
+The Go generator under `generate/` builds the existing native JSONL/zstd/ZIP
+format without reading a production bundle, test source, or the network.
+Synthetic means independently generated test data, **not invented packages or
+vulnerability relationships**. Production updater configuration in
+`source-config.yaml` is unrelated and remains unchanged.
 
 ## Regeneration
 
-The repair uses the 2026-09-22 source snapshot:
-
-- URL: `https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip?generation=1790074423522380`
-- SHA256: `979abbb54646d7baa320bee2dd507d5e32b869f1ac3c834d20b1b08859fb9083`
-- Size: 236,433,828 bytes.
-
-Keep the downloaded archive; generation reads it without refreshing it. An absent
-`SOURCE_BUNDLE_ZIP` is downloaded from `SOURCE_BUNDLE_URL`. Supply the checksum to
-reject an unexpected snapshot. Both root members and production `bundles/`
-members are supported; ambiguous duplicates are rejected.
-
-From the repository root, generate and validate isolated outputs first:
+Run from the repository root:
 
 ```sh
-SOURCE_BUNDLE_ZIP=/path/to/source.zip \
-SOURCE_BUNDLE_SHA256=979abbb54646d7baa320bee2dd507d5e32b869f1ac3c834d20b1b08859fb9083 \
-CI_MINIMAL_OUTPUT_PATHS=/tmp/ci-minimal-one.zip:/tmp/ci-minimal-two.zip \
-scanner/updater/ci/generate-ci-minimal-bundle.sh --check-reproducible
+go run ./scanner/updater/ci/generate -output /tmp/ci-minimal.zip
+go run ./scanner/updater/ci/generate -check -output /tmp/ci-minimal.zip
 
-bats scanner/updater/ci/generate-ci-minimal-bundle_test.bats
-CI_MINIMAL_BUNDLE_PATH=/tmp/ci-minimal-one.zip \
-go test ./scanner/updater -run '^TestCIMinimalBundle$' -count=1
+# After validating the isolated candidate:
+go run ./scanner/updater/ci/generate
+go run ./scanner/updater/ci/generate -check
 ```
 
-Omit `CI_MINIMAL_OUTPUT_PATHS` to regenerate the canonical checked-in bundle at
-`scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip` after validation.
-`CI_MINIMAL_TEST_CVE_PATHS` and `CI_MINIMAL_PACKAGE_SELECTION` allow
-isolated generator fixtures; they do not alter the production updater config.
+The default destination is
+`scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip`.
+`-check` compares regenerated bytes without changing the destination. With Go
+and dependencies already installed, regeneration also works with
+`GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local`.
 
-To refresh `qa-packages.json`, index the image with the current Scanner indexer,
-record its digest, and extract its dpkg binary/source names and Maven names from
-the index report. Keep distribution and repository identities separate. Validate
-the updated inventory through real matching, not only by counting source records.
+Members, operations, and records are ordered deterministically. ZIP metadata and
+operation timestamps are fixed. Operation UUIDs and SHA-256 fingerprints include
+member/updater identity, kind, and canonical content: changing a fixture changes
+the corresponding importer cache identity. Duplicate identical native records
+within an operation are emitted once. The completed temporary archive is decoded
+through the production `jsonblob.Iterate` reader before atomic replacement.
+Invalid fixtures or write/validation errors do not replace the destination.
 
-## Runtime validation and publication
+## Maintaining fixtures
 
-The minimized candidate was generated from the same pinned snapshot. Both
-reproducible outputs have SHA256
-`41c160a910cfa9600f9e6e7b69af0e8ba26032f35bd207373ae3206a6577aa35` and contain
-11 feeds with 472 KiB on disk, down from 606 KiB (22% smaller). The compressed
-members contain 481,212 bytes, down from 618,337. The isolated matcher imported
-all 11 sources in 6.291 seconds. Seven saved image scans completed with 202
-(Struts), 19 (Python), 14 (OpenSSL), 4 (gpgv), 7 (libc), 8 (nginx), and 8
-(systemd) vulnerability records. Struts had 202 normalized package/vulnerability
-matches, above the 138-finding assertion and including CVE-2017-5638 on
-`org.apache.struts:struts2-core`. Named QA records and severities were present,
-including Python CVE-2025-11468 (Moderate, CVSS 4.5) and gpgv CVE-2022-3219
-(Low, CVSS 3.3).
+The `fixtures_*.go` files are the source of truth, not generated output. They
+contain explicit ClairCore packages, distributions, repositories, ranges,
+aliases, vulnerabilities, NVD schema payloads and Scanner CSAF advisories.
+Shared values avoid repeating long descriptions and package/CPE definitions.
+Source member names and native updater identities are deliberately retained.
 
-| Measure | Previous | Minimized |
+The initial relationships were transcribed from the previous checked-in archive
+(SHA-256 `41c160a910cfa9600f9e6e7b69af0e8ba26032f35bd207373ae3206a6577aa35`),
+using the active image corpus and backend QA requirements during authoring.
+Descriptions and links retain their upstream attribution (NVD, vendor advisories
+and OSV); Red Hat advisory content is attributable to Red Hat Inc.
+Regeneration needs none of those original inputs.
+
+When adding or changing a scenario:
+
+1. Identify its consuming test and image/digest in the fixture comment. Verify
+   the package/advisory relationship against authoritative source data.
+2. Preserve binary/source relationships, architecture/module constraints,
+   repository keys/CPEs, aliases, fixed versions and unaffected ranges. RHEL
+   `Invert` entries are **non-vulnerability assertions**, not extra findings.
+3. Add required NVD/CSAF enrichment with matching tags. An enrichment alone
+   cannot produce a finding. Keep exact descriptions/CVSS used by shared tests.
+   A nonempty native description takes precedence over the NVD fallback: do not
+   replace that fallback with a generic sentence for a compared description.
+4. Keep test expectations independent. The generator must not parse tests or
+   download/filter an upstream feed. The Struts >=138 check is covered by
+   explicitly listed existing Maven and Ubuntu curl/expat/OpenSSL relationships;
+   never add fictional CVEs or lower the threshold.
+5. Validate an isolated candidate before updating the checked-in ZIP. Do not
+   weaken shared expectations to accommodate missing fixture data.
+
+## Validation
+
+```sh
+go test ./scanner/updater/ci/generate
+CI_MINIMAL_BUNDLE_PATH=/tmp/ci-minimal.zip \
+  go test ./scanner/updater -run '^TestCIMinimalBundle$' -count=1
+
+# Requires an explicitly selected disposable PostgreSQL admin connection.
+# Creates and drops unique databases; never point this at production.
+SCANNER_CI_TEST_DB='postgresql://postgres@127.0.0.1:55439/postgres?sslmode=disable' \
+SCANNER_CI_BASELINE_BUNDLE=/path/to/previous.zip \
+  go test -tags scanner_db_integration ./scanner/updater/ci/generate \
+  -run '^TestFixtureMatching$' -count=1 -v
+
+PATH="$PWD/operator/.gotools/bin:$PATH" \
+  bats tests/e2e/bats/scanner_v4_operator_bundle.bats scripts/ci/nightly.bats
+```
+
+The focused database test uses the real importer, matchers and NVD enrichment.
+It checks nginx fixability/CVSS, Struts Maven matching and aggregate findings,
+RHEL unaffected-range exclusion, an exact Jackson description/CVSS case, and
+negative fixed-version/distro/repository cases. Its independent Struts package
+inventory is documented under `generate/testdata/`.
+
+These checks do not replace the active `scanner/e2etests/testdata/image_tests.json`
+corpus, `TestCIMinimalBundleStruts`, or backend `DefaultPoliciesTest`,
+`ImageScanningTest`, `VulnMgmtTest` and `VulnScanWithGraphQLTest` suites. Nightly
+production-import logs are a separate acceptance gate: synthetic fixtures do not
+prove upstream ingestion still works.
+
+### Local validation snapshot (2026-10-01)
+
+| Measure | Previous bundle | Candidate |
 | --- | ---: | ---: |
-| ZIP bytes | 619,535 | 482,410 |
-| Uncompressed member bytes | 618,337 | 481,212 |
-| Native records | 16,560 | 15,287 |
-| Struts normalized matches | 921 | 202 |
-| Isolated matcher import | 5.221 s | 6.291 s |
+| ZIP bytes | 482,410 | 216,804 |
+| Native vulnerability records | 14,127 | 1,871 |
+| NVD enrichment records | 834 | 432 |
+| Red Hat CSAF enrichment records | 326 | 104 |
+| Members | 11 | 11 |
+| Focused Struts package/advisory findings | 202 | 192 |
+| Cold imports, seconds (three fresh DBs) | 15.153 / 12.389 / 13.886 | 3.544 / 3.762 / 4.662 |
+| Median cold import, seconds | 13.886 | 3.762 |
 
-The unchanged feeds retain their previous record counts. The reduced counts are
-Ubuntu 2,023 to 1,110, OSV 861 to 810, NVD 1,139 to 834, and Red Hat CSAF 330
-to 326. The import timing is not a performance improvement; it is included to
-make the trade-off visible and must be remeasured in CI.
+Candidate SHA-256:
+`0ec0ed48b67fdefaabaae6f8f340deb9ad3e3a52e8046bcab0404e076682106f`.
+The old documentation's 15,287 "native" count included 1,160 enrichments.
 
-This validates native import and matching only. No backend GraphQL QA or full
-42-image E2E run was performed, and a cold full-feed import was not timed
-because it exceeded the available 45-minute window.
+The timings are local observations on PostgreSQL 15 on a shared development
+host, with other validation running. They are not a controlled CI performance
+claim; rerun with the target CI database/resources before drawing conclusions.
 
-Use fresh, isolated matcher databases for full/minimal comparisons. Original
-updater fingerprints are preserved; importing a subset over an already imported
-full snapshot can skip operations with the same fingerprint.
+The full unchanged corpus was attempted against both bundles: each had 9 passing
+and 33 failing cases, with the same failing case names. Equal pass/fail counts do
+not establish equivalent output or acceptance.
 
-Run `TestCIMinimalBundleStruts` in the Scanner E2E suite and the backend QA suites
-`DefaultPoliciesTest`, `ImageScanningTest`, `VulnMgmtTest`, and
-`VulnScanWithGraphQLTest`. Compare archive size and cold-import duration using the
-same source snapshot and database configuration. Archive checks alone do not
-establish runtime coverage.
+Acceptance is **not complete**. Private Quay/Red Hat image pulls require registry
+credentials. The unchanged public corpus also reports exact-output mismatches
+against the previous bundle (including Ubuntu text/fix versions, package-level
+fix versions and Red Hat advisory-vs-CVE expectations). Do not infer a successful
+E2E run from the focused matching checks. Backend QA and nightly production-import
+evidence still require an appropriate deployment.
 
-CI and the standalone Scanner E2E chart import all archive members without an
-allowlist: definitions are already reduced by the bundle generator. If a CI
-allowlist is configured, it must include every archive source.
+## Publication and rollback
 
-Publishing is separate from local generation: publish the validated bundle
-commit first, then update every immutable bundle URL (CI values, Scanner E2E
-values, installation tests, and the GitHub accessibility test). Verify the remote SHA256 before
-rerunning CI. Until those pins change, CI still downloads the previous bundle.
+Do not update immutable consumer pins in the same step as artifact generation.
+Publish the validated artifact commit first, download it and verify its checksum,
+then update CI values, standalone Scanner values and accessibility-test pins in
+a separate authorized change. Installation tests now read the shared CI pin.
+Until publication/pinning, regular CI still downloads the previous artifact.
+
+Retain `5ad57fb2849616a8db4878c5647a280ac822b5f5` as the previous artifact pin for
+rollback. Commit, push and PR updates are separate actions. Deployment mode/URL
+messages and matcher `fetching vuln update` / `update imported` logs should be
+retained as runtime evidence.
