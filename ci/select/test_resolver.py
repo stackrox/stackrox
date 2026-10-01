@@ -88,12 +88,20 @@ class ResolverTest(unittest.TestCase):
         self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn("go", result.jobs)
         self.assertIn(
-            '005. clash on target "go-postgres"; '
+            '004. rule "sensor" matches\n     sensor/common/foo.go\n',
+            result.log_text,
+        )
+        self.assertIn(
+            '005. rule "central-policy" matches\n     central/policy/service.go\n',
+            result.log_text,
+        )
+        self.assertIn(
+            '007. clash on target "go-postgres"; '
             'rule "central-policy" says run, rule "sensor" says skip; run wins',
             result.log_text,
         )
         self.assertIn(
-            '006. clash on target "sensor-integration-tests"; '
+            '008. clash on target "sensor-integration-tests"; '
             'rule "sensor" says run, rule "central-policy" says skip; run wins',
             result.log_text,
         )
@@ -422,21 +430,25 @@ _EDGE_CASES = (
                  central/policy/service.go
             002. rule "go-sources" runs target "go"
             003. rule "style" runs target "style-check"
-            004. rule "image-wait" runs target "wait-for-images"
-            005. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
-            006. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
-            007. rule "remaining" takes default "run" for target "should-dispatch"
-            008. rule "remaining" takes default "run" for target "e2e-byodb-tests"
-            009. rule "remaining" takes default "run" for target "e2e-db-backup-restore-tests"
-            010. rule "remaining" takes default "run" for target "e2e-gke-upgrade-tests"
-            011. rule "remaining" takes default "run" for target "e2e-nongroovy-tests"
-            012. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke"
-            013. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke-konflux"
-            014. rule "remaining" takes default "skip" for target "e2e-qa-tests-ocp-4-22"
-            015. rule "remaining" takes default "run" for target "gke-nongroovy-e2e-tests"
-            016. rule "remaining" takes default "skip" for target "gke-qa-e2e-tests"
-            017. rule "remaining" takes default "run" for target "gke-ui-e2e-tests"
-            018. rule "remaining" takes default "skip" for target "ocp-vm-scanning-e2e-tests"
+            004. rule "sensor" matches
+                 sensor/common/foo.go
+            005. rule "central-policy" matches
+                 central/policy/service.go
+            006. rule "image-wait" runs target "wait-for-images"
+            007. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+            008. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
+            009. rule "remaining" takes default "run" for target "should-dispatch"
+            010. rule "remaining" takes default "run" for target "e2e-byodb-tests"
+            011. rule "remaining" takes default "run" for target "e2e-db-backup-restore-tests"
+            012. rule "remaining" takes default "run" for target "e2e-gke-upgrade-tests"
+            013. rule "remaining" takes default "run" for target "e2e-nongroovy-tests"
+            014. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke"
+            015. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke-konflux"
+            016. rule "remaining" takes default "skip" for target "e2e-qa-tests-ocp-4-22"
+            017. rule "remaining" takes default "run" for target "gke-nongroovy-e2e-tests"
+            018. rule "remaining" takes default "skip" for target "gke-qa-e2e-tests"
+            019. rule "remaining" takes default "run" for target "gke-ui-e2e-tests"
+            020. rule "remaining" takes default "skip" for target "ocp-vm-scanning-e2e-tests"
         """,
             },
         },
@@ -471,21 +483,25 @@ _EDGE_CASES = (
                  central/policy/service.go
             002. rule "go-sources" runs target "go"
             003. rule "style" runs target "style-check"
-            004. rule "image-wait" runs target "wait-for-images"
-            005. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
-            006. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
-            007. rule "remaining" takes default "run" for target "should-dispatch"
-            008. rule "remaining" takes default "run" for target "e2e-byodb-tests"
-            009. rule "remaining" takes default "run" for target "e2e-db-backup-restore-tests"
-            010. rule "remaining" takes default "run" for target "e2e-gke-upgrade-tests"
-            011. rule "remaining" takes default "run" for target "e2e-nongroovy-tests"
-            012. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke"
-            013. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke-konflux"
-            014. rule "remaining" takes default "skip" for target "e2e-qa-tests-ocp-4-22"
-            015. rule "remaining" takes default "run" for target "gke-nongroovy-e2e-tests"
-            016. rule "remaining" takes default "skip" for target "gke-qa-e2e-tests"
-            017. rule "remaining" takes default "run" for target "gke-ui-e2e-tests"
-            018. rule "remaining" takes default "skip" for target "ocp-vm-scanning-e2e-tests"
+            004. rule "sensor" matches
+                 sensor/common/foo.go
+            005. rule "central-policy" matches
+                 central/policy/service.go
+            006. rule "image-wait" runs target "wait-for-images"
+            007. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+            008. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
+            009. rule "remaining" takes default "run" for target "should-dispatch"
+            010. rule "remaining" takes default "run" for target "e2e-byodb-tests"
+            011. rule "remaining" takes default "run" for target "e2e-db-backup-restore-tests"
+            012. rule "remaining" takes default "run" for target "e2e-gke-upgrade-tests"
+            013. rule "remaining" takes default "run" for target "e2e-nongroovy-tests"
+            014. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke"
+            015. rule "remaining" takes default "skip" for target "e2e-qa-tests-gke-konflux"
+            016. rule "remaining" takes default "skip" for target "e2e-qa-tests-ocp-4-22"
+            017. rule "remaining" takes default "run" for target "gke-nongroovy-e2e-tests"
+            018. rule "remaining" takes default "skip" for target "gke-qa-e2e-tests"
+            019. rule "remaining" takes default "run" for target "gke-ui-e2e-tests"
+            020. rule "remaining" takes default "skip" for target "ocp-vm-scanning-e2e-tests"
         """,
             },
         },
@@ -700,23 +716,26 @@ _EDGE_CASES = (
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
             # <when>
-            001. clash on target "style-check"; rule "run-all-label" and rule "style" say run, rule "docs-only" says skip; run wins
-            002. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            003. clash on target "go-postgres"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            004. clash on target "sensor-integration-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            005. clash on target "should-dispatch"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            006. clash on target "wait-for-images"; rule "run-all-label" and rule "image-wait" say run, rule "docs-only" says skip; run wins
-            007. clash on target "e2e-byodb-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            008. clash on target "e2e-db-backup-restore-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            009. clash on target "e2e-gke-upgrade-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            010. clash on target "e2e-nongroovy-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            011. clash on target "e2e-qa-tests-gke"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            012. clash on target "e2e-qa-tests-gke-konflux"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            013. clash on target "e2e-qa-tests-ocp-4-22"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            014. clash on target "gke-nongroovy-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            015. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            016. clash on target "gke-ui-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-            017. clash on target "ocp-vm-scanning-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            001. rule "run-all-label" matches because label "ci-run-all-tests" is set
+            002. rule "docs-only" matches every changed file
+                 README.md
+            003. clash on target "style-check"; rule "run-all-label" and rule "style" say run, rule "docs-only" says skip; run wins
+            004. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            005. clash on target "go-postgres"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            006. clash on target "sensor-integration-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            007. clash on target "should-dispatch"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            008. clash on target "wait-for-images"; rule "run-all-label" and rule "image-wait" say run, rule "docs-only" says skip; run wins
+            009. clash on target "e2e-byodb-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            010. clash on target "e2e-db-backup-restore-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            011. clash on target "e2e-gke-upgrade-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            012. clash on target "e2e-nongroovy-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            013. clash on target "e2e-qa-tests-gke"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            014. clash on target "e2e-qa-tests-gke-konflux"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            015. clash on target "e2e-qa-tests-ocp-4-22"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            016. clash on target "gke-nongroovy-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            017. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            018. clash on target "gke-ui-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+            019. clash on target "ocp-vm-scanning-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
         """,
             },
         },
@@ -758,19 +777,23 @@ _EDGE_CASES = (
             005. rule "run-all-label" runs target "sensor-integration-tests"
             006. rule "run-all-label" runs target "should-dispatch"
             007. rule "run-all-label" runs target "wait-for-images"
-            008. rule "style" runs target "style-check"
-            009. rule "image-wait" runs target "wait-for-images"
-            010. clash on target "e2e-byodb-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            011. clash on target "e2e-db-backup-restore-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            012. clash on target "e2e-gke-upgrade-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            013. clash on target "e2e-nongroovy-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            014. clash on target "e2e-qa-tests-gke"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            015. clash on target "e2e-qa-tests-gke-konflux"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            016. clash on target "e2e-qa-tests-ocp-4-22"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            017. clash on target "gke-nongroovy-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            018. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            019. clash on target "gke-ui-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
-            020. clash on target "ocp-vm-scanning-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            008. rule "ci-tooling" matches every changed file
+                 .github/workflows/ (1)
+                 .openshift-ci/ (1)
+                 ci/select/ (1)
+            009. rule "style" runs target "style-check"
+            010. rule "image-wait" runs target "wait-for-images"
+            011. clash on target "e2e-byodb-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            012. clash on target "e2e-db-backup-restore-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            013. clash on target "e2e-gke-upgrade-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            014. clash on target "e2e-nongroovy-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            015. clash on target "e2e-qa-tests-gke"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            016. clash on target "e2e-qa-tests-gke-konflux"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            017. clash on target "e2e-qa-tests-ocp-4-22"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            018. clash on target "gke-nongroovy-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            019. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            020. clash on target "gke-ui-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
+            021. clash on target "ocp-vm-scanning-e2e-tests"; rule "run-all-label" says run, rule "ci-tooling" says skip; run wins
         """,
             },
         },
@@ -952,8 +975,12 @@ _EDGE_CASES = (
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
             # <when>
-            001. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
-            002. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
+            001. rule "sensor" matches
+                 sensor/common/foo.go
+            002. rule "central-policy" matches
+                 central/policy/service.go
+            003. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+            004. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
         """,
             },
         },
@@ -995,8 +1022,12 @@ _EDGE_CASES = (
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
             # <when>
-            001. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
-            002. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
+            001. rule "central-policy" matches
+                 central/policy/service.go
+            002. rule "sensor" matches
+                 sensor/common/foo.go
+            003. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+            004. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
         """,
             },
         },
