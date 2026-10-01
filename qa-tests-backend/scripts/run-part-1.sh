@@ -58,6 +58,8 @@ config_part_1() {
     if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
 
+        ensure_roxie_on_path
+
         local config_file
         config_file="$(mktemp)"
 

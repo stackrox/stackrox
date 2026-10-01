@@ -1,16 +1,10 @@
 import type { ReactElement } from 'react';
-import {
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
-    Flex,
-    FlexItem,
-    Title,
-} from '@patternfly/react-core';
+import { DescriptionList, Flex, FlexItem, Title } from '@patternfly/react-core';
 import type { BreakpointModifiers } from '@patternfly/react-core';
 
 import type { DetailsType } from '../reports.types';
+
+import DetailsDescriptionListGroups from './DetailsDescriptionListGroups';
 
 export type DetailsViewProps = {
     headingLevel: 'h2' | 'h3';
@@ -34,18 +28,10 @@ function DetailsView({
                     isHorizontal
                     horizontalTermWidthModifier={horizontalTermWidthModifier}
                 >
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Name</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {values.name || '-'}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Description</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {values.description || '-'}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
+                    <DetailsDescriptionListGroups
+                        description={values.description}
+                        name={values.name}
+                    />
                 </DescriptionList>
             </FlexItem>
         </Flex>

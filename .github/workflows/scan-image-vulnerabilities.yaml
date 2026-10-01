@@ -21,7 +21,7 @@ run-name: ${{ format('Scan images for vulnerabilities ({0})', inputs.version || 
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       wait-for-images-limit: ${{ steps.run-parameters.outputs.wait-for-images-limit }}
       version: ${{ steps.run-parameters.outputs.version }}
@@ -47,7 +47,7 @@ jobs:
 
   scan-image-vulnerabilities-upstream:
     name: "Upstream: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [run-parameters]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
@@ -99,7 +99,7 @@ jobs:
 
   scan-image-vulnerabilities-konflux:
     name: "Konflux: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [run-parameters]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.

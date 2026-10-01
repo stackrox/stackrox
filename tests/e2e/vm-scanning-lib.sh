@@ -270,3 +270,79 @@ ensure_virtctl_binary_insecure() {
     is_CI || die "Secure virtctl download failed; refusing insecure curl -k fallback outside CI. Set VIRTCTL_PATH or fix cluster ingress trust material."
     _download_and_install_virtctl -k
 }
+
+# Host-side files shared between the Go suite (via exported env) and post-test
+# guest journal collection. Kept out of test_outputs so the private key is not
+# uploaded as a CI artifact.
+vm_scan_e2e_dir() {
+    printf '%s\n' "${VM_SCAN_E2E_DIR:-/tmp/vm-scan-e2e}"
+}
+
+# export_vm_scan_public_key fills VM_SSH_PUBLIC_KEY from identity when unset.
+# LoadVMScanConfig requires both halves of the keypair.
+export_vm_scan_public_key() {
+    local identity="$1"
+    if [[ -n "${VM_SSH_PUBLIC_KEY:-}" ]]; then
+        return 0
+    fi
+    if [[ -f "${identity}.pub" ]]; then
+        VM_SSH_PUBLIC_KEY="$(<"${identity}.pub")"
+        export VM_SSH_PUBLIC_KEY
+        return 0
+    fi
+    VM_SSH_PUBLIC_KEY="$(ssh-keygen -y -f "$identity")"
+    printf '%s\n' "$VM_SSH_PUBLIC_KEY" > "${identity}.pub"
+    export VM_SSH_PUBLIC_KEY
+}
+
+# ensure_vm_scan_ssh_identity writes or reuses an SSH key under vm_scan_e2e_dir
+# so the Go suite and post-test guest log collection share the same identity.
+ensure_vm_scan_ssh_identity() {
+    local dir identity
+    dir="$(vm_scan_e2e_dir)"
+    mkdir -p "$dir"
+    identity="${dir}/ssh-identity"
+
+    if [[ -n "${VM_SSH_PRIVATE_KEY:-}" ]]; then
+        printf '%s\n' "${VM_SSH_PRIVATE_KEY}" > "$identity"
+        chmod 600 "$identity"
+        export VM_SSH_PRIVATE_KEY_PATH="$identity"
+        export_vm_scan_public_key "$identity"
+        return 0
+    fi
+
+    if [[ -f "$identity" ]]; then
+        export VM_SSH_PRIVATE_KEY_PATH="$identity"
+        VM_SSH_PRIVATE_KEY="$(<"$identity")"
+        export VM_SSH_PRIVATE_KEY
+        export_vm_scan_public_key "$identity"
+        return 0
+    fi
+
+    ssh-keygen -t ed25519 -f "$identity" -N "" -C "stackrox-vm-scan-e2e" >/dev/null
+    chmod 600 "$identity"
+    VM_SSH_PRIVATE_KEY="$(<"$identity")"
+    VM_SSH_PUBLIC_KEY="$(<"${identity}.pub")"
+    export VM_SSH_PRIVATE_KEY VM_SSH_PUBLIC_KEY VM_SSH_PRIVATE_KEY_PATH="$identity"
+    info "Ephemeral VM scan SSH identity written to ${identity}"
+}
+
+# persist_vm_scan_virtctl copies virtctl next to the SSH identity and records
+# the resolved path so post-test can find it after the test process's PATH
+# goes away.
+persist_vm_scan_virtctl() {
+    local dir src dest
+    dir="$(vm_scan_e2e_dir)"
+    mkdir -p "$dir"
+    src="$(command -v virtctl)" || {
+        info "virtctl not on PATH; post-test guest journal collection will skip"
+        return 0
+    }
+    printf '%s\n' "$src" > "${dir}/virtctl-path"
+    dest="${dir}/virtctl"
+    if cp "$src" "$dest" && chmod +x "$dest"; then
+        info "Persisted virtctl to ${dest} for post-test guest journal collection"
+    else
+        info "Could not copy virtctl to ${dest}; post-test will use ${src}"
+    fi
+}
