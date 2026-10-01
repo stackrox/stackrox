@@ -63,12 +63,12 @@ class ResolverTest(unittest.TestCase):
         self.assertNotIn("because file", log)
         self.assertIn(
             '017. clash on target "style-check"; '
-            'rule "style" says run, rule "docs-only" says skip; default "run"',
+            'rule "style" says run, rule "docs-only" says skip; run wins',
             log,
         )
         self.assertIn(
             '018. clash on target "wait-for-images"; '
-            'rule "image-wait" says run, rule "docs-only" says skip; default "run"',
+            'rule "image-wait" says run, rule "docs-only" says skip; run wins',
             log,
         )
         self.assertIn(
@@ -78,46 +78,52 @@ class ResolverTest(unittest.TestCase):
         self.assertNotIn("e2e-nongroovy-tests\n", result.decision_text)
         self.assertNotIn("go\n", result.decision_text)
 
-    def test_clash_takes_the_default_run(self):
+    def test_product_rules_that_disagree_both_run(self):
         result = decide(["sensor/common/foo.go", "central/policy/service.go"])
         self.assertIn("go-postgres", result.jobs)
         self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn("go", result.jobs)
         self.assertIn(
-            '006. clash on target "go-postgres"; '
-            'rule "central-policy" says run, rule "sensor" says skip; default "run"',
+            '005. clash on target "go-postgres"; '
+            'rule "central-policy" says run, rule "sensor" says skip; run wins',
             result.log_text,
         )
         self.assertIn(
-            '007. clash on target "sensor-integration-tests"; '
-            'rule "sensor" says run, rule "central-policy" says skip; default "run"',
+            '006. clash on target "sensor-integration-tests"; '
+            'rule "sensor" says run, rule "central-policy" says skip; run wins',
             result.log_text,
         )
 
-    def test_clash_takes_a_skip_default_when_the_file_says_skip(self):
+    def test_clash_runs_when_the_ready_pull_request_line_is_skip(self):
+        # decision-defaults describes a boring pull request. A rule that
+        # named this job as run is evidence the suite is relevant.
         defaults = parse_defaults(DEFAULTS.read_text(encoding="utf-8"))
         defaults["go-postgres"] = "skip"
         result = decide(
             ["sensor/common/foo.go", "central/policy/service.go"],
             defaults=defaults,
         )
-        self.assertNotIn("go-postgres", result.jobs)
-        self.assertIn('default "skip"', result.log_text)
+        self.assertIn("go-postgres", result.jobs)
+        self.assertIn(
+            'clash on target "go-postgres"; '
+            'rule "central-policy" says run, rule "sensor" says skip; run wins',
+            result.log_text,
+        )
 
-    def test_run_all_label_and_a_skip_take_the_default(self):
-        # docs-only skips every target, and the label runs every target.
-        # Each clash uses that target's default.
+    def test_run_all_label_wins_a_clash_with_a_skip(self):
+        # The label votes run for every target. A docs-only skip clashes,
+        # and the clash runs the job, including targets a ready pull request skips.
         result = decide(["README.md"], labels=["ci-run-all-tests"])
         self.assertIn("go", result.jobs)
         self.assertIn("style-check", result.jobs)
-        self.assertNotIn("gke-qa-e2e-tests", result.jobs)
+        self.assertIn("gke-qa-e2e-tests", result.jobs)
         self.assertIn(
-            'clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"',
+            'clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins',
             result.log_text,
         )
         self.assertIn(
             'clash on target "gke-qa-e2e-tests"; '
-            'rule "run-all-label" says run, rule "docs-only" says skip; default "skip"',
+            'rule "run-all-label" says run, rule "docs-only" says skip; run wins',
             result.log_text,
         )
 
@@ -160,12 +166,7 @@ class ResolverTest(unittest.TestCase):
             'rule "sensor" matches\n     sensor/common/foo.go\n',
             result.log_text,
         )
-        self.assertIn(
-            'rule "style" matches every changed file (2)\n'
-            "     .github/workflows/style.yaml\n"
-            "     sensor/common/foo.go\n",
-            result.log_text,
-        )
+        self.assertIn('rule "style" runs target "style-check"', result.log_text)
 
     def test_go_mod_runs_every_target(self):
         result = decide(["go.mod"])
