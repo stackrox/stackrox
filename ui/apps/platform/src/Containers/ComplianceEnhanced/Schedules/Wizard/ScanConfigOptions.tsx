@@ -109,9 +109,6 @@ function ScanConfigOptions(): ReactElement {
                         </Stack>
                     </StackItem>
                     <StackItem>
-                        <Divider component="div" />
-                    </StackItem>
-                    <StackItem>
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
                                 <Title headingLevel="h3">Schedule</Title>
