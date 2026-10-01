@@ -58,7 +58,7 @@ EXTRA_CSS = (
     # on every one of thousands of rows. The three row shapes sharing the template
     # are the header (.ch), a case <summary>, and a bodyless case (.nd).
     ".ch,.case>summary,.case.nd{display:grid;"
-    "grid-template-columns:9rem minmax(10rem,2fr) minmax(8rem,3fr) 5rem;"
+    "grid-template-columns:9rem minmax(10rem,1fr) 5rem;"
     "gap:.5rem;align-items:center}"
     ".ch{font-weight:600;padding:.4rem .5rem;border-bottom:2px solid #dee2e6}"
     # Thin separator between rows. Translucent black (not a fixed gray) so the line
@@ -70,7 +70,8 @@ EXTRA_CSS = (
     ".case.s-passed{background:#d1e7dd}"
     ".case.s-failed,.case.s-error{background:#f8d7da}"
     ".case.s-skipped{background:#e2e3e5}"
-    # col 1 = status (nowrap), 2 = name (caret + indent), 3 = class, 4 = time.
+    # col 1 = status (nowrap), 2 = name (caret + indent), 3 = time. The classname
+    # used to be a column but it is now a detail row (see _case_body).
     ".ch>:first-child,.case>summary>:first-child,.case.nd>:first-child"
     "{white-space:nowrap}"
     ".ch>:nth-child(2),.case>summary>:nth-child(2),.case.nd>:nth-child(2)"
@@ -79,8 +80,6 @@ EXTRA_CSS = (
     "color:#6c757d}"
     ".case[open]>summary>:nth-child(2)::before{content:'▾'}"
     ".ch>:nth-child(3),.case>summary>:nth-child(3),.case.nd>:nth-child(3)"
-    "{word-break:break-all}"
-    ".ch>:nth-child(4),.case>summary>:nth-child(4),.case.nd>:nth-child(4)"
     "{text-align:right;font-variant-numeric:tabular-nums}"
     ".case-body{padding:.25rem .75rem .6rem 1.7em}"
     ".case-body .lbl{font-weight:600;color:#6c757d;font-size:.85rem;margin-top:.6rem}"
@@ -107,7 +106,7 @@ STATUS = {
 # <details>. LIST_OPEN emits the container and the column-label header row.
 LIST_OPEN = ('<div class="cases"><div class="ch">'
              '<span>Status</span><span>Test</span>'
-             '<span>Class</span><span>Time (s)</span></div>')
+             '<span>Time (s)</span></div>')
 LIST_CLOSE = "</div>"
 
 # One delegated listener for every anchor link. Clicking an anchor that sits
@@ -167,11 +166,21 @@ def _text(el):
 
 
 def _classify(case_elem):
+    # Marker children are the primary signal and take precedence.
     if case_elem.find("failure") is not None:
         return "failed"
     if case_elem.find("error") is not None:
         return "error"
     if case_elem.find("skipped") is not None:
+        return "skipped"
+    # No marker child: trust the @status attribute as an override. Some runners
+    # record the outcome only there (e.g. status="failed") with no child element.
+    status = (case_elem.get("status") or "").strip().lower()
+    if status in ("failed", "failure", "fail", "broken", "regression"):
+        return "failed"
+    if status in ("error", "errored"):
+        return "error"
+    if status in ("skipped", "skip", "disabled", "ignored", "notrun", "not_run"):
         return "skipped"
     return "passed"
 
@@ -282,6 +291,7 @@ class Renderer:
             self.stack.append({
                 "list_open": False,
                 "preamble_written": False,
+                "name": elem.get("name") or "",  # to drop redundant case classnames
                 "attr_rows": _suite_attr_rows(elem),
                 "props": [],
                 "io": io,
@@ -370,16 +380,15 @@ class Renderer:
         self.case_no += 1
         anchor_id = f"t{self.case_no}"
         # Cells are positional grid children (see EXTRA_CSS nth-child rules); they
-        # carry no per-cell class. The class column is a bare <code> (its own grid
-        # item) rather than a wrapped span, saving a wrapper on every row.
+        # carry no per-cell class. Columns: status, test name, time. Classname is
+        # not a column anymore; it moved into the expandable details (_case_body).
         cells = (
             f"<span>{_anchor(anchor_id)}"
             f'<span class="badge {badge_class}">{label}</span></span>'
             f'<span>{esc(elem.get("name", ""))}</span>'
-            f'<code>{esc(elem.get("classname", ""))}</code>'
             f'<span>{esc(elem.get("time", ""))}</span>'
         )
-        body = self._case_body(elem)
+        body = self._case_body(elem, frame["name"])
         if body:
             # The case is a <details> (class "io" -> toggled by Expand/Collapse
             # all). Collapsed by default; the caret sits on the test name.
@@ -393,16 +402,37 @@ class Renderer:
                 f'<div class="case nd {row_class}" id="{anchor_id}">{cells}</div>'
             )
 
-    def _case_body(self, elem):
-        """Inner detail of a case: failure/error/skipped message and trace plus
-        stdout/stderr, rendered directly. The enclosing case <details> is the only
-        expand/collapse control, so there are no nested toggles here."""
-        parts = []
+    def _case_body(self, elem, suite_name):
+        """Inner detail of a case: a key/value table (attributes + properties),
+        then the failure/error/skipped message and trace, then stdout/stderr, all
+        rendered directly. The enclosing case <details> is the only expand/collapse
+        control, so there are no nested toggles here."""
+        # The marker child (if any) is located once: used for its message/trace
+        # below and for its @type in the key/value table.
         sub = elem.find("failure")
         if sub is None:
             sub = elem.find("error")
         if sub is None:
             sub = elem.find("skipped")
+
+        # Key/value details. Classname is dropped when it merely repeats the suite
+        # name (common for Go tests) to save space; shown when it adds information.
+        kv = []
+        classname = elem.get("classname", "")
+        if classname and classname != suite_name:
+            kv.append(("Class", classname))
+        kv.append(("File", elem.get("file", "")))
+        kv.append(("Line", elem.get("line", "")))
+        kv.append(("Assertions", elem.get("assertions", "")))
+        if sub is not None:
+            kv.append(("Type", sub.get("type", "")))
+        for prop in elem.iterfind("properties/property"):
+            value = prop.get("value")
+            if value is None:
+                value = _text(prop)
+            kv.append((prop.get("name", ""), (value or "").strip()))
+
+        parts = [_metadata_table(kv)]
         if sub is not None:
             message = sub.get("message", "")
             body = _text(sub)
@@ -423,23 +453,32 @@ class Renderer:
                 f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
 
 
+def _metadata_table(rows):
+    """Headerless two-column key/value table as a string (slightly smaller font);
+    returns '' when no row has a non-empty value. Used both inside a case's detail
+    block (directly) and by render_metadata (wrapped in a collapsible)."""
+    rows = [(k, v) for k, v in rows if v]
+    if not rows:
+        return ""
+    body = "".join(
+        f'<tr><td class="text-body-secondary pe-3">{esc(k)}</td><td>{esc(v)}</td></tr>'
+        for k, v in rows
+    )
+    return (f'<table class="meta table table-sm table-borderless w-auto mb-0">'
+            f"<tbody>{body}</tbody></table>")
+
+
 def render_metadata(out, rows, summary="Meta"):
-    """Render a collapsed, hover-expandable block of key/value metadata as a
-    headerless two-column table in a slightly smaller font.
+    """Render a collapsed, hover-expandable block of key/value metadata.
 
     `rows` is an iterable of (key, value) pairs; empty values are dropped. The
     block is tagged 'io' so the global Expand all / Collapse all buttons toggle
     it. Reusable: suites use it now, the summary can use it later.
     """
-    rows = [(k, v) for k, v in rows if v]
-    if not rows:
-        return
-    out.write(f'<details class="io meta"><summary>{esc(summary)}</summary>')
-    out.write('<table class="table table-sm table-borderless w-auto mb-0"><tbody>')
-    for k, v in rows:
-        out.write(f'<tr><td class="text-body-secondary pe-3">{esc(k)}</td>'
-                  f"<td>{esc(v)}</td></tr>")
-    out.write("</tbody></table></details>")
+    table = _metadata_table(rows)
+    if table:
+        out.write(f'<details class="io meta"><summary>{esc(summary)}</summary>'
+                  f"{table}</details>")
 
 
 def render_summary(out, totals):
