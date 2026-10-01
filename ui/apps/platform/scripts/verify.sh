@@ -123,7 +123,7 @@ cmd_doctor() {
     if [[ "${status}" == "200" ]]; then
         pass "dev server responds at ${UI_BASE_URL}"
     else
-        fail "dev server did not respond at ${UI_BASE_URL} (HTTP ${status}). Run: npm run start"
+        fail "dev server did not respond at ${UI_BASE_URL} (HTTP ${status}). Start it in the background with: BROWSER=none npm run start"
         failures=$((failures + 1))
     fi
 

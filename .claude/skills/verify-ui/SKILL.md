@@ -15,8 +15,11 @@ All commands run from `ui/apps/platform`.
 
 1. **Doctor.** `scripts/verify.sh doctor`. It checks the dev server, Central through the
    proxy, auth, and prints enabled feature flags. Fix what it reports before going on.
-   Run it again after any failed `open` or `prove`, because a half-broken environment gives
-   misleading failures.
+   If the dev server is not running, start it yourself as a background process with
+   `BROWSER=none npm run start` (it never exits), wait until it answers, and run `doctor`
+   again. Do not start Central; if Central is down, stop and say so. Run `doctor` again
+   after any failed `open` or `prove`, because a half-broken environment gives misleading
+   failures.
 2. **Static.** `scripts/verify.sh static`. It runs tsc, then eslint and `vitest related` on
    files changed since `origin/master`. Pass file paths to check only those.
 3. **Open.** `scripts/verify.sh open <route>` for every route the change touches, for
