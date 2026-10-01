@@ -528,7 +528,10 @@ def _q(value: str) -> str:
 
 
 def _parse_rules(raw: object, jobs: set[str]) -> tuple[Rule, ...]:
-    """_parse_rules reads the rules in order and requires a catch-all last rule."""
+    """_parse_rules reads the rules in order and allows remaining only as the last rule.
+
+    An earlier one votes on targets still open, and a later rule can clash those votes back to run.
+    """
     if not isinstance(raw, list) or not raw:
         raise DecisionError("rules must be a non-empty list")
     rules: list[Rule] = []
@@ -544,6 +547,11 @@ def _parse_rules(raw: object, jobs: set[str]) -> tuple[Rule, ...]:
     last = rules[-1]
     if last.when != "remaining":
         raise DecisionError("the last rule must decide every target no earlier rule decided")
+    for rule in rules[:-1]:
+        if rule.when == "remaining":
+            raise DecisionError(
+                f"rule {rule.number} {rule.name} uses remaining, which only the last rule may use"
+            )
     covers = sum((last.run_all, last.skip_all, last.default_all))
     if covers != 1:
         raise DecisionError("the last rule must run, skip, or take the default for every remaining target")

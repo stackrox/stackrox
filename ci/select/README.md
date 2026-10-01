@@ -58,7 +58,7 @@ A target ends up in one of these states. A clash runs the job, and the last rule
 - No earlier rule mentioned the job. The last rule says `default`, so the job takes its default.
 - A job that is going to run requires another job. The resolver adds the required job and says so in the log, even when that job's own result was skip.
 
-Rules are walked from top to bottom. The `when` field is one of `label-exists`, `no-file-changed`, `any-file-matches`, `every-file-matches`, `always`, or `remaining`. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. The last rule must be `remaining`, and it must use `*` for exactly one of those three lists.
+Rules are walked from top to bottom. The `when` field is one of `label-exists`, `no-file-changed`, `any-file-matches`, `every-file-matches`, `always`, or `remaining`. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. Only the last rule uses `remaining`. It must use `*` for exactly one of run, skip, or default.
 
 Paths are regular expressions. `any-file-matches` applies when one changed file matches a pattern. `every-file-matches` applies when every changed file matches a pattern. The diff does not have to contain every pattern.
 
