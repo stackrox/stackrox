@@ -130,7 +130,7 @@ function ScanConfigOptions(): ReactElement {
                                                 <RepeatScheduleDropdown
                                                     fieldId="parameters.intervalType"
                                                     value={
-                                                        formik.values.parameters.intervalType || ''
+                                                        formik.values.parameters.intervalType ?? ''
                                                     }
                                                     handleSelect={handleSelectChange}
                                                     includeDailyOption

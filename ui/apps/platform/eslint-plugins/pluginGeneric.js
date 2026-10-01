@@ -2,6 +2,22 @@
 
 const path = require('node:path');
 
+function isDisplayFallbackExpression(node) {
+    if (!node) {
+        return false;
+    }
+
+    if (node.type === 'Literal') {
+        return typeof node.value === 'string' || typeof node.value === 'number';
+    }
+
+    if (node.type === 'TemplateLiteral') {
+        return node.expressions.length === 0;
+    }
+
+    return false;
+}
+
 const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
@@ -140,6 +156,49 @@ const rules = {
                         context.report({
                             node,
                             message: 'Require that React Router Navigate element has replace prop',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'JSX-nullish-display-fallback': {
+        // Prefer nullish coalescing for display fallbacks so valid falsy values such as 0 are rendered.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace || with ?? for literal display fallbacks in JSX so valid falsy values are rendered',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXExpressionContainer(node) {
+                    const { expression } = node;
+                    if (
+                        expression?.type === 'LogicalExpression' &&
+                        expression.operator === '||' &&
+                        isDisplayFallbackExpression(expression.right)
+                    ) {
+                        context.report({
+                            node: expression,
+                            message:
+                                'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                            fix(fixer) {
+                                if (expression.left.type === 'LogicalExpression') {
+                                    return null;
+                                }
+
+                                const operatorToken = context.sourceCode.getTokenAfter(
+                                    expression.left,
+                                    (token) => token.value === '||'
+                                );
+                                return operatorToken
+                                    ? fixer.replaceText(operatorToken, '??')
+                                    : null;
+                            },
                         });
                     }
                 },
