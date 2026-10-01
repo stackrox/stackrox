@@ -49,7 +49,8 @@ const (
 )
 
 func getVsockPort() uint32 {
-	return uint32(env.VirtualMachinesVsockPort.IntegerSetting())
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	return uint32(port)
 }
 
 func clampPollInterval(interval time.Duration) time.Duration {
