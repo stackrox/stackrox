@@ -7,6 +7,11 @@ import {
     customSubjectValidation,
 } from 'Components/EmailTemplate/EmailTemplate.utils';
 
+import {
+    areNodeRolesValid,
+    defaultNodeRoles,
+    nodeRoleValidationMessage,
+} from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
@@ -17,6 +22,7 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
         time: '',
         daysOfWeek: [],
         daysOfMonth: [],
+        nodeRoles: [...defaultNodeRoles],
     },
     clusters: [],
     profiles: [],
@@ -30,6 +36,8 @@ export const helperTextForName =
 export const helperTextForNameEdit =
     "Scan config name cannot be changed because it's linked to existing scan results.";
 export const helperTextForTime = 'Select or enter scan time between 00:00 and 23:59 UTC';
+export const helperTextForNodeRoles =
+    'Determines which nodes are scanned for node-type profiles. If left empty, defaults to master and worker. Common roles: master, worker, infra, control-plane. Use @all to scan all nodes.';
 
 const timeRegExp = /\d\d:\d\d/;
 
@@ -70,6 +78,12 @@ const validationSchema = yup.object().shape({
                 intervalType[0] === 'MONTHLY'
                     ? schema.of(yup.string()).min(1, 'Selection is required')
                     : schema.notRequired()
+            ),
+        nodeRoles: yup
+            .array()
+            .of(yup.string().required())
+            .test('valid-node-roles', nodeRoleValidationMessage, (roles) =>
+                areNodeRolesValid(roles ?? [])
             ),
     }),
     clusters: yup.array().min(1),

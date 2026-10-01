@@ -123,6 +123,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const [createScanConfigError, setCreateScanConfigError] = useState('');
     const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
     const alertRef = useRef<HTMLDivElement | null>(null);
+    // Mirror of the uncommitted node-role draft input inside ScanConfigOptions. A ref (not
+    // state) is required because the Parameters-step footer's validate() runs synchronously in
+    // the same click as the input's blur-commit; a state read here would be stale and let an
+    // invalid draft slip through on the first click.
+    const nodeRoleDraftRef = useRef('');
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
@@ -220,10 +225,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                                 formik={formik}
                                 alertRef={alertRef}
                                 openModal={openModal}
+                                validate={() => nodeRoleDraftRef.current.trim() === ''}
                             />
                         }
                     >
-                        <ScanConfigOptions />
+                        <ScanConfigOptions nodeRoleDraftRef={nodeRoleDraftRef} />
                     </WizardStep>
                     <WizardStep
                         name={SELECT_CLUSTERS}

@@ -16,6 +16,7 @@ type ScanConfigParametersViewProps = {
     scanName: string;
     description?: string;
     scanSchedule: Schedule;
+    nodeRoles?: string[];
     children?: ReactNode;
 };
 
@@ -24,6 +25,7 @@ function ScanConfigParametersView({
     headingLevel,
     scanName,
     scanSchedule,
+    nodeRoles,
     children,
 }: ScanConfigParametersViewProps): ReactElement {
     return (
@@ -46,6 +48,18 @@ function ScanConfigParametersView({
                         {formatRecurringSchedule(scanSchedule)}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
+                {nodeRoles && (
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Node roles</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {nodeRoles.length > 0 ? (
+                                nodeRoles.join(', ')
+                            ) : (
+                                <em>Defaults to master and worker</em>
+                            )}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                )}
                 {children}
             </DescriptionList>
         </Flex>
