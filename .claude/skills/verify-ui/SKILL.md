@@ -49,7 +49,9 @@ screenshot next to it. The folder is gitignored and `npm run clean` does not del
   no spinner or skeleton is visible.
 - **Warnings** do not fail the run: console errors and axe accessibility violations. Some
   pages already have them. Treat any warning that comes from code you touched as a failure.
-  If you are not sure, run `open` on the same route on `origin/master` and compare.
+  Each a11y violation in `report.json` lists its nodes with a CSS selector, the start of the
+  element's HTML, and axe's reason, so check whether that element is one you changed. If you
+  still are not sure, run `open` on the same route on `origin/master` and compare.
 - Look at the screenshot. A page can pass every check and still show the wrong thing. A
   green run means the page works, not that it does what was asked.
 

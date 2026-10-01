@@ -272,6 +272,7 @@ cmd_open() {
             "heading:   \(.heading)",
             "failures:  \(if (.failures | length) == 0 then "none" else (.failures | join("; ")) end)",
             "warnings:  \(.warnings.consoleErrors | length) console error(s), \(.warnings.a11yViolations | length) a11y violation(s)",
+            (.warnings.a11yViolations[] | "a11y:      \(.id) (\(.impact)) at \(.nodes | map(.selector) | join(", "))"),
             (if .highlight then "highlight: \(.highlight.selector) matched \(.highlight.matchCount) element(s)" else empty end)' \
             "${report}"
         echo "report:     ${report}"

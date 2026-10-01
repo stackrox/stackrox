@@ -27,6 +27,8 @@ const settlePollMs = 250;
 const loadingIndicatorSelector = '[class*="-c-spinner"], [class*="-c-skeleton"]';
 const highlightClassName = 'verify-highlight';
 const highlightColor = '#c9190b';
+// Enough of an element's opening tag to recognize it, without dumping a whole table.
+const a11yHtmlMaxLength = 200;
 
 /**
  * Waits until the page has made API requests, no request of any kind has been in flight
@@ -113,6 +115,26 @@ function removeHighlight(doc) {
     });
     doc.getElementById(highlightClassName)?.remove();
     doc.getElementById(`${highlightClassName}-label`)?.remove();
+}
+
+/**
+ * Returns where an accessibility violation is and why it failed, so a reader can tell whether
+ * it comes from changed code without running the check again on the old code.
+ *
+ * @param {{ target: string[], html: string, failureSummary?: string }} node axe result node
+ * @returns {{ selector: string, html: string, failureSummary: string }}
+ */
+function getA11yNodeEvidence(node) {
+    const html =
+        node.html.length > a11yHtmlMaxLength
+            ? `${node.html.slice(0, a11yHtmlMaxLength)}...`
+            : node.html;
+    return {
+        // A target has more than one part only when the node is inside an iframe or shadow DOM.
+        selector: node.target.join(' >>> '),
+        html,
+        failureSummary: node.failureSummary ?? '',
+    };
 }
 
 /**
@@ -265,6 +287,7 @@ describe('Verify: open route', () => {
                             impact: violation.impact,
                             help: violation.help,
                             nodeCount: violation.nodes.length,
+                            nodes: violation.nodes.map(getA11yNodeEvidence),
                         }));
                     },
                     skipFailures
