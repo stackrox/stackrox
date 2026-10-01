@@ -269,29 +269,12 @@ class Renderer:
                 f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
 
 
-def render_header(out, title):
-    # Title on the left; expand/collapse controls on the right, on one line.
+def render_summary(out, totals):
+    # Summary card with the count chips, followed by the expand/collapse controls.
     # The buttons toggle every collapsible block tagged <details class="io">:
     # stdout/stderr and failure/error/skipped detail blocks. Plain JS, no libraries.
     out.write(
-        '<div class="d-flex flex-wrap justify-content-between '
-        'align-items-center gap-2 mb-4">'
-        f'<h1 class="mb-0">{esc(title)}</h1>'
-        '<div class="btn-group" role="group" aria-label="Expand or collapse all">'
-        '<button type="button" class="btn btn-sm btn-outline-secondary" '
-        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = true)\">"
-        "Expand all</button>"
-        '<button type="button" class="btn btn-sm btn-outline-secondary" '
-        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = false)\">"
-        "Collapse all</button>"
-        "</div>"
-        "</div>"
-    )
-
-
-def render_summary(out, totals):
-    out.write(
-        '<div class="card shadow-sm mb-4"><div class="card-body">'
+        '<div class="card shadow-sm mb-3"><div class="card-body">'
         '<h2 class="h6 text-uppercase text-body-secondary mb-3">Summary</h2>'
         '<div class="d-flex flex-wrap gap-2 summary-badges">'
         f'<span class="badge text-bg-dark">Total: {totals.get("total", 0)}</span>'
@@ -303,6 +286,19 @@ def render_summary(out, totals):
     )
 
 
+def render_buttons(out):
+    out.write(
+        '<div class="btn-group mb-4" role="group" aria-label="Expand or collapse all">'
+        '<button type="button" class="btn btn-sm btn-outline-secondary" '
+        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = true)\">"
+        "Expand all</button>"
+        '<button type="button" class="btn btn-sm btn-outline-secondary" '
+        "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = false)\">"
+        "Collapse all</button>"
+        "</div>"
+    )
+
+
 def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     out.write("<!DOCTYPE html>\n")
     out.write('<html lang="en"><head><meta charset="utf-8">')
@@ -311,8 +307,9 @@ def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     out.write(f'<link rel="stylesheet" href="{esc(bootstrap_url)}">')
     out.write(f"<style>{EXTRA_CSS}</style>")
     out.write('</head><body><div class="container-fluid py-4">')
-    render_header(out, title)
+    out.write(f'<h1 class="mb-4">{esc(title)}</h1>')
     render_summary(out, totals)
+    render_buttons(out)
 
     r = Renderer(out, suite_counts)
     for path in valid_files:
