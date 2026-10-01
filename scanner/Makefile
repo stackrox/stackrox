@@ -464,6 +464,7 @@ e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	    --create-namespace \
 	    $(if $(CI),,--atomic) \
 	    --timeout $(timeout) \
+	    $(shell bash -c 'source ../scripts/ci/nightly.sh; is_nightly_run && echo "-f $(e2e-chart-d)/values-full.yaml"') \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \

@@ -3,6 +3,7 @@
 load "../../../scripts/test_helpers.bats"
 
 setup() {
+    unset BUILD_TAG GITHUB_REF
     source "${BATS_TEST_DIRNAME}/../lib.sh"
     TEST_ROOT="${BATS_TEST_TMPDIR}/repo"
     mkdir -p "${TEST_ROOT}/deploy/common"
@@ -41,6 +42,23 @@ EOF
 
 run_operator_deploy() {
     DEPLOY_STACKROX_VIA_OPERATOR=true deploy_central_via_operator test-namespace
+}
+
+@test "nightly Operator deployments retain the production bundle default" {
+    export CI=true BUILD_TAG=4.11.x-nightly-20261001
+    run run_operator_deploy
+    assert_success
+    run yq eval-all '[select(.kind == "Central") | .spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/central.yaml"
+    assert_output "0"
+}
+
+@test "nightly Roxie deployments retain the production bundle default" {
+    export CI=true GITHUB_REF=refs/tags/4.11.x-nightly-20261001
+    printf 'central: {spec: {}}\n' > "${BATS_TEST_TMPDIR}/roxie.yaml"
+    run _configure_roxie_ci_vuln_bundle "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_success
+    run yq eval '[.central.spec.customize.envVars[]? | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "${BATS_TEST_TMPDIR}/roxie.yaml"
+    assert_output "0"
 }
 
 @test "Operator CI Central CR renders the minimal bundle URL" {

@@ -1,7 +1,7 @@
-# Values for nightly/scale tests - uses full GCS bundle
-# Usage: helm install scanner ./helmchart -f values-full.yaml
+# Nightly Scanner functional tests: omit the URL env override and use the
+# versioned production bundle configured in templates/scanner-config.yaml.
+# From scanner/e2etests: helm install scanner ./helmchart -f helmchart/values-full.yaml
 
 app:
   scanner:
-    # Use full bundle from GCS (200MB, complete vulnerability dataset)
-    vulnerabilitiesUrl: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip"
+    vulnerabilitiesUrl: null

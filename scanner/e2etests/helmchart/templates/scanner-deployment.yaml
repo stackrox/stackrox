@@ -46,8 +46,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- if .Values.app.scanner.vulnerabilitiesUrl }}
         - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL
           value: {{ .Values.app.scanner.vulnerabilitiesUrl | quote }}
+        {{- end }}
         ports:
           - name: grpc
             protocol: TCP

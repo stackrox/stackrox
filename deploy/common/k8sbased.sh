@@ -2,6 +2,8 @@
 
 # shellcheck source=./feature-flag-env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+# shellcheck source=../../scripts/ci/nightly.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/ci/nightly.sh"
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -510,6 +512,10 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
       elif [[ -n "$CI" ]]; then
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+        if is_nightly_run; then
+          # Remove the CI pin so the deployed chart selects its production bundle.
+          helm_args+=(--set customize.scanner-v4-matcher.envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL=null)
+        fi
       fi
 
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then

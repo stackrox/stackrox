@@ -135,6 +135,9 @@ _scanner_v4_ci_vuln_bundle_url() {
 _configure_roxie_ci_vuln_bundle() {
     local config_file="$1"
     [[ "${CI:-}" == "true" ]] || return 0
+    if is_nightly_run; then
+        return 0
+    fi
 
     local scanner_v4_component
     if ! scanner_v4_component="$(yq eval '.central.spec.scannerV4.scannerComponent // ""' "$config_file")"; then
@@ -692,7 +695,7 @@ deploy_central_via_operator() {
     esac
 
     if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
-        if [[ "${CI:-}" == "true" ]]; then
+        if [[ "${CI:-}" == "true" ]] && ! is_nightly_run; then
             # Keep Operator deployments aligned with Helm by reading the shared CI pin.
             local scannerV4CiVulnBundleURL
             if ! scannerV4CiVulnBundleURL="$(_scanner_v4_ci_vuln_bundle_url)"; then
