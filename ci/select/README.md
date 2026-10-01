@@ -103,7 +103,7 @@ wait-for-images
 should-dispatch
 ```
 
-The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. A rule that matched files or a label says so once, including when every job that rule named is in a clash. The files are indented under that line, and they are not repeated on the job lines. A directory pattern is the prefix and a count. An exact path is the file name. One file on any other pattern is that path. Lines 002 through 016 are the skips, one target each.
+The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. A rule that matched files or a label says so once, including when every job that rule named is in a clash. `every-file-matches` says `matches every changed file`. `any-file-matches` says `matches`, and when its patterns hit every changed file it says `matches all N changed files`. The files are indented under that line, and they are not repeated on the job lines. A directory pattern is the prefix and a count. An exact path is the file name. One file on any other pattern is that path. Lines 002 through 016 are the skips, one target each.
 
 ```text
 # stackrox/stackrox PR 23035 a1b2c3d
@@ -134,7 +134,7 @@ python3 ci/select/resolver.py \
 ```
 
 ```text
-001. rule "go-sources" matches every changed file (2)
+001. rule "go-sources" matches all 2 changed files
      sensor/common/foo.go
      central/policy/service.go
 004. rule "sensor" matches

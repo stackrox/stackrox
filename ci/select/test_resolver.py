@@ -425,7 +425,7 @@ _EDGE_CASES = (
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
             # <when>
-            001. rule "go-sources" matches every changed file (2)
+            001. rule "go-sources" matches all 2 changed files
                  sensor/common/foo.go
                  central/policy/service.go
             002. rule "go-sources" runs target "go"
@@ -478,7 +478,7 @@ _EDGE_CASES = (
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
             # <when>
-            001. rule "go-sources" matches every changed file (2)
+            001. rule "go-sources" matches all 2 changed files
                  sensor/common/foo.go
                  central/policy/service.go
             002. rule "go-sources" runs target "go"
@@ -1093,7 +1093,7 @@ _EDGE_CASES = (
                  pkg/a.go
                  pkg/b.go
             002. rule "go-wildcard" runs target "unit"
-            003. rule "shapes" matches every changed file (5)
+            003. rule "shapes" matches all 5 changed files
                  keep/exact.go
                  pkg/ (2)
                  notes/a

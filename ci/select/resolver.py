@@ -418,7 +418,10 @@ def _rule_actions(
 
 
 def _match_event(rule: Rule, files: list[str]) -> str | None:
-    """_match_event states why the rule matched, once, with files grouped by pattern."""
+    """_match_event states why the rule matched, once, with files grouped by pattern.
+
+    every-file-matches says "every changed file". An any-file hit of the whole diff says "all N changed files".
+    """
     if rule.when == "label-exists":
         return f"rule {_q(rule.name)} matches because label {_q(rule.label)} is set"
     if rule.when == "no-file-changed":
@@ -432,7 +435,7 @@ def _match_event(rule: Rule, files: list[str]) -> str | None:
     if rule.when == "every-file-matches":
         header += " every changed file"
     elif matched > 1 and matched == len(files):
-        header += f" every changed file ({matched})"
+        header += f" all {matched} changed files"
     return header + "\n" + "\n".join(f"     {group}" for group in groups)
 
 
