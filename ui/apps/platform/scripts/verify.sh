@@ -6,7 +6,9 @@
 # Usage:
 #   scripts/verify.sh doctor              check the dev server, Central, and auth are ready
 #   scripts/verify.sh static [files...]   tsc, then eslint and vitest on changed files
-#   scripts/verify.sh open <route>        open a route and capture evidence
+#   scripts/verify.sh open <route> [--highlight <selector>]
+#                                         open a route and capture evidence, optionally outlining
+#                                         the elements a jQuery selector matches in an extra screenshot
 #   scripts/verify.sh prove [feature]     run the e2e specs for a feature (lists features if omitted)
 #
 # Environment:
@@ -39,7 +41,7 @@ die() {
 }
 
 usage() {
-    sed -n '6,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '6,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
     exit 2
 }
 
@@ -238,7 +240,14 @@ cmd_static() {
 
 cmd_open() {
     local route="${1:-}"
-    [[ "${route}" == /* ]] || die "Usage: scripts/verify.sh open <route>, for example /main/violations"
+    [[ "${route}" == /* ]] || die "Usage: scripts/verify.sh open <route> [--highlight <selector>], for example /main/violations"
+    shift
+    local highlight=''
+    if [[ $# -gt 0 ]]; then
+        [[ "$1" == '--highlight' && -n "${2:-}" ]] ||
+            die "Usage: scripts/verify.sh open <route> [--highlight <selector>], for example --highlight 'th:contains(\"Policy severity\")'"
+        highlight="$2"
+    fi
 
     ensure_auth_token
     local dir
@@ -249,6 +258,7 @@ cmd_open() {
     CYPRESS_ROX_AUTH_TOKEN="${ROX_AUTH_TOKEN}" \
         CYPRESS_VERIFY_ROUTE="${route}" \
         CYPRESS_VERIFY_EVIDENCE_DIR="${dir}" \
+        CYPRESS_VERIFY_HIGHLIGHT="${highlight}" \
         TZ=UTC npx cypress run --e2e --browser "${VERIFY_BROWSER:-electron}" \
         --spec cypress/verify/openRoute.test.js \
         --config "baseUrl=${UI_BASE_URL},specPattern=cypress/verify/*.test.js,video=false,retries=0,screenshotsFolder=${dir}" ||
@@ -261,7 +271,8 @@ cmd_open() {
             "final url: \(.finalUrl)",
             "heading:   \(.heading)",
             "failures:  \(if (.failures | length) == 0 then "none" else (.failures | join("; ")) end)",
-            "warnings:  \(.warnings.consoleErrors | length) console error(s), \(.warnings.a11yViolations | length) a11y violation(s)"' \
+            "warnings:  \(.warnings.consoleErrors | length) console error(s), \(.warnings.a11yViolations | length) a11y violation(s)",
+            (if .highlight then "highlight: \(.highlight.selector) matched \(.highlight.matchCount) element(s)" else empty end)' \
             "${report}"
         echo "report:     ${report}"
         find "${dir}" -name '*.png' -print | sed 's/^/screenshot: /'

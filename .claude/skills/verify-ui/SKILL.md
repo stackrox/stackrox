@@ -28,12 +28,14 @@ All commands run from `ui/apps/platform`.
 3. **Open.** `scripts/verify.sh open <route>` for every route the change touches, for
    example `scripts/verify.sh open /main/violations`. Find routes in `src/routePaths.ts`.
    Use a URL with query params or an entity id when the change is on a detail page or
-   behind a filter.
+   behind a filter. Add `--highlight <selector>` with a jQuery selector for the element you
+   changed, for example `--highlight 'th:contains("Policy severity")'`. It saves
+   `page-highlighted.png` with that element outlined, and fails the run if nothing matches.
 4. **Prove.** `scripts/verify.sh prove <feature>` runs the e2e specs for the feature, where
    the feature is a directory under `cypress/integration`. Run it without an argument to
    list features.
 5. **Report.** In the PR description or the final message, list what you ran, the result,
-   and the paths to `report.json` and the screenshot.
+   and the paths to `report.json` and the screenshots.
 
 ## Reading `open` results
 

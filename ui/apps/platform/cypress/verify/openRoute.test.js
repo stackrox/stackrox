@@ -4,6 +4,8 @@
  * Run it through `scripts/verify.sh open <route>`, which sets these env vars:
  * - VERIFY_ROUTE: the route to open, for example /main/violations
  * - VERIFY_EVIDENCE_DIR: absolute path of the directory for report.json
+ * - VERIFY_HIGHLIGHT (optional): jQuery selector for the changed elements. They are outlined
+ *   in a second full-page screenshot, and the run fails if the selector matches nothing.
  *
  * The test fails on failed API requests, uncaught exceptions, no API requests at all,
  * a loading indicator that never goes away, a "Cannot find the page" result, or a redirect
@@ -23,6 +25,8 @@ const settleQuietMs = 1000;
 const settlePollMs = 250;
 // PatternFly spinners and skeletons, matched without the version prefix (pf-v6-c-spinner).
 const loadingIndicatorSelector = '[class*="-c-spinner"], [class*="-c-skeleton"]';
+const highlightClassName = 'verify-highlight';
+const highlightColor = '#c9190b';
 
 /**
  * Waits until the page has made API requests, no request of any kind has been in flight
@@ -60,6 +64,58 @@ function waitForPageToSettle(network) {
 }
 
 /**
+ * Outlines the matched elements and labels the first one with the selector, so a reader of
+ * the screenshot sees what changed. The outline is drawn inside the element, so a container
+ * that clips overflow does not cut it off, and it does not change layout.
+ *
+ * @param {JQuery<HTMLElement>} $elements
+ * @param {string} selector
+ */
+function addHighlight($elements, selector) {
+    const doc = $elements[0].ownerDocument;
+    $elements.each((_index, element) => {
+        element.classList.add(highlightClassName);
+    });
+
+    const style = doc.createElement('style');
+    style.id = highlightClassName;
+    style.textContent = `.${highlightClassName} { outline: 3px solid ${highlightColor} !important; outline-offset: -3px; }`;
+    doc.head.appendChild(style);
+
+    const rect = $elements[0].getBoundingClientRect();
+    const scrollingElement = doc.scrollingElement ?? doc.documentElement;
+    const label = doc.createElement('div');
+    label.id = `${highlightClassName}-label`;
+    label.textContent = selector;
+    Object.assign(label.style, {
+        position: 'absolute',
+        left: `${rect.left + scrollingElement.scrollLeft}px`,
+        zIndex: '2147483647',
+        padding: '2px 6px',
+        background: highlightColor,
+        color: '#fff',
+        font: '12px monospace',
+        pointerEvents: 'none',
+    });
+    doc.body.appendChild(label);
+    // Place it above the element once its rendered height is known.
+    label.style.top = `${Math.max(rect.top + scrollingElement.scrollTop - label.offsetHeight - 4, 0)}px`;
+}
+
+/**
+ * Removes what addHighlight added, so the accessibility check sees the page as users do.
+ *
+ * @param {Document} doc
+ */
+function removeHighlight(doc) {
+    doc.querySelectorAll(`.${highlightClassName}`).forEach((element) => {
+        element.classList.remove(highlightClassName);
+    });
+    doc.getElementById(highlightClassName)?.remove();
+    doc.getElementById(`${highlightClassName}-label`)?.remove();
+}
+
+/**
  * Returns the problems that make the verification fail.
  *
  * @param {Record<string, unknown>} evidence
@@ -88,6 +144,9 @@ function getFailures(evidence) {
     if (evidence.redirectedToLogin) {
         failures.push('redirected to login, so the auth token is missing or invalid');
     }
+    if (evidence.highlight && evidence.highlight.matchCount === 0) {
+        failures.push(`highlight selector ${evidence.highlight.selector} matched nothing`);
+    }
     return failures;
 }
 
@@ -95,8 +154,8 @@ describe('Verify: open route', () => {
     withAuth();
 
     it('should render the route without runtime errors', () => {
-        cy.env(['VERIFY_ROUTE', 'VERIFY_EVIDENCE_DIR']).then(
-            ({ VERIFY_ROUTE, VERIFY_EVIDENCE_DIR }) => {
+        cy.env(['VERIFY_ROUTE', 'VERIFY_EVIDENCE_DIR', 'VERIFY_HIGHLIGHT']).then(
+            ({ VERIFY_ROUTE, VERIFY_EVIDENCE_DIR, VERIFY_HIGHLIGHT }) => {
                 expect(VERIFY_ROUTE, 'VERIFY_ROUTE env var').to.be.a('string').and.not.be.empty;
                 expect(VERIFY_EVIDENCE_DIR, 'VERIFY_EVIDENCE_DIR env var').to.be.a('string').and.not
                     .be.empty;
@@ -114,6 +173,9 @@ describe('Verify: open route', () => {
                     notFound: false,
                     redirectedToLogin: false,
                     warnings: { consoleErrors: [], a11yViolations: [] },
+                    highlight: VERIFY_HIGHLIGHT
+                        ? { selector: VERIFY_HIGHLIGHT, matchCount: 0 }
+                        : null,
                 };
                 const network = { apiStartedCount: 0, pendingCount: 0, lastActivityAt: 0 };
 
@@ -175,6 +237,18 @@ describe('Verify: open route', () => {
                 });
 
                 cy.screenshot('page', { capture: 'fullPage' });
+
+                if (evidence.highlight) {
+                    cy.get('body').then(($body) => {
+                        const $matches = $body.find(VERIFY_HIGHLIGHT);
+                        evidence.highlight.matchCount = $matches.length;
+                        if ($matches.length !== 0) {
+                            addHighlight($matches, VERIFY_HIGHLIGHT);
+                            cy.screenshot('page-highlighted', { capture: 'fullPage' });
+                            cy.document().then(removeHighlight);
+                        }
+                    });
+                }
 
                 cy.window().then((win) => {
                     if (!win.axe) {
