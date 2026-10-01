@@ -1,0 +1,8 @@
+version = 1
+jobs = ["unit"]
+requires = []
+
+[[rules]]
+name = "rest"
+when = "remaining"
+skip = ["*"]
