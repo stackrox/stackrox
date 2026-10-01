@@ -184,9 +184,10 @@ def resolve(
         if rule.when == "remaining":
             continue
         actions = _rule_actions(rule, mapping.jobs, votes, clashes)
-        if not actions:
+        # A clash line names the rules and leaves out the files and the label.
+        matched = _match_event(rule, paths) if _rule_matched(rule, votes) else None
+        if not actions and not matched:
             continue
-        matched = _match_event(rule, paths)
         if matched:
             events.append(matched)
         events.extend(_rule_event(rule.name, verb, job) for verb, job in actions)
@@ -388,6 +389,15 @@ def _format_log(repo: str, pr: str, commit: str, events: list[str]) -> str:
     width = max(3, len(str(len(events))))
     body = "".join(f"{index:0{width}d}. {event}\n" for index, event in enumerate(events, start=1))
     return f"# {repo} PR {pr} {commit[:7]}\n# {when}\n{body}"
+
+
+def _rule_matched(rule: Rule, votes: dict[str, _Vote]) -> bool:
+    """_rule_matched reports whether this rule recorded a vote on any target."""
+    for vote in votes.values():
+        for opinion in _OPINIONS:
+            if any(hit.rule == rule.name for hit in vote.opinion(opinion)):
+                return True
+    return False
 
 
 def _rule_actions(

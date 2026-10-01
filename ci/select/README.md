@@ -103,7 +103,7 @@ wait-for-images
 should-dispatch
 ```
 
-The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. A rule that matched files says so once. The files are indented under that line, and they are not repeated on the job lines. A directory pattern is the prefix and a count. An exact path is the file name. One file on any other pattern is that path. Lines 002 through 016 are the skips, one target each.
+The end-to-end jobs are absent. The log says why `style-check` and `wait-for-images` stayed, and that `should-dispatch` was added because `wait-for-images` requires it. The first log line names the repository, the pull request, and the commit. The second line is the time the resolver ran, so that line changes on each run. A rule that matched files or a label says so once, including when every job that rule named is in a clash. The files are indented under that line, and they are not repeated on the job lines. A directory pattern is the prefix and a count. An exact path is the file name. One file on any other pattern is that path. Lines 002 through 016 are the skips, one target each.
 
 ```text
 # stackrox/stackrox PR 23035 a1b2c3d
@@ -116,7 +116,7 @@ The end-to-end jobs are absent. The log says why `style-check` and `wait-for-ima
 019. added target "should-dispatch" because target "wait-for-images" requires it
 ```
 
-A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash, so both run. The ready-pull-request line is not what keeps them. `go` is on the list because the paths end in `.go`.
+A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash, so both run. The log names each file under the rule that matched it. The ready-pull-request line is not what keeps them. `go` is on the list because the paths end in `.go`.
 
 ```bash
 printf '%s\n' sensor/common/foo.go central/policy/service.go > /tmp/ci-select/files.txt
@@ -131,18 +131,23 @@ python3 ci/select/resolver.py \
   --commit a1b2c3d \
   --decision-out /tmp/ci-select/decision.txt \
   --log-out /tmp/ci-select/resolver.log
-
-grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-005. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
-006. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
+001. rule "go-sources" matches every changed file (2)
+     sensor/common/foo.go
+     central/policy/service.go
+004. rule "sensor" matches
+     sensor/common/foo.go
+005. rule "central-policy" matches
+     central/policy/service.go
+007. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+008. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
 ```
 
 Changing the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` does not drop it. A rule asked for the job, so the clash still runs it.
 
-The label votes run for every target. On a docs-only pull request that clashes with the skip for every target, and the clash runs each one. `gke-qa-e2e-tests` is on the list even though a ready pull request skips it:
+The label votes run for every target. On a docs-only pull request that clashes with the skip for every target, and the clash runs each one. The log names the label and `README.md` before those clashes. `gke-qa-e2e-tests` is on the list even though a ready pull request skips it:
 
 ```bash
 printf '%s\n' README.md > /tmp/ci-select/files.txt
@@ -158,13 +163,14 @@ python3 ci/select/resolver.py \
   --commit a1b2c3d \
   --decision-out /tmp/ci-select/decision.txt \
   --log-out /tmp/ci-select/resolver.log
-
-grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-002. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
-015. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+001. rule "run-all-label" matches because label "ci-run-all-tests" is set
+002. rule "docs-only" matches every changed file
+     README.md
+004. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+017. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
 ```
 
 If `ci/decision-defaults` is missing a target that the rules name, the resolver prints `resolver failed: ...` on standard error, exits 1, and writes neither file.
