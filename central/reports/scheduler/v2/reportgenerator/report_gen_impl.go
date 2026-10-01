@@ -51,7 +51,7 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
-			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Limit(ReportMaxRowsLimit()).
 			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
@@ -61,12 +61,19 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
-			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Limit(ReportMaxRowsLimit()).
 			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 	cursorBatchSize = env.PostgresDefaultCursorBatchSize.IntegerSetting()
 )
+
+// ReportMaxRowsLimit returns the report max rows setting for query pagination.
+func ReportMaxRowsLimit() int32 {
+	// ReportMaxRows is bounded in pkg/env to make this narrowing conversion safe.
+	rows := env.ReportMaxRows.IntegerSetting()
+	return int32(rows)
+}
 
 type reportGeneratorImpl struct {
 	reportSnapshotStore     reportSnapshotDS.DataStore

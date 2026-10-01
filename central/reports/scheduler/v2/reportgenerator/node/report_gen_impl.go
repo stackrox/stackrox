@@ -13,7 +13,6 @@ import (
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -49,7 +48,7 @@ var (
 			search.NewQuerySelect(search.CVECreatedTime).Proto(),
 		},
 		Pagination: search.NewPagination().
-			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Limit(reportGen.ReportMaxRowsLimit()).
 			Offset(0).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Node)).
