@@ -132,10 +132,24 @@ _scanner_v4_ci_vuln_bundle_url() {
     printf '%s\n' "$scanner_v4_ci_vuln_bundle_url"
 }
 
+# Installation tests historically use the CI pin even for local runs. Nightlies
+# omit it so each tested chart/version supplies its own production default.
+_scanner_v4_install_bundle_values() {
+    if is_nightly_run; then
+        echo "Scanner V4 bundle: production (deployed version default)" >&2
+        return 0
+    fi
+    local url
+    url="$(_scanner_v4_ci_vuln_bundle_url)" || return 1
+    echo "Scanner V4 bundle: CI fixture ${url}" >&2
+    SCANNER_INSTALL_BUNDLE_URL="$url" yq -n '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL = strenv(SCANNER_INSTALL_BUNDLE_URL)'
+}
+
 _configure_roxie_ci_vuln_bundle() {
     local config_file="$1"
     [[ "${CI:-}" == "true" ]] || return 0
     if is_nightly_run; then
+        echo "Scanner V4 bundle: production default unless explicitly overridden in Roxie config" >&2
         return 0
     fi
 
@@ -149,12 +163,16 @@ _configure_roxie_ci_vuln_bundle() {
     if ! env_var_count="$(yq eval '[((.central.spec.customize.envVars // [])[]) | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "$config_file")"; then
         return 1
     fi
-    [[ "$env_var_count" == "0" ]] || return 0
+    if [[ "$env_var_count" != "0" ]]; then
+        echo "Scanner V4 bundle: explicit override $(yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL") | .value' "$config_file")" >&2
+        return 0
+    fi
 
     local scanner_v4_ci_vuln_bundle_url
     if ! scanner_v4_ci_vuln_bundle_url="$(_scanner_v4_ci_vuln_bundle_url)"; then
         return 1
     fi
+    echo "Scanner V4 bundle: CI fixture ${scanner_v4_ci_vuln_bundle_url}" >&2
     set_custom_env "$config_file" central SCANNER_V4_MATCHER_VULNERABILITIES_URL "$scanner_v4_ci_vuln_bundle_url"
 }
 
@@ -702,8 +720,11 @@ deploy_central_via_operator() {
                 return 1
             fi
             customize_envVars+=$'\n'
+            echo "Scanner V4 bundle: CI fixture ${scannerV4CiVulnBundleURL}" >&2
             customize_envVars+=$'      - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL'
             customize_envVars+=$'\n        value: "'"${scannerV4CiVulnBundleURL}"'"'
+        else
+            echo "Scanner V4 bundle: production (deployed version default)" >&2
         fi
         if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
             customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'

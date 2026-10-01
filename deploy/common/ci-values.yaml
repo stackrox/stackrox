@@ -47,4 +47,4 @@ customize:
   scanner-v4-matcher:
     envVars:
       # Use the repaired ci-minimal bundle from GitHub for fast CI testing.
-      SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+      SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/d79122fe33533aaa62330ba22373d640d82c65c0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"

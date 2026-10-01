@@ -12,7 +12,7 @@ app:
     # Vulnerability bundle URL
     # Default: Use ci-minimal bundle from GitHub for fast CI testing
     # Nightlies use values-full.yaml to retain the versioned production bundle default.
-    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+    vulnerabilitiesUrl: "https://raw.githubusercontent.com/stackrox/stackrox/d79122fe33533aaa62330ba22373d640d82c65c0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
   db:
     name: scanner-v4-db
     image:

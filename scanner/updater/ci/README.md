@@ -137,11 +137,11 @@ evidence still require an appropriate deployment.
 
 Do not update immutable consumer pins in the same step as artifact generation.
 Publish the validated artifact commit first, download it and verify its checksum,
-then update CI values, standalone Scanner values and accessibility-test pins in
-a separate authorized change. Installation tests now read the shared CI pin.
-Until publication/pinning, regular CI still downloads the previous artifact.
+then update CI values, standalone Scanner values, matcher accessibility tests, and
+installation-test pins in a separate commit. The current consumers pin artifact
+commit `d79122fe33533aaa62330ba22373d640d82c65c0`.
 
 Retain `5ad57fb2849616a8db4878c5647a280ac822b5f5` as the previous artifact pin for
-rollback. Commit, push and PR updates are separate actions. Deployment mode/URL
+rollback. PR updates remain separate from these commits. Deployment mode/URL
 messages and matcher `fetching vuln update` / `update imported` logs should be
 retained as runtime evidence.

@@ -1228,6 +1228,8 @@ EOT
     else
         create_central_pull_secrets "$central_namespace"
 
+        local scanner_bundle_values
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values)" || return 1
         base_helm_values=$(cat <<EOT
 central:
   resources:
@@ -1280,10 +1282,7 @@ scannerV4:
     autoscaling:
       disable: true
 
-customize:
-  scanner-v4-matcher:
-    envVars:
-      SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+${scanner_bundle_values}
 
 allowNonstandardNamespace: true
 EOT
@@ -1393,6 +1392,8 @@ EOT
         fi
         create_sensor_pull_secrets "$sensor_namespace"
 
+        local scanner_bundle_values
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values)" || return 1
         base_helm_values=$(cat <<EOT
 clusterName: "$cluster_name"
 centralEndpoint: "$central_endpoint"
@@ -1429,10 +1430,7 @@ scannerV4:
     persistence:
       none: true
 
-customize:
-  scanner-v4-matcher:
-    envVars:
-      SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+${scanner_bundle_values}
 
 admissionControl:
   replicas: 1

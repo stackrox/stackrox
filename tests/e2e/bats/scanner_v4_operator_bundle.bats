@@ -83,7 +83,7 @@ run_operator_deploy() {
     TEST_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../.." && pwd)"
     run _scanner_v4_ci_vuln_bundle_url
     assert_success
-    assert_output "https://raw.githubusercontent.com/stackrox/stackrox/5ad57fb2849616a8db4878c5647a280ac822b5f5/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+    assert_output "https://raw.githubusercontent.com/stackrox/stackrox/d79122fe33533aaa62330ba22373d640d82c65c0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 }
 
 @test "disabled Scanner V4 does not render the bundle URL" {
@@ -326,4 +326,67 @@ EOF
     assert_success
     run yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL") | .value' "${BATS_TEST_TMPDIR}/roxie-config.yaml"
     assert_output "https://example.invalid/ci-minimal.zip"
+}
+
+@test "installation bundle values retain the pin for regular and local runs" {
+    run _scanner_v4_install_bundle_values
+    assert_success
+    assert_output --partial "https://example.invalid/ci-minimal.zip"
+}
+
+@test "installation bundle values omit the CI override for nightlies" {
+    export BUILD_TAG=4.11.x-nightly-20261001
+    run _scanner_v4_install_bundle_values
+    assert_success
+    refute_output --partial "SCANNER_V4_MATCHER_VULNERABILITIES_URL:"
+}
+
+@test "standard Helm values omit only the CI pin at night, preserving explicit overrides" {
+    source "${BATS_TEST_DIRNAME}/../../../deploy/common/k8sbased.sh"
+    export BUILD_TAG=4.11.x-nightly-20261001
+    _scanner_v4_ci_helm_values "${TEST_ROOT}/deploy/common/ci-values.yaml" > "${BATS_TEST_TMPDIR}/nightly.yaml"
+    run yq '.customize."scanner-v4-matcher".envVars | has("SCANNER_V4_MATCHER_VULNERABILITIES_URL")' "${BATS_TEST_TMPDIR}/nightly.yaml"
+    assert_success
+    assert_output "false"
+    # Helm values files merge left-to-right; no --set=null may mask this override.
+    run yq eval-all '. as $item ireduce ({}; . * $item) | .customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL' "${BATS_TEST_TMPDIR}/nightly.yaml" "${TEST_ROOT}/deploy/common/ci-values.yaml"
+    assert_success
+    assert_output "https://example.invalid/ci-minimal.zip"
+    unset BUILD_TAG
+    _scanner_v4_ci_helm_values "${TEST_ROOT}/deploy/common/ci-values.yaml" > "${BATS_TEST_TMPDIR}/regular.yaml"
+    run cmp "${BATS_TEST_TMPDIR}/regular.yaml" "${TEST_ROOT}/deploy/common/ci-values.yaml"
+    assert_success
+}
+
+@test "standalone Scanner renders the pin only for regular runs and respects explicit values" {
+    local chart="${BATS_TEST_DIRNAME}/../../../scanner/e2etests/helmchart"
+    helm template scanner "$chart" > "${BATS_TEST_TMPDIR}/regular.yaml"
+    run grep 'SCANNER_V4_MATCHER_VULNERABILITIES_URL' "${BATS_TEST_TMPDIR}/regular.yaml"
+    assert_success
+    helm template scanner "$chart" -f "$chart/values-full.yaml" > "${BATS_TEST_TMPDIR}/nightly.yaml"
+    run grep 'SCANNER_V4_MATCHER_VULNERABILITIES_URL' "${BATS_TEST_TMPDIR}/nightly.yaml"
+    assert_failure
+    helm template scanner "$chart" -f "$chart/values-full.yaml" --set app.scanner.vulnerabilitiesUrl=https://example.invalid/explicit.zip > "${BATS_TEST_TMPDIR}/explicit.yaml"
+    run grep 'https://example.invalid/explicit.zip' "${BATS_TEST_TMPDIR}/explicit.yaml"
+    assert_success
+}
+
+@test "standalone nightly entrypoint selects production values for build tags and GitHub refs" {
+    local root="${BATS_TEST_DIRNAME}/../../.."
+    run env BUILD_TAG=4.11.x-nightly-20261001 make -n -C "$root/scanner" e2e-deploy
+    assert_success
+    assert_output --partial '-f e2etests/helmchart/values-full.yaml'
+    run env GITHUB_REF=refs/tags/4.11.x-nightly-20261001 make -n -C "$root/scanner" e2e-deploy
+    assert_success
+    assert_output --partial '-f e2etests/helmchart/values-full.yaml'
+    run make -n -C "$root/scanner" e2e-deploy
+    assert_success
+    refute_output --partial '-f e2etests/helmchart/values-full.yaml'
+}
+
+@test "installation bundle values fail rather than falling back when the CI pin is missing" {
+    printf '{}\n' > "${TEST_ROOT}/deploy/common/ci-values.yaml"
+    run _scanner_v4_install_bundle_values
+    assert_failure
+    assert_output --partial "CI Scanner V4 vulnerability bundle URL is empty"
 }
