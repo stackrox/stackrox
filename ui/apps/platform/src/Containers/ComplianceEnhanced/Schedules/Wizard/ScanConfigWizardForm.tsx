@@ -35,7 +35,7 @@ const SELECT_CLUSTERS_ID = 'clusters';
 const SELECT_PROFILES = 'Profiles';
 const SELECT_PROFILES_ID = 'profiles';
 const CONFIGURE_REPORT = 'Delivery';
-const CONFIGURE_REPORT_ID = 'delivery';
+const CONFIGURE_REPORT_ID = 'report';
 const REVIEW_CONFIG = 'Review';
 const REVIEW_CONFIG_ID = 'review';
 
