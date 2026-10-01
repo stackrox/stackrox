@@ -82,6 +82,11 @@ run_byodb_test() {
     # Run the QA BAT Tests.  Part 1 only as Part 2 deals more with sensor
     run_part_1
 
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping BYODB post-test log collection"
+        return 0
+    fi
+
     collect_and_check_stackrox_logs "$log_output_dir" "byodb_QA"
 }
 

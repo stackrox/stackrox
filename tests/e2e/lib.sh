@@ -23,9 +23,9 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
-# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
-# Can be overridden by individual jobs. Setting to "" will load data from all sources.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+# Temporary CI experiment: default E2E runs to the manual vulnerability bundle.
+# Jobs that exercise vulnerability-backed behavior can override this allowlist.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-manual}"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
@@ -179,7 +179,10 @@ deploy_stackrox_with_roxie() {
 
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
     # For Scanner V4 this means that it will also wait until vulnerabilities are loaded into the DB.
-    roxie deploy \
+    python3 "$ROOT/.openshift-ci/run_timed.py" \
+        --phase test-activity \
+        --name stackrox_deploy \
+        -- roxie deploy \
         --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
         --envrc "$roxie_envrc" \
         --config "$config_file"
@@ -1928,6 +1931,11 @@ handle_e2e_progress_failures() {
 }
 
 record_upgrade_test_progess() {
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping upgrade progress validation"
+        return 0
+    fi
+
     # Record the progress of the upgrade test. This order is tightly coupled to
     # the order of execution in .openshift-ci/ci_tests.py UpgradeTest and the
     # files listed below. This is essentially a check for the existence of state

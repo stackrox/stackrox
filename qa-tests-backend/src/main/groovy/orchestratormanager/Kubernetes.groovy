@@ -122,6 +122,7 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import util.E2ETiming
 import util.Env
 import util.Timer
 
@@ -392,11 +393,13 @@ class Kubernetes {
         return waitForPodsReady(ns, labels, 1, retries, intervalSecond)
     }
 
-    void getAndPrintPods(String ns, String name) {
+    List<Pod> getAndPrintPods(String ns, String name) {
         log.debug "Status of ${name}'s pods:"
-        for (Pod pod : getPodsByLabel(ns, ["deployment": name])) {
+        List<Pod> pods = getPodsByLabel(ns, ["deployment": name])
+        for (Pod pod : pods) {
             log.debug "\t- ${pod.metadata.name}\n\t  Container status: ${pod.status.containerStatuses*.state}"
         }
+        return pods
     }
 
     String getPodLog(String ns, String name) {
@@ -421,18 +424,24 @@ class Kubernetes {
     }
 
     void waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
-        Timer t = new Timer(retries, intervalSeconds)
+        E2ETiming.measure(
+                "fixture_k8s_deployment_delete_wait",
+                "Kubernetes.waitForDeploymentDeletion",
+                [deployment_name: deploy.name, namespace: deploy.namespace]
+        ) {
+            Timer t = new Timer(retries, intervalSeconds)
 
-        K8sDeployment d
-        while (t.IsValid()) {
-            d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
-            if (d == null) {
-                log.debug "${deploy.name}: deployment removed."
-                return
+            K8sDeployment d
+            while (t.IsValid()) {
+                d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
+                if (d == null) {
+                    log.debug "${deploy.name}: deployment removed."
+                    return
+                }
+                getAndPrintPods(deploy.namespace, deploy.name)
             }
-            getAndPrintPods(deploy.namespace, deploy.name)
+            log.debug "Timed out waiting for deployment ${deploy.name} to be deleted"
         }
-        log.debug "Timed out waiting for deployment ${deploy.name} to be deleted"
     }
 
     void deleteAndWaitForDeploymentDeletion(Deployment... deployments) {
@@ -2169,9 +2178,15 @@ class Kubernetes {
         K8sDeployment d = toK8sDeployment(deployment)
 
         try {
-            withK8sClientRetry(maxNumRetries, 1) {
-                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            E2ETiming.measure(
+                    "fixture_k8s_deployment_create",
+                    "Kubernetes.createDeploymentNoWait",
+                    [deployment_name: deployment.name, namespace: deployment.namespace]
+            ) {
+                withK8sClientRetry(maxNumRetries, 1) {
+                    client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                    log.debug "Told the orchestrator to createOrReplace " + deployment.name
+                }
             }
             if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
@@ -2210,36 +2225,92 @@ class Kubernetes {
     }
 
     String waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        Timer t = new Timer(60, 3)
-        while (t.IsValid()) {
-            log.debug "Waiting for ${deploymentName} to start"
-            K8sDeployment d = null
-            try {
-                d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
-            } catch (Exception e) {
-                log.warn("Error getting k8s deployment", e)
+        Map<String, String> timingDetails = [
+                deployment_name: deploymentName,
+                namespace: namespace,
+                skip_replica_wait: String.valueOf(skipReplicaWait),
+                configured_poll_count: "60",
+                poll_interval_seconds: "3",
+        ]
+        int pollAttempts = 0
+        return E2ETiming.measure(
+                "fixture_k8s_deployment_ready_wait",
+                "Kubernetes.waitForDeploymentStart",
+                timingDetails
+        ) {
+            Timer t = new Timer(60, 3)
+            while (t.IsValid()) {
+                pollAttempts++
+                timingDetails.put("poll_attempts", pollAttempts.toString())
+                log.debug "Waiting for ${deploymentName} to start"
+                K8sDeployment d = null
+                try {
+                    d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
+                } catch (Exception e) {
+                    log.warn("Error getting k8s deployment", e)
+                }
+                List<Pod> pods = getAndPrintPods(namespace, deploymentName)
+                recordPodWaitDetails(timingDetails, pods)
+                if (d == null) {
+                    timingDetails.put("result", "deployment_not_visible")
+                    log.debug "${deploymentName} not found yet"
+                    continue
+                } else if (skipReplicaWait) {
+                    // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
+                    // to work its way through the system.
+                    sleep(sleepDurationSeconds * 1000)
+                    timingDetails.put("result", "replica_wait_skipped")
+                    log.debug "${deploymentName}: deployment created (skipped replica wait)."
+                    return
+                }
+                if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
+                    timingDetails.put("result", "deployment_ready")
+                    log.debug "All ${d.getSpec().getReplicas()} replicas found " +
+                            "in ready state for ${deploymentName}"
+                    log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
+                    return d.getMetadata().getUid()
+                }
+                log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
+                        "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
             }
-            getAndPrintPods(namespace, deploymentName)
-            if (d == null) {
-                log.debug "${deploymentName} not found yet"
-                continue
-            } else if (skipReplicaWait) {
-                // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
-                // to work its way through the system.
-                sleep(sleepDurationSeconds * 1000)
-                log.debug "${deploymentName}: deployment created (skipped replica wait)."
-                return
-            }
-            if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
-                log.debug "All ${d.getSpec().getReplicas()} replicas found " +
-                        "in ready state for ${deploymentName}"
-                log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
-                return d.getMetadata().getUid()
-            }
-            log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
-                    "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
+            timingDetails.put("result", "wait_timed_out")
+            return ""
         }
-        return ""
+    }
+
+    @CompileDynamic
+    private static void recordPodWaitDetails(Map<String, String> details, List<Pod> pods) {
+        int readyContainers = 0
+        int totalContainers = 0
+        Set<String> phases = new LinkedHashSet<>()
+        Set<String> waitingReasons = new LinkedHashSet<>()
+        Set<String> schedulingReasons = new LinkedHashSet<>()
+
+        pods.each { Pod pod ->
+            phases.add(pod.status?.phase ?: "unknown")
+            List statuses = (pod.status?.initContainerStatuses ?: []) + (pod.status?.containerStatuses ?: [])
+            totalContainers += statuses.size()
+            statuses.each { status ->
+                if (status.ready) {
+                    readyContainers++
+                }
+                String reason = status.state?.waiting?.reason
+                if (reason) {
+                    waitingReasons.add(reason)
+                }
+            }
+            pod.status?.conditions?.each { condition ->
+                if (condition.type == "PodScheduled" && condition.status == "False" && condition.reason) {
+                    schedulingReasons.add(condition.reason)
+                }
+            }
+        }
+
+        details.put("pod_count", pods.size().toString())
+        details.put("pod_phases", phases.join(","))
+        details.put("container_readiness", "${readyContainers}/${totalContainers}")
+        details.put("container_waiting_reasons", waitingReasons.join(","))
+        details.put("scheduling_reasons", schedulingReasons.join(","))
     }
 
     @CompileDynamic

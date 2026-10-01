@@ -18,6 +18,25 @@ source "$ROOT/tests/e2e/lib.sh"
 # shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
 source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
+run_timed_command() {
+    local phase="$1"
+    local name="$2"
+    shift 2
+    python3 "$ROOT/.openshift-ci/run_timed.py" \
+        --phase "$phase" \
+        --name "$name" \
+        -- "$@"
+}
+
+run_timed_function() {
+    local phase="$1"
+    local name="$2"
+    shift 2
+    run_timed_command "$phase" "$name" \
+        bash "$ROOT/.openshift-ci/run_timed_function.sh" \
+        "$ROOT/tests/e2e/run.sh" "$@"
+}
+
 test_e2e() {
     local output_dir="${1:-/tmp/e2e-test-logs}"
 
@@ -35,7 +54,6 @@ test_e2e() {
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
-    setup_client_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
     kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
@@ -44,34 +62,16 @@ test_e2e() {
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
-
-    # Make sure we use the roxie version pinned in ROXIE_VERSION. Under Prow the test image
-    # ships an older roxie that does not recognize a generic (non-Infra) GKE cluster: it reports
-    # "cluster type: Unknown" and defaults Central exposure to a localhost port-forward instead of
-    # the LoadBalancer. That breaks endpoints_test.go, which dials all of Central's ports at the
-    # API host. The pinned version detects GKE and exposes Central via the LoadBalancer, matching
-    # the GHA runner (which installs the pinned version explicitly).
-    ensure_roxie_on_path
-
-    local roxie_config
-    roxie_config="$(mktemp)"
-    merge_yaml "$roxie_config" <<'EOF'
-central:
-  namespace: stackrox
-  pauseReconciliation: true
-  resourceProfile: ci
-securedCluster:
-  namespace: stackrox
-  pauseReconciliation: true
-  resourceProfile: ci
-EOF
-
-    deploy_stackrox_with_roxie_compat "$roxie_config"
-    rm -f "$roxie_config"
+    deploy_stackrox
 
     # Background streamers are not explicitly stopped. They die when the CI
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
     start_continuous_log_streaming "$output_dir"
+
+    if [[ "${E2E_INFRA_ONLY:-false}" == "true" ]]; then
+        info "E2E infra-only mode enabled; skipping non-Groovy test execution"
+        return 0
+    fi
 
     rm -f FAIL
 
@@ -79,7 +79,8 @@ EOF
 
     run_roxctl_tests
     run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
-    store_test_results "roxctl-test-output" "roxctl-test-output"
+    run_timed_function post-test-collection store-roxctl-test-results \
+        store_test_results "roxctl-test-output" "roxctl-test-output"
     [[ ! -f FAIL ]] || die "roxctl e2e tests failed"
 
     # Give some time for previous tests to finish up
@@ -90,8 +91,9 @@ EOF
         echo "Running e2e tests in release mode"
         export GOTAGS=release
     fi
-    make -C tests || touch FAIL
-    store_test_results "tests/all-tests-results" "all-tests-results"
+    run_timed_command test-execution api-tests make -C "$ROOT/tests" || touch FAIL
+    run_timed_function post-test-collection store-api-test-results \
+        store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
@@ -101,19 +103,25 @@ EOF
         wait_for_api
 
         setup_proxy_tests "localhost"
-        run_proxy_tests "localhost"
+        run_timed_function test-execution proxy-tests run_proxy_tests "localhost"
+        # run_proxy_tests normally leaves these values cleared for later suites.
+        export ROX_CA_CERT_FILE=""
+        export ROX_SERVER_NAME=""
     fi
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "$output_dir" "initial_tests"
+    run_timed_function post-test-collection collect-initial-stackrox-logs \
+        collect_and_check_stackrox_logs "$output_dir" "initial_tests"
 
     # Give some time for previous tests to finish up
     wait_for_api
 
     info "E2E destructive tests"
-    make -C tests destructive-tests || touch FAIL
-    store_test_results "tests/destructive-tests-results" "destructive-tests-results"
+    run_timed_command test-execution destructive-tests \
+        make -C "$ROOT/tests" destructive-tests || touch FAIL
+    run_timed_function post-test-collection store-destructive-test-results \
+        store_test_results "tests/destructive-tests-results" "destructive-tests-results"
     [[ ! -f FAIL ]] || die "destructive e2e tests failed"
 
     # Give some time for previous tests to finish up
@@ -124,10 +132,12 @@ EOF
     trap cleanup_workload_identities EXIT
     setup_workload_identities
     info "E2E external backup tests"
-    make -C tests external-backup-tests || touch FAIL
+    run_timed_command test-execution external-backup-tests \
+        make -C "$ROOT/tests" external-backup-tests || touch FAIL
     cleanup_workload_identities
     trap - EXIT
-    store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
+    run_timed_function post-test-collection store-external-backup-test-results \
+        store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }
 
@@ -168,25 +178,31 @@ run_roxctl_bats_tests() {
     [[ -d "$ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $ROOT/tests/roxctl/bats-tests/$suite"
 
     info "Running Bats e2e tests on development roxctl"
-    "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
+    run_timed_command test-execution "roxctl-bats-$suite" \
+        "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
 }
 
 run_roxctl_tests() {
     info "Run roxctl tests"
 
     junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
+        run_timed_command test-execution roxctl-token-file \
         "$ROOT/tests/roxctl/token-file.sh"
 
     junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
+        run_timed_command test-execution roxctl-authz-trace \
         "$ROOT/tests/roxctl/authz-trace.sh"
 
     junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
+        run_timed_command test-execution roxctl-k8s-context \
         "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
 
     junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
+        run_timed_command test-execution roxctl-helm-chart-generation \
         "$ROOT/tests/roxctl/helm-chart-generation.sh"
 
     CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+        run_timed_command test-execution roxctl-yaml-verification \
         "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
