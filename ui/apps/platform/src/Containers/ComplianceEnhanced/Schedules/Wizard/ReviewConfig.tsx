@@ -1,26 +1,13 @@
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
-import {
-    Alert,
-    Badge,
-    Divider,
-    Flex,
-    FlexItem,
-    List,
-    ListItem,
-    PageSection,
-    Title,
-} from '@patternfly/react-core';
+import { Alert, Divider, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
 
-import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import type { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
-import {
-    convertFormikParametersToSchedule,
-    getBodyDefault,
-    getSubjectDefault,
-} from '../compliance.scanConfigs.utils';
+import { convertFormikParametersToSchedule } from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import ScanConfigClustersView from '../components/ScanConfigClustersView';
+import ScanConfigDeliveryView from '../components/ScanConfigDeliveryView';
 import ScanConfigParametersView from '../components/ScanConfigParametersView';
 import ScanConfigProfilesView from '../components/ScanConfigProfilesView';
 
@@ -67,7 +54,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
             <Divider component="div" />
             <Flex
                 direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsLg' }}
+                spaceItems={{ default: 'spaceItemsMd' }}
                 className="pf-v6-u-pt-lg pf-v6-u-px-lg"
             >
                 <ScanConfigParametersView
@@ -76,29 +63,14 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     description={formikValues.parameters.description}
                     scanSchedule={scanSchedule}
                 />
-                <Flex direction={{ default: 'column' }}>
-                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                        <Title headingLevel={headingLevel}>Clusters</Title>
-                        <Badge isRead>{selectedClusters.length}</Badge>
-                    </Flex>
-                    <List isPlain>
-                        {selectedClusters.map((cluster) => (
-                            <ListItem key={cluster.id}>{cluster.clusterName}</ListItem>
-                        ))}
-                    </List>
-                </Flex>
+                <ScanConfigClustersView clusters={selectedClusters} headingLevel={headingLevel} />
                 <ScanConfigProfilesView
                     headingLevel={headingLevel}
                     profiles={formikValues.profiles}
                 />
-                <NotifierConfigurationView
+                <ScanConfigDeliveryView
                     headingLevel={headingLevel}
-                    customBodyDefault={getBodyDefault(formikValues.profiles)}
-                    customSubjectDefault={getSubjectDefault(
-                        formikValues.parameters.name,
-                        formikValues.profiles
-                    )}
-                    notifierConfigurations={formikValues.report.notifierConfigurations}
+                    notifiers={formikValues.report.notifierConfigurations}
                 />
                 <Alert
                     variant="info"
