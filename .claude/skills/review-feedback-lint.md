@@ -13,10 +13,16 @@
 /review-feedback-lint --since YYYY-MM-DD --until YYYY-MM-DD --scope ui|go|all
 ```
 
-**Example:**
+**Examples:**
 ```bash
 /review-feedback-lint --since 2026-08-01 --until 2026-09-01 --scope ui
+/review-feedback-lint --since 2026-08-01 --until 2026-09-01 --scope go
 ```
+
+Scopes:
+- `ui` matches paths under `ui/`.
+- `go` matches Go/backend review files (`*.go`, `*.proto`, `go.mod`, `go.sum`) regardless of top-level directory.
+- `all` keeps all paths except deterministic noise filters.
 
 ---
 
@@ -77,7 +83,7 @@ Use `.claude/skills/review-feedback-lint/corpus-status.py` to inspect or update 
 
 **Input:**
 - Date range (--since, --until)
-- Scope filter (--scope ui|go|all)
+- Scope filter (--scope ui|go|all); `go` is semantic, not a path prefix
 - Repository (default: stackrox/stackrox)
 
 **Output:** `~/.cache/stackrox/review-lint/corpus.sqlite3` plus per-range `raw-prs.jsonl` compatibility export.

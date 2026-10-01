@@ -184,10 +184,22 @@ def extract_coderabbitai_actionable_feedback(text: str) -> str:
     return text.strip()
 
 
+GO_REVIEW_FILE_EXTENSIONS = (".go", ".proto")
+GO_REVIEW_FILENAMES = {"go.mod", "go.sum"}
+
+
+def is_go_review_path(path: str) -> bool:
+    """Return whether a path is relevant to Go/backend review mining."""
+    name = Path(path).name
+    return name in GO_REVIEW_FILENAMES or path.endswith(GO_REVIEW_FILE_EXTENSIONS)
+
+
 def is_path_in_scope(path: str, scope: str) -> bool:
     """Check if file path matches the requested scope."""
     if scope == "all":
         return True
+    if scope == "go":
+        return is_go_review_path(path)
     return path.startswith(f"{scope}/")
 
 

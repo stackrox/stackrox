@@ -4,6 +4,7 @@
 #
 # Usage:
 #   ./run-collection.sh --since 2026-08-01 --until 2026-09-01 --scope ui [--repo stackrox/stackrox]
+#   ./run-collection.sh --since 2026-08-01 --until 2026-09-01 --scope go [--repo stackrox/stackrox]
 
 set -euo pipefail
 
