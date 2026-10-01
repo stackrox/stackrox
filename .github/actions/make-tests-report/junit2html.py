@@ -40,6 +40,16 @@ EXTRA_CSS = (
     "pre{white-space:pre-wrap;word-break:break-word}"
     ".summary-badges .badge{font-size:1rem}"
     "summary{cursor:pointer}"
+    # Self-linking anchors: a '#' that only appears on hover, so the view stays
+    # uncluttered. The element keeps its space while hidden to avoid layout shift.
+    ".anchor{opacity:0;padding-right:.35rem;text-decoration:none;color:#adb5bd}"
+    ".anchor:hover{color:#0d6efd}"
+    "h2:hover .anchor,h3:hover .anchor,h4:hover .anchor,h5:hover .anchor,"
+    "h6:hover .anchor,tr:hover .anchor{opacity:1}"
+    # Highlight whatever a shared #link points at.
+    ":target{scroll-margin-top:1rem}"
+    "section.suite:target{background:rgba(13,110,253,.06)}"
+    "tr:target>td{box-shadow:inset 0 0 0 9999px rgba(13,110,253,.12)}"
 )
 
 # status -> (row class, badge class, label). Errors are treated as failures (red).
@@ -56,6 +66,12 @@ TABLE_OPEN = ('<table class="table table-sm table-hover align-middle"><thead><tr
 TABLE_CLOSE = "</tbody></table>"
 
 esc = html.escape
+
+
+def _anchor(anchor_id):
+    """A hover-revealed '#' link that points to its own element's id, so readers
+    can copy a deep link from the address bar."""
+    return f'<a class="anchor" href="#{anchor_id}" aria-label="Link to here">#</a>'
 
 
 def _count_bg(count, color_class):
@@ -155,6 +171,8 @@ class Renderer:
         self.sid = 0  # next suite id (matches pass-1 start order)
         self.stack = []  # frames: {"table_open": bool}
         self.in_testcase = False
+        self.suite_no = 0  # per-document anchor counters
+        self.case_no = 0
 
     def handle_start(self, elem):
         if elem.tag == "testsuite":
@@ -201,7 +219,11 @@ class Renderer:
         pkg = elem.get("package", "")
         time = elem.get("time", "")
         failed = counts.get("failed", 0) + counts.get("error", 0)
-        self.out.write(f'<section class="suite mb-4"><h{lvl} class="mb-2">{name}')
+        self.suite_no += 1
+        anchor_id = f"suite-{self.suite_no}"
+        self.out.write(
+            f'<section class="suite mb-4" id="{anchor_id}">'
+            f'<h{lvl} class="mb-2">{_anchor(anchor_id)}{name}')
         if pkg:
             self.out.write(f" <small>{esc(pkg)}</small>")
         self.out.write(f"</h{lvl}>")
@@ -226,9 +248,11 @@ class Renderer:
 
         status = _classify(elem)
         row_class, badge_class, label = STATUS[status]
+        self.case_no += 1
+        anchor_id = f"test-{self.case_no}"
         self.out.write(
-            f'<tr class="{row_class}">'
-            f'<td><span class="badge {badge_class}">{label}</span></td>'
+            f'<tr class="{row_class}" id="{anchor_id}">'
+            f'<td>{_anchor(anchor_id)}<span class="badge {badge_class}">{label}</span></td>'
             f'<td>{esc(elem.get("name", ""))}</td>'
             f'<td><code>{esc(elem.get("classname", ""))}</code></td>'
             f'<td>{esc(elem.get("time", ""))}</td></tr>'
