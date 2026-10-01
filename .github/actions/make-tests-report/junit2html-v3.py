@@ -191,7 +191,7 @@ def suite_header(out, rec, seq, depth):
     name = rec["name"].strip() or "(unnamed suite)"
     pkg = rec["package"].strip()
     pkg_html = f' <small class="text-muted">{e(pkg)}</small>' if pkg else ""
-    out.write(f'<section id="s{seq}">')
+    out.write(f'<section id="s{seq}" class="suite">')
     out.write(
         f'<h{level} class="sh">{e(name)}{pkg_html}'
         f'<a class="anchor" href="#s{seq}">#</a></h{level}>'
@@ -327,6 +327,7 @@ details.case[open]>summary>:nth-child(2)::before{content:"\\25BE  ";color:#6c757
 pre{white-space:pre-wrap;word-break:break-word;background:#f8f9fa;padding:.5rem;border-radius:.25rem;margin-bottom:.5rem}
 section{margin-bottom:1.5rem}
 section:target{background:#fff3cd}
+section.suite{border-left: 3px solid #dee2e6;padding-left: 1rem;}
 details.case:target,.row-grid:target{outline:2px solid #0d6efd}
 summary{cursor:pointer}
 """
