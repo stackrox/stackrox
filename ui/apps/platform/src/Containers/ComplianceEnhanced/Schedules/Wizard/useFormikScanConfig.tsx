@@ -8,6 +8,7 @@ import {
 } from 'Components/EmailTemplate/EmailTemplate.utils';
 
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import { defaultNodeRoles } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
     parameters: {
@@ -17,6 +18,7 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
         time: '',
         daysOfWeek: [],
         daysOfMonth: [],
+        nodeRoles: [...defaultNodeRoles],
     },
     clusters: [],
     profiles: [],
@@ -71,6 +73,7 @@ const validationSchema = yup.object().shape({
                     ? schema.of(yup.string()).min(1, 'Selection is required')
                     : schema.notRequired()
             ),
+        nodeRoles: yup.array().of(yup.string().required()),
     }),
     clusters: yup.array().min(1),
     profiles: yup.array().min(1),

@@ -7,10 +7,14 @@ import (
 )
 
 const (
-	masterRole       = "master"
-	workerRole       = "worker"
 	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
 )
+
+// defaultNodeRoles returns the backward-compatible default roles used when
+// Central does not specify any (e.g. old Central version).
+func defaultNodeRoles() []string {
+	return []string{"master", "worker"}
+}
 
 var (
 	defaultScanSettingName = "default-" + branding.GetProductNameShort()

@@ -203,6 +203,53 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().Nil(config)
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationNodeRoleValidation() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Valid: custom roles
+	request := getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"infra", "control-plane"}
+	s.Require().NoError(validateScanConfiguration(request))
+
+	// Valid: @all alone
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"@all"}
+	s.Require().NoError(validateScanConfiguration(request))
+
+	// Valid: empty (defaults applied elsewhere)
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = nil
+	s.Require().NoError(validateScanConfiguration(request))
+
+	// Invalid: @all mixed with other roles
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"@all", "worker"}
+	_, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "@all")
+
+	// Invalid: special characters
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"inv@lid"}
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "invalid")
+
+	// Invalid: empty string in list
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"master", ""}
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "empty")
+
+	// Invalid: too long
+	request = getTestAPIRec()
+	request.ScanConfig.NodeRoles = []string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "invalid")
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
@@ -358,6 +405,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 						Notifiers:       []*storage.NotifierConfiguration{},
+						NodeRoles:       []string{"master", "worker"},
 					},
 				}, nil).Times(1)
 
@@ -468,6 +516,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 						Notifiers:       []*storage.NotifierConfiguration{},
+						NodeRoles:       []string{"master", "worker"},
 					}, true, nil).Times(1)
 
 				s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
@@ -1178,6 +1227,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
 			Notifiers:    []*v2.NotifierConfiguration{},
+			NodeRoles:    []string{"master", "worker"},
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
@@ -1219,6 +1269,7 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
+			NodeRoles:    []string{"master", "worker"},
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}
