@@ -46,33 +46,76 @@ EXTRA_CSS = (
     ".anchor{opacity:0;padding-right:.35rem;text-decoration:none;color:#adb5bd}"
     ".anchor:hover{color:#0d6efd}"
     "h2:hover .anchor,h3:hover .anchor,h4:hover .anchor,h5:hover .anchor,"
-    "h6:hover .anchor,tr:hover .anchor{opacity:1}"
+    "h6:hover .anchor,.case:hover .anchor{opacity:1}"
     # Highlight whatever a shared #link points at.
     ":target{scroll-margin-top:1rem}"
     "section.suite:target{background:rgba(13,110,253,.06)}"
-    "tr:target>td{box-shadow:inset 0 0 0 9999px rgba(13,110,253,.12)}"
+    ".case:target{outline:2px solid #0d6efd;outline-offset:-2px}"
+    # Test cases: a CSS-grid "table" whose rows are <details>, so each case can
+    # expand its own output. A fixed column template shared by every row keeps the
+    # columns aligned across the otherwise-independent rows. The disclosure caret
+    # sits on the test name.
+    ".cases-head,.case>summary,.case.nodetail{display:grid;"
+    "grid-template-columns:9rem minmax(10rem,2fr) minmax(8rem,3fr) 5rem;"
+    "gap:.5rem;align-items:center}"
+    ".cases-head{font-weight:600;padding:.4rem .5rem;border-bottom:2px solid #dee2e6}"
+    ".case{border-bottom:1px solid #dee2e6}"
+    ".case>summary,.case.nodetail{padding:.35rem .5rem}"
+    ".case>summary{list-style:none}"
+    ".case>summary::-webkit-details-marker{display:none}"
+    ".case.s-passed{background:#d1e7dd}"
+    ".case.s-failed,.case.s-error{background:#f8d7da}"
+    ".case.s-skipped{background:#e2e3e5}"
+    ".c-status{white-space:nowrap}"
+    ".c-name{padding-left:1.2em;position:relative;word-break:break-word}"
+    ".case>summary .c-name::before{content:'▸';position:absolute;left:0;"
+    "color:#6c757d}"
+    ".case[open]>summary .c-name::before{content:'▾'}"
+    ".c-class{word-break:break-all}"
+    ".c-time{text-align:right;font-variant-numeric:tabular-nums}"
+    ".case-body{padding:.25rem .75rem .6rem 1.7em}"
+    ".case-body .lbl{font-weight:600;color:#6c757d;font-size:.85rem;margin-top:.6rem}"
+    ".case-body>:first-child{margin-top:0}"
 )
 
 # status -> (row class, badge class, label). Errors are treated as failures (red).
 STATUS = {
-    "passed": ("table-success", "text-bg-success", "TEST PASSED"),
-    "failed": ("table-danger", "text-bg-danger", "TEST FAILED"),
-    "error": ("table-danger", "text-bg-danger", "TEST ERROR"),
-    "skipped": ("table-secondary", "text-bg-secondary", "TEST SKIPPED"),
+    "passed": ("s-passed", "text-bg-success", "TEST PASSED"),
+    "failed": ("s-failed", "text-bg-danger", "TEST FAILED"),
+    "error": ("s-error", "text-bg-danger", "TEST ERROR"),
+    "skipped": ("s-skipped", "text-bg-secondary", "TEST SKIPPED"),
 }
 
-TABLE_OPEN = ('<table class="table table-sm table-hover align-middle"><thead><tr>'
-              "<th>Status</th><th>Test</th><th>Class</th><th>Time (s)</th>"
-              "</tr></thead><tbody>")
-TABLE_CLOSE = "</tbody></table>"
+# A suite's cases are a CSS-grid list (not a <table>) so each row can be a
+# <details>. LIST_OPEN emits the container and the column-label header row.
+LIST_OPEN = ('<div class="cases"><div class="cases-head">'
+             '<span>Status</span><span class="c-name">Test</span>'
+             '<span>Class</span><span class="c-time">Time (s)</span></div>')
+LIST_CLOSE = "</div>"
+
+# One delegated listener for every anchor link. Clicking an anchor that sits
+# inside a <summary> would otherwise also toggle its <details>; preventDefault()
+# cancels that, and we set the hash ourselves so the address bar / :target still
+# update. Done once here instead of an inline onclick on each of thousands of rows.
+ANCHOR_SCRIPT = (
+    "<script>document.addEventListener('click',function(e){"
+    "var a=e.target.closest('a.anchor');"
+    "if(a){e.preventDefault();location.hash=a.getAttribute('href');}});</script>"
+)
 
 esc = html.escape
 
 
 def _anchor(anchor_id):
     """A hover-revealed '#' link that points to its own element's id, so readers
-    can copy a deep link from the address bar."""
-    return f'<a class="anchor" href="#{anchor_id}" aria-label="Link to here">#</a>'
+    can copy a deep link from the address bar. A single delegated click handler
+    (see ANCHOR_SCRIPT) stops an anchor inside a <summary> from also toggling the
+    <details> — cheaper than an inline onclick on every one of thousands of rows.
+
+    The visible "#" is the accessible name; we deliberately omit an aria-label
+    because it repeats across ~19k rows and ~0.5 MB matters for the size budget.
+    """
+    return f'<a class="anchor" href="#{anchor_id}">#</a>'
 
 
 def _count_bg(count, color_class):
@@ -201,7 +244,7 @@ class Renderer:
         self.suite_counts = suite_counts
         self.suite_io = suite_io
         self.sid = 0  # next suite id (matches pass-1 start order)
-        self.stack = []  # frames: {"table_open": bool}
+        self.stack = []  # frames: {"list_open": bool, "preamble_written": ...}
         self.in_testcase = False
         self.suite_no = 0  # per-document anchor counters
         self.case_no = 0
@@ -213,14 +256,14 @@ class Renderer:
             self.sid += 1
             if self.stack:  # a nested suite is a non-row child of parent
                 self._flush_preamble(self.stack[-1])
-                self._close_table(self.stack[-1])
+                self._close_list(self.stack[-1])
             self._write_suite_header(elem, counts, depth=len(self.stack))
             # Attributes are known now; <property> children stream in before the
             # cases and get appended to "props". Suite-level stdout/stderr were
             # captured in pass 1 (they follow the cases in the XML). The preamble
             # renders Meta then output, once, before the table.
             self.stack.append({
-                "table_open": False,
+                "list_open": False,
                 "preamble_written": False,
                 "attr_rows": _suite_attr_rows(elem),
                 "props": [],
@@ -243,7 +286,7 @@ class Renderer:
             frame = self.stack.pop()
             # A suite with only Meta/output and no cases still gets its preamble.
             self._flush_preamble(frame)
-            self._close_table(frame)
+            self._close_list(frame)
             self.out.write("</section>")
             elem.clear()
         elif tag == "property" and self.stack:
@@ -255,10 +298,10 @@ class Renderer:
             elem.clear()
 
     # -- writers -----------------------------------------------------------
-    def _close_table(self, frame):
-        if frame["table_open"]:
-            self.out.write(TABLE_CLOSE)
-            frame["table_open"] = False
+    def _close_list(self, frame):
+        if frame["list_open"]:
+            self.out.write(LIST_CLOSE)
+            frame["list_open"] = False
 
     def _flush_preamble(self, frame):
         """Render, once and before any table, the suite's Meta block followed by
@@ -300,28 +343,40 @@ class Renderer:
         if not self.stack:
             return
         frame = self.stack[-1]
-        self._flush_preamble(frame)  # Meta + suite output go before the tests table
-        if not frame["table_open"]:
-            self.out.write(TABLE_OPEN)
-            frame["table_open"] = True
+        self._flush_preamble(frame)  # Meta + suite output go before the cases list
+        if not frame["list_open"]:
+            self.out.write(LIST_OPEN)
+            frame["list_open"] = True
 
         status = _classify(elem)
         row_class, badge_class, label = STATUS[status]
         self.case_no += 1
         anchor_id = f"test-{self.case_no}"
-        self.out.write(
-            f'<tr class="{row_class}" id="{anchor_id}">'
-            f'<td>{_anchor(anchor_id)}<span class="badge {badge_class}">{label}</span></td>'
-            f'<td>{esc(elem.get("name", ""))}</td>'
-            f'<td><code>{esc(elem.get("classname", ""))}</code></td>'
-            f'<td>{esc(elem.get("time", ""))}</td></tr>'
+        cells = (
+            f'<span class="c-status">{_anchor(anchor_id)}'
+            f'<span class="badge {badge_class}">{label}</span></span>'
+            f'<span class="c-name">{esc(elem.get("name", ""))}</span>'
+            f'<span class="c-class"><code>{esc(elem.get("classname", ""))}</code></span>'
+            f'<span class="c-time">{esc(elem.get("time", ""))}</span>'
         )
+        body = self._case_body(elem)
+        if body:
+            # The case is a <details> (class "io" -> toggled by Expand/Collapse
+            # all). Collapsed by default; the caret sits on the test name.
+            self.out.write(
+                f'<details class="io case {row_class}" id="{anchor_id}">'
+                f"<summary>{cells}</summary>"
+                f'<div class="case-body">{body}</div></details>'
+            )
+        else:
+            self.out.write(
+                f'<div class="case nodetail {row_class}" id="{anchor_id}">{cells}</div>'
+            )
 
-        detail = self._case_detail(elem, status)
-        if detail:
-            self.out.write(f'<tr class="{row_class}"><td colspan="4">{detail}</td></tr>')
-
-    def _case_detail(self, elem, status):
+    def _case_body(self, elem):
+        """Inner detail of a case: failure/error/skipped message and trace plus
+        stdout/stderr, rendered directly. The enclosing case <details> is the only
+        expand/collapse control, so there are no nested toggles here."""
         parts = []
         sub = elem.find("failure")
         if sub is None:
@@ -331,19 +386,15 @@ class Renderer:
         if sub is not None:
             message = sub.get("message", "")
             body = _text(sub)
-            if message or body:
-                open_attr = " open" if status in ("failed", "error") else ""
-                summary = esc(message) if message else status
-                parts.append(f'<details class="io"{open_attr}><summary>{summary}</summary>')
-                if body:
-                    parts.append(f"<pre>{esc(body)}</pre>")
-                parts.append("</details>")
+            if message:
+                parts.append(f'<div class="lbl">{esc(message)}</div>')
+            if body:
+                parts.append(f"<pre>{esc(body)}</pre>")
         for label, el in (("stdout", elem.find("system-out")),
                           ("stderr", elem.find("system-err"))):
             text = _text(el)
             if text.strip():
-                parts.append(
-                    f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
+                parts.append(f'<div class="lbl">{label}</div><pre>{esc(text)}</pre>')
         return "".join(parts)
 
     def _write_output(self, label, text):
@@ -422,7 +473,9 @@ def pass2(valid_files, suite_counts, suite_io, totals, out, title):
         for event, elem in it:
             (r.handle_start if event == "start" else r.handle_end)(elem)
 
-    out.write("</div></body></html>")
+    out.write("</div>")
+    out.write(ANCHOR_SCRIPT)
+    out.write("</body></html>")
 
 
 def main(argv=None):
