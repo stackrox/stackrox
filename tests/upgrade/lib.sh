@@ -105,6 +105,23 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
+is_central_upgrade_ci() {
+    [[ "${CI:-}" == true && "${CI_JOB_NAME:-}" == gke-upgrade-tests-central ]]
+}
+
+customize_ci_central_db_chart() {
+    if is_central_upgrade_ci; then
+        # Defaults contain Helm templates, not plain YAML. Null values would
+        # restore the CPU limit, so remove that fallback before rendering.
+        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-chart.patch"
+        if git -C "$1" apply --reverse --check --unidiff-zero "$patch" 2>/dev/null; then
+            return 0
+        fi
+        git -C "$1" apply --check --unidiff-zero "$patch" || return "$?"
+        git -C "$1" apply --unidiff-zero "$patch"
+    fi
+}
+
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
@@ -127,6 +144,11 @@ deploy_earlier_postgres_central() {
     # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
     # because the later Helm upgrade cannot change an existing PVC's class.
     local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart /tmp/early-stackrox-central-services-chart
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
     if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
         if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
             kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
@@ -176,6 +198,15 @@ upgrade_central_helm_to_head() {
         die "Helm release stackrox-central-services not found in namespace ${namespace}"
     fi
 
+    if is_central_upgrade_ci; then
+        # Inspect only the override; never capture or trace release credentials.
+        if ! helm -n "$namespace" get values stackrox-central-services -o json |
+            jq -e '.central.db.resources.limits.cpu == null' >/dev/null; then
+            echo "Cannot upgrade: retained Central DB CPU limit or unreadable release values" >&2
+            return 1
+        fi
+    fi
+
     local chart_dir
     chart_dir="$(mktemp -d)"
     "$roxctl" helm output central-services \
@@ -222,6 +253,11 @@ upgrade_central_helm_to_head() {
     fi
 
     local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart "$chart_dir"
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
     if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
         if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
             kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"

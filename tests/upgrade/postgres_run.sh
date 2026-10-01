@@ -309,6 +309,27 @@ run_upgrade_smoke() (
     [[ ! -f FAIL ]] || die "Smoke tests failed"
 )
 
+run_ci_scaled_workload() (
+    if is_central_upgrade_ci; then
+        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-scale.patch"
+        git apply --check "$patch" || exit "$?"
+        git apply "$patch" || exit "$?"
+        # shellcheck disable=SC2329 # Invoked by the EXIT trap.
+        cleanup_scale_patch() {
+            local status=$?
+            if ! git apply --reverse "$patch"; then
+                echo "Failed to reverse Central DB CI scale patch" >&2
+                if [[ "$status" -eq 0 ]]; then
+                    status=1
+                fi
+            fi
+            exit "$status"
+        }
+        trap cleanup_scale_patch EXIT
+    fi
+    bash ./scale/launch_workload.sh scale-test
+)
+
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
@@ -330,7 +351,7 @@ deploy_scaled_workload() {
 
     sensor_wait
 
-    ./scale/launch_workload.sh scale-test
+    run_ci_scaled_workload
 
     # The historical scale script requests 5 CPUs per component. Leave room for
     # both scanners by reducing Central and Central DB's CPU reservations.

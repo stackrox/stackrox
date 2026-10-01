@@ -2,10 +2,183 @@
 
 setup() {
     set -o pipefail
+    unset CI CI_JOB_NAME
     source "${BATS_TEST_DIRNAME}/rollback.sh"
     export IMAGE=registry/main:4.9.0
     export POD='{"items":[{"metadata":{"name":"central-test"},"spec":{"containers":[{"name":"central","image":"registry/main:4.9.0"}]},"status":{"conditions":[{"type":"Ready","status":"False"}],"containerStatuses":[{"name":"central","ready":false,"lastState":{"terminated":{"exitCode":1}}}]}}]}'
     export LOG='Software downgrade is not supported.  The software supports database version of 213 but the database requires the software support a database version to be at least least 220'
+}
+
+@test "CI DB defaults customization is scoped and idempotent" {
+    source "${BATS_TEST_DIRNAME}/lib.sh"
+    export TEST_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+    mkdir -p "$BATS_TEST_TMPDIR/chart/internal"
+    local defaults="$BATS_TEST_TMPDIR/chart/internal/defaults.yaml"
+    cat >"$defaults" <<'EOF'
+defaults:
+  central:
+    endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
+    db:
+      resources:
+        requests:
+          memory: "8Gi"
+          cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
+EOF
+    cp "$defaults" "$BATS_TEST_TMPDIR/original"
+    customize_ci_central_db_chart "$BATS_TEST_TMPDIR/chart"
+    cmp "$defaults" "$BATS_TEST_TMPDIR/original"
+    export CI=true CI_JOB_NAME=gke-upgrade-tests-postgres
+    customize_ci_central_db_chart "$BATS_TEST_TMPDIR/chart"
+    cmp "$defaults" "$BATS_TEST_TMPDIR/original"
+    export CI_JOB_NAME=gke-upgrade-tests-central
+    customize_ci_central_db_chart "$BATS_TEST_TMPDIR/chart"
+    sed '/endpoint:/d' "$defaults" | yq e -j '.defaults.central.db.resources' - | jq -e '. == {"requests": {"cpu": "4", "memory": "8Gi"}, "limits": {"memory": "16Gi"}}'
+    cp "$defaults" "$BATS_TEST_TMPDIR/customized"
+    customize_ci_central_db_chart "$BATS_TEST_TMPDIR/chart"
+    cmp "$defaults" "$BATS_TEST_TMPDIR/customized"
+    echo unexpected >"$defaults"
+    run customize_ci_central_db_chart "$BATS_TEST_TMPDIR/chart"
+    [ "$status" -ne 0 ]
+    [ "$(cat "$defaults")" = unexpected ]
+}
+
+@test "CI upgrade rejects retained limits and failed value reads without leaking values" {
+    source "${BATS_TEST_DIRNAME}/lib.sh"
+    export CI=true CI_JOB_NAME=gke-upgrade-tests-central
+    export CURRENT_TAG=5.1.x REGISTRY=registry TEST_ROOT="$BATS_TEST_TMPDIR" TEST_HOST_PLATFORM=linux
+    info() { :; }
+    helm() {
+        case "$*" in
+            *'get values'*) echo '{"secret":"do-not-print","central":{"db":{"resources":{"limits":{"cpu":"8"}}}}}' ;;
+        esac
+    }
+    run upgrade_central_helm_to_head
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'retained Central DB CPU limit'* ]]
+    [[ "$output" != *'do-not-print'* ]]
+    helm() {
+        if [[ "$*" == *'get values'* ]]; then
+            echo '{}'
+            return 42
+        fi
+    }
+    run upgrade_central_helm_to_head
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'retained Central DB CPU limit'* ]]
+    helm() { [[ "$*" != *'get values'* ]]; }
+    run upgrade_central_helm_to_head
+    [ "$status" -ne 0 ]
+}
+
+setup_historical_scale() {
+    export MAIN_IMAGE_TAG=test
+    source "${BATS_TEST_DIRNAME}/postgres_run.sh"
+    mkdir -p "$BATS_TEST_TMPDIR/historical/scale"
+    git -C "$TEST_ROOT" show "$EARLIER_SHA:scale/launch_workload.sh" >"$BATS_TEST_TMPDIR/original"
+    cd "$BATS_TEST_TMPDIR/historical"
+    git init -q
+    cp "$BATS_TEST_TMPDIR/original" scale/launch_workload.sh
+    chmod +x scale/launch_workload.sh
+    export CI=true CI_JOB_NAME=gke-upgrade-tests-central
+}
+
+@test "historical scale patch changes only CI DB resources and restores on success and failure" {
+    setup_historical_scale
+    bash() {
+        cp scale/launch_workload.sh "$BATS_TEST_TMPDIR/patched"
+        return "${SCALE_STATUS:-0}"
+    }
+    run run_ci_scaled_workload
+    [ "$status" -eq 0 ]
+    cmp scale/launch_workload.sh "$BATS_TEST_TMPDIR/original"
+    grep 'patch deploy/central-db' "$BATS_TEST_TMPDIR/patched" | head -1 | grep -F '"requests":{"memory":"8Gi","cpu":"2"},"limits":{"memory":"8Gi","cpu":null}'
+    sed '/patch deploy\/central-db/d' "$BATS_TEST_TMPDIR/original" >"$BATS_TEST_TMPDIR/other-original"
+    sed '/patch deploy\/central-db/d' "$BATS_TEST_TMPDIR/patched" >"$BATS_TEST_TMPDIR/other-patched"
+    cmp "$BATS_TEST_TMPDIR/other-original" "$BATS_TEST_TMPDIR/other-patched"
+    export SCALE_STATUS=42
+    run run_ci_scaled_workload
+    [ "$status" -eq 42 ]
+    cmp scale/launch_workload.sh "$BATS_TEST_TMPDIR/original"
+}
+
+@test "historical scale patch mismatch prevents execution" {
+    setup_historical_scale
+    echo mismatch >scale/launch_workload.sh
+    bash() { touch "$BATS_TEST_TMPDIR/started"; }
+    run run_ci_scaled_workload
+    [ "$status" -ne 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/started" ]
+    [ "$(cat scale/launch_workload.sh)" = mismatch ]
+}
+
+@test "historical scale emits the intended DB strategic merge patch" {
+    setup_historical_scale
+    mkdir -p scale/workloads scale/signatures
+    touch scale/workloads/scale-test.yaml
+    printf '#!/bin/sh\nexit 0\n' >scale/signatures/create-signature-integrations.sh
+    chmod +x scale/signatures/create-signature-integrations.sh
+    kubectl() {
+        if [[ "$*" == 'get nodes -o json' ]]; then
+            echo '{"items":[{},{},{},{}]}'
+        elif [[ "$*" == *'patch deploy/central-db'* ]]; then
+            printf '%s\n' "${!#}" >"$BATS_TEST_TMPDIR/db-patch"
+        fi
+    }
+    export -f kubectl
+    run_ci_scaled_workload
+    jq -e '.spec.template.spec.containers == [{"name":"central-db","resources":{"requests":{"memory":"8Gi","cpu":"2"},"limits":{"memory":"8Gi","cpu":null}}}]' "$BATS_TEST_TMPDIR/db-patch"
+    cmp scale/launch_workload.sh "$BATS_TEST_TMPDIR/original"
+}
+
+@test "historical scale is unchanged outside the Central CI job" {
+    setup_historical_scale
+    bash() { cmp scale/launch_workload.sh "$BATS_TEST_TMPDIR/original"; }
+    export CI_JOB_NAME=gke-upgrade-tests-postgres
+    run_ci_scaled_workload
+    export CI_JOB_NAME=gke-upgrade-tests-central
+    unset CI
+    run_ci_scaled_workload
+}
+
+@test "initial install passes scoped DB request through Helm arguments" {
+    source "${BATS_TEST_DIRNAME}/lib.sh"
+    export CI=true CI_JOB_NAME=gke-upgrade-tests-central EARLIER_TAG=4.10.0 TEST_HOST_PLATFORM=linux
+    info() { :; }
+    go() { echo /tmp; }
+    make() { :; }
+    roxctl() { :; }
+    gen_admin_password() { echo synthetic; }
+    sleep() { :; }
+    ci_export() { :; }
+    customize_ci_central_db_chart() { echo "$1" >"$BATS_TEST_TMPDIR/customized"; }
+    helm() { printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/args"; }
+    deploy_earlier_postgres_central
+    grep -Fx /tmp/early-stackrox-central-services-chart "$BATS_TEST_TMPDIR/customized"
+    grep -Fx -- --set-string "$BATS_TEST_TMPDIR/args"
+    grep -Fx central.db.resources.requests.cpu=2 "$BATS_TEST_TMPDIR/args"
+    grep -Fx central.db.resources.requests.memory=8Gi "$BATS_TEST_TMPDIR/args"
+    grep -Fx central.db.resources.limits.memory=8Gi "$BATS_TEST_TMPDIR/args"
+    rm "$BATS_TEST_TMPDIR/customized"
+    export CI_JOB_NAME=gke-upgrade-tests-postgres
+    deploy_earlier_postgres_central
+    [ ! -e "$BATS_TEST_TMPDIR/customized" ]
+    ! grep -F central.db.resources.requests.cpu "$BATS_TEST_TMPDIR/args"
+}
+
+@test "historical scale cleanup failures are reported and preserve command failure" {
+    setup_historical_scale
+    bash() { echo mismatch >scale/launch_workload.sh; return "${SCALE_STATUS:-0}"; }
+    run run_ci_scaled_workload
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'Failed to reverse Central DB CI scale patch'* ]]
+    cp "$BATS_TEST_TMPDIR/original" scale/launch_workload.sh
+    export SCALE_STATUS=42
+    run run_ci_scaled_workload
+    [ "$status" -eq 42 ]
+    [[ "$output" == *'Failed to reverse Central DB CI scale patch'* ]]
 }
 
 @test "new rollback diagnostic is recognized" {
@@ -173,13 +346,19 @@ setup() {
 
 @test "release chart uses historical CLI but keeps current Central DB" {
     source "${BATS_TEST_DIRNAME}/lib.sh"
-    export TEST_ROOT="$BATS_TEST_TMPDIR" TEST_HOST_PLATFORM=linux
+    export TEST_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)" TEST_HOST_PLATFORM=linux
     export CURRENT_TAG=5.1.x REGISTRY=registry
     info() { :; }
     wait_for_api() { :; }
     wait_for_central_db() { :; }
     wait_for_scanner_V4() { :; }
-    old_roxctl() { echo "$*" >"$BATS_TEST_TMPDIR/roxctl-args"; }
+    old_roxctl() {
+        echo "$*" >"$BATS_TEST_TMPDIR/roxctl-args"
+        while [[ "$1" != --output-dir ]]; do shift; done
+        mkdir -p "$2/internal"
+        printf 'defaults:\n  central:\n    db:\n      resources:\n        requests:\n          memory: "8Gi"\n          cpu: "4"\n        limits:\n          memory: "16Gi"\n          cpu: "8"\n' >"$2/internal/defaults.yaml"
+        echo "$2" >"$BATS_TEST_TMPDIR/chart-dir"
+    }
     kubectl() {
         case "$*" in
             *'get secrets'*) echo '{"items":[{"metadata":{"name":"stackrox-generated-test","creationTimestamp":"2026-01-01"},"data":{"generated-values.yaml":"e30="}}]}' ;;
@@ -189,7 +368,11 @@ setup() {
     helm() {
         case "$*" in
             *'upgrade --help'*) echo help ;;
-            *upgrade*) cat >"$BATS_TEST_TMPDIR/values.yaml" ;;
+            *'get values'*) echo '{"central":{"db":{"resources":{"limits":{"cpu":null}}}}}' ;;
+            *upgrade*)
+                printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/helm-args"
+                cat >"$BATS_TEST_TMPDIR/values.yaml"
+                ;;
         esac
     }
     upgrade_central_helm_to_head stackrox 4.10.0 registry old_roxctl 5.1.x
@@ -197,6 +380,15 @@ setup() {
     [ "$(yq e '.central.db.image.tag' "$BATS_TEST_TMPDIR/values.yaml")" = 5.1.x ]
     [ "$(yq e '.central.image.tag' "$BATS_TEST_TMPDIR/values.yaml")" = 4.10.0 ]
     [ "$(yq e '.scannerV4.db.image.tag' "$BATS_TEST_TMPDIR/values.yaml")" = 4.10.0 ]
+    ! grep -F central.db.resources.requests.cpu "$BATS_TEST_TMPDIR/helm-args"
+    export CI=true CI_JOB_NAME=gke-upgrade-tests-central
+    upgrade_central_helm_to_head stackrox 4.10.0 registry old_roxctl 5.1.x
+    grep -Fx -- --reuse-values "$BATS_TEST_TMPDIR/helm-args"
+    grep -Fx -- --set-string "$BATS_TEST_TMPDIR/helm-args"
+    grep -Fx central.db.resources.requests.cpu=2 "$BATS_TEST_TMPDIR/helm-args"
+    grep -Fx central.db.resources.requests.memory=8Gi "$BATS_TEST_TMPDIR/helm-args"
+    grep -Fx central.db.resources.limits.memory=8Gi "$BATS_TEST_TMPDIR/helm-args"
+    [ "$(yq e '.defaults.central.db.resources.limits.cpu' "$(cat "$BATS_TEST_TMPDIR/chart-dir")/internal/defaults.yaml")" = null ]
 }
 
 @test "setting rollback preserves config and changes only Central" {
