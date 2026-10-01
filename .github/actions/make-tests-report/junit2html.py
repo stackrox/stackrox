@@ -40,6 +40,7 @@ EXTRA_CSS = (
     "pre{white-space:pre-wrap;word-break:break-word}"
     ".summary-badges .badge{font-size:1rem}"
     "summary{cursor:pointer}"
+    ".meta{font-size:.875rem}"
     # Self-linking anchors: a '#' that only appears on hover, so the view stays
     # uncluttered. The element keeps its space while hidden to avoid layout shift.
     ".anchor{opacity:0;padding-right:.35rem;text-decoration:none;color:#adb5bd}"
@@ -78,6 +79,17 @@ def _count_bg(count, color_class):
     """Bootstrap text-bg class for a count badge: neutral (light) when the count
     is zero, coloured only when it is non-zero."""
     return color_class if count else "text-bg-light"
+
+
+def _suite_attr_rows(elem):
+    """(label, value) rows for the <testsuite> attributes shown in the Meta block.
+    Empty ones are dropped later by render_metadata."""
+    return [
+        ("Assertions", elem.get("assertions", "")),
+        ("Hostname", elem.get("hostname", "")),
+        ("File", elem.get("file", "")),
+        ("ID", elem.get("id", "")),
+    ]
 
 
 class NotJUnit(Exception):
@@ -179,9 +191,17 @@ class Renderer:
             counts = self.suite_counts[self.sid]
             self.sid += 1
             if self.stack:  # a nested suite is a non-row child of parent
+                self._flush_meta(self.stack[-1])
                 self._close_table(self.stack[-1])
             self._write_suite_header(elem, counts, depth=len(self.stack))
-            self.stack.append({"table_open": False})
+            # Attributes are known now; <property> children stream in before the
+            # cases and get appended to "props". _flush_meta renders both, once.
+            self.stack.append({
+                "table_open": False,
+                "meta_written": False,
+                "attr_rows": _suite_attr_rows(elem),
+                "props": [],
+            })
         elif elem.tag == "testcase":
             self.in_testcase = True
 
@@ -197,13 +217,23 @@ class Renderer:
         tag = elem.tag
         if tag == "testsuite":
             frame = self.stack.pop()
+            self._flush_meta(frame)  # suites with only properties still show Meta
             self._close_table(frame)
             self.out.write("</section>")
             elem.clear()
+        elif tag == "property" and self.stack:
+            # Suite-level <property>; case-level ones are skipped via in_testcase.
+            value = elem.get("value")
+            if value is None:
+                value = _text(elem)
+            self.stack[-1]["props"].append((elem.get("name", ""), (value or "").strip()))
+            elem.clear()
         elif tag == "system-out" and self.stack:
+            self._flush_meta(self.stack[-1])
             self._close_table(self.stack[-1])
             self._write_output("stdout", _text(elem))
         elif tag == "system-err" and self.stack:
+            self._flush_meta(self.stack[-1])
             self._close_table(self.stack[-1])
             self._write_output("stderr", _text(elem))
 
@@ -212,6 +242,13 @@ class Renderer:
         if frame["table_open"]:
             self.out.write(TABLE_CLOSE)
             frame["table_open"] = False
+
+    def _flush_meta(self, frame):
+        """Render the suite's Meta block once, before any suite body content."""
+        if frame["meta_written"]:
+            return
+        frame["meta_written"] = True
+        render_metadata(self.out, frame["attr_rows"] + frame["props"])
 
     def _write_suite_header(self, elem, counts, depth):
         lvl = min(2 + depth, 6)
@@ -234,14 +271,21 @@ class Renderer:
             f'<span class="badge {_count_bg(failed, "text-bg-danger")} me-2">{failed} failed</span>'
             f'<span class="badge {_count_bg(counts.get("skipped", 0), "text-bg-secondary")} me-2">{counts.get("skipped", 0)} skipped</span>'
         )
+        timestamp = elem.get("timestamp", "")
+        bits = []
         if time:
-            self.out.write(f'<span class="small">{esc(time)}s</span>')
+            bits.append(f"{esc(time)}s")
+        if timestamp:
+            bits.append(esc(timestamp))
+        if bits:
+            self.out.write(f'<span class="small">{" &middot; ".join(bits)}</span>')
         self.out.write("</div>")
 
     def _write_case(self, elem):
         if not self.stack:
             return
         frame = self.stack[-1]
+        self._flush_meta(frame)  # Meta goes before the tests table
         if not frame["table_open"]:
             self.out.write(TABLE_OPEN)
             frame["table_open"] = True
@@ -291,6 +335,25 @@ class Renderer:
         if text.strip():
             self.out.write(
                 f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
+
+
+def render_metadata(out, rows, summary="Meta"):
+    """Render a collapsed, hover-expandable block of key/value metadata as a
+    headerless two-column table in a slightly smaller font.
+
+    `rows` is an iterable of (key, value) pairs; empty values are dropped. The
+    block is tagged 'io' so the global Expand all / Collapse all buttons toggle
+    it. Reusable: suites use it now, the summary can use it later.
+    """
+    rows = [(k, v) for k, v in rows if v]
+    if not rows:
+        return
+    out.write(f'<details class="io meta"><summary>{esc(summary)}</summary>')
+    out.write('<table class="table table-sm table-borderless w-auto mb-0"><tbody>')
+    for k, v in rows:
+        out.write(f'<tr><td class="text-body-secondary pe-3">{esc(k)}</td>'
+                  f"<td>{esc(v)}</td></tr>")
+    out.write("</tbody></table></details>")
 
 
 def render_summary(out, totals):
