@@ -133,6 +133,9 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        // A pod can still be listed after its deployment object is gone, and
+        // that holds this shared namespace in Terminating.
+        orchestrator.deleteManagedWorkloads(TEST_NAMESPACE)
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         try {
