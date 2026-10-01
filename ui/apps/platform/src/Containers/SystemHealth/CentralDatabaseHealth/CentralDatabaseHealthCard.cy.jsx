@@ -5,7 +5,7 @@ function patchDatabaseStatusResponse(overrides = {}) {
         req.reply({
             databaseAvailable: true,
             databaseType: 'PostgresDB',
-            databaseVersion: '16.0',
+            databaseVersion: '15.0',
             databaseIsExternal: false,
             ...overrides,
         });
@@ -20,7 +20,7 @@ describe(Cypress.spec.relative, () => {
         patchDatabaseStatusResponse();
         cy.mount(<CentralDatabaseHealthCard />);
         cy.get(`${cardHeader}:contains("no errors")`);
-        cy.get(`${cardHeader}:contains("PostgresDB 16.0")`);
+        cy.get(`${cardHeader}:contains("PostgresDB 15.0")`);
     });
 
     it('should not show a warning if the database is external', () => {
