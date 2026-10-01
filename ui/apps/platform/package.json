@@ -100,6 +100,7 @@
         "test-coverage": "TZ=UTC vitest run --coverage",
         "test:eslint-rules": "node eslint-plugins/pluginGeneric.test.js && node eslint-plugins/pluginAccessibility.test.js",
         "lint": "eslint --quiet --cache --cache-strategy content",
+        "lint:profile": "TIMING=1 eslint --quiet --no-cache",
         "lint:fast-dev": "eslint --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fast-dev-fix": "eslint --fix --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fix": "eslint --fix",

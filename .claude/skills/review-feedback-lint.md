@@ -299,7 +299,7 @@ Invariant: Calls to subscribe() in useEffect must return cleanup.
 
 **Tests:** Use ESLint `RuleTester` (see reference in `eslint-plugins/`)
 
-**Performance:** `TIMING=1 npm run lint` from `ui/apps/platform/`
+**Performance:** `npm run lint:profile -- <paths>` from `ui/apps/platform/` runs ESLint with `TIMING=1` and `--no-cache` so rule timing is visible. For full UI impact, run `npm run lint:profile -- .`.
 
 **Directory exclusions:** Add to `ignores:` arrays in `eslint.config.js` if legacy violations exist
 
@@ -355,7 +355,7 @@ Create fixtures representing before/after when exact replay is impractical.
 
 ### Performance Validation
 
-**ESLint:** `TIMING=1 npm run lint` - reject rules contributing >5% of total runtime without clear justification.
+**ESLint:** `npm run lint:profile -- <paths>` from `ui/apps/platform/` - inspect the `TIMING=1` rule table and reject rules contributing >5% of total runtime without clear justification.
 
 **Go:** Standard benchmark profiling.
 
