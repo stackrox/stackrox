@@ -81,7 +81,10 @@ function EditScanConfigDetail({
                 )}
                 {!isLoading && scanConfig && (
                     <PageSection padding={{ default: 'noPadding' }} isFilled>
-                        <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
+                        <ScanConfigWizardForm
+                            initialFormValues={parsedScanConfig}
+                            pageAction="edit"
+                        />
                     </PageSection>
                 )}
             </PageSection>
