@@ -61,7 +61,9 @@ EXTRA_CSS = (
     "grid-template-columns:9rem minmax(10rem,2fr) minmax(8rem,3fr) 5rem;"
     "gap:.5rem;align-items:center}"
     ".ch{font-weight:600;padding:.4rem .5rem;border-bottom:2px solid #dee2e6}"
-    ".case{border-bottom:1px solid #dee2e6}"
+    # Thin separator between rows. Translucent black (not a fixed gray) so the line
+    # stays visible over every row fill colour below.
+    ".case{border-bottom:1px solid rgba(0,0,0,.1)}"
     ".case>summary,.case.nd{padding:.35rem .5rem}"
     ".case>summary{list-style:none}"
     ".case>summary::-webkit-details-marker{display:none}"
