@@ -392,6 +392,56 @@ func (Comparator) EnumDescriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
 }
 
+// WorkloadType is a Kubernetes workload kind that can be excluded from a policy in bulk.
+type Exclusion_WorkloadType int32
+
+const (
+	Exclusion_WORKLOAD_TYPE_UNSPECIFIED Exclusion_WorkloadType = 0
+	Exclusion_CRON_JOB                  Exclusion_WorkloadType = 1
+	Exclusion_JOB                       Exclusion_WorkloadType = 2
+)
+
+// Enum value maps for Exclusion_WorkloadType.
+var (
+	Exclusion_WorkloadType_name = map[int32]string{
+		0: "WORKLOAD_TYPE_UNSPECIFIED",
+		1: "CRON_JOB",
+		2: "JOB",
+	}
+	Exclusion_WorkloadType_value = map[string]int32{
+		"WORKLOAD_TYPE_UNSPECIFIED": 0,
+		"CRON_JOB":                  1,
+		"JOB":                       2,
+	}
+)
+
+func (x Exclusion_WorkloadType) Enum() *Exclusion_WorkloadType {
+	p := new(Exclusion_WorkloadType)
+	*p = x
+	return p
+}
+
+func (x Exclusion_WorkloadType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Exclusion_WorkloadType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_policy_proto_enumTypes[7].Descriptor()
+}
+
+func (Exclusion_WorkloadType) Type() protoreflect.EnumType {
+	return &file_storage_policy_proto_enumTypes[7]
+}
+
+func (x Exclusion_WorkloadType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Exclusion_WorkloadType.Descriptor instead.
+func (Exclusion_WorkloadType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_policy_proto_rawDescGZIP(), []int{7, 0}
+}
+
 // Next tag: 29
 type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -411,7 +461,7 @@ type Policy struct {
 	LifecycleStages []LifecycleStage `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty" search:"Lifecycle Stage" crYaml:"lifecycleStages,stringer"` // @gotags: search:"Lifecycle Stage" crYaml:"lifecycleStages,stringer"
 	// Describes which events should trigger execution of this policy
 	EventSource EventSource `protobuf:"varint,22,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty" crYaml:"eventSource,stringer"` // @gotags: crYaml:"eventSource,stringer"
-	// Define deployments or images that should be excluded from this policy.
+	// Define deployments, images, or workload types that should be excluded from this policy.
 	Exclusions []*Exclusion `protobuf:"bytes,21,rep,name=exclusions,proto3" json:"exclusions,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	// Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
 	Scope []*Scope `protobuf:"bytes,11,rep,name=scope,proto3" json:"scope,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
@@ -1051,11 +1101,18 @@ func (x *EvaluationFilter) GetSkipContainerTypes() []ContainerType {
 }
 
 type Exclusion struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
-	Deployment    *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment,proto3" json:"deployment,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
-	Image         *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty" crYaml:",omitempty"`           // @gotags: crYaml:",omitempty"
-	Expiration    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty" crYaml:",timestamp,omitempty"` // @gotags: crYaml:",timestamp,omitempty"
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
+	Image      *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty" crYaml:",omitempty"`           // @gotags: crYaml:",omitempty"
+	Expiration *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty" crYaml:",timestamp,omitempty"` // @gotags: crYaml:",timestamp,omitempty"
+	// matcher is either a kind-agnostic name/scope exclusion or a type-only exclusion.
+	// Image stays outside the oneof because existing payloads may set both image and deployment.
+	//
+	// Types that are valid to be assigned to Matcher:
+	//
+	//	*Exclusion_Deployment_
+	//	*Exclusion_ExcludeByType_
+	Matcher       isExclusion_Matcher `protobuf_oneof:"matcher"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1097,13 +1154,6 @@ func (x *Exclusion) GetName() string {
 	return ""
 }
 
-func (x *Exclusion) GetDeployment() *Exclusion_Deployment {
-	if x != nil {
-		return x.Deployment
-	}
-	return nil
-}
-
 func (x *Exclusion) GetImage() *Exclusion_Image {
 	if x != nil {
 		return x.Image
@@ -1117,6 +1167,47 @@ func (x *Exclusion) GetExpiration() *timestamppb.Timestamp {
 	}
 	return nil
 }
+
+func (x *Exclusion) GetMatcher() isExclusion_Matcher {
+	if x != nil {
+		return x.Matcher
+	}
+	return nil
+}
+
+func (x *Exclusion) GetDeployment() *Exclusion_Deployment {
+	if x != nil {
+		if x, ok := x.Matcher.(*Exclusion_Deployment_); ok {
+			return x.Deployment
+		}
+	}
+	return nil
+}
+
+func (x *Exclusion) GetExcludeByType() *Exclusion_ExcludeByType {
+	if x != nil {
+		if x, ok := x.Matcher.(*Exclusion_ExcludeByType_); ok {
+			return x.ExcludeByType
+		}
+	}
+	return nil
+}
+
+type isExclusion_Matcher interface {
+	isExclusion_Matcher()
+}
+
+type Exclusion_Deployment_ struct {
+	Deployment *Exclusion_Deployment `protobuf:"bytes,5,opt,name=deployment,proto3,oneof" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+}
+
+type Exclusion_ExcludeByType_ struct {
+	ExcludeByType *Exclusion_ExcludeByType `protobuf:"bytes,8,opt,name=exclude_by_type,json=excludeByType,proto3,oneof" crYaml:"excludeByType,omitempty"` // @gotags: crYaml:"excludeByType,omitempty"
+}
+
+func (*Exclusion_Deployment_) isExclusion_Matcher() {}
+
+func (*Exclusion_ExcludeByType_) isExclusion_Matcher() {}
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
 // We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
@@ -1356,6 +1447,51 @@ func (x *Exclusion_Image) GetName() string {
 	return ""
 }
 
+// ExcludeByType excludes all workloads of the selected Kubernetes kinds.
+type Exclusion_ExcludeByType struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Types         []Exclusion_WorkloadType `protobuf:"varint,1,rep,packed,name=types,proto3,enum=storage.Exclusion_WorkloadType" json:"types,omitempty" crYaml:",omitempty,stringer"` // @gotags: crYaml:",omitempty,stringer"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Exclusion_ExcludeByType) Reset() {
+	*x = Exclusion_ExcludeByType{}
+	mi := &file_storage_policy_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Exclusion_ExcludeByType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Exclusion_ExcludeByType) ProtoMessage() {}
+
+func (x *Exclusion_ExcludeByType) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_policy_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Exclusion_ExcludeByType.ProtoReflect.Descriptor instead.
+func (*Exclusion_ExcludeByType) Descriptor() ([]byte, []int) {
+	return file_storage_policy_proto_rawDescGZIP(), []int{7, 3}
+}
+
+func (x *Exclusion_ExcludeByType) GetTypes() []Exclusion_WorkloadType {
+	if x != nil {
+		return x.Types
+	}
+	return nil
+}
+
 var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
@@ -1430,16 +1566,17 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12F\n" +
 	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"\\\n" +
 	"\x10EvaluationFilter\x12H\n" +
-	"\x14skip_container_types\x18\x01 \x03(\x0e2\x16.storage.ContainerTypeR\x12skipContainerTypes\"\xf5\x02\n" +
+	"\x14skip_container_types\x18\x01 \x03(\x0e2\x16.storage.ContainerTypeR\x12skipContainerTypes\"\xdc\x04\n" +
 	"\tExclusion\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
-	"\n" +
-	"deployment\x18\x05 \x01(\v2\x1d.storage.Exclusion.DeploymentR\n" +
-	"deployment\x12.\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12.\n" +
 	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12:\n" +
 	"\n" +
 	"expiration\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"expiration\x1a>\n" +
+	"expiration\x12?\n" +
+	"\n" +
+	"deployment\x18\x05 \x01(\v2\x1d.storage.Exclusion.DeploymentH\x00R\n" +
+	"deployment\x12J\n" +
+	"\x0fexclude_by_type\x18\b \x01(\v2 .storage.Exclusion.ExcludeByTypeH\x00R\rexcludeByType\x1a>\n" +
 	"\tContainer\x121\n" +
 	"\n" +
 	"image_name\x18\x03 \x01(\v2\x12.storage.ImageNameR\timageName\x1aF\n" +
@@ -1448,7 +1585,14 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12$\n" +
 	"\x05scope\x18\x04 \x01(\v2\x0e.storage.ScopeR\x05scope\x1a\x1b\n" +
 	"\x05Image\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04nameJ\x04\b\x02\x10\x03\"E\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x1aF\n" +
+	"\rExcludeByType\x125\n" +
+	"\x05types\x18\x01 \x03(\x0e2\x1f.storage.Exclusion.WorkloadTypeR\x05types\"D\n" +
+	"\fWorkloadType\x12\x1d\n" +
+	"\x19WORKLOAD_TYPE_UNSPECIFIED\x10\x00\x12\f\n" +
+	"\bCRON_JOB\x10\x01\x12\a\n" +
+	"\x03JOB\x10\x02B\t\n" +
+	"\amatcherJ\x04\b\x02\x10\x03\"E\n" +
 	"\x16ExportPoliciesResponse\x12+\n" +
 	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies*/\n" +
 	"\fPolicySource\x12\x0e\n" +
@@ -1506,8 +1650,8 @@ func file_storage_policy_proto_rawDescGZIP() []byte {
 	return file_storage_policy_proto_rawDescData
 }
 
-var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_storage_policy_proto_goTypes = []any{
 	(PolicySource)(0),                 // 0: storage.PolicySource
 	(EventSource)(0),                  // 1: storage.EventSource
@@ -1516,58 +1660,62 @@ var file_storage_policy_proto_goTypes = []any{
 	(Severity)(0),                     // 4: storage.Severity
 	(LifecycleStage)(0),               // 5: storage.LifecycleStage
 	(Comparator)(0),                   // 6: storage.Comparator
-	(*Policy)(nil),                    // 7: storage.Policy
-	(*PolicySection)(nil),             // 8: storage.PolicySection
-	(*PolicyGroup)(nil),               // 9: storage.PolicyGroup
-	(*PolicyValue)(nil),               // 10: storage.PolicyValue
-	(*PolicyList)(nil),                // 11: storage.PolicyList
-	(*ListPolicy)(nil),                // 12: storage.ListPolicy
-	(*EvaluationFilter)(nil),          // 13: storage.EvaluationFilter
-	(*Exclusion)(nil),                 // 14: storage.Exclusion
-	(*ExportPoliciesResponse)(nil),    // 15: storage.ExportPoliciesResponse
-	(*Policy_MitreAttackVectors)(nil), // 16: storage.Policy.MitreAttackVectors
-	(*Exclusion_Container)(nil),       // 17: storage.Exclusion.Container
-	(*Exclusion_Deployment)(nil),      // 18: storage.Exclusion.Deployment
-	(*Exclusion_Image)(nil),           // 19: storage.Exclusion.Image
-	(*Scope)(nil),                     // 20: storage.Scope
-	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
-	(ContainerType)(0),                // 22: storage.ContainerType
-	(*ImageName)(nil),                 // 23: storage.ImageName
+	(Exclusion_WorkloadType)(0),       // 7: storage.Exclusion.WorkloadType
+	(*Policy)(nil),                    // 8: storage.Policy
+	(*PolicySection)(nil),             // 9: storage.PolicySection
+	(*PolicyGroup)(nil),               // 10: storage.PolicyGroup
+	(*PolicyValue)(nil),               // 11: storage.PolicyValue
+	(*PolicyList)(nil),                // 12: storage.PolicyList
+	(*ListPolicy)(nil),                // 13: storage.ListPolicy
+	(*EvaluationFilter)(nil),          // 14: storage.EvaluationFilter
+	(*Exclusion)(nil),                 // 15: storage.Exclusion
+	(*ExportPoliciesResponse)(nil),    // 16: storage.ExportPoliciesResponse
+	(*Policy_MitreAttackVectors)(nil), // 17: storage.Policy.MitreAttackVectors
+	(*Exclusion_Container)(nil),       // 18: storage.Exclusion.Container
+	(*Exclusion_Deployment)(nil),      // 19: storage.Exclusion.Deployment
+	(*Exclusion_Image)(nil),           // 20: storage.Exclusion.Image
+	(*Exclusion_ExcludeByType)(nil),   // 21: storage.Exclusion.ExcludeByType
+	(*Scope)(nil),                     // 22: storage.Scope
+	(*timestamppb.Timestamp)(nil),     // 23: google.protobuf.Timestamp
+	(ContainerType)(0),                // 24: storage.ContainerType
+	(*ImageName)(nil),                 // 25: storage.ImageName
 }
 var file_storage_policy_proto_depIdxs = []int32{
 	5,  // 0: storage.Policy.lifecycle_stages:type_name -> storage.LifecycleStage
 	1,  // 1: storage.Policy.event_source:type_name -> storage.EventSource
-	14, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
-	20, // 3: storage.Policy.scope:type_name -> storage.Scope
+	15, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
+	22, // 3: storage.Policy.scope:type_name -> storage.Scope
 	4,  // 4: storage.Policy.severity:type_name -> storage.Severity
 	3,  // 5: storage.Policy.enforcement_actions:type_name -> storage.EnforcementAction
-	21, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
-	8,  // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
-	16, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
+	23, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
+	9,  // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
+	17, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
 	0,  // 9: storage.Policy.source:type_name -> storage.PolicySource
-	13, // 10: storage.Policy.evaluation_filter:type_name -> storage.EvaluationFilter
-	9,  // 11: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
+	14, // 10: storage.Policy.evaluation_filter:type_name -> storage.EvaluationFilter
+	10, // 11: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
 	2,  // 12: storage.PolicyGroup.boolean_operator:type_name -> storage.BooleanOperator
-	10, // 13: storage.PolicyGroup.values:type_name -> storage.PolicyValue
-	7,  // 14: storage.PolicyList.policies:type_name -> storage.Policy
+	11, // 13: storage.PolicyGroup.values:type_name -> storage.PolicyValue
+	8,  // 14: storage.PolicyList.policies:type_name -> storage.Policy
 	4,  // 15: storage.ListPolicy.severity:type_name -> storage.Severity
 	5,  // 16: storage.ListPolicy.lifecycle_stages:type_name -> storage.LifecycleStage
-	21, // 17: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
+	23, // 17: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
 	1,  // 18: storage.ListPolicy.event_source:type_name -> storage.EventSource
 	0,  // 19: storage.ListPolicy.source:type_name -> storage.PolicySource
-	13, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
-	22, // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.ContainerType
-	18, // 22: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
-	19, // 23: storage.Exclusion.image:type_name -> storage.Exclusion.Image
-	21, // 24: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
-	7,  // 25: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
-	23, // 26: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
-	20, // 27: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	14, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
+	24, // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.ContainerType
+	20, // 22: storage.Exclusion.image:type_name -> storage.Exclusion.Image
+	23, // 23: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
+	19, // 24: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
+	21, // 25: storage.Exclusion.exclude_by_type:type_name -> storage.Exclusion.ExcludeByType
+	8,  // 26: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
+	25, // 27: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
+	22, // 28: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
+	7,  // 29: storage.Exclusion.ExcludeByType.types:type_name -> storage.Exclusion.WorkloadType
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_storage_policy_proto_init() }
@@ -1578,13 +1726,17 @@ func file_storage_policy_proto_init() {
 	file_storage_deployment_proto_init()
 	file_storage_image_proto_init()
 	file_storage_scope_proto_init()
+	file_storage_policy_proto_msgTypes[7].OneofWrappers = []any{
+		(*Exclusion_Deployment_)(nil),
+		(*Exclusion_ExcludeByType_)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_policy_proto_rawDesc), len(file_storage_policy_proto_rawDesc)),
-			NumEnums:      7,
-			NumMessages:   13,
+			NumEnums:      8,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
