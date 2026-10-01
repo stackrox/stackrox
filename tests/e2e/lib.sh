@@ -125,8 +125,6 @@ deploy_stackrox_with_roxie() {
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
-    prepare_for_konflux "$config_file"
-
     workaround_label_length_limitation "$config_file"
 
     # Print out the config file in use for transparency.
@@ -178,14 +176,6 @@ deploy_stackrox_with_roxie() {
     info "║  StackRox deployed  ║"
     info "║                     ║"
     info "╚═════════════════════╝"
-}
-
-prepare_for_konflux() {
-    local config_file="$1"
-    if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
-        # We need to be able to pull operator bundle images.
-        registry_ro_login "quay.io/rhacs-eng"
-    fi
 }
 
 # When deploying Konflux-built images, we might get an additional "-fast" suffix on the main image version,
