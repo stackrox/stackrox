@@ -53,4 +53,57 @@ ruleTester.run('Button-LinkShim-href', plugin.rules['Button-LinkShim-href'], {
     ],
 });
 
+// Test the JSX-nullish-display-fallback rule
+ruleTester.run('JSX-nullish-display-fallback', plugin.rules['JSX-nullish-display-fallback'], {
+    valid: [
+        {
+            name: 'nullish coalescing with literal display fallback',
+            code: `<span>{cvssScore ?? '-'}</span>`,
+        },
+        {
+            name: 'boolean fallback expression is not a display fallback',
+            code: `<span>{isLoading || hasError}</span>`,
+        },
+        {
+            name: 'element fallback expression is control flow',
+            code: `<span>{children || <EmptyState />}</span>`,
+        },
+    ],
+
+    invalid: [
+        {
+            name: 'logical OR hides zero when displaying a literal fallback',
+            code: `<span>{cvssScore || '-'}</span>`,
+            output: `<span>{cvssScore ?? '-'}</span>`,
+            errors: [
+                {
+                    message:
+                        'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                },
+            ],
+        },
+        {
+            name: 'logical OR hides empty string when displaying a string fallback',
+            code: `<Label>{metadata.name || 'Unknown'}</Label>`,
+            output: `<Label>{metadata.name ?? 'Unknown'}</Label>`,
+            errors: [
+                {
+                    message:
+                        'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                },
+            ],
+        },
+        {
+            name: 'mixed logical expression is reported but not autofixed',
+            code: `<span>{isEnabled && count || '-'}</span>`,
+            errors: [
+                {
+                    message:
+                        'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                },
+            ],
+        },
+    ],
+});
+
 console.log('✓ All tests passed for pluginGeneric rules');
