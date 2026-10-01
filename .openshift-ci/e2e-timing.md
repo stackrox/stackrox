@@ -50,3 +50,29 @@ lanes. Set `E2E_TIMING_ENABLED` explicitly to override that default.
   raw `test.log` keeps these records; JUnit conversion filters them out.
 - The rest of the GHA/Prow test matrix is not enabled by this MVP; missing
   events there mean “not instrumented,” not zero time.
+
+## Groovy parallelization audit
+
+The GHA GKE QA lane also enables an observer-only Groovy parallelization audit.
+It records spec start/end markers, unique Kubernetes HTTP method/path pairs,
+Central gRPC service/method names, and changes to process-global Central auth
+configuration. It never records request bodies, headers, query strings, tokens,
+or credentials. Repeated identical operations within a spec/feature are
+deduplicated to keep log volume down.
+
+To summarize a completed GHA run, stream the job log through the analyzer:
+
+```sh
+gh run view RUN_ID --job JOB_ID --log \
+  | python3 qa-tests-backend/scripts/e2e_parallelization_audit.py
+```
+
+Use `--format json` for structured output. The report compares spec footprints
+within a run/lane. Each shared-resource finding says whether the spec lifetimes
+overlapped, were sequential, or could not be classified; sequential findings
+are candidates to investigate before parallelizing that pair. It is not a
+parallel-safety certification: direct REST clients, external services,
+controller side effects, and async operations that lose the test thread's MDC
+context are not fully attributed. Central API conflicts are service-level
+because request payloads are intentionally not observed. No reported conflict
+means only that this run did not observe one in the instrumented paths.

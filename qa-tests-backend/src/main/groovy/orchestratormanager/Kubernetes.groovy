@@ -96,6 +96,10 @@ import io.fabric8.kubernetes.api.model.rbac.Subject
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.client.http.BasicBuilder
+import io.fabric8.kubernetes.client.http.HttpClient
+import io.fabric8.kubernetes.client.http.HttpRequest
+import io.fabric8.kubernetes.client.http.Interceptor
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
@@ -122,6 +126,7 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import util.E2EParallelizationAudit
 import util.E2ETiming
 import util.Env
 import util.Timer
@@ -160,7 +165,18 @@ class Kubernetes {
 
     Kubernetes(String ns) {
         this.namespace = ns
-        this.client = new KubernetesClientBuilder().build()
+        KubernetesClientBuilder clientBuilder = new KubernetesClientBuilder()
+        if (E2EParallelizationAudit.isEnabled()) {
+            clientBuilder.withHttpClientBuilderConsumer { HttpClient.Builder httpClientBuilder ->
+                httpClientBuilder.addOrReplaceInterceptor("e2e-parallelization-audit", new Interceptor() {
+                    @Override
+                    void before(BasicBuilder builder, HttpRequest request, Interceptor.RequestTags tags) {
+                        E2EParallelizationAudit.kubernetesRequest(request.method(), request.uri().rawPath)
+                    }
+                })
+            }
+        }
+        this.client = clientBuilder.build()
         // On OpenShift, the namespace config is typically non-null (set to the default project), which causes all
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
