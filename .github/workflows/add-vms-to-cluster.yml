@@ -1,5 +1,5 @@
-name: "Add VMs to Cluster"
-run-name: "Add ${{ inputs.num-vms }} ${{ inputs.vm-os }} VMs to ${{ inputs.cluster-name }}"
+name: "Ensure VMs on Cluster"
+run-name: "Ensure ${{ inputs.num-vms }} ${{ inputs.vm-os }} VMs on ${{ inputs.cluster-name }}"
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       num-vms:
-        description: "Number of VMs to deploy"
+        description: "Desired count of {os}-1..N, not how many to add. Existing VMs are reused; 2 is a no-op if rhel9-1 and rhel9-2 already exist."
         required: false
         default: 1
         type: number
@@ -19,6 +19,7 @@ on:
         default: "rhel9"
         type: choice
         options:
+          - rhel8
           - rhel9
           - rhel10
       ssh-public-key:
