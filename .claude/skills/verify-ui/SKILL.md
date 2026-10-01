@@ -17,7 +17,10 @@ All commands run from `ui/apps/platform`.
    proxy, auth, and prints enabled feature flags. Fix what it reports before going on.
    If the dev server is not running, start it yourself as a background process with
    `BROWSER=none npm run start` (it never exits), wait until it answers, and run `doctor`
-   again. Do not start Central; if Central is down, stop and say so. Run `doctor` again
+   again. If Central is down, stop and give the user the ways to get one that `doctor`
+   prints. Do not deploy Central or create a cluster unless the user asked you to: it
+   uses shared quota, takes a long time, needs their credentials, and which Central to
+   use is their call. Run `doctor` again
    after any failed `open` or `prove`, because a half-broken environment gives misleading
    failures.
 2. **Static.** `scripts/verify.sh static`. It runs tsc, then eslint and `vitest related` on

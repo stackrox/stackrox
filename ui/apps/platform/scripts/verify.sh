@@ -124,14 +124,21 @@ cmd_doctor() {
         pass "dev server responds at ${UI_BASE_URL}"
     else
         fail "dev server did not respond at ${UI_BASE_URL} (HTTP ${status}). Start it in the background with: BROWSER=none npm run start"
-        failures=$((failures + 1))
+        # Central is reached through the dev server proxy, so it cannot be checked yet.
+        info "Central is checked once the dev server responds."
+        echo "Fix the failures above, then run doctor again."
+        return 1
     fi
 
     status="$(http_status "${UI_BASE_URL}/v1/ping")"
     if [[ "${status}" == "200" ]]; then
         pass "Central responds through the dev server proxy"
     else
-        fail "Central did not respond through the proxy (HTTP ${status}). Check that Central is running and UI_START_TARGET points at it (default https://localhost:8000)"
+        fail "Central did not respond through the proxy (HTTP ${status}). UI_START_TARGET must point at a running Central (default https://localhost:8000)"
+        info "Ways to get a Central:"
+        info "  existing Central: restart the dev server with UI_START_TARGET=https://<central> and set ROX_AUTH_TOKEN"
+        info "  local deploy: roxie deploy (see deploy/AGENTS.md)"
+        info "  infra demo cluster: infractl create demo <name>, then use its URL and admin password"
         failures=$((failures + 1))
         echo "Fix the failures above, then run doctor again."
         return 1
