@@ -14,6 +14,7 @@ from pathlib import Path
 
 BOOTSTRAP_CSS = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -385,9 +386,9 @@ def render_pass2(out, valid_files, suites, totals, title):
     write_summary(out, totals)
     write_controls(out)
 
-    suite_idx = 0   # index into global `suites`
-    suite_seq = 0   # 1-based s<N>
-    case_seq = 0    # 1-based t<N>
+    suite_idx = 0  # index into global `suites`
+    suite_seq = 0  # 1-based s<N>
+    case_seq = 0  # 1-based t<N>
 
     for path in valid_files:
         depth_stack = []  # records of currently-open suites
