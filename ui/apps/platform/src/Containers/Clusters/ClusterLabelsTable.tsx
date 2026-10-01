@@ -155,7 +155,7 @@ function ClusterLabelsTable({ labels, handleChangeLabels }: ClusterLabelsTablePr
                                 aria-label={isReplace ? 'Replace label' : 'Add label'}
                                 variant="plain"
                                 style={{ padding: 0 }}
-                                isDisabled={!isValid}
+                                isAriaDisabled={!isValid}
                                 onClick={() => onAddLabel()}
                             />
                         </Tooltip>

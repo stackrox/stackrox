@@ -1,5 +1,16 @@
 /* globals module */
 
+function getJSXAttribute(node, attributeName) {
+    return node?.attributes?.find((attribute) => attribute.name?.name === attributeName);
+}
+
+function isJSXAttributeExplicitFalse(attribute) {
+    return (
+        attribute?.value?.expression?.type === 'Literal' &&
+        attribute.value.expression.value === false
+    );
+}
+
 const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
@@ -319,6 +330,54 @@ const rules = {
                                     node,
                                     message:
                                         'Require that empty Th element has either expand, select, or screenReaderText prop',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'Button-Tooltip-isAriaDisabled': {
+        // Derived from review feedback; see PR #22653.
+        //
+        // Require isAriaDisabled instead of isDisabled when Button is wrapped in Tooltip.
+        // The isDisabled prop prevents keyboard focus, making tooltips inaccessible.
+        // The isAriaDisabled prop provides disabled styling while allowing keyboard focus.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that Button element wrapped in Tooltip uses isAriaDisabled instead of isDisabled for keyboard accessibility',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Button') {
+                        // Check if Button has an enabled isDisabled prop. Ignore literal false.
+                        const isDisabledAttribute = getJSXAttribute(node, 'isDisabled');
+                        const hasIsDisabled =
+                            isDisabledAttribute &&
+                            !isJSXAttributeExplicitFalse(isDisabledAttribute);
+
+                        if (hasIsDisabled) {
+                            // Check if Button is wrapped in a Tooltip or ConditionalTooltip
+                            const ancestors = context.sourceCode.getAncestors(node);
+                            const isWrappedInTooltip = ancestors.some(
+                                (ancestor) =>
+                                    ancestor.type === 'JSXElement' &&
+                                    (ancestor.openingElement?.name?.name === 'Tooltip' ||
+                                        ancestor.openingElement?.name?.name ===
+                                            'ConditionalTooltip')
+                            );
+
+                            if (isWrappedInTooltip) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Button wrapped in Tooltip should use isAriaDisabled instead of isDisabled to allow keyboard focus for accessibility',
                                 });
                             }
                         }
