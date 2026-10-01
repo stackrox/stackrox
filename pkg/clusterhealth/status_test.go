@@ -270,3 +270,88 @@ func TestOverallHealth(t *testing.T) {
 		})
 	}
 }
+
+func TestPopulateLocalScannerStatus(t *testing.T) {
+	cases := map[string]struct {
+		scannerHealthInfo *storage.ScannerHealthInfo
+		expected          storage.ClusterHealthStatus_HealthStatusLabel
+	}{
+		"nil: local scanning not enabled (optional component)": {
+			scannerHealthInfo: nil,
+			expected:          storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"status errors: enabled but misconfigured (no scanner v4)": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				StatusErrors: []string{"local image scanning is enabled but Scanner V4 is not enabled"},
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"status errors take precedence over pod counts": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				StatusErrors:                []string{"unable to find scanner deployment"},
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"no pod counts, no errors: uninitialized": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{},
+			expected:          storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"desired analyzer pods zero: uninitialized": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(0),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(0),
+			},
+			expected: storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		"no ready db pods: unhealthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(0),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"all analyzer and db pods ready: healthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(3),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"some analyzer pods not ready: degraded": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(2),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		"most analyzer pods not ready: unhealthy": {
+			scannerHealthInfo: &storage.ScannerHealthInfo{
+				TotalDesiredAnalyzerPodsOpt: analyzerPodsDesired(3),
+				TotalReadyAnalyzerPodsOpt:   analyzerPodsReady(1),
+				TotalReadyDbPodsOpt:         dbPodsReady(1),
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expected, PopulateLocalScannerStatus(c.scannerHealthInfo))
+		})
+	}
+}
+
+func analyzerPodsDesired(num int32) *storage.ScannerHealthInfo_TotalDesiredAnalyzerPods {
+	return &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{TotalDesiredAnalyzerPods: num}
+}
+func analyzerPodsReady(num int32) *storage.ScannerHealthInfo_TotalReadyAnalyzerPods {
+	return &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{TotalReadyAnalyzerPods: num}
+}
+func dbPodsReady(num int32) *storage.ScannerHealthInfo_TotalReadyDbPods {
+	return &storage.ScannerHealthInfo_TotalReadyDbPods{TotalReadyDbPods: num}
+}

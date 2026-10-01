@@ -14,6 +14,23 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+- ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
+
+### Deprecated Features
+
+### Technical Changes
+- ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
+- ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
+- ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
+
+## [5.0.0]
+
+
+
+### Added Features
+
 - ROX-32148: Virtual machine scanning is now enabled by default. RHEL VMs created with OpenShift Virtualization can be scanned for package vulnerabilities after installing roxagent in the guest.
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.

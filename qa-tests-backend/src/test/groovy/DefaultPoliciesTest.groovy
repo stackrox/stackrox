@@ -85,6 +85,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
             // Newer EKS ebs-csi-node DaemonSets use bidirectional mount propagation.
             "ebs-csi-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
+            // GKE filestore-node DaemonSets use bidirectional mount propagation.
+            "filestore-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()

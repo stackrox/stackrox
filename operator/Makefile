@@ -237,14 +237,20 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 	[[ $${ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS:-false} = true ]] || $(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
-manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: parent-proto-generate controller-gen go-mod-download ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate controller-gen go-mod-download ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./api/...
+
+.PHONY: go-mod-download
+go-mod-download: ## Download modules we depend on, with retries.
+# Warm up go module cache so that transient network failures do not abort controller-gen.
+# Once downloaded, this command is very quick (~200 ms).
+	go mod download || go mod download || go mod download
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.

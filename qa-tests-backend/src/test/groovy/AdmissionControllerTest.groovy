@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -132,8 +134,12 @@ class AdmissionControllerTest extends BaseSpecification {
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
-        for (policyID in createdPolicyIds) {
-            PolicyService.deletePolicy(policyID)
+        try {
+            for (policyID in createdPolicyIds) {
+                PolicyService.deletePolicy(policyID)
+            }
+        } catch (Exception e) {
+            log.warn "Failed to delete one or more policies during cleanup: ${e.message}"
         }
     }
 
@@ -249,6 +255,32 @@ class AdmissionControllerTest extends BaseSpecification {
         log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
+    private Exception deletePolicyWithCaution(String policyId) {
+        try {
+            if (policyId) {
+                PolicyService.deletePolicy(policyId)
+                // Wait for policy deletion to propagate to admission controller
+                withRetry(10, 1) {
+                    def policyExists = true
+                    try {
+                        Services.getPolicy(policyId)
+                    } catch (StatusRuntimeException e) {
+                        if (e.status.code == Status.Code.NOT_FOUND) {
+                            policyExists = false
+                        } else {
+                            throw e
+                        }
+                    }
+                    assert !policyExists : "Policy ${policyId} still exists after deletion"
+                }
+            }
+        } catch (Exception e) {
+            log.warn "Failed to delete policy ${policyId}: ${e.message}"
+            return e
+        }
+        return null
+    }
+
     // Retry to allow time for the admission controller to fetch scan data from
     // Central. Policies that require image enrichment (e.g. severity) may not
     // evaluate on the first attempt if the AC pod handling this request hasn't
@@ -313,12 +345,22 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created == !blocked
 
         cleanup:
+        // Delete policy first to avoid enforcement blocking cleanup,
+        // and to prevent leftover policy from impacting later tests.
+        def policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
-        orchestrator.deleteNamespace(testNs, false)
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
+        try {
+            // Wait for full namespace deletion; a namespace left in Terminating state
+            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
+            orchestrator.deleteNamespace(testNs)
+        } catch (Exception e) {
+            log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
+            throw e
+        }
+        if (policyDeletionFailure) {
+            throw policyDeletionFailure
         }
 
         where:
@@ -410,12 +452,22 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created2
 
         cleanup:
+        // Delete policy first to avoid enforcement blocking cleanup,
+        // and to prevent leftover policy from impacting later tests.
+        def policyDeletionFailure = deletePolicyWithCaution(policyId)
         if (created2) {
             deleteDeploymentWithCaution(deployment2)
         }
-        orchestrator.deleteNamespace(testNs, false)
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
+        try {
+            // Wait for full namespace deletion; a namespace left in Terminating state
+            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
+            orchestrator.deleteNamespace(testNs)
+        } catch (Exception e) {
+            log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
+            throw e
+        }
+        if (policyDeletionFailure) {
+            throw policyDeletionFailure
         }
 
         where:

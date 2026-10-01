@@ -77,8 +77,6 @@ func TestRenderScannerOnly(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
@@ -119,8 +117,6 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
@@ -197,8 +193,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -228,8 +222,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -259,8 +251,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -328,8 +318,6 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
