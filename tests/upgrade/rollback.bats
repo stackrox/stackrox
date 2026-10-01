@@ -77,7 +77,7 @@ setup_historical_scale() {
     export MAIN_IMAGE_TAG=test
     source "${BATS_TEST_DIRNAME}/postgres_run.sh"
     mkdir -p "$BATS_TEST_TMPDIR/historical/scale"
-    git -C "$TEST_ROOT" show "$EARLIER_SHA:scale/launch_workload.sh" >"$BATS_TEST_TMPDIR/original"
+    cp "${BATS_TEST_DIRNAME}/fixtures/scale/launch_workload.sh" "$BATS_TEST_TMPDIR/original"
     cd "$BATS_TEST_TMPDIR/historical"
     git init -q
     cp "$BATS_TEST_TMPDIR/original" scale/launch_workload.sh
