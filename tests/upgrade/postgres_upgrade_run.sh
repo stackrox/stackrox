@@ -313,8 +313,8 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
-    # Do not rollback central-db image, since downgrade from PG16 to PG15 is
-    # not possible.
+    # Keep the upgraded central-db image when rolling Central back, since the
+    # upgraded data directory cannot be used by an older PostgreSQL major version.
 }
 
 deploy_scaled_workload() {
@@ -342,6 +342,14 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
@@ -355,5 +363,30 @@ deploy_scaled_workload() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_upgrade "$*"
+    check_postgres_upgrade
+    if [[ "${1:-}" == "--check" ]]; then
+        # CI checks eligibility before provisioning a cluster or running pre/post-test hooks.
+        if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            echo "required=$POSTGRES_UPGRADE_REQUIRED" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            echo "$POSTGRES_UPGRADE_REASON" >> "$GITHUB_STEP_SUMMARY"
+        fi
+    elif [[ "$POSTGRES_UPGRADE_REQUIRED" == true ]]; then
+        CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        # Load deployment helpers only when the suite will actually run.
+        # shellcheck source=../../scripts/ci/lib.sh
+        source "$TEST_ROOT/scripts/ci/lib.sh"
+        # shellcheck source=../../scripts/ci/sensor-wait.sh
+        source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+        # shellcheck source=../../scripts/setup-certs.sh
+        source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+        # shellcheck source=../../tests/e2e/lib.sh
+        source "$TEST_ROOT/tests/e2e/lib.sh"
+        # shellcheck source=../../tests/upgrade/lib.sh
+        source "$TEST_ROOT/tests/upgrade/lib.sh"
+        # shellcheck source=../../tests/upgrade/validation.sh
+        source "$TEST_ROOT/tests/upgrade/validation.sh"
+        test_upgrade "$@"
+    fi
 fi
