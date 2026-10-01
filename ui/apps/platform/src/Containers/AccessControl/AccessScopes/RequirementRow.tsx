@@ -100,7 +100,7 @@ function RequirementRow({
                                             aria-label="Delete value"
                                             variant="plain"
                                             className="pf-m-smallest pf-v6-u-mr-sm"
-                                            isDisabled={values.length === 1}
+                                            isAriaDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
                                         />
                                     </Tooltip>
@@ -134,7 +134,7 @@ function RequirementRow({
                                             aria-label="Add value (press Enter)"
                                             variant="plain"
                                             className="pf-m-smallest pf-v6-u-mr-sm"
-                                            isDisabled={isDisabledAddValue}
+                                            isAriaDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
                                         />
                                     </Tooltip>
@@ -168,7 +168,7 @@ function RequirementRow({
                                     aria-label="OK"
                                     variant="plain"
                                     className="pf-m-smallest pf-v6-u-mr-sm"
-                                    isDisabled={values.length === 0 || valueInput.length !== 0}
+                                    isAriaDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
                                 />
                             </Tooltip>
@@ -199,7 +199,7 @@ function RequirementRow({
                                         aria-label="Edit rule"
                                         variant="plain"
                                         className="pf-m-smallest pf-v6-u-mr-sm"
-                                        isDisabled={activity === 'DISABLED'}
+                                        isAriaDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
                                     />
                                 </Tooltip>
@@ -214,7 +214,7 @@ function RequirementRow({
                                     aria-label="Delete rule"
                                     variant="plain"
                                     className="pf-m-smallest"
-                                    isDisabled={activity === 'DISABLED'}
+                                    isAriaDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
                                 />
                             </Tooltip>
