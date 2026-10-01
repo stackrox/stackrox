@@ -38,7 +38,7 @@ BOOTSTRAP_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap
 EXTRA_CSS = (
     ".suite{border-left:3px solid #dee2e6;padding-left:1rem}"
     "pre{white-space:pre-wrap;word-break:break-word}"
-    ".summary-badges .badge{font-size:1rem;margin-right:.5rem}"
+    ".summary-badges .badge{font-size:1rem}"
     "summary{cursor:pointer}"
 )
 
@@ -269,31 +269,37 @@ class Renderer:
                 f'<details class="io"><summary>{label}</summary><pre>{esc(text)}</pre></details>')
 
 
-def render_summary(out, totals):
-    out.write(
-        '<div class="card summary-badges">'
-        '<h2 class="mb-2">Summary</h2>'
-        f'<span class="badge text-bg-dark">Total: {totals.get("total", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("passed", 0), "text-bg-success")}">Passed: {totals.get("passed", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("failed", 0), "text-bg-danger")}">Failed: {totals.get("failed", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("error", 0), "text-bg-warning")}">Errors: {totals.get("error", 0)}</span>'
-        f'<span class="badge {_count_bg(totals.get("skipped", 0), "text-bg-secondary")}">Skipped: {totals.get("skipped", 0)}</span>'
-        "</div>"
-    )
-
-
-def render_toolbar(out):
-    # Buttons toggle every collapsible block tagged <details class="io">:
+def render_header(out, title):
+    # Title on the left; expand/collapse controls on the right, on one line.
+    # The buttons toggle every collapsible block tagged <details class="io">:
     # stdout/stderr and failure/error/skipped detail blocks. Plain JS, no libraries.
     out.write(
-        '<div class="mb-4">'
-        '<button type="button" class="btn btn-sm btn-outline-secondary me-2" '
+        '<div class="d-flex flex-wrap justify-content-between '
+        'align-items-center gap-2 mb-4">'
+        f'<h1 class="mb-0">{esc(title)}</h1>'
+        '<div class="btn-group" role="group" aria-label="Expand or collapse all">'
+        '<button type="button" class="btn btn-sm btn-outline-secondary" '
         "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = true)\">"
         "Expand all</button>"
         '<button type="button" class="btn btn-sm btn-outline-secondary" '
         "onclick=\"document.querySelectorAll('details.io').forEach(d => d.open = false)\">"
         "Collapse all</button>"
         "</div>"
+        "</div>"
+    )
+
+
+def render_summary(out, totals):
+    out.write(
+        '<div class="card shadow-sm mb-4"><div class="card-body">'
+        '<h2 class="h6 text-uppercase text-body-secondary mb-3">Summary</h2>'
+        '<div class="d-flex flex-wrap gap-2 summary-badges">'
+        f'<span class="badge text-bg-dark">Total: {totals.get("total", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("passed", 0), "text-bg-success")}">Passed: {totals.get("passed", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("failed", 0), "text-bg-danger")}">Failed: {totals.get("failed", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("error", 0), "text-bg-warning")}">Errors: {totals.get("error", 0)}</span>'
+        f'<span class="badge {_count_bg(totals.get("skipped", 0), "text-bg-secondary")}">Skipped: {totals.get("skipped", 0)}</span>'
+        "</div></div></div>"
     )
 
 
@@ -305,9 +311,8 @@ def pass2(valid_files, suite_counts, totals, out, title, bootstrap_url):
     out.write(f'<link rel="stylesheet" href="{esc(bootstrap_url)}">')
     out.write(f"<style>{EXTRA_CSS}</style>")
     out.write('</head><body><div class="container-fluid py-4">')
-    out.write(f'<h1 class="mb-4">{esc(title)}</h1>')
+    render_header(out, title)
     render_summary(out, totals)
-    render_toolbar(out)
 
     r = Renderer(out, suite_counts)
     for path in valid_files:
