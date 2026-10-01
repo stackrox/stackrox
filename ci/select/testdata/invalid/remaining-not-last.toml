@@ -1,0 +1,14 @@
+version = 1
+jobs = ["unit", "lint"]
+[[rules]]
+name = "early"
+when = "remaining"
+skip = ["*"]
+[[rules]]
+name = "late"
+when = "always"
+run = ["lint"]
+[[rules]]
+name = "remaining"
+when = "remaining"
+run = ["*"]

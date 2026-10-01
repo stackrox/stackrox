@@ -1142,6 +1142,7 @@ _REJECTED_RULES = (
         {"name": 'A rule that is not a table should be rejected', "input": {"rules": 'ci/select/testdata/invalid/rule-not-a-table.toml'}, "expect": {"error": 'rule 1 must be a table'}},
         {"name": 'Two rules with the same name should be rejected', "input": {"rules": 'ci/select/testdata/invalid/duplicate-rule-name.toml'}, "expect": {"error": 'duplicate rule name same'}},
         {"name": 'A rules file whose last rule is not remaining should be rejected', "input": {"rules": 'ci/select/testdata/invalid/last-rule-not-remaining.toml'}, "expect": {"error": 'the last rule must decide every target no earlier rule decided'}},
+        {"name": 'A remaining rule that is not last should be rejected', "input": {"rules": 'ci/select/testdata/invalid/remaining-not-last.toml'}, "expect": {"error": 'rule 1 early uses remaining, which only the last rule may use'}},
         {"name": 'A remaining rule that does not use a star should be rejected', "input": {"rules": 'ci/select/testdata/invalid/last-rule-not-star.toml'}, "expect": {"error": 'the last rule must run, skip, or take the default for every remaining target'}},
         {"name": 'A rule with an empty name should be rejected', "input": {"rules": 'ci/select/testdata/invalid/missing-name.toml'}, "expect": {"error": 'rule 1 needs a name'}},
         {"name": 'A rule with an unknown when should be rejected', "input": {"rules": 'ci/select/testdata/invalid/unknown-when.toml'}, "expect": {"error": "rule 1 odd has unknown when: 'sometimes'"}},
