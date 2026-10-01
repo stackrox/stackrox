@@ -19,7 +19,7 @@ func (p *Pattern) Compile() error {
 	return err
 }
 
-func (p *Pattern) compile() (glob.Glob, error) {
+func (p *Pattern) compile() (glob.Pattern, error) {
 	g, err := glob.Compile(string(*p))
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to compile %q", string(*p))
@@ -36,7 +36,7 @@ func (p *Pattern) Match(s string) bool {
 			return false
 		}
 	}
-	return v.(glob.Glob).Match(s)
+	return v.(glob.Pattern).Match(s)
 }
 
 func (p Pattern) Ptr() *Pattern {
