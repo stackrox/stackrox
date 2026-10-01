@@ -70,6 +70,97 @@ setup() {
     [ ! -f "$BATS_TEST_TMPDIR/started" ]
 }
 
+@test "snapshot authenticates through stdin without a mounted password file" {
+    setup_snapshot_commands
+    run rollback_version_snapshot
+    [ "$status" -eq 0 ]
+    [ "$output" = '[{"minseqnum":220,"version":"5.1"}]' ]
+    [ -f "$BATS_TEST_TMPDIR/authenticated" ]
+    grep -Fx -- '-i' "$BATS_TEST_TMPDIR/kubectl-args"
+    grep -Fx 'deploy/central-db' "$BATS_TEST_TMPDIR/kubectl-args"
+    grep -Fx 'central-db' "$BATS_TEST_TMPDIR/kubectl-args"
+    grep -Fx -- '--no-password' "$BATS_TEST_TMPDIR/psql-args"
+    grep -Fx 'ON_ERROR_STOP=1' "$BATS_TEST_TMPDIR/psql-args"
+    run grep -F -e "$SNAPSHOT_PASSWORD" -e "$SNAPSHOT_SECRET" "$BATS_TEST_TMPDIR/kubectl-args" "$BATS_TEST_TMPDIR/psql-args"
+    [ "$status" -eq 1 ]
+}
+
+@test "snapshot rejects failed secret lookup even when it produces valid data" {
+    setup_snapshot_commands
+    export SNAPSHOT_GET_STATUS=1
+    set +o pipefail
+    run rollback_version_snapshot
+    [ "$status" -ne 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/exec-called" ]
+}
+
+@test "snapshot rejects malformed base64 before database execution" {
+    setup_snapshot_commands
+    export SNAPSHOT_SECRET="${SNAPSHOT_SECRET}!"
+    run rollback_version_snapshot
+    [ "$status" -ne 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/exec-called" ]
+}
+
+@test "snapshot rejects missing or empty password before database execution" {
+    setup_snapshot_commands
+    export SNAPSHOT_SECRET=''
+    run rollback_version_snapshot
+    [ "$status" -ne 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/exec-called" ]
+}
+
+@test "snapshot propagates remote and SQL failures without caller pipefail" {
+    setup_snapshot_commands
+    set +o pipefail
+    export SNAPSHOT_EXEC_STATUS=1
+    run rollback_version_snapshot
+    [ "$status" -ne 0 ]
+
+    export SNAPSHOT_EXEC_STATUS=0 SNAPSHOT_SQL_STATUS=1
+    run rollback_version_snapshot
+    [ "$status" -ne 0 ]
+    [ -f "$BATS_TEST_TMPDIR/authenticated" ]
+}
+
+@test "snapshot rejects empty and malformed query output" {
+    setup_snapshot_commands
+    local result
+    for result in '' 'invalid'; do
+        export SNAPSHOT_JSON="$result"
+        run rollback_version_snapshot
+        [ "$status" -ne 0 ]
+        [ -f "$BATS_TEST_TMPDIR/authenticated" ]
+    done
+}
+
+@test "snapshot hides credentials from tracing and preserves caller shell options" {
+    setup_snapshot_commands
+    traced_snapshot() {
+        set +o pipefail
+        set -x
+        rollback_version_snapshot
+        local result=$?
+        [[ "$-" == *x* ]] || return 99
+        set +x
+        [[ ! -o pipefail ]] || return 99
+        return "$result"
+    }
+    run traced_snapshot
+    [ "$status" -eq 0 ]
+    [ -f "$BATS_TEST_TMPDIR/authenticated" ]
+    [[ "$output" != *"$SNAPSHOT_PASSWORD"* ]]
+    [[ "$output" != *"$SNAPSHOT_SECRET"* ]]
+    [[ ! -o xtrace ]]
+    [[ -o pipefail ]]
+
+    export SNAPSHOT_SQL_STATUS=1
+    run traced_snapshot
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"$SNAPSHOT_PASSWORD"* ]]
+    [[ "$output" != *"$SNAPSHOT_SECRET"* ]]
+}
+
 @test "recovery preserves failure and never touches database images" {
     export REGISTRY=registry CURRENT_TAG=5.1.x
     kubectl() { echo "$*" >>"$BATS_TEST_TMPDIR/calls"; return 1; }
@@ -154,4 +245,44 @@ setup() {
     ! rollback_check_snapshot '[{"minseqnum":220},{"minseqnum":220}]' 220
     ! rollback_check_snapshot '[{"minseqnum":213}]' 220
     ! rollback_check_snapshot 'invalid' 220
+}
+
+setup_snapshot_commands() {
+    export SNAPSHOT_PASSWORD=$'synthetic password \'"$\\end'
+    export SNAPSHOT_GET_STATUS=0 SNAPSHOT_EXEC_STATUS=0 SNAPSHOT_SQL_STATUS=0
+    SNAPSHOT_SECRET="$(printf '%s' "$SNAPSHOT_PASSWORD" | base64)"
+    export SNAPSHOT_SECRET
+    export SNAPSHOT_JSON='[ { "version": "5.1", "minseqnum": 220 } ]'
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+    cat >"$BATS_TEST_TMPDIR/bin/psql" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/psql-args"
+[ "${PGPASSWORD:-}" = "$SNAPSHOT_PASSWORD" ] || exit 1
+touch "$BATS_TEST_TMPDIR/authenticated"
+printf '%s\n' "$SNAPSHOT_JSON"
+exit "${SNAPSHOT_SQL_STATUS:-0}"
+EOF
+    chmod +x "$BATS_TEST_TMPDIR/bin/psql"
+    kubectl() {
+        printf '%s\n' "$@" >>"$BATS_TEST_TMPDIR/kubectl-args"
+        case "$*" in
+            '-n stackrox get secret central-db-password -o jsonpath={.data.password}')
+                printf '%s' "$SNAPSHOT_SECRET"
+                return "${SNAPSHOT_GET_STATUS:-0}"
+                ;;
+            '-n stackrox exec '*)
+                touch "$BATS_TEST_TMPDIR/exec-called"
+                if [[ "${SNAPSHOT_EXEC_STATUS:-0}" -ne 0 ]]; then
+                    printf '%s\n' "$SNAPSHOT_JSON"
+                    return "$SNAPSHOT_EXEC_STATUS"
+                fi
+                while [[ "$#" -gt 0 && "$1" != -- ]]; do shift; done
+                [[ "$#" -gt 0 ]] || return 1
+                shift
+                "$@"
+                ;;
+            *) return 1 ;;
+        esac
+    }
 }

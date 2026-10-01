@@ -18,15 +18,26 @@ rollback_check_snapshot() {
     jq -e --argjson minimum "$2" 'length == 1 and .[0].minseqnum == $minimum' <<<"$1" >/dev/null
 }
 
-rollback_version_snapshot() {
-    # Expand the password only inside the DB container, not in the host's command line.
+rollback_version_snapshot() (
+    set +x
+    set -o pipefail
+    local password snapshot
+    password="$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)" || return 1
+    if [[ -z "$password" ]]; then
+        echo 'Central DB password is missing or empty' >&2
+        return 1
+    fi
+    # Only init-db mounts the password; pass it to central-db without exposing it in arguments or traces.
     # shellcheck disable=SC2016
-    kubectl -n stackrox exec deploy/central-db -c central-db -- sh -c '
-        export PGPASSWORD="$(cat /run/secrets/stackrox.io/secrets/password)"
-        exec psql -X -v ON_ERROR_STOP=1 -U postgres -d central_active -Atc \
+    snapshot="$(printf '%s' "$password" | kubectl -n stackrox exec -i deploy/central-db -c central-db -- sh -c '
+        PGPASSWORD="$(cat)" || exit 1
+        export PGPASSWORD
+        exec psql --no-password -X -v ON_ERROR_STOP=1 -U postgres -d central_active -Atc \
             "SELECT coalesce(json_agg(v), '\''[]'\''::json) FROM versions v"
-    ' | jq -cS .
-}
+    ' | jq -ceS .)" || return 1
+    [[ -n "$snapshot" ]] || return 1
+    printf '%s\n' "$snapshot"
+)
 
 stop_rollback_central() {
     kubectl -n stackrox scale deploy/central --replicas=0 || return 1
