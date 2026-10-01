@@ -58,9 +58,16 @@ A target ends up in one of these states. A clash runs the job, and the last rule
 - No earlier rule mentioned the job. The last rule says `default`, so the job takes its default.
 - A job that is going to run requires another job. The resolver adds the required job and says so in the log, even when that job's own result was skip.
 
-Rules are walked from top to bottom. The `when` field is one of `label-exists`, `no-file-changed`, `any-file-matches`, `every-file-matches`, `always`, or `remaining`. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. Only the last rule uses `remaining`. It must use `*` for exactly one of run, skip, or default.
+Rules are walked from top to bottom. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. Paths are regular expressions. Call the changed files F, the paths that match any of the rule's patterns M, and the pull request's labels L.
 
-Paths are regular expressions. `any-file-matches` applies when one changed file matches a pattern. `every-file-matches` applies when every changed file matches a pattern. The diff does not have to contain every pattern.
+- `any-file-matches` applies when F and M intersect: F ∩ M ≠ ∅.
+- `every-file-matches` applies when M contains F and F is not empty: F ⊆ M and F ≠ ∅. An empty diff does not match. A file is in M when one pattern matches it, so the diff does not have to hit every pattern.
+- `no-file-changed` applies when F is empty.
+- `label-exists` applies when the rule's label is an element of L.
+- `always` applies to every pull request. It does not consult F or L.
+- `remaining` applies to the targets no earlier rule has voted on. It is not a condition on F or L.
+
+Only the last rule uses `remaining`. That rule must use `*` for exactly one of run, skip, or default.
 
 The sample rules do the following:
 
