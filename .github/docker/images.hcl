@@ -28,7 +28,7 @@ group "databases" {
   targets = ["central-db", "scanner-v4-db"]
 }
 
-# Central database (PostgreSQL 16)
+# Central database (PostgreSQL 15)
 target "central-db" {
   context = "image/postgres"
   dockerfile = "Dockerfile"
