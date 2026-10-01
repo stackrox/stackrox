@@ -12,6 +12,47 @@ const plugin = require('./pluginAccessibility');
 
 const ruleTester = createRuleTester();
 
+// Test the customIcon-ariaHidden rule
+ruleTester.run('customIcon-ariaHidden', plugin.rules['customIcon-ariaHidden'], {
+    valid: [
+        {
+            name: 'customIcon element has aria-hidden',
+            code: `<Alert customIcon={<Spinner aria-hidden />} title="Waiting" />`,
+        },
+        {
+            name: 'customIcon expression is not JSX',
+            code: `<Alert customIcon={statusIcon} title="Waiting" />`,
+        },
+        {
+            name: 'non-customIcon JSX attribute is ignored',
+            code: `<Alert icon={<Spinner />} title="Waiting" />`,
+        },
+    ],
+
+    invalid: [
+        {
+            name: 'customIcon spinner is missing aria-hidden',
+            code: `<Alert customIcon={<Spinner />} title="Waiting" />`,
+            errors: [
+                {
+                    message:
+                        'Add aria-hidden to decorative customIcon elements so assistive technologies do not announce duplicated status text',
+                },
+            ],
+        },
+        {
+            name: 'customIcon icon with other props is missing aria-hidden',
+            code: `<Alert customIcon={<CheckCircleIcon color="green" />} title="Complete" />`,
+            errors: [
+                {
+                    message:
+                        'Add aria-hidden to decorative customIcon elements so assistive technologies do not announce duplicated status text',
+                },
+            ],
+        },
+    ],
+});
+
 // Test the Button-Tooltip-isAriaDisabled rule
 ruleTester.run('Button-Tooltip-isAriaDisabled', plugin.rules['Button-Tooltip-isAriaDisabled'], {
     valid: [

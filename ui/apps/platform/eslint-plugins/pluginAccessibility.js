@@ -1,5 +1,15 @@
 /* globals module */
 
+function getJSXElementName(node) {
+    return node?.openingElement?.name?.name;
+}
+
+function hasJSXAttribute(node, attributeName) {
+    return node?.openingElement?.attributes?.some(
+        (attribute) => attribute.name?.name === attributeName
+    );
+}
+
 function getJSXAttribute(node, attributeName) {
     return node?.attributes?.find((attribute) => attribute.name?.name === attributeName);
 }
@@ -333,6 +343,39 @@ const rules = {
                                 });
                             }
                         }
+                    }
+                },
+            };
+        },
+    },
+    'customIcon-ariaHidden': {
+        // Decorative custom icons duplicate nearby status text and should be hidden from assistive technology.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require aria-hidden on JSX elements passed to PatternFly customIcon props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXAttribute(node) {
+                    if (node.name?.name !== 'customIcon') {
+                        return;
+                    }
+
+                    const customIconElement = node.value?.expression;
+                    if (
+                        customIconElement?.type === 'JSXElement' &&
+                        getJSXElementName(customIconElement) &&
+                        !hasJSXAttribute(customIconElement, 'aria-hidden')
+                    ) {
+                        context.report({
+                            node: customIconElement.openingElement,
+                            message:
+                                'Add aria-hidden to decorative customIcon elements so assistive technologies do not announce duplicated status text',
+                        });
                     }
                 },
             };
