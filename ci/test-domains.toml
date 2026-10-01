@@ -1,7 +1,7 @@
 # Rules are walked from top to bottom.
-# One rule saying run and another saying skip takes that target's line
-# from ci/decision-defaults. The last rule covers every target that no
-# earlier rule decided. default = ["*"] reads that same file.
+# One rule saying run and another saying skip runs the target. The last
+# rule covers every target that no earlier rule decided. default = ["*"]
+# reads ci/decision-defaults.
 
 version = 1
 
@@ -25,8 +25,8 @@ jobs = [
   "ocp-vm-scanning-e2e-tests",
 ]
 
-# The label asks for every target. A skip from another rule still clashes,
-# and the clash takes the target's default.
+# The label votes run for every target. A skip from another rule clashes,
+# and that clash runs the job.
 [[rules]]
 name = "run-all-label"
 when = "label-exists"
@@ -40,8 +40,8 @@ when = "any-file-matches"
 paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
 run = ["*"]
 
-# A docs-only change skips every target. The style rule still asks for
-# style-check, so that job clashes and takes its default.
+# A docs-only change skips every target. style-check and wait-for-images
+# still get a run vote, so those clashes run.
 [[rules]]
 name = "docs-only"
 when = "every-file-matches"

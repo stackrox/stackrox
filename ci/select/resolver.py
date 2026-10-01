@@ -2,9 +2,9 @@
 """Decide which CI jobs a pull request runs.
 
 Rules live in a TOML file and are walked from top to bottom. A target that
-one rule runs and another skips takes its line from decision-defaults.
-A target no rule has mentioned takes the last rule. When that rule says
-default, the same file supplies the decision.
+one rule runs and another skips runs: a clash must not drop a job a rule
+asked for. A target no rule has mentioned takes the last rule. When that
+rule says default, decision-defaults supplies the decision.
 """
 
 from __future__ import annotations
@@ -148,7 +148,7 @@ def resolve(
     for job in mapping.jobs:
         vote = votes[job]
         if vote.run and vote.skip:
-            outcomes[job] = defaults[job]
+            outcomes[job] = "run"
             clashes.append(job)
         elif vote.run:
             outcomes[job] = "run"
@@ -197,7 +197,7 @@ def resolve(
             f"clash on target {_q(job)}; "
             f"{_says(_rule_names(vote.run), 'run')}, "
             f"{_says(_rule_names(vote.skip), 'skip')}; "
-            f"default {_q(defaults[job])}"
+            "run wins"
         )
 
     for job in from_default:

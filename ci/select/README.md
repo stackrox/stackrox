@@ -25,7 +25,7 @@ This prototype relies on the surrounding CI for the following:
 - The rules are a TOML file, `ci/test-domains.toml`.
 - GitHub Actions triggers the hooked workflows, so the dispatcher runs inside a job that has already started.
 - Each enrolled Prow job has `always_run` set to `true`. Prow starts the job, and this tool can then skip the test. That flag lives in `openshift/release`, outside this repository.
-- When one rule says run and another says skip, the target takes its line from `ci/decision-defaults`.
+- When one rule says run and another says skip, the job runs. The log records the clash. `ci/decision-defaults` is not the tie-break.
 - The last rule says `default` for every target that no earlier rule mentioned. Those targets take `ci/decision-defaults`.
 - Adding or removing any label reruns the style, unit-test, and end-to-end dispatch workflows, so `ci-dispatcher-enforce` takes effect without a new commit. Whether a label change is a legitimate trigger is open for review.
 
@@ -35,7 +35,7 @@ The tool must follow these rules:
 
 - Decide for pull requests. A push to `master` or to a `release-*` branch can later use the same decision. Until that port, those pushes keep the triggers they have now.
 - Let `ci/decision-defaults` record which checks run on a pull request today, and which do not. Derive each run and each skip from that file. A target the file does not name is skipped.
-- When the label `ci-run-all-tests` is set, use a second default: the wider set of checks that label runs today. That set is not the pull-request default above.
+- When the label `ci-run-all-tests` is set, that rule votes run for every target. A skip from another rule clashes, and the clash runs the job, so the label runs every target on the list.
 - Treat an empty changed-files file as a pull request that changed no files. Treat a diff that could not be read as a failure, and then use `ci/decision-defaults`.
 - When the decision file is empty, or contains only comments, log that and follow `ci/decision-defaults`. When a job has no line in that file, log that and skip the job.
 - Use the label `ci-dispatcher-enforce` as the switch. Without that label, GitHub Actions and Prow still start jobs the way they do today. The tools only print what they would have done.
@@ -50,11 +50,11 @@ The tool must follow these rules:
 
 The decision file is the contract. Both dispatchers read that list. They do not look at the rules again to change it. In the commands below, each dispatcher resolves from the same inputs so you can see `run` or `skip` without copying a file by hand. In a workflow, a failed resolver is replaced by `ci/decision-defaults`.
 
-A target ends up in one of these states. A clash takes the default, and the last rule says `default`. Both of those are assumptions, listed earlier.
+A target ends up in one of these states. A clash runs the job, and the last rule says `default`. Both of those are assumptions, listed earlier.
 
 - One or more rules say run, and none say skip. The job runs.
 - One or more rules say skip, and none say run. The job is skipped.
-- Some rules say run and some say skip. The job takes its default.
+- Some rules say run and some say skip. The job runs. The log names both sides.
 - No earlier rule mentioned the job. The last rule says `default`, so the job takes its default.
 - A job that is going to run requires another job. The resolver adds the required job and says so in the log, even when that job's own result was skip.
 
@@ -64,9 +64,9 @@ Paths are regular expressions. `any-file-matches` applies when one changed file 
 
 The sample rules do the following:
 
-- The checked-in `ci-run-all-tests` rule asks every target to run, and a skip from another rule still clashes. The requirement is a second default: the wider set of checks that label runs today.
+- The checked-in `ci-run-all-tests` rule votes run for every target. A skip from another rule clashes, and the clash runs the job.
 - `go.mod`, `go.sum`, `proto/`, or `generated/` runs every target.
-- A change that is only docs skips every target. The style rule still runs `style-check`, and that clash takes the default `run`. The same clash keeps `wait-for-images`, which pulls `should-dispatch` back on.
+- A change that is only docs skips every target. The style rule still runs `style-check`, and that clash runs. The same clash keeps `wait-for-images`, which pulls `should-dispatch` back on.
 - A change that stays inside the workflow hooks, `.openshift-ci/`, or `ci/select/` skips the end-to-end jobs. One file outside those paths, including a Python file elsewhere, leaves the rule unmatched.
 - Any `.go` file runs `go`.
 - Any changed file runs `style-check`.
@@ -111,12 +111,12 @@ The end-to-end jobs are absent. The log says why `style-check` and `wait-for-ima
 001. rule "docs-only" matches every changed file
      README.md
 002. rule "docs-only" skips target "go"
-017. clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; default "run"
-018. clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; default "run"
+017. clash on target "style-check"; rule "style" says run, rule "docs-only" says skip; run wins
+018. clash on target "wait-for-images"; rule "image-wait" says run, rule "docs-only" says skip; run wins
 019. added target "should-dispatch" because target "wait-for-images" requires it
 ```
 
-A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash. Both defaults are `run`, so both names stay on the decision list. `go` is on the list because the paths end in `.go`.
+A sensor file and a Central policy file disagree. `go-postgres` and `sensor-integration-tests` clash, so both run. The ready-pull-request line is not what keeps them. `go` is on the list because the paths end in `.go`.
 
 ```bash
 printf '%s\n' sensor/common/foo.go central/policy/service.go > /tmp/ci-select/files.txt
@@ -136,13 +136,13 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-006. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; default "run"
-007. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; default "run"
+005. clash on target "go-postgres"; rule "central-policy" says run, rule "sensor" says skip; run wins
+006. clash on target "sensor-integration-tests"; rule "sensor" says run, rule "central-policy" says skip; run wins
 ```
 
-To see a clash resolve to skip, change the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` and pass that copy with `--defaults`.
+Changing the `go-postgres` line in a copy of `ci/decision-defaults` from `run` to `skip` does not drop it. A rule asked for the job, so the clash still runs it.
 
-The checked-in rule still asks every target to run. On these docs-only files that clashes with the skip for every target, and each target takes its default. `go` stays because its default is `run`. `gke-qa-e2e-tests` stays off because its default is `skip`. The requirement is a separate, wider default for this label:
+The label votes run for every target. On a docs-only pull request that clashes with the skip for every target, and the clash runs each one. `gke-qa-e2e-tests` is on the list even though a ready pull request skips it:
 
 ```bash
 printf '%s\n' README.md > /tmp/ci-select/files.txt
@@ -163,8 +163,8 @@ grep clash /tmp/ci-select/resolver.log
 ```
 
 ```text
-002. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; default "run"
-015. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; default "skip"
+002. clash on target "go"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
+015. clash on target "gke-qa-e2e-tests"; rule "run-all-label" says run, rule "docs-only" says skip; run wins
 ```
 
 If `ci/decision-defaults` is missing a target that the rules name, the resolver prints `resolver failed: ...` on standard error, exits 1, and writes neither file.
@@ -319,7 +319,7 @@ python3 -m unittest discover -s ci/select -p 'test_*.py'
 The commands above are enough to see whether a rule does what you expect. Shipping this for every pull request still needs the following:
 
 - Replace the sample rules with the real map from directories and labels to suites, including the build-and-test tags, the Go end-to-end tests, and the GKE or OpenShift jobs a subsystem change should run.
-- Add a second default for `ci-run-all-tests`: the wider set that label runs today. The checked-in label rule still asks every target to run.
+- If `ci-run-all-tests` should run a smaller set than every target, name that set on the label rule. A clash now runs the job, so `run = ["*"]` runs the whole list, including jobs a ready pull request skips.
 - Teach the remaining pull-request jobs to read the decision. `go-postgres` and `sensor-integration-tests` are in the rules, and their workflows do not consult the list, so a skip in the decision does not skip those jobs. The same is true for the other jobs in `style.yaml` and `unit-tests.yaml`, and for the scanner, CRD, and compatibility workflows.
 - Log a job that `ci/decision-defaults` does not name, and skip it. The dispatcher still prints `run` for that name.
 - Keep a required GitHub check from sitting in the expected state. Skipping `style-check` and `go` starts the job and exits 0. The other required checks are not on that path.

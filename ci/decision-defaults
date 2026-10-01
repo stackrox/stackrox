@@ -1,6 +1,6 @@
 # One target per line. The last word is run or skip.
-# The resolver uses this line when rules clash, when the catch-all rule says
-# default, and the dispatcher uses the whole file when the resolver fails.
+# The resolver uses this line when the catch-all rule says default.
+# The dispatcher uses the whole file when the resolver fails.
 # These lines are a ready pull request: not a draft, not a fork, and no
 # opt-in label. A change that is only under ui/ is a separate filter.
 
