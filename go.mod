@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.1
 	cloud.google.com/go/containeranalysis v0.20.0
 	cloud.google.com/go/securitycenter v1.46.0
-	cloud.google.com/go/storage v1.64.0
+	cloud.google.com/go/storage v1.68.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.1
