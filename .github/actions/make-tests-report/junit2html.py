@@ -43,44 +43,59 @@ EXTRA_CSS = (
     ".meta{font-size:.875rem}"
     # Self-linking anchors: a '#' that only appears on hover, so the view stays
     # uncluttered. The element keeps its space while hidden to avoid layout shift.
-    ".anchor{opacity:0;padding-right:.35rem;text-decoration:none;color:#adb5bd}"
-    ".anchor:hover{color:#0d6efd}"
-    "h2:hover .anchor,h3:hover .anchor,h4:hover .anchor,h5:hover .anchor,"
-    "h6:hover .anchor,.case:hover .anchor{opacity:1}"
+    ".an{opacity:0;padding-right:.35rem;text-decoration:none;color:#adb5bd}"
+    ".an:hover{color:#0d6efd}"
+    "h2:hover .an,h3:hover .an,h4:hover .an,h5:hover .an,"
+    "h6:hover .an,.case:hover .an{opacity:1}"
     # Highlight whatever a shared #link points at.
     ":target{scroll-margin-top:1rem}"
     "section.suite:target{background:rgba(13,110,253,.06)}"
     ".case:target{outline:2px solid #0d6efd;outline-offset:-2px}"
     # Test cases: a CSS-grid "table" whose rows are <details>, so each case can
     # expand its own output. A fixed column template shared by every row keeps the
-    # columns aligned across the otherwise-independent rows. The disclosure caret
-    # sits on the test name.
-    ".cases-head,.case>summary,.case.nodetail{display:grid;"
+    # columns aligned across the otherwise-independent rows. Cells are styled purely
+    # by grid position (nth-child) rather than a class per cell, which would repeat
+    # on every one of thousands of rows. The three row shapes sharing the template
+    # are the header (.ch), a case <summary>, and a bodyless case (.nd).
+    ".ch,.case>summary,.case.nd{display:grid;"
     "grid-template-columns:9rem minmax(10rem,2fr) minmax(8rem,3fr) 5rem;"
     "gap:.5rem;align-items:center}"
-    ".cases-head{font-weight:600;padding:.4rem .5rem;border-bottom:2px solid #dee2e6}"
+    ".ch{font-weight:600;padding:.4rem .5rem;border-bottom:2px solid #dee2e6}"
     ".case{border-bottom:1px solid #dee2e6}"
-    ".case>summary,.case.nodetail{padding:.35rem .5rem}"
+    ".case>summary,.case.nd{padding:.35rem .5rem}"
     ".case>summary{list-style:none}"
     ".case>summary::-webkit-details-marker{display:none}"
     ".case.s-passed{background:#d1e7dd}"
     ".case.s-failed,.case.s-error{background:#f8d7da}"
     ".case.s-skipped{background:#e2e3e5}"
-    ".c-status{white-space:nowrap}"
-    ".c-name{padding-left:1.2em;position:relative;word-break:break-word}"
-    ".case>summary .c-name::before{content:'▸';position:absolute;left:0;"
+    # col 1 = status (nowrap), 2 = name (caret + indent), 3 = class, 4 = time.
+    ".ch>:first-child,.case>summary>:first-child,.case.nd>:first-child"
+    "{white-space:nowrap}"
+    ".ch>:nth-child(2),.case>summary>:nth-child(2),.case.nd>:nth-child(2)"
+    "{padding-left:1.2em;position:relative;word-break:break-word}"
+    ".case>summary>:nth-child(2)::before{content:'▸';position:absolute;left:0;"
     "color:#6c757d}"
-    ".case[open]>summary .c-name::before{content:'▾'}"
-    ".c-class{word-break:break-all}"
-    ".c-time{text-align:right;font-variant-numeric:tabular-nums}"
+    ".case[open]>summary>:nth-child(2)::before{content:'▾'}"
+    ".ch>:nth-child(3),.case>summary>:nth-child(3),.case.nd>:nth-child(3)"
+    "{word-break:break-all}"
+    ".ch>:nth-child(4),.case>summary>:nth-child(4),.case.nd>:nth-child(4)"
+    "{text-align:right;font-variant-numeric:tabular-nums}"
     ".case-body{padding:.25rem .75rem .6rem 1.7em}"
     ".case-body .lbl{font-weight:600;color:#6c757d;font-size:.85rem;margin-top:.6rem}"
     ".case-body>:first-child{margin-top:0}"
 )
 
 # status -> (row class, badge class, label). Errors are treated as failures (red).
+#
+# Labels are deliberately asymmetric so browser in-page find (which is
+# case-insensitive) can jump straight to problem tests. The count badges say
+# "N failed"/"N skipped"/..., so searching "FAILED" would stop on every "0 failed"
+# count first. The non-passing labels therefore carry a "TEST " prefix that no
+# count badge has: "TEST FAILED" targets failures, and "TEST " (trailing space)
+# walks all failed/errored/skipped tests. "PASSED" stays short because passing is
+# ~all of the rows (so it dominates file size) and is never a search target.
 STATUS = {
-    "passed": ("s-passed", "text-bg-success", "TEST PASSED"),
+    "passed": ("s-passed", "text-bg-success", "PASSED"),
     "failed": ("s-failed", "text-bg-danger", "TEST FAILED"),
     "error": ("s-error", "text-bg-danger", "TEST ERROR"),
     "skipped": ("s-skipped", "text-bg-secondary", "TEST SKIPPED"),
@@ -88,9 +103,9 @@ STATUS = {
 
 # A suite's cases are a CSS-grid list (not a <table>) so each row can be a
 # <details>. LIST_OPEN emits the container and the column-label header row.
-LIST_OPEN = ('<div class="cases"><div class="cases-head">'
-             '<span>Status</span><span class="c-name">Test</span>'
-             '<span>Class</span><span class="c-time">Time (s)</span></div>')
+LIST_OPEN = ('<div class="cases"><div class="ch">'
+             '<span>Status</span><span>Test</span>'
+             '<span>Class</span><span>Time (s)</span></div>')
 LIST_CLOSE = "</div>"
 
 # One delegated listener for every anchor link. Clicking an anchor that sits
@@ -99,7 +114,7 @@ LIST_CLOSE = "</div>"
 # update. Done once here instead of an inline onclick on each of thousands of rows.
 ANCHOR_SCRIPT = (
     "<script>document.addEventListener('click',function(e){"
-    "var a=e.target.closest('a.anchor');"
+    "var a=e.target.closest('a.an');"
     "if(a){e.preventDefault();location.hash=a.getAttribute('href');}});</script>"
 )
 
@@ -115,7 +130,7 @@ def _anchor(anchor_id):
     The visible "#" is the accessible name; we deliberately omit an aria-label
     because it repeats across ~19k rows and ~0.5 MB matters for the size budget.
     """
-    return f'<a class="anchor" href="#{anchor_id}">#</a>'
+    return f'<a class="an" href="#{anchor_id}">#</a>'
 
 
 def _count_bg(count, color_class):
@@ -321,7 +336,7 @@ class Renderer:
         time = elem.get("time", "")
         failed = counts.get("failed", 0) + counts.get("error", 0)
         self.suite_no += 1
-        anchor_id = f"suite-{self.suite_no}"
+        anchor_id = f"s{self.suite_no}"
         self.out.write(
             f'<section class="suite mb-4" id="{anchor_id}">'
             f'<h{lvl} class="mb-2">{_anchor(anchor_id)}{name}')
@@ -351,13 +366,16 @@ class Renderer:
         status = _classify(elem)
         row_class, badge_class, label = STATUS[status]
         self.case_no += 1
-        anchor_id = f"test-{self.case_no}"
+        anchor_id = f"t{self.case_no}"
+        # Cells are positional grid children (see EXTRA_CSS nth-child rules); they
+        # carry no per-cell class. The class column is a bare <code> (its own grid
+        # item) rather than a wrapped span, saving a wrapper on every row.
         cells = (
-            f'<span class="c-status">{_anchor(anchor_id)}'
+            f"<span>{_anchor(anchor_id)}"
             f'<span class="badge {badge_class}">{label}</span></span>'
-            f'<span class="c-name">{esc(elem.get("name", ""))}</span>'
-            f'<span class="c-class"><code>{esc(elem.get("classname", ""))}</code></span>'
-            f'<span class="c-time">{esc(elem.get("time", ""))}</span>'
+            f'<span>{esc(elem.get("name", ""))}</span>'
+            f'<code>{esc(elem.get("classname", ""))}</code>'
+            f'<span>{esc(elem.get("time", ""))}</span>'
         )
         body = self._case_body(elem)
         if body:
@@ -370,7 +388,7 @@ class Renderer:
             )
         else:
             self.out.write(
-                f'<div class="case nodetail {row_class}" id="{anchor_id}">{cells}</div>'
+                f'<div class="case nd {row_class}" id="{anchor_id}">{cells}</div>'
             )
 
     def _case_body(self, elem):
