@@ -85,6 +85,7 @@ def _suite_attr_rows(elem):
     """(label, value) rows for the <testsuite> attributes shown in the Meta block.
     Empty ones are dropped later by render_metadata."""
     return [
+        ("Timestamp", elem.get("timestamp", "")),
         ("Assertions", elem.get("assertions", "")),
         ("Hostname", elem.get("hostname", "")),
         ("File", elem.get("file", "")),
@@ -291,14 +292,8 @@ class Renderer:
             f'<span class="badge {_count_bg(failed, "text-bg-danger")} me-2">{failed} failed</span>'
             f'<span class="badge {_count_bg(counts.get("skipped", 0), "text-bg-secondary")} me-2">{counts.get("skipped", 0)} skipped</span>'
         )
-        timestamp = elem.get("timestamp", "")
-        bits = []
         if time:
-            bits.append(f"{esc(time)}s")
-        if timestamp:
-            bits.append(esc(timestamp))
-        if bits:
-            self.out.write(f'<span class="small">{" &middot; ".join(bits)}</span>')
+            self.out.write(f'<span class="small">{esc(time)}</span>')
         self.out.write("</div>")
 
     def _write_case(self, elem):
