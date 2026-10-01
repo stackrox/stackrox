@@ -254,6 +254,7 @@ def pass1(files):
         except ET.ParseError as e:
             print(f"{path}: not well-formed XML ({e}); skipping", file=sys.stderr)
             continue
+        print(f"processing {path}")  # so the user sees which files were read
         valid_files.append(path)
         suite_counts.extend(suites)  # global order == pass-2 suite-start order
         suite_io.extend(ios)  # parallel to suite_counts
