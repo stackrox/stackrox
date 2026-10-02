@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -201,6 +202,71 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().Error(err)
 	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
 	s.Require().Nil(config)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationNodeRoleValidation() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Valid cases: validateScanConfiguration must accept these without error.
+	validCases := map[string][]string{
+		"custom roles":                    {"infra", "control-plane"},
+		"@all alone":                      {allNodesRole},
+		"empty defaults to master/worker": nil,
+		"single default role":             {"master"},
+		"single character role":           {"a"},
+		"exactly 39 characters":           {strings.Repeat("a", 39)},
+	}
+	for name, roles := range validCases {
+		s.Run("valid/"+name, func() {
+			request := getTestAPIRec()
+			request.ScanConfig.NodeRoles = roles
+			s.Require().NoError(validateScanConfiguration(request))
+		})
+	}
+
+	// Invalid cases: assert the error is an errox.InvalidArgs (robust, not
+	// dependent on user-facing message wording), plus a light substring check
+	// so a mixed-up case is still caught.
+	invalidCases := map[string]struct {
+		roles     []string
+		msgSubstr string
+	}{
+		"@all mixed with other roles": {[]string{allNodesRole, "worker"}, "@all"},
+		"special characters":          {[]string{"inv@lid"}, "invalid"},
+		"empty string in list":        {[]string{"master", ""}, "empty"},
+		"too long":                    {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
+		"duplicate role":              {[]string{"worker", "worker"}, "Duplicate"},
+		"duplicate exact roles":       {[]string{"master", "master"}, "Duplicate"},
+		"leading hyphen":              {[]string{"-infra"}, "invalid"},
+		"trailing hyphen":             {[]string{"infra-"}, "invalid"},
+		"hyphen alone":                {[]string{"-"}, "invalid"},
+		"too long by one character":   {[]string{strings.Repeat("a", 40)}, "invalid"},
+		"uppercase rejected":          {[]string{"Master", "Worker"}, "invalid"},
+		"uppercase @all rejected":     {[]string{"@ALL"}, "invalid"},
+	}
+	for name, tc := range invalidCases {
+		s.Run("invalid/"+name, func() {
+			request := getTestAPIRec()
+			request.ScanConfig.NodeRoles = tc.roles
+			config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+			s.Require().Error(err)
+			s.Require().Nil(config)
+			s.Require().ErrorIs(err, errox.InvalidArgs)
+			s.Require().Contains(err.Error(), tc.msgSubstr)
+		})
+	}
+
+	// No mutation: validateScanConfiguration must not modify the request, and a
+	// valid lowercase config's roles must be stored unchanged.
+	s.Run("valid lowercase roles pass through unchanged", func() {
+		request := getTestAPIRec()
+		request.ScanConfig.NodeRoles = []string{"master", "infra", "worker"}
+		s.Require().NoError(validateScanConfiguration(request))
+		s.Require().Equal([]string{"master", "infra", "worker"}, request.GetScanConfig().GetNodeRoles())
+
+		storageCfg := convertV2ScanConfigToStorage(allAccessContext, request)
+		s.Require().Equal([]string{"master", "infra", "worker"}, storageCfg.GetNodeRoles())
+	})
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
@@ -770,6 +836,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -836,6 +903,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -908,6 +976,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -1024,6 +1093,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 							OneTimeScan: false,
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
+							NodeRoles:   []string{"master", "worker"},
 						},
 						ClusterStatus: []*v2.ClusterScanStatus{},
 						ModifiedBy:    &v2.SlimUser{},
@@ -1178,6 +1248,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
 			Notifiers:    []*v2.NotifierConfiguration{},
+			NodeRoles:    []string{"master", "worker"},
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
@@ -1219,6 +1290,7 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
+			NodeRoles:    []string{"master", "worker"},
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}

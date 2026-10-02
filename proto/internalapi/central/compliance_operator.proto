@@ -60,6 +60,15 @@ message ApplyComplianceScanConfigRequest {
     // Populated by Central alongside the legacy profiles field.
     // Sensor should prefer this field when non-empty, and fall back to profiles otherwise.
     repeated ProfileReference profile_refs = 8;
+
+    // node_roles specifies which node roles the compliance scan should target.
+    // When empty, Sensor defaults to ["master", "worker"] for backward compatibility
+    // (handles messages from old Central versions that don't populate this field).
+    // Note: Sensor builds that predate this field will silently ignore it and fall
+    // back to their hardcoded default (master, worker) - this is the same default
+    // behavior as before this field existed, so it is not treated as a breaking
+    // change requiring capability negotiation.
+    repeated string node_roles = 9;
   }
 
   message OneTimeScan {

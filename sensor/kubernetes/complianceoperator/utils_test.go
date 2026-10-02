@@ -105,3 +105,34 @@ func TestBuildScanSettingBindingProfileRefsLegacyFallback(t *testing.T) {
 		assert.Equal(t, complianceoperator.Profile.Kind, refs[i].Kind)
 	}
 }
+
+func TestNodeRolesFromRequest(t *testing.T) {
+	testCases := map[string]struct {
+		request  *central.ApplyComplianceScanConfigRequest_BaseScanSettings
+		expected []string
+	}{
+		"explicit roles": {
+			request:  &central.ApplyComplianceScanConfigRequest_BaseScanSettings{NodeRoles: []string{"infra", "worker"}},
+			expected: []string{"infra", "worker"},
+		},
+		"empty roles defaults to master and worker": {
+			request:  &central.ApplyComplianceScanConfigRequest_BaseScanSettings{},
+			expected: []string{"master", "worker"},
+		},
+		"nil request defaults to master and worker": {
+			request:  nil,
+			expected: []string{"master", "worker"},
+		},
+		"@all role": {
+			request:  &central.ApplyComplianceScanConfigRequest_BaseScanSettings{NodeRoles: []string{"@all"}},
+			expected: []string{"@all"},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			result := nodeRolesFromRequest(tc.request)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
