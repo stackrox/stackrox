@@ -238,17 +238,17 @@ def case_header_row(out):
     )
 
 
-def render_case(out, tc, seq, suite_name):
+def render_case(out, tc, seq):
     cls, marker = classify(tc)
     label, color = STATUS_LABEL[cls]
     name = tc.get("name") or ""
     time = tc.get("time") or ""
     classname = tc.get("classname") or ""
 
-    # key/value table rows
+    # key/value table rows. classname is not shown here; Cypress (and others)
+    # put meaningful path info there, so it is prepended to the Test name instead
+    # (see name_cell below) when it differs from the case name.
     kv_rows = []
-    if classname and classname != suite_name:
-        kv_rows.append(("Class", classname))
     for lbl, attr in (("File", "file"), ("Line", "line"), ("Assertions", "assertions")):
         v = (tc.get(attr) or "").strip()
         if v:
@@ -292,14 +292,20 @@ def render_case(out, tc, seq, suite_name):
     )
     time_cell = f"<div>{e(time)}</div>"
 
+    # Prepend the classname to the test name when it adds information (differs
+    # from the case name). Cypress stores the spec/describe path in @classname.
+    if classname and classname != name:
+        name_html = f"{e(classname)} / {e(name)}"
+    else:
+        name_html = e(name)
+    name_cell = f"<div>{name_html}</div>"
+
     if body_parts:
-        name_cell = f"<div>{e(name)}</div>"
         out.write(f'<details class="io case" id="t{seq}">')
         out.write(f'<summary class="row-grid {rowbg}">{status_cell}{name_cell}{time_cell}</summary>')
         out.write(f'<div class="cbody">{"".join(body_parts)}</div>')
         out.write("</details>")
     else:
-        name_cell = f"<div>{e(name)}</div>"
         out.write(
             f'<div class="row-grid {rowbg}" id="t{seq}">'
             f"{status_cell}{name_cell}{time_cell}</div>"
@@ -409,11 +415,10 @@ def render_pass2(out, valid_files, suites, totals, title):
                 if tag == "testcase":
                     case_seq += 1
                     owner = depth_stack[-1] if depth_stack else None
-                    suite_name = owner["name"] if owner else ""
                     if owner is not None and not owner.get("_hdr_done"):
                         case_header_row(out)
                         owner["_hdr_done"] = True
-                    render_case(out, el, case_seq, suite_name)
+                    render_case(out, el, case_seq)
                     el.clear()
                 elif tag == "testsuite":
                     out.write("</section>")
