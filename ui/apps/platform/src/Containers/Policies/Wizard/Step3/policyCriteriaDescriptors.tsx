@@ -747,7 +747,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '0',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
     },
     {
         label: 'Days Since CVE Was First Discovered In Image',
