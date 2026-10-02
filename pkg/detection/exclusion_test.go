@@ -125,6 +125,18 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			shouldMatch: false,
 		},
 		{
+			name:       "Image-only exclusion does not match deployments",
+			deployment: fixtures.GetDeployment(),
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{
+						Image: &storage.Exclusion_Image{Name: "docker.io/library/nginx"},
+					},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
 			name:       "Scoped excluded scope, but different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
@@ -246,4 +258,14 @@ func TestMatchesImageExclusion(t *testing.T) {
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}
+}
+
+func TestImageOnlyExclusionDoesNotMatchAuditEvent(t *testing.T) {
+	cx, err := newCompiledExclusion(&storage.Exclusion{Image: &storage.Exclusion_Image{Name: "docker.io/library/nginx"}})
+	require.NoError(t, err)
+
+	auditEvent := &storage.KubernetesEvent{
+		Object: &storage.KubernetesEvent_Object{Name: "my-secret", Namespace: "default", ClusterId: "cluster-1"},
+	}
+	assert.False(t, auditEventMatchesExclusions(auditEvent, []*compiledExclusion{cx}))
 }
