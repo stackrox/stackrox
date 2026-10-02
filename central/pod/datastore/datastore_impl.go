@@ -14,6 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -61,9 +63,12 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchRawPods")
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresDefaultCursorTimeout.DurationSetting())
+	defer cancel()
 
 	var pods []*storage.Pod
-	err := ds.podStore.WalkByQuery(ctx, q, func(pod *storage.Pod) error {
+	// This method retains the full result, so a cursor does not bound its memory.
+	err := ds.podStore.GetByQueryFn(ctx, q, func(pod *storage.Pod) error {
 		pods = append(pods, pod)
 		return nil
 	})
