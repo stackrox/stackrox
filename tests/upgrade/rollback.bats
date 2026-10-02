@@ -143,6 +143,91 @@ setup_historical_scale() {
     run_ci_scaled_workload
 }
 
+@test "N-3 smoke cleanup preserves remote registration for current smoke" {
+    export MAIN_IMAGE_TAG=test TEST_HOST_PLATFORM=linux API_ENDPOINT=central.example REGISTRY=registry
+    export CLUSTER_TYPE_FOR_TEST=K8S EVENTS="$BATS_TEST_TMPDIR/events"
+    export REMOTE_REGISTRATION="$BATS_TEST_TMPDIR/remote-registration"
+    export RESOURCE_STATE="$BATS_TEST_TMPDIR/sensor-resources"
+    mkdir -p "$RESOURCE_STATE"
+    touch "$REMOTE_REGISTRATION"
+    source "${BATS_TEST_DIRNAME}/postgres_run.sh"
+
+    local n3_checkout="$BATS_TEST_TMPDIR/n3" current_checkout="$BATS_TEST_TMPDIR/current" checkout release
+    for checkout in "$n3_checkout" "$current_checkout"; do
+        if [[ "$checkout" == "$n3_checkout" ]]; then
+            release=n3
+        else
+            release=current
+        fi
+        mkdir -p "$checkout/bin/linux"
+        cat >"$checkout/bin/linux/roxctl" <<EOF
+#!/usr/bin/env bash
+if [[ "\$*" == *"sensor get-bundle remote"* ]]; then
+    if [[ ! -f "\$REMOTE_REGISTRATION" ]]; then
+        printf 'bundle-denied:$release\\n' >>"\$EVENTS"
+        echo "Central remote registration missing for '$release' bundle" >&2
+        exit 1
+    fi
+    printf 'bundle:$release\\n' >>"\$EVENTS"
+    mkdir -p sensor-remote
+    cat >sensor-remote/sensor.sh <<'SCRIPT'
+#!/usr/bin/env bash
+printf 'install:$release\\n' >>"\$EVENTS"
+touch "\$RESOURCE_STATE/$release"
+SCRIPT
+    cat >sensor-remote/delete-sensor.sh <<'SCRIPT'
+#!/usr/bin/env bash
+printf 'delete-sensor:$release\\n' >>"\$EVENTS"
+unlink "\$RESOURCE_STATE/$release"
+SCRIPT
+    chmod +x sensor-remote/sensor.sh sensor-remote/delete-sensor.sh
+elif [[ "\$*" == *"cluster delete --name remote"* ]]; then
+    printf 'cluster-delete:$release\\n' >>"\$EVENTS"
+    unlink "\$REMOTE_REGISTRATION"
+fi
+EOF
+        chmod +x "$checkout/bin/linux/roxctl"
+    done
+
+    info() { :; }
+    kubectl() { :; }
+    sensor_wait() { :; }
+    wait_for_central_reconciliation() { :; }
+    remove_qa_test_results() { :; }
+    store_qa_test_results() { :; }
+    make() { :; }
+
+    run_upgrade_smoke "$n3_checkout" 4.10.0 4.10.0 n3-results
+    remove_rollback_smoke_sensor_resources "$n3_checkout"
+    run_upgrade_smoke "$current_checkout" test test current-results
+
+    [ "$(grep -c '^bundle:' "$EVENTS")" -eq 2 ]
+    grep -Fx 'bundle:n3' "$EVENTS"
+    grep -Fx 'install:n3' "$EVENTS"
+    grep -Fx 'delete-sensor:n3' "$EVENTS"
+    grep -Fx 'bundle:current' "$EVENTS"
+    grep -Fx 'install:current' "$EVENTS"
+    local n3_bundle n3_install cleanup current_bundle current_install
+    n3_bundle="$(grep -nFx 'bundle:n3' "$EVENTS" | cut -d: -f1)"
+    n3_install="$(grep -nFx 'install:n3' "$EVENTS" | cut -d: -f1)"
+    cleanup="$(grep -nFx 'delete-sensor:n3' "$EVENTS" | cut -d: -f1)"
+    current_bundle="$(grep -nFx 'bundle:current' "$EVENTS" | cut -d: -f1)"
+    current_install="$(grep -nFx 'install:current' "$EVENTS" | cut -d: -f1)"
+    [ "$n3_bundle" -lt "$cleanup" ]
+    [ "$n3_install" -lt "$cleanup" ]
+    [ "$cleanup" -lt "$current_bundle" ]
+    [ "$current_bundle" -lt "$current_install" ]
+    if grep -q '^cluster-delete:' "$EVENTS"; then
+        false
+    fi
+    if grep -q '^delete-sensor:current$' "$EVENTS"; then
+        false
+    fi
+    [ ! -e "$RESOURCE_STATE/n3" ]
+    [ -e "$RESOURCE_STATE/current" ]
+    [ -f "$REMOTE_REGISTRATION" ]
+}
+
 @test "initial install passes scoped DB request through Helm arguments" {
     source "${BATS_TEST_DIRNAME}/lib.sh"
     export CI=true CI_JOB_NAME=gke-upgrade-tests-central EARLIER_TAG=4.10.0 TEST_HOST_PLATFORM=linux

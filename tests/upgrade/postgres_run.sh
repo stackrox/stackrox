@@ -261,11 +261,10 @@ test_upgrade_paths() (
 
     run_upgrade_smoke "$REPO_FOR_TIME_TRAVEL" "$rollback_tag" "$rollback_tag" "rollback-n3-smoke-tests"
     collect_and_check_stackrox_logs "$log_output_dir" "05_rollback_smoke"
-    (
-        cd "$REPO_FOR_TIME_TRAVEL"
-        ./sensor-remote/delete-sensor.sh
-        "bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name remote
-    )
+    # Remove the N-3 Sensor resources, but keep Central's remote registration:
+    # the current-release smoke run needs it for `sensor get-bundle remote`.
+    # The registration is removed when the ephemeral GKE cluster is torn down.
+    remove_rollback_smoke_sensor_resources "$REPO_FOR_TIME_TRAVEL"
 
     # Now go back to the current release. The HEAD chart installs Scanner V4,
     # which smoke test needs.
@@ -314,6 +313,11 @@ run_upgrade_smoke() (
     PATH="$checkout/bin/$TEST_HOST_PLATFORM:$PATH" CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
     store_qa_test_results "$results"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
+)
+
+remove_rollback_smoke_sensor_resources() (
+    cd "$1"
+    ./sensor-remote/delete-sensor.sh
 )
 
 run_ci_scaled_workload() (
