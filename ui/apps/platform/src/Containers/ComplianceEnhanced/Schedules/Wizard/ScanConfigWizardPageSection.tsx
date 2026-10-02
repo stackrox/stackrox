@@ -1,7 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Button, Wizard, WizardFooter, WizardStep, useWizardContext } from '@patternfly/react-core';
+import {
+    Button,
+    PageSection,
+    Wizard,
+    WizardFooter,
+    WizardStep,
+    useWizardContext,
+} from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
@@ -39,7 +46,7 @@ const CONFIGURE_REPORT_ID = 'report';
 const REVIEW_CONFIG = 'Review';
 const REVIEW_CONFIG_ID = 'review';
 
-type ScanConfigWizardFormProps = {
+type ScanConfigWizardPageSectionProps = {
     initialFormValues?: ScanConfigFormValues;
     pageAction: SchedulePageAction;
 };
@@ -117,10 +124,10 @@ function CustomWizardFooter({
     );
 }
 
-function ScanConfigWizardForm({
+function ScanConfigWizardPageSection({
     initialFormValues,
     pageAction,
-}: ScanConfigWizardFormProps): ReactElement {
+}: ScanConfigWizardPageSectionProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
@@ -220,7 +227,13 @@ function ScanConfigWizardForm({
     }
 
     return (
-        <>
+        <PageSection
+            hasBodyWrapper={false}
+            hasOverflowScroll
+            isFilled
+            padding={{ default: 'noPadding' }}
+            type="wizard"
+        >
             <FormikProvider value={formik}>
                 <Wizard
                     navAriaLabel="Scan schedule configuration steps"
@@ -335,8 +348,8 @@ function ScanConfigWizardForm({
                     taken back to the list of scan configurations.
                 </p>
             </Modal>
-        </>
+        </PageSection>
     );
 }
 
-export default ScanConfigWizardForm;
+export default ScanConfigWizardPageSection;
