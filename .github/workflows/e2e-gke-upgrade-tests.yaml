@@ -62,7 +62,7 @@ jobs:
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "4"
         GKE_SPOT: "false"
-      timeout-minutes: 20
+      timeout-minutes: 45
       run: |
         scripts/ci/gke.sh provision_gke_cluster cent-up
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
@@ -231,7 +231,7 @@ jobs:
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "4"
         GKE_SPOT: "false"
-      timeout-minutes: 20
+      timeout-minutes: 45
       run: |
         scripts/ci/gke.sh provision_gke_cluster pg-up
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
@@ -381,7 +381,7 @@ jobs:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
         GKE_SPOT: "false"
-      timeout-minutes: 20
+      timeout-minutes: 45
       run: |
         scripts/ci/gke.sh provision_gke_cluster sens-up
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
