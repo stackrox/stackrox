@@ -252,6 +252,13 @@ test_upgrade_paths() (
     # Cleanup the scaled sensor before smoke tests.
     helm uninstall -n stackrox stackrox-secured-cluster-services
     "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
+
+    # The restart allowlist below is intentionally limited to this smoke phase,
+    # but still require Scanner V4 to recover before considering the smoke run.
+    kubectl -n stackrox rollout status deployment/scanner-v4-db --timeout=600s
+    kubectl -n stackrox rollout status deployment/scanner-v4-indexer --timeout=600s
+    kubectl -n stackrox rollout status deployment/scanner-v4-matcher --timeout=600s
+
     run_upgrade_smoke "$REPO_FOR_TIME_TRAVEL" "$rollback_tag" "$rollback_tag" "rollback-n3-smoke-tests"
     collect_and_check_stackrox_logs "$log_output_dir" "05_rollback_smoke"
     (
