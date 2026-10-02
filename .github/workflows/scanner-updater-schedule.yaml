@@ -21,7 +21,7 @@ jobs:
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       needs-notification: ${{ steps.matrix-scheduled.outputs.has_errors }}
     steps:
@@ -98,7 +98,7 @@ jobs:
 
   plan:
     needs: build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       has_due: ${{ steps.emit.outputs.has_due }}
       matrix: ${{ steps.emit.outputs.matrix }}
@@ -152,7 +152,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (failure() || needs.build-matrix.outputs.needs-notification == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: read

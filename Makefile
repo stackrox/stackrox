@@ -138,7 +138,7 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, RATCHET_BIN, github.com/sethvargo/ratchet, tools/linters)
-$(call go-tool, ACTIONLINT_BIN, github.com/rhysd/actionlint/cmd/actionlint, tools/linters)
+$(call go-tool, ACTIONLINT_BIN, actionlint.kjanat.dev/cmd/actionlint, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
@@ -575,7 +575,7 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | grep -v -E '^($(NESTED_GO_MODULE_REGEX))(/|$$)' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*_test.go' | grep -v -E '^($(NESTED_GO_MODULE_REGEX))(/|$$)' | scripts/go-files-to-packages.sh | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	# Nested modules have independent coverage profiles, so keep their coverage
 	# out of the root profile while including their verbose output in JUnit.
@@ -604,19 +604,19 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" central pkg tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" migrator | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
-  $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "testing.B" central pkg migrator tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -871,14 +871,6 @@ roxvet: $(ROXVET_BIN)
 ##########
 ## Misc ##
 ##########
-.PHONY: clean-offline-bundle
-clean-offline-bundle:
-	$(SILENT)find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
-
-.PHONY: offline-bundle
-offline-bundle: clean-offline-bundle
-	$(SILENT)./scripts/offline-bundle/create.sh
-
 .PHONY: check-debugger
 check-debugger:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
