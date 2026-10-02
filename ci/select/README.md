@@ -58,16 +58,35 @@ A target ends up in one of these states. A clash runs the job, and the last rule
 - No earlier rule mentioned the job. The last rule says `default`, so the job takes its default.
 - A job that is going to run requires another job. The resolver adds the required job and says so in the log, even when that job's own result was skip.
 
-Rules are walked from top to bottom. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. Paths are regular expressions. Call the changed files F, the paths that match any of the rule's patterns M, and the pull request's labels L.
+Rules are walked from top to bottom. A rule lists jobs under `run`, `skip`, or `default`. The value `["*"]` means every target. Paths are regular expressions. Call the changed files F, the paths that match any of the rule's patterns M, and the pull request's labels L. F and L belong to the pull request. Each rule has its own M.
 
-- `any-file-matches` applies when F and M intersect: F ∩ M ≠ ∅.
-- `every-file-matches` applies when M contains F and F is not empty: F ⊆ M and F ≠ ∅. An empty diff does not match. A file is in M when one pattern matches it, so the diff does not have to hit every pattern.
+- `any-file-matches` applies when F and M intersect: `F ∩ M ≠ ∅`.
+- `every-file-matches` applies when M contains F and F is not empty: `F ⊆ M and F ≠ ∅`. An empty diff does not match. A file is in M when one pattern matches it, so the diff does not have to hit every pattern.
 - `no-file-changed` applies when F is empty.
 - `label-exists` applies when the rule's label is an element of L.
 - `always` applies to every pull request. It does not consult F or L.
 - `remaining` applies to the targets no earlier rule has voted on. It is not a condition on F or L.
 
 Only the last rule uses `remaining`. That rule must use `*` for exactly one of run, skip, or default.
+
+> [!NOTE]
+> **Example.** 
+>
+> A pull request changes `sensor/common/foo.go` and `README.md` (we omit labels in this example). Then set `F` = {`sensor/common/foo.go`, `README.md`}.
+>
+> Consider the following rule:
+> ```toml
+> [[rules]]
+> name = "go-sources"
+> when = "any-file-matches"
+> paths = ['\.go$']
+> run = ["go"]
+> ```
+> Here, `M` is a set containig all the go files in the repo (`paths`).
+>
+> For the `go-sources` rule, `sensor/common/foo.go` is contained in `M` and `README.md` is outside it, so `F ∩ M` = {`sensor/common/foo.go`} and the rule matches.
+>
+> A different rule - `docs-only` - has `when = every-file-matches` with patterns `\.md$`, `^docs/`, and `^CHANGELOG` (`M`). On the same diff its `M` contains `README.md` but not the Go files, so `F ⊆ M` does not hold. It would hold when the diff was `README.md` alone.
 
 The sample rules do the following:
 
