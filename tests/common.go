@@ -1443,6 +1443,11 @@ func isOpenshift() bool {
 	return os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift"
 }
 
+// usingKonfluxImages returns true when StackRox was deployed from Konflux-built images.
+func usingKonfluxImages() bool {
+	return os.Getenv("USE_KONFLUX_IMAGES") == "true"
+}
+
 // mustGetCluster returns the details of the one and only known secured cluster.
 func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
