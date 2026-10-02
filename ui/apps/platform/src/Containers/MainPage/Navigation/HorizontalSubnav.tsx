@@ -12,7 +12,6 @@ import {
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
@@ -66,7 +65,6 @@ const subnavRoutes: SubnavRouteConfig[] = [
             `${vulnerabilitiesAllImagesPath}/*`,
             `${vulnerabilitiesInactiveImagesPath}/*`,
             `${vulnerabilitiesImagesWithoutCvesPath}/*`,
-            `${vulnerabilitiesPlatformCvesPath}/*`,
             `${vulnerabilitiesWorkloadCvesPath}/*`, // Legacy (TODO: deprecate)
         ],
         component: VulnerabilitiesSubnav,

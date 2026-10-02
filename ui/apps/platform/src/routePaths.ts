@@ -84,7 +84,6 @@ export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 // TODO Deprecate these paths
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
-export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
 // TODO End Deprecate
 
 export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
@@ -208,7 +207,6 @@ export type RouteKey =
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/images-without-cves'
-    | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
     | 'base-images'
     | 'vulnerability-management'
@@ -374,10 +372,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/node-cves': {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
-    'vulnerabilities/platform-cves': {
-        featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
-        resourceAccessRequirements: everyResource(['Cluster']),
-    },
     // This is a lightweight page with cards that link to the individually gated report types
     // below. NavigationSidebar decides link visibility by checking the sub-route keys directly
     'vulnerabilities/reports': {
@@ -465,7 +459,6 @@ export const urlEntityListTypes: Record<string, string> = {
     [resourceTypes.CVE]: 'cves', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cves',
     [resourceTypes.NODE_CVE]: 'node-cves',
-    [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
     [resourceTypes.COMPONENT]: 'components', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-components',
     [resourceTypes.IMAGE_COMPONENT]: 'image-components',
@@ -486,7 +479,6 @@ export const urlEntityTypes: Record<string, string> = {
     [resourceTypes.CVE]: 'cve', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cve',
     [resourceTypes.NODE_CVE]: 'node-cve',
-    [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
     [resourceTypes.COMPONENT]: 'component', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-component',
     [resourceTypes.IMAGE_COMPONENT]: 'image-component',
@@ -503,7 +495,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
-    [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Reports',
     [vulnerabilityImageReportsPath]: 'Image reports',

@@ -214,44 +214,6 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
     }
 `;
 
-export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
-    fragment cveFields on ClusterVulnerability {
-        clusterCount(query: $query)
-        createdAt
-        cve
-        cvss
-        envImpact
-        fixedByVersion
-        id
-        impactScore
-        isFixable(query: $scopeQuery)
-        scoreVersion
-        lastModified
-        lastScanned
-        link
-        publishedOn
-        scoreVersion
-        severity
-        summary
-        unusedVarSink(query: $query)
-        vectors {
-            __typename
-            ... on CVSSV2 {
-                impactScore
-                exploitabilityScore
-                vector
-            }
-            ... on CVSSV3 {
-                impactScore
-                exploitabilityScore
-                vector
-            }
-        }
-        vulnerabilityType
-        vulnerabilityTypes
-    }
-`;
-
 export const IMAGE_CVE_LIST_FRAGMENT = gql`
     fragment imageCVEFields on ImageVulnerability {
         createdAt
@@ -274,32 +236,6 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
         deploymentCount(query: $query)
         imageCount(query: $query)
         componentCount: imageComponentCount(query: $query)
-    }
-`;
-
-export const CLUSTER_CVE_LIST_FRAGMENT = gql`
-    fragment clusterCVEFields on ClusterVulnerability {
-        clusterCount(query: $query)
-        createdAt
-        cve
-        cvss
-        envImpact
-        fixedByVersion
-        id
-        impactScore
-        isFixable(query: $scopeQuery)
-        lastModified
-        lastScanned
-        link
-        publishedOn
-        scoreVersion
-        severity
-        summary
-        suppressActivation
-        suppressExpiry
-        suppressed
-        vulnerabilityType
-        vulnerabilityTypes
     }
 `;
 

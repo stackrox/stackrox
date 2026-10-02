@@ -193,7 +193,7 @@ function getCategoriesUtils<
     };
 }
 
-export const categoriesUtilsForClairifyScanner = getCategoriesUtils(
+export const categoriesUtilsForScanner = getCategoriesUtils(
     ['SCANNER', 'NODE_SCANNER'],
     ['Image Scanner', 'Node Scanner']
 );

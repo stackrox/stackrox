@@ -30,19 +30,8 @@ export const NODE_CVE_NAME = gql`
     }
 `;
 
-export const CLUSTER_CVE_NAME = gql`
-    query getClusterCveName($id: ID!) {
-        clusterVulnerability(id: $id) {
-            id
-            name: cve
-            cve
-        }
-    }
-`;
-
 export default {
     CVE_NAME,
     IMAGE_CVE_NAME,
     NODE_CVE_NAME,
-    CLUSTER_CVE_NAME,
 };
