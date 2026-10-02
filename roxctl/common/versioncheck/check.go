@@ -100,13 +100,6 @@ type VersionGuidance struct {
 	Recommendation string
 }
 
-func (g VersionGuidance) String() string {
-	if g.Recommendation == "" {
-		return g.Summary
-	}
-	return g.Summary + "\n" + g.Recommendation
-}
-
 // Guidance returns structured guidance for the given compatibility classification,
 // describing the version relationship and recommended actions.
 func Guidance(c versioncompatibility.Compatibility) VersionGuidance {

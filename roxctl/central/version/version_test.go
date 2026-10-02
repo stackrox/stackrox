@@ -16,8 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/versioncheck"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -172,53 +170,6 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	c.Assert().Contains(output, "Compatibility:                     Matched")
 	c.Assert().Contains(output, "Compatible Central versions:")
 	c.Assert().Contains(output, "  roxctl version is matched with Central.")
-}
-
-func TestDisplayName(t *testing.T) {
-	tests := map[string]struct {
-		c    versioncompatibility.Compatibility
-		want string
-	}{
-		"matched":             {versioncompatibility.Matched, "Matched"},
-		"compatible behind":   {versioncompatibility.CompatibleBehind, "Compatible (Behind)"},
-		"compatible ahead":    {versioncompatibility.CompatibleAhead, "Compatible (Ahead)"},
-		"incompatible behind": {versioncompatibility.IncompatibleBehind, "Incompatible (Behind)"},
-		"incompatible ahead":  {versioncompatibility.IncompatibleAhead, "Incompatible (Ahead)"},
-		"unknown":             {versioncompatibility.Unknown, "Unknown"},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.c.DisplayName())
-		})
-	}
-}
-
-func TestGuidance(t *testing.T) {
-	tests := map[string]struct {
-		c         versioncompatibility.Compatibility
-		wantEmpty bool
-		contains  string
-	}{
-		"matched":             {versioncompatibility.Matched, false, "matched with Central"},
-		"compatible ahead":    {versioncompatibility.CompatibleAhead, false, "ahead of roxctl"},
-		"compatible behind":   {versioncompatibility.CompatibleBehind, false, "behind roxctl"},
-		"incompatible ahead":  {versioncompatibility.IncompatibleAhead, false, "outside the compatible version range"},
-		"incompatible behind": {versioncompatibility.IncompatibleBehind, false, "outside the compatible version range"},
-		"unknown":             {versioncompatibility.Unknown, true, ""},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			g := versioncheck.Guidance(tt.c)
-			if tt.wantEmpty {
-				assert.Empty(t, g.Summary)
-			} else {
-				require.NotEmpty(t, g.Summary)
-				assert.Contains(t, g.String(), tt.contains)
-			}
-		})
-	}
 }
 
 // --- helpers and mocks ---

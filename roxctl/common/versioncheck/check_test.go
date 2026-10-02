@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/versionheader"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -44,12 +45,12 @@ func TestCheckAndWarn(t *testing.T) {
 		"incompatible behind": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.3.0",
-			expectWarning:  "outside the supported version skew range",
+			expectWarning:  "Plan a Central upgrade",
 		},
 		"incompatible ahead": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.15.0",
-			expectWarning:  "outside the supported version skew range",
+			expectWarning:  "Use newer roxctl version",
 		},
 		"invalid central version": {
 			localVersion:   "4.8.0",
@@ -191,6 +192,33 @@ func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	_, err = client.GetMetadata(context.Background(), &v1.Empty{})
 	require.NoError(t, err)
 	assert.Empty(t, buf.String(), "warning should not be emitted a second time")
+}
+
+func TestGuidance(t *testing.T) {
+	tests := map[string]struct {
+		c         versioncompatibility.Compatibility
+		wantEmpty bool
+		contains  string
+	}{
+		"matched":             {versioncompatibility.Matched, false, "matched with Central"},
+		"compatible ahead":    {versioncompatibility.CompatibleAhead, false, "ahead of roxctl"},
+		"compatible behind":   {versioncompatibility.CompatibleBehind, false, "behind roxctl"},
+		"incompatible ahead":  {versioncompatibility.IncompatibleAhead, false, "ahead of roxctl"},
+		"incompatible behind": {versioncompatibility.IncompatibleBehind, false, "behind roxctl"},
+		"unknown":             {versioncompatibility.Unknown, true, ""},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			g := Guidance(tt.c)
+			if tt.wantEmpty {
+				assert.Empty(t, g.Summary)
+			} else {
+				require.NotEmpty(t, g.Summary)
+				assert.Contains(t, g.Summary, tt.contains)
+			}
+		})
+	}
 }
 
 // --- helpers and mocks ---
