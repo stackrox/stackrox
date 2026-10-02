@@ -25,10 +25,12 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/ubuntu"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
@@ -89,7 +91,7 @@ func TestFixtureMatching(t *testing.T) {
 				store, err := postgres.InitPostgresMatcherStore(ctx, pool, false)
 				require.NoError(t, err)
 				lv, err := libvuln.New(ctx, &libvuln.Options{Store: store, Locker: updates.NewLocalLockSource(), Client: srv.Client(), DisableBackgroundUpdates: true,
-					MatcherNames: []string{new(alpine.Matcher).Name(), new(java.Matcher).Name(), new(ubuntu.Matcher).Name(), rhcc.Matcher.Name()}, Enrichers: []driver.Enricher{&nvd.Enricher{}}})
+					MatcherNames: []string{new(alpine.Matcher).Name(), new(java.Matcher).Name(), new(ubuntu.Matcher).Name(), rhcc.Matcher.Name(), (*rhel.Matcher)(nil).Name()}, Enrichers: []driver.Enricher{&nvd.Enricher{}}})
 				require.NoError(t, err)
 				defer func() { require.NoError(t, lv.Close(context.Background())) }()
 				checkMatching(t, ctx, lv)
@@ -189,6 +191,35 @@ func checkMatching(t *testing.T, ctx context.Context, lv *libvuln.Libvuln) {
 			require.Equal(t, tc.affected, hasFinding(vr, "CVE-2017-5638"))
 		})
 	}
+	t.Run("RHEL 9 python3.9 source package", func(t *testing.T) {
+		const repoName = "cpe:2.3:a:redhat:enterprise_linux:9:*:*:*:*:*:*:*"
+		repoCPE, err := cpe.Unbind(repoName)
+		require.NoError(t, err)
+		pkg := &claircore.Package{
+			Name:    "python3",
+			Version: "3.9.25-2.el9_7",
+			Kind:    types.BinaryPackage,
+			Source:  &claircore.Package{Name: "python3.9", Version: "3.9.25-2.el9_7", Kind: types.SourcePackage},
+		}
+		repo := &claircore.Repository{Name: repoName, Key: "rhel-cpe-repository", CPE: repoCPE}
+		distro := &claircore.Distribution{DID: "rhel", Name: "Red Hat Enterprise Linux", VersionID: "9"}
+		vr, err := lv.Scan(ctx, singlePackageReport(pkg, distro, repo))
+		require.NoError(t, err)
+		require.True(t, hasFinding(vr, "CVE-2025-11468"), "RHEL 9 python3.9 should match CVE-2025-11468")
+
+		converted, err := mappers.ToProtoV4VulnerabilityReport(ctx, vr)
+		require.NoError(t, err)
+		var matched bool
+		for _, vuln := range converted.GetVulnerabilities() {
+			if vuln.GetName() != "CVE-2025-11468" {
+				continue
+			}
+			matched = true
+			require.Equal(t, v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE, vuln.GetNormalizedSeverity())
+			require.Equal(t, float32(4.5), vuln.GetCvss().GetV3().GetBaseScore())
+		}
+		require.True(t, matched, "mapped report should include CVE-2025-11468")
+	})
 	t.Run("exact description and CVSS", func(t *testing.T) {
 		// Same input and expectations as TestImage/sandbox-scannerremovejar.
 		vr, err := lv.Scan(ctx, singlePackageReport(&claircore.Package{Name: "com.fasterxml.jackson.core:jackson-databind", Version: "2.9.10.4", Kind: types.BinaryPackage}, nil, &claircore.Repository{Name: "maven"}))

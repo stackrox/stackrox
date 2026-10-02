@@ -6,24 +6,26 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 )
 
 const defaultOutput = "scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+
+var namespaceOID = uuid.FromStringOrPanic("6ba7b812-9dad-11d1-80b4-00c04fd430c8")
 
 // Fixtures are explicit native records. Expectations live separately in the
 // Scanner and backend tests; this command never reads tests or a source bundle.
@@ -89,7 +91,7 @@ func entries(fixtures []operation) ([]entry, error) {
 				return nil, fmt.Errorf("%s: marshal enrichment: %w", op.Member, err)
 			}
 			record := &driver.EnrichmentRecord{Tags: append([]string(nil), e.Tags...), Enrichment: payload}
-			sort.Strings(record.Tags)
+			slices.Sort(record.Tags)
 			if err := validateEnrichment(record); err != nil {
 				return nil, err
 			}
@@ -97,13 +99,13 @@ func entries(fixtures []operation) ([]entry, error) {
 		}
 	}
 	if len(groups) == 0 {
-		return nil, fmt.Errorf("no fixture records")
+		return nil, errors.New("no fixture records")
 	}
 	keys := make([]string, 0, len(groups))
 	for key := range groups {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	var out []entry
 	for _, key := range keys {
 		group := groups[key]
@@ -122,7 +124,7 @@ func entries(fixtures []operation) ([]entry, error) {
 			}
 			encoded[s] = e
 		}
-		sort.Strings(records)
+		slices.Sort(records)
 		hash := sha256.New()
 		// Version the encoding, and scope to member, updater and operation kind.
 		fmt.Fprintf(hash, "scanner-ci-fixture-v1\x00%s\x00", key)
@@ -131,7 +133,7 @@ func entries(fixtures []operation) ([]entry, error) {
 		}
 		digest := hash.Sum(nil)
 		fingerprint := driver.Fingerprint(fmt.Sprintf("sha256:%x", digest))
-		ref := uuid.NewSHA1(uuid.NameSpaceOID, digest)
+		ref := uuid.NewV5(namespaceOID, string(digest))
 		for _, record := range records {
 			e := encoded[record]
 			e.Date = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -144,7 +146,7 @@ func entries(fixtures []operation) ([]entry, error) {
 
 func validateVulnerability(v *claircore.Vulnerability) error {
 	if v == nil || v.Name == "" || v.Description == "" || v.Package == nil || v.Package.Name == "" {
-		return fmt.Errorf("vulnerability requires name, description and package")
+		return errors.New("vulnerability requires name, description and package")
 	}
 	if v.Dist == nil && (v.Repo == nil || v.Repo.Name == "") {
 		return fmt.Errorf("%s: missing distribution/repository", v.Name)
@@ -160,10 +162,10 @@ func validateVulnerability(v *claircore.Vulnerability) error {
 
 func validateEnrichment(e *driver.EnrichmentRecord) error {
 	if e == nil || len(e.Tags) == 0 || !json.Valid(e.Enrichment) || bytes.Equal(e.Enrichment, []byte("null")) {
-		return fmt.Errorf("enrichment requires tags and JSON payload")
+		return errors.New("enrichment requires tags and JSON payload")
 	}
 	if slices.Contains(e.Tags, "") {
-		return fmt.Errorf("empty enrichment tag")
+		return errors.New("empty enrichment tag")
 	}
 	var identity struct{ ID, Name string }
 	if err := json.Unmarshal(e.Enrichment, &identity); err != nil {
@@ -174,7 +176,7 @@ func validateEnrichment(e *driver.EnrichmentRecord) error {
 		id = identity.Name
 	}
 	if id == "" || !slices.Contains(e.Tags, id) {
-		return fmt.Errorf("enrichment identity must be present in its tags")
+		return errors.New("enrichment identity must be present in its tags")
 	}
 	return nil
 }
@@ -220,7 +222,7 @@ func validateArchive(path string) error {
 		return err
 	}
 	defer func() { _ = r.Close() }()
-	seen := make(map[uuid.UUID]bool)
+	seen := make(map[string]bool)
 	for _, member := range r.File {
 		if err := validateMember(member, seen); err != nil {
 			return fmt.Errorf("%s: %w", member.Name, err)
@@ -229,7 +231,7 @@ func validateArchive(path string) error {
 	return nil
 }
 
-func validateMember(member *zip.File, seen map[uuid.UUID]bool) error {
+func validateMember(member *zip.File, seen map[string]bool) error {
 	rc, err := member.Open()
 	if err != nil {
 		return err
@@ -243,11 +245,12 @@ func validateMember(member *zip.File, seen map[uuid.UUID]bool) error {
 	ops, iterErr := jsonblob.Iterate(zr)
 	var validationErr error
 	ops(func(op *driver.UpdateOperation, records jsonblob.RecordIter) bool {
-		if seen[op.Ref] || op.Ref == uuid.Nil || op.Updater == "" || op.Fingerprint == "" {
-			validationErr = fmt.Errorf("invalid or noncontiguous operation %s", op.Ref)
+		ref := op.Ref.String()
+		if seen[ref] || ref == uuid.Nil.String() || op.Updater == "" || op.Fingerprint == "" {
+			validationErr = fmt.Errorf("invalid or noncontiguous operation %s", ref)
 			return false
 		}
-		seen[op.Ref] = true
+		seen[ref] = true
 		records(func(v *claircore.Vulnerability, e *driver.EnrichmentRecord) bool {
 			switch op.Kind {
 			case driver.VulnerabilityKind:

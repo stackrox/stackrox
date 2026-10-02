@@ -13,6 +13,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
@@ -81,6 +82,10 @@ func TestCIMinimalBundle(t *testing.T) {
 						require.NotNil(t, v.Repo, "language and RHEL VEX records require repository identity")
 						require.NotEmpty(t, v.Repo.Name)
 					}
+					repository := ""
+					if v.Repo != nil {
+						repository = v.Repo.Name
+					}
 					require.NotContains(t, v.Package.Name, "synthetic")
 					if v.Package.Name == "nginx" && f.Name == "alpine.json.zst" {
 						require.NotEmpty(t, v.FixedInVersion)
@@ -92,7 +97,16 @@ func TestCIMinimalBundle(t *testing.T) {
 						}
 					}
 					for _, cve := range cvePattern.FindAllString(identities, -1) {
-						vulns[cve] = append(vulns[cve], vulnRecord{v.Package.Name, distribution, v.FixedInVersion, v.Links, f.Name, v.Invert})
+						vulns[cve] = append(vulns[cve], vulnRecord{
+							packageName:   v.Package.Name,
+							distribution:  distribution,
+							fixed:         v.FixedInVersion,
+							links:         v.Links,
+							source:        f.Name,
+							repository:    repository,
+							sourcePackage: v.Package.Kind == types.SourcePackage,
+							inverted:      v.Invert,
+						})
 					}
 				}
 				if e != nil {
@@ -178,7 +192,7 @@ func TestCIMinimalBundle(t *testing.T) {
 		"ubuntu libc":    {"CVE-2023-4911", "libc6", "22.04", "ubuntu.json.zst"},
 		"ubuntu gpgv":    {"CVE-2022-3219", "gpgv", "22.04", "ubuntu.json.zst"},
 		"rhel openssl":   {"CVE-2025-15467", "openssl-libs", "", "rhel-vex.json.zst"},
-		"rhel python":    {"CVE-2025-11468", "python3", "", "rhel-vex.json.zst"},
+		"rhel python":    {"CVE-2025-11468", "python3.9", "", "rhel-vex.json.zst"},
 		"amazon nss":     {"ALAS2-2024-2442", "nss-sysinit", "2", "aws.json.zst"},
 		"oracle gcrypt":  {"CVE-2021-33560", "libgcrypt", "8", "oracle.json.zst"},
 		"photon curl":    {"CVE-2023-38546", "curl", "3.0", "photon.json.zst"},
@@ -193,11 +207,21 @@ func TestCIMinimalBundle(t *testing.T) {
 			require.True(t, found, "missing matching identity for %s", tc.cve)
 		})
 	}
+	t.Run("RHEL 9 python source package and repository", func(t *testing.T) {
+		const repo = "cpe:2.3:a:redhat:enterprise_linux:9:*:*:*:*:*:*:*"
+		var found bool
+		for _, record := range vulns["CVE-2025-11468"] {
+			found = found || (!record.inverted && record.packageName == "python3.9" && record.sourcePackage &&
+				record.source == "rhel-vex.json.zst" && record.repository == repo)
+		}
+		require.True(t, found, "missing native RHEL 9 python3.9 record for %s", repo)
+	})
 }
 
 type vulnRecord struct {
 	packageName, distribution, fixed string
-	links, source                    string
+	links, source, repository        string
+	sourcePackage                    bool
 	inverted                         bool
 }
 type enrichmentRecord struct {

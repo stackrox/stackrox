@@ -11,9 +11,9 @@ _scanner_v4_ci_helm_values() {
     local values_file="$1"
     if is_nightly_run; then
         echo "Scanner V4 bundle: production (deployed version default unless explicitly overridden)" >&2
-        yq 'del(.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL)' "$values_file"
+        yq eval 'del(.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL)' "$values_file"
     else
-        echo "Scanner V4 bundle: CI fixture $(yq '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL' "$values_file")" >&2
+        echo "Scanner V4 bundle: CI fixture $(yq eval '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL' "$values_file")" >&2
         cat "$values_file"
     fi
 }

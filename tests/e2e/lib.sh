@@ -142,7 +142,7 @@ _scanner_v4_install_bundle_values() {
     local url
     url="$(_scanner_v4_ci_vuln_bundle_url)" || return 1
     echo "Scanner V4 bundle: CI fixture ${url}" >&2
-    SCANNER_INSTALL_BUNDLE_URL="$url" yq -n '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL = strenv(SCANNER_INSTALL_BUNDLE_URL)'
+    SCANNER_INSTALL_BUNDLE_URL="$url" yq eval -n '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL = strenv(SCANNER_INSTALL_BUNDLE_URL)'
 }
 
 _configure_roxie_ci_vuln_bundle() {

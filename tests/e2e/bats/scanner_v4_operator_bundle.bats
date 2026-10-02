@@ -345,7 +345,7 @@ EOF
     source "${BATS_TEST_DIRNAME}/../../../deploy/common/k8sbased.sh"
     export BUILD_TAG=4.11.x-nightly-20261001
     _scanner_v4_ci_helm_values "${TEST_ROOT}/deploy/common/ci-values.yaml" > "${BATS_TEST_TMPDIR}/nightly.yaml"
-    run yq '.customize."scanner-v4-matcher".envVars | has("SCANNER_V4_MATCHER_VULNERABILITIES_URL")' "${BATS_TEST_TMPDIR}/nightly.yaml"
+    run yq eval '.customize."scanner-v4-matcher".envVars | has("SCANNER_V4_MATCHER_VULNERABILITIES_URL")' "${BATS_TEST_TMPDIR}/nightly.yaml"
     assert_success
     assert_output "false"
     # Helm values files merge left-to-right; no --set=null may mask this override.
