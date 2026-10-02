@@ -93,7 +93,11 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionResul
 				"Run \"roxctl central login\" first")
 	}
 
-	return versioncheck.ClassifyCentralVersion(centralVersion)
+	result, err := versioncheck.ClassifyCentralVersion(centralVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "classifying Central version")
+	}
+	return result, nil
 }
 
 func (cmd *centralVersionCommand) printText(r *versioncheck.VersionResult) {
