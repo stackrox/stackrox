@@ -22,10 +22,20 @@
 
 set -Eeo pipefail
 
-# Binaries of the PostgreSQL version this image is built on. Binaries of the
-# previous major version live in /usr/lib64/pgsql/postgresql-<version>/bin
-# (see POSTGRESQL_PREV_VERSION in the base image).
+# TODO(cdu): review note, remove before the PR. OLD_BINARIES_ROOT is new in
+# this task -- the design doc interpolates /usr/lib64/pgsql inline in
+# maybe-upgrade, which cannot be redirected, so the upgrade path was
+# untestable without it. Production behaviour is unchanged; this is a
+# testability change to shipped code, so flagging it rather than burying it.
+#
+# Binaries of the PostgreSQL version this image is built on, and the root
+# under which the base image ships binaries of older major versions as
+# postgresql-<major>/bin (see POSTGRESQL_PREV_VERSION in the base image).
+#
+# These are named rather than inlined so that the bats suite in ./tests can
+# source this file and point them at stubs.
 NEW_BINARIES="/usr/bin"
+OLD_BINARIES_ROOT="/usr/lib64/pgsql"
 
 # load-init-bundle calls pg_restore on the database init bundle.
 load-init-bundle() {
@@ -235,7 +245,7 @@ maybe-upgrade() {
         rm -rf "$new_datadir"
     fi
 
-    old_bindir="/usr/lib64/pgsql/postgresql-${data_version}/bin"
+    old_bindir="$OLD_BINARIES_ROOT/postgresql-${data_version}/bin"
     if [ ! -x "$old_bindir/pg_ctl" ]; then
         echo "No PostgreSQL $data_version binaries in $old_bindir, cannot upgrade."
         return 0
@@ -348,4 +358,16 @@ main() {
     touch "$init_check"
 }
 
-[ "${BASH_SOURCE[0]}" = "$0" ] && main "$@"
+# TODO(cdu): review note, remove before the PR. Second change to shipped code
+# in this task. The design doc's "[ ... ] && main" (section 4.2) cannot
+# actually be sourced: the test is false when sourced, so the && list returns
+# 1 as the file's last command, which aborts the caller's source under
+# "set -e". Section 9 assumes the file is sourceable, so the doc contradicts
+# itself here. docker-entrypoint.sh in this image already uses the if form.
+#
+# Written as an if rather than "[ ... ] && main", so that sourcing this file
+# -- which the bats suite in ./tests does, to call the functions individually
+# -- does not end on a failed test and trip the caller's "set -e".
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    main "$@"
+fi
