@@ -16,9 +16,9 @@
 # unconditionally from main, which is the script's last command -- a non-zero
 # return would exit the init container non-zero and crashloop the pod, which
 # is precisely what this exists to prevent. Helpers that can fail
-# (clean-shutdown, pg-upgrade) are always called in a conditional context,
-# where bash disables "set -e" inside the function body; they therefore use
-# explicit "|| return 1" rather than relying on it.
+# (clean-shutdown, pg-upgrade, analyze-cluster) are always called in a
+# conditional context, where bash disables "set -e" inside the function body;
+# they therefore use explicit "|| return 1" rather than relying on it.
 
 set -Eeo pipefail
 
@@ -131,6 +131,40 @@ pg-upgrade() {
                 --jobs 4 \
                 "$@"
     )
+}
+
+# TODO(cdu): review note, remove before the PR. Two judgement calls here that
+# the design doc states but does not argue hard, and which ROX-37428 may
+# overturn:
+#   1. One full-quality pass instead of --analyze-in-stages. If the rehearsal
+#      shows vacuumdb dominating the init container's wall clock, the fallback
+#      is --analyze-in-stages with only stage 1 run offline.
+#   2. vacuumdb is "|| true" but the surrounding pg_ctl start/stop is
+#      "|| return 1". Asymmetric on purpose: bad statistics are a performance
+#      problem, but a cluster left running or uncleanly stopped would corrupt
+#      the swap that follows. Worth a second opinion.
+#
+# analyze-cluster refreshes optimizer statistics in the given data directory,
+# which pg_upgrade does not carry over (statistics transfer only arrives in
+# PostgreSQL 18). Without this the first queries after an upgrade plan against
+# empty pg_statistic, and autovacuum will not analyze promptly because
+# pg_upgrade leaves no recorded row changes to trigger it.
+#
+# A single full-quality pass is preferred over --analyze-in-stages: the staged
+# variant exists to get rough statistics quickly on a live server, and we are
+# offline here, so three passes would only cost more wall clock.
+#
+# Best effort -- bad statistics are a performance problem, not a correctness
+# one -- but the surrounding start/stop is not, since leaving the cluster
+# running or unclean would break the swap that follows.
+analyze-cluster() {
+    local datadir=${1:?missing first required argument: datadir}
+
+    echo "Refreshing optimizer statistics."
+    pg_ctl -D "$datadir" start -w --timeout 86400 -o "-h 127.0.0.1" || return 1
+    PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+        vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4 || true
+    pg_ctl -D "$datadir" stop -w || return 1
 }
 
 # TODO(cdu): review note, remove before the PR. Open question for you: the
@@ -267,6 +301,8 @@ maybe-upgrade() {
         rm -rf "$new_datadir"
         return 0
     fi
+
+    analyze-cluster "$new_datadir" || echo "Could not refresh statistics, continuing."
 
     # $PGDATA/*.conf is deliberately not carried over, unlike in central-db.
     # The server runs with an external config file and hba_file, so the copies
