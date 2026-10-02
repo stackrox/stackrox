@@ -48,6 +48,10 @@ func (m *deploymentMatcher) anyExclusionMatches(exclusions []*storage.Exclusion)
 }
 
 func (m *deploymentMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	if !appliesToDeployments(exclusion) {
+		return false
+	}
+
 	// If excluded scope does not match the deployment then no need to check for deployment name
 	if !m.scopeMatches(exclusion.GetDeployment().GetScope()) {
 		return false
