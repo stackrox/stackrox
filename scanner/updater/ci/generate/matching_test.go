@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
@@ -32,6 +31,7 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater"
@@ -60,7 +60,7 @@ func TestFixtureMatching(t *testing.T) {
 				admin, err := pgxpool.New(ctx, conn)
 				require.NoError(t, err)
 				defer admin.Close()
-				dbName := "ci_fixture_" + strings.ReplaceAll(uuid.NewString(), "-", "")
+				dbName := "ci_fixture_" + strings.ReplaceAll(uuid.NewV4().String(), "-", "")
 				_, err = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{dbName}.Sanitize())
 				require.NoError(t, err)
 				defer func() {
