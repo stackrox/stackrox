@@ -77,6 +77,7 @@ EOF
             info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
             patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
+
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
         # Note: The traditional deployment path still references PodSecurityPolicies,
