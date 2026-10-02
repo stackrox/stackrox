@@ -45,6 +45,9 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 
 // VersionResult holds structured version and compatibility information
 // for the running roxctl and a given Central.
+// JSON tags are required by the "roxctl central version --output=json" command.
+// The struct lives here rather than in roxctl/central/version to avoid a
+// circular dependency (versioncheck imports would break).
 type VersionResult struct {
 	CentralVersion            string   `json:"CentralVersion"`
 	RoxctlVersion             string   `json:"RoxctlVersion"`
