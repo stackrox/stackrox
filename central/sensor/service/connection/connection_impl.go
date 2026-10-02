@@ -648,9 +648,12 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 			profiles = append(profiles, profile.GetProfileName())
 		}
 		profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanConfig.GetProfileRefs())
-		cron, err := schedule.ConvertToCronTab(scanConfig.GetSchedule())
-		if err != nil {
-			return nil, err
+		var cron string
+		if scanConfig.GetSchedule() != nil {
+			cron, err = schedule.ConvertToCronTab(scanConfig.GetSchedule())
+			if err != nil {
+				return nil, err
+			}
 		}
 		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
 			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
