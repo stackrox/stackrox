@@ -139,7 +139,7 @@ Do not update immutable consumer pins in the same step as artifact generation.
 Publish the validated artifact commit first, download it and verify its checksum,
 then update CI values, standalone Scanner values, matcher accessibility tests, and
 installation-test pins in a separate commit. The current consumers pin artifact
-commit `d79122fe33533aaa62330ba22373d640d82c65c0`.
+commit `4168c59464973e0c91889e3e81461d5e407aedbe`.
 
 Retain `5ad57fb2849616a8db4878c5647a280ac822b5f5` as the previous artifact pin for
 rollback. PR updates remain separate from these commits. Deployment mode/URL

@@ -83,7 +83,7 @@ run_operator_deploy() {
     TEST_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../.." && pwd)"
     run _scanner_v4_ci_vuln_bundle_url
     assert_success
-    assert_output "https://raw.githubusercontent.com/stackrox/stackrox/d79122fe33533aaa62330ba22373d640d82c65c0/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+    assert_output "https://raw.githubusercontent.com/stackrox/stackrox/4168c59464973e0c91889e3e81461d5e407aedbe/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
 }
 
 @test "disabled Scanner V4 does not render the bundle URL" {
