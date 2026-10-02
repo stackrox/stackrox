@@ -51,21 +51,6 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         return disappearedFromStackRox
     }
 
-    // waitForAlertsInactive polls because Central deletes the deployment before
-    // the alerts pipeline stamps Inactive on remaining runtime alerts.
-    def waitForAlertsInactive(violations) {
-        Timer t = new Timer(60, 1)
-        while (t.IsValid()) {
-            if (violations.every { violation ->
-                def alert = AlertService.getViolation(violation.getId())
-                alert.getDeployment()?.getInactive()
-            }) {
-                return true
-            }
-        }
-        return false
-    }
-
     def assertAlertExistsForDeploymentUidAndGetViolations(String policyName, String deploymentUid) {
         checkPolicyExists(APTGETPOLICY)
         def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, false, 66)
@@ -230,7 +215,10 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         def newViolations =
                 assertAlertExistsForDeploymentUidAndGetViolations(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
         assert (newViolations*.id).toSet().containsAll(violations*.id)
-        assert waitForAlertsInactive(newViolations)
+        for (def violation: newViolations) {
+            def alert = AlertService.getViolation(violation.getId())
+            assert alert.getDeployment() != null && alert.getDeployment().getInactive()
+        }
 
         cleanup:
         if (!deploymentDeleted) {
