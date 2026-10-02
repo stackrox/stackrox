@@ -149,11 +149,24 @@ func TestSetupScannerV4Integration(t *testing.T) {
 		}
 	})
 
-	t.Run("do not try upsert if default integration exists", func(t *testing.T) {
+	t.Run("do not try upsert if default integration exists with correct categories", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.ScannerV4, true)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
-		s.EXPECT().Get(ctx, defID).Return(nil, true, nil)
+		// Return an integration with correct categories - no reconciliation needed.
+		existingCorrect := &storage.ImageIntegration{
+			Id:   defID,
+			Name: "Scanner V4",
+			Type: scannerTypes.ScannerV4,
+			Categories: []storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{},
+			},
+		}
+		s.EXPECT().Get(ctx, defID).Return(existingCorrect, true, nil)
 		s.EXPECT().PruneMany(ctx, []string{"ID-Other-ScannerV4"})
 		setupScannerV4Integration(ctx, s, iis)
 	})
@@ -211,4 +224,215 @@ func TestSetupLegacyScannerIntegration(t *testing.T) {
 
 		setupLegacyScannerIntegration(ctx, s, h, iis)
 	})
+}
+
+func TestCreateDefaultScannerV4Integration(t *testing.T) {
+	ctx := context.Background()
+	defaultID := store.DefaultScannerV4Integration.GetId()
+
+	t.Run("create default integration when it does not exist", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		s.EXPECT().Get(ctx, defaultID).Return(nil, false, nil)
+		s.EXPECT().Upsert(ctx, store.DefaultScannerV4Integration).Return(nil)
+
+		createDefaultScannerV4Integration(ctx, s)
+	})
+
+	t.Run("reconcile categories when existing integration has SCANNER only", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		// Existing integration with SCANNER category only (old default before node scanning).
+		existingScannerOnly := &storage.ImageIntegration{
+			Id:   defaultID,
+			Name: "Scanner V4",
+			Type: scannerTypes.ScannerV4,
+			Categories: []storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+			},
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{
+					IndexerEndpoint: "custom-indexer:8443",
+					MatcherEndpoint: "custom-matcher:8443",
+				},
+			},
+		}
+
+		s.EXPECT().Get(ctx, defaultID).Return(existingScannerOnly, true, nil)
+		s.EXPECT().Upsert(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, ii *storage.ImageIntegration) error {
+			// Verify categories were reconciled to include NODE_SCANNER.
+			assert.ElementsMatch(t, store.DefaultScannerV4Integration.GetCategories(), ii.GetCategories())
+			// Verify other fields were preserved (not wholesale replaced).
+			assert.Equal(t, "custom-indexer:8443", ii.GetScannerV4().GetIndexerEndpoint())
+			assert.Equal(t, "custom-matcher:8443", ii.GetScannerV4().GetMatcherEndpoint())
+			return nil
+		})
+
+		createDefaultScannerV4Integration(ctx, s)
+	})
+
+	t.Run("reconcile categories when existing integration has wrong categories", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		// Existing integration with only NODE_SCANNER (edge case).
+		existingNodeOnly := &storage.ImageIntegration{
+			Id:   defaultID,
+			Name: "Scanner V4",
+			Type: scannerTypes.ScannerV4,
+			Categories: []storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{
+					IndexerEndpoint: "indexer:8080",
+					MatcherEndpoint: "matcher:8080",
+				},
+			},
+		}
+
+		s.EXPECT().Get(ctx, defaultID).Return(existingNodeOnly, true, nil)
+		s.EXPECT().Upsert(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, ii *storage.ImageIntegration) error {
+			assert.ElementsMatch(t, store.DefaultScannerV4Integration.GetCategories(), ii.GetCategories())
+			assert.Equal(t, "indexer:8080", ii.GetScannerV4().GetIndexerEndpoint())
+			return nil
+		})
+
+		createDefaultScannerV4Integration(ctx, s)
+	})
+
+	t.Run("reconcile categories when existing integration has nil categories", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		// Ancient default shape: stored integration with no categories at all.
+		existingNilCategories := &storage.ImageIntegration{
+			Id:         defaultID,
+			Name:       "Scanner V4",
+			Type:       scannerTypes.ScannerV4,
+			Categories: nil,
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{
+					IndexerEndpoint: "legacy-indexer:8443",
+				},
+			},
+		}
+
+		s.EXPECT().Get(ctx, defaultID).Return(existingNilCategories, true, nil)
+		s.EXPECT().Upsert(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, ii *storage.ImageIntegration) error {
+			assert.ElementsMatch(t, store.DefaultScannerV4Integration.GetCategories(), ii.GetCategories())
+			assert.Equal(t, "legacy-indexer:8443", ii.GetScannerV4().GetIndexerEndpoint())
+			return nil
+		})
+
+		createDefaultScannerV4Integration(ctx, s)
+	})
+
+	t.Run("do nothing when existing integration already has correct categories", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		// Existing integration with correct categories.
+		existingCorrect := &storage.ImageIntegration{
+			Id:   defaultID,
+			Name: "Scanner V4",
+			Type: scannerTypes.ScannerV4,
+			Categories: []storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{},
+			},
+		}
+
+		s.EXPECT().Get(ctx, defaultID).Return(existingCorrect, true, nil)
+		// No Upsert expected when categories are already correct.
+
+		createDefaultScannerV4Integration(ctx, s)
+	})
+
+	t.Run("do nothing when Get returns error", func(t *testing.T) {
+		s := mockIIStore.NewMockStore(gomock.NewController(t))
+
+		s.EXPECT().Get(ctx, defaultID).Return(nil, false, errors.New("database error"))
+		// No Upsert expected when Get fails.
+
+		if buildinfo.ReleaseBuild {
+			createDefaultScannerV4Integration(ctx, s)
+		} else {
+			assert.Panics(t, func() { createDefaultScannerV4Integration(ctx, s) })
+		}
+	})
+}
+
+func TestCategoriesMatch(t *testing.T) {
+	testCases := []struct {
+		name     string
+		a        []storage.ImageIntegrationCategory
+		b        []storage.ImageIntegrationCategory
+		expected bool
+	}{
+		{
+			"empty slices match",
+			[]storage.ImageIntegrationCategory{},
+			[]storage.ImageIntegrationCategory{},
+			true,
+		},
+		{
+			"nil and empty slice match",
+			nil,
+			[]storage.ImageIntegrationCategory{},
+			true,
+		},
+		{
+			"same single element",
+			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+			true,
+		},
+		{
+			"same multiple elements in same order",
+			[]storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			[]storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			true,
+		},
+		{
+			"same multiple elements in different order",
+			[]storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+				storage.ImageIntegrationCategory_SCANNER,
+			},
+			[]storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			true,
+		},
+		{
+			"different lengths do not match",
+			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+			[]storage.ImageIntegrationCategory{
+				storage.ImageIntegrationCategory_SCANNER,
+				storage.ImageIntegrationCategory_NODE_SCANNER,
+			},
+			false,
+		},
+		{
+			"different elements do not match",
+			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := categoriesMatch(tc.a, tc.b)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }
