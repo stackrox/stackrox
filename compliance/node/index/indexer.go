@@ -170,23 +170,28 @@ func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 
 // IndexNode indexes a node at the configured host path mount.
 func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
-	// claircore no longer returns an error if the host path does not exist.
-	if _, err := os.Stat(l.cfg.HostPath); err != nil {
-		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
+	cfg, err := l.mappingConfig(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	layer, err := layer(ctx, layerDigest, l.cfg.HostPath)
+	// claircore no longer returns an error if the host path does not exist.
+	if _, err := os.Stat(cfg.HostPath); err != nil {
+		return nil, errors.Wrapf(err, "host path %q does not exist", cfg.HostPath)
+	}
+
+	layer, err := layer(ctx, layerDigest, cfg.HostPath)
 	if err != nil {
 		return nil, err
 	}
 	defer pkgutils.IgnoreError(layer.Close)
 
-	repos, err := runRepositoryScanner(ctx, l.cfg, layer)
+	repos, err := runRepositoryScanner(ctx, cfg, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
 
-	pkgs, err := runPackageScanner(ctx, l.cfg.PackageDBFilter, layer)
+	pkgs, err := runPackageScanner(ctx, cfg.PackageDBFilter, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
@@ -197,7 +202,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ccReport.Repositories), len(ccReport.Packages))
 
-	rhcosRel, err := osRelease(ctx, l.cfg.OSReleasePath)
+	rhcosRel, err := osRelease(ctx, cfg.OSReleasePath)
 	if err != nil {
 		log.Debugf("Not adding RHCOS package to index report: %v", err)
 	} else {
