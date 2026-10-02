@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
@@ -306,7 +307,7 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
+		rp := requestinterceptor.GetGRPCRequestDetails(ctx, err, info.FullMethod, req)
 		go c.track(rp)
 		return resp, err
 	}
@@ -322,7 +323,7 @@ func (c *Client) GetHTTPInterceptor() httputil.HTTPInterceptor {
 			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
 				status = *sptr
 			}
-			rp := getHTTPRequestDetails(r.Context(), r, status)
+			rp := requestinterceptor.GetHTTPRequestDetails(r.Context(), r, status)
 			go c.track(rp)
 		})
 	}

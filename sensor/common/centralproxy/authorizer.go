@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"golang.org/x/sync/errgroup"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
@@ -164,7 +164,7 @@ func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*aut
 }
 
 func extractBearerToken(r *http.Request) (string, error) {
-	headers := phonehome.Headers(r.Header)
+	headers := clientprofile.Headers(r.Header)
 	token := authn.ExtractToken(&headers, "Bearer")
 	if token == "" {
 		return "", pkghttputil.NewError(http.StatusUnauthorized, "missing or invalid bearer token")
