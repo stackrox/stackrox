@@ -98,6 +98,8 @@ var (
 	rhccRepoName = rhcc.GoldRepo.Name
 	// rhccRepoURI is the URI of the "Gold Repository".
 	rhccRepoURI = rhcc.GoldRepo.URI
+	// rhccRepoKey identifies repositories from both RHCC scanners.
+	rhccRepoKey = rhcc.RepositoryKey
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -1246,20 +1248,19 @@ func filterVulnerabilities(report *claircore.VulnerabilityReport) {
 	}
 }
 
-// rhccLayers returns a set of SHAs for the layers in official Red Hat images.
-// TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
-// as the old build system.
+// rhccLayers returns the SHAs of layers identified by ClairCore's RHCC scanners.
+// Konflux labels.json repositories have a CPE instead of the legacy GoldRepo
+// name and URI. Layers without RHCC build information are not included.
 func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
 	layers := set.NewStringSet()
 
-	var rhccID string
+	rhccIDs := set.NewStringSet()
 	for id, repo := range report.Repositories {
-		if repo.Name == rhccRepoName && repo.URI == rhccRepoURI {
-			rhccID = id
-			break
+		if repo != nil && (repo.Key == rhccRepoKey || repo.Name == rhccRepoName && repo.URI == rhccRepoURI) {
+			rhccIDs.Add(id)
 		}
 	}
-	if rhccID == "" {
+	if rhccIDs.IsEmpty() {
 		// Not an official Red Hat image nor based on one.
 		return layers.Freeze()
 	}
@@ -1267,7 +1268,7 @@ func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
 	for _, envs := range report.Environments {
 		for _, env := range envs {
 			for _, repoID := range env.RepositoryIDs {
-				if repoID == rhccID {
+				if rhccIDs.Contains(repoID) {
 					layers.Add(env.IntroducedIn.String())
 				}
 			}

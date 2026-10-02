@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/enricher/kev"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -822,6 +823,73 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 			})
 
 			protoassert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestFilterVulnerabilitiesRHCCLayers(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatLayers, true)
+
+	legacyLayer := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
+	konfluxLayer := claircore.MustParseDigest("sha256:" + strings.Repeat("b", 64))
+	unmarkedLayer := claircore.MustParseDigest("sha256:" + strings.Repeat("c", 64))
+	otherLayer := claircore.MustParseDigest("sha256:" + strings.Repeat("d", 64))
+
+	tests := map[string]struct {
+		includeKonflux bool
+		includeLegacy  bool
+	}{
+		"no RHCC build information":            {},
+		"legacy Dockerfile only":               {includeLegacy: true},
+		"Konflux labels only":                  {includeKonflux: true},
+		"Konflux labels and legacy Dockerfile": {includeKonflux: true, includeLegacy: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			report := &claircore.VulnerabilityReport{
+				Repositories: map[string]*claircore.Repository{
+					"other": {Key: "rhel-cpe-repository", Name: "Red Hat Container Catalog"},
+				},
+				Packages: map[string]*claircore.Package{
+					"unmarked": {ID: "unmarked"},
+					"other":    {ID: "other"},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"unmarked": {{IntroducedIn: unmarkedLayer, PackageDB: "sqlite:var/lib/rpm"}},
+					"other":    {{IntroducedIn: otherLayer, RepositoryIDs: []string{"other"}}},
+				},
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"redhat": {ID: "redhat", Updater: "rhel-vex"},
+					"osv":    {ID: "osv", Updater: "osv/go"},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"unmarked": {"redhat", "osv"},
+					"other":    {"redhat", "osv"},
+				},
+			}
+			if tc.includeKonflux {
+				report.Repositories["konflux"] = &claircore.Repository{Key: rhcc.RepositoryKey, Name: "cpe:2.3:a:redhat:example:1:*:*:*:*:*:*:*"}
+				report.Packages["konflux"] = &claircore.Package{ID: "konflux"}
+				report.Environments["konflux"] = []*claircore.Environment{{IntroducedIn: konfluxLayer, PackageDB: "root/buildinfo/labels.json", RepositoryIDs: []string{"konflux"}}}
+				report.PackageVulnerabilities["konflux"] = []string{"redhat", "osv"}
+			}
+			if tc.includeLegacy {
+				report.Repositories["legacy"] = &claircore.Repository{Name: rhccRepoName, URI: rhccRepoURI}
+				report.Packages["legacy"] = &claircore.Package{ID: "legacy"}
+				report.Environments["legacy"] = []*claircore.Environment{{IntroducedIn: legacyLayer, PackageDB: "root/buildinfo/Dockerfile-example", RepositoryIDs: []string{"legacy"}}}
+				report.PackageVulnerabilities["legacy"] = []string{"redhat", "osv"}
+			}
+
+			filterVulnerabilities(report)
+
+			assert.Equal(t, []string{"redhat", "osv"}, report.PackageVulnerabilities["unmarked"])
+			assert.Equal(t, []string{"redhat", "osv"}, report.PackageVulnerabilities["other"])
+			if tc.includeKonflux {
+				assert.Equal(t, []string{"redhat"}, report.PackageVulnerabilities["konflux"])
+			}
+			if tc.includeLegacy {
+				assert.Equal(t, []string{"redhat"}, report.PackageVulnerabilities["legacy"])
+			}
 		})
 	}
 }
