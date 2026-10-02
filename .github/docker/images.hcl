@@ -44,7 +44,7 @@ target "central-db" {
   cache-to = ["type=gha,mode=max,scope=central-db"]
 }
 
-# Scanner V4 database (PostgreSQL 15)
+# Scanner V4 database (PostgreSQL 16)
 target "scanner-v4-db" {
   context = "scanner/image/db"
   dockerfile = "Dockerfile"
