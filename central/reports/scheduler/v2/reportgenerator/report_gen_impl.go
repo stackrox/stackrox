@@ -539,6 +539,7 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+		search.NewQuerySelect(search.CVEOrigin).Proto(),
 	}
 	return ret
 }
@@ -562,6 +563,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+		search.NewQuerySelect(search.CVEOrigin).Proto(),
 	}
 	return ret
 }
