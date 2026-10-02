@@ -333,6 +333,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 **Registration:** Import in `tools/roxvet/roxvet.go`, add to `unitchecker.Main()`
 
+**Performance:** `make roxvet-profile` times a full roxvet run. Use `ROXVET_FLAGS` to compare a rule enabled/disabled, for example `make roxvet-profile ROXVET_FLAGS="-envintegercast=false"` or narrow package scope with `ROXVET_PKGS=./pkg/...`.
+
 ---
 
 ## Validation Requirements
@@ -361,7 +363,7 @@ Create fixtures representing before/after when exact replay is impractical.
 
 **ESLint:** `npm run lint:profile -- <paths>` from `ui/apps/platform/` - inspect the `TIMING=1` rule table and reject rules contributing >5% of total runtime without clear justification.
 
-**Go:** Standard benchmark profiling.
+**Go:** `make roxvet-profile` for whole-tool elapsed time. Compare all-rules runtime with the new analyzer disabled via `ROXVET_FLAGS="-<rule>=false"`; use `ROXVET_PKGS=./path/...` for a focused package set during iteration.
 
 ---
 

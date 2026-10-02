@@ -82,3 +82,14 @@ These rules were chosen before broader invariants because they have strong local
 - They encode feedback that reviewers otherwise repeat manually.
 
 Rules that require cross-file route authorization modeling, feature-flag dependency graphs, generated API schemas, or runtime request semantics remain candidates for later work but need more infrastructure to avoid noisy false positives.
+
+## Validation snapshot
+
+Lightweight validation run on this branch:
+
+- `python3 -m py_compile .claude/skills/review-feedback-lint/*.py`: passed
+- `git diff --check`: passed
+- `cd ui/apps/platform && npm run test:eslint-rules`: passed
+- `cd ui/apps/platform && npm run lint:profile -- eslint-plugins/pluginGeneric.js eslint-plugins/pluginAccessibility.js`: passed and printed the ESLint `TIMING=1` table; the top visible costs were `prettier/prettier` at 110 ms and `import/no-self-import` at 8.5 ms for the affected plugin files, with no mined rule in the top 10.
+- `GOCACHE=$PWD/.cache/go-build GOMODCACHE=$PWD/.cache/go-mod go test ./tools/roxvet/analyzers/envintegercast`: passed
+- `GOCACHE=$PWD/.cache/go-build GOMODCACHE=$PWD/.cache/go-mod make --quiet roxvet-profile ROXVET_PKGS=./tools/roxvet/...`: 24 packages, `real 2.14`, `user 7.01`, `sys 3.81` on this machine with the local Go cache warm.
