@@ -49,9 +49,58 @@ describe('BaseImagesModal', () => {
 
             cy.get('input#baseImagePath').type('ubuntu');
             cy.get('input#baseImagePath').blur();
-            cy.contains(
-                'Base image path must include both repository and tag separated by ":"'
-            ).should('be.visible');
+            cy.contains('Base image path must include a tag pattern after ":"').should(
+                'be.visible'
+            );
+            cy.contains('For registries with a port, use registry:port/repo:tag').should(
+                'be.visible'
+            );
+        });
+
+        it('should show error when the pattern is placed on the path of a registry with a port', () => {
+            const onClose = cy.stub();
+            const onSuccess = cy.stub();
+
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
+
+            // Registry port colon must not be mistaken for the tag separator.
+            cy.get('input#baseImagePath').type('registry:5000/repo*');
+            cy.get('input#baseImagePath').blur();
+            cy.contains('Base image path must include a tag pattern after ":"').should(
+                'be.visible'
+            );
+        });
+
+        it('should reject invalid tag pattern characters', () => {
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={cy.stub()} onSuccess={cy.stub()} />
+                </TestWrapper>
+            );
+
+            cy.get('input#baseImagePath').type('registry:5000/repo:1.@bad');
+            cy.get('input#baseImagePath').blur();
+            cy.contains('Tag pattern must not contain "/", ":", "@", or whitespace').should(
+                'be.visible'
+            );
+            cy.findByRole('button', { name: 'Save' }).should('be.disabled');
+        });
+
+        it('should reject tag patterns longer than 128 bytes', () => {
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={cy.stub()} onSuccess={cy.stub()} />
+                </TestWrapper>
+            );
+
+            cy.get('input#baseImagePath').type(`ubuntu:${'a'.repeat(129)}`);
+            cy.get('input#baseImagePath').blur();
+            cy.contains('Tag pattern must be at most 128 bytes').should('be.visible');
+            cy.findByRole('button', { name: 'Save' }).should('be.disabled');
         });
 
         it('should enable save button when form is valid', () => {
