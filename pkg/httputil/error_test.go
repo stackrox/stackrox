@@ -47,11 +47,11 @@ func TestWriteError(t *testing.T) {
 		},
 		{
 			name:                "Known internal error yields appropriate status in response header",
-			incomingErr:         errors.Wrap(errox.NotFound, "Origin: known internal error"),
+			incomingErr:         errox.NotFound.New("Origin: known internal error"),
 			grpcCode:            codes.NotFound,
 			expectedStatus:      404,
-			expectedMessage:     `{"code":5, "message":"Origin: known internal error: not found"}`,
-			expectedGRPCMessage: `{"code":5, "message":"Origin: known internal error: not found"}`,
+			expectedMessage:     `{"code":5, "message":"Origin: known internal error"}`,
+			expectedGRPCMessage: `{"code":5, "message":"Origin: known internal error"}`,
 		},
 		{
 			name:                "Error of an unknown type yields 500",

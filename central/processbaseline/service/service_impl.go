@@ -73,7 +73,7 @@ func validateKeyNotEmpty(key *storage.ProcessBaselineKey) error {
 
 func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
 	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetPro
 			return nil, err
 		}
 		if !deploymentExists {
-			return nil, errors.Wrapf(errox.NotFound, "deployment with id '%q' does not exist", request.GetKey().GetDeploymentId())
+			return nil, errox.NotFound.Newf("deployment with id '%q' does not exist", request.GetKey().GetDeploymentId())
 		}
 
 		// Build an unlocked baseline
@@ -95,7 +95,7 @@ func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetPro
 			return nil, err
 		}
 		if baseline == nil {
-			return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
+			return nil, errox.NotFound.Newf("No process baseline with key %+v found", request.GetKey())
 		}
 	}
 	return baseline, nil
@@ -195,7 +195,7 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 	clusterId := request.GetClusterId()
 
 	if clusterId == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
+		return nil, errox.InvalidArgs.New("no cluster ID specified")
 	}
 
 	keys, err := s.getKeys(ctx, clusterId, request.GetNamespaces())
@@ -233,12 +233,12 @@ func (s *serviceImpl) BulkUnlockProcessBaselines(ctx context.Context, request *v
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {
 	if request.GetQuery() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "query string must be nonempty")
+		return nil, errox.InvalidArgs.New("query string must be nonempty")
 	}
 
 	q, err := search.ParseQuery(request.GetQuery())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	results, err := s.dataStore.Search(ctx, q)

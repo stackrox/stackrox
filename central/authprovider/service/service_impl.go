@@ -84,7 +84,7 @@ func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProv
 	}
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
-		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
+		return nil, errox.NotFound.Newf("auth provider %q not found", request.GetId())
 	}
 	return authProvider.StorageView(), nil
 }
@@ -296,7 +296,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Delete
 	// Get auth provider.
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
-		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
+		return nil, errox.NotFound.Newf("auth provider %q not found", request.GetId())
 	}
 
 	// Do not attempt to delete auth provider of type "basic" and instead return an invalid args error.

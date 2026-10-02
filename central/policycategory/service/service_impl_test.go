@@ -44,7 +44,7 @@ func (s *PolicyCategoryServiceTestSuite) TestRenameInvalidNameFails() {
 	})
 	s.Nil(resp)
 	s.Error(err)
-	s.Equal(fmt.Sprintf("%s: %s", invalidNameErrString, errox.InvalidArgs.Error()), err.Error())
+	s.Equal(invalidNameErrString, err.Error())
 
 }
 

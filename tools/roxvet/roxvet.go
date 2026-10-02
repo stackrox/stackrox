@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/donotcompareproto"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/erroxwrap"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/gogoprotofunctions"
@@ -29,6 +30,7 @@ func main() {
 	unitchecker.Main(
 		donotcompareproto.Analyzer,
 		dontprintferr.Analyzer,
+		erroxwrap.Analyzer,
 		filepathwalk.Analyzer,
 		godoccapitalizationmismatch.Analyzer,
 		gogoprotofunctions.Analyzer,
