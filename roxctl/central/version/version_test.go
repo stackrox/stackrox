@@ -136,7 +136,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	c.Assert().Equal("5.0.2", result.CentralVersion)
 	c.Assert().Equal("MATCHED", result.Compatibility)
 	c.Assert().NotEmpty(result.CompatibleCentralVersions)
-	c.Assert().NotEmpty(result.Guidance)
+	c.Assert().NotEmpty(result.Summary)
 }
 
 func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {

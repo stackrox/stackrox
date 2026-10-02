@@ -51,9 +51,8 @@ type VersionResult struct {
 	CompatibleCentralVersions []string `json:"CompatibleCentralVersions"`
 	Compatibility             string   `json:"Compatibility"`
 	DisplayName               string   `json:"-"`
-	Guidance                  string   `json:"Guidance"`
-	Summary                   string   `json:"-"`
-	Recommendation            string   `json:"-"`
+	Summary                   string   `json:"Summary"`
+	Recommendation            string   `json:"Recommendation"`
 
 	compatibility versioncompatibility.Compatibility
 }
@@ -89,7 +88,6 @@ func ClassifyCentralVersion(centralVersion string) (*VersionResult, error) {
 		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
 		Compatibility:             compat.String(),
 		DisplayName:               compat.DisplayName(),
-		Guidance:                  g.String(),
 		Summary:                   g.Summary,
 		Recommendation:            g.Recommendation,
 		compatibility:             compat,
@@ -153,7 +151,6 @@ func checkAndWarn(centralVersion string, w io.Writer) bool {
 	}
 
 	fmt.Fprintf(w, "Warning: roxctl %s and Central %s versions are outside the supported version skew range. Correct functioning is not guaranteed.\n", result.RoxctlVersion, centralVersion)
-	fmt.Fprintf(w, "         %s\n", result.Summary)
 	if result.Recommendation != "" {
 		fmt.Fprintf(w, "         %s\n", result.Recommendation)
 	}

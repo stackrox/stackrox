@@ -44,12 +44,12 @@ func TestCheckAndWarn(t *testing.T) {
 		"incompatible behind": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.3.0",
-			expectWarning:  "behind roxctl",
+			expectWarning:  "outside the supported version skew range",
 		},
 		"incompatible ahead": {
 			localVersion:   "4.8.0",
 			centralVersion: "4.15.0",
-			expectWarning:  "ahead of roxctl",
+			expectWarning:  "outside the supported version skew range",
 		},
 		"invalid central version": {
 			localVersion:   "4.8.0",
@@ -87,7 +87,7 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 	}{
 		"incompatible version warns": {
 			centralVersion: "4.2.0",
-			expectWarning:  "behind roxctl",
+			expectWarning:  "outside the supported version skew range",
 		},
 		"compatible version is silent": {
 			centralVersion: "4.10.6",
