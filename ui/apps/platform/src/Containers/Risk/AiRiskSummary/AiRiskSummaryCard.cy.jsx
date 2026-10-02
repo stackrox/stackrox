@@ -29,7 +29,9 @@ describe(Cypress.spec.relative, () => {
         setup({ error: new Error('something went wrong'), onRetry });
 
         cy.contains('Unable to generate AI risk summary').should('exist');
-        cy.contains('something went wrong').should('exist');
+        // The card displays via getAxiosErrorMessage, which capitalizes the first
+        // character of the backend's lower-case message for display.
+        cy.contains('Something went wrong').should('exist');
         cy.contains('Always review AI-generated content prior to use.').should('not.exist');
 
         cy.contains('button', 'Try again').click();

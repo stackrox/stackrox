@@ -1,4 +1,4 @@
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getAxiosErrorMessage, getRawAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type CollectionConfigErrorType =
     | 'CollectionLoop'
@@ -30,7 +30,12 @@ export type CollectionConfigError =
  * @return A categorized error specific to collections
  */
 export function parseConfigError(err: Error): CollectionConfigError {
-    const rawMessage = getAxiosErrorMessage(err);
+    // Match against the raw message: getAxiosErrorMessage capitalizes the first
+    // character for display, which would defeat the case-sensitive patterns below
+    // (e.g. the loopId regex anchored on a lower-case leading word). Use the
+    // capitalized message only where it is shown to the user.
+    const rawMessage = getRawAxiosErrorMessage(err);
+    const displayMessage = getAxiosErrorMessage(err);
 
     if (/create a loop/.test(rawMessage)) {
         const errorRegex = /^edge between '[0-9a-fA-F-]*' and '(?<loopId>[0-9a-fA-F-]*)'/;
@@ -62,20 +67,20 @@ export function parseConfigError(err: Error): CollectionConfigError {
             type: 'InvalidRule',
             message:
                 'The server was unable to process a regular expression used in a collection rule',
-            details: rawMessage,
+            details: displayMessage,
         };
     }
 
     if (/Cannot save an empty collection/.test(rawMessage)) {
         return {
             type: 'EmptyCollection',
-            message: rawMessage,
+            message: displayMessage,
         };
     }
 
     return {
         type: 'UnknownError',
         message: 'An unexpected error has occurred when processing the collection',
-        details: rawMessage,
+        details: displayMessage,
     };
 }

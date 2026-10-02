@@ -123,6 +123,13 @@ export default defineConfig(async () => {
             // scope with `global` instead of `window`
             global: 'window',
         },
+        optimizeDeps: {
+            // Cypress component tests load each spec as its own Vite entry, so Vite's
+            // startup dependency scan can miss a dep only reached by a not-yet-loaded
+            // spec and then re-optimize + reload mid-test, which breaks React (null
+            // dispatcher). Pre-bundle such deps here so they are ready up front.
+            include: ['lodash/upperFirst'],
+        },
         plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
         preview: {
             ...serverConfig,
