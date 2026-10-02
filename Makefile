@@ -868,6 +868,22 @@ roxvet: $(ROXVET_BIN)
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -tags "sql_integration test_e2e test_e2e_vm test race destructive integration scanner_db_integration compliance externalbackups"
 
+.PHONY: roxvet-profile
+roxvet-profile: skip-dirs := operator/pkg/clientset /generated/ /mocks
+roxvet-profile: ROXVET_PKGS ?= ./...
+roxvet-profile: ROXVET_FLAGS ?=
+roxvet-profile: $(ROXVET_BIN)
+	@echo "+ $@"
+	@echo "ROXVET_PKGS=$(ROXVET_PKGS)"
+	@echo "ROXVET_FLAGS=$(ROXVET_FLAGS)"
+	$(SILENT)tmp=$$(mktemp); \
+	    trap 'rm -f "$$tmp"' EXIT; \
+	    go list -e $(ROXVET_PKGS) \
+	        | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	        sort > "$$tmp"; \
+	    echo "Packages: $$(wc -l < "$$tmp" | tr -d ' ')"; \
+	    /usr/bin/time -p sh -c 'cat "$$1" | xargs -n 1000 go vet -vettool "$$2" $(ROXVET_FLAGS) -tags "sql_integration test_e2e test_e2e_vm test race destructive integration scanner_db_integration compliance externalbackups"' sh "$$tmp" "$(ROXVET_BIN)"
+
 ##########
 ## Misc ##
 ##########

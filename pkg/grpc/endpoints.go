@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	golog "log"
+	"math"
 	"net"
 	"net/http"
 	"strings"
@@ -30,15 +31,16 @@ const (
 )
 
 var (
-	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultMaxHTTP2ConcurrentStreams)
+	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultMaxHTTP2ConcurrentStreams).WithMaximum(math.MaxUint32)
 )
 
 func maxHTTP2ConcurrentStreams() uint32 {
-	if maxHTTP2ConcurrentStreamsSetting.IntegerSetting() <= 0 {
+	maxStreams := maxHTTP2ConcurrentStreamsSetting.IntegerSetting()
+	if maxStreams <= 0 {
 		return defaultMaxHTTP2ConcurrentStreams
 	}
 
-	return uint32(maxHTTP2ConcurrentStreamsSetting.IntegerSetting())
+	return uint32(maxStreams)
 }
 
 // EndpointConfig configures an endpoint through which the server is exposed.

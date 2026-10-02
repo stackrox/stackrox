@@ -2,6 +2,66 @@
 
 const path = require('node:path');
 
+function isDisplayFallbackExpression(node) {
+    if (!node) {
+        return false;
+    }
+
+    if (node.type === 'Literal') {
+        return typeof node.value === 'string' || typeof node.value === 'number';
+    }
+
+    if (node.type === 'TemplateLiteral') {
+        return node.expressions.length === 0;
+    }
+
+    return false;
+}
+
+function hasStringIndexType(typeParameter) {
+    if (!typeParameter) {
+        return false;
+    }
+
+    if (typeParameter.type === 'TSStringKeyword') {
+        return true;
+    }
+
+    if (typeParameter.type === 'TSUnionType') {
+        return typeParameter.types?.some((typeNode) => typeNode.type === 'TSStringKeyword');
+    }
+
+    return false;
+}
+
+function typeIncludesUndefined(typeParameter) {
+    if (!typeParameter) {
+        return false;
+    }
+
+    if (typeParameter.type === 'TSUndefinedKeyword') {
+        return true;
+    }
+
+    if (typeParameter.type === 'TSUnionType') {
+        return typeParameter.types?.some((typeNode) => typeIncludesUndefined(typeNode));
+    }
+
+    return false;
+}
+
+function getRecordTypeParameters(typeAnnotation) {
+    if (
+        typeAnnotation?.type !== 'TSTypeReference' ||
+        typeAnnotation.typeName?.type !== 'Identifier' ||
+        typeAnnotation.typeName.name !== 'Record'
+    ) {
+        return undefined;
+    }
+
+    return typeAnnotation.typeParameters?.params ?? typeAnnotation.typeArguments?.params;
+}
+
 const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
@@ -140,6 +200,85 @@ const rules = {
                         context.report({
                             node,
                             message: 'Require that React Router Navigate element has replace prop',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'JSX-nullish-display-fallback': {
+        // Prefer nullish coalescing for display fallbacks so valid falsy values such as 0 are rendered.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace || with ?? for literal display fallbacks in JSX so valid falsy values are rendered',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXExpressionContainer(node) {
+                    const { expression } = node;
+                    if (
+                        expression?.type === 'LogicalExpression' &&
+                        expression.operator === '||' &&
+                        isDisplayFallbackExpression(expression.right)
+                    ) {
+                        context.report({
+                            node: expression,
+                            message:
+                                'Use ?? for display fallback so valid falsy values like 0 or empty string are not replaced',
+                            fix(fixer) {
+                                if (expression.left.type === 'LogicalExpression') {
+                                    return null;
+                                }
+
+                                const operatorToken = context.sourceCode.getTokenAfter(
+                                    expression.left,
+                                    (token) => token.value === '||'
+                                );
+                                return operatorToken
+                                    ? fixer.replaceText(operatorToken, '??')
+                                    : null;
+                            },
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'Partial-Record-sparse-map': {
+        // A finite object literal typed as Record<string, T> is not a total map for arbitrary strings.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Use Partial<Record<string, T>> or Record<string, T | undefined> for sparse lookup maps',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                VariableDeclarator(node) {
+                    if (node.init?.type !== 'ObjectExpression') {
+                        return;
+                    }
+
+                    const typeParameters = getRecordTypeParameters(
+                        node.id?.typeAnnotation?.typeAnnotation
+                    );
+                    if (typeParameters?.length === 2) {
+                        const [keyType, valueType] = typeParameters;
+                        if (!hasStringIndexType(keyType) || typeIncludesUndefined(valueType)) {
+                            return;
+                        }
+
+                        context.report({
+                            node: node.id.typeAnnotation,
+                            message:
+                                'Use Partial<Record<string, T>> or Record<string, T | undefined> for sparse lookup maps',
                         });
                     }
                 },

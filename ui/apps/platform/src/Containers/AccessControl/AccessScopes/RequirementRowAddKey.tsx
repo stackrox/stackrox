@@ -82,7 +82,7 @@ function RequirementRowAddKey({
                                 aria-label="Requirement key OK (press tab or enter)"
                                 variant="plain"
                                 className="pf-m-smallest pf-v6-u-ml-sm"
-                                isDisabled={isDisabledOK}
+                                isAriaDisabled={isDisabledOK}
                                 onClick={onClickRequirementKeyOK}
                             />
                         </Tooltip>

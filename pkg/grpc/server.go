@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"strings"
@@ -60,7 +61,7 @@ var (
 	log = logging.LoggerForModule()
 
 	maxResponseMsgSizeSetting       = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
-	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultMaxGrpcConcurrentStreams)
+	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultMaxGrpcConcurrentStreams).WithMaximum(math.MaxUint32)
 	enableRequestTracing            = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
@@ -69,11 +70,12 @@ func maxResponseMsgSize() int {
 }
 
 func maxGrpcConcurrentStreams() uint32 {
-	if maxGrpcConcurrentStreamsSetting.IntegerSetting() <= 0 {
+	maxStreams := maxGrpcConcurrentStreamsSetting.IntegerSetting()
+	if maxStreams <= 0 {
 		return defaultMaxGrpcConcurrentStreams
 	}
 
-	return uint32(maxGrpcConcurrentStreamsSetting.IntegerSetting())
+	return uint32(maxStreams)
 }
 
 type server interface {
