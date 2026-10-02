@@ -53,17 +53,18 @@ func (g *Gate) Enter(clusterID string) (active bool, release func()) {
 	}
 }
 
-// BeginDeletion prevents new active writes and waits for existing writes to finish.
+// BeginDeletion prevents new active writes and waits for in-flight writes to finish.
 // The returned function must be called once cluster cleanup completes.
 func (g *Gate) BeginDeletion(clusterID string) func() {
 	e := g.retain(clusterID)
 	concurrency.WithLock(&e.stateMu, func() {
 		e.deleting = true
 	})
-	e.mu.Lock()
+	// Drain in-flight read locks, then release. Cleanup can exceed the dev
+	// mutex watchdog (10s), which aborts the process on a long exclusive hold.
+	concurrency.WithLock(&e.mu, func() {})
 
 	return func() {
-		concurrency.UnsafeUnlock(&e.mu)
 		concurrency.WithLock(&e.stateMu, func() {
 			e.deleting = false
 		})
