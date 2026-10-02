@@ -4,7 +4,7 @@ go 1.26.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.27.0
-	cloud.google.com/go/compute/metadata v0.9.1
+	cloud.google.com/go/compute/metadata v0.10.0
 	cloud.google.com/go/containeranalysis v0.20.0
 	cloud.google.com/go/securitycenter v1.47.0
 	cloud.google.com/go/storage v1.68.0
