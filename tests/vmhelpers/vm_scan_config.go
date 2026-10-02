@@ -28,15 +28,15 @@ const (
 	defaultScanPollInterval = 10 * time.Second
 	defaultDeleteTimeout    = 5 * time.Minute
 	defaultGuestUser        = "cloud-user"
-
-	defaultRepo2CPEURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 )
 
 var (
 	vmScanNamespacePrefix = env.RegisterSetting("VM_SCAN_NAMESPACE_PREFIX", env.WithDefault("vm-scan-e2e"))
 	vmScanSkipCleanup     = env.RegisterBooleanSetting("VM_SCAN_SKIP_CLEANUP", false)
 
-	repo2CPEURL = env.RegisterSetting("ROXAGENT_REPO2CPE_URL", env.WithDefault(defaultRepo2CPEURL))
+	// repo2CPEURL is empty so Quadlet omits --repo-cpe-url and the agent
+	// stays Sensor-managed. Set ROXAGENT_REPO2CPE_URL to force URL-managed.
+	repo2CPEURL = env.RegisterSetting("ROXAGENT_REPO2CPE_URL")
 )
 
 // VMSpec describes a VM to provision: container-disk image and guest SSH user.

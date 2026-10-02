@@ -180,6 +180,8 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	}
 	props["Orchestrator Version"] = omd.GetVersion()
 
+	props["Sensor Version Compatibility"] = cluster.GetStatus().GetSensorVersionCompatibility().String()
+
 	if vmTraits := buildVMTraits(hasVMTelemetryCap, metrics.GetVirtualMachineMetrics()); vmTraits != nil {
 		maps.Copy(props, vmTraits)
 	}

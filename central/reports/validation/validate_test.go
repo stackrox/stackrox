@@ -52,6 +52,12 @@ func TestValidateEntityScope(t *testing.T) {
 			),
 			expectError: false,
 		},
+		"label key with empty value is valid": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, apiV2.ScopeField_FIELD_LABEL, exactValue("required=")),
+			),
+			expectError: false,
+		},
 		"valid multiple rules different entities": {
 			scope: makeEntityScope(
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, apiV2.ScopeField_FIELD_NAME, exactValue("prod")),

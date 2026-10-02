@@ -35,6 +35,7 @@ test_e2e() {
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
+    setup_client_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
     kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
@@ -43,7 +44,30 @@ test_e2e() {
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
-    deploy_stackrox
+
+    # Make sure we use the roxie version pinned in ROXIE_VERSION. Under Prow the test image
+    # ships an older roxie that does not recognize a generic (non-Infra) GKE cluster: it reports
+    # "cluster type: Unknown" and defaults Central exposure to a localhost port-forward instead of
+    # the LoadBalancer. That breaks endpoints_test.go, which dials all of Central's ports at the
+    # API host. The pinned version detects GKE and exposes Central via the LoadBalancer, matching
+    # the GHA runner (which installs the pinned version explicitly).
+    ensure_roxie_on_path
+
+    local roxie_config
+    roxie_config="$(mktemp)"
+    merge_yaml "$roxie_config" <<'EOF'
+central:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Background streamers are not explicitly stopped. They die when the CI
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
@@ -94,7 +118,7 @@ test_e2e() {
 
     # Give some time for previous tests to finish up
     wait_for_api
-    restore_4_6_postgres_backup
+    restore_postgres_backup
 
     wait_for_api
     trap cleanup_workload_identities EXIT

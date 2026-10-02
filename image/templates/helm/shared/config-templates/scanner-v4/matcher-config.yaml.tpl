@@ -13,7 +13,7 @@ matcher:
   enable: true
   database:
     conn_string: >
-      host=scanner-v4-db.{{ .Release.Namespace }}.svc
+      host=scanner-v4-db.{{ ._rox._namespace }}.svc
       port=5432
       sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
       user=postgres
@@ -29,8 +29,8 @@ matcher:
 {{- end }}
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
-  vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION
-  indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc:8443
+  vulnerabilities_url: https://central.{{ ._rox._namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION
+  indexer_addr: scanner-v4-indexer.{{ ._rox._namespace }}.svc:8443
 log_level: "{{ ._rox.scannerV4.matcher.logLevel }}"
 grpc_listen_addr: 0.0.0.0:8443
 http_listen_addr: 0.0.0.0:9443

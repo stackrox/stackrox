@@ -1,5 +1,7 @@
 package virtualmachine
 
+import "cmp"
+
 // Facts keys used in VirtualMachine.Facts maps.
 // Keep the keys camelCase to match the style used elsewhere in the UI.
 const (
@@ -29,3 +31,9 @@ const (
 	DNFMetadataStatusAvailable   = "available"
 	DNFMetadataStatusUnavailable = "unavailable"
 )
+
+// DisplayGuestOS is the guest OS written to storage.guest_os: agent-detected
+// when present, otherwise fallback (the KubeVirt informer value).
+func DisplayGuestOS(facts map[string]string, fallback string) string {
+	return cmp.Or(facts[DetectedGuestOSKey], fallback)
+}

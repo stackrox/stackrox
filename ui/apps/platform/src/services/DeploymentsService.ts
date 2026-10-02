@@ -167,6 +167,6 @@ export function fetchDeploymentRiskSummary(id: string): Promise<DeploymentRiskSu
         throw new Error('Deployment ID must be specified');
     }
     return axios
-        .get<DeploymentRiskSummary>(`${deploymentWithRiskUrl}/${id}/ai-summary`)
+        .get<DeploymentRiskSummary>(`${deploymentWithRiskUrl}/${id}/ai-summary`, { timeout: 60000 })
         .then((response) => response.data);
 }

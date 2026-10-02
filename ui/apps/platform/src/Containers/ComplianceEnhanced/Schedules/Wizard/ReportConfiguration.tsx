@@ -19,7 +19,7 @@ function ReportConfiguration(): ReactElement {
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Report</Title>
+                        <Title headingLevel="h2">Delivery</Title>
                     </FlexItem>
                     <FlexItem>
                         Optionally configure e-mail delivery destinations for reports

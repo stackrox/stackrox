@@ -108,7 +108,26 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 
 	return EnrichmentResult{
 		ScanResult: ScanNotDone,
-	}, errors.New("no image vulnerability retrievers are integrated")
+	}, noMatchingScannerErr(components.ScannerType())
+}
+
+func noMatchingScannerErr(requiredType string) error {
+	return errors.Errorf(
+		"this scan request was produced by %s, but no scanner of that type is integrated",
+		scannerTypeDescription(requiredType))
+}
+
+// scannerTypeDescription returns a human-friendly name for a scanner type
+// string
+func scannerTypeDescription(scannerType string) string {
+	switch scannerType {
+	case scannerTypes.Clairify:
+		return "the legacy StackRox Scanner"
+	case scannerTypes.ScannerV4:
+		return "Scanner V4"
+	default:
+		return fmt.Sprintf("a scanner of type %q", scannerType)
+	}
 }
 
 func (e *enricherV2Impl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,

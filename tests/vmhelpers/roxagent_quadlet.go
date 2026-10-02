@@ -217,24 +217,21 @@ func stageQuadletInstall(image, repo2cpeURL, podmanAuthPath string) (string, err
 	}
 	if err := os.WriteFile(filepath.Join(dir, quadletContainerFileName), overlayed, 0o644); err != nil {
 		_ = os.RemoveAll(dir)
-		return "", err
+		return "", fmt.Errorf("write %s: %w", quadletContainerFileName, err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, quadletInstallScriptName), installSrc, 0o755); err != nil {
 		_ = os.RemoveAll(dir)
-		return "", err
+		return "", fmt.Errorf("write %s: %w", quadletInstallScriptName, err)
 	}
 	return dir, nil
 }
 
 // overlayQuadletContainer rewrites Image= and Exec= for the cluster image and
-// a 5m rescan. A non-empty authFile sets REGISTRY_AUTH_FILE on [Service]:
-// RHEL 8 Quadlet rejects AuthFile= as an unsupported [Container] key.
+// a 5m rescan. A non-empty authFile sets REGISTRY_AUTH_FILE on [Service]
+// because RHEL 8 Quadlet rejects AuthFile=.
 func overlayQuadletContainer(src []byte, image, repo2cpeURL, authFile string) ([]byte, error) {
 	if strings.TrimSpace(image) == "" {
 		return nil, errors.New("overlayQuadletContainer: image is empty")
-	}
-	if strings.TrimSpace(repo2cpeURL) == "" {
-		return nil, errors.New("overlayQuadletContainer: repo2cpeURL is empty")
 	}
 
 	sawImage, sawExec := false, false
@@ -253,8 +250,7 @@ func overlayQuadletContainer(src []byte, image, repo2cpeURL, authFile string) ([
 				out = append(out, "Environment=REGISTRY_AUTH_FILE="+authFile)
 			}
 		case strings.HasPrefix(line, "Exec="):
-			out = append(out, "Exec=serve --host-path /host --rescan-interval "+
-				E2ERescanInterval.String()+" --repo-cpe-url "+repo2cpeURL)
+			out = append(out, overlayExecLine(repo2cpeURL))
 			sawExec = true
 		default:
 			out = append(out, line)
@@ -267,4 +263,14 @@ func overlayQuadletContainer(src []byte, image, repo2cpeURL, authFile string) ([
 		return nil, errors.New("overlayQuadletContainer: no Exec= line")
 	}
 	return []byte(strings.Join(out, "\n")), nil
+}
+
+// overlayExecLine is the Quadlet Exec= line. --repo-cpe-url is omitted when
+// empty so systemd cannot pass a blank argument to serve.
+func overlayExecLine(repo2cpeURL string) string {
+	line := "Exec=serve --host-path /host --rescan-interval " + E2ERescanInterval.String()
+	if u := strings.TrimSpace(repo2cpeURL); u != "" {
+		line += " --repo-cpe-url " + u
+	}
+	return line
 }

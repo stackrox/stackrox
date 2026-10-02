@@ -20,10 +20,10 @@ The connection to the server [^ ]+ was refused
 EOT
 )
 
-tmp_in="$(mktemp)"
-tmp_out="$(mktemp --suffix=-stdout.txt)"
-tmp_err="$(mktemp --suffix=-stderr.txt)"
-grep_out="$(mktemp)"
+tmp_in="$(mktemp "${TMPDIR:-/tmp}/rox-kubectl-stdin.XXXXXX")"
+tmp_out="$(mktemp "${TMPDIR:-/tmp}/rox-kubectl-stdout.XXXXXX")"
+tmp_err="$(mktemp "${TMPDIR:-/tmp}/rox-kubectl-stderr.XXXXXX")"
+grep_out="$(mktemp "${TMPDIR:-/tmp}/rox-kubectl-grep.XXXXXX")"
 trap 'cat ${tmp_out}; cat ${tmp_err} >&2; rm -f ${tmp_in} ${tmp_out} ${tmp_err} ${grep_out}' EXIT
 
 cat > "${tmp_in}"

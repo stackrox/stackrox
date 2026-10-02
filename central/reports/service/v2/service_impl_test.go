@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/notifiers"
 	postgresMocks "github.com/stackrox/rox/pkg/postgres/mocks"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -158,7 +159,8 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration_RejectsNodeType()
 	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), "node-config").
 		Return(protoReportConfig, true, nil).Times(1)
 	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
-	s.notifierDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
+	s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), gomock.Any()).
+		Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).AnyTimes()
 
 	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 	requestConfig.Id = "node-config"
@@ -850,11 +852,11 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 func (s *ReportServiceTestSuite) mockNotifierStoreCalls(reqNotifier *apiV2.NotifierConfiguration,
 	notifierIDExits, isValidationError, isUpdate bool) {
 	if notifierIDExits {
-		s.notifierDataStore.EXPECT().Exists(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
-			Return(true, nil).Times(1)
+		s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
+			Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
 	} else {
-		s.notifierDataStore.EXPECT().Exists(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
-			Return(false, nil).Times(1)
+		s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
+			Return(nil, false, nil).Times(1)
 	}
 
 	if !isValidationError && !isUpdate {

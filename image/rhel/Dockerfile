@@ -1,9 +1,20 @@
+ARG TARGETARCH
+ARG PG_VERSION=16
+
 FROM registry.access.redhat.com/ubi9:latest AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
-FROM ubi-base AS downloads
+# PGDG does not publish s390x RPMs, and UBI only provides PostgreSQL 13.
+# Use CentOS Stream's PostgreSQL module for that architecture's download stage.
+FROM ubi-base AS downloads-amd64
+FROM ubi-base AS downloads-arm64
+FROM ubi-base AS downloads-ppc64le
+FROM quay.io/centos/centos:stream9 AS downloads-s390x
+
+FROM downloads-${TARGETARCH} AS downloads
 
 ARG DEBUG_BUILD=no
+ARG PG_VERSION
 
 WORKDIR /
 COPY download.sh /download.sh
@@ -39,7 +50,35 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-FROM ubi-micro-base
+FROM ubi-micro-base AS runtime-base
+
+ARG PG_VERSION
+
+COPY --from=package_installer /out/ /
+
+# Execute the clients in the final runtime to check their version and libraries.
+RUN set -eu; \
+    for client in pg_dump pg_restore; do \
+        version="$("$client" --version)"; \
+        echo "$version"; \
+        case "$version" in \
+            "$client (PostgreSQL) ${PG_VERSION}."*) ;; \
+            *) echo "Expected PostgreSQL ${PG_VERSION} client: $client" >&2; exit 1 ;; \
+        esac; \
+    done
+
+FROM ubi-base AS cli-tarballs
+
+RUN dnf install -y pigz
+COPY bin/roxctl* /tmp/roxctl/
+RUN cd /tmp/roxctl && \
+    shopt -s nullglob && \
+    for f in roxctl-*; do \
+        [[ -f "$f" && -x "$f" ]] || continue; \
+        tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
+    done
+
+FROM runtime-base
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -61,8 +100,6 @@ ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
     ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
-
-COPY --from=package_installer /out/ /
 
 COPY static-bin /stackrox/
 COPY --from=downloads /output/go/ /go/
@@ -94,9 +131,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
-COPY bin/roxctl*            /assets/downloads/cli/
-
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --from=cli-tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

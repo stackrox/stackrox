@@ -233,8 +233,6 @@ spec:
         {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
-        - name: ROX_SCANNER_GRPC_ENDPOINT
-          value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
         - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
           value: "true"
         {{- end }}
@@ -242,7 +240,7 @@ spec:
           value: {{ quote ._rox._configFP }}
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
-          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" ._rox._namespace }}
         - name: ROX_SCANNER_V4
           value: "true"
         {{- end }}

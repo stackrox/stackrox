@@ -14,11 +14,6 @@ spec:
     hostAliases: []
     db:
       hostAliases: []
-  scanner:
-    analyzer:
-      hostAliases: []
-    db:
-      hostAliases: []
   scannerV4:
     indexer:
       hostAliases: []

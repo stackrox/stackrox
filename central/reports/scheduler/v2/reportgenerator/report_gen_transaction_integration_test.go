@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/csv"
 	"io"
+	"slices"
 	"time"
 
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
@@ -19,26 +20,30 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// CSV column indices matching csvHeader in csv_gen.go.
+// CSV column indices for the fixed prefix that precedes any feature-flag-gated
+// columns (see csvHeader in csv_gen.go). Columns after EPSS can shift depending
+// on enabled features, so look those up with colOf instead of hardcoding them.
 const (
-	colCluster      = 0
-	colNamespace    = 1
-	colDeployment   = 2
-	colImage        = 3
-	colComponent    = 4
-	colCompVersion  = 5
-	colCVE          = 6
-	colFixable      = 7
-	colFixedBy      = 8
-	colSeverity     = 9
-	colCVSS         = 10
-	colNVDCVSS      = 11
-	colEPSS         = 12
-	colDiscoveredAt = 13
-	colReference    = 14
-	colAdvName      = 15
-	colAdvLink      = 16
+	colCluster     = 0
+	colNamespace   = 1
+	colDeployment  = 2
+	colImage       = 3
+	colComponent   = 4
+	colCompVersion = 5
+	colCVE         = 6
+	colFixable     = 7
+	colFixedBy     = 8
+	colSeverity    = 9
+	colCVSS        = 10
+	colNVDCVSS     = 11
+	colEPSS        = 12
 )
+
+// colOf returns the index of the named column in the current CSV layout, which
+// depends on which feature-flag-gated columns formatCol includes.
+func colOf(name string) int {
+	return slices.Index(formatCol(), name)
+}
 
 // collectColumn extracts a single column from all rows.
 func collectColumn(rows [][]string, col int) []string {
@@ -162,7 +167,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_A
 
 	rows := s.readBlobCSV(blobStore, snap.GetReportConfigurationId(), snap.GetReportId())
 	s.Require().Len(rows, 9, "1 header + 8 data rows")
-	s.Equal(csvHeader, rows[0])
+	s.Equal(formatCol(), rows[0])
 
 	dataRows := rows[1:]
 	s.ElementsMatch([]string{
@@ -239,7 +244,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_E
 
 	rows := s.readBlobCSV(blobStore, snap.GetReportConfigurationId(), snap.GetReportId())
 	s.Require().Len(rows, 1, "only header row for empty result")
-	s.Equal(csvHeader, rows[0])
+	s.Equal(formatCol(), rows[0])
 }
 
 // TestGenerateReportTransaction_CSVFieldValues spot-checks individual CSV field
@@ -275,9 +280,9 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_C
 	s.Equal("9.00", row[colCVSS])
 	s.Equal("10.00", row[colNVDCVSS])
 	s.Equal("70.000", row[colEPSS])
-	s.NotEqual("Not Available", row[colDiscoveredAt])
-	s.Equal("RHSA-2025-CVE-fixable", row[colAdvName])
-	s.Equal("test-rhsa-link", row[colAdvLink])
+	s.NotEqual("Not Available", row[colOf("Discovered At")])
+	s.Equal("RHSA-2025-CVE-fixable", row[colOf("Advisory Name")])
+	s.Equal("test-rhsa-link", row[colOf("Advisory Link")])
 }
 
 // TestGenerateReportTransaction_ReportStatusUpdated verifies that the report

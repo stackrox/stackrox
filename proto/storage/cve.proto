@@ -164,6 +164,7 @@ message CVEInfo {
   EPSS epss = 12;
   Exploit exploit = 13;
   bool cisa_kev = 14; // @gotags: search:"CISA KEV"
+  bool known_ransomware_campaign = 15; // @gotags: search:"Known Ransomware Campaign"
 }
 
 message Advisory {

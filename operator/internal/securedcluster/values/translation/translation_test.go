@@ -41,8 +41,6 @@ func TestTranslation(t *testing.T) {
 }
 
 func (s *TranslationTestSuite) TestImageOverrides() {
-	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
-	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
 	s.T().Setenv(images.ScannerV4.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
@@ -60,14 +58,6 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
-
-	scannerImage, err := vals.PathValue("image.scanner.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner:1.0.0", scannerImage)
-
-	scannerDbImage, err := vals.PathValue("image.scannerDb.fullRef")
-	s.Require().NoError(err)
-	s.Equal("stackrox/scanner-db:1.0.0", scannerDbImage)
 
 	scannerV4DbImage, err := vals.PathValue("image.scannerV4DB.fullRef")
 	s.Require().NoError(err)
@@ -149,9 +139,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
 					"db": map[string]interface{}{
@@ -195,9 +182,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
 					"db": map[string]interface{}{
@@ -242,16 +226,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
@@ -274,14 +250,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -309,9 +277,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": true,
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -342,9 +307,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
 					"db": map[string]interface{}{
@@ -379,14 +341,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -734,75 +688,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"auditLogs": map[string]interface{}{
 					"disableCollection": false,
 				},
-				"scanner": map[string]interface{}{
-					"disable":  false,
-					"replicas": int32(7),
-					"autoscaling": map[string]interface{}{
-						"disable":     false,
-						"minReplicas": int32(6),
-						"maxReplicas": int32(8),
-					},
-					"nodeSelector": map[string]string{
-						"scanner-node-selector-label1": "scanner-node-selector-value1",
-						"scanner-node-selector-label2": "scanner-node-selector-value2",
-					},
-					"tolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"hostAliases": []map[string]interface{}{
-						{
-							"ip":        "127.0.0.1",
-							"hostnames": []string{"scanner.com"},
-						},
-					},
-					"dbNodeSelector": map[string]string{
-						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
-						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
-					},
-					"dbTolerations": []map[string]interface{}{
-						{
-							"key":      "node.stackrox.io",
-							"operator": "Equal",
-							"value":    "false",
-						}, {
-							"key":      "node-role.kubernetes.io/infra",
-							"operator": "Exists",
-						},
-					},
-					"dbHostAliases": []map[string]interface{}{
-						{
-							"ip":        "127.0.0.1",
-							"hostnames": []string{"scanner-db.com"},
-						},
-					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "50",
-							"memory": "60",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "70",
-							"memory": "80",
-						},
-					},
-					"dbResources": map[string]interface{}{
-						"limits": map[string]interface{}{
-							"cpu":    "90",
-							"memory": "100",
-						},
-						"requests": map[string]interface{}{
-							"cpu":    "110",
-							"memory": "120",
-						},
-					},
-				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
 					"indexer": map[string]interface{}{
@@ -955,14 +840,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"forceCollectionMethod": true,
 					"collectionMethod":      "CORE_BPF",
 				},
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -987,14 +864,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1022,14 +891,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1057,14 +918,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1090,14 +943,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1128,14 +973,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1171,14 +1008,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": false,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
@@ -1557,8 +1386,6 @@ func TestDeploymentDefaults(t *testing.T) {
 	componentPaths := []testingUtils.ComponentPath{
 		{Name: "sensor", NodeSelectorPath: "sensor.nodeSelector", TolerationsPath: "sensor.tolerations"},
 		{Name: "admissionControl", NodeSelectorPath: "admissionControl.nodeSelector", TolerationsPath: "admissionControl.tolerations"},
-		{Name: "scanner", NodeSelectorPath: "scanner.nodeSelector", TolerationsPath: "scanner.tolerations"},
-		{Name: "scanner-db", NodeSelectorPath: "scanner.dbNodeSelector", TolerationsPath: "scanner.dbTolerations"},
 		{Name: "scannerV4-indexer", NodeSelectorPath: "scannerV4.indexer.nodeSelector", TolerationsPath: "scannerV4.indexer.tolerations"},
 		{Name: "scannerV4-db", NodeSelectorPath: "scannerV4.db.nodeSelector", TolerationsPath: "scannerV4.db.tolerations"},
 	}
