@@ -17,7 +17,7 @@ import {
 
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
+import RepeatScheduleDropdown from 'Components/Reports/Step/RepeatScheduleDropdown';
 
 import usePageAction from 'hooks/usePageAction';
 import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
@@ -127,10 +127,11 @@ function ScanConfigOptions(): ReactElement {
                                                 <RepeatScheduleDropdown
                                                     fieldId="parameters.intervalType"
                                                     value={
-                                                        formik.values.parameters.intervalType || ''
+                                                        formik.values.parameters.intervalType ??
+                                                        'UNSET'
                                                     }
                                                     handleSelect={handleSelectChange}
-                                                    includeDailyOption
+                                                    hasUnsetOption={false}
                                                     onBlur={formik.handleBlur}
                                                 />
                                             </FormLabelGroup>

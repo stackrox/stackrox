@@ -4,16 +4,19 @@ import type { FormikProps } from 'formik';
 
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import type {
     DailySchedule,
     MonthlySchedule,
+    Schedule,
     ScheduleBase,
     WeeklySchedule,
 } from 'types/schedule.proto';
 import { getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
+import { ensureExhaustive } from 'utils/type.utils';
 
 import type { DeliveryType } from '../reports.types';
+
+import RepeatScheduleDropdown from './RepeatScheduleDropdown';
 
 export type ScheduleFormSectionProps<T extends DeliveryType = DeliveryType> = {
     formik: FormikProps<T>;
@@ -22,7 +25,7 @@ export type ScheduleFormSectionProps<T extends DeliveryType = DeliveryType> = {
 function ScheduleFormSection<T extends DeliveryType = DeliveryType>({
     formik,
 }: ScheduleFormSectionProps<T>): ReactElement {
-    function handleSelectIntervalType(id: string, intervalType: string): void {
+    function handleSelectIntervalType(id: string, intervalType: Schedule['intervalType']): void {
         const scheduleBase: ScheduleBase = {
             hour: formik.values.schedule?.hour ?? 0,
             minute: formik.values.schedule?.minute ?? 0,
@@ -52,7 +55,12 @@ function ScheduleFormSection<T extends DeliveryType = DeliveryType>({
                 formik.setFieldValue('schedule', schedule);
                 break;
             }
+            case 'UNSET': {
+                formik.setFieldValue('schedule', null);
+                break;
+            }
             default:
+                ensureExhaustive(intervalType);
                 break;
         }
     }
@@ -93,9 +101,11 @@ function ScheduleFormSection<T extends DeliveryType = DeliveryType>({
             >
                 <RepeatScheduleDropdown
                     fieldId="schedule.intervalType"
-                    value={formik.values.schedule?.intervalType ?? ''}
-                    handleSelect={handleSelectIntervalType}
-                    includeDailyOption
+                    value={formik.values.schedule?.intervalType ?? 'UNSET'}
+                    handleSelect={(id, selection) =>
+                        handleSelectIntervalType(id, selection as Schedule['intervalType'])
+                    }
+                    hasUnsetOption
                     onBlur={formik.handleBlur}
                 />
             </FormLabelGroup>

@@ -1,9 +1,12 @@
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { Snapshot } from 'types/reportJob';
+import type { Schedule } from 'types/schedule.proto';
 
 // Core report types
 
 export type ReportType = 'VULNERABILITY' | 'NODE_VULNERABILITY';
+
+export type ReportSchedule = Schedule; // same as compliance scan schedules
 
 export type ReportConfigurationBase = {
     id: string;
@@ -165,42 +168,6 @@ export type CvesSince =
 export type ViewBasedVulnerabilityReportFilters = {
     query: string;
 };
-
-// Scheduling types
-
-export const intervalTypes = ['WEEKLY', 'MONTHLY'] as const;
-export type IntervalType = (typeof intervalTypes)[number];
-
-// Sunday = 0, Monday = 1, .... Saturday =  6
-export type DaysOfWeek = {
-    days: number[]; // int32
-};
-
-// 1 for 1st, 2 for 2nd .... 31 for 31st
-export type DaysOfMonth = {
-    days: number[]; // int32
-};
-
-export type Interval = DaysOfWeek | DaysOfMonth;
-
-export type ReportSchedule =
-    | {
-          intervalType: 'WEEKLY';
-          hour: number;
-          minute: number;
-          daysOfWeek: DaysOfWeek;
-      }
-    | {
-          intervalType: 'MONTHLY';
-          hour: number;
-          minute: number;
-          daysOfMonth: DaysOfMonth;
-      }
-    | {
-          intervalType: 'DAILY';
-          hour: number;
-          minute: number;
-      };
 
 // Notification types
 
