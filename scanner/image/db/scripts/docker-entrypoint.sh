@@ -311,6 +311,41 @@ _pg_want_help() {
 	return 1
 }
 
+# TODO(cdu): review note, remove before the PR. This is a deliberate
+# divergence from central-db, not a port of it. image/postgres's
+# docker-entrypoint.sh only switches binaries when FORCE_OLD_BINARIES=true;
+# here it is unconditional, because the Scanner upgrade path is allowed to
+# decline and must then still come up. Everything in ROX-37425 depends on
+# this, so it is worth confirming you are happy with the divergence.
+#
+### STACKROX MODIFIED - Always run the server binaries matching the on-disk
+### data directory. If init-entrypoint.sh could not upgrade the cluster (for
+### example there was not enough room to copy it), the directory is still on
+### the previous major version, and starting the newer server against it would
+### crashloop the pod. The image ships the previous major version under
+### /usr/lib64/pgsql (see POSTGRESQL_PREV_VERSION in the base image).
+rox_use_matching_binaries() {
+	local data_version binary_version bindir
+
+	# Absent on a fresh install, before init-entrypoint.sh has run initdb.
+	[ -s "$PGDATA/PG_VERSION" ] || return 0
+
+	data_version="$(< "$PGDATA/PG_VERSION")"
+	binary_version="$(postgres -V | sed 's/postgres (PostgreSQL) \([0-9]*\).*/\1/')"
+	[ "$data_version" -lt "$binary_version" ] || return 0
+
+	bindir="/usr/lib64/pgsql/postgresql-${data_version}/bin"
+	if [ ! -x "$bindir/postgres" ]; then
+		printf >&2 'Data directory is PostgreSQL %s but %s is missing; startup will fail\n' \
+			"$data_version" "$bindir"
+		return 0
+	fi
+
+	printf >&2 'Data directory is PostgreSQL %s, starting the binaries in %s\n' \
+		"$data_version" "$bindir"
+	export PATH="$bindir:$PATH"
+}
+
 _main() {
 	# if first arg looks like a flag, assume we want to run postgres server
 	if [ "${1:0:1}" = '-' ]; then
@@ -318,6 +353,12 @@ _main() {
 	fi
 
 	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
+		### STACKROX MODIFIED - Must run before anything that resolves a
+		### PostgreSQL binary through PATH. The server itself is launched as
+		### `flock ... "$@" &` below, which resolves `postgres` at exec time,
+		### so exporting PATH here is enough.
+		rox_use_matching_binaries
+
 		docker_setup_env
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
