@@ -117,7 +117,7 @@ require (
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/russellhaering/gosaml2 v0.12.0
 	github.com/russellhaering/goxmldsig v1.6.1
-	github.com/segmentio/analytics-go/v3 v3.3.0
+	github.com/segmentio/analytics-go/v3 v3.4.0
 	github.com/sergi/go-diff v1.4.0
 	github.com/sigstore/cosign/v3 v3.1.3
 	github.com/sigstore/rekor v1.5.4
@@ -232,7 +232,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
@@ -404,7 +403,6 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/sassoftware/relic/v8 v8.2.0 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.11.0 // indirect
-	github.com/segmentio/backo-go v1.0.1 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/protobuf-specs v0.5.1 // indirect
