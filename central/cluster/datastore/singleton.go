@@ -23,6 +23,8 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -60,7 +62,9 @@ func initialize() {
 		ranking.ClusterRanker(),
 		networkBaselineManager.Singleton(),
 		compliancePruning.Singleton(),
-		clusterInitStoreSingleton.Singleton())
+		clusterInitStoreSingleton.Singleton(),
+		virtualMachineDataStore.Singleton(),
+		virtualMachineV2DataStore.Singleton())
 
 	utils.CrashOnError(err)
 }

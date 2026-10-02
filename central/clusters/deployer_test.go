@@ -18,10 +18,6 @@ func getCollectorImage(fields *charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorImageRemote, fields.CollectorImageTag)
 }
 
-func getScannerSlim(fields *charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ScannerSlimImageRemote, fields.ScannerImageTag)
-}
-
 func getMain(fields *charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ImageRemote, fields.ImageTag)
 }
@@ -114,121 +110,102 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 	defaultMainImage := flavor.MainImage()
 	defaultCollectorImageNoTag := flavor.CollectorImageNoTag()
 	defaultCollectorImage := flavor.CollectorImage()
-	defaultScannerSlimImage := flavor.ScannerSlimImage()
 
 	var cases = map[string]struct {
-		cluster                *storage.Cluster
-		expectedErrorMessage   string
-		expectedMain           string
-		expectedCollectorRef   string
-		expectedScannerSlimRef string
+		cluster              *storage.Cluster
+		expectedErrorMessage string
+		expectedMain         string
+		expectedCollectorRef string
 	}{
 		// we're testing possible main & collector combinations, grouped by main image setting
 
 		// default main image
 		"default main / no collector": {
-			cluster:                makeTestCluster(defaultMainImageNoTag, ""),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   defaultCollectorImage,
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImageNoTag, ""),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: defaultCollectorImage,
 		},
 		"default main / default collector": {
-			cluster:                makeTestCluster(defaultMainImageNoTag, defaultCollectorImageNoTag),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   defaultCollectorImage,
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImageNoTag, defaultCollectorImageNoTag),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: defaultCollectorImage,
 		},
 		"default main / default collector: custom tag": {
-			cluster:                makeTestCluster(defaultMainImageNoTag, fmt.Sprintf("%s:custom", defaultCollectorImageNoTag)),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   flavor.CollectorImage(),
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImageNoTag, fmt.Sprintf("%s:custom", defaultCollectorImageNoTag)),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: flavor.CollectorImage(),
 		},
 		"default main / custom collector: with namespace": {
-			cluster:                makeTestCluster(defaultMainImage, "quay.io/rhacs/collector"),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImage, "quay.io/rhacs/collector"),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 		},
 		"default main / custom collector: with namespace & custom tag": {
-			cluster:                makeTestCluster(defaultMainImage, "quay.io/rhacs/collector:custom"),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImage, "quay.io/rhacs/collector:custom"),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 		},
 		"default main / custom collector: without namespace": {
-			cluster:                makeTestCluster(defaultMainImage, "example.io/collector"),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImage, "example.io/collector"),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
 		},
 		"default main / custom collector: without namespace & custom tag": {
-			cluster:                makeTestCluster(defaultMainImage, "example.io/collector:custom"),
-			expectedMain:           defaultMainImage,
-			expectedCollectorRef:   fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(defaultMainImage, "example.io/collector:custom"),
+			expectedMain:         defaultMainImage,
+			expectedCollectorRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
 		},
 		"default main: custom tag / no collector": {
-			cluster:                makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
-			expectedMain:           fmt.Sprintf("%s:custom", defaultMainImageNoTag),
-			expectedCollectorRef:   defaultCollectorImage,
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
+			expectedMain:         fmt.Sprintf("%s:custom", defaultMainImageNoTag),
+			expectedCollectorRef: defaultCollectorImage,
 		},
 		"default main: custom tag / default collector": {
-			cluster:                makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
-			expectedMain:           fmt.Sprintf("%s:custom", defaultMainImageNoTag),
-			expectedCollectorRef:   defaultCollectorImage,
-			expectedScannerSlimRef: defaultScannerSlimImage,
+			cluster:              makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
+			expectedMain:         fmt.Sprintf("%s:custom", defaultMainImageNoTag),
+			expectedCollectorRef: defaultCollectorImage,
 		},
 		"default main: custom registry / no collector": {
-			cluster:                makeTestCluster("quay.io/rhacs/"+flavor.MainImageName, ""),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/"+flavor.MainImageName, ""),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 		},
 
 		// custom main image
 		"custom main: with namespace / no collector": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", ""),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", ""),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 		},
 		"custom main: without namespace / no collector": {
-			cluster:                makeTestCluster("example.io/main", ""),
-			expectedMain:           fmt.Sprintf("example.io/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("example.io/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("example.io/main", ""),
+			expectedMain:         fmt.Sprintf("example.io/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 		},
 		"custom main / default collector": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", defaultCollectorImageNoTag),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   defaultCollectorImage,
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", defaultCollectorImageNoTag),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: defaultCollectorImage,
 		},
 		"custom main / custom collector: with namespace": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 		},
 		"custom main / custom collector: with namespace & custom tag": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector:custom"),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector:custom"),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 		},
 		"custom main / custom collector: without namespace": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", "example.io/collector"),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", "example.io/collector"),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
 		},
 		"custom main / custom collector: without namespace & custom tag": {
-			cluster:                makeTestCluster("quay.io/rhacs/main", "example.io/collector:custom"),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/main", "example.io/collector:custom"),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
 		},
 		/*
 			// These tests are failing right now but should succeed after ROX-15691 has been implemented
@@ -244,16 +221,14 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			},
 		*/
 		"custom main / custom collector: same registry, different namespaces": {
-			cluster:                makeTestCluster("quay.io/namespace-a/main", "quay.io/namespace-b/collector"),
-			expectedMain:           fmt.Sprintf("quay.io/namespace-a/main:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/namespace-b/collector:%s", flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/namespace-a/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/namespace-a/main", "quay.io/namespace-b/collector"),
+			expectedMain:         fmt.Sprintf("quay.io/namespace-a/main:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/namespace-b/collector:%s", flavor.CollectorImageTag),
 		},
 		"custom main: non-default name / no collector": {
-			cluster:                makeTestCluster("quay.io/rhacs/customname", ""),
-			expectedMain:           fmt.Sprintf("quay.io/rhacs/customname:%s", flavor.MainImageTag),
-			expectedCollectorRef:   fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
-			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
+			cluster:              makeTestCluster("quay.io/rhacs/customname", ""),
+			expectedMain:         fmt.Sprintf("quay.io/rhacs/customname:%s", flavor.MainImageTag),
+			expectedCollectorRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 		},
 		// Expected fail cases
 		"expectedError: empty main image": {
@@ -280,7 +255,6 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 				s.NoError(err)
 				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
 				s.Equal(c.expectedCollectorRef, getCollectorImage(fields), "Collector image does not match")
-				s.Equal(c.expectedScannerSlimRef, getScannerSlim(fields), "Scanner slim image does not match")
 			}
 		})
 	}
@@ -338,7 +312,6 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NotEmpty(t, fields.Versions.ChartVersion)
 	assert.NotEmpty(t, fields.Versions.MainVersion)
 	assert.NotEmpty(t, fields.Versions.CollectorVersion)
-	assert.NotEmpty(t, fields.Versions.ScannerVersion)
 
 	assert.NotEmpty(t, fields.ChartRepo.URL)
 }

@@ -31,25 +31,27 @@ type reportEmailSubjectFormat struct {
 
 // ImageCVEQueryResponse contains the fields of report query response
 type ImageCVEQueryResponse struct {
-	Cluster           *string                        `db:"cluster"`
-	Namespace         *string                        `db:"namespace"`
-	Deployment        *string                        `db:"deployment"`
-	Image             *string                        `db:"image"`
-	Component         *string                        `db:"component"`
-	ComponentVersion  *string                        `db:"component_version"`
-	CVEID             *string                        `db:"cve_id"`
-	CVE               *string                        `db:"cve"`
-	Fixable           *bool                          `db:"fixable"`
-	FixedByVersion    *string                        `db:"fixed_by"`
-	Severity          *storage.VulnerabilitySeverity `db:"severity"`
-	CVSS              *float64                       `db:"cvss"`
-	NVDCVSS           *float64                       `db:"nvd_cvss"`
-	EPSSProbability   *float64                       `db:"epss_probability"`
-	CisaKev           *bool                          `db:"cisa_kev"`
-	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
-	AdvisoryName      *string                        `db:"advisory_name"`
-	AdvisoryLink      *string                        `db:"advisory_link"`
-	Origin            *storage.VulnOrigin            `db:"cve_origin"`
+	Cluster                 *string                        `db:"cluster"`
+	Namespace               *string                        `db:"namespace"`
+	Deployment              *string                        `db:"deployment"`
+	Image                   *string                        `db:"image"`
+	Component               *string                        `db:"component"`
+	ComponentVersion        *string                        `db:"component_version"`
+	CVEID                   *string                        `db:"cve_id"`
+	CVE                     *string                        `db:"cve"`
+	Fixable                 *bool                          `db:"fixable"`
+	FixedByVersion          *string                        `db:"fixed_by"`
+	Severity                *storage.VulnerabilitySeverity `db:"severity"`
+	CVSS                    *float64                       `db:"cvss"`
+	NVDCVSS                 *float64                       `db:"nvd_cvss"`
+	EPSSProbability         *float64                       `db:"epss_probability"`
+	CisaKev                 *bool                          `db:"cisa_kev"`
+	KnownRansomwareCampaign *bool                          `db:"known_ransomware_campaign"`
+	DiscoveredAtImage       *time.Time                     `db:"first_image_occurrence_timestamp"`
+	ImageCreatedAt          *time.Time                     `db:"image_created_time"`
+	AdvisoryName            *string                        `db:"advisory_name"`
+	AdvisoryLink            *string                        `db:"advisory_link"`
+	Origin                  *storage.VulnOrigin            `db:"cve_origin"`
 
 	Link string
 }
@@ -160,6 +162,10 @@ func (res *ImageCVEQueryResponse) GetCisaKev() *bool {
 	return res.CisaKev
 }
 
+func (res *ImageCVEQueryResponse) GetKnownRansomwareCampaign() *bool {
+	return res.KnownRansomwareCampaign
+}
+
 func (res *ImageCVEQueryResponse) GetAdvisoryName() string {
 	if res.AdvisoryName == nil {
 		return "Not Available"
@@ -179,6 +185,13 @@ func (res *ImageCVEQueryResponse) GetDiscoveredAtImage() string {
 		return "Not Available"
 	}
 	return res.DiscoveredAtImage.Format("January 02, 2006")
+}
+
+func (res *ImageCVEQueryResponse) GetImageCreatedAt() string {
+	if res.ImageCreatedAt == nil {
+		return "Not Available"
+	}
+	return res.ImageCreatedAt.Format("2006-01-02")
 }
 
 // ReportQueryParts contains the parts used to build the report query

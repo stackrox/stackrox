@@ -45,7 +45,12 @@ import HelpIconTh from 'Components/HelpIconTh';
 import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { deleteReportConfiguration, reportDownloadURL } from 'services/ReportsService';
+import {
+    deleteReportConfiguration,
+    fetchReportHistory,
+    reportDownloadURL,
+    runReportRequest,
+} from 'services/ReportsService';
 import type {
     ImageVulnerabilityReportConfiguration,
     ImageVulnerabilityReportResourceScope,
@@ -115,9 +120,12 @@ function ConfigReportsTab() {
         perPage,
         sortOption,
     });
-    const { reportSnapshots, isLoading: isLoadingReportSnapshots } =
-        useWatchLastSnapshotForReports(reportConfigurations);
+    const { reportSnapshots, isLoading: isLoadingReportSnapshots } = useWatchLastSnapshotForReports(
+        reportConfigurations,
+        fetchReportHistory
+    );
     const { isRunning, runError, runReport } = useRunReport({
+        runReportRequest,
         onCompleted: ({ reportNotificationMethod }) => {
             if (reportNotificationMethod === 'EMAIL') {
                 addToast('The report has been sent to the configured email notifier', 'success');

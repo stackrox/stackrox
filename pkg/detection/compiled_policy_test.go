@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/features"
@@ -275,4 +276,103 @@ func TestProcessAndFileAccessMatchers(t *testing.T) {
 			}
 		})
 	}
+}
+
+func initAndRegularDeployment() (*storage.Deployment, []*storage.Image) {
+	dep := &storage.Deployment{
+		Id:        "dep",
+		Name:      "dep",
+		Namespace: "ns",
+		Containers: []*storage.Container{
+			{
+				Name:            "init-setup",
+				Type:            storage.ContainerType_INIT,
+				SecurityContext: &storage.SecurityContext{Privileged: true},
+				Image:           &storage.ContainerImage{Id: "init-img", Name: &storage.ImageName{FullName: "busybox:latest"}},
+			},
+			{
+				Name:            "app",
+				Type:            storage.ContainerType_REGULAR,
+				SecurityContext: &storage.SecurityContext{},
+				Image:           &storage.ContainerImage{Id: "app-img", Name: &storage.ImageName{FullName: "nginx:1.25"}},
+			},
+		},
+	}
+	images := []*storage.Image{
+		{Id: "init-img", Name: &storage.ImageName{FullName: "busybox:latest"}},
+		{Id: "app-img", Name: &storage.ImageName{FullName: "nginx:1.25"}},
+	}
+	return dep, images
+}
+
+func TestEvaluationFilterSkipsInitContainers(t *testing.T) {
+	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
+
+	dep, images := initAndRegularDeployment()
+	ed := booleanpolicy.EnhancedDeployment{Deployment: dep, Images: images}
+
+	skipInit := &storage.EvaluationFilter{
+		SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+	}
+	privilegedPolicy := &storage.Policy{
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		Name:            "privileged",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: fieldnames.PrivilegedContainer,
+				Values:    []*storage.PolicyValue{{Value: "true"}},
+			}},
+		}},
+		EvaluationFilter: skipInit,
+	}
+
+	compiled, err := CompilePolicy(privilegedPolicy, nil, nil)
+	require.NoError(t, err)
+
+	violations, err := compiled.MatchAgainstDeployment(nil, ed)
+	require.NoError(t, err)
+	assert.Empty(t, violations.AlertViolations, "privileged init container is skipped")
+
+	dep.Containers[0].SecurityContext.Privileged = false
+	dep.Containers[1].SecurityContext.Privileged = true
+	violations, err = compiled.MatchAgainstDeployment(nil, ed)
+	require.NoError(t, err)
+	require.Len(t, violations.AlertViolations, 1)
+	assert.Contains(t, violations.AlertViolations[0].GetMessage(), "app")
+
+	unfiltered := privilegedPolicy.CloneVT()
+	unfiltered.EvaluationFilter = nil
+	dep.Containers[0].SecurityContext.Privileged = true
+	dep.Containers[1].SecurityContext.Privileged = false
+	compiled, err = CompilePolicy(unfiltered, nil, nil)
+	require.NoError(t, err)
+	violations, err = compiled.MatchAgainstDeployment(nil, ed)
+	require.NoError(t, err)
+	require.NotEmpty(t, violations.AlertViolations)
+	assert.Contains(t, violations.AlertViolations[0].GetMessage(), "init-setup")
+
+	processPolicy := &storage.Policy{
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		Name:            "process",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: fieldnames.ProcessName,
+				Values:    []*storage.PolicyValue{{Value: "bash"}},
+			}},
+		}},
+		EvaluationFilter: skipInit,
+	}
+	compiled, err = CompilePolicy(processPolicy, nil, nil)
+	require.NoError(t, err)
+
+	appProcess := &storage.ProcessIndicator{
+		ContainerName: "app",
+		Signal:        &storage.ProcessSignal{Name: "bash", ExecFilePath: "/bin/bash"},
+	}
+	violations, err = compiled.MatchAgainstDeploymentAndProcess(nil, ed, appProcess, true)
+	require.NoError(t, err)
+	assert.NotNil(t, violations.ProcessViolation)
 }

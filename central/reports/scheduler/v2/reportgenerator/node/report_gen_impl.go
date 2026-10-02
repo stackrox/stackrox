@@ -37,6 +37,7 @@ var (
 		Selects: []*v1.QuerySelect{
 			search.NewQuerySelect(search.Cluster).Proto(),
 			search.NewQuerySelect(search.Node).Proto(),
+			search.NewQuerySelect(search.OperatingSystem).Proto(),
 			search.NewQuerySelect(search.Component).Proto(),
 			search.NewQuerySelect(search.ComponentVersion).Proto(),
 			search.NewQuerySelect(search.CVEID).Proto(),

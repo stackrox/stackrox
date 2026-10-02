@@ -51,7 +51,7 @@ export const KnownExploit: CompoundSearchFilterAttribute = {
             },
         ],
     },
-    featureFlagDependency: ['ROX_SCANNER_V4', 'ROX_CISA_KEV'],
+    featureFlagDependency: ['ROX_SCANNER_V4'],
 };
 
 // The filter value is the VulnOrigin enum name (e.g. VULN_ORIGIN_RED_HAT), which the

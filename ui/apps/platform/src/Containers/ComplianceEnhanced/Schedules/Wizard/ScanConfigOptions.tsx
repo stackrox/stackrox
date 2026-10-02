@@ -20,7 +20,7 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
 import usePageAction from 'hooks/usePageAction';
-import type { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
 
 import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './useFormikScanConfig';
 
@@ -28,7 +28,7 @@ import './ScanConfigOptions.css';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
-    const { pageAction } = usePageAction<PageActions>();
+    const { pageAction } = usePageAction<SchedulePageAction>();
     const isEditAction = pageAction === 'edit';
 
     function handleSelectChange(id: string, value: string): void {
@@ -107,9 +107,6 @@ function ScanConfigOptions(): ReactElement {
                                 </FormLabelGroup>
                             </StackItem>
                         </Stack>
-                    </StackItem>
-                    <StackItem>
-                        <Divider component="div" />
                     </StackItem>
                     <StackItem>
                         <Flex direction={{ default: 'column' }}>

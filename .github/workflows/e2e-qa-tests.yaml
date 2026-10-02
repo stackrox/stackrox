@@ -72,7 +72,7 @@ defaults:
 jobs:
   qa-e2e-tests:
     if: inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -189,7 +189,7 @@ jobs:
         run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
-        uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+        uses: stackrox/actions/roxie/install-cli@6691d5c300d4af17546145bdbbb9862c53975af4 # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
 
@@ -200,7 +200,7 @@ jobs:
             | tar xz -C /usr/local/bin oc
           oc version --client
 
-      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+      - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
         if: inputs.cluster-provisioning-method == 'infra'
 
       - name: Wait for infra cluster and get kubeconfig

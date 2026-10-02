@@ -113,7 +113,6 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	v.AddChild("central", central)
-	v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner, deploymentDefaults))
 	v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client, deploymentDefaults))
 	v.AddChild("customize", &customize)
 
@@ -374,23 +373,6 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 	mounts.SetStringSlice("secrets", secrets)
 	declarativeConfig.AddChild("mounts", &mounts)
 	return &declarativeConfig
-}
-
-func getCentralScannerComponentValues(s *platform.ScannerComponentSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	if s == nil && !defaults.IsSet() {
-		return nil
-	}
-	if s == nil {
-		s = &platform.ScannerComponentSpec{}
-	}
-
-	sv := translation.NewValuesBuilder()
-	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
-	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer(), defaults)
-	translation.SetScannerDBValues(&sv, s.DB, defaults)
-	sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
-
-	return &sv
 }
 
 func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {

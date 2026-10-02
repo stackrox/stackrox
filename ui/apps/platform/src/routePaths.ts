@@ -387,7 +387,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/reports/nodes': {
-        featureFlagRequirements: allEnabled(['ROX_NODE_VULNERABILITY_REPORTS']),
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'vulnerabilities/user-workloads': {
@@ -410,7 +409,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'base-images': {
-        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
         resourceAccessRequirements: everyResource(['ImageAdministration']),
     },
     'vulnerability-management': {

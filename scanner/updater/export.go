@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -201,26 +202,40 @@ func rhelVexOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{rhelVexUpdaterName}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
 			rhelVexUpdaterName: func(i any) error {
-				ctx := context.Background()
-				ctx = log.With(ctx, "updater", rhelVexUpdaterName)
+				ctx := log.With(context.Background(), "updater", rhelVexUpdaterName)
+				// Validate during factory configuration so invalid input fails manager
+				// initialization; updater configuration errors only skip the updater.
+				ignoreKernel := false
+				if value := os.Getenv("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES"); value != "" {
+					var err error
+					ignoreKernel, err = strconv.ParseBool(value)
+					if err != nil {
+						return fmt.Errorf("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: %w", err)
+					}
+				}
 
-				// This function gets called for both the Factory and the Updater.
-				// We only need to configure the Factory (which has the CompressedFileTimeout field).
+				// The factory passes the download timeout to the updater; UpdaterConfig
+				// has no timeout field. Kernel exclusion is set on UpdaterConfig because
+				// the manager configures the updater after construction, overwriting any
+				// kernel-exclusion value inherited from the factory.
 				switch cfg := i.(type) {
 				case *vex.FactoryConfig:
-					// Configure the factory with custom timeout.
-					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
-					if timeout != "" {
-						parsedTimeout, err := time.ParseDuration(timeout)
+					var timeout *claircore.Duration
+					if value := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT"); value != "" {
+						parsedTimeout, err := time.ParseDuration(value)
 						if err != nil {
 							slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
 						} else {
-							cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
+							duration := claircore.Duration(parsedTimeout)
+							timeout = &duration
 							slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
 						}
 					}
+					if timeout != nil {
+						cfg.CompressedFileTimeout = *timeout
+					}
 				case *vex.UpdaterConfig:
-					// Updater config - nothing to configure here.
+					cfg.IgnoreKernelPackages = ignoreKernel
 				default:
 					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
 				}
