@@ -10,6 +10,7 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import services.ClusterService
 import services.ImageService
+import services.NamespaceService
 import services.PolicyService
 import util.Timer
 
@@ -132,6 +133,9 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        // A pod can still be listed after its deployment object is gone, and
+        // that holds this shared namespace in Terminating.
+        orchestrator.deleteManagedWorkloads(TEST_NAMESPACE)
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         try {
@@ -244,6 +248,20 @@ class AdmissionControllerTest extends BaseSpecification {
         true         | true
     }
 
+    // cleanupLabelTestNamespace removes workloads before the namespace. A pod
+    // from an allowed deployment keeps the namespace past the delete wait, and
+    // Central can still list it after the API object is gone (ROX-36941).
+    private void cleanupLabelTestNamespace(String testNs) {
+        if (!testNs) {
+            return
+        }
+        orchestrator.deleteManagedWorkloads(testNs)
+        orchestrator.deleteNamespace(testNs)
+        withRetry(30, 1) {
+            assert NamespaceService.getNamespaces().every { it.metadata.name != testNs }
+        }
+    }
+
     def deleteDeploymentWithCaution(Deployment deployment) {
         orchestrator.deleteDeployment(deployment)
         def timer = new Timer(30, 1)
@@ -345,16 +363,9 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created == !blocked
 
         cleanup:
-        // Delete policy first to avoid enforcement blocking cleanup,
-        // and to prevent leftover policy from impacting later tests.
         def policyDeletionFailure = deletePolicyWithCaution(policyId)
-        if (created) {
-            deleteDeploymentWithCaution(deployment)
-        }
         try {
-            // Wait for full namespace deletion; a namespace left in Terminating state
-            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
-            orchestrator.deleteNamespace(testNs)
+            cleanupLabelTestNamespace(testNs)
         } catch (Exception e) {
             log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
             throw e
@@ -452,16 +463,9 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created2
 
         cleanup:
-        // Delete policy first to avoid enforcement blocking cleanup,
-        // and to prevent leftover policy from impacting later tests.
         def policyDeletionFailure = deletePolicyWithCaution(policyId)
-        if (created2) {
-            deleteDeploymentWithCaution(deployment2)
-        }
         try {
-            // Wait for full namespace deletion; a namespace left in Terminating state
-            // leaks into NamespaceTest and breaks its ACS/orchestrator count check (ROX-36941).
-            orchestrator.deleteNamespace(testNs)
+            cleanupLabelTestNamespace(testNs)
         } catch (Exception e) {
             log.warn "Namespace ${testNs} deletion failed or timed out: ${e.message}"
             throw e
