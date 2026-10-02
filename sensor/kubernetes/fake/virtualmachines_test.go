@@ -103,6 +103,17 @@ func TestValidateVMWorkload(t *testing.T) {
 				`Setting "updateInterval"=1m40s causes none of the VMs to ever receive an update. ` +
 				`Lower the value of "updateInterval" or increase the 'lifecycleDuration'.`,
 		},
+		"enabled workload with negative numPackages should reset it": {
+			input: VirtualMachineWorkload{
+				PoolSize:          5,
+				NumPackages:       -1,
+				LifecycleDuration: 2 * time.Minute,
+				UpdateInterval:    20 * time.Second,
+			},
+			wantLifecycleDuration: 2 * time.Minute,
+			wantUpdateInterval:    20 * time.Second,
+			wantErr:               "virtualMachineWorkload.numPackages is -1 but must be non-negative; defaulting to 0",
+		},
 		"reportInterval does not affect lifecycle validation": {
 			input: VirtualMachineWorkload{
 				PoolSize:          5,
@@ -123,6 +134,8 @@ func TestValidateVMWorkload(t *testing.T) {
 			assert.Equal(t, tt.wantLifecycleDuration, result.LifecycleDuration, "lifecycleDuration mismatch")
 			assert.Equal(t, tt.wantUpdateInterval, result.UpdateInterval, "updateInterval mismatch")
 			assert.Equal(t, tt.input.PoolSize, result.PoolSize, "poolSize should not change")
+			wantNumPackages := max(tt.input.NumPackages, 0)
+			assert.Equal(t, wantNumPackages, result.NumPackages, "numPackages mismatch")
 
 			if tt.wantErr == "" {
 				assert.NoError(t, err, "expected no error")
