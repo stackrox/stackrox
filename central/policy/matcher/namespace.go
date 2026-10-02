@@ -48,7 +48,7 @@ func (m *namespaceMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) 
 }
 
 func (m *namespaceMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
-	return m.scopeMatches(exclusion.GetDeployment().GetScope())
+	return appliesToDeployments(exclusion) && m.scopeMatches(exclusion.GetDeployment().GetScope())
 }
 
 func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
