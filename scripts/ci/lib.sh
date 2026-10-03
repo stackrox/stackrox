@@ -5,6 +5,8 @@
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/lib.sh
 source "$SCRIPTS_ROOT/scripts/lib.sh"
+# shellcheck source=./nightly.sh
+source "$SCRIPTS_ROOT/scripts/ci/nightly.sh"
 # shellcheck source=../../scripts/ci/metrics.sh
 source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
@@ -1236,10 +1238,6 @@ is_tagged() {
     local tags
     tags="$(git tag --contains)"
     [[ -n "$tags" ]]
-}
-
-is_nightly_run() {
-    [[ "${BUILD_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {

@@ -2,6 +2,21 @@
 
 # shellcheck source=./feature-flag-env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+# shellcheck source=../../scripts/ci/nightly.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/ci/nightly.sh"
+
+# Print CI values without masking higher-precedence caller values files. In
+# particular --set=null would override ROX_CENTRAL_EXTRA_HELM_VALUES_FILE too.
+_scanner_v4_ci_helm_values() {
+    local values_file="$1"
+    if is_nightly_run; then
+        echo "Scanner V4 bundle: production (deployed version default unless explicitly overridden)" >&2
+        yq eval 'del(.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL)' "$values_file"
+    else
+        echo "Scanner V4 bundle: CI fixture $(yq eval '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL' "$values_file")" >&2
+        cat "$values_file"
+    fi
+}
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -509,7 +524,8 @@ function launch_central {
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
       elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+        _scanner_v4_ci_helm_values "${COMMON_DIR}/ci-values.yaml" > "${unzip_dir}/ci-scanner-values.yaml" || return 1
+        helm_args+=(-f "${unzip_dir}/ci-scanner-values.yaml")
       fi
 
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then

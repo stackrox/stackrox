@@ -1,0 +1,926 @@
+[
+  {
+    "name": "adduser",
+    "version": "3.118ubuntu2",
+    "arch": "all",
+    "source": "adduser",
+    "sourceVersion": "3.118ubuntu2"
+  },
+  {
+    "name": "apt",
+    "version": "2.0.5",
+    "arch": "amd64",
+    "source": "apt",
+    "sourceVersion": "2.0.5"
+  },
+  {
+    "name": "base-files",
+    "version": "11ubuntu5.3",
+    "arch": "amd64",
+    "source": "base-files",
+    "sourceVersion": "11ubuntu5.3"
+  },
+  {
+    "name": "base-passwd",
+    "version": "3.5.47",
+    "arch": "amd64",
+    "source": "base-passwd",
+    "sourceVersion": "3.5.47"
+  },
+  {
+    "name": "bash",
+    "version": "5.0-6ubuntu1.1",
+    "arch": "amd64",
+    "source": "bash",
+    "sourceVersion": "5.0-6ubuntu1.1"
+  },
+  {
+    "name": "bsdutils",
+    "version": "1:2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "bzip2",
+    "version": "1.0.8-2",
+    "arch": "amd64",
+    "source": "bzip2",
+    "sourceVersion": "1.0.8-2"
+  },
+  {
+    "name": "ca-certificates",
+    "version": "20210119~20.04.1",
+    "arch": "all",
+    "source": "ca-certificates",
+    "sourceVersion": "20210119~20.04.1"
+  },
+  {
+    "name": "coreutils",
+    "version": "8.30-3ubuntu2",
+    "arch": "amd64",
+    "source": "coreutils",
+    "sourceVersion": "8.30-3ubuntu2"
+  },
+  {
+    "name": "curl",
+    "version": "7.68.0-1ubuntu2.5",
+    "arch": "amd64",
+    "source": "curl",
+    "sourceVersion": "7.68.0-1ubuntu2.5"
+  },
+  {
+    "name": "dash",
+    "version": "0.5.10.2-6",
+    "arch": "amd64",
+    "source": "dash",
+    "sourceVersion": "0.5.10.2-6"
+  },
+  {
+    "name": "debconf",
+    "version": "1.5.73",
+    "arch": "all",
+    "source": "debconf",
+    "sourceVersion": "1.5.73"
+  },
+  {
+    "name": "debianutils",
+    "version": "4.9.1",
+    "arch": "amd64",
+    "source": "debianutils",
+    "sourceVersion": "4.9.1"
+  },
+  {
+    "name": "diffutils",
+    "version": "1:3.7-3",
+    "arch": "amd64",
+    "source": "diffutils",
+    "sourceVersion": "1:3.7-3"
+  },
+  {
+    "name": "dpkg",
+    "version": "1.19.7ubuntu3",
+    "arch": "amd64",
+    "source": "dpkg",
+    "sourceVersion": "1.19.7ubuntu3"
+  },
+  {
+    "name": "e2fsprogs",
+    "version": "1.45.5-2ubuntu1",
+    "arch": "amd64",
+    "source": "e2fsprogs",
+    "sourceVersion": "1.45.5-2ubuntu1"
+  },
+  {
+    "name": "fdisk",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "findutils",
+    "version": "4.7.0-1ubuntu1",
+    "arch": "amd64",
+    "source": "findutils",
+    "sourceVersion": "4.7.0-1ubuntu1"
+  },
+  {
+    "name": "fontconfig",
+    "version": "2.13.1-2ubuntu3",
+    "arch": "amd64",
+    "source": "fontconfig",
+    "sourceVersion": "2.13.1-2ubuntu3"
+  },
+  {
+    "name": "fontconfig-config",
+    "version": "2.13.1-2ubuntu3",
+    "arch": "all",
+    "source": "fontconfig",
+    "sourceVersion": "2.13.1-2ubuntu3"
+  },
+  {
+    "name": "fonts-dejavu-core",
+    "version": "2.37-1",
+    "arch": "all",
+    "source": "fonts-dejavu",
+    "sourceVersion": "2.37-1"
+  },
+  {
+    "name": "gcc-10-base",
+    "version": "10.3.0-1ubuntu1~20.04",
+    "arch": "amd64",
+    "source": "gcc-10",
+    "sourceVersion": "10.3.0-1ubuntu1~20.04"
+  },
+  {
+    "name": "gpgv",
+    "version": "2.2.19-3ubuntu2.1",
+    "arch": "amd64",
+    "source": "gnupg2",
+    "sourceVersion": "2.2.19-3ubuntu2.1"
+  },
+  {
+    "name": "grep",
+    "version": "3.4-1",
+    "arch": "amd64",
+    "source": "grep",
+    "sourceVersion": "3.4-1"
+  },
+  {
+    "name": "gzip",
+    "version": "1.10-0ubuntu4",
+    "arch": "amd64",
+    "source": "gzip",
+    "sourceVersion": "1.10-0ubuntu4"
+  },
+  {
+    "name": "hostname",
+    "version": "3.23",
+    "arch": "amd64",
+    "source": "hostname",
+    "sourceVersion": "3.23"
+  },
+  {
+    "name": "init-system-helpers",
+    "version": "1.57",
+    "arch": "all",
+    "source": "init-system-helpers",
+    "sourceVersion": "1.57"
+  },
+  {
+    "name": "libacl1",
+    "version": "2.2.53-6",
+    "arch": "amd64",
+    "source": "acl",
+    "sourceVersion": "2.2.53-6"
+  },
+  {
+    "name": "libapr1",
+    "version": "1.6.5-1ubuntu1",
+    "arch": "amd64",
+    "source": "apr",
+    "sourceVersion": "1.6.5-1ubuntu1"
+  },
+  {
+    "name": "libapt-pkg6.0",
+    "version": "2.0.5",
+    "arch": "amd64",
+    "source": "apt",
+    "sourceVersion": "2.0.5"
+  },
+  {
+    "name": "libasn1-8-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libattr1",
+    "version": "1:2.4.48-5",
+    "arch": "amd64",
+    "source": "attr",
+    "sourceVersion": "1:2.4.48-5"
+  },
+  {
+    "name": "libaudit-common",
+    "version": "1:2.8.5-2ubuntu6",
+    "arch": "all",
+    "source": "audit",
+    "sourceVersion": "1:2.8.5-2ubuntu6"
+  },
+  {
+    "name": "libaudit1",
+    "version": "1:2.8.5-2ubuntu6",
+    "arch": "amd64",
+    "source": "audit",
+    "sourceVersion": "1:2.8.5-2ubuntu6"
+  },
+  {
+    "name": "libblkid1",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "libbrotli1",
+    "version": "1.0.7-6ubuntu0.1",
+    "arch": "amd64",
+    "source": "brotli",
+    "sourceVersion": "1.0.7-6ubuntu0.1"
+  },
+  {
+    "name": "libbz2-1.0",
+    "version": "1.0.8-2",
+    "arch": "amd64",
+    "source": "bzip2",
+    "sourceVersion": "1.0.8-2"
+  },
+  {
+    "name": "libc-bin",
+    "version": "2.31-0ubuntu9.2",
+    "arch": "amd64",
+    "source": "glibc",
+    "sourceVersion": "2.31-0ubuntu9.2"
+  },
+  {
+    "name": "libc6",
+    "version": "2.31-0ubuntu9.2",
+    "arch": "amd64",
+    "source": "glibc",
+    "sourceVersion": "2.31-0ubuntu9.2"
+  },
+  {
+    "name": "libcap-ng0",
+    "version": "0.7.9-2.1build1",
+    "arch": "amd64",
+    "source": "libcap-ng",
+    "sourceVersion": "0.7.9-2.1build1"
+  },
+  {
+    "name": "libcom-err2",
+    "version": "1.45.5-2ubuntu1",
+    "arch": "amd64",
+    "source": "e2fsprogs",
+    "sourceVersion": "1.45.5-2ubuntu1"
+  },
+  {
+    "name": "libcrypt1",
+    "version": "1:4.4.10-10ubuntu4",
+    "arch": "amd64",
+    "source": "libxcrypt",
+    "sourceVersion": "1:4.4.10-10ubuntu4"
+  },
+  {
+    "name": "libcurl4",
+    "version": "7.68.0-1ubuntu2.5",
+    "arch": "amd64",
+    "source": "curl",
+    "sourceVersion": "7.68.0-1ubuntu2.5"
+  },
+  {
+    "name": "libdb5.3",
+    "version": "5.3.28+dfsg1-0.6ubuntu2",
+    "arch": "amd64",
+    "source": "db5.3",
+    "sourceVersion": "5.3.28+dfsg1-0.6ubuntu2"
+  },
+  {
+    "name": "libdebconfclient0",
+    "version": "0.251ubuntu1",
+    "arch": "amd64",
+    "source": "cdebconf",
+    "sourceVersion": "0.251ubuntu1"
+  },
+  {
+    "name": "libexpat1",
+    "version": "2.2.9-1build1",
+    "arch": "amd64",
+    "source": "expat",
+    "sourceVersion": "2.2.9-1build1"
+  },
+  {
+    "name": "libext2fs2",
+    "version": "1.45.5-2ubuntu1",
+    "arch": "amd64",
+    "source": "e2fsprogs",
+    "sourceVersion": "1.45.5-2ubuntu1"
+  },
+  {
+    "name": "libfdisk1",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "libffi7",
+    "version": "3.3-4",
+    "arch": "amd64",
+    "source": "libffi",
+    "sourceVersion": "3.3-4"
+  },
+  {
+    "name": "libfontconfig1",
+    "version": "2.13.1-2ubuntu3",
+    "arch": "amd64",
+    "source": "fontconfig",
+    "sourceVersion": "2.13.1-2ubuntu3"
+  },
+  {
+    "name": "libfreetype6",
+    "version": "2.10.1-2ubuntu0.1",
+    "arch": "amd64",
+    "source": "freetype",
+    "sourceVersion": "2.10.1-2ubuntu0.1"
+  },
+  {
+    "name": "libgcc-s1",
+    "version": "10.3.0-1ubuntu1~20.04",
+    "arch": "amd64",
+    "source": "gcc-10",
+    "sourceVersion": "10.3.0-1ubuntu1~20.04"
+  },
+  {
+    "name": "libgcrypt20",
+    "version": "1.8.5-5ubuntu1",
+    "arch": "amd64",
+    "source": "libgcrypt20",
+    "sourceVersion": "1.8.5-5ubuntu1"
+  },
+  {
+    "name": "libgmp10",
+    "version": "2:6.2.0+dfsg-4",
+    "arch": "amd64",
+    "source": "gmp",
+    "sourceVersion": "2:6.2.0+dfsg-4"
+  },
+  {
+    "name": "libgnutls30",
+    "version": "3.6.13-2ubuntu1.3",
+    "arch": "amd64",
+    "source": "gnutls28",
+    "sourceVersion": "3.6.13-2ubuntu1.3"
+  },
+  {
+    "name": "libgpg-error0",
+    "version": "1.37-1",
+    "arch": "amd64",
+    "source": "libgpg-error",
+    "sourceVersion": "1.37-1"
+  },
+  {
+    "name": "libgssapi-krb5-2",
+    "version": "1.17-6ubuntu4.1",
+    "arch": "amd64",
+    "source": "krb5",
+    "sourceVersion": "1.17-6ubuntu4.1"
+  },
+  {
+    "name": "libgssapi3-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libhcrypto4-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libheimbase1-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libheimntlm0-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libhogweed5",
+    "version": "3.5.1+really3.5.1-2ubuntu0.1",
+    "arch": "amd64",
+    "source": "nettle",
+    "sourceVersion": "3.5.1+really3.5.1-2ubuntu0.1"
+  },
+  {
+    "name": "libhx509-5-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libidn2-0",
+    "version": "2.2.0-2",
+    "arch": "amd64",
+    "source": "libidn2",
+    "sourceVersion": "2.2.0-2"
+  },
+  {
+    "name": "libk5crypto3",
+    "version": "1.17-6ubuntu4.1",
+    "arch": "amd64",
+    "source": "krb5",
+    "sourceVersion": "1.17-6ubuntu4.1"
+  },
+  {
+    "name": "libkeyutils1",
+    "version": "1.6-6ubuntu1",
+    "arch": "amd64",
+    "source": "keyutils",
+    "sourceVersion": "1.6-6ubuntu1"
+  },
+  {
+    "name": "libkrb5-26-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libkrb5-3",
+    "version": "1.17-6ubuntu4.1",
+    "arch": "amd64",
+    "source": "krb5",
+    "sourceVersion": "1.17-6ubuntu4.1"
+  },
+  {
+    "name": "libkrb5support0",
+    "version": "1.17-6ubuntu4.1",
+    "arch": "amd64",
+    "source": "krb5",
+    "sourceVersion": "1.17-6ubuntu4.1"
+  },
+  {
+    "name": "libldap-2.4-2",
+    "version": "2.4.49+dfsg-2ubuntu1.8",
+    "arch": "amd64",
+    "source": "openldap",
+    "sourceVersion": "2.4.49+dfsg-2ubuntu1.8"
+  },
+  {
+    "name": "libldap-common",
+    "version": "2.4.49+dfsg-2ubuntu1.8",
+    "arch": "all",
+    "source": "openldap",
+    "sourceVersion": "2.4.49+dfsg-2ubuntu1.8"
+  },
+  {
+    "name": "liblz4-1",
+    "version": "1.9.2-2ubuntu0.20.04.1",
+    "arch": "amd64",
+    "source": "lz4",
+    "sourceVersion": "1.9.2-2ubuntu0.20.04.1"
+  },
+  {
+    "name": "liblzma5",
+    "version": "5.2.4-1ubuntu1",
+    "arch": "amd64",
+    "source": "xz-utils",
+    "sourceVersion": "5.2.4-1ubuntu1"
+  },
+  {
+    "name": "libmount1",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "libncurses6",
+    "version": "6.2-0ubuntu2",
+    "arch": "amd64",
+    "source": "ncurses",
+    "sourceVersion": "6.2-0ubuntu2"
+  },
+  {
+    "name": "libncursesw6",
+    "version": "6.2-0ubuntu2",
+    "arch": "amd64",
+    "source": "ncurses",
+    "sourceVersion": "6.2-0ubuntu2"
+  },
+  {
+    "name": "libnettle7",
+    "version": "3.5.1+really3.5.1-2ubuntu0.1",
+    "arch": "amd64",
+    "source": "nettle",
+    "sourceVersion": "3.5.1+really3.5.1-2ubuntu0.1"
+  },
+  {
+    "name": "libnghttp2-14",
+    "version": "1.40.0-1build1",
+    "arch": "amd64",
+    "source": "nghttp2",
+    "sourceVersion": "1.40.0-1build1"
+  },
+  {
+    "name": "libp11-kit0",
+    "version": "0.23.20-1ubuntu0.1",
+    "arch": "amd64",
+    "source": "p11-kit",
+    "sourceVersion": "0.23.20-1ubuntu0.1"
+  },
+  {
+    "name": "libpam-modules",
+    "version": "1.3.1-5ubuntu4.2",
+    "arch": "amd64",
+    "source": "pam",
+    "sourceVersion": "1.3.1-5ubuntu4.2"
+  },
+  {
+    "name": "libpam-modules-bin",
+    "version": "1.3.1-5ubuntu4.2",
+    "arch": "amd64",
+    "source": "pam",
+    "sourceVersion": "1.3.1-5ubuntu4.2"
+  },
+  {
+    "name": "libpam-runtime",
+    "version": "1.3.1-5ubuntu4.2",
+    "arch": "all",
+    "source": "pam",
+    "sourceVersion": "1.3.1-5ubuntu4.2"
+  },
+  {
+    "name": "libpam0g",
+    "version": "1.3.1-5ubuntu4.2",
+    "arch": "amd64",
+    "source": "pam",
+    "sourceVersion": "1.3.1-5ubuntu4.2"
+  },
+  {
+    "name": "libpcre2-8-0",
+    "version": "10.34-7",
+    "arch": "amd64",
+    "source": "pcre2",
+    "sourceVersion": "10.34-7"
+  },
+  {
+    "name": "libpcre3",
+    "version": "2:8.39-12build1",
+    "arch": "amd64",
+    "source": "pcre3",
+    "sourceVersion": "2:8.39-12build1"
+  },
+  {
+    "name": "libpng16-16",
+    "version": "1.6.37-2",
+    "arch": "amd64",
+    "source": "libpng1.6",
+    "sourceVersion": "1.6.37-2"
+  },
+  {
+    "name": "libprocps8",
+    "version": "2:3.3.16-1ubuntu2.1",
+    "arch": "amd64",
+    "source": "procps",
+    "sourceVersion": "2:3.3.16-1ubuntu2.1"
+  },
+  {
+    "name": "libpsl5",
+    "version": "0.21.0-1ubuntu1",
+    "arch": "amd64",
+    "source": "libpsl",
+    "sourceVersion": "0.21.0-1ubuntu1"
+  },
+  {
+    "name": "libroken18-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "librtmp1",
+    "version": "2.4+20151223.gitfa8646d.1-2build1",
+    "arch": "amd64",
+    "source": "rtmpdump",
+    "sourceVersion": "2.4+20151223.gitfa8646d.1-2build1"
+  },
+  {
+    "name": "libsasl2-2",
+    "version": "2.1.27+dfsg-2",
+    "arch": "amd64",
+    "source": "cyrus-sasl2",
+    "sourceVersion": "2.1.27+dfsg-2"
+  },
+  {
+    "name": "libsasl2-modules-db",
+    "version": "2.1.27+dfsg-2",
+    "arch": "amd64",
+    "source": "cyrus-sasl2",
+    "sourceVersion": "2.1.27+dfsg-2"
+  },
+  {
+    "name": "libseccomp2",
+    "version": "2.5.1-1ubuntu1~20.04.1",
+    "arch": "amd64",
+    "source": "libseccomp",
+    "sourceVersion": "2.5.1-1ubuntu1~20.04.1"
+  },
+  {
+    "name": "libselinux1",
+    "version": "3.0-1build2",
+    "arch": "amd64",
+    "source": "libselinux",
+    "sourceVersion": "3.0-1build2"
+  },
+  {
+    "name": "libsemanage-common",
+    "version": "3.0-1build2",
+    "arch": "all",
+    "source": "libsemanage",
+    "sourceVersion": "3.0-1build2"
+  },
+  {
+    "name": "libsemanage1",
+    "version": "3.0-1build2",
+    "arch": "amd64",
+    "source": "libsemanage",
+    "sourceVersion": "3.0-1build2"
+  },
+  {
+    "name": "libsepol1",
+    "version": "3.0-1",
+    "arch": "amd64",
+    "source": "libsepol",
+    "sourceVersion": "3.0-1"
+  },
+  {
+    "name": "libsmartcols1",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "libsqlite3-0",
+    "version": "3.31.1-4ubuntu0.2",
+    "arch": "amd64",
+    "source": "sqlite3",
+    "sourceVersion": "3.31.1-4ubuntu0.2"
+  },
+  {
+    "name": "libss2",
+    "version": "1.45.5-2ubuntu1",
+    "arch": "amd64",
+    "source": "e2fsprogs",
+    "sourceVersion": "1.45.5-2ubuntu1"
+  },
+  {
+    "name": "libssh-4",
+    "version": "0.9.3-2ubuntu2.1",
+    "arch": "amd64",
+    "source": "libssh",
+    "sourceVersion": "0.9.3-2ubuntu2.1"
+  },
+  {
+    "name": "libssl1.1",
+    "version": "1.1.1f-1ubuntu2.4",
+    "arch": "amd64",
+    "source": "openssl",
+    "sourceVersion": "1.1.1f-1ubuntu2.4"
+  },
+  {
+    "name": "libstdc++6",
+    "version": "10.3.0-1ubuntu1~20.04",
+    "arch": "amd64",
+    "source": "gcc-10",
+    "sourceVersion": "10.3.0-1ubuntu1~20.04"
+  },
+  {
+    "name": "libsystemd0",
+    "version": "245.4-4ubuntu3.6",
+    "arch": "amd64",
+    "source": "systemd",
+    "sourceVersion": "245.4-4ubuntu3.6"
+  },
+  {
+    "name": "libtasn1-6",
+    "version": "4.16.0-2",
+    "arch": "amd64",
+    "source": "libtasn1-6",
+    "sourceVersion": "4.16.0-2"
+  },
+  {
+    "name": "libtinfo6",
+    "version": "6.2-0ubuntu2",
+    "arch": "amd64",
+    "source": "ncurses",
+    "sourceVersion": "6.2-0ubuntu2"
+  },
+  {
+    "name": "libudev1",
+    "version": "245.4-4ubuntu3.6",
+    "arch": "amd64",
+    "source": "systemd",
+    "sourceVersion": "245.4-4ubuntu3.6"
+  },
+  {
+    "name": "libunistring2",
+    "version": "0.9.10-2",
+    "arch": "amd64",
+    "source": "libunistring",
+    "sourceVersion": "0.9.10-2"
+  },
+  {
+    "name": "libuuid1",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "libwind0-heimdal",
+    "version": "7.7.0+dfsg-1ubuntu1",
+    "arch": "amd64",
+    "source": "heimdal",
+    "sourceVersion": "7.7.0+dfsg-1ubuntu1"
+  },
+  {
+    "name": "libzstd1",
+    "version": "1.4.4+dfsg-3ubuntu0.1",
+    "arch": "amd64",
+    "source": "libzstd",
+    "sourceVersion": "1.4.4+dfsg-3ubuntu0.1"
+  },
+  {
+    "name": "locales",
+    "version": "2.31-0ubuntu9.2",
+    "arch": "all",
+    "source": "glibc",
+    "sourceVersion": "2.31-0ubuntu9.2"
+  },
+  {
+    "name": "login",
+    "version": "1:4.8.1-1ubuntu5.20.04",
+    "arch": "amd64",
+    "source": "shadow",
+    "sourceVersion": "1:4.8.1-1ubuntu5.20.04"
+  },
+  {
+    "name": "logsave",
+    "version": "1.45.5-2ubuntu1",
+    "arch": "amd64",
+    "source": "e2fsprogs",
+    "sourceVersion": "1.45.5-2ubuntu1"
+  },
+  {
+    "name": "lsb-base",
+    "version": "11.1.0ubuntu2",
+    "arch": "all",
+    "source": "lsb",
+    "sourceVersion": "11.1.0ubuntu2"
+  },
+  {
+    "name": "mawk",
+    "version": "1.3.4.20200120-2",
+    "arch": "amd64",
+    "source": "mawk",
+    "sourceVersion": "1.3.4.20200120-2"
+  },
+  {
+    "name": "mount",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "ncurses-base",
+    "version": "6.2-0ubuntu2",
+    "arch": "all",
+    "source": "ncurses",
+    "sourceVersion": "6.2-0ubuntu2"
+  },
+  {
+    "name": "ncurses-bin",
+    "version": "6.2-0ubuntu2",
+    "arch": "amd64",
+    "source": "ncurses",
+    "sourceVersion": "6.2-0ubuntu2"
+  },
+  {
+    "name": "openssl",
+    "version": "1.1.1f-1ubuntu2.4",
+    "arch": "amd64",
+    "source": "openssl",
+    "sourceVersion": "1.1.1f-1ubuntu2.4"
+  },
+  {
+    "name": "passwd",
+    "version": "1:4.8.1-1ubuntu5.20.04",
+    "arch": "amd64",
+    "source": "shadow",
+    "sourceVersion": "1:4.8.1-1ubuntu5.20.04"
+  },
+  {
+    "name": "perl-base",
+    "version": "5.30.0-9ubuntu0.2",
+    "arch": "amd64",
+    "source": "perl",
+    "sourceVersion": "5.30.0-9ubuntu0.2"
+  },
+  {
+    "name": "procps",
+    "version": "2:3.3.16-1ubuntu2.1",
+    "arch": "amd64",
+    "source": "procps",
+    "sourceVersion": "2:3.3.16-1ubuntu2.1"
+  },
+  {
+    "name": "sed",
+    "version": "4.7-1",
+    "arch": "amd64",
+    "source": "sed",
+    "sourceVersion": "4.7-1"
+  },
+  {
+    "name": "sensible-utils",
+    "version": "0.0.12+nmu1",
+    "arch": "all",
+    "source": "sensible-utils",
+    "sourceVersion": "0.0.12+nmu1"
+  },
+  {
+    "name": "sysvinit-utils",
+    "version": "2.96-2.1ubuntu1",
+    "arch": "amd64",
+    "source": "sysvinit",
+    "sourceVersion": "2.96-2.1ubuntu1"
+  },
+  {
+    "name": "tar",
+    "version": "1.30+dfsg-7ubuntu0.20.04.1",
+    "arch": "amd64",
+    "source": "tar",
+    "sourceVersion": "1.30+dfsg-7ubuntu0.20.04.1"
+  },
+  {
+    "name": "tzdata",
+    "version": "2021a-0ubuntu0.20.04",
+    "arch": "all",
+    "source": "tzdata",
+    "sourceVersion": "2021a-0ubuntu0.20.04"
+  },
+  {
+    "name": "ubuntu-keyring",
+    "version": "2020.02.11.4",
+    "arch": "all",
+    "source": "ubuntu-keyring",
+    "sourceVersion": "2020.02.11.4"
+  },
+  {
+    "name": "ucf",
+    "version": "3.0038+nmu1",
+    "arch": "all",
+    "source": "ucf",
+    "sourceVersion": "3.0038+nmu1"
+  },
+  {
+    "name": "util-linux",
+    "version": "2.34-0.1ubuntu9.1",
+    "arch": "amd64",
+    "source": "util-linux",
+    "sourceVersion": "2.34-0.1ubuntu9.1"
+  },
+  {
+    "name": "zlib1g",
+    "version": "1:1.2.11.dfsg-2ubuntu1.2",
+    "arch": "amd64",
+    "source": "zlib",
+    "sourceVersion": "1:1.2.11.dfsg-2ubuntu1.2"
+  }
+]
