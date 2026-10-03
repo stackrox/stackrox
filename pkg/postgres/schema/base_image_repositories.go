@@ -3,9 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,7 +21,19 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageRepository)(nil)), "base_image_repositories")
+		schema = &walker.Schema{
+			Table:    "base_image_repositories",
+			Type:     "*storage.BaseImageRepository",
+			TypeName: "BaseImageRepository",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "RepositoryPath", ProtoBufName: "repository_path", ColumnName: "RepositoryPath", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRepositoryPath()", false), Options: walker.PostgresOptions{Unique: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "CreatedBy_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCreatedBy().GetId()", false), Search: walker.SearchField{FieldName: "User ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "CreatedBy_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCreatedBy().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageRepositoriesStmt)
 		return schema

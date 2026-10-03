@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -36,7 +36,28 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
+		schema = &walker.Schema{
+			Table:    "listening_endpoints",
+			Type:     "*storage.ProcessListeningOnPortStorage",
+			TypeName: "ProcessListeningOnPortStorage",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Port", ProtoBufName: "port", ColumnName: "Port", Type: "uint32", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "uint32", ObjectGetter: walker.MakeObjectGetter("GetPort()", false), Search: walker.SearchField{FieldName: "Port", Enabled: true}},
+			{Schema: schema, Name: "Protocol", ProtoBufName: "protocol", ColumnName: "Protocol", Type: "storage.L4Protocol", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.L4Protocol", ObjectGetter: walker.MakeObjectGetter("GetProtocol()", false), Search: walker.SearchField{FieldName: "Port Protocol", Enabled: true}},
+			{Schema: schema, Name: "CloseTimestamp", ProtoBufName: "close_timestamp", ColumnName: "CloseTimestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCloseTimestamp()", false), Search: walker.SearchField{FieldName: "Closed Time", Enabled: true}},
+			{Schema: schema, Name: "ProcessIndicatorId", ProtoBufName: "process_indicator_id", ColumnName: "ProcessIndicatorId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetProcessIndicatorId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Process ID", Enabled: true}},
+			{Schema: schema, Name: "Closed", ProtoBufName: "closed", ColumnName: "Closed", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetClosed()", false), Search: walker.SearchField{FieldName: "Closed", Enabled: true}},
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeploymentId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "PodUid", ProtoBufName: "pod_uid", ColumnName: "PodUid", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPodUid()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Pod UID", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[4].SetReference("ProcessIndicator", "id", true, false, false, false)
+		schema.Fields[6].SetReference("Deployment", "id", true, false, false, false)
+		schema.Fields[7].SetReference("Pod", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
 			"storage.Deployment":       DeploymentsSchema,
@@ -46,7 +67,19 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, "processlisteningonportstorage", (*storage.ProcessListeningOnPortStorage)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, map[search.FieldLabel]*search.Field{
+			"Closed":        {FieldPath: "processlisteningonportstorage.closed", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Closed Time":   {FieldPath: "processlisteningonportstorage.close_timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Cluster ID":    {FieldPath: "processlisteningonportstorage.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Deployment ID": {FieldPath: "processlisteningonportstorage.deployment_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Namespace":     {FieldPath: "processlisteningonportstorage.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Pod UID":       {FieldPath: "processlisteningonportstorage.pod_uid", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Port":          {FieldPath: "processlisteningonportstorage.port", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Port Protocol": {FieldPath: "processlisteningonportstorage.protocol", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+			"Process ID":    {FieldPath: "processlisteningonportstorage.process_indicator_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_LISTENING_ON_PORT},
+		}))
+		enumregistry.AddValues("processlisteningonportstorage.protocol", map[string]int32{"L4_PROTOCOL_ANY": -1, "L4_PROTOCOL_ICMP": 3, "L4_PROTOCOL_RAW": 4, "L4_PROTOCOL_SCTP": 5, "L4_PROTOCOL_TCP": 1, "L4_PROTOCOL_UDP": 2, "L4_PROTOCOL_UNKNOWN": 0})
+
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableListeningEndpointsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)

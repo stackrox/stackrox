@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,8 +28,51 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachine)(nil)), "virtual_machines")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VIRTUAL_MACHINES, "virtualmachine", (*storage.VirtualMachine)(nil)))
+		schema = &walker.Schema{
+			Table:    "virtual_machines",
+			Type:     "*storage.VirtualMachine",
+			TypeName: "VirtualMachine",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Virtual Machine ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Virtual Machine Name", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_VIRTUAL_MACHINES, map[search.FieldLabel]*search.Field{
+			"Cluster":              {FieldPath: "virtualmachine.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES},
+			"Cluster ID":           {FieldPath: "virtualmachine.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINES},
+			"Namespace":            {FieldPath: "virtualmachine.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES},
+			"Virtual Machine ID":   {FieldPath: "virtualmachine.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES},
+			"Virtual Machine Name": {FieldPath: "virtualmachine.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES},
+		}))
+		enumregistry.AddValues("virtualmachine.notes", map[string]int32{"MISSING_METADATA": 0, "MISSING_SCANNER": 4, "MISSING_SCAN_DATA": 1, "MISSING_SIGNATURE": 2, "MISSING_SIGNATURE_VERIFICATION_DATA": 3, "SCAN_FAILED": 5})
+		enumregistry.AddValues("virtualmachine.scan.components.notes", map[string]int32{"UNSCANNED": 1, "UNSPECIFIED": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.source", map[string]int32{"DOTNETCORERUNTIME": 5, "GO": 7, "INFRASTRUCTURE": 6, "JAVA": 2, "NODEJS": 4, "OS": 0, "PYTHON": 1, "RUBY": 3})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.CvssScore.Cvssv3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.cve_base_info.cvss_metrics.source", map[string]int32{"SOURCE_NVD": 3, "SOURCE_OSV": 2, "SOURCE_RED_HAT": 1, "SOURCE_UNKNOWN": 0})
+		enumregistry.AddValues("virtualmachine.scan.components.vulnerabilities.severity", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("virtualmachine.scan.notes", map[string]int32{"OS_UNKNOWN": 1, "OS_UNSUPPORTED": 2, "UNSET": 0})
+		enumregistry.AddValues("virtualmachine.state", map[string]int32{"RUNNING": 2, "STOPPED": 1, "UNKNOWN": 0})
+
 		schema.ScopingResource = resources.VirtualMachine
 		RegisterTable(schema, CreateTableVirtualMachinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINES, schema)

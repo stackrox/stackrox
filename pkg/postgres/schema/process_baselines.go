@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,8 +28,24 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), "process_baselines")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_BASELINES, "processbaseline", (*storage.ProcessBaseline)(nil)))
+		schema = &walker.Schema{
+			Table:    "process_baselines",
+			Type:     "*storage.ProcessBaseline",
+			TypeName: "ProcessBaseline",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "Key_DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey().GetDeploymentId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "Key_ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey().GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Key_Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey().GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_BASELINES, map[search.FieldLabel]*search.Field{
+			"Cluster ID":    {FieldPath: "processbaseline.key.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_BASELINES},
+			"Deployment ID": {FieldPath: "processbaseline.key.deployment_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_BASELINES},
+			"Namespace":     {FieldPath: "processbaseline.key.namespace", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_BASELINES},
+		}))
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableProcessBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, schema)
