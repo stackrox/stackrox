@@ -706,11 +706,22 @@ func rejectNodeReportSnapshot(snapshot *storage.ReportSnapshot) error {
 }
 
 // SnapshotReadContext elevates the request context with WorkflowAdministration
-// read so view-based history RPCs can query the snapshot datastore.
+// read so RPCs authorized by the report's owning resource can query the snapshot datastore.
 func SnapshotReadContext(ctx context.Context) context.Context {
 	return sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+}
+
+// SnapshotWriteContext elevates the request context with WorkflowAdministration
+// write so RPCs authorized by the report's owning resource can update snapshots.
+func SnapshotWriteContext(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration),
 		),
 	)
