@@ -17,7 +17,7 @@ func TestStringSlice(t *testing.T) {
 		"these", "are", "test", "values",
 	}
 
-	s := StringSlice(in...)
+	s := SortedStringSlice(in...)
 
 	assert.Equal(t, []string{"are", "test", "these", "values"}, s)
 }

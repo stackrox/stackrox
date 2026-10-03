@@ -386,6 +386,26 @@ func TestCompatibleVersionsWhenMissingBumpData(t *testing.T) {
 	}
 }
 
+func TestDisplayName(t *testing.T) {
+	tests := map[string]struct {
+		c    Compatibility
+		want string
+	}{
+		"matched":             {Matched, "Matched"},
+		"compatible behind":   {CompatibleBehind, "Compatible (Behind)"},
+		"compatible ahead":    {CompatibleAhead, "Compatible (Ahead)"},
+		"incompatible behind": {IncompatibleBehind, "Incompatible (Behind)"},
+		"incompatible ahead":  {IncompatibleAhead, "Incompatible (Ahead)"},
+		"unknown":             {Unknown, "Unknown"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.c.DisplayName())
+		})
+	}
+}
+
 func overrideTestBumps(t *testing.T) {
 	const testBumpsYAML = `bumps:
   - from: "3.74"

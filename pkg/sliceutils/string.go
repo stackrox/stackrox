@@ -5,14 +5,19 @@ import (
 	"slices"
 )
 
-// StringSlice returns a sorted string slice from the given T.
+// SortedStringSlice returns a sorted string slice from the given T.
+func SortedStringSlice[T fmt.Stringer](in ...T) []string {
+	res := StringSlice[T](in...)
+	slices.Sort(res)
+	return res
+}
+
+// StringSlice returns a string slice from the given T.
 func StringSlice[T fmt.Stringer](in ...T) []string {
 	res := make([]string, 0, len(in))
 	for _, i := range in {
 		res = append(res, i.String())
 	}
-
-	slices.Sort(res)
 	return res
 }
 

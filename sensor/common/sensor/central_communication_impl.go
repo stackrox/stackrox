@@ -162,7 +162,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.InitContainerSupport.Enabled() {
 		capsSet.Add(centralsensor.InitContainerSupport)
 	}
-	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
+	sensorHello.Capabilities = sliceutils.SortedStringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
