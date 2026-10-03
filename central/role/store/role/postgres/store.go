@@ -59,7 +59,10 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
+	// Use of pgSearch.NewGloballyScopedGenericStoreWithCache can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGloballyScopedGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -67,6 +70,7 @@ func New(db postgres.DB) Store {
 		copyFromRoles,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
 		targetResource,
 		nil,
 		nil,
@@ -85,6 +89,10 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
 }
 
 func insertIntoRoles(batch *pgx.Batch, obj *storage.Role) error {
