@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/csv"
+	"strings"
 	"testing"
 	"time"
 
@@ -100,6 +101,38 @@ func TestGenerateCSV_LongConfigNameIsTruncated(t *testing.T) {
 	require.Len(t, reader.File, 1)
 	assert.Contains(t, reader.File[0].Name, "...")
 	assert.LessOrEqual(t, len(reader.File[0].Name), 200)
+}
+
+func TestGenerateCSV_ConfigNameProducesSafeZipEntry(t *testing.T) {
+	tests := map[string]string{
+		"traversal":     "../reports",
+		"backslashes":   `..\reports\report`,
+		"absolute-like": "/tmp/report",
+		"empty":         "",
+		"long":          strings.Repeat("a", 100),
+		"unicode":       "报告-🚀",
+	}
+
+	const prefix = "RHACS_Node_Vulnerability_Report_"
+	for name, configName := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf, err := generateCSV(nil, configName)
+			require.NoError(t, err)
+
+			reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+			require.NoError(t, err)
+			require.Len(t, reader.File, 1)
+
+			entryName := reader.File[0].Name
+			assert.True(t, strings.HasPrefix(entryName, prefix), entryName)
+			assert.True(t, strings.HasSuffix(entryName, ".csv"), entryName)
+			assert.NotContains(t, entryName, "/", entryName)
+			assert.NotContains(t, entryName, `\`, entryName)
+			if name == "long" {
+				assert.Contains(t, entryName, strings.Repeat("a", 80)+"...", entryName)
+			}
+		})
+	}
 }
 
 func TestGenerateCSV_ZipEntryHasModifiedTimestamp(t *testing.T) {
