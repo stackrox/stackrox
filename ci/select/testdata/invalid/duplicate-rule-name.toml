@@ -1,0 +1,10 @@
+version = 1
+jobs = ["unit"]
+[[rules]]
+name = "same"
+when = "always"
+run = ["unit"]
+[[rules]]
+name = "same"
+when = "remaining"
+skip = ["*"]

@@ -1,0 +1,11 @@
+version = 1
+jobs = ["unit"]
+[[rules]]
+name = "odd"
+when = "any-file-matches"
+paths = [1]
+run = ["unit"]
+[[rules]]
+name = "rest"
+when = "remaining"
+skip = ["*"]
