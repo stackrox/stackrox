@@ -23,10 +23,9 @@ import (
 func ReadVersionPostgres(t context.Context, dbName string) (*migrations.MigrationVersion, error) {
 	gc := migGorm.GetConfig()
 
-	ver := migrations.MigrationVersion{MainVersion: "0"}
 	db, err := gc.ConnectWithRetries(dbName)
 	if err != nil {
-		return &ver, nil
+		return nil, errors.Wrap(err, "connecting to read database version")
 	}
 	defer migGorm.Close(db)
 	return ReadVersionGormDB(t, db)
@@ -34,17 +33,43 @@ func ReadVersionPostgres(t context.Context, dbName string) (*migrations.Migratio
 
 // ReadVersionGormDB - reads the version from the postgres database with a gorm instance.
 func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
-	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
-	var modelVersion pkgSchema.Versions
+	var exists bool
+	if err := db.WithContext(ctx).Raw("SELECT to_regclass('versions') IS NOT NULL").Scan(&exists).Error; err != nil {
+		return nil, errors.Wrap(err, "checking version metadata table")
+	}
 	ver := migrations.MigrationVersion{MainVersion: "0"}
-	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
-	if result.Error != nil {
+	var records []pkgSchema.Versions
+	if exists {
+		// SELECT * also reads historical tables containing only serialized metadata.
+		if err := db.WithContext(ctx).Raw("SELECT * FROM versions LIMIT 2").Scan(&records).Error; err != nil {
+			return nil, errors.Wrap(err, "reading version metadata")
+		}
+	}
+	if len(records) == 0 {
+		var populated bool
+		err := db.WithContext(ctx).Raw(`SELECT EXISTS (
+			SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+			WHERE n.nspname = ANY(current_schemas(false))
+			AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+			AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+			AND c.relname <> 'versions'
+			AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass
+				AND d.objid = c.oid AND d.deptype = 'e'))`).Scan(&populated).Error
+		if err != nil {
+			return nil, errors.Wrap(err, "checking for existing application data")
+		}
+		if populated {
+			return nil, errors.New("missing version metadata in a populated database; contact support before repairing the database")
+		}
 		return &ver, nil
 	}
+	if len(records) != 1 {
+		return nil, errors.New("multiple database version records; contact support before repairing the database")
+	}
 
-	protoVersion, err := ConvertVersionToProto(&modelVersion)
+	protoVersion, err := ConvertVersionToProto(&records[0])
 	if err != nil {
-		return &ver, nil
+		return nil, errors.Wrap(err, "decoding version metadata")
 	}
 
 	log.WriteToStderrf("Migration version from DB = %s.", protoVersion)
@@ -53,23 +78,21 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	ver.SeqNum = int(protoVersion.GetSeqNum())
 	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
+	if ver.SeqNum <= 0 || ver.MinimumSeqNum < 0 {
+		return nil, errors.New("invalid database sequence metadata; only a database without a version record can be a fresh installation")
+	}
 	return &ver, nil
 }
 
 // UpdateVersionPostgres - updates the version allowing for outer transaction.
-func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
+func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) error {
 	err := pgutils.Retry(ctx, func() error {
-		_, err := db.Exec(ctx, "DELETE FROM versions")
-		if err != nil {
-			return err
-		}
-
-		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
+		_, err := db.Exec(ctx, "WITH cleared AS (DELETE FROM versions) INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
 			updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
 			protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
 		return err
 	})
-	utils.Must(errors.Wrap(err, "failed to write migration version"))
+	return errors.Wrap(err, "failed to write migration version")
 }
 
 // SetVersionPostgres - sets the version in the named postgres database
@@ -108,12 +131,17 @@ func SetVersion(ctx context.Context, db *gorm.DB, updatedVersion *storage.Versio
 }
 
 // SetCurrentVersion - sets the current version via gormDB database
-func SetCurrentVersion(ctx context.Context, gormDB *gorm.DB) {
+func SetCurrentVersion(ctx context.Context, gormDB *gorm.DB) error {
+	minimum, err := migrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return err
+	}
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
+		MinSeqNum:     int32(minimum),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	SetVersion(ctx, gormDB, newVersion, false)
+	return nil
 }

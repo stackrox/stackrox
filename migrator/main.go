@@ -22,9 +22,24 @@ import (
 func main() {
 	startProfilingServer()
 	if err := run(); err != nil {
-		log.WriteToStderrf("Migrator failed: %+v", err)
+		handleFailure(err, func(message string) error {
+			return os.WriteFile("/dev/termination-log", []byte(message), 0600)
+		}, time.Sleep)
 		os.Exit(1)
 	}
+}
+
+func handleFailure(err error, writeMessage func(string) error, wait func(time.Duration)) {
+	log.WriteToStderrf("Migrator failed: %+v", err)
+	var compatibilityErr *migrations.CompatibilityError
+	if !errors.As(err, &compatibilityErr) {
+		return
+	}
+	if writeErr := writeMessage(compatibilityErr.Error()); writeErr != nil {
+		log.WriteToStderrf("Unable to write migration rejection to /dev/termination-log: %v", writeErr)
+	}
+	log.WriteToStderr("Migration rejected permanently; waiting five minutes before exiting. Central will not start.")
+	wait(5 * time.Minute)
 }
 
 func startProfilingServer() {
@@ -51,6 +66,9 @@ func run() error {
 	if conf.Maintenance.SafeMode {
 		log.WriteToStderr("configuration has safe mode set. Skipping migrator")
 		return nil
+	}
+	if _, err := migrations.MinimumSupportedForVersion(version.GetMainVersion()); err != nil {
+		return errors.Wrap(err, "invalid migration release metadata")
 	}
 
 	rollbackVersion := strings.TrimSpace(conf.Maintenance.ForceRollbackVersion)
