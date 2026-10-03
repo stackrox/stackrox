@@ -1,7 +1,6 @@
 package reportgenerator
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -11,12 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type configDetailsTestCase struct {
-	desc         string
-	snapshot     *storage.ReportSnapshot
-	expectedHTML string
-}
-
 func TestEmailFormatter(t *testing.T) {
 	suite.Run(t, new(EmailFormatterTestSuite))
 }
@@ -25,329 +18,196 @@ type EmailFormatterTestSuite struct {
 	suite.Suite
 }
 
-func (s *EmailFormatterTestSuite) TestFormatReportConfigDetails() {
-	for _, tc := range s.configDetailsTestCases() {
-		s.T().Run(tc.desc, func(t *testing.T) {
-			configHTML, err := formatReportConfigDetails(tc.snapshot, 50, 30)
-			s.Require().NoError(err)
-			expectedHTML := strings.ReplaceAll(tc.expectedHTML, "\n", "")
-			expectedHTML = strings.ReplaceAll(expectedHTML, "\t", "")
-			s.Require().Equal(expectedHTML, configHTML)
-		})
-	}
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_CollectionScope() {
+	snap := fixtures.GetReportSnapshot()
+	reportURL := "https://acs.example.com/main/vulnerabilities/reports/images/configurations/abc123"
+
+	html, err := FormatWorkloadReportEmailBody("Intro text.", snap, 6298, 92, true, reportURL)
+	s.Require().NoError(err)
+
+	// Header, title and subtitle.
+	s.Contains(html, "Workload CVE Report")
+	s.Contains(html, "App Team 1 Report")
+	s.Contains(html, `src="cid:logo.png"`)
+	// Intro passed through.
+	s.Contains(html, "Intro text.")
+	// Stat cards with thousands separators.
+	s.Contains(html, "6,298")
+	s.Contains(html, "92")
+	s.Contains(html, "Deployed images")
+	s.Contains(html, "Watched images")
+	// Severity legend (fixture has all severities).
+	s.Contains(html, "CVE severity")
+	s.Contains(html, "Critical")
+	s.Contains(html, "Important")
+	// Details table.
+	s.Contains(html, "CVE status")
+	s.Contains(html, "Fixable")
+	s.Contains(html, "collection-1")
+	s.Contains(html, "CVEs discovered in image since")
+	s.Contains(html, "All time")
+	// Attachment note and console button.
+	s.Contains(html, "attached as a CSV/ZIP")
+	s.Contains(html, reportURL)
+	s.Contains(html, "View report in console")
+	// Not the no-vulns messaging.
+	s.NotContains(html, "No workload CVEs found")
 }
 
-func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCase {
-	cases := []configDetailsTestCase{
-		{
-			desc: "All severities, image types, fixabilities; Cves since last scheduled report",
-			snapshot: func() *storage.ReportSnapshot {
-				snap := fixtures.GetReportSnapshot()
-				snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-					SinceLastSentScheduledReport: true,
-				}
-				return snap
-			}(),
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>App Team 1 Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>50 in Deployed images, 30 in Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE severity: </span>
-							<span>Critical, Important, Moderate, Low</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE status: </span>
-							<span>Fixable, Not fixable</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: </span>
-							<span>collection-1</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Image type: </span>
-							<span>Deployed images, Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVEs discovered since: </span>
-							<span>Last successful scheduled report</span>
-						</div>
-					</div>`,
-		},
-		{
-			desc:     "All severities, image types, fixabilities; Cves since All time",
-			snapshot: fixtures.GetReportSnapshot(),
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>App Team 1 Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>50 in Deployed images, 30 in Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE severity: </span>
-							<span>Critical, Important, Moderate, Low</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE status: </span>
-							<span>Fixable, Not fixable</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: </span>
-							<span>collection-1</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Image type: </span>
-							<span>Deployed images, Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVEs discovered since: </span>
-							<span>All time</span>
-						</div>
-					</div>`,
-		},
-		{
-			desc: "Critical severity, fixable CVEs, Deployed Images; Cves since custom date",
-			snapshot: func() *storage.ReportSnapshot {
-				snap := fixtures.GetReportSnapshot()
-				snap.GetVulnReportFilters().Severities = []storage.VulnerabilitySeverity{
-					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-				}
-				snap.GetVulnReportFilters().Fixability = storage.VulnerabilityReportFilters_FIXABLE
-				snap.GetVulnReportFilters().ImageTypes = []storage.VulnerabilityReportFilters_ImageType{
-					storage.VulnerabilityReportFilters_DEPLOYED,
-				}
-				dateTs, err := protocompat.ConvertTimeToTimestampOrError(timeutil.MustParse("2006-01-02 15:04:05", "2023-01-20 22:42:02"))
-				s.Require().NoError(err)
-				snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
-					SinceStartDate: dateTs,
-				}
-				return snap
-			}(),
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>App Team 1 Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>50 in Deployed images, 30 in Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE severity: </span>
-							<span>Critical</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVE status: </span>
-							<span>Fixable</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: </span>
-							<span>collection-1</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Image type: </span>
-							<span>Deployed images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVEs discovered since: </span>
-							<span>January 20, 2023</span>
-						</div>
-					</div>`,
-		},
-	}
-	cases = append(cases, s.entityScopeTestCases()...)
-	return cases
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_NoVulns() {
+	snap := fixtures.GetReportSnapshot()
+
+	html, err := FormatWorkloadReportEmailBody("Intro text.", snap, 0, 0, false, "")
+	s.Require().NoError(err)
+
+	s.Contains(html, "No workload CVEs found")
+	s.Contains(html, "No report file is attached")
+	s.NotContains(html, "attached as a CSV/ZIP")
+	// No button when the URL is empty.
+	s.NotContains(html, "View report in console")
 }
 
-func (s *EmailFormatterTestSuite) TestFormatNodeReportConfigDetails() {
-	for _, tc := range s.nodeConfigDetailsTestCases() {
-		s.T().Run(tc.desc, func(t *testing.T) {
-			configHTML, err := FormatNodeReportConfigDetails(tc.snapshot, 25)
-			s.Require().NoError(err)
-			expectedHTML := strings.ReplaceAll(tc.expectedHTML, "\n", "")
-			expectedHTML = strings.ReplaceAll(expectedHTML, "\t", "")
-			s.Require().Equal(expectedHTML, configHTML)
-		})
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_EntityScope() {
+	snap := fixtures.GetReportSnapshot()
+	snap.Collection = nil
+	snap.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_EntityScope{
+			EntityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{{Value: "production"}, {Value: "staging"}},
+					},
+				},
+			},
+		},
 	}
+	snap.GetVulnReportFilters().Query = "CVSS > 7"
+
+	html, err := FormatWorkloadReportEmailBody("Intro text.", snap, 12, 88, true, "")
+	s.Require().NoError(err)
+
+	// Entity scope shows a Filter row (raw query, HTML-escaped) and scope rules,
+	// but no severity legend or CVE status row.
+	s.Contains(html, "Filter")
+	s.Contains(html, "CVSS &gt; 7")
+	s.Contains(html, "Namespace Name: production, staging")
+	s.NotContains(html, "CVE severity")
+	s.NotContains(html, "CVE status")
 }
 
-func (s *EmailFormatterTestSuite) TestFormatNodeReportConfigDetails_NilFilters() {
-	snap := &storage.ReportSnapshot{
-		Name: "Node Report",
-	}
-	_, err := FormatNodeReportConfigDetails(snap, 0)
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_EscapesUserValues() {
+	snap := fixtures.GetReportSnapshot()
+	snap.Name = "<script>alert(1)</script>"
+
+	html, err := FormatWorkloadReportEmailBody("Intro text.", snap, 1, 0, true, "")
+	s.Require().NoError(err)
+
+	s.NotContains(html, "<script>alert(1)</script>")
+	s.Contains(html, "&lt;script&gt;")
+}
+
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_CustomDate() {
+	snap := fixtures.GetReportSnapshot()
+	dateTs, err := protocompat.ConvertTimeToTimestampOrError(timeutil.MustParse("2006-01-02 15:04:05", "2023-01-20 22:42:02"))
+	s.Require().NoError(err)
+	snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{SinceStartDate: dateTs}
+
+	html, err := FormatWorkloadReportEmailBody("Intro text.", snap, 1, 0, true, "")
+	s.Require().NoError(err)
+	s.Contains(html, "January 20, 2023")
+}
+
+func (s *EmailFormatterTestSuite) TestFormatWorkloadReportEmailBody_MissingFilters() {
+	snap := &storage.ReportSnapshot{Name: "Broken"}
+	_, err := FormatWorkloadReportEmailBody("Intro text.", snap, 1, 0, true, "")
 	s.Require().Error(err)
 }
 
-func (s *EmailFormatterTestSuite) nodeConfigDetailsTestCases() []configDetailsTestCase {
-	return []configDetailsTestCase{
-		{
-			desc: "Node report with entity scope and filter query",
-			snapshot: &storage.ReportSnapshot{
-				Name: "Node Team Report",
-				Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
-					NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
-						Query: "CVSS > 7",
-					},
-				},
-				ResourceScope: &storage.ResourceScope{
-					ScopeReference: &storage.ResourceScope_EntityScope{
-						EntityScope: &storage.EntityScope{
-							Rules: []*storage.EntityScopeRule{
-								{
-									Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
-									Field:  storage.EntityField_FIELD_NAME,
-									Values: []*storage.RuleValue{
-										{Value: "prod-us"},
-										{Value: "prod-eu"},
-									},
-								},
-							},
+func (s *EmailFormatterTestSuite) TestFormatNodeReportEmailBody() {
+	snap := &storage.ReportSnapshot{
+		Name: "Node Team Report",
+		Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{Query: "CVSS > 7"},
+		},
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{
+				EntityScope: &storage.EntityScope{
+					Rules: []*storage.EntityScopeRule{
+						{
+							Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+							Field:  storage.EntityField_FIELD_NAME,
+							Values: []*storage.RuleValue{{Value: "prod-us"}, {Value: "prod-eu"}},
 						},
 					},
 				},
 			},
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>Node Team Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>25</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Filter: </span>
-							<span>CVSS > 7</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: </span>
-							<span>Cluster Name: prod-us, prod-eu</span>
-						</div>
-					</div>`,
 		},
-		{
-			desc: "Node report without filter query or entity scope",
-			snapshot: &storage.ReportSnapshot{
-				Name: "Simple Node Report",
-				Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
-					NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{},
-				},
-			},
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>Simple Node Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>25</span>
-						</div>
-					</div>`,
+	}
+
+	html, err := FormatNodeReportEmailBody("Intro text.", snap, 247, true,
+		"https://acs.example.com/main/vulnerabilities/reports/nodes/configurations/abc")
+	s.Require().NoError(err)
+
+	s.Contains(html, "Node CVE Report")
+	s.Contains(html, "Node Team Report")
+	s.Contains(html, `src="cid:logo.png"`)
+	s.Contains(html, "247")
+	s.Contains(html, "Node CVEs found")
+	s.Contains(html, "Filter")
+	s.Contains(html, "CVSS &gt; 7")
+	s.Contains(html, "Cluster Name: prod-us, prod-eu")
+	s.Contains(html, "attached as a CSV/ZIP")
+	// Node reports never render a severity legend.
+	s.NotContains(html, "CVE severity")
+}
+
+func (s *EmailFormatterTestSuite) TestFormatNodeReportEmailBody_NoVulns() {
+	snap := &storage.ReportSnapshot{
+		Name: "Simple Node Report",
+		Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+			NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{},
 		},
+	}
+
+	html, err := FormatNodeReportEmailBody("Intro text.", snap, 0, false, "")
+	s.Require().NoError(err)
+	s.Contains(html, "No node CVEs found")
+	s.Contains(html, "No report file is attached")
+}
+
+func (s *EmailFormatterTestSuite) TestFormatNodeReportEmailBody_NilFilters() {
+	snap := &storage.ReportSnapshot{Name: "Node Report"}
+	_, err := FormatNodeReportEmailBody("Intro text.", snap, 0, false, "")
+	s.Require().Error(err)
+}
+
+func (s *EmailFormatterTestSuite) TestHumanizeInt() {
+	cases := map[string]struct {
+		in  int
+		out string
+	}{
+		"zero":      {0, "0"},
+		"tens":      {92, "92"},
+		"hundreds":  {999, "999"},
+		"thousands": {6298, "6,298"},
+		"millions":  {1234567, "1,234,567"},
+		"exact-1k":  {1000, "1,000"},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.Equal(tc.out, humanizeInt(tc.in))
+		})
 	}
 }
 
-func (s *EmailFormatterTestSuite) entityScopeTestCases() []configDetailsTestCase {
-	return []configDetailsTestCase{
-		{
-			desc: "Entity scope with filter query cvss > 7",
-			snapshot: func() *storage.ReportSnapshot {
-				snap := fixtures.GetReportSnapshot()
-				snap.Collection = nil
-				snap.ResourceScope = &storage.ResourceScope{
-					ScopeReference: &storage.ResourceScope_EntityScope{
-						EntityScope: &storage.EntityScope{
-							Rules: []*storage.EntityScopeRule{
-								{
-									Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
-									Field:  storage.EntityField_FIELD_NAME,
-									Values: []*storage.RuleValue{
-										{Value: "production"},
-										{Value: "staging"},
-									},
-								},
-								{
-									Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
-									Field:  storage.EntityField_FIELD_NAME,
-									Values: []*storage.RuleValue{
-										{Value: "main-cluster"},
-									},
-								},
-							},
-						},
-					},
-				}
-				snap.GetVulnReportFilters().Query = "CVSS > 7"
-				return snap
-			}(),
-			expectedHTML: `<div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Config name: </span>
-							<span>App Team 1 Report</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: </span>
-							<span>50 in Deployed images, 30 in Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Filter: </span>
-							<span>CVSS > 7</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: </span>
-							<span>Namespace Name: production, staging, Cluster Name: main-cluster</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								Image type: </span>
-							<span>Deployed images, Watched images</span>
-						</div>
-						<div style="padding: 0 0 10px 0">
-							<span style="font-weight: bold; margin-right: 10px">
-								CVEs discovered since: </span>
-							<span>All time</span>
-						</div>
-					</div>`,
-		},
-	}
+func (s *EmailFormatterTestSuite) TestBuildReportURL() {
+	s.Equal("https://acs.example.com/main/vulnerabilities/reports/images/configurations/abc",
+		BuildWorkloadReportURL("https://acs.example.com", "abc"))
+	s.Equal("https://acs.example.com/main/vulnerabilities/reports/nodes/configurations/abc",
+		BuildNodeReportURL("https://acs.example.com", "abc"))
+	// Missing endpoint or config ID yields an empty link (button omitted).
+	s.Empty(BuildWorkloadReportURL("", "abc"))
+	s.Empty(BuildWorkloadReportURL("https://acs.example.com", ""))
 }
