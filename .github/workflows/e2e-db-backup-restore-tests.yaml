@@ -39,6 +39,7 @@ jobs:
       ROX_SCANNER_V4: "false"
       STORAGE: pvc
       STORAGE_CLASS: faster
+      SCANNER_V4_DB_STORAGE_CLASS: stackrox-gke-ssd
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
