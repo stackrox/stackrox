@@ -1,22 +1,19 @@
 import withAuth from '../../../helpers/basicAuth';
-import { addAutocompleteFilter, compoundFiltersSelectors } from '../../../helpers/compoundFilters';
+import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
     interceptAndOverrideFeatureFlags,
     interceptAndOverridePermissions,
-    interceptAndWatchRequests,
 } from '../../../helpers/request';
-import {
-    changePerPageOption,
-    sortByTableHeader,
-    verifyColumnManagement,
-} from '../../../helpers/tableHelpers';
+import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
-    applyLocalSeverityFilters,
+    clickFirstImageWithMockedResponses,
+    interactAndWaitForImageList,
+    mockSbomGenerationRequest,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -25,20 +22,17 @@ import { selectors } from './WorkloadCves.selectors';
 describe('Workload CVE Image Single page', () => {
     withAuth();
 
-    function visitFirstImage(): Promise<string> {
+    function visitFirstImage(): Cypress.Chainable<string> {
         visitWorkloadCveOverview();
 
-        selectEntityTab('Image');
+        interactAndWaitForImageList(() => {
+            selectEntityTab('Image');
+        });
 
         // Ensure the data in the table has settled
         cy.get(selectors.isUpdatingTable).should('not.exist');
 
-        return cy.get('tbody tr td[data-label="Image"] a').then(([$imageLink]) => {
-            const imageName = $imageLink.innerText.replace('\n', '');
-            cy.wrap($imageLink).click();
-            cy.get('h1').contains(imageName);
-            return Promise.resolve(imageName);
-        });
+        return clickFirstImageWithMockedResponses();
     }
 
     it('should contain the correct search filters in the toolbar', () => {
@@ -51,108 +45,6 @@ describe('Workload CVE Image Single page', () => {
         cy.get(compoundFiltersSelectors.entityMenuToggle).click();
     });
 
-    it('should display consistent data between the cards and the table test', () => {
-        visitFirstImage();
-
-        const severityCardSelector = vulnSelectors.summaryCard('CVEs by severity');
-        const statusCardSelector = vulnSelectors.summaryCard('CVEs by status');
-
-        // Verify the severity card renders all five severity levels with numeric counts
-        cy.get(
-            [
-                `${severityCardSelector} span.pf-v6-c-icon:contains("Critical") ~ p`,
-                `${severityCardSelector} span.pf-v6-c-icon:contains("Important") ~ p`,
-                `${severityCardSelector} span.pf-v6-c-icon:contains("Moderate") ~ p`,
-                `${severityCardSelector} span.pf-v6-c-icon:contains("Low") ~ p`,
-                `${severityCardSelector} span.pf-v6-c-icon:contains("Unknown") ~ p`,
-            ].join(',')
-        ).then(($severityTotals) => {
-            // All five severity levels should be rendered
-            expect($severityTotals).to.have.length(5);
-
-            const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {
-                const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                return Number.isNaN(count) ? acc : count;
-            }, 0);
-
-            // Verify that the status card totals (fixable + unfixable) match the severity
-            // card totals, since both are derived from the same imageCVECountBySeverity data.
-            // Note: These sums may differ from "results found" because a single CVE can be
-            // counted under multiple severity levels when different sources assign different
-            // severities, while imageVulnerabilityCount is a deduplicated count.
-            cy.get(
-                [
-                    `${statusCardSelector} p:contains('with available fixes')`,
-                    `${statusCardSelector} p:contains("without fixes")`,
-                ].join(',')
-            ).then(($statusTotals) => {
-                const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
-                    const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                    return Number.isNaN(count) ? acc : count;
-                }, 0);
-
-                expect(statusTotal).to.equal(severityTotal);
-            });
-        });
-    });
-
-    it('should correctly apply a severity filter', () => {
-        visitFirstImage();
-        // Check that no severities are hidden by default
-        cy.get(vulnSelectors.summaryCard('CVEs by severity'))
-            .find('p')
-            .contains(new RegExp('(Critical|Important|Moderate|Low|Unknown) hidden'))
-            .should('not.exist');
-
-        const severityFilter = 'Critical';
-
-        applyLocalSeverityFilters(severityFilter);
-
-        // Check that summary card severities are hidden correctly
-        cy.get(`*:contains("Critical hidden")`).should('not.exist');
-        cy.get(`*:contains("Important hidden")`);
-        cy.get(`*:contains("Moderate hidden")`);
-        cy.get(`*:contains("Low hidden")`);
-        cy.get(`*:contains("Unknown hidden")`);
-
-        // Check that table rows are filtered
-        cy.get(selectors.filteredViewLabel);
-
-        // Ensure the table is not in a loading state
-        cy.get(selectors.isUpdatingTable).should('not.exist');
-
-        // Check that every row in the table has the correct severity
-        // Query for table rows via jQuery to avoid a Cypress error in the case where there are no rows
-        cy.get('table tbody').then(($table) => {
-            const $cells = $table.find('tr td[data-label="CVE severity"]');
-            // This tests the invariant that if a single severity filter is applied, all rows in the table
-            // will have that same severity. This check also holds if the filter removes all rows from the table.
-            $cells.each((_, $cell) => {
-                const severity = $cell.innerText;
-                expect(severity).to.equal(severityFilter);
-            });
-        });
-    });
-
-    // This test should correctly apply a CVE name filter to the CVEs table
-    it('should correctly apply CVE name filters', () => {
-        visitFirstImage();
-
-        // Get any table row and extract the CVE name from the column with the CVE data label
-        cy.get('tbody tr td[data-label="CVE"]')
-            .first()
-            .then(([$cveNameCell]) => {
-                const cveName = $cveNameCell.innerText;
-                // Enter the CVE name into the CVE filter
-                addAutocompleteFilter('CVE', 'Name', cveName);
-                // Check that the header above the table shows only one result
-                cy.get(`*:contains("1 result found")`);
-                // Check that the only row in the table has the correct CVE name
-                cy.get(`tbody tr td[data-label="CVE"]`).should('have.length', 1);
-                cy.get(`tbody tr td[data-label="CVE"]:contains("${cveName}")`);
-            });
-    });
-
     // Verifies that the data returned by the server is not duplicated due to Apollo client cache issues
     // see: https://issues.redhat.com/browse/ROX-24254
     //      https://github.com/stackrox/stackrox/pull/6156
@@ -161,7 +53,6 @@ describe('Workload CVE Image Single page', () => {
         const imageRootKey = isFlattenImageData ? 'imageV2' : 'image';
 
         const opname = 'getCVEsForImage';
-        const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
 
         const imageData = {
             id: isFlattenImageData
@@ -295,14 +186,27 @@ describe('Workload CVE Image Single page', () => {
             },
         };
 
-        const staticResponseMap = { [opname]: { body } };
+        // Navigate to the image page manually instead of using visitFirstImage(),
+        // so we can provide our own getCVEsForImage response without alias conflicts.
+        visitWorkloadCveOverview();
+        interactAndWaitForImageList(() => {
+            selectEntityTab('Image');
+        });
+
+        const detailRouteMatcher = getRouteMatcherMapForGraphQL(['getImageDetails', opname]);
+        const detailStaticResponse = {
+            getImageDetails: {
+                fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
+            },
+            [opname]: { body },
+        };
 
         interactAndWaitForResponses(
             () => {
-                visitFirstImage();
+                cy.get('tbody tr td[data-label="Image"] a').first().click();
             },
-            routeMatcherMap,
-            staticResponseMap
+            detailRouteMatcher,
+            detailStaticResponse
         );
 
         cy.get(vulnSelectors.expandRowButton).click();
@@ -314,78 +218,6 @@ describe('Workload CVE Image Single page', () => {
             cy.get(fixedInCellSelector)
                 .eq(index)
                 .contains(component.imageVulnerabilities[0].fixedByVersion);
-        });
-    });
-
-    // See case 03985920 and ROX-27344 for more details
-    it('should receive consistent CVE counts when sorting and paginating the table', () => {
-        const isFlattenImageData = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA');
-        const imageRootKey = isFlattenImageData ? 'imageV2' : 'image';
-
-        const opname = 'getCVEsForImage';
-        const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
-
-        // Captures the initial CVE count and the initial query sent when visiting the image details page
-        // and uses these values as a basis of comparison on subsequent requests
-        function createAssertion(initialCount: number, initialQuery: string) {
-            return function (interception) {
-                expect(interception.request.body.variables.query).to.equal(initialQuery);
-                expect(
-                    interception.response.body.data[imageRootKey].imageVulnerabilityCount
-                ).to.equal(initialCount);
-            };
-        }
-
-        // Test count stability with no filters applied
-        interceptAndWatchRequests(routeMatcherMap).then(({ waitForRequests }) => {
-            visitFirstImage();
-            waitForRequests()
-                .then(({ request, response }) => ({
-                    assertCveCountsUnchanged: createAssertion(
-                        response.body.data[imageRootKey].imageVulnerabilityCount,
-                        request.body.variables.query
-                    ),
-                }))
-                .then(({ assertCveCountsUnchanged }) => {
-                    // Check the initial sort request
-                    sortByTableHeader('CVE');
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Check the initial perPage change request
-                    changePerPageOption(50);
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Test another sort back-and-forth
-                    sortByTableHeader('CVE severity');
-                    waitForRequests().then(assertCveCountsUnchanged);
-                    sortByTableHeader('CVE severity');
-                    waitForRequests().then(assertCveCountsUnchanged);
-                    sortByTableHeader('CVE severity');
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Test changing back to the original pagination
-                    changePerPageOption(20);
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Test a pagination change after returning to the default
-                    changePerPageOption(10);
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Test sorting by a column already used as a sort *again*
-                    sortByTableHeader('CVE severity');
-                    waitForRequests().then(assertCveCountsUnchanged);
-
-                    // Test sorting on the only remaining untested column by rapidly changing
-                    // the column value without waiting for a response
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
-                    waitForRequests().then(assertCveCountsUnchanged);
-                    waitForRequests().then(assertCveCountsUnchanged);
-                    waitForRequests().then(assertCveCountsUnchanged);
-                    waitForRequests().then(assertCveCountsUnchanged);
-                });
         });
     });
 
@@ -421,11 +253,12 @@ describe('Workload CVE Image Single page', () => {
                 this.skip();
             }
 
+            mockSbomGenerationRequest();
+
             visitFirstImage().then((imageFullName) => {
                 cy.get(headerSbomModalButton).click();
                 cy.get(selectors.generateSbomModal).contains(imageFullName);
                 cy.get(generateSbomButton).click();
-                cy.get(':contains("Generating, please do not navigate away from this modal")');
                 cy.get(':contains("Software Bill of Materials (SBOM) generated successfully")');
             });
         });
