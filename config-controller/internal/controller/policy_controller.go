@@ -169,6 +169,38 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	// Enforce uniqueness of spec.policyName across SecurityPolicy CRs. Because the
+	// controller resolves policies by name, two CRs sharing a policyName would both
+	// adopt the same Central policy: the second CR silently overwrites the first and
+	// the "loser" later gets stuck in deletion (ROX-37350). To guarantee a single,
+	// deterministic winner even when CRs are applied concurrently, the oldest CR
+	// keeps the name while any other CR is rejected with a clear condition. The
+	// rejected CR is requeued so it can reclaim the name once the winner goes away.
+	if conflicting, err := r.findConflictingSeniorCR(ctx, policyCR); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to check policyName uniqueness")
+	} else if conflicting != nil {
+		retErr := fmt.Errorf("duplicate policyName %q is already managed by SecurityPolicy %q; policyName must be unique", policyCR.Spec.PolicyName, conflicting.GetName())
+		// Clear any recorded policy ID so a rejected CR can never delete a policy it
+		// does not own; the winning CR is solely responsible for that policy.
+		policyCR.Status.PolicyId = ""
+		policyCR.Status.Conditions.UpdateCondition(configstackroxiov1alpha1.SecurityPolicyCondition{
+			Type:    configstackroxiov1alpha1.PolicyValidated,
+			Status:  "False",
+			Message: retErr.Error(),
+		})
+		policyCR.Status.Conditions.UpdateCondition(configstackroxiov1alpha1.SecurityPolicyCondition{
+			Type:    configstackroxiov1alpha1.AcceptedByCentral,
+			Status:  "False",
+			Message: retErr.Error(),
+		})
+		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "error updating status for securitypolicy %q", policyCR.GetName())
+		}
+		log.Warnf("Rejecting SecurityPolicy %q: %v", policyCR.GetName(), retErr)
+		// Requeue so the CR can reclaim the name once the conflicting CR is removed.
+		return ctrl.Result{RequeueAfter: env.ConfigControllerReconcileInterval.DurationSetting()}, nil
+	}
+
 	if exists && existingPolicy.GetIsDefault() {
 		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
 		policyCR.Status.Conditions.UpdateCondition(configstackroxiov1alpha1.SecurityPolicyCondition{
@@ -273,6 +305,45 @@ func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxi
 		return ctrl.Result{}, errors.Wrap(err, errMsg)
 	}
 	return ctrl.Result{}, nil
+}
+
+// findConflictingSeniorCR returns another SecurityPolicy CR that shares policyCR's
+// spec.policyName and that wins the ownership tie-break (i.e. policyCR must yield to
+// it). It returns nil when policyCR may keep the name. CRs that are themselves being
+// deleted are ignored, since they are relinquishing their name.
+func (r *SecurityPolicyReconciler) findConflictingSeniorCR(ctx context.Context, policyCR *configstackroxiov1alpha1.SecurityPolicy) (*configstackroxiov1alpha1.SecurityPolicy, error) {
+	var list configstackroxiov1alpha1.SecurityPolicyList
+	if err := r.K8sClient.List(ctx, &list); err != nil {
+		return nil, errors.Wrap(err, "failed to list SecurityPolicy resources")
+	}
+	for i := range list.Items {
+		other := &list.Items[i]
+		if other.GetUID() == policyCR.GetUID() {
+			continue
+		}
+		if !other.ObjectMeta.DeletionTimestamp.IsZero() {
+			continue
+		}
+		if other.Spec.PolicyName != policyCR.Spec.PolicyName {
+			continue
+		}
+		if isSeniorTo(other, policyCR) {
+			return other, nil
+		}
+	}
+	return nil, nil
+}
+
+// isSeniorTo reports whether candidate wins a policyName collision over current. The
+// older CR (by creation timestamp) wins; ties are broken deterministically by the
+// lexicographically smaller UID so that exactly one CR is ever the winner.
+func isSeniorTo(candidate, current *configstackroxiov1alpha1.SecurityPolicy) bool {
+	ct := candidate.GetCreationTimestamp()
+	cur := current.GetCreationTimestamp()
+	if !ct.Equal(&cur) {
+		return ct.Before(&cur)
+	}
+	return candidate.GetUID() < current.GetUID()
 }
 
 func getEventFilter() predicate.Funcs {
