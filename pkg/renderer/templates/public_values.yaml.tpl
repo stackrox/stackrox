@@ -146,10 +146,12 @@ scannerV4:
     {{- end }}
 
 {{- $envVars := deepCopy .EnvironmentMap -}}
+{{/* Chart-owned names: the Central chart already writes these, so copying them into customize.envVars would duplicate env entries and kubectl apply cannot patch that. */}}
 {{- $_ := unset $envVars "ROX_OFFLINE_MODE" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_ENDPOINT" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_STORAGE_KEY_V1" -}}
 {{- $_ := unset $envVars "ROX_SCANNER_V4" -}}
+{{- $_ := unset $envVars "ROX_CENTRAL_WORKER_ENABLED" -}}
 {{- if $envVars }}
 
 customize:
