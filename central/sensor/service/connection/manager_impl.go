@@ -16,12 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -77,7 +75,7 @@ type manager struct {
 	complianceOperatorMgr      common.ComplianceOperatorManager
 	initSyncMgr                *initSyncManager
 	autoTriggerUpgrades        *concurrency.Flag
-	rateLimiter                *rate.Limiter
+	rateLimiter                chainedRateLimiter
 	adminEventsStream          events.Stream
 }
 
@@ -87,25 +85,9 @@ func NewManager(mgr hashManager.Manager) Manager {
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
-		rateLimiter:            newVMIndexReportRateLimiter(),
+		rateLimiter:            newSensorEventRateLimiters(),
 		adminEventsStream:      adminEventStream.Singleton(),
 	}
-}
-
-func newVMIndexReportRateLimiter() *rate.Limiter {
-	rl, err := rate.NewLimiter(
-		"vm_index_reports",
-		env.VMIndexReportRateLimit.FloatSetting(),
-		env.VMIndexReportBucketCapacity.IntegerSetting()).
-		ForWorkload(func(msg *central.MsgFromSensor) bool {
-			return msg.GetEvent().GetVirtualMachineIndexReport() != nil
-		})
-
-	if err != nil {
-		utils.Should(errors.Wrap(err, "Creating rate-limiter for VM index reports"))
-	}
-
-	return rl
 }
 
 func (m *manager) initializeUpgradeControllers() error {

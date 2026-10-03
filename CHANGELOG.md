@@ -26,6 +26,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
 
+- Central rate-limits Scanner V4 node index reports (default 0.2 requests per second, burst 50) to bound matcher load. Tune with `ROX_NODE_INDEX_REPORT_RATE_LIMIT` and `ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY`; set the rate to 0 to disable.
+
 ## [5.0.0]
 
 
