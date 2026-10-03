@@ -20,4 +20,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_populate_deployment_containers_imageidv2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_drop_unused_child_idx_indexes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type"
+	_ "github.com/stackrox/rox/migrator/migrations/m_227_to_m_228_harden_secret_env_var_policy"
 )
