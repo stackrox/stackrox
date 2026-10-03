@@ -625,6 +625,7 @@ shell-unit-tests:
 	$(SILENT)mkdir -p shell-test-output
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
 		scripts \
+		scanner/image/db/scripts \
 		tests/e2e/bats
 
 .PHONY: ui-build
