@@ -26,6 +26,10 @@ type DataStore interface {
 	CountEvents(ctx context.Context, query *v1.Query) (int, error)
 	GetEvent(ctx context.Context, id string) (*storage.AdministrationEvent, error)
 	ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error)
+	// DeleteEventsForResource deletes events associated with the given resource ID,
+	// including events still held in the write buffer. An empty resourceID is a no-op
+	// and returns nil without deleting anything.
+	DeleteEventsForResource(ctx context.Context, resourceID string) error
 }
 
 func newDataStore(storage store.Store, writer writer.Writer) DataStore {

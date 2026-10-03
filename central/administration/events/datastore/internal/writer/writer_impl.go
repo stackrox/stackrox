@@ -122,6 +122,19 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	return c.flushNoLock(ctx)
 }
 
+func (c *writerImpl) DropForResource(resourceID string) {
+	if resourceID == "" {
+		return
+	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	for id, event := range c.buffer {
+		if event.GetResource().GetId() == resourceID {
+			delete(c.buffer, id)
+		}
+	}
+}
+
 // Modifies `updated` with the values of the base event and returns the merged event.
 func mergeEvents(updated *storage.AdministrationEvent, base *storage.AdministrationEvent) *storage.AdministrationEvent {
 	if base == nil {
