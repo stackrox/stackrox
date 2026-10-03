@@ -168,19 +168,19 @@ require (
 	gorm.io/driver/postgres v1.6.2
 	gorm.io/gorm v1.31.2
 	helm.sh/helm/v3 v3.21.3
-	k8s.io/api v0.36.5
-	k8s.io/apiextensions-apiserver v0.36.5
-	k8s.io/apimachinery v0.36.5
-	k8s.io/apiserver v0.36.5
-	k8s.io/cli-runtime v0.36.5
-	k8s.io/client-go v0.36.5
-	k8s.io/kubectl v0.36.5
-	k8s.io/kubelet v0.32.13
-	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
+	k8s.io/api v0.37.0
+	k8s.io/apiextensions-apiserver v0.37.0
+	k8s.io/apimachinery v0.37.0
+	k8s.io/apiserver v0.37.0
+	k8s.io/cli-runtime v0.37.0
+	k8s.io/client-go v0.37.0
+	k8s.io/kubectl v0.37.0
+	k8s.io/kubelet v0.37.0
+	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	kubevirt.io/api v1.9.0
 	kubevirt.io/client-go v1.10.0-alpha.0
 	sigs.k8s.io/controller-runtime v0.24.1
-	sigs.k8s.io/controller-tools v0.21.0
+	sigs.k8s.io/controller-tools v0.22.0
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -438,7 +438,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/zmap/zcrypto v0.0.0-20250129210703-03c45d0bae98 // indirect
 	github.com/zmap/zlint/v3 v3.6.6 // indirect
-	go.etcd.io/bbolt v1.4.3 // indirect
+	go.etcd.io/bbolt v1.5.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.44.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.71.0 // indirect
@@ -461,13 +461,13 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/code-generator v0.36.5 // indirect
-	k8s.io/component-base v0.36.5 // indirect
-	k8s.io/component-helpers v0.36.5 // indirect
-	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
+	k8s.io/code-generator v0.37.0 // indirect
+	k8s.io/component-base v0.37.0 // indirect
+	k8s.io/component-helpers v0.37.0 // indirect
+	k8s.io/gengo/v2 v2.0.0-20260408192533-25e2208e0dc3 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.31.0 // indirect
-	k8s.io/streaming v0.36.5 // indirect
+	k8s.io/streaming v0.37.0 // indirect
 	kubevirt.io/containerized-data-importer-api v1.64.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	modernc.org/libc v1.75.6 // indirect
@@ -475,13 +475,13 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 	modernc.org/sqlite v1.58.0 // indirect
 	oras.land/oras-go/v2 v2.6.2 // indirect
-	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.34.0 // indirect
+	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.36.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.21.1 // indirect
 	sigs.k8s.io/network-policy-api v0.1.5 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.4.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
 )
 
 // HOW TO BUMP
