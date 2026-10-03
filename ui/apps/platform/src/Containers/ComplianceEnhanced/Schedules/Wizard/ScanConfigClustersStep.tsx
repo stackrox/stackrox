@@ -7,7 +7,6 @@ import {
     Alert,
     Bullseye,
     Button,
-    Divider,
     Flex,
     FlexItem,
     Form,
@@ -27,7 +26,7 @@ import type { ComplianceIntegration } from 'services/ComplianceIntegrationServic
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import ComplianceClusterStatus from '../components/ComplianceClusterStatus';
 
-export type ClusterSelectionProps = {
+export type ScanConfigClustersStepProps = {
     alertRef: RefObject<HTMLDivElement>;
     clusters: ComplianceIntegration[];
     isFetchingClusters: boolean;
@@ -41,11 +40,11 @@ function InstallClustersButton() {
     );
 }
 
-function ClusterSelection({
+function ScanConfigClustersStep({
     alertRef,
     clusters,
     isFetchingClusters,
-}: ClusterSelectionProps): ReactElement {
+}: ScanConfigClustersStepProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForClusters = isRouteEnabled('clusters');
     const {
@@ -151,55 +150,49 @@ function ClusterSelection({
     }
 
     return (
-        <>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
-                    <FlexItem>
-                        <Title headingLevel="h2">Clusters</Title>
-                    </FlexItem>
-                    <FlexItem>Select clusters to be included in the scan</FlexItem>
-                </Flex>
-            </PageSection>
-            <Divider component="div" />
-            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
-                <Alert
-                    title="At least one cluster must be in a Healthy state to proceed with the schedule."
-                    variant="info"
-                    component="p"
-                    isInline
-                >
-                    <p>
-                        Tip: The most common reason a cluster is marked Unhealthy is that the
-                        Compliance Operator is either not installed or is below version 1.6.
-                    </p>
-                </Alert>
-                {formikTouched.clusters && formikValues.clusters.length === 0 && (
+        <PageSection>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                <Title headingLevel="h2">Clusters</Title>
+                <Form ref={alertRef}>
                     <Alert
-                        title="At least one cluster is required to proceed"
+                        title="At least one cluster must be in a Healthy state to proceed with the schedule."
+                        variant="info"
                         component="p"
-                        variant="danger"
                         isInline
-                    />
-                )}
-                <Table>
-                    <Thead noWrap>
-                        <Tr>
-                            <Th
-                                select={{
-                                    onSelect: handleSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
-                            <Th>Name</Th>
-                            <Th>Operator status</Th>
-                            <Th>Operator version</Th>
-                        </Tr>
-                    </Thead>
-                    <Tbody>{renderTableBodyContent()}</Tbody>
-                </Table>
-            </Form>
-        </>
+                    >
+                        <p>
+                            Tip: The most common reason a cluster is marked Unhealthy is that the
+                            Compliance Operator is either not installed or is below version 1.6.
+                        </p>
+                    </Alert>
+                    {formikTouched.clusters && formikValues.clusters.length === 0 && (
+                        <Alert
+                            title="At least one cluster is required to proceed"
+                            component="p"
+                            variant="danger"
+                            isInline
+                        />
+                    )}
+                    <Table>
+                        <Thead noWrap>
+                            <Tr>
+                                <Th
+                                    select={{
+                                        onSelect: handleSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                                <Th>Name</Th>
+                                <Th>Operator status</Th>
+                                <Th>Operator version</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>{renderTableBodyContent()}</Tbody>
+                    </Table>
+                </Form>
+            </Flex>
+        </PageSection>
     );
 }
 
-export default ClusterSelection;
+export default ScanConfigClustersStep;

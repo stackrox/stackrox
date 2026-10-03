@@ -1,6 +1,6 @@
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
-import { Alert, Divider, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
+import { Alert, Flex, PageSection, Title } from '@patternfly/react-core';
 
 import type { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
@@ -13,12 +13,12 @@ import ScanConfigProfilesView from '../components/ScanConfigProfilesView';
 
 const headingLevel = 'h3';
 
-export type ReviewConfigProps = {
+export type ScanConfigReviewStepProps = {
     clusters: ComplianceIntegration[];
     errorMessage: string;
 };
 
-function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
+function ScanConfigReviewStep({ clusters, errorMessage }: ScanConfigReviewStepProps) {
     const { values: formikValues }: FormikContextType<ScanConfigFormValues> = useFormikContext();
 
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
@@ -32,31 +32,19 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
     const selectedClusters = findById(formikValues.clusters, clusters, 'clusterId');
 
     return (
-        <>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
-                    <FlexItem>
-                        <Title headingLevel="h2">Review</Title>
-                    </FlexItem>
-                    <FlexItem>Review the scan schedule before you save changes</FlexItem>
-                    {errorMessage && (
-                        <Alert
-                            title={'Scan configuration request failure'}
-                            component="p"
-                            variant="danger"
-                            isInline
-                        >
-                            {errorMessage}
-                        </Alert>
-                    )}
-                </Flex>
-            </PageSection>
-            <Divider component="div" />
-            <Flex
-                direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsMd' }}
-                className="pf-v6-u-pt-lg pf-v6-u-px-lg"
-            >
+        <PageSection>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                <Title headingLevel="h2">Review</Title>
+                {errorMessage && (
+                    <Alert
+                        title={'Scan configuration request failure'}
+                        component="p"
+                        variant="danger"
+                        isInline
+                    >
+                        {errorMessage}
+                    </Alert>
+                )}
                 <ScanConfigParametersView
                     headingLevel={headingLevel}
                     scanName={formikValues.parameters.name}
@@ -83,8 +71,8 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     not run until scheduled time when you save changes to an existing scan schedule.
                 </Alert>
             </Flex>
-        </>
+        </PageSection>
     );
 }
 
-export default ReviewConfig;
+export default ScanConfigReviewStep;
