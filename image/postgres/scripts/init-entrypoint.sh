@@ -2,6 +2,9 @@
 
 set -Eeo pipefail
 
+# shellcheck source=backup-cleanup.sh
+source "$(dirname "${BASH_SOURCE[0]}")/backup-cleanup.sh"
+
 # Return the list of possible backup locations based on the mounted volumes.
 # The result is either two locations, if the backup volume is mounted, or only
 # one otherwise.
@@ -13,7 +16,7 @@ get_backup_locations () {
 
     local -n locations=$1
 
-    if $(df | grep "${BACKUP_VOLUME_MOUNT}"); then
+    if df | grep -q "${BACKUP_VOLUME_MOUNT}"; then
         locations+=("${BACKUP_VOLUME_MOUNT}");
     fi
 
@@ -67,6 +70,7 @@ else
 
     PG_DATA_VERSION=$(cat "${PGDATA}/PG_VERSION")
 
+    backup_locations=()
     get_backup_locations backup_locations
 
     if [[ -v FORCE_CLEANUP && "${FORCE_CLEANUP}" == "true" ]]; then
@@ -83,7 +87,7 @@ else
         # since we could be asked to restore a backup after an upgrade.
         # $POSTGRESQL_PREV_VERSION is an env variable set by the
         # postgresql-container image itself.
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
             echo "Removing ${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
             rm -rf "${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
@@ -97,7 +101,7 @@ else
         # since we could be asked to restore a backup after an upgrade.
         # $POSTGRESQL_PREV_VERSION is an env variable set by the
         # postgresql-container image itself.
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
             BACKUP_DIR="${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
 
@@ -141,17 +145,25 @@ else
             exit 1
         fi
 
+        # Remove backups from prior major version upgrades. They are
+        # unrestorable because the old binaries are no longer shipped in
+        # this image, and they consume PVC space that the current upgrade
+        # needs for its own backup + verification copy.
+        cleanup_stale_upgrade_backups \
+            "${PG_DATA_VERSION}-${PG_BINARY_VERSION}" \
+            "${backup_locations[@]}"
+
         # This is the amount of disk space we currently consume. Normally we
         # could use df as well, since the data will be the only disk space
         # consumer, but in testing environment it might not be the case.
         PG_DATA_USED=$(du -s "${PGDATA}" | awk '{print $1}')
 
         echo "Verifying backup locations ${backup_locations[*]}"
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
-            # The backup volume needs to accomodate two copies of data, one is the
+            # The backup volume needs to accommodate two copies of data, one is the
             # actual backup, and one is a restored copy, which will be deleted later.
-            echo "${location}: Checking avaibale disk space..."
+            echo "${location}: Checking available disk space..."
             if check_available_space "${location}" $((PG_DATA_USED * 2)); then
                 echo "Location has enough space."
                 PG_BACKUP_VOLUME="${location}"
@@ -260,4 +272,16 @@ else
         rm -rf "${PGDATA}"
         mv "${PGDATA_NEW}" "${PGDATA}"
     fi
+fi
+
+# Remove upgrade backups older than the configured retention period.
+# Default is 30 days; set PG_BACKUP_RETENTION_DAYS=0 to keep backups
+# indefinitely.
+PG_BACKUP_RETENTION_DAYS="${PG_BACKUP_RETENTION_DAYS:-30}"
+if [ "${PG_BACKUP_RETENTION_DAYS}" -gt 0 ] 2>/dev/null; then
+    retention_locations=()
+    get_backup_locations retention_locations
+    cleanup_expired_upgrade_backups \
+        "${PG_BACKUP_RETENTION_DAYS}" \
+        "${retention_locations[@]}"
 fi
