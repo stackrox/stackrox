@@ -1575,3 +1575,20 @@ func getNodeAlerts() []*storage.Alert {
 	}
 	return alerts
 }
+
+func TestFindAlertForAPIResources(t *testing.T) {
+	customAlert := func(apiResource string) *storage.Alert {
+		alert := getResourceAlerts()[0].CloneVT()
+		alert.GetResource().ResourceType = storage.Alert_Resource_CUSTOM
+		alert.GetResource().ApiResource = apiResource
+		return alert
+	}
+	argoApp := customAlert("applications.argoproj.io")
+	otherApp := customAlert("applications.app.k8s.io")
+
+	assert.Nil(t, findMatchingAlert(alertAdapter{otherApp}, []*storage.Alert{argoApp}),
+		"same name and type but a different API resource must not match")
+	protoassert.Equal(t, argoApp, findMatchingAlert(alertAdapter{customAlert("applications.argoproj.io")}, []*storage.Alert{otherApp, argoApp}))
+	assert.Nil(t, findMatchingAlert(alertAdapter{argoApp}, []*storage.Alert{getResourceAlerts()[0]}),
+		"custom resource alert must not match a built-in resource alert")
+}

@@ -200,6 +200,7 @@ type AlertMatcher interface {
 	HasResource() bool
 	GetResourceType() storage.Alert_Resource_ResourceType
 	GetResourceName() string
+	GetResourceAPIResource() string
 	HasNode() bool
 	GetNodeId() string
 	GetNodeName() string
@@ -212,18 +213,19 @@ type AlertMatcher interface {
 // alerts and determine resolution/inactive status. Avoids TOAST I/O by
 // reading only inline columns.
 type AlertMatchKey struct {
-	ID                 string  `db:"alert_id"`
-	PolicyID           string  `db:"policy_id"`
-	State              int     `db:"violation_state"`
-	LifecycleStage     int     `db:"lifecycle_stage"`
-	DeploymentID       *string `db:"deployment_id"`
-	DeploymentInactive *bool   `db:"inactive_deployment"`
-	ResourceType       *int    `db:"resource_type"`
-	ResourceName       *string `db:"resource"`
-	ClusterID          *string `db:"cluster_id"`
-	Namespace          *string `db:"namespace"`
-	NodeID             *string `db:"node_id"`
-	NodeName           *string `db:"node"`
+	ID                  string  `db:"alert_id"`
+	PolicyID            string  `db:"policy_id"`
+	State               int     `db:"violation_state"`
+	LifecycleStage      int     `db:"lifecycle_stage"`
+	DeploymentID        *string `db:"deployment_id"`
+	DeploymentInactive  *bool   `db:"inactive_deployment"`
+	ResourceType        *int    `db:"resource_type"`
+	ResourceName        *string `db:"resource"`
+	ResourceAPIResource *string `db:"resource_api_resource"`
+	ClusterID           *string `db:"cluster_id"`
+	Namespace           *string `db:"namespace"`
+	NodeID              *string `db:"node_id"`
+	NodeName            *string `db:"node"`
 }
 
 func (k *AlertMatchKey) GetId() string                    { return k.ID }
@@ -260,6 +262,14 @@ func (k *AlertMatchKey) GetResourceName() string {
 	}
 	return *k.ResourceName
 }
+
+// GetResourceAPIResource returns the "<plural>[.<group>]" API resource name, or empty if unset.
+func (k *AlertMatchKey) GetResourceAPIResource() string {
+	if k.ResourceAPIResource == nil {
+		return ""
+	}
+	return *k.ResourceAPIResource
+}
 func (k *AlertMatchKey) HasNode() bool {
 	return k.NodeID != nil && *k.NodeID != ""
 }
@@ -288,10 +298,10 @@ func (k *AlertMatchKey) GetNamespace() string {
 	return *k.Namespace
 }
 
-// WithAlertMatchKeyQuery augments a query with SELECT on the 12 inline columns
+// WithAlertMatchKeyQuery augments a query with SELECT on the 13 inline columns
 // needed for alert matching: alert_id, policy_id, violation_state, lifecycle_stage,
-// deployment_id, inactive_deployment, resource_type, resource, cluster_id,
-// namespace, node_id, and node.
+// deployment_id, inactive_deployment, resource_type, resource, resource_api_resource,
+// cluster_id, namespace, node_id, and node.
 func WithAlertMatchKeyQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
@@ -303,6 +313,7 @@ func WithAlertMatchKeyQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.Inactive).Proto(),
 		search.NewQuerySelect(search.ResourceType).Proto(),
 		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceAPIResource).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.NodeID).Proto(),

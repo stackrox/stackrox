@@ -45,6 +45,8 @@ message MsgToCompliance {
     message StartRequest {
       string cluster_id = 1;
       storage.AuditLogFileState collect_start_state = 2;
+      // api_resources are additional "<plural>[.<group>]" resources to collect on top of the built-in set.
+      repeated string api_resources = 3;
     }
     message StopRequest {}
 

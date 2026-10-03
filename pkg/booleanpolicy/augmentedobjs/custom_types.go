@@ -18,6 +18,7 @@ const (
 	HasEgressPolicyCustomTag           = "Has Egress Network Policy"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
+	KubernetesAPIResourceCustomTag     = "Kubernetes API Resource"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
 	KubernetesResourceCustomTag        = "Kubernetes Resource"
 	KubernetesResourceNameCustomTag    = "Kubernetes Resource Name"

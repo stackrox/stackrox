@@ -235,6 +235,22 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 	suite.NoError(err)
 }
 
+func (suite *ManagerTestSuite) TestHandleResourceAlertsForAPIResource() {
+	alert := fixtures.GetResourceAlert()
+	alert.GetResource().ResourceType = storage.Alert_Resource_CUSTOM
+	alert.GetResource().ApiResource = "applications.argoproj.io"
+	alerts := []*storage.Alert{alert}
+
+	// An additional filter option on the API resource must be passed so that equally named resources of different
+	// API resources are not merged.
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(set.NewStringSet(), nil)
+
+	err := suite.manager.HandleResourceAlerts(alert.GetResource().GetClusterId(), alerts, storage.LifecycleStage_RUNTIME)
+	suite.NoError(err)
+}
+
 func (suite *ManagerTestSuite) TestHandleNodeAlerts() {
 	alerts := []*storage.Alert{fixtures.GetNodeAlert()}
 

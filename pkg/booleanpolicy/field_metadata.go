@@ -240,6 +240,7 @@ func (f *FieldMetadata) registerFieldMetadata(fieldName string, qb querybuilders
 	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, validator, source, fieldTypes, options...)
 }
 
+// initializeFieldMetadata registers the query builder, validator and event source of every policy field.
 func initializeFieldMetadata() FieldMetadata {
 	f := FieldMetadata{
 		fieldsToQB: make(map[string]*metadataAndQB),
@@ -869,6 +870,15 @@ func initializeFieldMetadata() FieldMetadata {
 		func(c *validateConfiguration) *regexp.Regexp {
 			return auditEventAPIVerbValueRegex
 		}, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{AuditLogEvent},
+		negationForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.KubeAPIResource,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIResourceCustomTag),
+		nil,
+		validateAuditEventAPIResource,
+		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
 		negationForbidden,
 	)

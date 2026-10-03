@@ -56,6 +56,8 @@ export type AlertResource = {
     clusterName: string;
     namespace: string;
     namespaceId: string;
+    // <plural>[.<group>] of the resource, only set if resourceType is CUSTOM
+    apiResource?: string;
 };
 
 export type AlertResourceType =
@@ -66,7 +68,8 @@ export type AlertResourceType =
     | 'CLUSTER_ROLE_BINDINGS'
     | 'NETWORK_POLICIES'
     | 'SECURITY_CONTEXT_CONSTRAINTS'
-    | 'EGRESS_FIREWALLS';
+    | 'EGRESS_FIREWALLS'
+    | 'CUSTOM';
 
 export function isDeploymentAlert(alert: Alert): alert is DeploymentAlert {
     return 'deployment' in alert && Boolean(alert.deployment);
@@ -199,10 +202,13 @@ export type ResourceListAlert = {
             | 'CLUSTER_ROLE_BINDINGS'
             | 'NETWORK_POLICIES'
             | 'SECURITY_CONTEXT_CONSTRAINTS'
-            | 'EGRESS_FIREWALLS';
+            | 'EGRESS_FIREWALLS'
+            | 'CUSTOM';
     };
     resource: {
         name: string;
+        // <plural>[.<group>] of the resource, only set if resourceType is CUSTOM
+        apiResource?: string;
     };
 } & BaseListAlert;
 
@@ -237,7 +243,8 @@ export type ListAlertResourceType =
     | 'CLUSTER_ROLE_BINDINGS'
     | 'NETWORK_POLICIES'
     | 'SECURITY_CONTEXT_CONSTRAINTS'
-    | 'EGRESS_FIREWALLS';
+    | 'EGRESS_FIREWALLS'
+    | 'CUSTOM';
 
 export type BaseListAlert = {
     id: string;

@@ -348,11 +348,16 @@ func (*KubernetesEvent_PodPortForwardArgs_) isKubernetesEvent_ObjectArgs() {}
 func (*KubernetesEvent_PodAttachArgs_) isKubernetesEvent_ObjectArgs() {}
 
 type KubernetesEvent_Object struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
-	Name          string                          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" policy:"Kubernetes Resource Name"`                                                       // @gotags: policy:"Kubernetes Resource Name"
-	Resource      KubernetesEvent_Object_Resource `protobuf:"varint,2,opt,name=resource,proto3,enum=storage.KubernetesEvent_Object_Resource" json:"resource,omitempty" policy:"Kubernetes Resource"` // @gotags: policy:"Kubernetes Resource"
-	ClusterId     string                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace     string                          `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	state     protoimpl.MessageState          `protogen:"open.v1"`
+	Name      string                          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" policy:"Kubernetes Resource Name"`                                                       // @gotags: policy:"Kubernetes Resource Name"
+	Resource  KubernetesEvent_Object_Resource `protobuf:"varint,2,opt,name=resource,proto3,enum=storage.KubernetesEvent_Object_Resource" json:"resource,omitempty" policy:"Kubernetes Resource"` // @gotags: policy:"Kubernetes Resource"
+	ClusterId string                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace string                          `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// api_group is the API group of the resource (empty for the core group).
+	ApiGroup string `protobuf:"bytes,5,opt,name=api_group,json=apiGroup,proto3" json:"api_group,omitempty"`
+	// api_resource is the canonical "<plural>[.<group>]" name of the resource, e.g. "applications.argoproj.io".
+	// It is only set for resources that are not covered by the Resource enum (i.e. resource is UNKNOWN).
+	ApiResource   string `protobuf:"bytes,6,opt,name=api_resource,json=apiResource,proto3" json:"api_resource,omitempty" policy:"Kubernetes API Resource"` // @gotags: policy:"Kubernetes API Resource"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -411,6 +416,20 @@ func (x *KubernetesEvent_Object) GetClusterId() string {
 func (x *KubernetesEvent_Object) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
+	}
+	return ""
+}
+
+func (x *KubernetesEvent_Object) GetApiGroup() string {
+	if x != nil {
+		return x.ApiGroup
+	}
+	return ""
+}
+
+func (x *KubernetesEvent_Object) GetApiResource() string {
+	if x != nil {
+		return x.ApiResource
 	}
 	return ""
 }
@@ -663,7 +682,7 @@ var File_storage_kube_event_proto protoreflect.FileDescriptor
 
 const file_storage_kube_event_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\f\n" +
+	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf5\f\n" +
 	"\x0fKubernetesEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x128\n" +
@@ -680,13 +699,15 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"user_agent\x18\x12 \x01(\tR\tuserAgent\x12P\n" +
 	"\x0fresponse_status\x18\x13 \x01(\v2'.storage.KubernetesEvent.ResponseStatusR\x0eresponseStatus\x12\x1f\n" +
 	"\vrequest_uri\x18\x14 \x01(\tR\n" +
-	"requestUri\x1a\x88\x03\n" +
+	"requestUri\x1a\xc8\x03\n" +
 	"\x06Object\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
 	"\bresource\x18\x02 \x01(\x0e2(.storage.KubernetesEvent.Object.ResourceR\bresource\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xe6\x01\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12\x1b\n" +
+	"\tapi_group\x18\x05 \x01(\tR\bapiGroup\x12!\n" +
+	"\fapi_resource\x18\x06 \x01(\tR\vapiResource\"\xe6\x01\n" +
 	"\bResource\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tPODS_EXEC\x10\x01\x12\x14\n" +

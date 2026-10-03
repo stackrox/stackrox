@@ -91,6 +91,9 @@ function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
     return <span>{message}</span>;
 }
 
+/**
+ * Returns the violations table columns for the given workflow view.
+ */
 export function getViolationsTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
     return [
         {
@@ -123,6 +126,14 @@ export function getViolationsTableColumnDescriptors(filteredWorkflowView: Filter
                     deployment.deploymentType.length > 0
                 ) {
                     return deployment.deploymentType as string;
+                }
+                const apiResource = original?.resource?.apiResource;
+                if (
+                    value === 'CUSTOM' &&
+                    typeof apiResource === 'string' &&
+                    apiResource.length > 0
+                ) {
+                    return apiResource;
                 }
                 return startCase(value.toLowerCase());
             },

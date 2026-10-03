@@ -759,3 +759,116 @@ func (s *PolicyValueValidator) TestValidateFilePath() {
 		})
 	}
 }
+
+func auditLogPolicyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
+	return &storage.Policy{
+		Name:            "audit-log-policy",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections:  []*storage.PolicySection{{PolicyGroups: groups}},
+	}
+}
+
+func policyGroup(fieldName string, values ...string) *storage.PolicyGroup {
+	group := &storage.PolicyGroup{FieldName: fieldName}
+	for _, v := range values {
+		group.Values = append(group.Values, &storage.PolicyValue{Value: v})
+	}
+	return group
+}
+
+func (s *PolicyValueValidator) TestValidateKubeAPIResourceForAuditEventSource() {
+	cases := map[string]struct {
+		groups      []*storage.PolicyGroup
+		errExpected bool
+	}{
+		"API resource with group and verb is valid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "applications.argoproj.io"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH", "UPDATE"),
+			},
+		},
+		"core API resource is valid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "limitranges"),
+				policyGroup(fieldnames.KubeAPIVerb, "DELETE"),
+			},
+		},
+		"API resource satisfies dependency of user name": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "applications.argoproj.io"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+				{FieldName: fieldnames.KubeUserName, Negate: true, Values: []*storage.PolicyValue{{Value: "system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller"}}},
+			},
+		},
+		"API resource without verb is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "applications.argoproj.io"),
+			},
+			errExpected: true,
+		},
+		"API resource together with Kubernetes Resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeResource, "SECRETS"),
+				policyGroup(fieldnames.KubeAPIResource, "applications.argoproj.io"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+		"built-in resource as API resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "secrets"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+		"built-in resource with group as API resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "clusterroles.rbac.authorization.k8s.io"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+		"regex API resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "r/.*"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+		"upper case API resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				policyGroup(fieldnames.KubeAPIResource, "Applications.argoproj.io"),
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+		"negated API resource is invalid": {
+			groups: []*storage.PolicyGroup{
+				{FieldName: fieldnames.KubeAPIResource, Negate: true, Values: []*storage.PolicyValue{{Value: "applications.argoproj.io"}}},
+				policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+			},
+			errExpected: true,
+		},
+	}
+	for name, c := range cases {
+		s.Run(name, func() {
+			err := Validate(auditLogPolicyWithGroups(c.groups...), ValidateSourceIsAuditLogEvents())
+			if c.errExpected {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *PolicyValueValidator) TestValidateKubeAPIResourceNotSupportedForDeploymentEventSource() {
+	policy := auditLogPolicyWithGroups(
+		policyGroup(fieldnames.KubeAPIResource, "applications.argoproj.io"),
+		policyGroup(fieldnames.KubeAPIVerb, "PATCH"),
+	)
+	policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
+	s.Error(Validate(policy))
+}

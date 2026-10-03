@@ -39,6 +39,7 @@ var (
 		search.NewQuerySelect(search.Node).Proto(),
 		search.NewQuerySelect(search.ResourceName).Proto(),
 		search.NewQuerySelect(search.ResourceType).Proto(),
+		search.NewQuerySelect(search.ResourceAPIResource).Proto(),
 	}
 
 	// ListAlertArrayFields tells the query builder that "category" is a
@@ -51,30 +52,31 @@ var (
 // ListAlertScanner holds pgtype scan destinations for the column projection
 // query and converts scanned values into a *storage.ListAlert.
 type ListAlertScanner struct {
-	ID                 pgtype.Text
-	LifecycleStage     pgtype.Int4
-	ViolationTime      pgtype.Timestamp
-	State              pgtype.Int4
-	PolicyID           pgtype.Text
-	PolicyName         pgtype.Text
-	Severity           pgtype.Int4
-	Description        pgtype.Text
-	Categories         pgtype.FlatArray[string]
-	EnforcementAction  pgtype.Int4
-	EnforcementCount   pgtype.Int4
-	EntityType         pgtype.Int4
-	ClusterID          pgtype.Text
-	ClusterName        pgtype.Text
-	Namespace          pgtype.Text
-	NamespaceID        pgtype.Text
-	DeploymentID       pgtype.Text
-	DeploymentName     pgtype.Text
-	DeploymentType     pgtype.Text
-	DeploymentInactive pgtype.Bool
-	NodeID             pgtype.Text
-	NodeName           pgtype.Text
-	ResourceName       pgtype.Text
-	ResourceType       pgtype.Int4
+	ID                  pgtype.Text
+	LifecycleStage      pgtype.Int4
+	ViolationTime       pgtype.Timestamp
+	State               pgtype.Int4
+	PolicyID            pgtype.Text
+	PolicyName          pgtype.Text
+	Severity            pgtype.Int4
+	Description         pgtype.Text
+	Categories          pgtype.FlatArray[string]
+	EnforcementAction   pgtype.Int4
+	EnforcementCount    pgtype.Int4
+	EntityType          pgtype.Int4
+	ClusterID           pgtype.Text
+	ClusterName         pgtype.Text
+	Namespace           pgtype.Text
+	NamespaceID         pgtype.Text
+	DeploymentID        pgtype.Text
+	DeploymentName      pgtype.Text
+	DeploymentType      pgtype.Text
+	DeploymentInactive  pgtype.Bool
+	NodeID              pgtype.Text
+	NodeName            pgtype.Text
+	ResourceName        pgtype.Text
+	ResourceType        pgtype.Int4
+	ResourceAPIResource pgtype.Text
 }
 
 // Dests returns scan destination pointers in the order matching listAlertSelectProtos.
@@ -85,7 +87,7 @@ func (s *ListAlertScanner) Dests() []any {
 		&s.EnforcementAction, &s.EnforcementCount, &s.EntityType,
 		&s.ClusterID, &s.ClusterName, &s.Namespace, &s.NamespaceID,
 		&s.DeploymentID, &s.DeploymentName, &s.DeploymentType, &s.DeploymentInactive,
-		&s.NodeID, &s.NodeName, &s.ResourceName, &s.ResourceType,
+		&s.NodeID, &s.NodeName, &s.ResourceName, &s.ResourceType, &s.ResourceAPIResource,
 	}
 }
 
@@ -150,7 +152,8 @@ func (s *ListAlertScanner) Build() *storage.ListAlert {
 		}
 		la.Entity = &storage.ListAlert_Resource{
 			Resource: &storage.ListAlert_ResourceEntity{
-				Name: s.ResourceName.String,
+				Name:        s.ResourceName.String,
+				ApiResource: s.ResourceAPIResource.String,
 			},
 		}
 	case storage.Alert_NODE:

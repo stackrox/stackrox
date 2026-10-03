@@ -58,7 +58,7 @@ describe('policyCriteriaValidators', () => {
                 const error = validator.validate(section, context);
 
                 /* eslint-disable vitest/no-conditional-expect */
-                if (name === 'Kubernetes Resource') {
+                if (name === 'Kubernetes Resource' || name === 'Kubernetes API Resource') {
                     expect(error).toContain('Kubernetes API verb');
                     expect(error).not.toContain('Kubernetes resource type');
                 } else if (name === 'Kubernetes API Verb') {
@@ -83,9 +83,23 @@ describe('policyCriteriaValidators', () => {
             expect(validator.validate(section, context)).toBeUndefined();
         });
 
+        it('should pass when an API resource is used instead of a resource type', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes API Resource'),
+                    mockCriterionWithName('Kubernetes API Verb'),
+                ],
+            };
+            expect(validator.validate(section, context)).toBeUndefined();
+        });
+
         it('should pass when all required criteria are present for all audit log criteria', () => {
             const nonRequiredDescriptors = auditLogDescriptor.filter(
-                (d) => d.name !== 'Kubernetes Resource' && d.name !== 'Kubernetes API Verb'
+                (d) =>
+                    d.name !== 'Kubernetes Resource' &&
+                    d.name !== 'Kubernetes API Resource' &&
+                    d.name !== 'Kubernetes API Verb'
             );
 
             nonRequiredDescriptors.forEach((descriptor) => {
@@ -108,6 +122,48 @@ describe('policyCriteriaValidators', () => {
             };
             const error = validator.validate(section, context);
             expect(error).toBeDefined();
+        });
+    });
+
+    describe('Audit log resource criteria are mutually exclusive validator', () => {
+        const validator = policySectionValidators.find(
+            (v) => v.name === 'Audit log resource criteria are mutually exclusive'
+        );
+
+        if (!validator) {
+            throw new Error(
+                'Audit log resource criteria are mutually exclusive validator not found'
+            );
+        }
+
+        const context: PolicyContext = {
+            eventSource: 'AUDIT_LOG_EVENT',
+            lifecycleStages: ['RUNTIME'],
+        };
+
+        it('should fail when both resource type and API resource are present', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('Kubernetes Resource'),
+                    mockCriterionWithName('Kubernetes API Resource'),
+                    mockCriterionWithName('Kubernetes API Verb'),
+                ],
+            };
+            expect(validator.validate(section, context)).toContain('cannot be combined');
+        });
+
+        it('should pass when only one of them is present', () => {
+            ['Kubernetes Resource', 'Kubernetes API Resource'].forEach((name) => {
+                const section: ClientPolicySection = {
+                    sectionName: 'Test Section',
+                    policyGroups: [
+                        mockCriterionWithName(name),
+                        mockCriterionWithName('Kubernetes API Verb'),
+                    ],
+                };
+                expect(validator.validate(section, context)).toBeUndefined();
+            });
         });
     });
 

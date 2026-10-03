@@ -119,6 +119,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processes: [ProcessIndicator]!",
 	}))
 	utils.Must(builder.AddType("Alert_Resource", []string{
+		"apiResource: String!",
 		"clusterId: String!",
 		"clusterName: String!",
 		"name: String!",
@@ -2669,6 +2670,11 @@ func (resolver *Resolver) wrapAlert_ResourcesWithContext(ctx context.Context, va
 		output[i] = &alert_ResourceResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *alert_ResourceResolver) ApiResource(ctx context.Context) string {
+	value := resolver.data.GetApiResource()
+	return value
 }
 
 func (resolver *alert_ResourceResolver) ClusterId(ctx context.Context) string {

@@ -383,3 +383,13 @@ func getPodAttachEvent(podName, container string) *storage.KubernetesEvent {
 	}
 	return event
 }
+
+func TestViolationMessageForAPIResourceAuditLogEvents(t *testing.T) {
+	kubeEvent := getKubeEvent(storage.KubernetesEvent_Object_UNKNOWN, storage.KubernetesEvent_PATCH, "cluster-id", "ns", "my-app")
+	kubeEvent.Object.ApiResource = "applications.argoproj.io"
+	assert.Equal(t, "Access to applications.argoproj.io \"my-app\" in namespace \"ns\"", GenerateKubeEventViolationMsg(kubeEvent).GetMessage())
+
+	kubeEvent = getKubeEvent(storage.KubernetesEvent_Object_UNKNOWN, storage.KubernetesEvent_DELETE, "cluster-id", "", "")
+	kubeEvent.Object.ApiResource = "machineconfigs.machineconfiguration.openshift.io"
+	assert.Equal(t, "Access to machineconfigs.machineconfiguration.openshift.io", GenerateKubeEventViolationMsg(kubeEvent).GetMessage())
+}

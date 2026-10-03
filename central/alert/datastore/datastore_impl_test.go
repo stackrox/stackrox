@@ -1238,6 +1238,42 @@ func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysResource() {
 	s.Equal(res.GetNamespace(), key.GetNamespace())
 }
 
+func (s *AlertDatastoreImplSuite) TestAPIResourceAlertRoundTrip() {
+	alert := fixtures.GetResourceAlert()
+	alert.State = storage.ViolationState_ACTIVE
+	alert.LifecycleStage = storage.LifecycleStage_RUNTIME
+	alert.GetResource().ResourceType = storage.Alert_Resource_CUSTOM
+	alert.GetResource().ApiResource = "applications.argoproj.io"
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.AlertID, alert.GetId()).
+		AddExactMatches(search.ResourceAPIResource, "applications.argoproj.io").
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+	s.Equal(storage.Alert_Resource_CUSTOM, keys[0].GetResourceType())
+	s.Equal("applications.argoproj.io", keys[0].GetResourceAPIResource())
+
+	listAlerts, err := s.datastore.SearchListAlerts(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(listAlerts, 1)
+	s.Equal(storage.ListAlert_CUSTOM, listAlerts[0].GetCommonEntityInfo().GetResourceType())
+	s.Equal("applications.argoproj.io", listAlerts[0].GetResource().GetApiResource())
+
+	otherQ := search.NewQueryBuilder().
+		AddExactMatches(search.AlertID, alert.GetId()).
+		AddExactMatches(search.ResourceAPIResource, "applications.app.k8s.io").
+		ProtoQuery()
+	keys, err = s.datastore.SearchAlertMatchKeys(ctx, otherQ, false)
+	s.NoError(err)
+	s.Empty(keys)
+}
+
 func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysNode() {
 	alert := fixtures.GetNodeAlert()
 	alert.State = storage.ViolationState_ACTIVE

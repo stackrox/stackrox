@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -502,4 +503,89 @@ func (s *ComplianceAuditLogReaderTestSuite) getSentEvent(c chan *auditEvent) *au
 		s.FailNow("Channel didn't return after a while - might be a deadlock")
 	}
 	return nil // unreachable due to the FailNow but the compiler doesn't realize it hence the return
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestShouldSendEventForAPIResources() {
+	reader := &auditLogReaderImpl{
+		apiResources: set.NewFrozenStringSet("applications.argoproj.io", "nodes", "limitranges"),
+	}
+
+	cases := map[string]struct {
+		ref      objectRef
+		verb     string
+		expected bool
+	}{
+		"requested resource with group": {
+			ref:      objectRef{APIGroup: "argoproj.io", Resource: "applications"},
+			verb:     "patch",
+			expected: true,
+		},
+		"requested core resource": {
+			ref:      objectRef{Resource: "limitranges"},
+			verb:     "delete",
+			expected: true,
+		},
+		"same plural in another group is not sent": {
+			ref:      objectRef{APIGroup: "app.k8s.io", Resource: "applications"},
+			verb:     "patch",
+			expected: false,
+		},
+		"subresource of requested resource is not sent": {
+			ref:      objectRef{Resource: "nodes", Subresource: "status"},
+			verb:     "patch",
+			expected: false,
+		},
+		"get of requested resource is not sent": {
+			ref:      objectRef{APIGroup: "argoproj.io", Resource: "applications"},
+			verb:     "get",
+			expected: false,
+		},
+		"watch of requested resource is not sent": {
+			ref:      objectRef{APIGroup: "argoproj.io", Resource: "applications"},
+			verb:     "watch",
+			expected: false,
+		},
+		"unrequested resource is not sent": {
+			ref:      objectRef{Resource: "resourcequotas"},
+			verb:     "create",
+			expected: false,
+		},
+		"built-in resource keeps its verb rules": {
+			ref:      objectRef{Resource: "secrets"},
+			verb:     "get",
+			expected: true,
+		},
+		"built-in resource keeps its deny list": {
+			ref:      objectRef{Resource: "clusterroles"},
+			verb:     "get",
+			expected: false,
+		},
+	}
+	for name, c := range cases {
+		s.Run(name, func() {
+			event := &auditEvent{Stage: "ResponseComplete", ObjectRef: c.ref, Verb: c.verb}
+			s.Equal(c.expected, reader.shouldSendEvent(event))
+		})
+	}
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestShouldSendEventWithoutAPIResourcesOnlySendsBuiltIns() {
+	reader := &auditLogReaderImpl{}
+
+	s.True(reader.shouldSendEvent(&auditEvent{Stage: "ResponseComplete", ObjectRef: objectRef{Resource: "configmaps"}, Verb: "update"}))
+	s.False(reader.shouldSendEvent(&auditEvent{Stage: "ResponseComplete", ObjectRef: objectRef{APIGroup: "argoproj.io", Resource: "applications"}, Verb: "update"}))
+	s.False(reader.shouldSendEvent(&auditEvent{Stage: "RequestReceived", ObjectRef: objectRef{Resource: "configmaps"}, Verb: "update"}))
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestToKubernetesEventSetsAPIResource() {
+	builtIn := &auditEvent{ObjectRef: objectRef{Resource: "secrets", Name: "s"}, Verb: "create", StageTimestamp: "2021-05-06T00:19:49.915375Z"}
+	k8sEvent := builtIn.ToKubernetesEvent("cluster")
+	s.Equal(storage.KubernetesEvent_Object_SECRETS, k8sEvent.GetObject().GetResource())
+	s.Empty(k8sEvent.GetObject().GetApiResource())
+
+	custom := &auditEvent{ObjectRef: objectRef{APIGroup: "argoproj.io", Resource: "applications", Name: "app"}, Verb: "patch", StageTimestamp: "2021-05-06T00:19:49.915375Z"}
+	k8sEvent = custom.ToKubernetesEvent("cluster")
+	s.Equal(storage.KubernetesEvent_Object_UNKNOWN, k8sEvent.GetObject().GetResource())
+	s.Equal("argoproj.io", k8sEvent.GetObject().GetApiGroup())
+	s.Equal("applications.argoproj.io", k8sEvent.GetObject().GetApiResource())
 }
