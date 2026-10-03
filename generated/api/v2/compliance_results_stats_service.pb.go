@@ -449,6 +449,104 @@ func (x *ListComplianceClusterScanStatsResponse) GetTotalCount() int32 {
 	return 0
 }
 
+// ComplianceScanTrendDataPoint represents a single data point in a compliance trend over time
+type ComplianceScanTrendDataPoint struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	ScanTime      *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceScanTrendDataPoint) Reset() {
+	*x = ComplianceScanTrendDataPoint{}
+	mi := &file_api_v2_compliance_results_stats_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceScanTrendDataPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceScanTrendDataPoint) ProtoMessage() {}
+
+func (x *ComplianceScanTrendDataPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_results_stats_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceScanTrendDataPoint.ProtoReflect.Descriptor instead.
+func (*ComplianceScanTrendDataPoint) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_results_stats_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ComplianceScanTrendDataPoint) GetScanTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ScanTime
+	}
+	return nil
+}
+
+func (x *ComplianceScanTrendDataPoint) GetCheckStats() []*ComplianceCheckStatusCount {
+	if x != nil {
+		return x.CheckStats
+	}
+	return nil
+}
+
+// ListComplianceScanTrendResponse provides compliance trends over time
+type ListComplianceScanTrendResponse struct {
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	DataPoints    []*ComplianceScanTrendDataPoint `protobuf:"bytes,1,rep,name=data_points,json=dataPoints,proto3" json:"data_points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListComplianceScanTrendResponse) Reset() {
+	*x = ListComplianceScanTrendResponse{}
+	mi := &file_api_v2_compliance_results_stats_service_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListComplianceScanTrendResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListComplianceScanTrendResponse) ProtoMessage() {}
+
+func (x *ListComplianceScanTrendResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_results_stats_service_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListComplianceScanTrendResponse.ProtoReflect.Descriptor instead.
+func (*ListComplianceScanTrendResponse) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_results_stats_service_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListComplianceScanTrendResponse) GetDataPoints() []*ComplianceScanTrendDataPoint {
+	if x != nil {
+		return x.DataPoints
+	}
+	return nil
+}
+
 var File_api_v2_compliance_results_stats_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
@@ -494,7 +592,15 @@ const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\n" +
 	"scan_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceClusterScanStatsR\tscanStats\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount2\xbc\t\n" +
+	"totalCount\"\x98\x01\n" +
+	"\x1cComplianceScanTrendDataPoint\x127\n" +
+	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12?\n" +
+	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
+	"checkStats\"d\n" +
+	"\x1fListComplianceScanTrendResponse\x12A\n" +
+	"\vdata_points\x18\x01 \x03(\v2 .v2.ComplianceScanTrendDataPointR\n" +
+	"dataPoints2\xb4\n" +
+	"\n" +
 	"\x1dComplianceResultsStatsService\x12\xa7\x01\n" +
 	"\x19GetComplianceProfileStats\x12#.v2.ComplianceProfileResultsRequest\x1a*.v2.ListComplianceProfileScanStatsResponse\"9\x82\xd3\xe4\x93\x023\x121/v2/compliance/scan/stats/profiles/{profile_name}\x12\x82\x01\n" +
 	"\x1aGetComplianceProfilesStats\x12\f.v2.RawQuery\x1a*.v2.ListComplianceProfileScanStatsResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/v2/compliance/scan/stats/profiles\x12\xb6\x01\n" +
@@ -502,7 +608,8 @@ const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\x1eGetComplianceProfileCheckStats\x12!.v2.ComplianceProfileCheckRequest\x1a .v2.ListComplianceProfileResults\"M\x82\xd3\xe4\x93\x02G\x12E/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}\x12\xb0\x01\n" +
 	"\x1dGetComplianceClusterScanStats\x12 .v2.ComplianceScanClusterRequest\x1a*.v2.ListComplianceClusterScanStatsResponse\"A\x82\xd3\xe4\x93\x02;\x129/v2/compliance/stats/configurations/clusters/{cluster_id}\x12\x92\x01\n" +
 	" GetComplianceOverallClusterStats\x12\f.v2.RawQuery\x1a-.v2.ListComplianceClusterOverallStatsResponse\"1\x82\xd3\xe4\x93\x02+\x12)/v2/compliance/scan/stats/overall/cluster\x12\xb3\x01\n" +
-	"\x19GetComplianceClusterStats\x12#.v2.ComplianceProfileResultsRequest\x1a-.v2.ListComplianceClusterOverallStatsResponse\"B\x82\xd3\xe4\x93\x02<\x12:/v2/compliance/scan/stats/profiles/{profile_name}/clustersB'\n" +
+	"\x19GetComplianceClusterStats\x12#.v2.ComplianceProfileResultsRequest\x1a-.v2.ListComplianceClusterOverallStatsResponse\"B\x82\xd3\xe4\x93\x02<\x12:/v2/compliance/scan/stats/profiles/{profile_name}/clusters\x12v\n" +
+	"\x17GetComplianceScanTrends\x12\f.v2.RawQuery\x1a#.v2.ListComplianceScanTrendResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v2/compliance/scan/stats/trendsB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x02b\x06proto3"
 
 var (
@@ -517,7 +624,7 @@ func file_api_v2_compliance_results_stats_service_proto_rawDescGZIP() []byte {
 	return file_api_v2_compliance_results_stats_service_proto_rawDescData
 }
 
-var file_api_v2_compliance_results_stats_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_v2_compliance_results_stats_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_v2_compliance_results_stats_service_proto_goTypes = []any{
 	(*ComplianceScanStatsShim)(nil),                   // 0: v2.ComplianceScanStatsShim
 	(*ComplianceProfileScanStats)(nil),                // 1: v2.ComplianceProfileScanStats
@@ -526,46 +633,53 @@ var file_api_v2_compliance_results_stats_service_proto_goTypes = []any{
 	(*ListComplianceProfileScanStatsResponse)(nil),    // 4: v2.ListComplianceProfileScanStatsResponse
 	(*ListComplianceClusterProfileStatsResponse)(nil), // 5: v2.ListComplianceClusterProfileStatsResponse
 	(*ListComplianceClusterScanStatsResponse)(nil),    // 6: v2.ListComplianceClusterScanStatsResponse
-	(*ComplianceCheckStatusCount)(nil),                // 7: v2.ComplianceCheckStatusCount
-	(*timestamppb.Timestamp)(nil),                     // 8: google.protobuf.Timestamp
-	(*ComplianceBenchmark)(nil),                       // 9: v2.ComplianceBenchmark
-	(*ComplianceScanCluster)(nil),                     // 10: v2.ComplianceScanCluster
-	(*RawQuery)(nil),                                  // 11: v2.RawQuery
-	(*ComplianceProfileResultsRequest)(nil),           // 12: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
-	(*ListComplianceProfileResults)(nil),              // 14: v2.ListComplianceProfileResults
-	(*ListComplianceClusterOverallStatsResponse)(nil), // 15: v2.ListComplianceClusterOverallStatsResponse
+	(*ComplianceScanTrendDataPoint)(nil),              // 7: v2.ComplianceScanTrendDataPoint
+	(*ListComplianceScanTrendResponse)(nil),           // 8: v2.ListComplianceScanTrendResponse
+	(*ComplianceCheckStatusCount)(nil),                // 9: v2.ComplianceCheckStatusCount
+	(*timestamppb.Timestamp)(nil),                     // 10: google.protobuf.Timestamp
+	(*ComplianceBenchmark)(nil),                       // 11: v2.ComplianceBenchmark
+	(*ComplianceScanCluster)(nil),                     // 12: v2.ComplianceScanCluster
+	(*RawQuery)(nil),                                  // 13: v2.RawQuery
+	(*ComplianceProfileResultsRequest)(nil),           // 14: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 15: v2.ComplianceProfileCheckRequest
+	(*ListComplianceProfileResults)(nil),              // 16: v2.ListComplianceProfileResults
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 17: v2.ListComplianceClusterOverallStatsResponse
 }
 var file_api_v2_compliance_results_stats_service_proto_depIdxs = []int32{
-	7,  // 0: v2.ComplianceScanStatsShim.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	8,  // 1: v2.ComplianceScanStatsShim.last_scan:type_name -> google.protobuf.Timestamp
-	7,  // 2: v2.ComplianceProfileScanStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	9,  // 3: v2.ComplianceProfileScanStats.benchmarks:type_name -> v2.ComplianceBenchmark
+	9,  // 0: v2.ComplianceScanStatsShim.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	10, // 1: v2.ComplianceScanStatsShim.last_scan:type_name -> google.protobuf.Timestamp
+	9,  // 2: v2.ComplianceProfileScanStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	11, // 3: v2.ComplianceProfileScanStats.benchmarks:type_name -> v2.ComplianceBenchmark
 	0,  // 4: v2.ComplianceClusterScanStats.scan_stats:type_name -> v2.ComplianceScanStatsShim
-	10, // 5: v2.ComplianceClusterScanStats.cluster:type_name -> v2.ComplianceScanCluster
-	11, // 6: v2.ComplianceScanClusterRequest.query:type_name -> v2.RawQuery
+	12, // 5: v2.ComplianceClusterScanStats.cluster:type_name -> v2.ComplianceScanCluster
+	13, // 6: v2.ComplianceScanClusterRequest.query:type_name -> v2.RawQuery
 	1,  // 7: v2.ListComplianceProfileScanStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
 	1,  // 8: v2.ListComplianceClusterProfileStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
 	2,  // 9: v2.ListComplianceClusterScanStatsResponse.scan_stats:type_name -> v2.ComplianceClusterScanStats
-	12, // 10: v2.ComplianceResultsStatsService.GetComplianceProfileStats:input_type -> v2.ComplianceProfileResultsRequest
-	11, // 11: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:input_type -> v2.RawQuery
-	3,  // 12: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:input_type -> v2.ComplianceScanClusterRequest
-	13, // 13: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:input_type -> v2.ComplianceProfileCheckRequest
-	3,  // 14: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:input_type -> v2.ComplianceScanClusterRequest
-	11, // 15: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:input_type -> v2.RawQuery
-	12, // 16: v2.ComplianceResultsStatsService.GetComplianceClusterStats:input_type -> v2.ComplianceProfileResultsRequest
-	4,  // 17: v2.ComplianceResultsStatsService.GetComplianceProfileStats:output_type -> v2.ListComplianceProfileScanStatsResponse
-	4,  // 18: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:output_type -> v2.ListComplianceProfileScanStatsResponse
-	5,  // 19: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:output_type -> v2.ListComplianceClusterProfileStatsResponse
-	14, // 20: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:output_type -> v2.ListComplianceProfileResults
-	6,  // 21: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:output_type -> v2.ListComplianceClusterScanStatsResponse
-	15, // 22: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
-	15, // 23: v2.ComplianceResultsStatsService.GetComplianceClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
-	17, // [17:24] is the sub-list for method output_type
-	10, // [10:17] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	10, // 10: v2.ComplianceScanTrendDataPoint.scan_time:type_name -> google.protobuf.Timestamp
+	9,  // 11: v2.ComplianceScanTrendDataPoint.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	7,  // 12: v2.ListComplianceScanTrendResponse.data_points:type_name -> v2.ComplianceScanTrendDataPoint
+	14, // 13: v2.ComplianceResultsStatsService.GetComplianceProfileStats:input_type -> v2.ComplianceProfileResultsRequest
+	13, // 14: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:input_type -> v2.RawQuery
+	3,  // 15: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:input_type -> v2.ComplianceScanClusterRequest
+	15, // 16: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:input_type -> v2.ComplianceProfileCheckRequest
+	3,  // 17: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:input_type -> v2.ComplianceScanClusterRequest
+	13, // 18: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:input_type -> v2.RawQuery
+	14, // 19: v2.ComplianceResultsStatsService.GetComplianceClusterStats:input_type -> v2.ComplianceProfileResultsRequest
+	13, // 20: v2.ComplianceResultsStatsService.GetComplianceScanTrends:input_type -> v2.RawQuery
+	4,  // 21: v2.ComplianceResultsStatsService.GetComplianceProfileStats:output_type -> v2.ListComplianceProfileScanStatsResponse
+	4,  // 22: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:output_type -> v2.ListComplianceProfileScanStatsResponse
+	5,  // 23: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:output_type -> v2.ListComplianceClusterProfileStatsResponse
+	16, // 24: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:output_type -> v2.ListComplianceProfileResults
+	6,  // 25: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:output_type -> v2.ListComplianceClusterScanStatsResponse
+	17, // 26: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
+	17, // 27: v2.ComplianceResultsStatsService.GetComplianceClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
+	8,  // 28: v2.ComplianceResultsStatsService.GetComplianceScanTrends:output_type -> v2.ListComplianceScanTrendResponse
+	21, // [21:29] is the sub-list for method output_type
+	13, // [13:21] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_results_stats_service_proto_init() }
@@ -581,7 +695,7 @@ func file_api_v2_compliance_results_stats_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_results_stats_service_proto_rawDesc), len(file_api_v2_compliance_results_stats_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
