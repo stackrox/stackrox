@@ -1020,10 +1020,7 @@ jobs:
               push_context="merge-to-master"
             fi
             echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
+            push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
             echo "Operator image push completed successfully"
 
   build-and-push-scanner:
