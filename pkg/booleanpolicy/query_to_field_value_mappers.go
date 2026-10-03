@@ -21,6 +21,7 @@ var (
 		search.DeploymentAnnotation:          newMapper(fieldnames.DisallowedAnnotation, leftRightCompoundMap),
 		search.ImageLabel:                    newMapper(fieldnames.DisallowedImageLabel, leftRightCompoundMap),
 		search.VolumeReadonly:                newMapper(fieldnames.WritableMountedVolume, invertBooleanMap),
+		search.ContainerStartTime:            newMapper(fieldnames.ContainerAge, numberOfDaysSinceMap),
 		search.ImageCreatedTime:              newMapper(fieldnames.ImageAge, numberOfDaysSinceMap),
 		search.ImageScanTime:                 newMapper(fieldnames.ImageScanAge, numberOfDaysSinceMap),
 		search.ServiceAccountPermissionLevel: newMapper(fieldnames.MinimumRBACPermissions, serviceAccountPermissionLevelMap),

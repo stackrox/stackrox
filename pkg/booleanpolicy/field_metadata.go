@@ -502,6 +502,24 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	// SPIKE: ContainerAge uses oldest_container_started on Deployment.Container, which is
+	// populated transiently at detection time from pod store data (not persisted).
+	// Lifecycle stages are DEPLOY and RUNTIME only — BUILD has no running containers.
+	// No imageEnrichmentRequired since the data comes from pod records, not image scans.
+	//
+	// OPEN QUESTION: Should this also apply at RUNTIME lifecycle? If a container trips the
+	// criterion mid-run (no K8s event), the 4-hour reprocess loop fires it. If limited to
+	// DEPLOY, the policy only fires on pod create/update events, missing mid-run aging.
+	// Recommend DEPLOY+RUNTIME to match customer's compliance use case.
+	f.registerFieldMetadataRegex(fieldnames.ContainerAge,
+		querybuilders.ForDays(search.ContainerStartTime),
+		violationmessages.ContainerAgeContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return integerValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
 	f.registerFieldMetadataRegex(fieldnames.ImageAge,
 		querybuilders.ForDays(search.ImageCreatedTime),
 		violationmessages.ImageContextFields,
