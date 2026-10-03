@@ -2,7 +2,7 @@ import type { Traits } from 'types/traits.proto';
 import axios from './instance';
 import type { Empty } from './types';
 
-export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS' | 'KUBE_SERVICE_ACCOUNT';
+export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS' | 'KUBE_SERVICE_ACCOUNT' | 'SPIFFE';
 
 export type MachineConfigMapping = {
     key: string;
