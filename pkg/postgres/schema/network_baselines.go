@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkBaselinesSchema() })
+}
 
 var (
 	// CreateTableNetworkBaselinesStmt holds the create statement for table `network_baselines`.
@@ -25,7 +30,7 @@ var (
 	}
 
 	// NetworkBaselinesSchema is the go schema for table `network_baselines`.
-	NetworkBaselinesSchema = func() *walker.Schema {
+	NetworkBaselinesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_baselines")
 		if schema != nil {
 			return schema
@@ -36,7 +41,7 @@ var (
 		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_BASELINE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

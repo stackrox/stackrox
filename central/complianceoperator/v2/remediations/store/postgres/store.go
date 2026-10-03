@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorRemediationV2Schema
+	schema         = pkgSchema.ComplianceOperatorRemediationV2Schema()
 	targetResource = resources.Compliance
 )
 

@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestShortCircuitsSchema() })
+}
 
 var (
 	// CreateTableTestShortCircuitsStmt holds the create statement for table `test_short_circuits`.
@@ -23,15 +28,15 @@ var (
 	}
 
 	// TestShortCircuitsSchema is the go schema for table `test_short_circuits`.
-	TestShortCircuitsSchema = func() *walker.Schema {
+	TestShortCircuitsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_short_circuits")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestShortCircuit)(nil)), "test_short_circuits")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestChild1":        TestChild1Schema,
-			"storage.TestG2GrandChild1": TestG2GrandChild1Schema,
+			"storage.TestChild1":        TestChild1Schema(),
+			"storage.TestG2GrandChild1": TestG2GrandChild1Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTableTestShortCircuitsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(114), schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -94,7 +94,7 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 
 	var sc alertviews.ListAlertScanner
 	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(cloned.GetPagination().GetLimit(), whenUnlimited))
-	err := pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, cloned, alertviews.ListAlertArrayFields,
+	err := pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema(), cloned, alertviews.ListAlertArrayFields,
 		&pgSearch.DirectScanConfig{
 			ScanDests: sc.Dests,
 			OnRow: func() error {
@@ -137,7 +137,7 @@ func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context
 	}
 
 	var results []*alertviews.PolicyNameAndSeverity
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
 		results = append(results, r)
 		return nil
 	})
@@ -157,7 +157,7 @@ func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q 
 	}
 	countQuery := alertviews.WithPolicySeverityCountQuery(q)
 
-	result, err := pgSearch.RunSelectOneForSchema[alertviews.PolicySeverityCounts](ctx, ds.db, schema.AlertsSchema, countQuery)
+	result, err := pgSearch.RunSelectOneForSchema[alertviews.PolicySeverityCounts](ctx, ds.db, schema.AlertsSchema(), countQuery)
 	if err != nil {
 		return &alertviews.PolicySeverityCounts{}, err
 	}
@@ -178,7 +178,7 @@ func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Quer
 	groupQuery := alertviews.WithAlertPolicyGroupQuery(q)
 
 	var results []*alertviews.AlertPolicyGroup
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, groupQuery, func(r *alertviews.AlertPolicyGroup) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), groupQuery, func(r *alertviews.AlertPolicyGroup) error {
 		results = append(results, r)
 		return nil
 	})
@@ -199,7 +199,7 @@ func (ds *datastoreImpl) SearchAlertTimeseriesEvents(ctx context.Context, q *v1.
 	timeseriesQuery := alertviews.WithAlertTimeseriesQuery(q)
 
 	var results []*alertviews.AlertTimeseriesEvent
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
 		results = append(results, r)
 		return nil
 	})
@@ -225,7 +225,7 @@ func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Que
 	clonedQuery.Pagination = nil
 
 	var ids []string
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.DeploymentIDResult) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), clonedQuery, func(r *alertviews.DeploymentIDResult) error {
 		if id := r.GetDeploymentID(); id != "" {
 			ids = append(ids, id)
 		}
@@ -248,7 +248,7 @@ func (ds *datastoreImpl) SearchAlertMatchKeys(ctx context.Context, q *v1.Query, 
 	matchKeyQuery := alertviews.WithAlertMatchKeyQuery(q)
 
 	var results []*alertviews.AlertMatchKey
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, matchKeyQuery, func(r *alertviews.AlertMatchKey) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), matchKeyQuery, func(r *alertviews.AlertMatchKey) error {
 		results = append(results, r)
 		return nil
 	})
@@ -551,7 +551,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 	q.Selects = alertviews.ListAlertSelectProtos
 
 	var sc alertviews.ListAlertScanner
-	return pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, q, alertviews.ListAlertArrayFields,
+	return pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema(), q, alertviews.ListAlertArrayFields,
 		&pgSearch.DirectScanConfig{
 			ScanDests: sc.Dests,
 			OnRow: func() error {

@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestStructsSchema() })
+}
 
 var (
 	// CreateTableTestStructsStmt holds the create statement for table `test_structs`.
@@ -29,7 +34,7 @@ var (
 	}
 
 	// TestStructsSchema is the go schema for table `test_structs`.
-	TestStructsSchema = func() *walker.Schema {
+	TestStructsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_structs")
 		if schema != nil {
 			return schema
@@ -40,7 +45,7 @@ var (
 		RegisterTable(schema, CreateTableTestStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(101), schema)
 		return schema
-	}()
+	})
 )
 
 const (

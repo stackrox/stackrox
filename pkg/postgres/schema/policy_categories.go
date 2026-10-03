@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { PolicyCategoriesSchema() })
+}
 
 var (
 	// CreateTablePolicyCategoriesStmt holds the create statement for table `policy_categories`.
@@ -22,7 +27,7 @@ var (
 	}
 
 	// PolicyCategoriesSchema is the go schema for table `policy_categories`.
-	PolicyCategoriesSchema = func() *walker.Schema {
+	PolicyCategoriesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("policy_categories")
 		if schema != nil {
 			return schema
@@ -33,7 +38,7 @@ var (
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

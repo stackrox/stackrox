@@ -31,7 +31,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessIndicatorsSchema
+	schema         = pkgSchema.ProcessIndicatorsSchema()
 	targetResource = resources.DeploymentExtension
 )
 

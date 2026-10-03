@@ -300,7 +300,7 @@ func runSearchRawAlerts(ctx context.Context, t testing.TB, datastore DataStore, 
 
 func runSelectQuery(ctx context.Context, t testing.TB, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
 	var results []*violationsBySeverity
-	err := postgres.RunSelectRequestForSchemaFn[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema, q, func(r *violationsBySeverity) error {
+	err := postgres.RunSelectRequestForSchemaFn[violationsBySeverity](ctx, testDB.DB, schema.AlertsSchema(), q, func(r *violationsBySeverity) error {
 		results = append(results, r)
 		return nil
 	})

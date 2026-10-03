@@ -45,7 +45,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NodesSchema
+	schema         = pkgSchema.NodesSchema()
 	targetResource = resources.Node
 )
 
@@ -911,7 +911,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		return nil
 	}
 
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, "WalkByQuery", callback)
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema(), q, s.db, "WalkByQuery", callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -1041,7 +1041,7 @@ func gatherKeys(parts *nodePartsAsSlice) [][]byte {
 }
 
 func applyDefaultSort(q *v1.Query) *v1.Query {
-	q = sortfields.TransformSortOptions(q, pkgSchema.NodesSchema.OptionsMap)
+	q = sortfields.TransformSortOptions(q, pkgSchema.NodesSchema().OptionsMap)
 
 	defaultSortOption := &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),

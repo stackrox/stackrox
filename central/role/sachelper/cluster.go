@@ -68,5 +68,5 @@ func hasClusterIDInScope(
 }
 
 func getClustersOptionsMap() search.OptionsMap {
-	return schema.ClustersSchema.OptionsMap
+	return schema.ClustersSchema().OptionsMap
 }
