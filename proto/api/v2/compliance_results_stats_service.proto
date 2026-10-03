@@ -16,6 +16,7 @@ message ComplianceScanStatsShim {
   repeated ComplianceCheckStatusCount check_stats = 2;
   google.protobuf.Timestamp last_scan = 3;
   string scan_config_id = 4;
+  ComplianceDataState data_state = 5;
 }
 
 // ComplianceProfileScanStats provides scan stats overview based on profile

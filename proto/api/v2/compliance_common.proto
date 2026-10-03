@@ -71,6 +71,9 @@ message ComplianceCheckResultStatusCount {
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
   repeated ComplianceControl controls = 5;
+  // Rolled-up freshness across all clusters reporting this check: OUTDATED if
+  // any contributing cluster has stale data (OUTDATED > CURRENT > UNKNOWN).
+  ComplianceDataState data_state = 6;
 }
 
 message ComplianceControl {
@@ -93,6 +96,21 @@ message ListComplianceProfileResults {
   repeated ComplianceCheckResultStatusCount profile_results = 1;
   string profile_name = 2;
   int32 total_count = 3;
+  // Number of clusters with OUTDATED data in the current filtered scope
+  // (computed over the unpaginated result set). Non-zero signals the UI
+  // to show an outdated-data banner.
+  int32 outdated_cluster_count = 4;
+}
+
+// ComplianceDataState indicates whether compliance data is current relative to
+// the scan configuration's schedule.
+enum ComplianceDataState {
+  // Cannot evaluate: no schedule, unresolvable config, or no data.
+  COMPLIANCE_DATA_STATE_UNKNOWN = 0;
+  // Data reflects the most recent expected scan cycle.
+  COMPLIANCE_DATA_STATE_CURRENT = 1;
+  // Data predates the most recent expected scan cycle.
+  COMPLIANCE_DATA_STATE_OUTDATED = 2;
 }
 
 // ComplianceClusterOverallStats provides overall stats for cluster
@@ -101,12 +119,17 @@ message ComplianceClusterOverallStats {
   repeated ComplianceCheckStatusCount check_stats = 2;
   repeated string cluster_errors = 3;
   google.protobuf.Timestamp last_scan_time = 4;
+  ComplianceDataState data_state = 5;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
   repeated ComplianceClusterOverallStats scan_stats = 1;
   int32 total_count = 2;
+  // Number of clusters with OUTDATED data in the current filtered scope
+  // (computed over the unpaginated result set). Non-zero signals the UI
+  // to show an outdated-data banner.
+  int32 outdated_cluster_count = 3;
 }
 
 message ComplianceProfileResultsRequest {
