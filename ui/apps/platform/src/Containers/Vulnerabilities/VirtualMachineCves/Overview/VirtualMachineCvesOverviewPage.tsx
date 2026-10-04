@@ -1,7 +1,6 @@
 import { Content, Flex, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
-import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import { useManagedColumns } from 'hooks/useManagedColumns';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLPagination from 'hooks/useURLPagination';
@@ -37,10 +36,7 @@ function VirtualMachineCvesOverviewPage() {
             <PageTitle title="Virtual Machine CVEs Overview" />
             <PageSection component="div">
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                        <Title headingLevel="h1">Virtual machine vulnerabilities</Title>
-                        <TechnologyPreviewLabel />
-                    </Flex>
+                    <Title headingLevel="h1">Virtual machine vulnerabilities</Title>
                     <Content component="p">
                         Prioritize and remediate observed CVEs across virtual machines
                     </Content>

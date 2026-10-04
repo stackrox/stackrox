@@ -34,10 +34,10 @@ bitfield_to_failure() {
     msg="$msg main"
   fi
   if ((status & 2)); then
-    msg="$msg scanner-db"
+    msg="$msg scanner-v4-db"
   fi
   if ((status & 1)); then
-    msg="$msg scanner"
+    msg="$msg scanner-v4"
   fi
   fail "$msg - status $status"
 }
@@ -52,22 +52,22 @@ assert_flavor_prompt_release() {
 
 assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
-  # main/scanner/scanner-db are constants from code
+  # main/scanner-v4/scanner-v4-db are constants from code
   assert_line --regexp '^The main .* "quay.io/rhacs-eng/main:'
-  assert_line --regexp '^The scanner-db .* "quay.io/rhacs-eng/scanner-db:'
-  assert_line --regexp '^The scanner .* "quay.io/rhacs-eng/scanner:'
+  assert_line --regexp '^The scanner-v4-db .* "quay.io/rhacs-eng/scanner-v4-db:'
+  assert_line --regexp '^The scanner-v4 .* "quay.io/rhacs-eng/scanner-v4:'
 }
 
 assert_prompts_opensource() {
   assert_line --regexp '^The main .* "quay.io/stackrox-io/main:'
-  assert_line --regexp '^The scanner-db .* "quay.io/stackrox-io/scanner-db:'
-  assert_line --regexp '^The scanner .* "quay.io/stackrox-io/scanner:'
+  assert_line --regexp '^The scanner-v4-db .* "quay.io/stackrox-io/scanner-v4-db:'
+  assert_line --regexp '^The scanner-v4 .* "quay.io/stackrox-io/scanner-v4:'
 }
 
 assert_prompts_rhacs() {
   assert_line --regexp '^The main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:'
-  assert_line --regexp '^The scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:'
-  assert_line --regexp '^The scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9:'
+  assert_line --regexp '^The scanner-v4-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9:'
+  assert_line --regexp '^The scanner-v4 .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9:'
 }
 
 @test "roxctl-development central generate interactive flavor=dummy should ask for valid value" {
@@ -85,7 +85,7 @@ assert_prompts_rhacs() {
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "quay.io/rhacs-eng" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "quay.io/rhacs-eng" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/scanner-v4" "quay.io/rhacs-eng" "$any_version" 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development central generate interactive flavor=opensource" {
@@ -97,7 +97,7 @@ assert_prompts_rhacs() {
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "quay.io/stackrox-io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "quay.io/stackrox-io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/scanner-v4" "quay.io/stackrox-io" "$any_version" 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-development central generate interactive flavor=rhacs" {
@@ -109,7 +109,7 @@ assert_prompts_rhacs() {
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "registry.redhat.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "registry.redhat.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/scanner-v4" "registry.redhat.io" "$any_version" 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 # RELEASE
@@ -129,7 +129,7 @@ assert_prompts_rhacs() {
   assert_flavor_prompt_release
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "quay.io/stackrox-io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "quay.io/stackrox-io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/scanner-v4" "quay.io/stackrox-io" "$any_version" 'scanner-v4-indexer' 'scanner-v4-db'
 }
 
 @test "roxctl-release central generate interactive flavor=rhacs" {
@@ -141,5 +141,5 @@ assert_prompts_rhacs() {
   assert_flavor_prompt_release
   sleep 2 # due to frequent flakes of missing yaml files
   assert_components_registry "$out_dir/central" "registry.redhat.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "registry.redhat.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/scanner-v4" "registry.redhat.io" "$any_version" 'scanner-v4-indexer' 'scanner-v4-db'
 }

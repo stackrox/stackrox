@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -25,7 +26,6 @@ describe('Vulnerability Management Clusters', () => {
             'Cluster',
             'Image CVEs',
             'Node CVEs',
-            'Platform CVEs',
             'K8S Version',
             'Entities',
             'Latest Violation',
@@ -37,7 +37,8 @@ describe('Vulnerability Management Clusters', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
-        const tdSelector = '.rt-td:nth-child(9)';
+        const columnIndex = hasFeatureFlag('ROX_LEGACY_SCANNER') ? 9 : 8;
+        const tdSelector = `.rt-td:nth-child(${columnIndex})`;
 
         // 0. Initial table state indicates that the column is sorted ascending.
         cy.get(thSelector).should('have.class', '-sort-asc');
@@ -82,14 +83,17 @@ describe('Vulnerability Management Clusters', () => {
     });
 
     it('should display links for namespaces', () => {
-        verifySecondaryEntities(entitiesKey, 'namespaces', 7);
+        const columnIndex = hasFeatureFlag('ROX_LEGACY_SCANNER') ? 7 : 6;
+        verifySecondaryEntities(entitiesKey, 'namespaces', columnIndex);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 7);
+        const columnIndex = hasFeatureFlag('ROX_LEGACY_SCANNER') ? 7 : 6;
+        verifySecondaryEntities(entitiesKey, 'deployments', columnIndex);
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 7);
+        const columnIndex = hasFeatureFlag('ROX_LEGACY_SCANNER') ? 7 : 6;
+        verifySecondaryEntities(entitiesKey, 'nodes', columnIndex);
     });
 });

@@ -11,7 +11,7 @@ tests:
     availableSchemas:
     - openshift-4.12
   set:
-    scanner.disable: false
+    scannerV4.disable: false
   expect: |
-    assertScannerIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9:3.0.99.0")
-    assertScannerDBIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9:3.0.99.0")
+    assertScannerIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9:3.0.99.0")
+    assertScannerDBIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9:3.0.99.0")

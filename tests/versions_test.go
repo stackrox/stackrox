@@ -33,5 +33,4 @@ func TestVersions(t *testing.T) {
 	}
 
 	assert.Equal(t, kind, version.GetVersionKind(versions.CollectorVersion), "rc and release builds should reference a corresponding collector version")
-	assert.Equal(t, kind, version.GetVersionKind(versions.ScannerVersion), "rc and release builds should reference a corresponding scanner version")
 }

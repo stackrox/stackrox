@@ -70,6 +70,7 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 		ads,
 		tokenIssuerFactory,
 		mapperFactory,
+		nil,
 	)
 	s.Require().NoError(s.authProviderRegistry.RegisterBackendFactory(
 		s.ctx,

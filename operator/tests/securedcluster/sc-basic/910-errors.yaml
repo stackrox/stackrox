@@ -1,0 +1,18 @@
+# The central CR and its operands are gone in the previous step.
+# Scanner V2 - including the secured-cluster "local scanner" that the reconciler used to
+# create on OpenShift once the central scanner was gone - has been removed, so the
+# SecuredCluster reconciler must NOT create a "scanner" deployment on any platform.
+# The Scanner V4 matcher only ever runs on the Central side (the indexer is the
+# delegated-scanning component on the secured-cluster side, checked by the
+# 910-assert-openshift / 910-errors-non-openshift files), so it must not appear on the
+# secured-cluster side either.
+# This errors file makes sure neither is present or re-created, on any platform.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher

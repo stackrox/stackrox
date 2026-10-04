@@ -32,8 +32,8 @@ const (
 	DNFMetadataStatusUnavailable = "unavailable"
 )
 
-// DisplayGuestOS prefers the agent-detected OS so callers can show a versioned
-// string while storage.GuestOs remains the informer value used for scan stamping.
+// DisplayGuestOS is the guest OS written to storage.guest_os: agent-detected
+// when present, otherwise fallback (the KubeVirt informer value).
 func DisplayGuestOS(facts map[string]string, fallback string) string {
 	return cmp.Or(facts[DetectedGuestOSKey], fallback)
 }

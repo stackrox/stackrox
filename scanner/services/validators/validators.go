@@ -154,6 +154,20 @@ func validateContents(contents *v4.Contents) error {
 	return nil
 }
 
+// validateCPE reports an error if s is a non-empty string that isn't a valid
+// bound CPE WFN. An empty string is treated as "no CPE" and is not an error,
+// matching the same convention mappers.toClairCoreCPE uses for the wire
+// format: ClairCore's own zero-value WFN and this package's empty string are
+// both accepted as "unset", even though StackRox's own mappers now always
+// serialize "unset" as the bound wildcard CPE rather than "".
+func validateCPE(s string) error {
+	if s == "" {
+		return nil
+	}
+	_, err := cpe.Unbind(s)
+	return err
+}
+
 func validateMap[T hasIDAndCPE](m map[string]T, fieldName string, validateF func(T) error) error {
 	for k, v := range m {
 		if reflect.ValueOf(v).IsZero() {
@@ -162,8 +176,7 @@ func validateMap[T hasIDAndCPE](m map[string]T, fieldName string, validateF func
 		if v.GetId() == "" {
 			return fmt.Errorf("%s element %q: ID is empty", fieldName, k)
 		}
-		_, err := cpe.Unbind(v.GetCpe())
-		if err != nil {
+		if err := validateCPE(v.GetCpe()); err != nil {
 			return fmt.Errorf("%s element %q: invalid CPE: %w", fieldName, k, err)
 		}
 		if err := validateF(v); err != nil {
@@ -182,8 +195,7 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 		if o.GetId() == "" {
 			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
 		}
-		_, err := cpe.Unbind(o.GetCpe())
-		if err != nil {
+		if err := validateCPE(o.GetCpe()); err != nil {
 			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
 		}
 		if err := validateF(o); err != nil {

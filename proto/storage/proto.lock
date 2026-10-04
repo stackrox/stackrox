@@ -6682,6 +6682,11 @@
                 "id": 14,
                 "name": "cisa_kev",
                 "type": "bool"
+              },
+              {
+                "id": 15,
+                "name": "known_ransomware_campaign",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -14049,6 +14054,14 @@
                 "integer": 4
               }
             ]
+          },
+          {
+            "name": "SkipContainerType",
+            "enum_fields": [
+              {
+                "name": "SKIP_INIT"
+              }
+            ]
           }
         ],
         "messages": [
@@ -14353,7 +14366,7 @@
               {
                 "id": 1,
                 "name": "skip_container_types",
-                "type": "ContainerType",
+                "type": "SkipContainerType",
                 "is_repeated": true
               }
             ]
@@ -14438,9 +14451,6 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"

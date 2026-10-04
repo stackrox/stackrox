@@ -1,29 +1,17 @@
 import { useCallback } from 'react';
 
-import { fetchReportHistory } from 'services/ReportsService';
-import type { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
+import type { FetchReportHistoryServiceParams } from 'services/ReportsService';
+import type { ConfiguredReportSnapshot, ReportSnapshot } from 'services/ReportsService.types';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestQuery from 'hooks/useRestQuery';
 
-// TODO investigate whether this hook is for generic or specific report type.
+// Only the config id is needed, so accept a minimal shape to support any report type.
+type ReportConfigurationRef = { id: string };
 
-async function fetchLastReportJobForConfiguration(
-    reportConfigurationId: string
-): Promise<ReportSnapshot> {
-    const reportSnapshot = await fetchReportHistory({
-        id: reportConfigurationId,
-        query: '',
-        page: 1,
-        perPage: 1,
-        showMyHistory: true,
-        sortOption: {
-            field: 'Report Completion Time',
-            reversed: true,
-        },
-    });
-    return reportSnapshot[0] ?? null;
-}
+type FetchReportHistory = (
+    params: FetchReportHistoryServiceParams
+) => Promise<ConfiguredReportSnapshot[]>;
 
 type ReportSnapshotLookup = Partial<Record<string, ReportSnapshot | null>>;
 
@@ -38,13 +26,27 @@ export type FetchLastSnapshotReturn = Result & {
 };
 
 export function useWatchLastSnapshotForReports(
-    reportConfigurations: ReportConfiguration | ReportConfiguration[] | null
+    reportConfigurations: ReportConfigurationRef | ReportConfigurationRef[] | null,
+    fetchReportHistory: FetchReportHistory
 ): FetchLastSnapshotReturn {
     const fetchSnapshotsCallback = useCallback(() => {
         if (!reportConfigurations) {
             const result: ReportSnapshotLookup = {};
             return Promise.resolve(result);
         }
+
+        const fetchLastReportJobForConfiguration = (id: string) =>
+            fetchReportHistory({
+                id,
+                query: '',
+                page: 1,
+                perPage: 1,
+                showMyHistory: true,
+                sortOption: {
+                    field: 'Report Completion Time',
+                    reversed: true,
+                },
+            }).then((snapshots) => snapshots[0] ?? null);
 
         const promise: Promise<ReportSnapshotLookup> = new Promise((resolve, reject) => {
             const configurations = Array.isArray(reportConfigurations)
@@ -65,7 +67,7 @@ export function useWatchLastSnapshotForReports(
         });
 
         return promise;
-    }, [reportConfigurations]);
+    }, [reportConfigurations, fetchReportHistory]);
     const { data, isLoading, error, refetch } = useRestQuery(fetchSnapshotsCallback);
 
     useInterval(refetch, 10000);

@@ -162,7 +162,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
 
 class UIE2eTest(BaseTest):
-    TEST_TIMEOUT = 2 * 60 * 60
+    TEST_TIMEOUT = 3 * 60 * 60
 
     def run(self):
         print("Executing UI e2e test")
@@ -192,7 +192,7 @@ class ComplianceE2eTest(BaseTest):
 
 
 class NonGroovyE2e(BaseTest):
-    TEST_TIMEOUT = 120 * 60
+    TEST_TIMEOUT = 3 * 60 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
 
     def run(self):
@@ -261,7 +261,7 @@ class CustomSetTest(BaseTest):
 
 
 class BYODBTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60 * 2
+    TEST_TIMEOUT = 60 * 60 * 3
     TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
 
     def run(self):

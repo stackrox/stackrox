@@ -3,10 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import { components } from 'react-select';
 import queryString from 'qs';
-import { connect } from 'react-redux';
 import { Filter } from 'react-feather';
 
-import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
 import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
@@ -99,7 +97,6 @@ export const removeValuesForKey = (oldOptions, newOptions) => {
 const URLSearchInputWithAutocomplete = ({
     autoCompleteResults,
     categoryOptions,
-    setAllSearchOptions,
     clearAutocomplete,
     fetchAutocomplete,
     placeholder,
@@ -235,7 +232,6 @@ const URLSearchInputWithAutocomplete = ({
 
     function updateAutocompleteState(searchOptions) {
         return (input) => {
-            setAllSearchOptions(searchOptions);
             if (searchOptions.length === 0) {
                 if (clearAutocomplete) {
                     clearAutocomplete();
@@ -311,7 +307,6 @@ URLSearchInputWithAutocomplete.propTypes = {
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
-    setAllSearchOptions: PropTypes.func.isRequired,
     prependAutocompleteQuery: PropTypes.arrayOf(
         PropTypes.shape({
             value: PropTypes.string,
@@ -328,8 +323,4 @@ URLSearchInputWithAutocomplete.defaultProps = {
     prependAutocompleteQuery: [],
 };
 
-const mapDispatchToProps = {
-    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions,
-};
-
-export default connect(null, mapDispatchToProps)(URLSearchInputWithAutocomplete);
+export default URLSearchInputWithAutocomplete;

@@ -1,0 +1,355 @@
+import { useCallback, useRef, useState } from 'react';
+import type { ReactElement, RefObject } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import {
+    Button,
+    PageSection,
+    Wizard,
+    WizardFooter,
+    WizardStep,
+    useWizardContext,
+} from '@patternfly/react-core';
+import type { WizardStepType } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
+import { FormikProvider } from 'formik';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
+import isEqual from 'lodash/isEqual';
+
+import useAnalytics, {
+    COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+    COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
+} from 'hooks/useAnalytics';
+import useModal from 'hooks/useModal';
+import useRestQuery from 'hooks/useRestQuery';
+import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
+import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import ScanConfigOptions from './ScanConfigOptions';
+import ScanConfigClustersStep from './ScanConfigClustersStep';
+import ScanConfigProfilesStep from './ScanConfigProfilesStep';
+import ScanConfigDeliveryStep from './ScanConfigDeliveryStep';
+import ScanConfigReviewStep from './ScanConfigReviewStep';
+import useFormikScanConfig from './useFormikScanConfig';
+import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
+
+// Parameters (and so on) for step label are consistent with the corresponding step heading and view heading.
+const PARAMETERS = 'Parameters';
+const PARAMETERS_ID = 'parameters';
+const SELECT_CLUSTERS = 'Clusters';
+const SELECT_CLUSTERS_ID = 'clusters';
+const SELECT_PROFILES = 'Profiles';
+const SELECT_PROFILES_ID = 'profiles';
+const CONFIGURE_REPORT = 'Delivery';
+const CONFIGURE_REPORT_ID = 'report';
+const REVIEW_CONFIG = 'Review';
+const REVIEW_CONFIG_ID = 'review';
+
+type ScanConfigWizardPageSectionProps = {
+    initialFormValues?: ScanConfigFormValues;
+    pageAction: SchedulePageAction;
+};
+
+type CustomWizardFooterProps = {
+    stepId: string;
+    formik: ReturnType<typeof useFormikScanConfig>;
+    alertRef: RefObject<HTMLDivElement>;
+    openModal: () => void;
+    validate?: () => boolean;
+};
+
+function CustomWizardFooter({
+    stepId,
+    formik,
+    alertRef,
+    openModal,
+    validate = () => true,
+}: CustomWizardFooterProps) {
+    const { activeStep, goToNextStep, goToPrevStep } = useWizardContext();
+
+    function scrollToAlert() {
+        if (alertRef.current) {
+            alertRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+    }
+
+    function setAllFieldsTouched(formikGroupKey: string): void {
+        const groupHasNestedFields =
+            typeof formik.values[formikGroupKey] === 'object' &&
+            !Array.isArray(formik.values[formikGroupKey]);
+        let touchedState;
+
+        if (groupHasNestedFields) {
+            touchedState = Object.keys(formik.values[formikGroupKey]).reduce((acc, field) => {
+                acc[field] = true;
+                return acc;
+            }, {});
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: touchedState });
+        } else {
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: true });
+        }
+    }
+
+    function handleNext() {
+        const hasNoErrors = Object.keys(formik.errors?.[stepId] ?? {}).length === 0;
+
+        if (!hasNoErrors) {
+            setAllFieldsTouched(stepId);
+            scrollToAlert();
+            return; // Don't navigate if validation fails
+        }
+
+        // Additional validation check if provided
+        if (!validate()) {
+            return;
+        }
+
+        // If validation passes, navigate to next step
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        goToNextStep();
+    }
+
+    return (
+        <WizardFooter
+            activeStep={activeStep}
+            isBackDisabled={activeStep.name === PARAMETERS}
+            onNext={handleNext}
+            onBack={goToPrevStep}
+            onClose={openModal}
+        />
+    );
+}
+
+function ScanConfigWizardPageSection({
+    initialFormValues,
+    pageAction,
+}: ScanConfigWizardPageSectionProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
+    const navigate = useNavigate();
+    const formik = useFormikScanConfig(initialFormValues);
+    const [isCreating, setIsCreating] = useState(false);
+    const [createScanConfigError, setCreateScanConfigError] = useState('');
+    const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
+    const alertRef = useRef<HTMLDivElement | null>(null);
+
+    const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
+    const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
+
+    const { isModalOpen, openModal, closeModal } = useModal();
+
+    async function onSave() {
+        setIsCreating(true);
+        setCreateScanConfigError('');
+        const complianceScanConfig = convertFormikToScanConfig(formik.values);
+        const { clusters, scanConfig } = complianceScanConfig;
+        const { notifiers, profiles, scanSchedule } = scanConfig;
+
+        try {
+            await saveScanConfig(complianceScanConfig);
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+                properties: {
+                    success: true,
+                    errorMessage: '',
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
+                },
+            });
+            navigate(complianceEnhancedSchedulesPath);
+        } catch (error) {
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+                properties: {
+                    success: false,
+                    errorMessage: getAxiosErrorMessage(error),
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
+                },
+            });
+            setCreateScanConfigError(getAxiosErrorMessage(error));
+        } finally {
+            setIsCreating(false);
+        }
+    }
+
+    function handleProfilesUpdate() {
+        if (!isEqual(clustersUsedForProfileData, formik.values.clusters)) {
+            setClustersUsedForProfileData(formik.values.clusters);
+        }
+    }
+
+    function wizardStepChanged(_event: unknown, currentStep: WizardStepType): void {
+        if (currentStep?.id) {
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
+                properties: {
+                    step: String(currentStep.id),
+                },
+            });
+        }
+
+        handleProfilesUpdate();
+        setCreateScanConfigError('');
+    }
+
+    function onClose(): void {
+        navigate(complianceEnhancedSchedulesPath);
+    }
+
+    function canJumpToClusters() {
+        return Object.keys(formik.errors?.parameters ?? {}).length === 0;
+    }
+
+    function canJumpToProfiles() {
+        return canJumpToClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
+    }
+
+    function canJumpToDelivery() {
+        return canJumpToProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
+    }
+
+    function canJumpToReview() {
+        return canJumpToDelivery() && Object.keys(formik.errors?.report ?? {}).length === 0;
+    }
+
+    function allClustersAreUnhealthy(): boolean {
+        return clusters?.every((cluster) => cluster.status === 'UNHEALTHY') || false;
+    }
+
+    return (
+        <PageSection
+            hasBodyWrapper={false}
+            hasOverflowScroll
+            isFilled
+            padding={{ default: 'noPadding' }}
+            type="wizard"
+        >
+            <FormikProvider value={formik}>
+                <Wizard
+                    navAriaLabel="Scan schedule configuration steps"
+                    onSave={onSave}
+                    onStepChange={wizardStepChanged}
+                >
+                    <WizardStep
+                        name={PARAMETERS}
+                        id={PARAMETERS_ID}
+                        body={{ hasNoPadding: true }}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={PARAMETERS_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ScanConfigOptions />
+                    </WizardStep>
+                    <WizardStep
+                        name={SELECT_CLUSTERS}
+                        id={SELECT_CLUSTERS_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToClusters()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={SELECT_CLUSTERS_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                                validate={() => !(allClustersAreUnhealthy() && !initialFormValues)}
+                            />
+                        }
+                    >
+                        <ScanConfigClustersStep
+                            alertRef={alertRef}
+                            clusters={clusters ?? []}
+                            isFetchingClusters={isFetchingClusters}
+                        />
+                    </WizardStep>
+                    <WizardStep
+                        name={SELECT_PROFILES}
+                        id={SELECT_PROFILES_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToProfiles()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={SELECT_PROFILES_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ScanConfigProfilesStep
+                            alertRef={alertRef}
+                            clusterIds={clustersUsedForProfileData}
+                        />
+                    </WizardStep>
+                    <WizardStep
+                        name={CONFIGURE_REPORT}
+                        id={CONFIGURE_REPORT_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToDelivery()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={CONFIGURE_REPORT_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ScanConfigDeliveryStep />
+                    </WizardStep>
+                    <WizardStep
+                        name={REVIEW_CONFIG}
+                        id={REVIEW_CONFIG_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToReview()}
+                        footer={{
+                            nextButtonProps: { isLoading: isCreating },
+                            nextButtonText: 'Save',
+                            onClose: openModal,
+                        }}
+                    >
+                        <ScanConfigReviewStep
+                            clusters={clusters ?? []}
+                            errorMessage={createScanConfigError}
+                        />
+                    </WizardStep>
+                </Wizard>
+            </FormikProvider>
+            <Modal
+                variant="small"
+                title="Confirm cancel"
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                actions={[
+                    <Button key="confirm" variant="primary" onClick={onClose}>
+                        Confirm
+                    </Button>,
+                    <Button key="cancel" variant="secondary" onClick={closeModal}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                <p>
+                    Are you sure you want to cancel? Any unsaved changes will be lost. You will be
+                    taken back to the list of scan configurations.
+                </p>
+            </Modal>
+        </PageSection>
+    );
+}
+
+export default ScanConfigWizardPageSection;

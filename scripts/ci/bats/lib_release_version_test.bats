@@ -85,7 +85,7 @@ function setup() {
     assert_output ""
 }
 
-# check_collector_version(), check_scanner_version() tests
+# check_collector_version(), check_fact_version() tests
 
 function make() {
     echo "${tags[$3]}"
@@ -128,25 +128,5 @@ function make() {
 @test "spots fact tag is a release" {
     declare -A tags=( [fact-tag]="0.2.1")
     run check_fact_version
-    assert_success
-}
-
-@test "spots scanner tag is a master commit" {
-    declare -A tags=( [scanner-tag]="3.45.x-12-g8a2e05d0ec")
-    run check_scanner_version
-    assert_failure
-    assert_output --partial 'Scanner tag does not look like a release tag'
-}
-
-@test "spots scanner tag is a release candidate" {
-    declare -A tags=( [scanner-tag]="3.45.1-rc.1")
-    run check_scanner_version
-    assert_failure
-    assert_output --partial 'Scanner tag does not look like a release tag'
-}
-
-@test "spots scanner tag is a release" {
-    declare -A tags=( [scanner-tag]="3.45.1")
-    run check_scanner_version
     assert_success
 }

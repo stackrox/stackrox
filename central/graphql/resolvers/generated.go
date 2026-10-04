@@ -199,6 +199,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssV3: CVSSV3",
 		"epss: EPSS",
 		"exploit: Exploit",
+		"knownRansomwareCampaign: Boolean!",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -1447,6 +1448,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SkipContainerType(0)))
 	utils.Must(builder.AddType("SlimUser", []string{
 		"id: ID!",
 		"name: String!",
@@ -3434,6 +3436,11 @@ func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error
 func (resolver *cVEInfoResolver) Exploit(ctx context.Context) (*exploitResolver, error) {
 	value := resolver.data.GetExploit()
 	return resolver.root.wrapExploit(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) KnownRansomwareCampaign(ctx context.Context) bool {
+	value := resolver.data.GetKnownRansomwareCampaign()
+	return value
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -15621,6 +15628,24 @@ func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx conte
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx context.Context) string {
 	value := resolver.data.GetNamespaceName()
 	return value
+}
+
+func toSkipContainerType(value *string) storage.SkipContainerType {
+	if value != nil {
+		return storage.SkipContainerType(storage.SkipContainerType_value[*value])
+	}
+	return storage.SkipContainerType(0)
+}
+
+func toSkipContainerTypes(values *[]string) []storage.SkipContainerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SkipContainerType, len(*values))
+	for i, v := range *values {
+		output[i] = toSkipContainerType(&v)
+	}
+	return output
 }
 
 type slimUserResolver struct {

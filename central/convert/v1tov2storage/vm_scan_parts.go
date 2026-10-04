@@ -54,6 +54,7 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 			},
 			FixedBy:  highestFixedBy(comp.GetVulnerabilities()),
 			CveCount: compCveCount,
+			Notes:    convertComponentNotes(comp.GetNotes()),
 		})
 	}
 
@@ -145,6 +146,22 @@ func convertCVEBaseInfo(info *storage.VirtualMachineCVEInfo) *storage.CVEInfo {
 		References:   refs,
 		Epss:         epss,
 	}
+}
+
+func convertComponentNotes(notes []storage.EmbeddedVirtualMachineScanComponent_Note) []storage.VirtualMachineComponentV2_Note {
+	if len(notes) == 0 {
+		return nil
+	}
+	out := make([]storage.VirtualMachineComponentV2_Note, 0, len(notes))
+	for _, n := range notes {
+		switch n {
+		case storage.EmbeddedVirtualMachineScanComponent_UNSCANNED:
+			out = append(out, storage.VirtualMachineComponentV2_UNSCANNED)
+		default:
+			out = append(out, storage.VirtualMachineComponentV2_UNSPECIFIED)
+		}
+	}
+	return out
 }
 
 func convertScanNotes(notes []storage.VirtualMachineScan_Note) []storage.VirtualMachineScanV2_Note {

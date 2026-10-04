@@ -23,9 +23,6 @@ spec:
           matchLabels:
             app: admission-control
       {{- if ._rox.sensor.localImageScanning.enabled }}
-      - podSelector:
-          matchLabels:
-            app: scanner
       {{- if ._rox.scannerV4._indexerEnabled }}
       - podSelector:
           matchLabels:

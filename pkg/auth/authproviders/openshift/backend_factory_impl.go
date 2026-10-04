@@ -18,7 +18,7 @@ const (
 
 	// TypeNameWithACMAccessControlDelegation is the type name for OpenShift auth providers
 	// with role resolution from ACM.
-	TypeNameWithACMAccessControlDelegation = "openshift-with-acm-roles"
+	TypeNameWithACMAccessControlDelegation = authproviders.OpenShiftTypeNameWithACMAccessControlDelegation
 
 	callbackRelativePath = "callback"
 )

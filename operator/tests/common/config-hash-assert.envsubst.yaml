@@ -22,26 +22,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
-spec:
-  template:
-    metadata:
-      annotations:
-        app.stackrox.io/config-hash: ${CONFIG_HASH}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-db
-spec:
-  template:
-    metadata:
-      annotations:
-        app.stackrox.io/config-hash: ${CONFIG_HASH}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: scanner-v4-indexer
 spec:
   template:
