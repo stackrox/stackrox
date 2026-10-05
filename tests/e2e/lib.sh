@@ -157,8 +157,6 @@ deploy_stackrox_with_roxie() {
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
-    prepare_for_konflux "$config_file"
-
     workaround_label_length_limitation "$config_file"
 
     # Print out the config file in use for transparency.
@@ -210,35 +208,6 @@ deploy_stackrox_with_roxie() {
     info "║  StackRox deployed  ║"
     info "║                     ║"
     info "╚═════════════════════╝"
-}
-
-prepare_for_konflux() {
-    local config_file="$1"
-    local use_konflux
-    use_konflux=$(yq eval ".roxie.konfluxImages" "$config_file")
-    local main_image_tag
-    main_image_tag=$(yq eval ".roxie.version" "$config_file")
-    if [[ "$use_konflux" == "true" ]]; then
-        # We need to be able to pull operator bundle images.
-        registry_ro_login "quay.io/rhacs-eng"
-
-        info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
-        if is_CI; then
-            # get_branch_name() may only be called in CI context.
-            local branch_name
-            branch_name="$(get_branch_name)"
-            if [[ "$branch_name" =~ ^release- ]]; then
-                info "On release branch (${branch_name}), skipping main image tag patching for Konflux usage"
-                return
-            fi
-        fi
-        info "Patching main image tag for Konflux usage: using ${main_image_tag}"
-        if [[ "$main_image_tag" != *-fast ]]; then
-            main_image_tag="${main_image_tag}-fast"
-            patch_yaml "$config_file" ".roxie.version = \"${main_image_tag}\""
-            info "Main image tag patched for Konflux usage: ${main_image_tag}"
-        fi
-    fi
 }
 
 # When deploying Konflux-built images, we might get an additional "-fast" suffix on the main image version,
