@@ -1,0 +1,57 @@
+{
+    "data": {
+        "images": [
+            {
+                "id": "sha256:abcxyz",
+                "digest": "sha256:abcxyz",
+                "name": {
+                    "registry": "docker.io",
+                    "remote": "cypress-test/image",
+                    "tag": "v0.0.1",
+                    "__typename": "ImageName"
+                },
+                "metadata": {
+                    "v1": {
+                        "layers": [
+                            {
+                                "instruction": "ADD",
+                                "value": "file:abc123 in /",
+                                "__typename": "ImageLayer"
+                            }
+                        ],
+                        "__typename": "V1Metadata"
+                    },
+                    "__typename": "ImageMetadata"
+                },
+                "operatingSystem": "debian:11",
+                "watchStatus": "NOT_WATCHED",
+                "imageComponents": [
+                    {
+                        "name": "openssl",
+                        "version": "3.0.8-r0",
+                        "location": "",
+                        "source": "OS",
+                        "layerIndex": 0,
+                        "inBaseImageLayer": false,
+                        "imageVulnerabilities": [
+                            {
+                                "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                "fixedByVersion": "3.0.8-r1",
+                                "advisory": null,
+                                "pendingExceptionCount": 0,
+                                "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
+                                "cvss": 7.5,
+                                "scoreVersion": "V3",
+                                "nvdCvss": 0,
+                                "nvdScoreVersion": "UNKNOWN_VERSION",
+                                "__typename": "ImageVulnerability"
+                            }
+                        ],
+                        "__typename": "ImageComponent"
+                    }
+                ],
+                "__typename": "Image"
+            }
+        ]
+    }
+}

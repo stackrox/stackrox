@@ -1,0 +1,17 @@
+{
+    "data": {
+        "imageCVE": {
+            "cve": "MOCK-2023-123456",
+            "firstDiscoveredInSystem": "2024-03-25T14:35:43.111026Z",
+            "publishedOn": "2023-10-14T02:15:00Z",
+            "distroTuples": [
+                {
+                    "summary": "Mocked CVE for Cypress testing",
+                    "link": "",
+                    "operatingSystem": "debian:11",
+                    "cveBaseInfo": { "epss": null }
+                }
+            ]
+        }
+    }
+}
