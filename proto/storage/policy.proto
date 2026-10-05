@@ -3,7 +3,6 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
-import "storage/deployment.proto";
 import "storage/image.proto";
 import "storage/scope.proto";
 
@@ -178,9 +177,16 @@ enum Comparator {
   GREATER_THAN = 4;
 }
 
+// SkipContainerType lists container kinds a policy may skip during evaluation.
+// The set is independent of ContainerType and currently contains only init containers.
+// An empty skip_container_types list evaluates every container type.
+enum SkipContainerType {
+  SKIP_INIT = 0;
+}
+
 // EvaluationFilter pre-filters which entities a policy evaluates.
 message EvaluationFilter {
-  repeated ContainerType skip_container_types = 1;
+  repeated SkipContainerType skip_container_types = 1; // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
 }
 
 message Exclusion {
