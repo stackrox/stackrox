@@ -11,12 +11,24 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+      ci-job-name:
+        description: Unique CI job name.
+        type: string
+        default: gke-db-backup-restore-tests
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tag:
         description: Image tag to test.
         type: string
         required: true
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,7 +45,8 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-tests
+      CI_JOB_NAME: ${{ inputs.ci-job-name || 'gke-db-backup-restore-tests' }}
+      USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
