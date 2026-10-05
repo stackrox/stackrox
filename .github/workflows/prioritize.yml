@@ -28,8 +28,10 @@ on:
         type: string
 
 concurrency:
-  group: fullsend-prioritize-${{ inputs.source_repo }}-${{ fromJSON(inputs.event_payload).issue.number }}
-  cancel-in-progress: true
+  # Keep dispatch runs independent: payloads can represent issues or PRs, and
+  # concurrency grouping should not need to parse caller-provided JSON.
+  group: fullsend-prioritize-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   prioritize:
