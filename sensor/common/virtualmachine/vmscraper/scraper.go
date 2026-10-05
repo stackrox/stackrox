@@ -118,8 +118,8 @@ type VMScraper struct {
 	warnMaxBytes          int
 	stopper               concurrency.Stopper
 	started               atomic.Bool
-	// loggedSkip is set after the first skip log for a missing-capability stretch
-	// so a 10s ticker does not repeat it until the capability returns.
+	// loggedSkip is set after the first skip log for a feature-disabled stretch
+	// so a 10s ticker does not repeat it until Central is reachable again.
 	loggedSkip atomic.Bool
 	// indexReportsDisabled is set from a feature-disabled ACK and cleared on
 	// CentralReachable so a later connection can scrape again.
@@ -206,7 +206,6 @@ func (s *VMScraper) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()
 		s.indexReportsDisabled.Store(false)
-		s.loggedSkip.Store(false)
 	case common.SensorComponentEventOfflineMode:
 		s.centralReady.Reset()
 	}
@@ -331,15 +330,13 @@ func (s *VMScraper) run() {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
-	disabled := s.indexReportsDisabled.Load()
-	if disabled || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+	if s.indexReportsDisabled.Load() {
 		if s.loggedSkip.CompareAndSwap(false, true) {
-			if disabled {
-				log.Infof("VMScraper: skipping pulling index reports from VMs; Central ACKed feature disabled")
-			} else {
-				log.Infof("VMScraper: skipping pulling index reports from VMs; Central does not advertise VirtualMachinesSupported")
-			}
+			log.Infof("VMScraper: skipping pulling index reports from VMs; Central ACKed feature disabled")
 		}
+		return
+	}
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return
 	}
 	s.loggedSkip.Store(false)
@@ -412,12 +409,15 @@ func (s *VMScraper) reconcile() {
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
+				nextAt := now.Add(randOffset(newVMWindow, s.randFloat64()))
 				st = &vmState{
-					nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())),
+					nextAttemptAt: nextAt,
 					vmID:          vm.ID,
 					mappingPath:   metrics.MappingPathUnspecified,
 				}
 				s.vmState[key] = st
+				log.Infof("VMScraper: queued %q for first index pull in %s (spread window %s)",
+					key, nextAt.Sub(now), newVMWindow)
 			} else if st.vmID != vm.ID {
 				// namespace/name can outlive a KubeVirt recreate; do not inherit scrape state.
 				st = &vmState{
@@ -426,6 +426,7 @@ func (s *VMScraper) reconcile() {
 					mappingPath:   metrics.MappingPathUnspecified,
 				}
 				s.vmState[key] = st
+				log.Infof("VMScraper: re-queued %q for index pull (VM identity changed)", key)
 			}
 		}
 		for key := range s.vmState {

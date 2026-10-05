@@ -40,7 +40,7 @@ permissions:
 jobs:
   recheck:
     if: ${{ !inputs.skip_freshness_check }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       result: ${{ steps.check.outputs.result }}
     concurrency:
@@ -89,7 +89,7 @@ jobs:
   update:
     needs: recheck
     if: always() && (needs.recheck.result == 'skipped' || needs.recheck.outputs.result == 'run')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: scanner-updater-export-${{ inputs.object }}
       cancel-in-progress: false
@@ -104,6 +104,7 @@ jobs:
       ROX_GIT_REF: ${{ inputs.ref }}
       GCS_OBJECT: ${{ inputs.object }}
       STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
     steps:
     - name: Checkout repository (master for local actions)
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -194,7 +195,7 @@ jobs:
       !inputs.skip_freshness_check &&
       always() &&
       (needs.recheck.result == 'failure' || needs.update.result == 'failure')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: read

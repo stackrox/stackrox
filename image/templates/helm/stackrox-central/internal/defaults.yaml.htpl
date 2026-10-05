@@ -92,7 +92,6 @@ defaults:
           memory: "16Gi"
           cpu: "8"
   centralWorker:
-    enabled: true
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:

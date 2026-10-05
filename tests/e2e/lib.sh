@@ -92,6 +92,38 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# Ensure the roxie CLI is installed and on PATH. run.sh runs under both GitHub Actions and
+# OpenShift CI (Prow); on Prow the GHA roxie/install-cli action is unavailable and the test
+# image may ship an older roxie, so we rely on the self-installing scripts/roxie.sh wrapper,
+# which downloads the version pinned in ROXIE_VERSION into bin/<os>_<arch>/roxie and put it
+# ahead of any pre-installed roxie on PATH.
+ensure_roxie_on_path() {
+    local os arch
+    case "$(uname -s)" in
+        Linux*) os="linux" ;;
+        Darwin*) os="darwin" ;;
+        *) die "Unsupported operating system: $(uname -s)" ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        arm64|aarch64) arch="arm64" ;;
+        *) die "Unsupported architecture: $(uname -m)" ;;
+    esac
+
+    # Triggers the download/install of the pinned roxie version if it is not present yet.
+    "$ROOT/scripts/roxie.sh" version
+
+    # Put ONLY roxie at the front of PATH, via a dedicated directory. We must not prepend
+    # "$ROOT/bin/${os}_${arch}" directly: it also contains roxctl, which the bats tests move out
+    # of that directory mid-run, after which bare `roxctl` would resolve to the now-missing path
+    # (instead of the stable /usr/local/bin/roxctl copy) and later phases (e.g. proxy tests) fail.
+    local roxie_bindir; roxie_bindir="$(mktemp -d)"
+    ln -sf "$ROOT/bin/${os}_${arch}/roxie" "${roxie_bindir}/roxie"
+    export PATH="${roxie_bindir}:$PATH"
+
+    check_for_roxie
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
@@ -125,8 +157,6 @@ deploy_stackrox_with_roxie() {
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
-    prepare_for_konflux "$config_file"
-
     workaround_label_length_limitation "$config_file"
 
     # Print out the config file in use for transparency.
@@ -146,9 +176,9 @@ deploy_stackrox_with_roxie() {
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
-    # For Scanner V2 this means that it will also wait until vulnerabilities are loaded into the DB.
+    # For Scanner V4 this means that it will also wait until vulnerabilities are loaded into the DB.
     roxie deploy \
-        --early-readiness=false --central-wait=40m --secured-cluster-wait=40m \
+        --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
         --envrc "$roxie_envrc" \
         --config "$config_file"
 
@@ -178,35 +208,6 @@ deploy_stackrox_with_roxie() {
     info "║  StackRox deployed  ║"
     info "║                     ║"
     info "╚═════════════════════╝"
-}
-
-prepare_for_konflux() {
-    local config_file="$1"
-    local use_konflux
-    use_konflux=$(yq eval ".roxie.konfluxImages" "$config_file")
-    local main_image_tag
-    main_image_tag=$(yq eval ".roxie.version" "$config_file")
-    if [[ "$use_konflux" == "true" ]]; then
-        # We need to be able to pull operator bundle images.
-        registry_ro_login "quay.io/rhacs-eng"
-
-        info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
-        if is_CI; then
-            # get_branch_name() may only be called in CI context.
-            local branch_name
-            branch_name="$(get_branch_name)"
-            if [[ "$branch_name" =~ ^release- ]]; then
-                info "On release branch (${branch_name}), skipping main image tag patching for Konflux usage"
-                return
-            fi
-        fi
-        info "Patching main image tag for Konflux usage: using ${main_image_tag}"
-        if [[ "$main_image_tag" != *-fast ]]; then
-            main_image_tag="${main_image_tag}-fast"
-            patch_yaml "$config_file" ".roxie.version = \"${main_image_tag}\""
-            info "Main image tag patched for Konflux usage: ${main_image_tag}"
-        fi
-    fi
 }
 
 # When deploying Konflux-built images, we might get an additional "-fast" suffix on the main image version,
@@ -297,35 +298,17 @@ securedCluster:
     clusterName: remote
 EOF
 
-    # Expose plaintext endpoints required by endpoints_test.go.
-    set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
+    # Scan every 9-11 minutes during compatibility tests.
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL" "10m"
+    set_custom_env "$config_file" "securedCluster" "ROX_NODE_SCANNING_INTERVAL_DEVIATION" "60s"
+
+    # Configure the endpoints required by endpoints_test.go.
+    handle_endpoints_for_test "$config_file"
 
     # Speed up baseline generation so TestPod can observe process events within the test window.
     # The default is 1h; tests time out long before baselines would be generated.
     set_custom_env "$config_file" "central" "ROX_BASELINE_GENERATION_DURATION" "1m"
     set_custom_env "$config_file" "central" "ROX_NETWORK_BASELINE_OBSERVATION_PERIOD" "2m"
-
-    # Inject the full endpoint config into the central-endpoints ConfigMap so that
-    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
-    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
-        local overlay_tmp; overlay_tmp="$(mktemp)"
-        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
-        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
-        cat > "$overlay_tmp" <<'OVERLAY'
-central:
-  spec:
-    overlays:
-    - apiVersion: v1
-      kind: ConfigMap
-      name: central-endpoints
-      patches:
-      - path: data.endpoints\.yaml
-        verbatim: |
-OVERLAY
-        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
-        merge_yaml "$config_file" < "$overlay_tmp"
-        rm -f "$overlay_tmp"
-    fi
 
     # Add the test CA so Central accepts client-cert auth during endpoints_test.go.
     if [[ -n "${TRUSTED_CA_FILE:-}" && -f "${TRUSTED_CA_FILE}" ]]; then
@@ -440,6 +423,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-true}"
     ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
@@ -620,6 +604,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
     customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
@@ -749,13 +735,11 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
-    # Shorten node-scan cadence for e2e (production: 5m initial, 4h interval).
-    # Matcher-not-ready drops the first index as unretryable; a short interval
-    # covers the next scan without restarting collector.
-    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_MAX_INITIAL_WAIT'
-    customize_envVars+=$'\n      value: "1s"'
+    # Scan every 9-11 minutes during operator-deployed e2e tests.
     customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL'
-    customize_envVars+=$'\n      value: "30s"'
+    customize_envVars+=$'\n      value: "10m"'
+    customize_envVars+=$'\n    - name: ROX_NODE_SCANNING_INTERVAL_DEVIATION'
+    customize_envVars+=$'\n      value: "60s"'
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -772,6 +756,10 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_INIT_CONTAINER_SUPPORT:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
         customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
+    fi
+    if [[ -n "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+        customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION}"'"'
     fi
 
     local scannerV4DbPersistenceYaml
@@ -1640,7 +1628,8 @@ wait_for_scanner_V4() {
         info "Listing available storage classes:"
         kubectl describe storageclasses 2>/dev/null || true
 
-        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-3600}
+        # (todo) re-visit the default timeout of 2h and make vuln loading more performant
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}
         info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 
@@ -1802,8 +1791,8 @@ _record_build_info() {
     set_ci_shared_export "build" "${build_info}"
 }
 
-restore_4_6_postgres_backup() {
-    info "Restoring a 4.6 postgres backup"
+restore_postgres_backup() {
+    info "Restoring a postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
@@ -1813,10 +1802,10 @@ restore_4_6_postgres_backup() {
     if is_CI; then
         setup_gcp
     fi
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4.10.0.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-            central db restore --timeout 5m postgres_db_4_6.sql.zip
+            central db restore --timeout 5m postgres_db_4.10.0.sql.zip
 }
 
 update_public_config() {

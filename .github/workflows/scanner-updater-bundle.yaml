@@ -21,7 +21,7 @@ permissions:
 jobs:
   build-matrix:
     if: github.repository_owner == 'stackrox'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       streams: ${{ steps.emit.outputs.streams }}
     steps:
@@ -40,7 +40,7 @@ jobs:
 
   bundle:
     needs: build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1
       volumes:
@@ -216,7 +216,7 @@ jobs:
   notify:
     needs: [bundle]
     if: always() && needs.bundle.result == 'failure'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: read

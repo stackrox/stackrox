@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: securitypolicies.config.stackrox.io
 spec:
   group: config.stackrox.io
@@ -82,10 +82,13 @@ spec:
                   evaluates.
                 properties:
                   skipContainerTypes:
+                    description: SkipContainerTypes lists container kinds to skip
+                      during evaluation.
                     items:
+                      description: SkipContainerType lists container kinds a policy
+                        may skip during evaluation.
                       enum:
-                      - REGULAR
-                      - INIT
+                      - SKIP_INIT
                       type: string
                     type: array
                 type: object
