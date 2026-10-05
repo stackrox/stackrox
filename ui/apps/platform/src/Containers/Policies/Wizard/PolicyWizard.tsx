@@ -169,16 +169,16 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                     <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <PageSection isFilled id="policy-page">
+            <PageSection id="policy-page">
                 <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
                 <div>Design custom security policies for your environment</div>
             </PageSection>
             <PageSection
                 hasBodyWrapper={false}
-                isFilled
                 hasOverflowScroll
+                isFilled
                 padding={{ default: 'noPadding' }}
-                className="pf-v6-u-h-100"
+                type="wizard"
             >
                 <FormikProvider value={formik}>
                     <Wizard
