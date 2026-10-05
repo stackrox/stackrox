@@ -58,17 +58,17 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 	}
 
 	if useJSON {
-		if err := cmd.printJSON(result); err != nil {
+		err := cmd.printJSON(result)
+		if err != nil {
 			cmd.env.Logger().ErrfLn("%v", err)
-			return err
 		}
-		return nil
+		return err
 	}
 	cmd.printText(result)
 	return nil
 }
 
-func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionResult, error) {
+func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionCheckResult, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing gRPC connection to Central")
@@ -78,7 +78,7 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionResul
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
-	versioncheck.SuppressVersionMismatchWarning() // Don't print another warning if versions
+	versioncheck.SuppressVersionMismatchWarning() // Don't print another warning if versions are incompatible
 
 	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
 	if err != nil {
@@ -93,14 +93,14 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionResul
 				"Run \"roxctl central login\" first")
 	}
 
-	result, err := versioncheck.ClassifyCentralVersion(centralVersion)
+	result, err := versioncheck.CheckCentralVersion(centralVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "classifying Central version")
+		return nil, errors.Wrap(err, "checking Central version")
 	}
 	return result, nil
 }
 
-func (cmd *centralVersionCommand) printText(r *versioncheck.VersionResult) {
+func (cmd *centralVersionCommand) printText(r *versioncheck.VersionCheckResult) {
 	const labelFmt = "%-35s%s"
 	cmd.env.Logger().PrintfLn(labelFmt, "Central version:", r.CentralVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "roxctl version:", r.RoxctlVersion)
@@ -112,7 +112,7 @@ func (cmd *centralVersionCommand) printText(r *versioncheck.VersionResult) {
 	}
 }
 
-func (cmd *centralVersionCommand) printJSON(r *versioncheck.VersionResult) error {
+func (cmd *centralVersionCommand) printJSON(r *versioncheck.VersionCheckResult) error {
 	enc := json.NewEncoder(cmd.env.InputOutput().Out())
 	enc.SetIndent("", "  ")
 	return errors.Wrap(enc.Encode(r), "encoding version information as JSON")

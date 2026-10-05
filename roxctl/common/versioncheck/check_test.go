@@ -67,9 +67,8 @@ func TestCheckAndWarn(t *testing.T) {
 			testutils.SetMainVersion(t, tc.localVersion)
 
 			var buf bytes.Buffer
-			result := checkAndWarn(tc.centralVersion, &buf)
+			checkAndWarn(tc.centralVersion, &buf)
 
-			assert.Equal(t, tc.expectWarning != "", result, "return value mismatch")
 			if tc.expectWarning != "" {
 				assert.Contains(t, buf.String(), tc.expectWarning)
 				assert.Contains(t, buf.String(), "Compatible Centrals:")
@@ -103,7 +102,7 @@ func TestCentralVersionClientInterceptor(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
 			t.Cleanup(func() {
-				ResetSuppressVersionMismatchWarningForTesting(t)
+				UnsuppressVersionMismatchWarningForTesting(t)
 			})
 
 			var buf bytes.Buffer
@@ -143,7 +142,7 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 		t.Run(name, func(t *testing.T) {
 			testutils.SetMainVersion(t, "4.8.0")
 			t.Cleanup(func() {
-				ResetSuppressVersionMismatchWarningForTesting(t)
+				UnsuppressVersionMismatchWarningForTesting(t)
 			})
 
 			var serverInterceptors []grpc.UnaryServerInterceptor
@@ -170,7 +169,7 @@ func TestCentralVersionClientInterceptor_WithRealServerInterceptor(t *testing.T)
 func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	testutils.SetMainVersion(t, "4.8.0")
 	t.Cleanup(func() {
-		ResetSuppressVersionMismatchWarningForTesting(t)
+		UnsuppressVersionMismatchWarningForTesting(t)
 	})
 
 	var buf bytes.Buffer

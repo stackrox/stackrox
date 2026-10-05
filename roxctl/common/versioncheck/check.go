@@ -19,8 +19,8 @@ import (
 
 var suppressVersionMismatchWarning atomic.Bool
 
-// SuppressVersionMismatchWarning if call the warnings in CentralVersionClientInterceptor will
-// be suppressed
+// SuppressVersionMismatchWarning once called, prevents
+// CentralVersionClientInterceptor from emitting warnings.
 func SuppressVersionMismatchWarning() {
 	suppressVersionMismatchWarning.Store(true)
 }
@@ -43,12 +43,29 @@ func CentralVersionClientInterceptor(w io.Writer) grpc.UnaryClientInterceptor {
 	}
 }
 
-// VersionResult holds structured version and compatibility information
+func checkAndWarn(centralVersion string, w io.Writer) {
+	result, err := CheckCentralVersion(centralVersion)
+	if err != nil {
+		return
+	}
+	if result.compatibility != versioncompatibility.IncompatibleAhead && result.compatibility != versioncompatibility.IncompatibleBehind {
+		return
+	}
+
+	fmt.Fprintf(w, "Warning: roxctl %s and Central %s versions are outside the supported version skew range. Correct functioning is not guaranteed.\n", result.RoxctlVersion, centralVersion)
+	if result.Recommendation != "" {
+		fmt.Fprintf(w, "         %s\n", result.Recommendation)
+	}
+	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
+		result.RoxctlVersion, centralVersion, strings.Join(result.CompatibleCentralVersions, ", "))
+}
+
+// VersionCheckResult holds structured version and compatibility information
 // for the running roxctl and a given Central.
 // JSON tags are required by the "roxctl central version --output=json" command.
 // The struct lives here rather than in roxctl/central/version to avoid a
 // circular dependency (versioncheck imports would break).
-type VersionResult struct {
+type VersionCheckResult struct {
 	CentralVersion            string   `json:"CentralVersion"`
 	RoxctlVersion             string   `json:"RoxctlVersion"`
 	CompatibleCentralVersions []string `json:"CompatibleCentralVersions"`
@@ -60,9 +77,9 @@ type VersionResult struct {
 	compatibility versioncompatibility.Compatibility
 }
 
-// ClassifyCentralVersion classifies the given Central version against
+// CheckCentralVersion classifies the given Central version against
 // the running roxctl version and returns structured version info.
-func ClassifyCentralVersion(centralVersion string) (*VersionResult, error) {
+func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
 	roxctlVersion := version.GetMainVersion()
 	_, err := productstreams.ParseXYFromVersionString(roxctlVersion)
 	if err != nil {
@@ -85,7 +102,7 @@ func ClassifyCentralVersion(centralVersion string) (*VersionResult, error) {
 
 	g := Guidance(compat)
 
-	return &VersionResult{
+	return &VersionCheckResult{
 		CentralVersion:            centralVersion,
 		RoxctlVersion:             roxctlVersion,
 		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
@@ -135,22 +152,4 @@ func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
 	default:
 		return VersionGuidance{}
 	}
-}
-
-func checkAndWarn(centralVersion string, w io.Writer) bool {
-	result, err := ClassifyCentralVersion(centralVersion)
-	if err != nil {
-		return false
-	}
-	if result.compatibility != versioncompatibility.IncompatibleAhead && result.compatibility != versioncompatibility.IncompatibleBehind {
-		return false
-	}
-
-	fmt.Fprintf(w, "Warning: roxctl %s and Central %s versions are outside the supported version skew range. Correct functioning is not guaranteed.\n", result.RoxctlVersion, centralVersion)
-	if result.Recommendation != "" {
-		fmt.Fprintf(w, "         %s\n", result.Recommendation)
-	}
-	fmt.Fprintf(w, "         roxctl: %s | Central: %s | Compatible Centrals: %s\n",
-		result.RoxctlVersion, centralVersion, strings.Join(result.CompatibleCentralVersions, ", "))
-	return true
 }
