@@ -50,7 +50,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 }
 
 func (d *detectorImpl) DeploymentInactive(deploymentID string) bool {
-	_, exists, err := d.deployments.ListDeployment(detectorCtx, deploymentID)
+	exists, err := d.deployments.DeploymentExists(detectorCtx, deploymentID)
 	if err != nil {
 		log.Errorf("Couldn't determine inactive state of deployment %q: %v", deploymentID, err)
 		return false

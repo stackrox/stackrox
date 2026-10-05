@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -50,6 +52,70 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 
 func (suite *DeploymentDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+}
+
+type testDeletedDeployments struct {
+	ids map[string]bool
+}
+
+func (c *testDeletedDeployments) Add(id string) {
+	c.ids[id] = true
+}
+
+func (c *testDeletedDeployments) Contains(id string) bool {
+	return c.ids[id]
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestDeploymentExistsDuringDeletion() {
+	const id = "deployment-id"
+	tests := map[string]struct {
+		cachedExists     bool
+		deleting         bool
+		markDuringLookup bool
+		dbCount          int
+		dbErr            error
+		wantExists       bool
+		wantErr          bool
+	}{
+		"active deployment uses cache":       {cachedExists: true, wantExists: true},
+		"missing deployment uses cache":      {},
+		"deleted row with stale cache":       {cachedExists: true, deleting: true},
+		"deletion starts after cache lookup": {cachedExists: true, markDuringLookup: true},
+		"deletion pending with row present":  {cachedExists: true, deleting: true, dbCount: 1, wantExists: true},
+		"reinserted row with stale cache":    {deleting: true, dbCount: 1, wantExists: true},
+		"database error":                     {cachedExists: true, deleting: true, dbErr: errors.New("database unavailable"), wantErr: true},
+	}
+
+	for name, test := range tests {
+		suite.Run(name, func() {
+			store := storeMocks.NewMockStore(gomock.NewController(suite.T()))
+			deleted := &testDeletedDeployments{ids: make(map[string]bool)}
+			if test.deleting {
+				deleted.Add(id)
+			}
+			store.EXPECT().Exists(suite.ctx, id).DoAndReturn(func(context.Context, string) (bool, error) {
+				if test.markDuringLookup {
+					deleted.Add(id)
+				}
+				return test.cachedExists, nil
+			})
+			if test.deleting || test.markDuringLookup {
+				store.EXPECT().Count(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, query *v1.Query) (int, error) {
+					suite.True(query.EqualVT(pkgSearch.NewQueryBuilder().AddDocIDs(id).ProtoQuery()))
+					return test.dbCount, test.dbErr
+				})
+			}
+
+			ds := &datastoreImpl{deploymentStore: store, deletedDeploymentCache: deleted}
+			exists, err := ds.DeploymentExists(suite.ctx, id)
+			suite.Equal(test.wantExists, exists)
+			if test.wantErr {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
