@@ -46,6 +46,145 @@ const rules = {
             };
         },
     },
+    'PageSection-type-breadcrumb': {
+        // Require that PageSection elememt has type="breadcrumb" prop if Breadcrumb is a child.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that PageSection elememt has type="breadcrumb" prop if Breadcrumb is a child.',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'PageSection' &&
+                        !node.attributes.some(
+                            (attribute) =>
+                                attribute.name?.name === 'type' &&
+                                attribute.value?.value === 'breadcrumb'
+                        )
+                    ) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length > 0 &&
+                            Array.isArray(ancestors[ancestors.length - 1].children) &&
+                            ancestors[ancestors.length - 1].children.some(
+                                (child) => child.openingElement?.name?.name === 'Breadcrumb'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'PageSection element needs type="breadcrumb" prop if BreadCrumb is a child',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'PageSection-type-tabs': {
+        // Require that PageSection elememt has type="tabs" prop if Tabs is a child.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that PageSection elememt has type="tabs" prop if Tabs is a child.',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'PageSection' &&
+                        !node.attributes.some(
+                            (attribute) =>
+                                attribute.name?.name === 'type' && attribute.value?.value === 'tabs'
+                        )
+                    ) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length > 0 &&
+                            Array.isArray(ancestors[ancestors.length - 1].children) &&
+                            ancestors[ancestors.length - 1].children.some(
+                                (child) => child.openingElement?.name?.name === 'Tabs'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'PageSection element needs type="tabs" prop if Tabs is a child',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'PageSection-type-wizard': {
+        // Require that PageSection elememt has type="wizard" prop if Wizard is a child.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that PageSection elememt has type="wizard" prop if Wizard is a child.',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'PageSection' &&
+                        !node.attributes.some(
+                            (attribute) =>
+                                attribute.name?.name === 'type' &&
+                                attribute.value?.value === 'wizard'
+                        )
+                    ) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length > 0 &&
+                            Array.isArray(ancestors[ancestors.length - 1].children) &&
+                            ancestors[ancestors.length - 1].children.some(
+                                (child) => child.openingElement?.name?.name === 'Wizard'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'PageSection element needs type="wizard" prop if Wizard is a child',
+                            });
+                        } else if (
+                            ancestors.length > 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].children)
+                        ) {
+                            const childFound = ancestors[ancestors.length - 1].children.find(
+                                (child) => child.openingElement?.name?.name === 'FormikProvider'
+                            );
+                            if (
+                                childFound &&
+                                Array.isArray(childFound.children) &&
+                                childFound.children.some(
+                                    (child) => child.openingElement?.name?.name === 'Wizard'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'PageSection element needs type="wizard" prop if Wizard is a descendant',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'Td-dataLabel-Th-text': {
         // Require that if Td element has dataLabel prop with string value,
         // then Th element with same index has corresponding text (or screenReaderText).
