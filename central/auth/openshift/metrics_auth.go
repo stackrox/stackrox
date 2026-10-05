@@ -125,7 +125,21 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 	log.Info("Client CA changed, updating OpenShift metrics auth provider")
 	config[userpki.ConfigKeys] = caPEM
-	if _, err := registry.UpdateProvider(ctx, authProviderID, authproviders.WithConfig(config)); err != nil {
+
+	factory := provider.BackendFactory()
+	if factory == nil {
+		log.Warn("Auth provider has no backend factory, cannot apply the new client CA")
+		return
+	}
+	// WithConfig on its own only rewrites the stored config. The provider keeps its
+	// existing backend, which parsed the certificates once at construction time, and the
+	// registry then re-registers those same stale certificates with the client CA
+	// manager. Central would keep advertising the superseded CA until restart, so the
+	// backend has to be rebuilt from the new config as part of the same update.
+	if _, err := registry.UpdateProvider(ctx, authProviderID,
+		authproviders.WithConfig(config),
+		authproviders.WithBackendFromFactory(ctx, factory),
+	); err != nil {
 		log.Warnf("Failed to update client CA in auth provider: %v", err)
 	}
 }
