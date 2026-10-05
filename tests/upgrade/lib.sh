@@ -148,6 +148,212 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
+# The rollback boundary journey uses Helm for release-matched chart upgrades.
+is_central_upgrade_ci() {
+    [[ "${CI:-}" == true && "${CI_JOB_NAME:-}" == gke-upgrade-tests-central ]]
+}
+
+customize_ci_central_db_chart() {
+    if is_central_upgrade_ci; then
+        # Defaults contain Helm templates, not plain YAML. Null values would
+        # restore the CPU limit, so remove that fallback before rendering.
+        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-chart.patch"
+        if git -C "$1" apply --reverse --check --unidiff-zero "$patch" 2>/dev/null; then
+            return 0
+        fi
+        git -C "$1" apply --check --unidiff-zero "$patch" || return "$?"
+        git -C "$1" apply --unidiff-zero "$patch"
+    fi
+}
+
+deploy_earlier_postgres_central() {
+    info "Deploying: $EARLIER_TAG..."
+
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    # Let's try helm
+    # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
+    # produces a value shared with Helm --set and later restore/auth.
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
+
+    # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
+    # because the later Helm upgrade cannot change an existing PVC's class.
+    local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart /tmp/early-stackrox-central-services-chart
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
+            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        fi
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+
+    # Pin all initial images to the fixture, regardless of the CLI's embedded tag.
+    # Otherwise a later historical chart can downgrade Scanner V4 DB on its PVC.
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         "${helm_extra_args[@]}" \
+         --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+         --set central.db.enabled=true \
+         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
+         --set central.persistence.none=true \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="${EARLIER_TAG}" \
+         --set scanner.dbImage.tag="${EARLIER_TAG}" \
+         --set scannerV4.image.tag="${EARLIER_TAG}" \
+         --set scannerV4.db.image.tag="${EARLIER_TAG}"
+
+    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
+    # the scripts.  So we will give it a minute for things to get started before we proceed
+    sleep 60
+
+    ROX_USERNAME="admin"
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+}
+
+# upgrade_central_helm_to_head applies the HEAD chart to the existing
+# stackrox-central-services release so Scanner V4 is installed. kubectl set
+# image does not create V4, and HEAD Central does not use leftover Scanner V2.
+# Optional CLI and DB tag overrides support release-matched rollback smoke tests
+# without downgrading Central DB.
+upgrade_central_helm_to_head() {
+    local namespace="${1:-stackrox}"
+    local image_tag="${2:-$CURRENT_TAG}"
+    local registry="${3:-$REGISTRY}"
+    local roxctl="${4:-$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl}"
+    local db_tag="${5:-$image_tag}"
+
+    info "Applying Central chart for $image_tag with Scanner V4 (Central DB: $db_tag)"
+
+    if ! helm -n "$namespace" status stackrox-central-services >/dev/null 2>&1; then
+        die "Helm release stackrox-central-services not found in namespace ${namespace}"
+    fi
+
+    if is_central_upgrade_ci; then
+        # Inspect only the override; never capture or trace release credentials.
+        if ! helm -n "$namespace" get values stackrox-central-services -o json |
+            jq -e '.central.db.resources.limits.cpu == null' >/dev/null; then
+            echo "Cannot upgrade: retained Central DB CPU limit or unreadable release values" >&2
+            return 1
+        fi
+    fi
+
+    local chart_dir
+    chart_dir="$(mktemp -d)"
+    "$roxctl" helm output central-services \
+        --image-defaults opensource \
+        --output-dir "${chart_dir}" --remove
+
+    # Retrieve the generated-values secret from installation time.
+    # The helm chart needs the CA stored there to sign the V4 TLS certs.
+    local helm_generated_values_file
+    helm_generated_values_file="$(mktemp)"
+    local generated_secrets_json
+    generated_secrets_json="$(kubectl -n "$namespace" get secrets -o json | jq '[.items[]
+        | select(.metadata.name | startswith("stackrox-generated-"))
+        | select(.data["generated-values.yaml"] != null)]')"
+    local generated_secret_count
+    generated_secret_count="$(jq 'length' <<<"$generated_secrets_json")"
+    if [[ "$generated_secret_count" -lt 1 ]]; then
+        die "Expected a Helm generated-values secret in ${namespace}, found 0"
+    fi
+    # Helm pre-upgrade hooks use resource-policy=keep, so extra generated-values
+    # secrets can exist. V4 certs must use the install-time CA in the oldest.
+    local helm_generated_secret_name
+    helm_generated_secret_name="$(jq -r 'sort_by(.metadata.creationTimestamp)[0].metadata.name' <<<"$generated_secrets_json")"
+    if [[ "$generated_secret_count" -gt 1 ]]; then
+        info "Found ${generated_secret_count} generated-values secrets; using install-time ${helm_generated_secret_name}"
+    fi
+    jq -r --arg name "$helm_generated_secret_name" \
+        '.[] | select(.metadata.name == $name) | .data["generated-values.yaml"] | @base64d' \
+        <<<"$generated_secrets_json" > "$helm_generated_values_file"
+    if [[ ! -s "$helm_generated_values_file" ]]; then
+        die "Helm generated-values secret ${helm_generated_secret_name} was empty"
+    fi
+
+    # 4.6 installs this CRD outside Helm ownership; HEAD templates it. Helm
+    # refuses the upgrade until the existing CRD is adopted.
+    if kubectl get crd securitypolicies.config.stackrox.io >/dev/null 2>&1; then
+        kubectl annotate crd/securitypolicies.config.stackrox.io \
+            meta.helm.sh/release-name=stackrox-central-services \
+            meta.helm.sh/release-namespace="${namespace}" \
+            --overwrite
+        kubectl label crd/securitypolicies.config.stackrox.io \
+            app.kubernetes.io/managed-by=Helm \
+            --overwrite
+    fi
+
+    local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart "$chart_dir"
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
+            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        fi
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+    # The image walk uses kubectl patch/set, so Helm 4 SSA will not overwrite
+    # those fields (central-config, CPU/memory) without --force-conflicts.
+    if helm upgrade --help 2>&1 | grep -q -- '--force-conflicts'; then
+        helm_extra_args+=(--force-conflicts)
+    fi
+
+    # The chart emits the Scanner V4 DB PVC only when createClaim is true;
+    # this is an upgrade so .Release.IsInstall is false.
+    # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
+    # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
+    helm -n "$namespace" upgrade --reuse-values \
+        -f "$helm_generated_values_file" \
+        -f - \
+        "${helm_extra_args[@]}" \
+        stackrox-central-services "${chart_dir}" <<EOT
+image:
+  registry: "${registry}"
+central:
+  db:
+    image:
+      tag: "${db_tag}"
+  image:
+    tag: "${image_tag}"
+scannerV4:
+  disable: false
+  image:
+    tag: "${image_tag}"
+  db:
+    image:
+      tag: "${image_tag}"
+    persistence:
+      persistentVolumeClaim:
+        createClaim: true
+customize:
+  envVars:
+    SCANNER_V4_MATCHER_READINESS: vulnerability
+EOT
+
+    export SCANNER_V4_VULN_READINESS=true
+    wait_for_api "$namespace"
+    wait_for_central_db "$namespace"
+    wait_for_scanner_V4 "$namespace"
+}
+
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 

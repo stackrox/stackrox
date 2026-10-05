@@ -27,6 +27,7 @@ source "$TEST_ROOT/tests/e2e/lib.sh"
 source "$TEST_ROOT/tests/upgrade/lib.sh"
 # shellcheck source=../../tests/upgrade/validation.sh
 source "$TEST_ROOT/tests/upgrade/validation.sh"
+source "$TEST_ROOT/tests/upgrade/rollback.sh"
 
 test_upgrade() {
     info "Starting upgrade test"
@@ -41,11 +42,27 @@ test_upgrade() {
 
     export_test_environment
 
+    # Resolve exact GA boundaries before mutating the deployment. Missing tags or
+    # indistinguishable historical sequences must fail, never silently skip N-4.
+    ROLLBACK_PLAN="$(cd "$TEST_ROOT" && go run ./tests/upgrade/versions \
+        --target "$CURRENT_TAG" --from "${PREVIOUS_RELEASES[${#PREVIOUS_RELEASES[@]}-1]}")"
+    local tag
+    while IFS= read -r tag; do
+        PREVIOUS_RELEASES+=("$tag")
+    done < <(jq -r '.additional_upgrades[].tag' <<<"$ROLLBACK_PLAN")
+    if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+        mkdir -p "$ARTIFACT_DIR"
+        ARTIFACT_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
+        printf '%s\n' "$ROLLBACK_PLAN" >"$ARTIFACT_DIR/rollback-plan.json"
+    fi
+
     # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"
     QUAY_REPO="rhacs-eng"
     REGISTRY="quay.io/$QUAY_REPO"
 
+    export OUTPUT_FORMAT="helm"
+    export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
 
     if is_CI; then
@@ -62,7 +79,7 @@ test_upgrade() {
     test_upgrade_paths "$log_output_dir"
 }
 
-test_upgrade_paths() {
+test_upgrade_paths() (
     info "Testing various upgrade paths"
 
     if [[ "$#" -ne 1 ]]; then
@@ -81,24 +98,17 @@ test_upgrade_paths() {
     export MAX_WAIT_SECONDS=600
 
     ########################################################################################
-    # Use roxie to deploy older central                                                    #
+    # Use roxctl to generate helm files and deploy older central                           #
     ########################################################################################
-    deploy_earlier_tag_central
+    deploy_earlier_postgres_central
     wait_for_api
     setup_client_TLS_certs
-
-    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
-    # Put the toolchain selected for this checkout first on PATH for the build.
-    # Needed for restore_backup to find roxctl.
-    local build_goroot
-    build_goroot="$(go env GOROOT)"
-    PATH="${build_goroot}/bin:${PATH}" make cli
 
     restore_backup
     wait_for_api
 
     # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+    deploy_postgres_scaled_workload
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
@@ -171,7 +181,7 @@ test_upgrade_paths() {
     ########################################################################################
     # Upgrade back to latest to run the smoke tests by first walking previous releases     #
     ########################################################################################
-    for str in ${PREVIOUS_RELEASES[@]}; do
+    for str in "${PREVIOUS_RELEASES[@]}"; do
       info "Walking upgrades -- release => $str"
       kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$str"
       kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$str"
@@ -185,6 +195,7 @@ test_upgrade_paths() {
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+    kubectl -n stackrox rollout status deploy/central --timeout=600s
     wait_for_api
     wait_for_background_migrations
 
@@ -198,11 +209,20 @@ test_upgrade_paths() {
     touch "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}"
 
     ########################################################################################
-    # Rollback to the previous Postgres                                                    #
+    # Reject N-4, recover on N-3, then roll forward on the same database.                   #
     ########################################################################################
-    info "Rolling back to previous version with Postgres still enabled"
-    force_rollback_to_previous_postgres
+    local original_config rollback_tag
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.canRollbackAfterUpgrade')" "true"
+    original_config="$(kubectl -n stackrox get configmap/central-config -o json | jq '{data}')"
+    rollback_tag="$(jq -r '.allowed.tag' <<<"$ROLLBACK_PLAN")"
+    # Keep the original failure status even if best-effort recovery also fails.
+    trap 'recover_rollback_central "$?" "$original_config"' EXIT
+
+    test_rejected_rollback "$ROLLBACK_PLAN" "${ARTIFACT_DIR:-$log_output_dir}/rollback-rejection"
+    set_rollback_version "$rollback_tag"
     wait_for_api
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$rollback_tag"
+    checkForPostgresAccessScopes
 
     validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -213,86 +233,150 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
 
-    # Now go back to the current release. The HEAD installs Scanner V4,
-    # which smoke test needs. Secured cluster still has reconciliation paused at this point.
-    upgrade_operator_to_head
+    # Run the old release's own smoke suite with matching CLI and secured cluster.
+    # Scanner is still at the fixture version: this only upgrades it, never downgrades it.
+    (
+        cd "$REPO_FOR_TIME_TRAVEL"
+        git checkout "$(jq -r '.allowed.sha' <<<"$ROLLBACK_PLAN")"
+        build_goroot="$(go env GOROOT)"
+        MAIN_IMAGE_TAG="$rollback_tag" BUILD_TAG="$rollback_tag" PATH="${build_goroot}/bin:${PATH}" make cli
+    )
+    upgrade_central_helm_to_head stackrox "$rollback_tag" "$REGISTRY" \
+        "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl" "$CURRENT_TAG"
+
+    # Cleanup the scaled sensor before smoke tests.
+    helm uninstall -n stackrox stackrox-secured-cluster-services
+    "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
+
+    # The restart allowlist below is intentionally limited to this smoke phase,
+    # but still require Scanner V4 to recover before considering the smoke run.
+    kubectl -n stackrox rollout status deployment/scanner-v4-db --timeout=600s
+    kubectl -n stackrox rollout status deployment/scanner-v4-indexer --timeout=600s
+    kubectl -n stackrox rollout status deployment/scanner-v4-matcher --timeout=600s
+
+    run_upgrade_smoke "$REPO_FOR_TIME_TRAVEL" "$rollback_tag" "$rollback_tag" "rollback-n3-smoke-tests"
+    collect_and_check_stackrox_logs "$log_output_dir" "05_rollback_smoke"
+    # Remove the N-3 Sensor resources, but keep Central's remote registration:
+    # the current-release smoke run needs it for `sensor get-bundle remote`.
+    # The registration is removed when the ephemeral GKE cluster is torn down.
+    remove_rollback_smoke_sensor_resources "$REPO_FOR_TIME_TRAVEL"
+
+    # Now go back to the current release. The HEAD chart installs Scanner V4,
+    # which smoke test needs.
+    kubectl -n stackrox patch configmap/central-config --type=merge -p "$original_config"
+    upgrade_central_helm_to_head
+    kubectl -n stackrox rollout status deploy/central --timeout=600s
     wait_for_background_migrations
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$CURRENT_TAG"
+    trap - EXIT
+    run_upgrade_smoke "$TEST_ROOT" "$CURRENT_TAG" "$COLLECTOR_TAG" "upgrade-paths-smoke-tests"
 
-    # Cleanup the scaled sensor before smoke tests
-    roxie teardown secured-cluster --verbose --single-namespace
+    touch "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}"
 
-    # Remove scaled Sensor from Central
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name scale-remote
+    collect_and_check_stackrox_logs "$log_output_dir" "06_final"
+)
 
-    info "Fetching an init bundle for cluster 'remote'"
-    # This is necessary since the cluster already exists in the database restored from backup, so the CRS
-    # created by roxie is useless (you cannot re-register a cluster using CRS by design).
-    # TODO(ROX-37449): switch to just sensor cert when possible.
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
-    local init_bundle
-    init_bundle="$(mktemp)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" central init-bundles generate remote --output-secrets - > "${init_bundle}"
-    kubectl apply -n stackrox -f "${init_bundle}"
-    rm -f "${init_bundle}"
+run_upgrade_smoke() (
+    local checkout="$1" tag="$2" collector_tag="$3" results="$4"
+    cd "$checkout"
+    export MAIN_IMAGE_TAG="$tag" BUILD_TAG="$tag"
+    local roxctl="$checkout/bin/$TEST_HOST_PLATFORM/roxctl"
+
+    info "Fetching a sensor bundle for cluster 'remote'"
+    "$roxctl" version
+    rm -rf sensor-remote
+    "$roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor get-bundle remote
+    [[ -d sensor-remote ]]
 
     info "Installing sensor"
-    roxie deploy secured-cluster --verbose \
-        --single-namespace \
-        --tag "${CURRENT_TAG}" \
-        --resources ci \
-        --set securedCluster.spec.clusterName=remote
+    ./sensor-remote/sensor.sh
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$tag"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$tag"
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$collector_tag" \
+        "compliance=$REGISTRY/main:$tag"
 
     sensor_wait
 
     wait_for_central_reconciliation
 
-    # This nginx image is expected to have fixable CVEs with CVSS >= 7 once score
-    # enrichment is available. It differs from the policy test's nginx-2.0.3 image,
-    # so that workload still exercises automatic scanning on deployment.
+    # Wait for enriched scan data before the vulnerability policy assertions.
     wait_for_scored_image_scan "quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine"
 
     rm -f FAIL
     remove_qa_test_results
 
     info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
-    store_qa_test_results "upgrade-paths-smoke-tests"
+    PATH="$checkout/bin/$TEST_HOST_PLATFORM:$PATH" CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
+    store_qa_test_results "$results"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
+)
 
-    touch "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}"
+remove_rollback_smoke_sensor_resources() (
+    cd "$1"
+    ./sensor-remote/delete-sensor.sh
+)
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
-}
+run_ci_scaled_workload() (
+    if is_central_upgrade_ci; then
+        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-scale.patch"
+        git apply --check "$patch" || exit "$?"
+        git apply "$patch" || exit "$?"
+        # shellcheck disable=SC2329 # Invoked by the EXIT trap.
+        cleanup_scale_patch() {
+            local status=$?
+            if ! git apply --reverse "$patch"; then
+                echo "Failed to reverse Central DB CI scale patch" >&2
+                if [[ "$status" -eq 0 ]]; then
+                    status=1
+                fi
+            fi
+            exit "$status"
+        }
+        trap cleanup_scale_patch EXIT
+    fi
+    bash ./scale/launch_workload.sh scale-test
+)
 
-force_rollback_to_previous_postgres() {
-    info "Forcing a rollback to ${EARLIER_TAG}"
+deploy_postgres_scaled_workload() {
+    info "Deploying a scaled workload"
 
-    local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
-    echo "upgrade status: ${upgradeStatus}"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${CURRENT_TAG}"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
-    kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
-    local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
-    local config_patch
-    config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
-    echo "config patch: $config_patch"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
 
-    # downgrading to a version that does not understand process listening on ports
-    # so turning that off in sensor and collector to prevent central crashes.
-    # Sensor and Collector will be deleted a few steps after this so no need
-    # to turn these back on.  Going forward unexpected messages will result in
-    # an `UNEXPECTED` log instead of crashing central.  However that change is
-    # not present in the initial 3.74 version.
-    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+        central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
-    kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
+    helm install -n stackrox --create-namespace \
+        stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
+        -f /tmp/cluster-init-bundle.yaml \
+        --set system.enablePodSecurityPolicies=false \
+        --set clusterName=scale-remote \
+        --set image.main.tag="${EARLIER_TAG}" \
+        --set image.collector.tag="${EARLIER_TAG}" \
+        --set centralEndpoint="$API_ENDPOINT"
 
-    # Keep the upgraded central-db image when rolling Central back, since the
-    # upgraded data directory cannot be used by an older PostgreSQL major version.
+    sensor_wait
+
+    run_ci_scaled_workload
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    wait_for_api
+
+    info "Sleep for a bit to let the scale build"
+    # shellcheck disable=SC2034
+    for i in $(seq 1 150); do
+        echo -n .
+        sleep 5
+    done
+
+    info "Done with our nap for scaling"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

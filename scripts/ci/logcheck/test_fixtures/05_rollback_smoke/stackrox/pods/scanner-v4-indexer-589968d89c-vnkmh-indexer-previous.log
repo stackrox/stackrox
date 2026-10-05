@@ -1,0 +1,1 @@
+panic: migrate: failed to connect to `user=postgres database=`: 34.118.224.45:5432 (scanner-v4-db.stackrox.svc): dial error: dial tcp 34.118.224.45:5432: connect: connection refused

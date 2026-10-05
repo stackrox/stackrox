@@ -96,6 +96,45 @@ function setup() {
     [ "$status" -eq 2 ]
 }
 
+@test "Scanner V4 connection-refused panic is allowed for indexer in N-3 rollback smoke" {
+    run "$CMD" "gke-upgrade-tests-central" "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-previous.log"
+    [ "$status" -eq 0 ]
+    [ "${lines[1]}" = "Ignoring this restart due to: Scanner V4 N-3 rollback smoke raced Scanner V4 DB startup" ]
+}
+
+@test "Scanner V4 connection-refused panic is allowed for matcher in N-3 rollback smoke" {
+    run "$CMD" "gke-upgrade-tests-central" "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-matcher-589c467548-jb5qc-matcher-previous.log"
+    [ "$status" -eq 0 ]
+}
+
+@test "Scanner V4 rollback-smoke exception is not allowed for another job" {
+    run "$CMD" "gke-other-job" "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-previous.log"
+    [ "$status" -eq 2 ]
+}
+
+@test "Scanner V4 rollback-smoke exception is not allowed in another phase" {
+    local other_phase="${BATS_FILE_TMPDIR}/04_postgres_postgres_rollback/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-previous.log"
+    mkdir -p "$(dirname "$other_phase")"
+    cp "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-previous.log" "$other_phase"
+
+    run "$CMD" "gke-upgrade-tests-central" "$other_phase"
+    [ "$status" -eq 2 ]
+}
+
+@test "Scanner V4 rollback-smoke exception does not allow other errors" {
+    local other_error="${BATS_FILE_TMPDIR}/05_rollback_smoke/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-previous.log"
+    mkdir -p "$(dirname "$other_error")"
+    cp "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-indexer-589968d89c-vnkmh-indexer-other-error-previous.log" "$other_error"
+
+    run "$CMD" "gke-upgrade-tests-central" "$other_error"
+    [ "$status" -eq 2 ]
+}
+
+@test "Scanner V4 rollback-smoke exception does not allow other containers" {
+    run "$CMD" "gke-upgrade-tests-central" "${TEST_FIXTURES}/05_rollback_smoke/stackrox/pods/scanner-v4-db-589968d89c-vnkmh-db-previous.log"
+    [ "$status" -eq 2 ]
+}
+
 teardown () {
     echo "$BATS_TEST_NAME
 --------

@@ -1,0 +1,12 @@
+diff --git a/internal/defaults.yaml b/internal/defaults.yaml
+--- a/internal/defaults.yaml
++++ b/internal/defaults.yaml
+@@ -87,7 +87,7 @@
+       resources:
+         requests:
+           memory: "8Gi"
+           cpu: "4"
+         limits:
+           memory: "16Gi"
+-          cpu: "8"
++          # No CPU limit for the Central upgrade CI job.
