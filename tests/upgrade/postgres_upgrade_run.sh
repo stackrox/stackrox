@@ -174,8 +174,8 @@ test_upgrade_path() {
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
-    check_postgres_version "$CURRENT_POSTGRES_VERSION"
     wait_for_api
+    check_postgres_version "$CURRENT_POSTGRES_VERSION"
 
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
@@ -303,14 +303,14 @@ test_not_enough_disk_space() {
     kubectl -n stackrox patch pvc/central-db -p \
         '{"spec": {"resources": {"requests": {"storage": "4Gi"}}}}'
     kubectl -n stackrox rollout restart deployment/central-db
-    check_postgres_version "$CURRENT_POSTGRES_VERSION"
     wait_for_api
+    check_postgres_version "$CURRENT_POSTGRES_VERSION"
 
     # Make sure we can restore from a physical backup and run with old binaries
     # after upgrade if needed.
     kubectl -n stackrox set env deploy/central-db RESTORE_BACKUP=true FORCE_OLD_BINARIES=true
-    check_postgres_version "$EARLIER_POSTGRES_VERSION"
     wait_for_api
+    check_postgres_version "$EARLIER_POSTGRES_VERSION"
 
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
