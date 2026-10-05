@@ -461,9 +461,21 @@ deploy_stackrox_operator() {
           INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
-        make -C operator kuttl deploy-via-olm \
-          TEST_NAMESPACE="rhacs-operator-system" \
-          ROX_PRODUCT_BRANDING=RHACS_BRANDING
+        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+            local index_image_tag="v${MAIN_IMAGE_TAG}"
+            if [[ "${index_image_tag}" != *-fast ]]; then
+                index_image_tag="${index_image_tag}-fast"
+            fi
+            make -C operator kuttl deploy-via-olm \
+              TEST_NAMESPACE="rhacs-operator-system" \
+              ROX_PRODUCT_BRANDING=RHACS_BRANDING \
+              INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index" \
+              INDEX_IMG_TAG="${index_image_tag}"
+        else
+            make -C operator kuttl deploy-via-olm \
+              TEST_NAMESPACE="rhacs-operator-system" \
+              ROX_PRODUCT_BRANDING=RHACS_BRANDING
+        fi
     fi
 }
 
