@@ -108,7 +108,15 @@ gh_download_release() {
         version="tags/${version}"
     fi
 
-    asset_id="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused \
+    local auth_headers=()
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        auth_headers+=(-H "Authorization: token ${GITHUB_TOKEN}")
+    else
+        # shellcheck disable=SC2016
+        echo >&2 'Note: $GITHUB_TOKEN not found, querying GitHub without an Authorization header may result in throttling.'
+    fi
+
+    asset_id="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]}" \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2026-03-10" \
         "https://api.github.com/repos/${repo}/releases/${version}" \
@@ -117,7 +125,7 @@ gh_download_release() {
         echo >&2 "Error: No asset ID found for asset name ${asset_name} for release tag ${version} in repo ${repo}"
         exit 1
     fi
-    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused \
+    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]}" \
         -H 'Accept: application/octet-stream' \
         -o "$target" \
         "https://api.github.com/repos/${repo}/releases/assets/${asset_id}"
