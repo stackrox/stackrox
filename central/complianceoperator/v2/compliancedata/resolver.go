@@ -29,12 +29,13 @@ const (
 	skew = 2 * time.Minute
 )
 
-// grace returns the configured or default grace period.
-// Default = ComplianceScanScheduleWatcherTimeout + ComplianceScanWatcherTimeout.
+// grace returns the grace period before results are considered outdated.
+// It is the schedule-watcher + scan-watcher timeout sum: the maximum time a
+// triggered scan can legitimately still be in flight, so flagging OUTDATED
+// before it elapses would false-positive on scans that are merely in progress.
+// It is derived from those two settings (not independently configurable) so it
+// cannot drift from the watcher behavior it must outlast.
 func grace() time.Duration {
-	if g := env.ComplianceOutdatedGrace.DurationSetting(); g > 0 {
-		return g
-	}
 	return env.ComplianceScanScheduleWatcherTimeout.DurationSetting() +
 		env.ComplianceScanWatcherTimeout.DurationSetting()
 }
