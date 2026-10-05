@@ -356,11 +356,11 @@ describe('Workload CVE Image Single page', () => {
                     waitForRequests().then(assertCveCountsUnchanged);
 
                     // Test another sort back-and-forth
-                    sortByTableHeader('CVE severity');
+                    sortByTableHeader('Top CVE severity');
                     waitForRequests().then(assertCveCountsUnchanged);
-                    sortByTableHeader('CVE severity');
+                    sortByTableHeader('Top CVE severity');
                     waitForRequests().then(assertCveCountsUnchanged);
-                    sortByTableHeader('CVE severity');
+                    sortByTableHeader('Top CVE severity');
                     waitForRequests().then(assertCveCountsUnchanged);
 
                     // Test changing back to the original pagination
@@ -372,7 +372,7 @@ describe('Workload CVE Image Single page', () => {
                     waitForRequests().then(assertCveCountsUnchanged);
 
                     // Test sorting by a column already used as a sort *again*
-                    sortByTableHeader('CVE severity');
+                    sortByTableHeader('Top CVE severity');
                     waitForRequests().then(assertCveCountsUnchanged);
 
                     // Test sorting on the only remaining untested column by rapidly changing
