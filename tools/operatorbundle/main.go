@@ -1,13 +1,17 @@
 // Command operatorbundle is a test harness CLI for the pkg/operatorbundle upgrade advisor.
 //
-// Given one or more vulnerable image digests, it resolves the installed operator bundle
-// from the Red Hat Ecosystem Catalog, selects the latest patch update within the same
-// major.minor, scans the candidate bundle's images via StackRox Central, and prints a
-// per-image CVE diff (fixed / still active / newly introduced).
+// Given one or more vulnerable image digests, it resolves the installed operator bundle from
+// in-cluster OLM data (the installed ClusterServiceVersions), selects the latest patch update
+// within the same major.minor from the operator catalog index, scans the candidate bundle's
+// images via StackRox Central, and prints a per-image CVE diff (fixed / still active / newly
+// introduced).
 //
-// It reuses roxctl connection/auth flags to reach Central. Example:
+// It reuses roxctl connection/auth flags to reach Central, reads OLM resources via the
+// current kubeconfig context, and reaches the CatalogSource registry over gRPC (e.g. via
+// `oc port-forward`). Example:
 //
 //	operatorbundle diff --endpoint central.example.com:443 \
+//	  --catalog-grpc-address localhost:50051 \
 //	  --digest sha256:fcb63b... [--digest sha256:...] [--format table|json]
 package main
 
@@ -23,8 +27,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/tools/operatorbundle/catalog"
 	"github.com/stackrox/rox/tools/operatorbundle/central"
+	"github.com/stackrox/rox/tools/operatorbundle/olm"
+	api "github.com/stackrox/rox/tools/operatorbundle/olm/registryapi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -52,14 +59,14 @@ func rootCommand() *cobra.Command {
 }
 
 type diffOptions struct {
-	env          environment.Environment
-	digests      []string
-	catalogURL   string
-	catalogToken string
-	format       string
-	timeout      time.Duration
-	force        bool
-	quiet        bool
+	env                environment.Environment
+	digests            []string
+	catalogGRPCAddress string
+	kubeconfig         string
+	format             string
+	timeout            time.Duration
+	force              bool
+	quiet              bool
 }
 
 func diffCommand(env environment.Environment) *cobra.Command {
@@ -72,8 +79,9 @@ func diffCommand(env environment.Environment) *cobra.Command {
 		},
 	}
 	c.Flags().StringArrayVar(&opts.digests, "digest", nil, "Vulnerable image digest to analyze (repeatable)")
-	c.Flags().StringVar(&opts.catalogURL, "catalog-url", catalog.DefaultURL, "Operator catalog GraphQL endpoint")
-	c.Flags().StringVar(&opts.catalogToken, "catalog-token", "", "Bearer token for the catalog GraphQL endpoint (optional)")
+	c.Flags().StringVar(&opts.catalogGRPCAddress, "catalog-grpc-address", "localhost:50051",
+		"Address of the OLM CatalogSource registry gRPC (e.g. reached via `oc port-forward`)")
+	c.Flags().StringVar(&opts.kubeconfig, "kubeconfig", "", "Path to kubeconfig (defaults to the standard loading rules / current context)")
 	c.Flags().StringVar(&opts.format, "format", "table", "Output format: table or json")
 	c.Flags().DurationVar(&opts.timeout, "timeout", 5*time.Minute, "Overall timeout for the analysis")
 	c.Flags().BoolVar(&opts.force, "force", false, "Force re-scan of candidate images instead of using cached scans")
@@ -103,7 +111,18 @@ func (o *diffOptions) run() error {
 	defer utils.IgnoreError(conn.Close)
 
 	centralClient := central.NewClient(conn, o.force)
-	catalogClient := catalog.NewClient(o.catalogURL, o.catalogToken)
+
+	o.progress("Loading in-cluster OLM data…")
+	dyn, err := olm.NewDynamicClient(o.kubeconfig)
+	if err != nil {
+		return errors.Wrap(err, "creating Kubernetes dynamic client")
+	}
+	regConn, err := grpc.NewClient(o.catalogGRPCAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return errors.Wrap(err, "dialing catalog registry gRPC")
+	}
+	defer utils.IgnoreError(func() error { return regConn.Close() })
+	catalogClient := olm.NewClient(dyn, api.NewRegistryClient(regConn))
 
 	var advisorOpts []operatorbundle.AdvisorOption
 	if !o.quiet {
