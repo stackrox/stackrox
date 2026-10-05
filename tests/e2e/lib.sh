@@ -423,7 +423,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
-    ci_export ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-true}"
+    ci_export ROX_POLICY_WORKLOAD_KIND_EXCLUSION "${ROX_POLICY_WORKLOAD_KIND_EXCLUSION:-true}"
     ci_export ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"
     ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export ROX_AI_INTEGRATIONS "${ROX_AI_INTEGRATIONS:-true}"
@@ -604,7 +604,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
+    customize_envVars+=$'\n      - name: ROX_POLICY_WORKLOAD_KIND_EXCLUSION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
     customize_envVars+=$'\n        value: "'"${ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL:-true}"'"'
@@ -757,9 +757,9 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
         customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
     fi
-    if [[ -n "${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION:-}" ]]; then
-        customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_TYPE_EXCLUSION'
-        customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_TYPE_EXCLUSION}"'"'
+    if [[ -n "${ROX_POLICY_WORKLOAD_KIND_EXCLUSION:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_KIND_EXCLUSION'
+        customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_KIND_EXCLUSION}"'"'
     fi
 
     local scannerV4DbPersistenceYaml
