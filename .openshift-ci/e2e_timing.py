@@ -97,13 +97,20 @@ def _base_event(phase: str, name: str, attributes: Optional[Dict[str, str]]):
     return event
 
 
-def _write_event(event: Dict[str, object]) -> None:
+def _write_event(event: Dict[str, object], event_file: Optional[str] = None) -> None:
     line = "e2e_timing " + json.dumps(event, separators=(",", ":"), sort_keys=True)
     try:
         print(line, flush=True)
     except OSError:
         # Timing telemetry must not affect test or cleanup behavior.
         pass
+    if event_file:
+        try:
+            with open(event_file, "a", encoding="utf-8") as output:
+                output.write(line + "\n")
+        except OSError:
+            # Artifact capture must not affect test or cleanup behavior.
+            pass
 
 
 def child_timing_environment() -> Optional[Dict[str, str]]:
@@ -167,14 +174,17 @@ def timed_span(
     phase: str,
     name: str,
     attributes: Optional[Dict[str, str]] = None,
+    event_file: Optional[str] = None,
 ) -> Iterator[None]:
-    """Emit start/end JSONL records around work without changing its outcome."""
+    """Emit start/end records around work; optionally mirror them to an artifact."""
     if not is_enabled():
         yield
         return
 
     base_event = _base_event(phase, name, attributes)
-    _write_event({**base_event, "event": "start", "timestamp": _timestamp()})
+    _write_event(
+        {**base_event, "event": "start", "timestamp": _timestamp()}, event_file
+    )
     outcome = "success"
     reason = None
     try:
@@ -197,4 +207,4 @@ def timed_span(
         }
         if reason:
             end_event["reason"] = reason
-        _write_event(end_event)
+        _write_event(end_event, event_file)

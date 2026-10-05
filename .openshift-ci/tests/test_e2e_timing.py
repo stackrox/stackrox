@@ -2,8 +2,11 @@ import io
 import json
 import os
 import subprocess
+import sys
+import tempfile
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 from e2e_timing import is_enabled, record_skipped, timed_span
@@ -170,6 +173,53 @@ class TestTimedCommand(unittest.TestCase):
         events = events_from_output(output)
         self.assertEqual(["start", "end"], [e["event"] for e in events])
         self.assertEqual("failure", events[-1]["outcome"])
+
+    def test_captures_timing_and_audit_events_as_raw_jsonl(self):
+        with tempfile.TemporaryDirectory() as artifact_dir:
+            event_file = Path(artifact_dir) / "e2e-events.jsonl"
+            child_events = [
+                'e2e_timing {"schema_version":1,"phase":"test-case"}',
+                'e2e_parallel_audit {"schema_version":1,"event_type":"spec_start"}',
+            ]
+            child_code = "\n".join(
+                ["print('ordinary output')"]
+                + [f"print({line!r})" for line in child_events]
+            )
+            output = io.StringIO()
+            with patch.dict(
+                os.environ,
+                {
+                    "E2E_TIMING_ENABLED": "true",
+                    "E2E_PARALLELIZATION_AUDIT_ENABLED": "true",
+                    "E2E_INFRA_ONLY": "false",
+                    "ARTIFACT_DIR": artifact_dir,
+                },
+                clear=True,
+            ), redirect_stdout(output):
+                status = run_timed_main(
+                    [
+                        "--phase",
+                        "test-lane-command",
+                        "--name",
+                        "qa-part-1",
+                        "--",
+                        sys.executable,
+                        "-c",
+                        child_code,
+                    ]
+                )
+
+            self.assertEqual(0, status)
+            self.assertIn("ordinary output", output.getvalue())
+            lines = event_file.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(4, len(lines))  # Wrapper start/end plus two child events.
+            parsed = [json.loads(line.split(" ", 1)[1]) for line in lines]
+            self.assertEqual(["start", "test-case", "spec_start", "end"], [
+                event.get("event", event.get("phase", event.get("event_type")))
+                for event in parsed
+            ])
+            self.assertTrue(all("***" not in line for line in lines))
+            self.assertNotIn("ordinary output", event_file.read_text(encoding="utf-8"))
 
     def test_signal_exit_uses_shell_status_convention(self):
         with patch.dict(os.environ, {"E2E_TIMING_ENABLED": "false"}, clear=True), patch(

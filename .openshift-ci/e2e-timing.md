@@ -60,10 +60,17 @@ configuration. It never records request bodies, headers, query strings, tokens,
 or credentials. Repeated identical operations within a spec/feature are
 deduplicated to keep log volume down.
 
-To summarize a completed GHA run, stream the job log through the analyzer:
+When the audit is enabled, `run_timed.py` mirrors only `e2e_timing` and
+`e2e_parallel_audit` records to `ARTIFACT_DIR/e2e-events.jsonl`, while retaining
+the normal console output. The existing post-test artifact upload stores this
+file in GCS alongside the JUnit reports. Prefer this raw JSONL file for analysis;
+the console log remains a fallback for older runs and may not preserve valid
+JSON delimiters.
+
+To summarize a completed GHA run, stream the GCS event file through the analyzer:
 
 ```sh
-gh run view RUN_ID --job JOB_ID --log \
+gcloud storage cat gs://stackrox-ci-artifacts/stackrox/stackrox/RUN_ID-ATTEMPT/gke-qa-e2e-tests/part-1/junit-reports/e2e-events.jsonl \
   | python3 qa-tests-backend/scripts/e2e_parallelization_audit.py
 ```
 

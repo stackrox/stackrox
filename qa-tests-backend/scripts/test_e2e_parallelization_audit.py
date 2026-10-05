@@ -25,8 +25,9 @@ class ParallelizationAuditTest(unittest.TestCase):
             "2026-10-01T12:00:00Z 2026/10/01 12:00:00 "
             'e2e_parallel_audit {"schema_version":1,"event_type":"spec_start"}\n'
         )
-        events, malformed = parse_events([line, "ordinary output\n"])
-        self.assertEqual(1, len(events))
+        artifact_line = 'e2e_parallel_audit {"schema_version":1,"event_type":"spec_end"}\n'
+        events, malformed = parse_events([line, artifact_line, "ordinary output\n"])
+        self.assertEqual(2, len(events))
         self.assertEqual(0, malformed)
 
     def test_reports_overlapping_kubernetes_read_write_on_same_resource(self):
