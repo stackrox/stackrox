@@ -142,7 +142,7 @@ func generateTemplateData(t reflect.Type, visited set.StringSet) []ConvertType {
 			typ     reflect.Type
 		}{
 			{"Deployment", ",omitempty", reflect.TypeFor[*storage.Exclusion_Deployment]()},
-			{"ExcludeByType", "excludeByType,omitempty", reflect.TypeFor[*storage.Exclusion_ExcludeByType]()},
+			{"ExcludeByKind", "excludeByKind,omitempty", reflect.TypeFor[*storage.Exclusion_ExcludeByKind]()},
 		} {
 			fieldType := extra.typ.String()
 			needConversion := protoreflect.IsProtoMessage(getBaseType(extra.typ))

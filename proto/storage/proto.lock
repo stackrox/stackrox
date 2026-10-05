@@ -14056,10 +14056,10 @@
             ]
           },
           {
-            "name": "Exclusion.WorkloadType",
+            "name": "Exclusion.WorkloadKind",
             "enum_fields": [
               {
-                "name": "WORKLOAD_TYPE_UNSPECIFIED"
+                "name": "WORKLOAD_KIND_UNSPECIFIED"
               },
               {
                 "name": "CRON_JOB",
@@ -14405,8 +14405,8 @@
               },
               {
                 "id": 8,
-                "name": "exclude_by_type",
-                "type": "ExcludeByType",
+                "name": "exclude_by_kind",
+                "type": "ExcludeByKind",
                 "oneof_parent": "matcher"
               }
             ],
@@ -14450,12 +14450,12 @@
                 ]
               },
               {
-                "name": "ExcludeByType",
+                "name": "ExcludeByKind",
                 "fields": [
                   {
                     "id": 1,
-                    "name": "types",
-                    "type": "WorkloadType",
+                    "name": "kinds",
+                    "type": "WorkloadKind",
                     "is_repeated": true
                   }
                 ]

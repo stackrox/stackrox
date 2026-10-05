@@ -143,12 +143,12 @@ spec:
                               type: object
                           type: object
                       type: object
-                    excludeByType:
-                      description: ExcludeByType excludes all workloads of the selected
+                    excludeByKind:
+                      description: ExcludeByKind excludes all workloads of the selected
                         Kubernetes kinds.
                       properties:
-                        types:
-                          description: Types is the list of Kubernetes workload kinds
+                        kinds:
+                          description: Kinds is the list of Kubernetes workload kinds
                             to exclude.
                           items:
                             enum:
@@ -158,7 +158,7 @@ spec:
                           minItems: 1
                           type: array
                       required:
-                      - types
+                      - kinds
                       type: object
                     expiration:
                       format: date-time

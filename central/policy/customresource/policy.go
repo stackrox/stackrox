@@ -49,19 +49,19 @@ func convertExclusion_Deployment(p *storage.Exclusion_Deployment) *Exclusion_Dep
 	}
 }
 
-// Exclusion_ExcludeByType represents storage.Exclusion_ExcludeByType in the Custom Resource.
-type Exclusion_ExcludeByType struct {
-	Types []string `yaml:",omitempty"`
+// Exclusion_ExcludeByKind represents storage.Exclusion_ExcludeByKind in the Custom Resource.
+type Exclusion_ExcludeByKind struct {
+	Kinds []string `yaml:",omitempty"`
 }
 
-// convertExclusion_ExcludeByType Converts storage.Exclusion_ExcludeByType to *Exclusion_ExcludeByType
-func convertExclusion_ExcludeByType(p *storage.Exclusion_ExcludeByType) *Exclusion_ExcludeByType {
+// convertExclusion_ExcludeByKind Converts storage.Exclusion_ExcludeByKind to *Exclusion_ExcludeByKind
+func convertExclusion_ExcludeByKind(p *storage.Exclusion_ExcludeByKind) *Exclusion_ExcludeByKind {
 	if p == nil {
 		return nil
 	}
 
-	return &Exclusion_ExcludeByType{
-		Types: sliceutils.StringSlice(p.GetTypes()...),
+	return &Exclusion_ExcludeByKind{
+		Kinds: sliceutils.StringSlice(p.GetKinds()...),
 	}
 }
 
@@ -71,7 +71,7 @@ type Exclusion struct {
 	Image         *storage.Exclusion_Image `yaml:",omitempty"`
 	Expiration    string                   `yaml:",omitempty"`
 	Deployment    *Exclusion_Deployment    `yaml:",omitempty"`
-	ExcludeByType *Exclusion_ExcludeByType `yaml:"excludeByType,omitempty"`
+	ExcludeByKind *Exclusion_ExcludeByKind `yaml:"excludeByKind,omitempty"`
 }
 
 // convertExclusion Converts storage.Exclusion to *Exclusion
@@ -85,7 +85,7 @@ func convertExclusion(p *storage.Exclusion) *Exclusion {
 		Image:         p.GetImage(),
 		Expiration:    timestampToFormatRFC3339(p.GetExpiration()),
 		Deployment:    convertExclusion_Deployment(p.GetDeployment()),
-		ExcludeByType: convertExclusion_ExcludeByType(p.GetExcludeByType()),
+		ExcludeByKind: convertExclusion_ExcludeByKind(p.GetExcludeByKind()),
 	}
 }
 

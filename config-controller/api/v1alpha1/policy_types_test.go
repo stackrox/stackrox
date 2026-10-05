@@ -290,7 +290,7 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 	}
 }
 
-func TestToProtobufRejectsDeploymentAndExcludeByType(t *testing.T) {
+func TestToProtobufRejectsDeploymentAndExcludeByKind(t *testing.T) {
 	spec := SecurityPolicySpec{
 		PolicyName:      "both-matchers",
 		Categories:      []string{"Security Best Practices"},
@@ -302,8 +302,8 @@ func TestToProtobufRejectsDeploymentAndExcludeByType(t *testing.T) {
 				Deployment: Deployment{
 					Name: "collector",
 				},
-				ExcludeByType: &ExcludeByType{
-					Types: []WorkloadType{"JOB"},
+				ExcludeByKind: &ExcludeByKind{
+					Kinds: []WorkloadKind{"JOB"},
 				},
 			},
 		},
@@ -313,48 +313,48 @@ func TestToProtobufRejectsDeploymentAndExcludeByType(t *testing.T) {
 		Notifier: {},
 		Cluster:  {},
 	})
-	assert.EqualError(t, err, "exclusion cannot set both 'deployment' and 'excludeByType'")
+	assert.EqualError(t, err, "exclusion cannot set both 'deployment' and 'excludeByKind'")
 }
 
-func TestToProtobufExcludeByType(t *testing.T) {
+func TestToProtobufExcludeByKind(t *testing.T) {
 	caches := map[CacheType]map[string]string{
 		Notifier: {},
 		Cluster:  {},
 	}
-	baseSpec := func(exclude *ExcludeByType) SecurityPolicySpec {
+	baseSpec := func(exclude *ExcludeByKind) SecurityPolicySpec {
 		return SecurityPolicySpec{
-			PolicyName:      "type-exclusion",
+			PolicyName:      "kind-exclusion",
 			Categories:      []string{"Security Best Practices"},
 			LifecycleStages: []LifecycleStage{"DEPLOY"},
 			Severity:        "LOW_SEVERITY",
 			Exclusions: []Exclusion{{
-				Name:          "by type",
-				ExcludeByType: exclude,
+				Name:          "by kind",
+				ExcludeByKind: exclude,
 			}},
 		}
 	}
 
 	t.Run("converts JOB and CRON_JOB", func(t *testing.T) {
-		proto, err := baseSpec(&ExcludeByType{Types: []WorkloadType{"JOB", "CRON_JOB"}}).ToProtobuf(caches)
+		proto, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"JOB", "CRON_JOB"}}).ToProtobuf(caches)
 		assert.NoError(t, err)
-		assert.Equal(t, []storage.Exclusion_WorkloadType{
+		assert.Equal(t, []storage.Exclusion_WorkloadKind{
 			storage.Exclusion_JOB,
 			storage.Exclusion_CRON_JOB,
-		}, proto.GetExclusions()[0].GetExcludeByType().GetTypes())
+		}, proto.GetExclusions()[0].GetExcludeByKind().GetKinds())
 	})
 
-	t.Run("rejects empty type list", func(t *testing.T) {
-		_, err := baseSpec(&ExcludeByType{}).ToProtobuf(caches)
-		assert.EqualError(t, err, "excludeByType must specify at least one workload type")
+	t.Run("rejects empty kind list", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{}).ToProtobuf(caches)
+		assert.EqualError(t, err, "excludeByKind must specify at least one workload kind")
 	})
 
-	t.Run("rejects unknown type", func(t *testing.T) {
-		_, err := baseSpec(&ExcludeByType{Types: []WorkloadType{"CRONJOB"}}).ToProtobuf(caches)
-		assert.EqualError(t, err, `excludeByType contains unknown workload type "CRONJOB"`)
+	t.Run("rejects unknown kind", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"CRONJOB"}}).ToProtobuf(caches)
+		assert.EqualError(t, err, `excludeByKind contains unknown workload kind "CRONJOB"`)
 	})
 
-	t.Run("rejects mixed valid and unknown types", func(t *testing.T) {
-		_, err := baseSpec(&ExcludeByType{Types: []WorkloadType{"JOB", "CRONJOB"}}).ToProtobuf(caches)
-		assert.EqualError(t, err, `excludeByType contains unknown workload type "CRONJOB"`)
+	t.Run("rejects mixed valid and unknown kinds", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"JOB", "CRONJOB"}}).ToProtobuf(caches)
+		assert.EqualError(t, err, `excludeByKind contains unknown workload kind "CRONJOB"`)
 	})
 }

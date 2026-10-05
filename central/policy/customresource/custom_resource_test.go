@@ -24,14 +24,14 @@ func TestConvertToCR(t *testing.T) {
 	assert.YAMLEq(t, templateFile, converted)
 }
 
-func TestConvertExcludeByType(t *testing.T) {
+func TestConvertExcludeByKind(t *testing.T) {
 	policy := fixtures.GetPolicy()
 	policy.Exclusions = []*storage.Exclusion{
 		{
 			Name: "skip-batch",
-			Matcher: &storage.Exclusion_ExcludeByType_{
-				ExcludeByType: &storage.Exclusion_ExcludeByType{
-					Types: []storage.Exclusion_WorkloadType{
+			Matcher: &storage.Exclusion_ExcludeByKind_{
+				ExcludeByKind: &storage.Exclusion_ExcludeByKind{
+					Kinds: []storage.Exclusion_WorkloadKind{
 						storage.Exclusion_CRON_JOB,
 						storage.Exclusion_JOB,
 					},
@@ -41,7 +41,7 @@ func TestConvertExcludeByType(t *testing.T) {
 	}
 	converted, err := generateCustomResource(policy)
 	require.NoError(t, err)
-	assert.Contains(t, converted, "excludeByType:")
+	assert.Contains(t, converted, "excludeByKind:")
 	assert.Contains(t, converted, "CRON_JOB")
 	assert.Contains(t, converted, "JOB")
 	assert.NotContains(t, converted, "deployment:")

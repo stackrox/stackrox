@@ -95,20 +95,20 @@ type Exclusion struct {
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
 	// +optional
-	// ExcludeByType excludes all workloads of the selected Kubernetes kinds.
-	ExcludeByType *ExcludeByType `json:"excludeByType,omitempty"`
+	// ExcludeByKind excludes all workloads of the selected Kubernetes kinds.
+	ExcludeByKind *ExcludeByKind `json:"excludeByKind,omitempty"`
 	// +optional
 	// +kubebuilder:validation:Format="date-time"
 	Expiration string `json:"expiration,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=CRON_JOB;JOB
-type WorkloadType string
+type WorkloadKind string
 
-type ExcludeByType struct {
+type ExcludeByKind struct {
 	// +kubebuilder:validation:MinItems=1
-	// Types is the list of Kubernetes workload kinds to exclude.
-	Types []WorkloadType `json:"types"`
+	// Kinds is the list of Kubernetes workload kinds to exclude.
+	Kinds []WorkloadKind `json:"kinds"`
 }
 
 type Deployment struct {
@@ -312,8 +312,8 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			protoExclusion.Expiration = protoTS
 		}
 
-		if exclusion.Deployment != (Deployment{}) && exclusion.ExcludeByType != nil {
-			return nil, errors.New("exclusion cannot set both 'deployment' and 'excludeByType'")
+		if exclusion.Deployment != (Deployment{}) && exclusion.ExcludeByKind != nil {
+			return nil, errors.New("exclusion cannot set both 'deployment' and 'excludeByKind'")
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
@@ -361,21 +361,21 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			}
 		}
 
-		if exclusion.ExcludeByType != nil {
-			if len(exclusion.ExcludeByType.Types) == 0 {
-				return nil, errors.New("excludeByType must specify at least one workload type")
+		if exclusion.ExcludeByKind != nil {
+			if len(exclusion.ExcludeByKind.Kinds) == 0 {
+				return nil, errors.New("excludeByKind must specify at least one workload kind")
 			}
-			types := make([]storage.Exclusion_WorkloadType, 0, len(exclusion.ExcludeByType.Types))
-			for _, t := range exclusion.ExcludeByType.Types {
-				val, found := storage.Exclusion_WorkloadType_value[string(t)]
-				if !found || storage.Exclusion_WorkloadType(val) == storage.Exclusion_WORKLOAD_TYPE_UNSPECIFIED {
-					return nil, errors.Errorf("excludeByType contains unknown workload type %q", t)
+			kinds := make([]storage.Exclusion_WorkloadKind, 0, len(exclusion.ExcludeByKind.Kinds))
+			for _, kind := range exclusion.ExcludeByKind.Kinds {
+				val, found := storage.Exclusion_WorkloadKind_value[string(kind)]
+				if !found || storage.Exclusion_WorkloadKind(val) == storage.Exclusion_WORKLOAD_KIND_UNSPECIFIED {
+					return nil, errors.Errorf("excludeByKind contains unknown workload kind %q", kind)
 				}
-				types = append(types, storage.Exclusion_WorkloadType(val))
+				kinds = append(kinds, storage.Exclusion_WorkloadKind(val))
 			}
-			protoExclusion.Matcher = &storage.Exclusion_ExcludeByType_{
-				ExcludeByType: &storage.Exclusion_ExcludeByType{
-					Types: types,
+			protoExclusion.Matcher = &storage.Exclusion_ExcludeByKind_{
+				ExcludeByKind: &storage.Exclusion_ExcludeByKind{
+					Kinds: kinds,
 				},
 			}
 		}
