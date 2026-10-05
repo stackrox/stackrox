@@ -80,6 +80,44 @@ choose_cluster_version() {
     fi
 }
 
+gke_cluster_not_found() {
+    [[ "$1" =~ (code=404|NOT_FOUND|NotFound|not[[:space:]]+found) ]]
+}
+
+delete_cluster_and_wait() {
+    local output i
+
+    # CLUSTER_NAME is set by assign_env_variables via ci_export.
+    # shellcheck disable=SC2153
+    info "Deleting cluster ${CLUSTER_NAME} before trying another zone"
+    if ! output=$(timeout 300 gcloud container clusters delete --quiet "${CLUSTER_NAME}" 2>&1); then
+        if gke_cluster_not_found "$output"; then
+            info "Cluster ${CLUSTER_NAME} is already absent"
+            return 0
+        fi
+        info "Failed to delete cluster ${CLUSTER_NAME}; refusing to try another zone"
+        info "$output"
+        return 1
+    fi
+    info "$output"
+
+    for i in {1..30}; do
+        if ! output=$(gcloud container clusters describe "${CLUSTER_NAME}" --format=json 2>&1); then
+            if gke_cluster_not_found "$output"; then
+                info "Confirmed cluster ${CLUSTER_NAME} was deleted"
+                return 0
+            fi
+            info "Could not confirm deletion of cluster ${CLUSTER_NAME} (check $i of 30): $output"
+        else
+            info "Cluster ${CLUSTER_NAME} still exists after delete (check $i of 30)"
+        fi
+        sleep 10
+    done
+
+    info "Timed out waiting for cluster ${CLUSTER_NAME} cleanup; refusing to try another zone"
+    return 1
+}
+
 create_cluster() {
     info "Creating a GKE cluster"
     # Store requested timestamp to create log query link with time range.
@@ -191,35 +229,72 @@ create_cluster() {
         if [[ "${status}" == 0 ]]; then
             success=1
             break
-        elif [[ "${status}" == 124 ]]; then
+        fi
+
+        if [[ "${status}" == 124 ]]; then
             info "gcloud command timed out. Checking to see if cluster is still creating"
-            if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
-                info "Create cluster did not create the cluster in Google. Trying a different zone..."
+        else
+            info "gcloud cluster creation failed with status ${status}; inspecting cluster state before zone fallback"
+        fi
+
+        local cluster_json cluster_status cluster_exists=1
+        if ! cluster_json=$(gcloud container clusters describe "${CLUSTER_NAME}" --format=json 2>&1); then
+            if gke_cluster_not_found "$cluster_json"; then
+                info "Cluster ${CLUSTER_NAME} was not created in ${zone}; trying another zone"
+                cluster_exists=0
             else
+                info "Unable to determine cluster ${CLUSTER_NAME} state; refusing unsafe zone fallback"
+                info "$cluster_json"
+                return 1
+            fi
+        else
+            cluster_status=$(jq -r '.status // "UNKNOWN"' <<<"${cluster_json}")
+            if [[ "${cluster_status}" == "ERROR" ]]; then
+                info "GKE cluster ${CLUSTER_NAME} entered terminal ERROR state in ${zone}:"
+                jq -c '{status, statusMessage, conditions}' <<<"${cluster_json}" | while IFS= read -r line; do info "$line"; done
+            elif [[ "${cluster_status}" == "RUNNING" ]]; then
+                success=1
+            elif [[ "${status}" == "124" ]]; then
                 for i in {1..60}; do
-                    if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
+                    sleep 20
+                    if ! cluster_json=$(gcloud container clusters describe "${CLUSTER_NAME}" --format=json 2>&1); then
+                        if gke_cluster_not_found "$cluster_json"; then
+                            info "Cluster ${CLUSTER_NAME} disappeared while waiting in ${zone}"
+                            cluster_exists=0
+                            break
+                        fi
+                        info "Unable to determine cluster ${CLUSTER_NAME} state while waiting; refusing unsafe zone fallback"
+                        info "$cluster_json"
+                        return 1
+                    fi
+
+                    cluster_status=$(jq -r '.status // "UNKNOWN"' <<<"${cluster_json}")
+                    if [[ "${cluster_status}" == "RUNNING" ]]; then
                         success=1
                         break
+                    elif [[ "${cluster_status}" == "ERROR" ]]; then
+                        info "GKE cluster ${CLUSTER_NAME} entered terminal ERROR state in ${zone}:"
+                        jq -c '{status, statusMessage, conditions}' <<<"${cluster_json}" | while IFS= read -r line; do info "$line"; done
+                        break
                     fi
-                    sleep 20
-                    info "Waiting for cluster ${CLUSTER_NAME} in ${zone} to move to running state (wait $i of 60)"
+                    info "Waiting for cluster ${CLUSTER_NAME} in ${zone} to move to running state (wait $i of 60; status ${cluster_status})"
                 done
             fi
+        fi
 
-            if [[ "${success}" == 1 ]]; then
-                info "Successfully launched cluster ${CLUSTER_NAME}"
-                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-                ls -l "${kubeconfig}" || true
-                gcloud container clusters get-credentials "$CLUSTER_NAME"
-                ls -l "${kubeconfig}" || true
-                break
+        if [[ "${success}" == 1 ]]; then
+            info "Successfully launched cluster ${CLUSTER_NAME}"
+            local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+            ls -l "${kubeconfig}" || true
+            gcloud container clusters get-credentials "$CLUSTER_NAME"
+            ls -l "${kubeconfig}" || true
+            break
+        fi
+
+        if [[ "${cluster_exists}" == 1 ]]; then
+            if ! delete_cluster_and_wait; then
+                return 1
             fi
-            info "Timed out"
-            info "Attempting to delete the cluster before trying another zone"
-            gcloud container clusters delete "${CLUSTER_NAME}" || {
-                info "An error occurred deleting the cluster: $?"
-                true
-            }
         fi
     done
 
