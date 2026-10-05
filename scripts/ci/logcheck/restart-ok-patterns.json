@@ -66,6 +66,12 @@
         "logline": "panic: migrate: failed to connect to"
     },
     {
+        "comment": "Scanner V4 N-3 rollback smoke raced Scanner V4 DB startup",
+        "job": "^gke-upgrade-tests-central$",
+        "logfile": "05_rollback_smoke/stackrox/pods/scanner-v4-(indexer-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer|matcher-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher)-previous\\.log$",
+        "logline": "panic: migrate: failed to connect to .*scanner-v4-db\\.stackrox\\.svc.*connect: connection refused"
+    },
+    {
         "comment": "config-controller restart due to m2m auth OIDC discovery failure - ROX-32040",
         "job": ".*",
         "logfile": "config-controller.*-manager-previous",

@@ -105,6 +105,23 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
+is_central_upgrade_ci() {
+    [[ "${CI:-}" == true && "${CI_JOB_NAME:-}" == gke-upgrade-tests-central ]]
+}
+
+customize_ci_central_db_chart() {
+    if is_central_upgrade_ci; then
+        # Defaults contain Helm templates, not plain YAML. Null values would
+        # restore the CPU limit, so remove that fallback before rendering.
+        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-chart.patch"
+        if git -C "$1" apply --reverse --check --unidiff-zero "$patch" 2>/dev/null; then
+            return 0
+        fi
+        git -C "$1" apply --check --unidiff-zero "$patch" || return "$?"
+        git -C "$1" apply --unidiff-zero "$patch"
+    fi
+}
+
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
@@ -127,6 +144,11 @@ deploy_earlier_postgres_central() {
     # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
     # because the later Helm upgrade cannot change an existing PVC's class.
     local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart /tmp/early-stackrox-central-services-chart
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
     if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
         if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
             kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
@@ -161,20 +183,33 @@ deploy_earlier_postgres_central() {
 # upgrade_central_helm_to_head applies the HEAD chart to the existing
 # stackrox-central-services release so Scanner V4 is installed. kubectl set
 # image does not create V4, and HEAD Central does not use leftover Scanner V2.
+# Optional CLI and DB tag overrides support release-matched rollback smoke tests
+# without downgrading Central DB.
 upgrade_central_helm_to_head() {
     local namespace="${1:-stackrox}"
     local image_tag="${2:-$CURRENT_TAG}"
     local registry="${3:-$REGISTRY}"
+    local roxctl="${4:-$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl}"
+    local db_tag="${5:-$image_tag}"
 
-    info "Upgrading central Helm release to HEAD chart with Scanner V4"
+    info "Applying Central chart for $image_tag with Scanner V4 (Central DB: $db_tag)"
 
     if ! helm -n "$namespace" status stackrox-central-services >/dev/null 2>&1; then
         die "Helm release stackrox-central-services not found in namespace ${namespace}"
     fi
 
+    if is_central_upgrade_ci; then
+        # Inspect only the override; never capture or trace release credentials.
+        if ! helm -n "$namespace" get values stackrox-central-services -o json |
+            jq -e '.central.db.resources.limits.cpu == null' >/dev/null; then
+            echo "Cannot upgrade: retained Central DB CPU limit or unreadable release values" >&2
+            return 1
+        fi
+    fi
+
     local chart_dir
     chart_dir="$(mktemp -d)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" helm output central-services \
+    "$roxctl" helm output central-services \
         --image-defaults opensource \
         --output-dir "${chart_dir}" --remove
 
@@ -218,6 +253,11 @@ upgrade_central_helm_to_head() {
     fi
 
     local helm_extra_args=()
+    if is_central_upgrade_ci; then
+        customize_ci_central_db_chart "$chart_dir"
+        helm_extra_args+=(--set-string central.db.resources.requests.cpu=2)
+        helm_extra_args+=(--set-string central.db.resources.requests.memory=8Gi --set-string central.db.resources.limits.memory=8Gi)
+    fi
     if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
         if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
             kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
@@ -244,7 +284,7 @@ image:
 central:
   db:
     image:
-      tag: "${image_tag}"
+      tag: "${db_tag}"
   image:
     tag: "${image_tag}"
 scannerV4:
