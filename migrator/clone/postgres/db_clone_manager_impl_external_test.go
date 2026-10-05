@@ -4,11 +4,9 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/config"
@@ -136,6 +134,16 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	migVer.SetVersionPostgres(s.ctx, externalDB, futureVersion)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
-	s.EqualError(dbm.Scan(), errorMessage)
+	err := dbm.Scan()
+	s.Require().ErrorContains(err, "Central rollback blocked")
+	s.Require().ErrorContains(err, futureVersion.GetVersion())
+}
+
+func (s *PostgresExternalManagerSuite) TestUpgradeCompatibility() {
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{Version: "4.9.0", SeqNum: 227})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "4.9")
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	s.Require().NoError(New("", s.config, s.sourceMap).Scan())
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{Version: "5.2.0", SeqNum: 230, MinSeqNum: 228})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "Central rollback blocked")
 }

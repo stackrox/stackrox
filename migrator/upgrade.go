@@ -44,6 +44,9 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 	if err != nil {
 		return errors.Wrap(err, "failed to get version from the database")
 	}
+	if err := migVer.CheckCompatibility(ver); err != nil {
+		return err
+	}
 
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 
@@ -83,22 +86,37 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 // upgradeWithLock runs migrations and schema application while holding the
 // advisory lock.
 func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
+	return upgradeWithLockAndSchema(ctx, pgPool, gormDB, dbClone, pkgSchema.ApplyAllSchemas)
+}
+
+func upgradeWithLockAndSchema(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string, applySchemas func(context.Context, *gorm.DB)) error {
 	// Re-read the version after acquiring the lock. Another instance may have
 	// completed migrations between the first read and the acquisition of the lock.
 	ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 	if err != nil {
 		return errors.Wrap(err, "failed to re-read version from the database after acquiring lock")
 	}
+	if err := migVer.CheckCompatibility(ver); err != nil {
+		return err
+	}
 
 	// If Postgres has no version, then we have no populated databases at all and thus don't
 	// need to migrate
 	if ver.SeqNum == 0 && ver.MainVersion == "0" {
 		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
-		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-		migVer.SetCurrentVersion(ctx, gormDB)
-		return nil
+		// An interrupted fresh install must not leave application tables without
+		// version metadata, which is indistinguishable from a damaged database.
+		return gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			applySchemas(ctx, tx)
+			return migVer.SetCurrentVersion(ctx, tx)
+		})
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
+	if err := runner.Preflight(ver.SeqNum); err != nil {
+		return err
+	}
+	// Metadata schema initialization is allowed only after compatibility approval.
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, pkgSchema.VersionsSchema.Table)
 
 	databases := &types.Databases{
 		GormDB:     gormDB,
@@ -109,6 +127,6 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 		return errors.Wrap(err, "migrations failed")
 	}
 
-	pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-	return nil
+	applySchemas(ctx, gormDB)
+	return runner.UpdateToCurrentVersion(databases)
 }

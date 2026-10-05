@@ -236,13 +236,13 @@ for a production-grade example that models realistic data distributions.
 
 When a migration makes a schema change that is incompatible with a previous release:
 
-1. Write the migration normally
-2. Update `MinimumSupportedDBVersionSeqNum` in `pkg/migrations/internal/fallback_seq_num.go`
-   to the `CurrentDBVersionSeqNum` of the first release that can tolerate the change
-3. Update the associated version string
+1. Verify that every release within the N-3 compatibility window tolerates the change.
+2. If any supported release still needs the old schema, defer the destructive change.
+3. Once those releases are outside the window, add and test the cleanup migration.
 
-The migrator will reject upgrades from versions below this threshold, preventing users
-from upgrading into an incompatible state.
+The minimum version and sequence advance together from release metadata; do not change
+them independently to accommodate a breaking migration. See the release-maintenance
+procedure in [README.md](README.md#maintaining-release-metadata).
 
 ## Checklist
 
@@ -254,4 +254,5 @@ from upgrading into an incompatible state.
 - [ ] Backwards compatibility test verifies old queries still work
 - [ ] No feature flag dependencies in migration code
 - [ ] `CurrentDBVersionSeqNum` is incremented (done by bootstrap tool)
+- [ ] Release metadata is regenerated with `make go-generated-srcs`
 - [ ] Migration is registered in `migrator/runner/all.go` (done by bootstrap tool)

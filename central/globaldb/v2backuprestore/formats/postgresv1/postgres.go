@@ -89,10 +89,18 @@ func checkMigrationVersion(_ common.RestoreFileContext, fileReader io.Reader, si
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	if version.SeqNum < migrations.MinimumSupportedDBVersionSeqNum() {
+	minimumSequence, err := migrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	if version.SeqNum < minimumSequence {
+		minimumVersion, err := migrations.MinimumSupportedDBVersion()
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
 		// Use FailedPrecondition status to indicate this is a permanent validation failure,
 		// not a transient error that should be retried.
-		errMsg := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, migrations.MinimumSupportedDBVersion())
+		errMsg := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, minimumVersion)
 		log.Error(errMsg)
 		return status.Error(codes.FailedPrecondition, errMsg.Error())
 	}
