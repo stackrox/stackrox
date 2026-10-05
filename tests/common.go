@@ -1235,6 +1235,29 @@ func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespac
 	return patchedDeploy
 }
 
+// mustSetDeploymentEnvVals sets multiple env variables on a container in a single
+// strategic-merge patch (one rollout instead of one per variable), or fails the test.
+func (ks *KubernetesSuite) mustSetDeploymentEnvVals(ctx context.Context, namespace string, deployment string, container string, envVars map[string]string) *appsV1.Deployment {
+	sb := strings.Builder{}
+	for name, value := range envVars {
+		if sb.Len() > 0 {
+			sb.WriteString(",")
+		}
+		sb.WriteString(fmt.Sprintf(`{"name":%q,"value":%q}`, name, value))
+	}
+	patch := fmt.Appendf(nil, `{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[%s]}]}}}}`,
+		container, sb.String())
+	whatVars := fmt.Sprintf("variables %v on deployment %q in namespace %q", envVars, deployment, namespace)
+	ks.logf("Setting %s", whatVars)
+	var patchedDeploy *appsV1.Deployment
+	mustEventually(ks.T(), ctx, func() error {
+		var err error
+		patchedDeploy, err = ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+		return err
+	}, 5*time.Second, fmt.Sprintf("cannot set %s", whatVars))
+	return patchedDeploy
+}
+
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
 func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
 	val, err := ks.getDeploymentEnvVal(ctx, namespace, deployment, container, envVar)
