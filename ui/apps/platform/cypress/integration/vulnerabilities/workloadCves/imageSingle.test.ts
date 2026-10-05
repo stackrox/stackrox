@@ -377,10 +377,10 @@ describe('Workload CVE Image Single page', () => {
 
                     // Test sorting on the only remaining untested column by rapidly changing
                     // the column value without waiting for a response
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
-                    sortByTableHeader('CVSS');
+                    sortByTableHeader('Top CVSS');
+                    sortByTableHeader('Top CVSS');
+                    sortByTableHeader('Top CVSS');
+                    sortByTableHeader('Top CVSS');
                     waitForRequests().then(assertCveCountsUnchanged);
                     waitForRequests().then(assertCveCountsUnchanged);
                     waitForRequests().then(assertCveCountsUnchanged);
