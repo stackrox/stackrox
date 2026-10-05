@@ -227,6 +227,11 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 	return deployment, true, nil
 }
 
+// DeploymentExists checks the store directly, which enforces read access on the deployment.
+func (ds *datastoreImpl) DeploymentExists(ctx context.Context, id string) (bool, error) {
+	return ds.deploymentStore.Exists(ctx, id)
+}
+
 // GetDeployments
 func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
 	var deployments []*storage.Deployment
