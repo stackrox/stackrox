@@ -82,7 +82,7 @@ func diffCommand(env environment.Environment) *cobra.Command {
 	c.Flags().StringVar(&opts.catalogGRPCAddress, "catalog-grpc-address", "localhost:50051",
 		"Address of the OLM CatalogSource registry gRPC (e.g. reached via `oc port-forward`)")
 	c.Flags().StringVar(&opts.kubeconfig, "kubeconfig", "", "Path to kubeconfig (defaults to the standard loading rules / current context)")
-	c.Flags().StringVar(&opts.format, "format", "table", "Output format: table or json")
+	c.Flags().StringVar(&opts.format, "format", "table", "Output format: table, json, or csv")
 	c.Flags().DurationVar(&opts.timeout, "timeout", 5*time.Minute, "Overall timeout for the analysis")
 	c.Flags().BoolVar(&opts.force, "force", false, "Force re-scan of candidate images instead of using cached scans")
 	c.Flags().BoolVar(&opts.quiet, "quiet", false, "Suppress progress output on stderr")
@@ -99,8 +99,8 @@ func (o *diffOptions) progress(format string, args ...any) {
 }
 
 func (o *diffOptions) run() error {
-	if o.format != "table" && o.format != "json" {
-		return errors.Errorf("invalid --format %q: must be table or json", o.format)
+	if o.format != "table" && o.format != "json" && o.format != "csv" {
+		return errors.Errorf("invalid --format %q: must be table, json or csv", o.format)
 	}
 
 	o.progress("Connecting to Central…")
@@ -141,6 +141,9 @@ func (o *diffOptions) run() error {
 	out := o.env.InputOutput().Out()
 	if o.format == "json" {
 		return renderJSON(out, reports)
+	}
+	if o.format == "csv" {
+		return renderCSV(out, reports)
 	}
 	renderTable(out, reports, unresolved)
 	if len(reports) == 0 && len(unresolved) > 0 {

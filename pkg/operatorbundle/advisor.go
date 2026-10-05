@@ -127,7 +127,13 @@ func (a *Advisor) analyzeBundle(ctx context.Context, installed *Bundle, triggeri
 	if err != nil {
 		return report, err
 	}
-	candidateImages, err := a.collectCandidateCVEs(ctx, candidate.RelatedImages)
+
+	// Narrow to images actually used in the cluster: collectInstalledCVEs kept only the
+	// installed-bundle images the InstalledImageSource (ACS) has, i.e. the deployed/used ones.
+	// Scan and diff only the candidate images that match those (repository, name) keys.
+	used := usedPairKeys(installedImages)
+	a.progress("  %d of %d bundle image(s) are used in the cluster", len(installedImages), len(installed.RelatedImages))
+	candidateImages, err := a.collectCandidateCVEs(ctx, filterToUsed(candidate.RelatedImages, used))
 	if err != nil {
 		return report, err
 	}
@@ -135,6 +141,28 @@ func (a *Advisor) analyzeBundle(ctx context.Context, installed *Bundle, triggeri
 	a.progress("Computing CVE diff…")
 	report.ImageDiffs = ComputeDiff(installedImages, candidateImages)
 	return report, nil
+}
+
+// usedPairKeys returns the (repository, name) keys of the images used in the cluster, i.e. the
+// installed-bundle images the InstalledImageSource had CVE data for.
+func usedPairKeys(installed []ImageCVEs) map[string]struct{} {
+	keys := make(map[string]struct{}, len(installed))
+	for _, img := range installed {
+		keys[pairKey(img)] = struct{}{}
+	}
+	return keys
+}
+
+// filterToUsed keeps only the candidate related images whose (repository, name) is in the used
+// set, so unused bundle images are neither scanned nor diffed.
+func filterToUsed(candidate []RelatedImage, used map[string]struct{}) []RelatedImage {
+	out := make([]RelatedImage, 0, len(used))
+	for _, ri := range candidate {
+		if _, ok := used[pairKeyParts(RepositoryFromReference(ri.Image), ri.Name)]; ok {
+			out = append(out, ri)
+		}
+	}
+	return out
 }
 
 // collectInstalledCVEs looks up CVEs for already-scanned installed-bundle images by digest.

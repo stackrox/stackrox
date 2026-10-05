@@ -87,7 +87,13 @@ func pairedDiff(installed, candidate ImageCVEs) ImageDiff {
 // an empty name are disambiguated by repository. Validated unique across sampled operators (see
 // mt_nogit_image_remed/phase1_validation.md).
 func pairKey(img ImageCVEs) string {
-	return img.Repository + "\x00" + img.Name
+	return pairKeyParts(img.Repository, img.Name)
+}
+
+// pairKeyParts builds the diff pairing key from its components, so a RelatedImage (which is not
+// an ImageCVEs) can be keyed identically to an ImageCVEs. See pairKey.
+func pairKeyParts(repository, name string) string {
+	return repository + "\x00" + name
 }
 
 // indexByPairKey indexes images by their (repository, name) key. If two images share a key the

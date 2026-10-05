@@ -8,8 +8,11 @@
 //     from an operator catalog, keyed by image digest.
 //  2. Find newer bundle versions of the same package/channel and select the latest patch
 //     release within the installed bundle's major.minor (the "update candidate").
-//  3. Obtain CVEs for every image of the update candidate (by scanning) and for every
-//     image of the installed bundle (from already-scanned data).
+//  3. Obtain CVEs for the installed-bundle images that are used in the cluster (those the
+//     InstalledImageSource/ACS already has scanned) and, restricted to that same
+//     (repository, name) set, scan the matching update-candidate images. Unused bundle
+//     images (e.g. the many Istio versions a multi-version bundle ships but the cluster does
+//     not run) are neither scanned nor diffed.
 //  4. Diff the CVEs per image, pairing images by their (repository, bundle name) key so that
 //     multi-version bundles (many images sharing one repository) diff correctly, classifying
 //     each CVE as fixed, still active, or newly introduced.

@@ -152,3 +152,75 @@ func TestAdvise(t *testing.T) {
 		assert.Empty(t, reports[0].ImageDiffs)
 	})
 }
+
+// TestAdviseNarrowsToUsedImages verifies that only images used in the cluster (installed-bundle
+// images the InstalledImageSource has) are scanned and diffed: a multi-version bundle ships many
+// (repository, name) variants, but only the deployed ones should drive candidate scanning.
+func TestAdviseNarrowsToUsedImages(t *testing.T) {
+	sev := storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	const (
+		cniRepo = "registry.redhat.io/openshift-service-mesh/istio-cni-rhel9"
+		pxyRepo = "registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9"
+		mgRepo  = "registry.redhat.io/openshift-service-mesh/istio-must-gather-rhel9"
+		ztRepo  = "registry.redhat.io/openshift-service-mesh/istio-ztunnel-rhel9"
+	)
+
+	installedBundle := &Bundle{
+		Package: "servicemeshoperator3", ChannelName: "stable", Version: "3.2.0",
+		CSVName: "servicemeshoperator3.v3.2.0",
+		RelatedImages: []RelatedImage{
+			{Image: cniRepo, Name: "images_v1_27_3_cni", Digest: "sha256:cni-used"},      // used
+			{Image: pxyRepo, Name: "images_v1_27_3_proxy", Digest: "sha256:pxy-used"},    // used
+			{Image: mgRepo, Name: "images_v1_27_3_mustgather", Digest: "sha256:mg-used"}, // used, dropped in candidate
+			{Image: cniRepo, Name: "images_v1_24_3_cni", Digest: "sha256:cni-unused"},    // not in cluster
+			{Image: pxyRepo, Name: "images_v1_24_3_proxy", Digest: "sha256:pxy-unused"},  // not in cluster
+		},
+	}
+	candidateBundle := Bundle{
+		Package: "servicemeshoperator3", ChannelName: "stable", Version: "3.2.9",
+		CSVName: "servicemeshoperator3.v3.2.9",
+		RelatedImages: []RelatedImage{
+			{Image: cniRepo, Name: "images_v1_27_3_cni", Digest: "sha256:cni-new"},
+			{Image: pxyRepo, Name: "images_v1_27_3_proxy", Digest: "sha256:pxy-new"},
+			{Image: cniRepo, Name: "images_v1_24_3_cni", Digest: "sha256:cni-unused-new"},
+			{Image: pxyRepo, Name: "images_v1_24_3_proxy", Digest: "sha256:pxy-unused-new"},
+			{Image: ztRepo, Name: "images_v1_28_0_ztunnel", Digest: "sha256:zt-new"}, // brand new, not used
+		},
+	}
+
+	catalog := &fakeCatalog{
+		installed:  map[string]*Bundle{"sha256:cni-used": installedBundle},
+		candidates: map[string][]Bundle{"servicemeshoperator3": {candidateBundle}},
+	}
+	// Only the three deployed images are present in ACS.
+	installedSrc := &fakeInstalled{byDigest: map[string]*ImageCVEs{
+		"sha256:cni-used": {Repository: cniRepo, Digest: "sha256:cni-used", CVEs: []CVE{cve("CVE-CNI", sev, "")}},
+		"sha256:pxy-used": {Repository: pxyRepo, Digest: "sha256:pxy-used", CVEs: []CVE{cve("CVE-PXY", sev, "1.1")}},
+		"sha256:mg-used":  {Repository: mgRepo, Digest: "sha256:mg-used", CVEs: []CVE{cve("CVE-MG", sev, "")}},
+	}}
+	scanner := &fakeScanner{byRef: map[string]*ImageCVEs{
+		cniRepo + "@sha256:cni-new": {Repository: cniRepo, Digest: "sha256:cni-new", CVEs: []CVE{cve("CVE-CNI", sev, "")}},
+		pxyRepo + "@sha256:pxy-new": {Repository: pxyRepo, Digest: "sha256:pxy-new", CVEs: []CVE{}},
+	}}
+
+	advisor := NewAdvisor(catalog, scanner, installedSrc)
+	reports, _, err := advisor.Advise(context.Background(), []string{"sha256:cni-used"})
+	require.NoError(t, err)
+	require.Len(t, reports, 1)
+
+	// Only the two used images that also exist in the candidate are scanned — not the unused
+	// 1.24.3 variants nor the brand-new ztunnel.
+	assert.ElementsMatch(t, []string{cniRepo + "@sha256:cni-new", pxyRepo + "@sha256:pxy-new"}, scanner.scans,
+		"only used images present in the candidate should be scanned")
+
+	byKey := make(map[string]ImageDiff)
+	for _, d := range reports[0].ImageDiffs {
+		byKey[d.Repository+"|"+d.Name] = d
+		assert.NotEqual(t, ImageAdded, d.Status, "unused candidate images must not appear as ADDED")
+	}
+	require.Len(t, reports[0].ImageDiffs, 3, "two paired used images + one removed (dropped) used image")
+	assert.Equal(t, ImagePaired, byKey[cniRepo+"|images_v1_27_3_cni"].Status)
+	assert.Equal(t, ImagePaired, byKey[pxyRepo+"|images_v1_27_3_proxy"].Status)
+	// must-gather is used but dropped from the candidate -> REMOVED.
+	assert.Equal(t, ImageRemoved, byKey[mgRepo+"|images_v1_27_3_mustgather"].Status)
+}

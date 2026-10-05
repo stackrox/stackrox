@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -93,6 +94,46 @@ func toReportViews(reports []operatorbundle.BundleDiffReport) []reportView {
 		views = append(views, v)
 	}
 	return views
+}
+
+// renderCSV writes one row per (image, CVE): installed_image,candidate_image,cve,status, where
+// status is fixed / not-fixed / new. Image cells are repository@digest, or empty when there is
+// no counterpart (candidate for a REMOVED image, installed for an ADDED one).
+func renderCSV(w io.Writer, reports []operatorbundle.BundleDiffReport) error {
+	cw := csv.NewWriter(w)
+	if err := cw.Write([]string{"installed_image", "candidate_image", "cve", "status"}); err != nil {
+		return errors.Wrap(err, "writing CSV header")
+	}
+	for _, r := range reports {
+		for _, d := range r.ImageDiffs {
+			installed := imageRef(d.Repository, d.InstalledDigest)
+			candidate := imageRef(d.Repository, d.CandidateDigest)
+			for _, group := range []struct {
+				status string
+				cves   []operatorbundle.CVE
+			}{
+				{"fixed", d.Fixed},
+				{"not-fixed", d.StillActive},
+				{"new", d.New},
+			} {
+				for _, c := range group.cves {
+					if err := cw.Write([]string{installed, candidate, c.ID, group.status}); err != nil {
+						return errors.Wrap(err, "writing CSV row")
+					}
+				}
+			}
+		}
+	}
+	cw.Flush()
+	return errors.Wrap(cw.Error(), "flushing CSV")
+}
+
+// imageRef returns repository@digest, or "" when the digest is absent.
+func imageRef(repository, digest string) string {
+	if digest == "" {
+		return ""
+	}
+	return repository + "@" + digest
 }
 
 func renderJSON(w io.Writer, reports []operatorbundle.BundleDiffReport) error {
