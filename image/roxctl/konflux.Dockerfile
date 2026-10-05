@@ -37,7 +37,7 @@ COPY --from=ubi-micro-base / /out/
 # prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
 RUN dnf install -y \
     --installroot=/out/ \
-    --releasever=8 \
+    --releasever=9 \
     --setopt=install_weak_deps=False \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
