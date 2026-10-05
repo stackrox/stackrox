@@ -30,6 +30,7 @@ import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
+import util.E2EParallelizationAudit
 import util.Env
 import util.Helpers
 import util.OnFailure
@@ -246,6 +247,7 @@ class BaseSpecification extends Specification {
     def setupSpec() {
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
+        E2EParallelizationAudit.specStarted(this.class.name)
         log.info("Starting testsuite")
 
         testSpecStartTimeMillis = System.currentTimeMillis()
@@ -307,6 +309,7 @@ class BaseSpecification extends Specification {
         // These .puts() have to be repeated here or else the key is cleared.
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
+        E2EParallelizationAudit.featureStarted(this.class.name, currentTestName.getMethodName())
         log.info("Starting testcase: ${currentTestName.getMethodName()}")
 
         // Make sure to use or revert back to the desired central gRPC auth
@@ -330,17 +333,20 @@ class BaseSpecification extends Specification {
     }
 
     def cleanupSpec() {
-        log.info("Ending testsuite")
+        try {
+            log.info("Ending testsuite")
 
-        BaseService.useBasicAuth()
-        BaseService.setUseClientCert(false)
-        //TODO(ROX-30946): figure out why Sensor is unhealthy at the end of UpgradesTest
-        if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
-            log.info("Checking if cluster is healthy after test")
-            waitForClusterHealthy()
+            BaseService.useBasicAuth()
+            BaseService.setUseClientCert(false)
+            //TODO(ROX-30946): figure out why Sensor is unhealthy at the end of UpgradesTest
+            if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
+                log.info("Checking if cluster is healthy after test")
+                waitForClusterHealthy()
+            }
+        } finally {
+            E2EParallelizationAudit.specFinished(this.class.name)
+            MDC.remove("specification")
         }
-
-        MDC.remove("specification")
     }
 
     private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
@@ -365,7 +371,11 @@ class BaseSpecification extends Specification {
     }
 
     def cleanup() {
-        log.info("Ending testcase")
+        try {
+            log.info("Ending testcase")
+        } finally {
+            E2EParallelizationAudit.featureFinished()
+        }
     }
 
     static addStackroxImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {

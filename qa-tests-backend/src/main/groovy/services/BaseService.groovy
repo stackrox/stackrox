@@ -22,6 +22,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
 
+import util.E2EParallelizationAudit
 import util.Env
 import util.Keys
 
@@ -63,6 +64,7 @@ class BaseService {
             if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
                 return
             }
+            E2EParallelizationAudit.centralAuthConfigurationChanged()
             if (useClientCert != newUseClientCert) {
                 if (transportChannel != null) {
                     transportChannel.shutdownNow()
@@ -154,11 +156,14 @@ class BaseService {
             log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
         }
 
-        if (authInterceptor == null) {
-            effectiveChannel = transportChannel
-        } else {
-            effectiveChannel = ClientInterceptors.intercept(transportChannel, authInterceptor)
+        Channel channel = transportChannel
+        if (authInterceptor != null) {
+            channel = ClientInterceptors.intercept(channel, authInterceptor)
         }
+        if (E2EParallelizationAudit.isEnabled()) {
+            channel = ClientInterceptors.intercept(channel, E2EParallelizationAudit.centralClientInterceptor())
+        }
+        effectiveChannel = channel
     }
 
     static Channel getChannel() {
