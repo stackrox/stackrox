@@ -118,7 +118,7 @@ func TestImageExclusionDoesNotDisableDeployTimeDetection(t *testing.T) {
 	})
 
 	t.Run("a deployment exclusion still skips the named deployment", func(t *testing.T) {
-		policy := oldCriticalCVEPolicy(&storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "payments"}})
+		policy := oldCriticalCVEPolicy(&storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Name: "payments"}}})
 		alerts, err := detectorFor(t, policy).Detect(ctx, payments)
 		require.NoError(t, err)
 		assert.Empty(t, alerts)
