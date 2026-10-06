@@ -77,6 +77,42 @@ spec:
     matchNames:
       - "{{ .Release.Namespace }}"
 
+{{- if and ._rox.monitoring.openshift.custom ._rox.monitoring.openshift.custom.enabled }}
+---
+
+{{- /*
+The ServiceMonitor is placed into the openshift-monitoring namespace to comply with the
+OpenShift monitoring namespace label requirements. This is an exception to the rule
+that leaking resources into system namespaces should be avoided.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "central-ocp-monitor-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" (print "central-ocp-monitor-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" (print "central-ocp-monitor-" .Release.Namespace)) | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "central-ocp.{{ .Release.Namespace }}.svc"
+  selector:
+    matchLabels:
+      stackrox.io/ocp-api: "true"
+  namespaceSelector:
+    matchNames:
+      - "{{ .Release.Namespace }}"
+
+{{- end }}
 ---
 
 {{- /*
