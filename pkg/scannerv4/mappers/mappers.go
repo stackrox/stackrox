@@ -19,7 +19,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/enricher/kev"
-	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -91,15 +90,6 @@ var (
 		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
-
-	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
-	vexUpdater = (*vex.Updater)(nil).Name()
-	// rhccRepoName is the name of the "Gold Repository".
-	rhccRepoName = rhcc.GoldRepo.Name
-	// rhccRepoURI is the URI of the "Gold Repository".
-	rhccRepoURI = rhcc.GoldRepo.URI
-	// rhccRepoKey identifies repositories from both RHCC scanners.
-	rhccRepoKey = rhcc.RepositoryKey
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -125,7 +115,6 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 		return nil, nil
 	}
 	filterPackages(r)
-	filterVulnerabilities(r)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
@@ -1177,105 +1166,6 @@ func filterPackages(report *claircore.VulnerabilityReport) {
 			delete(report.PackageVulnerabilities, pkgID)
 		}
 	}
-}
-
-// filterVulnerabilities filters out vulnerabilities from the given vulnerability report.
-// Note: This function only modifies the report's PackageVulnerabilities map.
-// It is non-trivial to remove all unreferenced vulnerabilities from the report's
-// Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
-// extra vulnerabilities. It is up to the client to handle this.
-func filterVulnerabilities(report *claircore.VulnerabilityReport) {
-	// We only filter out non-Red Hat vulnerabilities found in Red Hat layers (if configured to do so) at this time.
-	if !features.ScannerV4RedHatLayers.Enabled() {
-		return
-	}
-
-	redhatLayers := rhccLayers(report)
-	if redhatLayers.IsEmpty() {
-		// This image is neither an official Red Hat image nor based on one, so nothing to do here.
-		return
-	}
-	for pkgID, pkg := range report.Packages {
-		// Sanity check.
-		if pkg == nil {
-			continue
-		}
-
-		envs, found := report.Environments[pkgID]
-		if !found {
-			// Did not find a related environment, so we cannot determine the layer.
-			continue
-		}
-
-		// Just use the first environment.
-		// It is possible there are multiple environments associated with this package;
-		// however, for our purposes, we only need the first one,
-		// as the layer index will always be the same between different environments.
-		// Quay does this, too: https://github.com/quay/quay/blob/v3.10.3/data/secscan_model/secscan_v4_model.py#L583.
-		// We also do this in our own client code.
-		env := envs[0]
-		// If this package was introduced in a non-Red Hat layer, skip it.
-		if !redhatLayers.Contains(env.IntroducedIn.String()) {
-			continue
-		}
-
-		var n int
-		for _, vulnID := range report.PackageVulnerabilities[pkgID] {
-			vuln := report.Vulnerabilities[vulnID]
-			// Sanity check.
-			if vuln == nil {
-				continue
-			}
-
-			// If the vulnerability did not come from Red Hat's VEX data, then skip it.
-			if vuln.Updater != vexUpdater {
-				continue
-			}
-
-			report.PackageVulnerabilities[pkgID][n] = vulnID
-			n++
-		}
-
-		// Hint to the GC the filtered vulnerabilities are no longer needed.
-		clear(report.PackageVulnerabilities[pkgID][n:])
-		report.PackageVulnerabilities[pkgID] = report.PackageVulnerabilities[pkgID][:n:n]
-
-		// If there aren't any vulnerabilities from Red Hat's VEX data,
-		// then delete the whole entry.
-		if n == 0 {
-			delete(report.PackageVulnerabilities, pkgID)
-		}
-	}
-}
-
-// rhccLayers returns the SHAs of layers identified by ClairCore's RHCC scanners.
-// Konflux labels.json repositories have a CPE instead of the legacy GoldRepo
-// name and URI. Layers without RHCC build information are not included.
-func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
-	layers := set.NewStringSet()
-
-	rhccIDs := set.NewStringSet()
-	for id, repo := range report.Repositories {
-		if repo != nil && (repo.Key == rhccRepoKey || repo.Name == rhccRepoName && repo.URI == rhccRepoURI) {
-			rhccIDs.Add(id)
-		}
-	}
-	if rhccIDs.IsEmpty() {
-		// Not an official Red Hat image nor based on one.
-		return layers.Freeze()
-	}
-
-	for _, envs := range report.Environments {
-		for _, env := range envs {
-			for _, repoID := range env.RepositoryIDs {
-				if rhccIDs.Contains(repoID) {
-					layers.Add(env.IntroducedIn.String())
-				}
-			}
-		}
-	}
-
-	return layers.Freeze()
 }
 
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
