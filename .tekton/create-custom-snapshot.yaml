@@ -75,7 +75,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:06b877f34bc873eddbf28ad8a921bf007533c1ce8dd89e8d2e1503b79344c9ae
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
         - name: kind
           value: task
         resolver: bundles
@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:8ebe2ad8fdf3cab3e5a53c1edc69194c98209cfadab24b884f4ad9ebcf7bbbfc
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:1d7c5517a4a1a8e2688620b39ee980e82505ca1ab7ae5541b5463120ae9b3897
           imagePullPolicy: IfNotPresent
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
@@ -224,7 +224,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:06b877f34bc873eddbf28ad8a921bf007533c1ce8dd89e8d2e1503b79344c9ae
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
         - name: kind
           value: task
         resolver: bundles
@@ -242,7 +242,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:06b877f34bc873eddbf28ad8a921bf007533c1ce8dd89e8d2e1503b79344c9ae
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
         - name: kind
           value: task
         resolver: bundles
@@ -315,7 +315,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:06b877f34bc873eddbf28ad8a921bf007533c1ce8dd89e8d2e1503b79344c9ae
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
         - name: kind
           value: task
         resolver: bundles

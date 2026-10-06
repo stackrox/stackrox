@@ -3,29 +3,67 @@
 
 set -euo pipefail
 
-# Tests upgrade to Postgres.
+# Tests PostgreSQL major-version upgrades.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.7.2"
-EARLIER_SHA="ef2060ed332c7b8513cb9eb52b9745df9a8285cc"
-CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
-PREVIOUS_RELEASES=("4.7.3")
+EARLIER_TAG="4.10.0"
+EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
-# shellcheck source=../../scripts/ci/lib.sh
-source "$TEST_ROOT/scripts/ci/lib.sh"
-# shellcheck source=../../scripts/ci/sensor-wait.sh
-source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
-# shellcheck source=../../scripts/setup-certs.sh
-source "$TEST_ROOT/tests/scripts/setup-certs.sh"
-# shellcheck source=../../tests/e2e/lib.sh
-source "$TEST_ROOT/tests/e2e/lib.sh"
-# shellcheck source=../../tests/upgrade/lib.sh
-source "$TEST_ROOT/tests/upgrade/lib.sh"
-# shellcheck source=../../tests/upgrade/validation.sh
-source "$TEST_ROOT/tests/upgrade/validation.sh"
+
+postgres_major_version() {
+    # Current images use ARG PG_VERSION; older releases put the major directly in FROM.
+    local version
+    version="$(sed -n \
+        -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([1-9][0-9]*\)-.*$/\1/p')"
+    # Missing or ambiguous versions must fail the check, not silently skip coverage.
+    [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
+    echo "$version"
+}
+
+check_postgres_upgrade() {
+    local earlier_version current_version
+    earlier_version="$(git -C "$TEST_ROOT" show "$EARLIER_SHA:image/postgres/Dockerfile" | postgres_major_version)" || \
+        die "Cannot determine PostgreSQL major version for $EARLIER_TAG ($EARLIER_SHA)"
+    current_version="$(postgres_major_version < "$TEST_ROOT/image/postgres/Dockerfile")" || \
+        die "Cannot determine PostgreSQL major version for the current checkout"
+
+    EARLIER_POSTGRES_VERSION="$earlier_version"
+    CURRENT_POSTGRES_VERSION="$current_version"
+
+    POSTGRES_UPGRADE_REQUIRED=false
+    if (( current_version > earlier_version )); then
+        POSTGRES_UPGRADE_REQUIRED=true
+        POSTGRES_UPGRADE_REASON="Running PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version."
+    else
+        POSTGRES_UPGRADE_REASON="Skipping PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version. No major-version upgrade."
+    fi
+    info "$POSTGRES_UPGRADE_REASON"
+}
+
+check_postgres_version() {
+    local expected_version="$1"
+    local db_password actual_version
+
+    kubectl -n stackrox rollout status deployment/central-db --timeout="${MAX_WAIT_SECONDS:-300}s" || \
+        die "Central DB rollout did not complete"
+
+    db_password="$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)" || \
+        die "Cannot read the Central DB password"
+
+    # Pass the password on stdin so it does not appear in the exec command.
+    # shellcheck disable=SC2016
+    actual_version="$(kubectl -n stackrox exec -i deploy/central-db -c central-db -- \
+        bash -c 'PGPASSWORD="$(cat)" \
+            psql -X -w -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -Atc "SHOW server_version"' <<< "$db_password")" || \
+        die "Cannot query the running PostgreSQL version"
+
+    info "Central DB is running PostgreSQL $actual_version; expected major version $expected_version"
+    test_equals_non_silent "${actual_version%%.*}" "$expected_version"
+}
 
 test_upgrade() {
     info "Starting postgres upgrade test"
@@ -79,8 +117,6 @@ test_upgrade_path() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.7.2"
-
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
@@ -95,11 +131,12 @@ test_upgrade_path() {
     ########################################################################################
     deploy_earlier_postgres_central
     wait_for_api
+    check_postgres_version "$EARLIER_POSTGRES_VERSION"
     setup_client_TLS_certs
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_6_backup
+    restore_backup
     wait_for_api
 
     # Run with some scale to have data populated to migrate
@@ -133,11 +170,12 @@ test_upgrade_path() {
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
-    # Upgrade the image to PG15
+    # Upgrade the image to PG16
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
     wait_for_api
+    check_postgres_version "$CURRENT_POSTGRES_VERSION"
 
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
@@ -165,6 +203,7 @@ test_upgrade_path() {
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
     wait_for_central_db
+    check_postgres_version "$CURRENT_POSTGRES_VERSION"
 
     # Verify data is still there
     checkForPostgresAccessScopes
@@ -191,8 +230,6 @@ test_not_enough_disk_space() {
 
     local log_output_dir="$1"
 
-    FORCE_ROLLBACK_VERSION="4.7.2"
-
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
@@ -209,11 +246,12 @@ test_not_enough_disk_space() {
     deploy_earlier_postgres_central
     unset PVC_SIZE
     wait_for_api
+    check_postgres_version "$EARLIER_POSTGRES_VERSION"
     setup_client_TLS_certs
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_6_backup
+    restore_backup
     wait_for_api
 
     # Do not apply scaled workload to control disk space, do fallocate instead
@@ -253,7 +291,7 @@ test_not_enough_disk_space() {
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
-    # Upgrade the image to PG15
+    # Upgrade the image to PG16
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image \
         deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
@@ -266,18 +304,19 @@ test_not_enough_disk_space() {
         '{"spec": {"resources": {"requests": {"storage": "4Gi"}}}}'
     kubectl -n stackrox rollout restart deployment/central-db
     wait_for_api
+    check_postgres_version "$CURRENT_POSTGRES_VERSION"
 
     # Make sure we can restore from a physical backup and run with old binaries
     # after upgrade if needed.
-    kubectl -n stackrox set env deploy/central-db RESTORE_BACKUP=true
-    kubectl -n stackrox set env deploy/central-db FORCE_OLD_BINARIES=true
+    kubectl -n stackrox set env deploy/central-db RESTORE_BACKUP=true FORCE_OLD_BINARIES=true
     wait_for_api
+    check_postgres_version "$EARLIER_POSTGRES_VERSION"
 
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
 
 force_rollback_to_previous_postgres() {
-    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+    info "Forcing a rollback to ${EARLIER_TAG}"
 
     local upgradeStatus
     upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
@@ -287,7 +326,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
     local config_patch
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
@@ -301,10 +340,10 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
-    # Do not rollback central-db image, since downgrade from PG15 to PG13 is
-    # not possible.
+    # Keep the upgraded central-db image when rolling Central back, since the
+    # upgraded data directory cannot be used by an older PostgreSQL major version.
 }
 
 deploy_scaled_workload() {
@@ -317,7 +356,8 @@ deploy_scaled_workload() {
 
     # Make sure no init bundle from previous runs is there
     rm -f /tmp/cluster-init-bundle.yaml
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+        central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
     helm install -n stackrox --create-namespace \
         stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
@@ -331,6 +371,14 @@ deploy_scaled_workload() {
     sensor_wait
 
     ./scale/launch_workload.sh scale-test
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
@@ -344,5 +392,30 @@ deploy_scaled_workload() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_upgrade "$*"
+    check_postgres_upgrade
+    if [[ "${1:-}" == "--check" ]]; then
+        # CI checks eligibility before provisioning a cluster or running pre/post-test hooks.
+        if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            echo "required=$POSTGRES_UPGRADE_REQUIRED" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            echo "$POSTGRES_UPGRADE_REASON" >> "$GITHUB_STEP_SUMMARY"
+        fi
+    elif [[ "$POSTGRES_UPGRADE_REQUIRED" == true ]]; then
+        CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        # Load deployment helpers only when the suite will actually run.
+        # shellcheck source=../../scripts/ci/lib.sh
+        source "$TEST_ROOT/scripts/ci/lib.sh"
+        # shellcheck source=../../scripts/ci/sensor-wait.sh
+        source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+        # shellcheck source=../../scripts/setup-certs.sh
+        source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+        # shellcheck source=../../tests/e2e/lib.sh
+        source "$TEST_ROOT/tests/e2e/lib.sh"
+        # shellcheck source=../../tests/upgrade/lib.sh
+        source "$TEST_ROOT/tests/upgrade/lib.sh"
+        # shellcheck source=../../tests/upgrade/validation.sh
+        source "$TEST_ROOT/tests/upgrade/validation.sh"
+        test_upgrade "$@"
+    fi
 fi

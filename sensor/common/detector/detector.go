@@ -427,7 +427,11 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
+	caps := []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
+	if features.PolicyWorkloadKindExclusion.Enabled() {
+		caps = append(caps, centralsensor.WorkloadKindExclusionCap)
+	}
+	return caps
 }
 
 // ProcessPolicySync reconciles policies and flush all deployments through the detector

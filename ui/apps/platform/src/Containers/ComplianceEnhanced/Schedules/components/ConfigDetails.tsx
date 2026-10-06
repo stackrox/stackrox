@@ -1,23 +1,12 @@
-import {
-    Alert,
-    Bullseye,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
-    Flex,
-    Spinner,
-} from '@patternfly/react-core';
+import { Alert, Bullseye, Flex, Spinner } from '@patternfly/react-core';
 
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
-import {
-    getBodyDefault,
-    getSubjectDefault,
-    getTimeWithHourMinuteFromISO8601,
-} from '../compliance.scanConfigs.utils';
-import ScanConfigParametersView from './ScanConfigParametersView';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import ScanConfigActivityView from './ScanConfigActivityView';
 import ScanConfigClustersTable from './ScanConfigClustersTable';
+import ScanConfigDeliveryView from './ScanConfigDeliveryView';
+import ScanConfigParametersView from './ScanConfigParametersView';
 import ScanConfigProfilesView from './ScanConfigProfilesView';
 
 export type ConfigDetailsProps = {
@@ -47,28 +36,14 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
 
     if (scanConfig) {
         return (
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 <ScanConfigParametersView
                     headingLevel={headingLevel}
                     scanName={scanConfig.scanName}
                     description={scanConfig.scanConfig.description}
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
-                >
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Last scanned</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {scanConfig.lastExecutedTime
-                                ? getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime)
-                                : 'Scan is in progress'}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Last updated</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                </ScanConfigParametersView>
+                />
+                <ScanConfigActivityView headingLevel={headingLevel} scanConfig={scanConfig} />
                 <ScanConfigClustersTable
                     headingLevel={headingLevel}
                     clusterScanStatuses={scanConfig.clusterStatus}
@@ -77,14 +52,9 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     headingLevel={headingLevel}
                     profiles={scanConfig.scanConfig.profiles}
                 />
-                <NotifierConfigurationView
+                <ScanConfigDeliveryView
                     headingLevel={headingLevel}
-                    customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
-                    customSubjectDefault={getSubjectDefault(
-                        scanConfig.scanName,
-                        scanConfig.scanConfig.profiles
-                    )}
-                    notifierConfigurations={scanConfig.scanConfig.notifiers}
+                    notifiers={scanConfig.scanConfig.notifiers}
                 />
             </Flex>
         );

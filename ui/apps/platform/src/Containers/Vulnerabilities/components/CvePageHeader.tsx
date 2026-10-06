@@ -52,11 +52,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
     const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && Boolean(cveBaseInfo); // not (yet) for Node CVE
 
     const labels: ReactNode[] = [];
-    if (
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CISA_KEV') &&
-        hasKnownExploit(cveBaseInfo?.exploit)
-    ) {
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && hasKnownExploit(cveBaseInfo?.exploit)) {
         labels.push(<KnownExploitLabel key="exploit" isCompact={false} />);
         if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
             labels.push(
