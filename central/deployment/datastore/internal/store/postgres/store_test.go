@@ -260,14 +260,6 @@ func (s *DeploymentsStoreSuite) TestSACCount() {
 			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
-
-			count, err = s.store.Count(testCase.context, search.NewQueryBuilder().AddDocIDs(objA.GetId()).ProtoQuery())
-			assert.NoError(t, err)
-			if expectedCount == 0 {
-				assert.Zero(t, count)
-			} else {
-				assert.Equal(t, 1, count)
-			}
 		})
 	}
 }

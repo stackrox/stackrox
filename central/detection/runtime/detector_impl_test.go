@@ -23,6 +23,7 @@ func TestDeploymentInactive(t *testing.T) {
 			exists:   false,
 			inactive: true,
 		},
+		// A failed lookup must not mark live deployments' alerts inactive.
 		"datastore error": {
 			err:      errors.New("database unavailable"),
 			inactive: false,
