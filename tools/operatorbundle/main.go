@@ -28,8 +28,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/tools/operatorbundle/central"
-	"github.com/stackrox/rox/tools/operatorbundle/olm"
-	api "github.com/stackrox/rox/tools/operatorbundle/olm/registryapi"
+	"github.com/stackrox/rox/pkg/operatorbundle/olm"
+	api "github.com/stackrox/rox/pkg/operatorbundle/olm/registryapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/operatorbundle"
-	api "github.com/stackrox/rox/tools/operatorbundle/olm/registryapi"
+	api "github.com/stackrox/rox/pkg/operatorbundle/olm/registryapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

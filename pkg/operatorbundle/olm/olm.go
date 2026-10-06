@@ -21,7 +21,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/operatorbundle"
-	api "github.com/stackrox/rox/tools/operatorbundle/olm/registryapi"
+	api "github.com/stackrox/rox/pkg/operatorbundle/olm/registryapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
