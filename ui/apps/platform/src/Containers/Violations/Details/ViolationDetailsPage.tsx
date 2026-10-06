@@ -45,7 +45,10 @@ function getAlertEntityInfo(alert: Alert): { entityName: string; displayedResour
     if (isResourceAlert(alert)) {
         return {
             entityName: alert.resource.clusterName,
-            displayedResourceType: startCase(alert.resource.resourceType.toLowerCase()),
+            displayedResourceType:
+                alert.resource.resourceType === 'CUSTOM' && alert.resource.apiResource
+                    ? alert.resource.apiResource
+                    : startCase(alert.resource.resourceType.toLowerCase()),
         };
     }
     if (isDeploymentAlert(alert)) {

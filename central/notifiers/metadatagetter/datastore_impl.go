@@ -83,6 +83,10 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 			// These two resource types have no namespace
 			return nil
 		}
+		if resourceType == storage.Alert_Resource_CUSTOM && entity.Resource.GetNamespace() == "" {
+			// Cluster scoped custom resources have no namespace
+			return nil
+		}
 		namespaceName = entity.Resource.GetNamespace()
 		clusterID = entity.Resource.GetClusterId()
 	case *storage.Alert_Image:

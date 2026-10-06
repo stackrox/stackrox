@@ -46,10 +46,20 @@ type auditEvent struct {
 }
 
 type objectRef struct {
-	APIVersion string `json:"apiVersion"`
-	Name       string `json:"name"`
-	Namespace  string `json:"namespace"`
-	Resource   string `json:"resource"`
+	APIGroup    string `json:"apiGroup"`
+	APIVersion  string `json:"apiVersion"`
+	Name        string `json:"name"`
+	Namespace   string `json:"namespace"`
+	Resource    string `json:"resource"`
+	Subresource string `json:"subresource"`
+}
+
+// apiResourceName returns the canonical "<plural>[.<group>]" name of the referenced resource.
+func (o *objectRef) apiResourceName() string {
+	if o.APIGroup == "" {
+		return o.Resource
+	}
+	return o.Resource + "." + o.APIGroup
 }
 
 type userRef struct {
@@ -72,6 +82,8 @@ func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {
 	}
 }
 
+// ToKubernetesEvent converts the audit event into a KubernetesEvent. Resources not covered by the
+// resource type enum are identified by their API resource name.
 func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
 	protoTime, err := protocompat.ParseRFC3339NanoTimestamp(e.StageTimestamp)
 	if err != nil {
@@ -98,18 +110,22 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 
 	reason := e.Annotations[reasonAnnotationKey]
 
+	var apiResource string
 	resource, found := auditResourceToKubeResource[strings.ToLower(e.ObjectRef.Resource)]
 	if !found {
 		resource = storage.KubernetesEvent_Object_UNKNOWN
+		apiResource = e.ObjectRef.apiResourceName()
 	}
 
 	k8sEvent := &storage.KubernetesEvent{
 		Id: e.AuditID,
 		Object: &storage.KubernetesEvent_Object{
-			Name:      e.ObjectRef.Name,
-			Resource:  resource,
-			ClusterId: clusterID,
-			Namespace: e.ObjectRef.Namespace,
+			Name:        e.ObjectRef.Name,
+			Resource:    resource,
+			ClusterId:   clusterID,
+			Namespace:   e.ObjectRef.Namespace,
+			ApiGroup:    e.ObjectRef.APIGroup,
+			ApiResource: apiResource,
 		},
 		Timestamp: protoTime,
 		ApiVerb:   storage.KubernetesEvent_APIVerb(storage.KubernetesEvent_APIVerb_value[strings.ToUpper(e.Verb)]),

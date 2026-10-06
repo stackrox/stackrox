@@ -486,6 +486,7 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 		namespace    string
 		resourceName string
 		resourceType storage.Alert_Resource_ResourceType
+		apiResource  string
 	}
 	alertGroups := make(map[alertKey][]*storage.Alert)
 	for _, alert := range alerts {
@@ -493,6 +494,7 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 			namespace:    alert.GetNamespace(),
 			resourceName: alert.GetResource().GetName(),
 			resourceType: alert.GetResource().GetResourceType(),
+			apiResource:  alert.GetResource().GetApiResource(),
 		}
 		alertGroups[key] = append(alertGroups[key], alert)
 	}
@@ -503,6 +505,9 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 			alertmanager.WithClusterID(clusterID),
 			alertmanager.WithNamespace(key.namespace),
 			alertmanager.WithResource(key.resourceName, key.resourceType),
+		}
+		if key.apiResource != "" {
+			opts = append(opts, alertmanager.WithAPIResource(key.apiResource))
 		}
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err

@@ -12,6 +12,7 @@ import {
 import type { WizardPolicyStep4 } from '../policies.utils';
 import {
     imageSigningCriteriaName,
+    kubernetesAPIResourceCriteriaName,
     mountPropagationCriteriaName,
 } from './Step3/policyCriteriaDescriptors';
 import { policySectionValidators } from './Step3/policyCriteriaValidators';
@@ -105,9 +106,13 @@ const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
                                                             if (
                                                                 // from[1] means one level up in the object
                                                                 context.from &&
-                                                                context.from[1]?.value
-                                                                    ?.fieldName ===
-                                                                    mountPropagationCriteriaName
+                                                                [
+                                                                    mountPropagationCriteriaName,
+                                                                    kubernetesAPIResourceCriteriaName,
+                                                                ].includes(
+                                                                    context.from[1]?.value
+                                                                        ?.fieldName
+                                                                )
                                                             ) {
                                                                 const currentValue =
                                                                     context.from[0]?.value?.value;

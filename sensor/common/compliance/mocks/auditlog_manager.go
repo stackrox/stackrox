@@ -240,6 +240,18 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Stop))
 }
 
+// UpdatePolicies mocks base method.
+func (m *MockAuditLogCollectionManager) UpdatePolicies(policies []*storage.Policy) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdatePolicies", policies)
+}
+
+// UpdatePolicies indicates an expected call of UpdatePolicies.
+func (mr *MockAuditLogCollectionManagerMockRecorder) UpdatePolicies(policies any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicies", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).UpdatePolicies), policies)
+}
+
 // MockclusterIDWaiter is a mock of clusterIDWaiter interface.
 type MockclusterIDWaiter struct {
 	ctrl     *gomock.Controller

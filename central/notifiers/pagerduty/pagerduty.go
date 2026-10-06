@@ -188,7 +188,12 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		} else {
 			payload.Source = entity.Resource.GetClusterName()
 		}
-		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
+		// Name custom resources by their API resource instead of the generic CUSTOM type.
+		resourceType := entity.Resource.GetResourceType().String()
+		if apiResource := entity.Resource.GetApiResource(); apiResource != "" {
+			resourceType = apiResource
+		}
+		payload.Component = fmt.Sprintf("%s %s", resourceType, entity.Resource.GetName())
 	}
 	return pd.V2Event{
 		Action:     eventType,

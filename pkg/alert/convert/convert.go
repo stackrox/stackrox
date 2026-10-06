@@ -38,10 +38,12 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 	return listAlert
 }
 
+// populateListAlertEntityInfoForResource sets the resource entity and common entity info on the list alert.
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
 	listAlert.Entity = &storage.ListAlert_Resource{
 		Resource: &storage.ListAlert_ResourceEntity{
-			Name: resource.GetName(),
+			Name:        resource.GetName(),
+			ApiResource: resource.GetApiResource(),
 		},
 	}
 	resStr := resource.GetResourceType().String()
@@ -163,12 +165,19 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 	// TODO: Cluster name and namespace id will have to be passed in here
 	// That will come from runtime detector (currently detector.detectForDeployment). This is TBD until the detection piece is completed
 	// (and ROX-7355 is done for cluster name)
+	resourceType := storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[strings.ToUpper(kubeEvent.GetObject().GetResource().String())])
+	// The API resource is only set for resources that are not covered by the resource type enum.
+	apiResource := kubeEvent.GetObject().GetApiResource()
+	if apiResource != "" {
+		resourceType = storage.Alert_Resource_CUSTOM
+	}
 	return &storage.Alert_Resource_{
 		Resource: &storage.Alert_Resource{
-			ResourceType: storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[strings.ToUpper(kubeEvent.GetObject().GetResource().String())]),
+			ResourceType: resourceType,
 			Name:         kubeEvent.GetObject().GetName(),
 			ClusterId:    kubeEvent.GetObject().GetClusterId(),
 			Namespace:    kubeEvent.GetObject().GetNamespace(),
+			ApiResource:  apiResource,
 		},
 	}
 }

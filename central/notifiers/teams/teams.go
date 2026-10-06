@@ -140,6 +140,9 @@ func (t *teams) getResourceSection(resource *storage.Alert_Resource) section {
 		{Name: "Cluster Id", Value: resource.GetClusterId()},
 		{Name: "Cluster Name", Value: resource.GetClusterName()}}
 
+	if resource.GetApiResource() != "" {
+		facts = append(facts, fact{Name: "API Resource", Value: resource.GetApiResource()})
+	}
 	if resource.GetNamespace() != "" {
 		facts = append(facts, fact{Name: "Namespace", Value: resource.GetNamespace()})
 	}

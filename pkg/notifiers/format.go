@@ -100,6 +100,7 @@ const bplPolicyFormat = `
 {{if .GetResource}}{{line ""}}{{header "Resource:"}}
 	{{stringify "Name:" .GetResource.Name | list}}
 	{{stringify "Type:" .GetResource.ResourceType | list}}
+	{{if .GetResource.ApiResource }}{{stringify "API Resource:" .GetResource.ApiResource | list}}{{end}}
 	{{stringify "Cluster:" .GetResource.ClusterName | list}}
 	{{stringify "ClusterId:" .GetResource.ClusterId | list}}
 	{{if .GetResource.Namespace }}{{stringify "Namespace:" .GetResource.Namespace | list}}{{end}}

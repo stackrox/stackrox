@@ -8,6 +8,7 @@ type K8sResourceKind =
     | 'NetworkPolicies'
     | 'SecurityContextConstraints'
     | 'EgressFirewalls'
+    | 'CustomResource'
     | 'Deployment'
     | 'Namespace'
     | 'Secret'
@@ -45,6 +46,10 @@ const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: s
     },
     EgressFirewalls: {
         text: 'EF',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
+    },
+    CustomResource: {
+        text: 'R',
         backgroundColor: 'var(--pf-t--color--purple--60)',
     },
     Deployment: {

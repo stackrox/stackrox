@@ -642,9 +642,14 @@ func (w alertAdapter) GetResourceType() storage.Alert_Resource_ResourceType {
 	return w.a.GetResource().GetResourceType()
 }
 func (w alertAdapter) GetResourceName() string { return w.a.GetResource().GetName() }
-func (w alertAdapter) HasNode() bool           { return w.a.GetNode() != nil }
-func (w alertAdapter) GetNodeId() string       { return w.a.GetNode().GetId() }
-func (w alertAdapter) GetNodeName() string     { return w.a.GetNode().GetName() }
+
+// GetResourceAPIResource returns the API resource name of resource alerts for non built-in resource types.
+func (w alertAdapter) GetResourceAPIResource() string {
+	return w.a.GetResource().GetApiResource()
+}
+func (w alertAdapter) HasNode() bool       { return w.a.GetNode() != nil }
+func (w alertAdapter) GetNodeId() string   { return w.a.GetNode().GetId() }
+func (w alertAdapter) GetNodeName() string { return w.a.GetNode().GetName() }
 
 // GetClusterId returns the entity-specific cluster ID to match the original
 // comparison behavior. Resource and node alerts store the cluster ID on their
@@ -688,6 +693,8 @@ func findMatchingKey(toFind *storage.Alert, keys []*alertviews.AlertMatchKey) *a
 	return nil
 }
 
+// alertsAreForSamePolicyAndEntity reports whether both alerts share policy, state and the violating
+// entity (deployment, resource or node).
 func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
 	if a1.GetPolicyId() != a2.GetPolicyId() || a1.GetState() != a2.GetState() {
 		return false
@@ -698,6 +705,7 @@ func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
 	} else if a1.HasResource() && a2.HasResource() {
 		return a1.GetResourceType() == a2.GetResourceType() &&
 			a1.GetResourceName() == a2.GetResourceName() &&
+			a1.GetResourceAPIResource() == a2.GetResourceAPIResource() &&
 			a1.GetClusterId() == a2.GetClusterId() &&
 			a1.GetNamespace() == a2.GetNamespace()
 	} else if a1.HasNode() && a2.HasNode() {

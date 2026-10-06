@@ -81,6 +81,15 @@ func WithResource(resourceName string, resourceType storage.Alert_Resource_Resou
 	}
 }
 
+// WithAPIResource returns an AlertFilterOption that filters for the specified "<plural>[.<group>]" API resource.
+func WithAPIResource(apiResource string) AlertFilterOption {
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddExactMatches(search.ResourceAPIResource, apiResource)
+		},
+	}
+}
+
 // WithLifecycleStage returns an AlertFilterOptions that filters by lifecycle stage.
 func WithLifecycleStage(lifecycleStage storage.LifecycleStage) AlertFilterOption {
 	return &alertFilterOptionImpl{

@@ -84,6 +84,7 @@ func podAttachViolationMsg(event *storage.KubernetesEvent) (string, []*storage.A
 	return getAttachMsgHeader(event), getAttachMsgViolationAttr(event)
 }
 
+// getDefaultViolationMsgHeader builds a human readable header describing the accessed resource.
 func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	object := event.GetObject()
 	readableResourceName := strings.ToLower(object.GetResource().String())
@@ -97,6 +98,12 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	}
 	singularResourceName = strings.ReplaceAll(singularResourceName, "_", " ")
 	readableResourceName = strings.ReplaceAll(readableResourceName, "_", " ")
+
+	// Resources that are not covered by the enum are shown by their "<plural>[.<group>]" name as is.
+	if apiResource := object.GetApiResource(); apiResource != "" {
+		readableResourceName = apiResource
+		singularResourceName = apiResource
+	}
 
 	var header string
 	if object.GetName() == "" {

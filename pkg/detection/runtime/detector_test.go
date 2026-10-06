@@ -181,3 +181,65 @@ func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 	}
 }
+
+func (s *RuntimeDetectorTestSuite) TestAPIResourcePolicy() {
+	policySet := detection.NewPolicySet(nil, nil)
+
+	policy := &storage.Policy{
+		Id:            "7b0a2f3e-1c3f-4f5a-9d0b-6a1e2f3c4d5e",
+		PolicyVersion: "1.1",
+		Name:          "ArgoCD Application changed outside of GitOps",
+		Severity:      storage.Severity_HIGH_SEVERITY,
+		Categories:    []string{"Kubernetes Events"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section 1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: "Kubernetes API Resource",
+						Values:    []*storage.PolicyValue{{Value: "applications.argoproj.io"}},
+					},
+					{
+						FieldName: "Kubernetes API Verb",
+						Values:    []*storage.PolicyValue{{Value: "PATCH"}, {Value: "UPDATE"}},
+					},
+					{
+						FieldName: "Kubernetes User Name",
+						Negate:    true,
+						Values:    []*storage.PolicyValue{{Value: "system:serviceaccount:openshift-gitops:gitops-controller"}},
+					},
+				},
+			},
+		},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+	}
+	s.NoError(policySet.UpsertPolicy(policy), "upsert policy should succeed")
+
+	d := NewDetector(policySet)
+
+	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_UNKNOWN, storage.KubernetesEvent_PATCH, "cluster-id", "openshift-gitops", "my-app", false)
+	kubeEvent.Object.ApiGroup = "argoproj.io"
+	kubeEvent.Object.ApiResource = "applications.argoproj.io"
+
+	alerts, err := d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Len(alerts, 1, "change by a user should alert")
+
+	kubeEvent.User.Username = "system:serviceaccount:openshift-gitops:gitops-controller"
+	alerts, err = d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Empty(alerts, "change by the GitOps controller should not alert")
+
+	kubeEvent.User.Username = "username"
+	kubeEvent.Object.ApiGroup = "app.k8s.io"
+	kubeEvent.Object.ApiResource = "applications.app.k8s.io"
+	alerts, err = d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Empty(alerts, "resource in another API group should not alert")
+
+	kubeEvent = s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_PATCH, "cluster-id", "openshift-gitops", "my-app", false)
+	alerts, err = d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Empty(alerts, "built-in resource should not alert")
+}

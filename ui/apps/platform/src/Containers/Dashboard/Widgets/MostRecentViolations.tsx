@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, Title, Truncate } from '@patternfly/react-core';
+import { Flex, Label, Title, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
@@ -14,6 +14,9 @@ export type MostRecentViolationsProps = {
     alerts: Alert[];
 };
 
+/**
+ * Lists the most recent critical severity violations with links to their details.
+ */
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -41,10 +44,25 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     NETWORK_POLICIES: 'NetworkPolicies',
                                     SECURITY_CONTEXT_CONSTRAINTS: 'SecurityContextConstraints',
                                     EGRESS_FIREWALLS: 'EgressFirewalls',
+                                    CUSTOM: 'CustomResource',
                                 } as const;
                                 const kind = resourceTypeToKind[alert.resource.resourceType];
                                 icon = <ResourceIcon className="pf-v6-u-mr-sm" kind={kind} />;
                                 name = <Truncate content={alert.resource.name} />;
+                                // The icon only shows CustomResource, so name the API resource separately.
+                                if (
+                                    alert.resource.resourceType === 'CUSTOM' &&
+                                    alert.resource.apiResource
+                                ) {
+                                    name = (
+                                        <>
+                                            {name}
+                                            <Label isCompact className="pf-v6-u-ml-sm">
+                                                {alert.resource.apiResource}
+                                            </Label>
+                                        </>
+                                    );
+                                }
                             }
 
                             const PolicySeverityIcon = policySeverityIconMap[policy.severity];

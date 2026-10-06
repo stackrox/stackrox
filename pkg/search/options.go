@@ -426,8 +426,9 @@ var (
 	AreaOfConcern = newFieldLabel("Area Of Concern")
 
 	// Resource alerts search fields
-	ResourceName = newFieldLabel("Resource")
-	ResourceType = newFieldLabel("Resource Type")
+	ResourceName        = newFieldLabel("Resource")
+	ResourceType        = newFieldLabel("Resource Type")
+	ResourceAPIResource = newFieldLabel("Resource API Resource")
 
 	// Vulnerability Watch Request fields
 	RequestName                 = newFieldLabel("Request Name")

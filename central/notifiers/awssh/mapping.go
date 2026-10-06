@@ -135,6 +135,15 @@ func getEntitySection(alert *storage.Alert) []securityhubTypes.Resource {
 }
 
 func getResourceSection(resource *storage.Alert_Resource) []securityhubTypes.Resource {
+	details := map[string]string{
+		"cluster-name":       resource.GetClusterName(),
+		"resource-name":      resource.GetName(),
+		"resource-namespace": resource.GetNamespace(),
+		"resource-type":      resource.GetResourceType().String(),
+	}
+	if apiResource := resource.GetApiResource(); apiResource != "" {
+		details["resource-api-resource"] = apiResource
+	}
 	resources := []securityhubTypes.Resource{
 		// At the time of this writing, AWS security hub does not support the notion of a k8s cluster/deployment.
 		// While it supports a resource type AwsEksCluster, it lacks support for cluster details.
@@ -144,12 +153,7 @@ func getResourceSection(resource *storage.Alert_Resource) []securityhubTypes.Res
 			Id:   aws.String(fmt.Sprintf("resource: %s", resource.GetName())),
 			Type: aws.String(resourceTypeOther),
 			Details: &securityhubTypes.ResourceDetails{
-				Other: map[string]string{
-					"cluster-name":       resource.GetClusterName(),
-					"resource-name":      resource.GetName(),
-					"resource-namespace": resource.GetNamespace(),
-					"resource-type":      resource.GetResourceType().String(),
-				},
+				Other: details,
 			},
 		},
 	}

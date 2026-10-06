@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -22,12 +23,14 @@ type Reader interface {
 	StopReader()
 }
 
-// NewReader returns a new instance of Reader
-func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string, startState *storage.AuditLogFileState) Reader {
+// NewReader returns a new instance of Reader. apiResources are "<plural>[.<group>]" resources that are sent
+// in addition to the built-in set of resources.
+func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string, startState *storage.AuditLogFileState, apiResources []string) Reader {
 	return &auditLogReaderImpl{
-		logPath:    defaultLogPath,
-		stopper:    concurrency.NewStopper(),
-		sender:     newAuditLogSender(client, nodeName, clusterID),
-		startState: startState,
+		logPath:      defaultLogPath,
+		stopper:      concurrency.NewStopper(),
+		sender:       newAuditLogSender(client, nodeName, clusterID),
+		startState:   startState,
+		apiResources: set.NewFrozenStringSet(apiResources...),
 	}
 }

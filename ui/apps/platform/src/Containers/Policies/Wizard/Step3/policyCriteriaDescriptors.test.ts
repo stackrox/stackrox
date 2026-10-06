@@ -5,6 +5,7 @@ import {
     nodeEventDescriptor,
     policyCriteriaDescriptors,
     validateFilePath,
+    validateKubernetesAPIResource,
     warnBroadFilePath,
 } from './policyCriteriaDescriptors';
 
@@ -302,4 +303,32 @@ describe('policyCriteriaDescriptors', () => {
             });
         }
     );
+});
+
+describe('validateKubernetesAPIResource', () => {
+    it('should accept empty and valid API resources', () => {
+        expect(validateKubernetesAPIResource('')).toBeUndefined();
+        expect(validateKubernetesAPIResource('limitranges')).toBeUndefined();
+        expect(validateKubernetesAPIResource('applications.argoproj.io')).toBeUndefined();
+        expect(validateKubernetesAPIResource('issuers.cert-manager.io')).toBeUndefined();
+    });
+
+    it('should reject malformed API resources', () => {
+        expect(validateKubernetesAPIResource('Applications.argoproj.io')).toBeDefined();
+        expect(validateKubernetesAPIResource('r/.*')).toBeDefined();
+        expect(validateKubernetesAPIResource('applications..argoproj.io')).toBeDefined();
+    });
+
+    it('should reject surrounding whitespace since the value is saved as entered', () => {
+        expect(validateKubernetesAPIResource(' applications.argoproj.io')).toBeDefined();
+        expect(validateKubernetesAPIResource('applications.argoproj.io ')).toBeDefined();
+        expect(validateKubernetesAPIResource('   ')).toBeDefined();
+    });
+
+    it('should reject resources covered by the Kubernetes resource type criterion', () => {
+        expect(validateKubernetesAPIResource('secrets')).toBeDefined();
+        expect(
+            validateKubernetesAPIResource('clusterroles.rbac.authorization.k8s.io')
+        ).toBeDefined();
+    });
 });

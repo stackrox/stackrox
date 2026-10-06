@@ -33,6 +33,7 @@ type Properties struct {
 	Service        string `json:"service,omitempty"`
 	DeploymentType string `json:"deployment_type,omitempty"`
 	ResourceType   string `json:"resource_type,omitempty"`
+	APIResource    string `json:"api_resource,omitempty"`
 
 	EnforcementActions []Enforcement `json:"enforcement_actions,omitempty"`
 	Summary            string        `json:"summary,omitempty"`
@@ -87,6 +88,7 @@ func convertAlertToFinding(alert *storage.Alert, sourceID string, notifierEndpoi
 			Namespace:    alert.GetResource().GetNamespace(),
 			Service:      alert.GetResource().GetName(),
 			ResourceType: alert.GetResource().GetResourceType().String(),
+			APIResource:  alert.GetResource().GetApiResource(),
 
 			EnforcementActions: convertEnforcement(alert),
 			Summary:            convertAlertDescription(alert),

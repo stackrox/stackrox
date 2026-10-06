@@ -27,26 +27,50 @@ var (
 		),
 		fieldnames.KubeUserName: set.NewStringSet(
 			fieldnames.KubeResource,
+			fieldnames.KubeAPIResource,
 		),
 		fieldnames.KubeUserGroups: set.NewStringSet(
 			fieldnames.KubeResource,
+			fieldnames.KubeAPIResource,
 		),
 	}
 
 	// eventSourceRequirements defines the minimum required fields for a
-	// given event source.
-	eventSourceRequirements = map[storage.EventSource]set.StringSet{
-		storage.EventSource_AUDIT_LOG_EVENT: set.NewStringSet(
-			fieldnames.KubeResource,
-			fieldnames.KubeAPIVerb,
-		),
+	// given event source. Each entry is a set of alternatives of which at
+	// least one field must be present.
+	eventSourceRequirements = map[storage.EventSource][]set.StringSet{
+		storage.EventSource_AUDIT_LOG_EVENT: {
+			set.NewStringSet(fieldnames.KubeResource, fieldnames.KubeAPIResource),
+			set.NewStringSet(fieldnames.KubeAPIVerb),
+		},
 		// FileAccess fields are currently the only ones supported for
 		// node events. In the future, when more node events are supported,
 		// this constraint can be relaxed.
-		storage.EventSource_NODE_EVENT: set.NewStringSet(
-			fieldnames.FilePath,
-		),
+		storage.EventSource_NODE_EVENT: {
+			set.NewStringSet(fieldnames.FilePath),
+		},
 	}
+
+	// mutuallyExclusiveFields defines fields that cannot be used together
+	// in the same policy section.
+	mutuallyExclusiveFields = [][2]string{
+		// An audit event either refers to a built-in resource or to an API
+		// resource, so a section with both could never match.
+		{fieldnames.KubeResource, fieldnames.KubeAPIResource},
+	}
+
+	// builtInAuditLogResources are the plural resource names covered by the
+	// Kubernetes Resource field for audit log events. The Kubernetes API
+	// Resource field cannot refer to these.
+	builtInAuditLogResources = set.NewFrozenStringSet(
+		"secrets",
+		"configmaps",
+		"clusterroles",
+		"clusterrolebindings",
+		"networkpolicies",
+		"securitycontextconstraints",
+		"egressfirewalls",
+	)
 )
 
 type validateConfiguration struct {
@@ -186,6 +210,10 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		errorList.AddError(err)
 	}
 
+	if err := validateMutuallyExclusiveFields(s, &seenFields); err != nil {
+		errorList.AddError(err)
+	}
+
 	return errorList.ToError()
 }
 
@@ -208,17 +236,43 @@ func validateFieldDependencies(s *storage.PolicySection, seenFields *set.StringS
 func validateEventSourceRequirements(s *storage.PolicySection, seenFields *set.StringSet, eventSource storage.EventSource) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating event source requirements for %s", s.GetSectionName()))
 
-	for es, requiredFields := range eventSourceRequirements {
-		if eventSource != es {
+	for _, alternatives := range eventSourceRequirements[eventSource] {
+		if alternatives.Intersects(*seenFields) {
 			continue
 		}
-
-		for required := range requiredFields {
-			if !seenFields.Contains(required) {
-				errorList.AddStringf("%q policies require field %q", eventSource, required)
-			}
+		if alternatives.Cardinality() == 1 {
+			errorList.AddStringf("%q policies require field %q", eventSource, alternatives.GetArbitraryElem())
+		} else {
+			errorList.AddStringf("%q policies require one of fields %q", eventSource, alternatives.AsSortedSlice(func(a, b string) bool { return a < b }))
 		}
 	}
 
 	return errorList.ToError()
+}
+
+// validateMutuallyExclusiveFields validates that a policy section does not
+// contain fields that cannot be used together.
+func validateMutuallyExclusiveFields(s *storage.PolicySection, seenFields *set.StringSet) error {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating mutually exclusive fields for %q", s.GetSectionName()))
+
+	for _, fields := range mutuallyExclusiveFields {
+		if seenFields.Contains(fields[0]) && seenFields.Contains(fields[1]) {
+			errorList.AddStringf("policy sections cannot contain both %q and %q", fields[0], fields[1])
+		}
+	}
+
+	return errorList.ToError()
+}
+
+// validateAuditEventAPIResource validates a "<plural>[.<group>]" value of the
+// Kubernetes API Resource field.
+func validateAuditEventAPIResource(_ *validateConfiguration, value string) (bool, error) {
+	if !auditEventAPIResourceValueRegex.MatchString(value) {
+		return false, fmt.Errorf("must be of the form <plural>[.<group>] and match %q", auditEventAPIResourceValueRegex.String())
+	}
+	plural, _, _ := strings.Cut(value, ".")
+	if builtInAuditLogResources.Contains(plural) {
+		return false, fmt.Errorf("%q is covered by the %q field", plural, fieldnames.KubeResource)
+	}
+	return true, nil
 }

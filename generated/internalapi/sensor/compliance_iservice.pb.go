@@ -875,8 +875,10 @@ type MsgToCompliance_AuditLogCollectionRequest_StartRequest struct {
 	state             protoimpl.MessageState     `protogen:"open.v1"`
 	ClusterId         string                     `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	CollectStartState *storage.AuditLogFileState `protobuf:"bytes,2,opt,name=collect_start_state,json=collectStartState,proto3" json:"collect_start_state,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// api_resources are additional "<plural>[.<group>]" resources to collect on top of the built-in set.
+	ApiResources  []string `protobuf:"bytes,3,rep,name=api_resources,json=apiResources,proto3" json:"api_resources,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Reset() {
@@ -919,6 +921,13 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetClusterId() 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetCollectStartState() *storage.AuditLogFileState {
 	if x != nil {
 		return x.CollectStartState
+	}
+	return nil
+}
+
+func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetApiResources() []string {
+	if x != nil {
+		return x.ApiResources
 	}
 	return nil
 }
@@ -975,7 +984,7 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12?\n" +
 	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryH\x00R\rnodeInventory\x12<\n" +
 	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReportB\x05\n" +
-	"\x03msg\"\xb1\f\n" +
+	"\x03msg\"\xd7\f\n" +
 	"\x0fMsgToCompliance\x12>\n" +
 	"\x06config\x18\x01 \x01(\v2$.sensor.MsgToCompliance.ScrapeConfigH\x00R\x06config\x12>\n" +
 	"\atrigger\x18\x02 \x01(\v2\".sensor.MsgToCompliance.TriggerRunH\x00R\atrigger\x12t\n" +
@@ -988,14 +997,15 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\n" +
 	"TriggerRun\x12\x1b\n" +
 	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12!\n" +
-	"\fstandard_ids\x18\x02 \x03(\tR\vstandardIds\x1a\xe7\x02\n" +
+	"\fstandard_ids\x18\x02 \x03(\tR\vstandardIds\x1a\x8d\x03\n" +
 	"\x19AuditLogCollectionRequest\x12]\n" +
 	"\tstart_req\x18\x01 \x01(\v2>.sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequestH\x00R\bstartReq\x12Z\n" +
-	"\bstop_req\x18\x02 \x01(\v2=.sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequestH\x00R\astopReq\x1ay\n" +
+	"\bstop_req\x18\x02 \x01(\v2=.sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequestH\x00R\astopReq\x1a\x9e\x01\n" +
 	"\fStartRequest\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12J\n" +
-	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x11collectStartState\x1a\r\n" +
+	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x11collectStartState\x12#\n" +
+	"\rapi_resources\x18\x03 \x03(\tR\fapiResources\x1a\r\n" +
 	"\vStopRequestB\x05\n" +
 	"\x03req\x1a\xd2\x02\n" +
 	"\rComplianceACK\x12D\n" +

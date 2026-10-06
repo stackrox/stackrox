@@ -41,6 +41,38 @@ const highChurnPrefixes: Record<string, string> = {
  * Returns a warning message when a file path glob pattern is structurally too broad,
  * such as root-level catch-alls or globs under high-churn directories.
  */
+// Resources covered by the Kubernetes resource type criterion for audit log events.
+const builtInAuditLogResources = [
+    'secrets',
+    'configmaps',
+    'clusterroles',
+    'clusterrolebindings',
+    'networkpolicies',
+    'securitycontextconstraints',
+    'egressfirewalls',
+];
+
+const apiResourceRegExp = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
+
+/**
+ * Validates a Kubernetes API resource of the form <plural>[.<group>], for example applications.argoproj.io.
+ * Returns an error message string if invalid, undefined if valid.
+ */
+export function validateKubernetesAPIResource(value: string): string | undefined {
+    if (value.length === 0) {
+        return undefined;
+    }
+    // Validate the raw value: it is saved as entered, and the backend rejects surrounding whitespace.
+    if (!apiResourceRegExp.test(value)) {
+        return 'API resource must be a lowercase <plural>.<group>, for example applications.argoproj.io, or <plural> for core resources';
+    }
+    const [plural] = value.split('.');
+    if (builtInAuditLogResources.includes(plural)) {
+        return 'Use the Kubernetes resource type criterion for this resource';
+    }
+    return undefined;
+}
+
 export function warnBroadFilePath(value: string): string | undefined {
     const trimmed = value.trim();
 
@@ -268,6 +300,7 @@ const subComponentsForContainerMemory: SubComponent[] = [
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
 export const mountPropagationCriteriaName = 'Mount Propagation';
+export const kubernetesAPIResourceCriteriaName = 'Kubernetes API Resource';
 
 // A form descriptor for every option (key) on the policy criteria form page.
 /*
@@ -1671,6 +1704,20 @@ export const auditLogDescriptor: Descriptor[] = [
         ],
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
+    },
+    {
+        label: 'Kubernetes API resource',
+        name: kubernetesAPIResourceCriteriaName,
+        shortName: 'Kubernetes API resource',
+        category: policyCriteriaCategories.RESOURCE_OPERATION,
+        type: 'text',
+        placeholder: 'applications.argoproj.io',
+        helperText:
+            'Enter the plural resource name as listed by "oc api-resources" or "kubectl api-resources", followed by the API group if it has one: for example limitranges, routes.route.openshift.io or applications.argoproj.io. Cannot be combined with Kubernetes resource type.',
+        validate: validateKubernetesAPIResource,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_AUDIT_LOG_CUSTOM_RESOURCES'],
     },
     {
         label: 'Kubernetes resource name',

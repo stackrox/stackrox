@@ -43,6 +43,7 @@ export const mostRecentAlertsQuery = gql`
             resource {
                 resourceType
                 name
+                apiResource
             }
             policy {
                 name

@@ -22,7 +22,6 @@ import (
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
-	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -218,6 +217,7 @@ func (f *fakeAuditLogUpdater) Accepts(_ *central.MsgToSensor) bool            { 
 func (f *fakeAuditLogUpdater) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
-func (f *fakeAuditLogUpdater) ForceUpdate() {}
+func (f *fakeAuditLogUpdater) ForceUpdate()                       {}
+func (f *fakeAuditLogUpdater) UpdatePolicies(_ []*storage.Policy) {}
 
-var _ updater.Component = (*fakeAuditLogUpdater)(nil)
+var _ AuditLogUpdater = (*fakeAuditLogUpdater)(nil)

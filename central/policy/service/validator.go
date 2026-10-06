@@ -156,6 +156,8 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 	}
 }
 
+// validateEventSource checks that the event source fits the lifecycle stages and that audit log
+// policies only use supported criteria, scopes and exclusions.
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
 		return s.eventSourceError()
@@ -164,6 +166,11 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
 		policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
 		return errors.New("event source must not be set for build or deploy time policies")
+	}
+
+	if !features.AuditLogCustomResources.Enabled() && booleanpolicy.ContainsValueWithFieldName(policy, fieldnames.KubeAPIResource) {
+		// Such a policy can still be provided via the API (JSON import or CR) with the feature flag disabled.
+		return fmt.Errorf("%s is disabled, policy criteria %q is unavailable", features.AuditLogCustomResources.EnvVar(), fieldnames.KubeAPIResource)
 	}
 
 	if s.isAuditEventPolicy(policy) {
