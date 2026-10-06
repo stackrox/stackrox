@@ -7,6 +7,10 @@ on:
         required: true
         default: 0.0.0
         type: string
+      previous-version:
+        description: Previous release version to migrate forward from (A.B.C)
+        required: true
+        type: string
       dry-run:
         description: Dry-run
         required: false
@@ -34,9 +38,13 @@ jobs:
       KUBECONFIG: "/tmp/kubeconfig"
       RELEASE: ${{ needs.variables.outputs.release }}
       PATCH: ${{ needs.variables.outputs.patch }}
+      # Remove the fallback before merging
+      PREVIOUS_VERSION: ${{ github.event.inputs.previous-version || '4.10.0' }}
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -68,22 +76,96 @@ jobs:
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
-    - name: Deploy Central
-      id: deploy-central
+    - name: Deploy previous Central version
+      id: deploy-previous
       run: |
-          roxie_envrc="$(mktemp)"
-          echo "roxie-envrc=${roxie_envrc}" >> "$GITHUB_OUTPUT"
+          envrc="$(mktemp)"
+          echo "envrc=${envrc}" >> "$GITHUB_OUTPUT"
+
+          roxie deploy central \
+            --tag "${PREVIOUS_VERSION}" \
+            --resources auto \
+            --port-forwarding \
+            --envrc "${envrc}" \
+            --central-wait 5m
+
+    - name: Restore previous backup
+      run: |
+        source "${{ steps.deploy-previous.outputs.envrc }}"
+
+        gsutil cp "gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_${PREVIOUS_VERSION}.sql.zip" .
+
+        roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+          central db restore --timeout 5m "postgres_db_${PREVIOUS_VERSION}.sql.zip"
+
+        # The restore bounces Central; wait for it to come back before continuing.
+        deadline=$((SECONDS + 300))
+        until curl -sk "https://$API_ENDPOINT/v1/ping" | grep -q ok; do
+          if (( SECONDS > deadline )); then
+            echo "Central did not come back within 5m after restore" >&2
+            exit 1
+          fi
+          sleep 2
+        done
+
+    - name: Upgrade Central to target version
+      id: deploy-target
+      run: |
+          envrc="$(mktemp)"
+          echo "envrc=${envrc}" >> "$GITHUB_OUTPUT"
 
           roxie deploy central \
             --tag "${RELEASE}.${PATCH}" \
             --resources auto \
-            --port-forwarding \
-            --envrc "${roxie_envrc}" \
+            --envrc "${envrc}" \
             --central-wait 5m
+
+    - name: Wait for background migrations
+      run: |
+        source "${{ steps.deploy-target.outputs.envrc }}"
+
+        target=$(git show "${RELEASE}.${PATCH}:central/backgroundmigrations/seq_num.go" 2>/dev/null \
+          | sed -n 's/^const CurrentBgMigrationSeqNum = \([0-9]*\)$/\1/p')
+
+        if [[ -z "$target" ]]; then
+          echo "No background migration seqnum found for ${RELEASE}.${PATCH} (feature may not exist at this version); skipping wait"
+        else
+          db_password=$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)
+          for _ in $(seq 1 20); do
+            seqnum=$(kubectl -n stackrox exec deploy/central-db -c central-db -- \
+              bash -c "PGPASSWORD='${db_password}' psql -U postgres -d central_active -tAc 'SELECT seqnum FROM background_migration_versions LIMIT 1'" | tr -d '[:space:]')
+            [[ "$seqnum" -ge "$target" ]] 2>/dev/null && break
+            sleep 15
+          done
+        fi
+
+    - name: Strip transient cluster auth config
+      run: |
+        source "${{ steps.deploy-target.outputs.envrc }}"
+
+        # Central recreates this config for its own cluster on startup. Keeping the
+        # snapshot cluster's issuer would make restores depend on that cluster.
+        query='
+          .configs[]?
+          | select(.type == "KUBE_SERVICE_ACCOUNT")
+          | select(.mappings == [{
+              "key": "sub",
+              "valueExpression": "system:serviceaccount:stackrox:config-controller",
+              "role": "Configuration Controller"
+            }])
+          | .id
+        '
+        auth_cfg=(--config <(printf 'user = "admin:%s"' "$ROX_ADMIN_PASSWORD"))
+
+        ids=$(curl -sk "${auth_cfg[@]}" "https://$API_ENDPOINT/v1/auth/m2m" | jq -r "$query")
+        for id in $ids; do
+          [[ -n "$id" ]] || continue
+          curl -sk "${auth_cfg[@]}" -X DELETE "https://$API_ENDPOINT/v1/auth/m2m/$id" > /dev/null
+        done
 
     - name: Grab a central backup
       run: |
-        source "${{ steps.deploy-central.outputs.roxie-envrc }}"
+        source "${{ steps.deploy-target.outputs.envrc }}"
         roxctl central backup --output "postgres_db_${RELEASE}.${PATCH}.sql.zip"
 
     - name: Upload backup as an artifact
