@@ -39,12 +39,12 @@ func TestConvertExcludeByKind(t *testing.T) {
 			},
 		},
 	}
-	converted, err := generateCustomResource(policy)
-	require.NoError(t, err)
-	assert.Contains(t, converted, "excludeByKind:")
-	assert.Contains(t, converted, "CRON_JOB")
-	assert.Contains(t, converted, "JOB")
-	assert.NotContains(t, converted, "deployment:")
+	cr := ConvertPolicyToCustomResource(policy)
+	require.Len(t, cr.SecurityPolicySpec.Exclusions, 1)
+	exclusion := cr.SecurityPolicySpec.Exclusions[0]
+	require.NotNil(t, exclusion.ExcludeByKind)
+	assert.Equal(t, []string{"CRON_JOB", "JOB"}, exclusion.ExcludeByKind.Kinds)
+	assert.Nil(t, exclusion.Deployment)
 }
 
 func getTestPolicy() *storage.Policy {
