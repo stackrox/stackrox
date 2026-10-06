@@ -59,14 +59,14 @@ const apiResourceRegExp = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[
  * Returns an error message string if invalid, undefined if valid.
  */
 export function validateKubernetesAPIResource(value: string): string | undefined {
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
+    if (value.length === 0) {
         return undefined;
     }
-    if (!apiResourceRegExp.test(trimmed)) {
+    // Validate the raw value: it is saved as entered, and the backend rejects surrounding whitespace.
+    if (!apiResourceRegExp.test(value)) {
         return 'API resource must be a lowercase <plural>.<group>, for example applications.argoproj.io, or <plural> for core resources';
     }
-    const [plural] = trimmed.split('.');
+    const [plural] = value.split('.');
     if (builtInAuditLogResources.includes(plural)) {
         return 'Use the Kubernetes resource type criterion for this resource';
     }

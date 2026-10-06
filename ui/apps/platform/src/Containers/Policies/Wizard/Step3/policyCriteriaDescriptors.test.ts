@@ -319,6 +319,12 @@ describe('validateKubernetesAPIResource', () => {
         expect(validateKubernetesAPIResource('applications..argoproj.io')).toBeDefined();
     });
 
+    it('should reject surrounding whitespace since the value is saved as entered', () => {
+        expect(validateKubernetesAPIResource(' applications.argoproj.io')).toBeDefined();
+        expect(validateKubernetesAPIResource('applications.argoproj.io ')).toBeDefined();
+        expect(validateKubernetesAPIResource('   ')).toBeDefined();
+    });
+
     it('should reject resources covered by the Kubernetes resource type criterion', () => {
         expect(validateKubernetesAPIResource('secrets')).toBeDefined();
         expect(
