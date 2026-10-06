@@ -435,8 +435,8 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	caps := []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
-	if features.PolicyWorkloadTypeExclusion.Enabled() {
-		caps = append(caps, centralsensor.WorkloadTypeExclusionCap)
+	if features.PolicyWorkloadKindExclusion.Enabled() {
+		caps = append(caps, centralsensor.WorkloadKindExclusionCap)
 	}
 	return caps
 }

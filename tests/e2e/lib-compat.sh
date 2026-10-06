@@ -96,6 +96,11 @@ roxie_config_from_environment_compat() {
 
     handle_endpoints_for_test "$config_file" # Echoes info internally.
 
+    if [[ -n "${EXTERNAL_DB:-}" ]]; then
+        info "Configuring external database..."
+        handle_external_database_settings "$config_file" "$namespace"
+    fi
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -197,6 +202,32 @@ roxie_config_from_environment_compat() {
     handle_virtual_machines_configuration "$config_file"
 }
 
+handle_external_database_settings() {
+    local config_file="$1"
+    local namespace="$2"
+
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      db:
+        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+        passwordSecret:
+          name: "central-external-db-password"
+EOF
+    retrying_kubectl -n "${namespace}" apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: central-external-db-password
+  labels:
+    app.kubernetes.io/managed-by: "${managed_by}"
+data:
+  password: $(echo -n "${EXTERNAL_DB_PASSWORD}" | base64 | tr -d '\n')
+EOF
+}
+
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
 # environment variables.
 collect_feature_flags() {
@@ -206,7 +237,7 @@ collect_feature_flags() {
     env_with_default ROX_NODE_VULNERABILITY_REPORTS "true"
     env_with_default ROX_TAILORED_PROFILES "true"
     env_with_default ROX_INIT_CONTAINER_SUPPORT "true"
-    env_with_default ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "true"
+    env_with_default ROX_POLICY_WORKLOAD_KIND_EXCLUSION "true"
     env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"

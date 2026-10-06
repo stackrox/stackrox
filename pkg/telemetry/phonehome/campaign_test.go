@@ -408,7 +408,7 @@ func TestCompile(t *testing.T) {
 		},
 		{
 			criterion:    *PathPattern("[b-a]"),
-			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
+			errorMessage: `error parsing path pattern: failed to compile "[b-a]": glob: syntax error at 5: range hi character is less than lo`,
 		},
 	}
 

@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "PolicyCategoryService"
+      "name": "PolicyCategoryService",
+      "description": "PolicyCategoryService APIs can be used to manage policy categories."
     }
   ],
   "consumes": [
