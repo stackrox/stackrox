@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"maps"
 	"strconv"
 
 	// Required for the usage of go:embed below.
@@ -40,6 +41,8 @@ const (
 
 	legacyCollectionKernelModule = "KernelModule"
 	legacyCollectionEBPF         = "EBPF"
+
+	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
 var (
@@ -105,7 +108,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if sc.Spec.ClusterName != nil {
 		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
 	}
-	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
+	v.SetStringMap("clusterLabels", t.clusterLabels(ctx, sc))
 
 	if sc.Spec.CentralEndpoint != nil && *sc.Spec.CentralEndpoint != "" {
 		v.SetStringValue("centralEndpoint", *sc.Spec.CentralEndpoint)
@@ -613,4 +616,28 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 		cv.AddChild("scraper", &sv)
 	}
 	return &cv
+}
+
+// clusterLabels returns the user-specified cluster labels (excluding the
+// reserved central-colocated label) merged with auto-detected labels. When a
+// Central CR exists anywhere in the cluster, the label
+// stackrox.io/central-colocated=true is added so that access scopes can
+// dynamically match the cluster where Central runs. The Central CR may live
+// in a different namespace than the SecuredCluster CR, so the whole cluster
+// is searched rather than just the SecuredCluster's own namespace.
+func (t Translator) clusterLabels(ctx context.Context, sc platform.SecuredCluster) map[string]string {
+	labels := maps.Clone(sc.Spec.ClusterLabels)
+	delete(labels, centralColocatedLabelKey)
+
+	centralList := &platform.CentralList{}
+	if err := t.client.List(ctx, centralList); err != nil {
+		return labels
+	}
+	if len(centralList.Items) > 0 {
+		if labels == nil {
+			labels = make(map[string]string, 1)
+		}
+		labels[centralColocatedLabelKey] = "true"
+	}
+	return labels
 }
