@@ -89,7 +89,7 @@ func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
 func computeCompatibleRange() (productstreams.XYVersion, []productstreams.XYVersion, error) {
 	xy, err := productstreams.ParseXYFromVersionString(version.GetMainVersion())
 	if err != nil {
-		return productstreams.XYVersion{}, nil, errors.Wrapf(err, "parsing version %q", version.GetMainVersion())
+		return productstreams.XYVersion{}, nil, errors.Wrapf(err, "parsing embedded version %q", version.GetMainVersion())
 	}
 	versions, err := makeCompatibleVersionRange(xy, AllowedSkew)
 	return xy, versions, err

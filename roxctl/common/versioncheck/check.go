@@ -80,11 +80,6 @@ type VersionCheckResult struct {
 // CheckCentralVersion classifies the given Central version against
 // the running roxctl version and returns structured version info.
 func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
-	roxctlVersion := version.GetMainVersion()
-	_, err := productstreams.ParseXYFromVersionString(roxctlVersion)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing roxctl version %q", roxctlVersion)
-	}
 	centralXY, err := productstreams.ParseXYFromVersionString(centralVersion)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing Central version %q", centralVersion)
@@ -104,7 +99,7 @@ func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
 
 	return &VersionCheckResult{
 		CentralVersion:            centralVersion,
-		RoxctlVersion:             roxctlVersion,
+		RoxctlVersion:             version.GetMainVersion(),
 		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
 		Compatibility:             compat.String(),
 		DisplayName:               compat.DisplayName(),

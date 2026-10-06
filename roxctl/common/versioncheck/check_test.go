@@ -56,10 +56,6 @@ func TestCheckAndWarn(t *testing.T) {
 			localVersion:   "4.8.0",
 			centralVersion: "invalid",
 		},
-		"invalid local version": {
-			localVersion:   "invalid",
-			centralVersion: "4.10.1",
-		},
 	}
 
 	for name, tc := range cases {
@@ -77,6 +73,14 @@ func TestCheckAndWarn(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheckAndWarnPanicsOnInvalidLocalVersion(t *testing.T) {
+	testutils.SetMainVersion(t, "invalid")
+	assert.Panics(t, func() {
+		var buf bytes.Buffer
+		checkAndWarn("4.10.1", &buf)
+	})
 }
 
 func TestCentralVersionClientInterceptor(t *testing.T) {
