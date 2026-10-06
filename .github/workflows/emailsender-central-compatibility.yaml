@@ -68,7 +68,7 @@ jobs:
         run: echo "version=$(cat stackrox/ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
-        uses: stackrox/actions/roxie/install-cli@6691d5c300d4af17546145bdbbb9862c53975af4 # ratchet:stackrox/actions@v1
+        uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
 
