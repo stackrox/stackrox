@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "AlertService"
+      "name": "AlertService",
+      "description": "AlertService APIs can be used to manage alerts."
     }
   ],
   "consumes": [
@@ -1253,14 +1254,6 @@
       },
       "title": "Next tag: 13"
     },
-    "storageContainerType": {
-      "type": "string",
-      "enum": [
-        "REGULAR",
-        "INIT"
-      ],
-      "default": "REGULAR"
-    },
     "storageEnforcementAction": {
       "type": "string",
       "enum": [
@@ -1282,7 +1275,7 @@
         "skipContainerTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageContainerType"
+            "$ref": "#/definitions/storageSkipContainerType"
           }
         }
       },
@@ -1529,7 +1522,7 @@
         "CUSTOM"
       ],
       "default": "DEPLOYMENT",
-      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
+      "description": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
     },
     "storageNetworkEntityInfoType": {
       "type": "string",
@@ -1542,7 +1535,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "description": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePolicy": {
       "type": "object",
@@ -1880,6 +1873,14 @@
         "CRITICAL_SEVERITY"
       ],
       "default": "UNSET_SEVERITY"
+    },
+    "storageSkipContainerType": {
+      "type": "string",
+      "enum": [
+        "SKIP_INIT"
+      ],
+      "default": "SKIP_INIT",
+      "description": "SkipContainerType lists container kinds a policy may skip during evaluation.\nThe set is independent of ContainerType and currently contains only init containers.\nAn empty skip_container_types list evaluates every container type."
     },
     "storageViolationState": {
       "type": "string",
