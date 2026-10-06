@@ -100,7 +100,7 @@ func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
 		return nil, errors.Wrap(err, "getting compatible versions")
 	}
 
-	g := Guidance(compat)
+	summary, recommendation := guidance(compat)
 
 	return &VersionCheckResult{
 		CentralVersion:            centralVersion,
@@ -108,48 +108,32 @@ func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
 		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
 		Compatibility:             compat.String(),
 		DisplayName:               compat.DisplayName(),
-		Summary:                   g.Summary,
-		Recommendation:            g.Recommendation,
+		Summary:                   summary,
+		Recommendation:            recommendation,
 		compatibility:             compat,
 	}, nil
 }
 
-// VersionGuidance holds structured guidance about version compatibility.
-type VersionGuidance struct {
-	Summary        string
-	Recommendation string
-}
-
-// Guidance returns structured guidance for the given compatibility classification,
+// guidance returns structured guidance for the given compatibility classification,
 // describing the version relationship and recommended actions.
-func Guidance(c versioncompatibility.Compatibility) VersionGuidance {
+func guidance(c versioncompatibility.Compatibility) (string, string) {
 	switch c {
 	case versioncompatibility.Matched:
-		return VersionGuidance{
-			Summary: "roxctl version is matched with Central.",
-		}
+		return "roxctl version is matched with Central.", ""
 	case versioncompatibility.CompatibleAhead:
-		return VersionGuidance{
-			Summary:        "Central version is compatible with roxctl but is ahead of roxctl.",
-			Recommendation: "No immediate action is required. Use newer roxctl version to match the Central's version for optimal functionality.",
-		}
+		return "Central version is compatible with roxctl but is ahead of roxctl.",
+			"No immediate action is required. Use newer roxctl version to match the Central's version for optimal functionality."
 	case versioncompatibility.CompatibleBehind:
-		return VersionGuidance{
-			Summary: "Central version is compatible with roxctl but is behind roxctl.",
-			Recommendation: "No immediate action is required. It is recommended to plan a Central upgrade. " +
-				"If you prefer not to upgrade Central, consider using an older roxctl version to match the Central's version.",
-		}
+		return "Central version is compatible with roxctl but is behind roxctl.",
+			"No immediate action is required. It is recommended to plan a Central upgrade. " +
+				"If you prefer not to upgrade Central, consider using an older roxctl version to match the Central's version."
 	case versioncompatibility.IncompatibleAhead:
-		return VersionGuidance{
-			Summary:        "Central version is outside the compatible version range and is ahead of roxctl.",
-			Recommendation: "Use newer roxctl version to match Central, or at minimum to within the compatible version range.",
-		}
+		return "Central version is outside the compatible version range and is ahead of roxctl.",
+			"Use newer roxctl version to match Central, or at minimum to within the compatible version range."
 	case versioncompatibility.IncompatibleBehind:
-		return VersionGuidance{
-			Summary:        "Central version is outside the compatible version range and is behind roxctl.",
-			Recommendation: "Plan a Central upgrade or use older roxctl version to be within the compatible version range.",
-		}
+		return "Central version is outside the compatible version range and is behind roxctl.",
+			"Plan a Central upgrade or use older roxctl version to be within the compatible version range."
 	default:
-		return VersionGuidance{}
+		return "", ""
 	}
 }

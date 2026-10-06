@@ -49,31 +49,37 @@ func (c *centralVersionTestSuite) TestCompatibilityStates() {
 		centralVersion string
 		wantCompat     versioncompatibility.Compatibility
 		wantDisplay    string
+		wantContains   []string
 	}{
 		"matched": {
 			centralVersion: "5.0.2",
 			wantCompat:     versioncompatibility.Matched,
 			wantDisplay:    "Matched",
+			wantContains:   []string{"matched with Central"},
 		},
 		"compatible ahead": {
 			centralVersion: "5.3.1",
 			wantCompat:     versioncompatibility.CompatibleAhead,
 			wantDisplay:    "Compatible (Ahead)",
+			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
 		},
 		"compatible behind": {
 			centralVersion: "4.10.1",
 			wantCompat:     versioncompatibility.CompatibleBehind,
 			wantDisplay:    "Compatible (Behind)",
+			wantContains:   []string{"behind roxctl", "Central upgrade"},
 		},
 		"incompatible ahead": {
 			centralVersion: "5.6.0",
 			wantCompat:     versioncompatibility.IncompatibleAhead,
 			wantDisplay:    "Incompatible (Ahead)",
+			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
 		},
 		"incompatible behind": {
 			centralVersion: "4.5.2",
 			wantCompat:     versioncompatibility.IncompatibleBehind,
 			wantDisplay:    "Incompatible (Behind)",
+			wantContains:   []string{"behind roxctl", "Central upgrade"},
 		},
 	}
 
@@ -95,10 +101,8 @@ func (c *centralVersionTestSuite) TestCompatibilityStates() {
 			c.Assert().Contains(output, "Compatible Central versions:")
 			c.Assert().Contains(output, "Compatibility:")
 			c.Assert().Contains(output, tt.wantDisplay)
-			g := versioncheck.Guidance(tt.wantCompat)
-			c.Assert().Contains(output, "  "+g.Summary)
-			if g.Recommendation != "" {
-				c.Assert().Contains(output, "  "+g.Recommendation)
+			for _, s := range tt.wantContains {
+				c.Assert().Contains(output, s)
 			}
 		})
 	}

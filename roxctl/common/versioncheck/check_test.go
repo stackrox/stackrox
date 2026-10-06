@@ -209,12 +209,12 @@ func TestGuidance(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			g := Guidance(tt.c)
+			summary, _ := guidance(tt.c)
 			if tt.wantEmpty {
-				assert.Empty(t, g.Summary)
+				assert.Empty(t, summary)
 			} else {
-				require.NotEmpty(t, g.Summary)
-				assert.Contains(t, g.Summary, tt.contains)
+				require.NotEmpty(t, summary)
+				assert.Contains(t, summary, tt.contains)
 			}
 		})
 	}
