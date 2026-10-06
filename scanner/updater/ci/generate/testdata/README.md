@@ -1,14 +1,12 @@
-# Independent matching inputs
+# Struts matching input
 
-`struts-packages.json` is the installed dpkg inventory (including source names
-and versions) from the amd64 `quay.io/rhacs-eng/qa-multi-arch:struts-app` image.
-The locally cached image has repository digest
+`struts-packages.json` is the dpkg inventory used by the database-backed
+`TestFixtureMatching/struts aggregate` case. It records the installed package,
+source-package, architecture, and version fields from the amd64
+`quay.io/rhacs-eng/qa-multi-arch:struts-app` image at digest
 `sha256:3401cc09305901ed505ddfccf3e533dde3f7fe326958131ee653d4067ab32246`.
-Its `/usr/local/tomcat/webapps/ROOT.war` contains
-`WEB-INF/lib/struts2-core-2.3.12.jar`.
+The test adds the image's `struts2-core-2.3.12.jar` Maven package separately.
 
-The database-backed regression test builds an index report from this inventory
-and that Maven package. This is a focused matching test, not a substitute for
-indexing the full image corpus. The generator never reads this directory.
-Expected findings and the >=138 threshold are maintained in test code, not in
-the vulnerability fixtures.
+This independent inventory lets the test check aggregate matches using the
+package relationships from a real image. The expected finding threshold lives
+in test code; the fixture generator does not read this file.

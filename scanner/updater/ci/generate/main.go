@@ -1,6 +1,10 @@
 // Command generate builds the offline Scanner E2E vulnerability bundle.
 package main
 
+// If the generated bundle changes, update its immutable consumer pins as described
+// in ../README.md under "Publication and rollback".
+//go:generate go run . -output ../../../image/scanner/bundles/ci-minimal/vulnerabilities.zip
+
 import (
 	"archive/zip"
 	"bytes"
