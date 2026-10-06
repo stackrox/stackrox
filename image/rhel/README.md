@@ -7,9 +7,10 @@ This image is built in opinionated way based on the DoD Centralized Artifacts Re
 ## PostgreSQL clients
 
 `Dockerfile` downloads PostgreSQL client RPMs from PGDG for amd64, arm64, and
-ppc64le. For s390x it uses a CentOS Stream 9 download stage because PGDG does not
-publish s390x packages and UBI's repositories do not provide the PostgreSQL 16
-module. The runtime remains UBI on every architecture.
+ppc64le. For s390x, `download.sh` adds the CentOS Stream 9 AppStream repository
+to its download commands because PGDG does not publish s390x packages and UBI's
+repositories do not provide the PostgreSQL 16 module. The download and runtime
+stages use UBI on every architecture.
 
 `PG_VERSION` selects the client major version. The `runtime-base` stage runs
 `pg_dump` and `pg_restore` and checks their versions in the runtime filesystem,

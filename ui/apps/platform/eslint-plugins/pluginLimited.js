@@ -379,6 +379,38 @@ const rules = {
             };
         },
     },
+    'no-import-from-Containers-in-Components': {
+        // Prevent soft circular dependency:
+        // * A generic file in Components has import from a specific file in Containers.
+        // * Another specific file in Containers might have import of that generic file from Components.
+        //   Although the rule cannot know for sure, Components exists for import into Containers.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Fix soft circular dependency between specific Containers and generic Components',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    const { filename } = context;
+                    if (
+                        filename.includes('ui/apps/platform/src/Components/') &&
+                        typeof node.source?.value === 'string' &&
+                        node.source.value.startsWith('Containers/')
+                    ) {
+                        context.report({
+                            node,
+                            message:
+                                'Fix soft circular dependency between specific Containers and generic Components',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-logical-or-preceding-array-or-object': {
         // Consistently write more precise nullish coalescing operator.
         meta: {

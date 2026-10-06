@@ -16,6 +16,10 @@ jobs:
           echo "Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
 
   build:
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
     name: Build
     uses: ./.github/workflows/build.yaml
     secrets: inherit

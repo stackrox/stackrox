@@ -57,6 +57,7 @@ case "$github_login" in
 'parametalol')      slack_user='U02MJ72K1B5' ;;
 'pedrottimark')     slack_user='U01RN8V8DEH' ;;
 'porridge')         slack_user='U020XCUG2LA' ;;
+'rhmdnd')           slack_user='U01C24L97D1' ;;
 'rhybrillou')       slack_user='U02GPRG4NHF' ;;
 'robbycochran')     slack_user='U03NAEPKDE1' ;;
 'rukletsov')        slack_user='U01G6P17RTK' ;;
