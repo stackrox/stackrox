@@ -167,7 +167,7 @@
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "style-loader": "^4.0.0",
-        "tailwindcss": "^2.0.3",
+        "tailwindcss": "^4.3.3",
         "ts-loader": "^9.5.2",
         "typescript": "^5.9.2",
         "vite": "^6.4.2",
