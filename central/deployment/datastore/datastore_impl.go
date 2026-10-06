@@ -227,14 +227,9 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 	return deployment, true, nil
 }
 
+// DeploymentExists
 func (ds *datastoreImpl) DeploymentExists(ctx context.Context, id string) (bool, error) {
-	exists, err := ds.deploymentStore.Exists(ctx, id)
-	if err != nil || ds.deletedDeploymentCache == nil || !ds.deletedDeploymentCache.Contains(id) {
-		return exists, err
-	}
-
-	count, err := ds.deploymentStore.Count(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(id).ProtoQuery())
-	return count > 0, err
+	return ds.deploymentStore.Exists(ctx, id)
 }
 
 // GetDeployments
