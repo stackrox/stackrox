@@ -63,6 +63,8 @@ config_part_1() {
     if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
 
+        ensure_roxie_on_path
+
         local config_file
         config_file="$(mktemp)"
 
@@ -78,9 +80,6 @@ EOF
 
         if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
             info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
-            patch_yaml "$config_file" ".roxie.konfluxImages = true"
-        elif pr_has_label test-konflux-images; then
-            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
             patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
         deploy_stackrox_with_roxie_compat "$config_file"

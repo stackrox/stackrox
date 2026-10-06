@@ -96,6 +96,11 @@ roxie_config_from_environment_compat() {
 
     handle_endpoints_for_test "$config_file" # Echoes info internally.
 
+    if [[ -n "${EXTERNAL_DB:-}" ]]; then
+        info "Configuring external database..."
+        handle_external_database_settings "$config_file" "$namespace"
+    fi
+
     info "Configuring custom central environment..."
     while read -r var_val; do
         local name="${var_val%%=*}"
@@ -186,7 +191,6 @@ roxie_config_from_environment_compat() {
     handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
     handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
     handle_scanner_v4_vuln_readiness "$config_file"
-    handle_scanner_v4_matcher_resources "$config_file"
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -198,6 +202,32 @@ roxie_config_from_environment_compat() {
     handle_virtual_machines_configuration "$config_file"
 }
 
+handle_external_database_settings() {
+    local config_file="$1"
+    local namespace="$2"
+
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      db:
+        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+        passwordSecret:
+          name: "central-external-db-password"
+EOF
+    retrying_kubectl -n "${namespace}" apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: central-external-db-password
+  labels:
+    app.kubernetes.io/managed-by: "${managed_by}"
+data:
+  password: $(echo -n "${EXTERNAL_DB_PASSWORD}" | base64 | tr -d '\n')
+EOF
+}
+
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
 # environment variables.
 collect_feature_flags() {
@@ -207,7 +237,7 @@ collect_feature_flags() {
     env_with_default ROX_NODE_VULNERABILITY_REPORTS "true"
     env_with_default ROX_TAILORED_PROFILES "true"
     env_with_default ROX_INIT_CONTAINER_SUPPORT "true"
-    env_with_default ROX_POLICY_WORKLOAD_TYPE_EXCLUSION "true"
+    env_with_default ROX_POLICY_WORKLOAD_KIND_EXCLUSION "true"
     env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
@@ -285,20 +315,6 @@ handle_scanner_v4_vuln_readiness() {
         info "  restricting vuln bundle sources to ${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
         set_custom_env "$config_file" "central" "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
     fi
-}
-
-# handle_scanner_v4_matcher_resources raises the scanner-v4-matcher memory limit
-# for roxie deployments.
-handle_scanner_v4_matcher_resources() {
-    local config_file="$1"
-
-    # Only meaningful when Scanner V4 is enabled.
-    if [[ "${ROX_SCANNER_V4:-true}" == "false" ]]; then
-        return
-    fi
-
-    info "  setting scanner-v4-matcher memory limit to 6Gi"
-    patch_yaml "$config_file" '.central.spec.scannerV4.matcher.resources.limits.memory = "6Gi"'
 }
 
 handle_trusted_ca_file() {

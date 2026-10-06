@@ -232,12 +232,12 @@ func TestConditionUpdates(t *testing.T) {
 func TestToProtobufEvaluationFilter(t *testing.T) {
 	tests := map[string]struct {
 		filter         *EvaluationFilter
-		expectedTypes  []storage.ContainerType
+		expectedTypes  []storage.SkipContainerType
 		expectNilProto bool
 	}{
 		"skip init containers": {
-			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"INIT"}},
-			expectedTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			filter:        &EvaluationFilter{SkipContainerTypes: []SkipContainerType{"SKIP_INIT"}},
+			expectedTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 		},
 		"nil filter": {
 			filter:         nil,
