@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/versionheader"
@@ -77,10 +78,16 @@ func TestCheckAndWarn(t *testing.T) {
 
 func TestCheckAndWarnPanicsOnInvalidLocalVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "invalid")
-	assert.Panics(t, func() {
+	if buildinfo.ReleaseBuild {
 		var buf bytes.Buffer
 		checkAndWarn("4.10.1", &buf)
-	})
+		assert.Empty(t, buf.String())
+	} else {
+		assert.Panics(t, func() {
+			var buf bytes.Buffer
+			checkAndWarn("4.10.1", &buf)
+		})
+	}
 }
 
 func TestCentralVersionClientInterceptor(t *testing.T) {
