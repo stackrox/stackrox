@@ -1713,7 +1713,7 @@ export const auditLogDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'applications.argoproj.io',
         helperText:
-            'Enter the plural resource name as listed by "oc api-resources" or "kubectl api-resources", followed by the API group if it has one: for example limitranges, routes.route.openshift.io or applications.argoproj.io. Singular names such as limitrange never match. Cannot be combined with Kubernetes resource type.',
+            'Enter the plural resource name as listed by "oc api-resources" or "kubectl api-resources", followed by the API group if it has one: for example limitranges, routes.route.openshift.io or applications.argoproj.io. Cannot be combined with Kubernetes resource type.',
         validate: validateKubernetesAPIResource,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
