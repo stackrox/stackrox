@@ -60,6 +60,11 @@ message ApplyComplianceScanConfigRequest {
     // Populated by Central alongside the legacy profiles field.
     // Sensor should prefer this field when non-empty, and fall back to profiles otherwise.
     repeated ProfileReference profile_refs = 8;
+
+    // node_roles are the node roles the compliance scan should target for this cluster.
+    // Note: Sensor builds that predate this field will silently ignore it and fall
+    // back to their hardcoded default (master, worker).
+    repeated string node_roles = 9;
   }
 
   message OneTimeScan {
