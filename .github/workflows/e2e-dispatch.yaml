@@ -138,7 +138,7 @@ jobs:
             print()
             width = max(len(name) for name in jobs)
             for name in sorted(jobs):
-                print(f'{name:<{width}}  {"✓" if jobs[name] else ""}')
+                print(f'{name:<{width}}  {"✓" if jobs[name] else "✖️"}')
 
   wait-for-images:
     needs: [ should-dispatch ]
