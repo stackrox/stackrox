@@ -868,7 +868,7 @@ _image_prefetcher_prebuilt_await() {
 
 _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
-    # ROX-24818: GKE is excluded from system image prefetch as it causes
+    # ROX-24818: GKE is excluded from QA job system image prefetch as it causes
     # flakes in test.
     *-operator-e2e-tests|e2e-operator-tests*|*ocp*qa-e2e-tests*)
         image_prefetcher_await_set stackrox-images
