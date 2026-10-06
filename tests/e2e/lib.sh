@@ -24,8 +24,11 @@ export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
-# Can be overridden by individual jobs. Setting to "" will load data from all sources.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+# Nightlies use the deployed Scanner's production defaults. Explicit caller values are preserved;
+# setting the variable to "" loads data from all sources.
+if [[ ! -v SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST ]] && ! is_nightly_run; then
+    export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu"
+fi
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of

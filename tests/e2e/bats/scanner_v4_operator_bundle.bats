@@ -3,7 +3,7 @@
 load "../../../scripts/test_helpers.bats"
 
 setup() {
-    unset BUILD_TAG GITHUB_REF
+    unset BUILD_TAG GITHUB_REF SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST
     source "${BATS_TEST_DIRNAME}/../lib.sh"
     TEST_ROOT="${BATS_TEST_TMPDIR}/repo"
     mkdir -p "${TEST_ROOT}/deploy/common"
@@ -38,6 +38,36 @@ EOF
         fi
     }
     wait_for_object_to_appear() { :; }
+}
+
+@test "regular runs use the default Scanner V4 bundle allowlist" {
+    run printf '%s' "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+    assert_output "alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu"
+}
+
+@test "nightly runs do not set the default Scanner V4 bundle allowlist" {
+    run env BUILD_TAG=4.11.x-nightly-20261001 bash -c 'unset SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST; source "$1"; [[ ! -v SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST ]]' _ "${BATS_TEST_DIRNAME}/../lib.sh"
+    assert_success
+}
+
+@test "sourcing lib preserves a caller-supplied allowlist" {
+    run env SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST=manual,nvd bash -c 'source "$1"; printf "%s" "$SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"' _ "${BATS_TEST_DIRNAME}/../lib.sh"
+    assert_success
+    assert_output "manual,nvd"
+}
+
+@test "nightly runs preserve an explicitly supplied Scanner V4 bundle allowlist" {
+    export BUILD_TAG=4.11.x-nightly-20261001 SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST=manual,nvd
+    run_operator_deploy
+    run yq eval 'select(.kind == "Central") | [.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST")][0].value' "${BATS_TEST_TMPDIR}/central.yaml"
+    assert_success
+    assert_line "manual,nvd"
+}
+
+@test "an empty caller allowlist remains empty to load all sources" {
+    run env SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST= bash -c 'source "$1"; printf "%s" "$SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"' _ "${BATS_TEST_DIRNAME}/../lib.sh"
+    assert_success
+    assert_output ""
 }
 
 run_operator_deploy() {

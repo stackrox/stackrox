@@ -465,6 +465,8 @@ function launch_central {
             --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
           )
         fi
+        # lib.sh supplies the default only on non-nightly runs; a nightly value
+        # here is an explicit caller override and should still be applied.
         if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
           helm_args+=(
             --set-json "customize.envVars.SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
@@ -623,6 +625,8 @@ function launch_central {
                 if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
                   ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
                 fi
+                # Preserve explicit caller overrides on nightlies; lib.sh does
+                # not supply its default allowlist for those runs.
                 if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
                   ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher \
                     "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
