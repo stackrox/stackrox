@@ -47,6 +47,7 @@ jobs:
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name || 'gke-db-backup-restore-tests' }}
       USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
+      DEPLOY_STACKROX_VIA_OPERATOR: ${{ inputs.use-konflux-images && 'true' || 'false' }}
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
