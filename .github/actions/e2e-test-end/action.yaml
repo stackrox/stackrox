@@ -32,26 +32,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Validate inputs
-      shell: bash
-      env:
-        INFRA_TOKEN: ${{ inputs.infra-token }}
-        CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
-      run: |
-        case "$CLUSTER_PROVISIONING_METHOD" in
-          direct-gke|infra|dbg-existing-infra) ;;
-          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra, dbg-existing-infra."; exit 1 ;;
-        esac
-
-        need_infra="false"
-        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" || "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
-          need_infra="true"
-        fi
-        if [[ "$need_infra" == "true" && -z "$INFRA_TOKEN" ]]; then
-          echo "::error::Input infra-token is required for interacting with infra clusters."
-          exit 1
-        fi
-
     - name: Apply defaults and set shared environment
       shell: bash
       run: |
@@ -66,6 +46,25 @@ runs:
           debug_run="true"
         fi
         echo "DEBUG_RUN=${debug_run}" >> "$GITHUB_ENV"
+
+    - name: Validate inputs
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        case "$CLUSTER_PROVISIONING_METHOD" in
+          direct-gke|infra|dbg-existing-infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra, dbg-existing-infra."; exit 1 ;;
+        esac
+
+        need_infra="false"
+        if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" || "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
+          need_infra="true"
+        fi
+        if [[ "$need_infra" == "true" && -z "$INFRA_TOKEN" ]]; then
+          echo "::error::Input infra-token is required for interacting with infra clusters."
+          exit 1
+        fi
 
     - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
