@@ -31,7 +31,7 @@ jobs:
       ci-job-name: ocp-qa-e2e-tests-fips-konflux
       cluster-name-prefix: e2e-qa-ocp-fps-knflx
       cluster-provisioning-method: infra
-      cluster-wait-timeout-minutes: 90
+      cluster-wait-timeout-minutes: 60
       infra-flavor: openshift-4
       infra-args: |
         openshift-version=ocp/stable
