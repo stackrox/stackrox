@@ -1169,6 +1169,15 @@ func TestComplianceV2OutdatedDataStaleness(t *testing.T) {
 		ks.mustDeleteDeploymentEnvVar(restoreCtx, stackroxNamespace, "central", scanWatcherTimeoutEnv)
 		ks.mustDeleteDeploymentEnvVar(restoreCtx, stackroxNamespace, "central", scanScheduleWatcherTimeoutEnv)
 		ks.waitUntilK8sDeploymentReady(restoreCtx, stackroxNamespace, "central")
+		// Parallel siblings resume as soon as this test (incl. cleanups) returns and
+		// immediately dial gRPC, so make sure Central is actually answering again
+		// (not just k8s-ready; the OCP route lags) before we hand control back.
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			rpcCtx, cancel := context.WithTimeout(restoreCtx, 5*time.Second)
+			defer cancel()
+			_, err := v1.NewFeatureFlagServiceClient(conn).GetFeatureFlags(rpcCtx, &v1.Empty{})
+			assert.NoError(c, err)
+		}, 3*time.Minute, 5*time.Second)
 	})
 
 	// Wait for Central to come back: k8s rollout + gRPC responsiveness (on OCP the gRPC
@@ -1246,10 +1255,22 @@ func TestComplianceV2OutdatedDataStaleness(t *testing.T) {
 		scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
 		t.Cleanup(func() {
 			scaleToN(context.Background(), t, k8sClient, "sensor", stackroxNamespace, 1)
+			// Wait for Sensor to actually come back up (not just the scale update) before
+			// this test returns: parallel siblings resume right after and need a connected
+			// Sensor for their own scan configurations to be applied.
+			sensorCtx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
+			defer cancel()
+			ks.waitUntilK8sDeploymentReady(sensorCtx, stackroxNamespace, "sensor")
 		})
 
-		_, err := client.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfig.GetId()})
-		require.NoErrorf(t, err, "failed to request on-demand scan for %s", testID)
+		// Sensor's connection to Central may already be gone by the time this is sent
+		// (scaleToN does not wait for Central to notice), in which case the manager
+		// returns a send error even though it already recorded last_scan_requested_time,
+		// which is what drives the OUTDATED assertion below. Don't fail on that race;
+		// let the assertion decide the outcome.
+		if _, err := client.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfig.GetId()}); err != nil {
+			t.Logf("on-demand scan request for %s returned an error while Sensor is scaled to 0: %v", testID, err)
+		}
 
 		require.EventuallyWithT(t, func(c *assert.CollectT) {
 			resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
