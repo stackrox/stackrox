@@ -48,6 +48,22 @@ func (f *fakeInstalled) GetCVEsByDigest(_ context.Context, digest string) (*Imag
 	return f.byDigest[digest], nil
 }
 
+type fakeDeployed struct {
+	deployed map[string]struct{}
+	calls    int
+}
+
+func (f *fakeDeployed) ListDeployedAmong(_ context.Context, digests []string) (map[string]struct{}, error) {
+	f.calls++
+	out := make(map[string]struct{})
+	for _, d := range digests {
+		if _, ok := f.deployed[d]; ok {
+			out[d] = struct{}{}
+		}
+	}
+	return out, nil
+}
+
 func TestAdvise(t *testing.T) {
 	sev := storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
 	const repo = "registry.redhat.io/albo/controller-rhel9"
@@ -223,4 +239,68 @@ func TestAdviseNarrowsToUsedImages(t *testing.T) {
 	assert.Equal(t, ImagePaired, byKey[pxyRepo+"|images_v1_27_3_proxy"].Status)
 	// must-gather is used but dropped from the candidate -> REMOVED.
 	assert.Equal(t, ImageRemoved, byKey[mgRepo+"|images_v1_27_3_mustgather"].Status)
+}
+
+// TestAdviseRunningOnly verifies that WithRunningOnly further restricts the analysis to images
+// referenced by a running deployment: a scanned-but-not-deployed image is excluded from both
+// scanning and the diff, and the deployed source is queried once per bundle (batched).
+func TestAdviseRunningOnly(t *testing.T) {
+	sev := storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	const (
+		cniRepo = "registry.redhat.io/openshift-service-mesh/istio-cni-rhel9"
+		pxyRepo = "registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9"
+		opRepo  = "registry.redhat.io/openshift-service-mesh/istio-rhel9-operator"
+	)
+	installedBundle := &Bundle{
+		Package: "servicemeshoperator3", ChannelName: "stable", Version: "3.2.0",
+		CSVName: "servicemeshoperator3.v3.2.0",
+		RelatedImages: []RelatedImage{
+			{Image: cniRepo, Name: "images_v1_27_3_cni", Digest: "sha256:cni"},
+			{Image: pxyRepo, Name: "images_v1_27_3_proxy", Digest: "sha256:pxy"},
+			{Image: opRepo, Name: "sail_operator", Digest: "sha256:op"},
+		},
+	}
+	candidateBundle := Bundle{
+		Package: "servicemeshoperator3", ChannelName: "stable", Version: "3.2.9",
+		CSVName: "servicemeshoperator3.v3.2.9",
+		RelatedImages: []RelatedImage{
+			{Image: cniRepo, Name: "images_v1_27_3_cni", Digest: "sha256:cni-new"},
+			{Image: pxyRepo, Name: "images_v1_27_3_proxy", Digest: "sha256:pxy-new"},
+			{Image: opRepo, Name: "sail_operator", Digest: "sha256:op-new"},
+		},
+	}
+	catalog := &fakeCatalog{
+		installed:  map[string]*Bundle{"sha256:op": installedBundle},
+		candidates: map[string][]Bundle{"servicemeshoperator3": {candidateBundle}},
+	}
+	// All three images are scanned/present in ACS.
+	installedSrc := &fakeInstalled{byDigest: map[string]*ImageCVEs{
+		"sha256:cni": {Repository: cniRepo, Digest: "sha256:cni", CVEs: []CVE{cve("CVE-CNI", sev, "")}},
+		"sha256:pxy": {Repository: pxyRepo, Digest: "sha256:pxy", CVEs: []CVE{cve("CVE-PXY", sev, "")}},
+		"sha256:op":  {Repository: opRepo, Digest: "sha256:op", CVEs: []CVE{cve("CVE-OP", sev, "")}},
+	}}
+	scanner := &fakeScanner{byRef: map[string]*ImageCVEs{
+		pxyRepo + "@sha256:pxy-new": {Repository: pxyRepo, Digest: "sha256:pxy-new", CVEs: []CVE{}},
+		opRepo + "@sha256:op-new":   {Repository: opRepo, Digest: "sha256:op-new", CVEs: []CVE{}},
+	}}
+	// Only proxy and operator are actually running; cni is scanned but not deployed.
+	deployed := &fakeDeployed{deployed: map[string]struct{}{"sha256:pxy": {}, "sha256:op": {}}}
+
+	advisor := NewAdvisor(catalog, scanner, installedSrc, WithRunningOnly(deployed))
+	reports, _, err := advisor.Advise(context.Background(), []string{"sha256:op"})
+	require.NoError(t, err)
+	require.Len(t, reports, 1)
+
+	assert.Equal(t, 1, deployed.calls, "deployed source is queried once per bundle (batched)")
+	assert.ElementsMatch(t, []string{pxyRepo + "@sha256:pxy-new", opRepo + "@sha256:op-new"}, scanner.scans,
+		"only running images are scanned; cni (scanned-but-not-deployed) is excluded")
+
+	names := make(map[string]bool)
+	for _, d := range reports[0].ImageDiffs {
+		names[d.Name] = true
+	}
+	require.Len(t, reports[0].ImageDiffs, 2)
+	assert.True(t, names["images_v1_27_3_proxy"])
+	assert.True(t, names["sail_operator"])
+	assert.False(t, names["images_v1_27_3_cni"], "cni must be excluded by running-only")
 }

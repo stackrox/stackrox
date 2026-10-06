@@ -30,6 +30,13 @@ type InstalledImageSource interface {
 	GetCVEsByDigest(ctx context.Context, digest string) (*ImageCVEs, error)
 }
 
+// DeployedImageSource returns, from a set of image digests, the subset referenced by a
+// currently-running workload (deployment) in the cluster. Used to optionally restrict analysis
+// to actively-deployed images.
+type DeployedImageSource interface {
+	ListDeployedAmong(ctx context.Context, digests []string) (map[string]struct{}, error)
+}
+
 // RepositoryFromReference strips any tag and digest from an image reference, returning the
 // registry+repository portion used to pair images across bundles. For example
 // "registry.redhat.io/albo/controller-rhel9@sha256:abc" and

@@ -22,12 +22,21 @@ func WithProgress(fn ProgressFunc) AdvisorOption {
 	}
 }
 
+// WithRunningOnly restricts the analysis to images currently deployed/running in the cluster,
+// using the given source to resolve which images are deployed.
+func WithRunningOnly(src DeployedImageSource) AdvisorOption {
+	return func(a *Advisor) {
+		a.deployed = src
+	}
+}
+
 // Advisor orchestrates the operator bundle CVE upgrade analysis. It is constructed with the
 // three external data sources and is safe to reuse across Advise calls.
 type Advisor struct {
 	catalog    CatalogClient
 	scanner    ImageScanner
 	installed  InstalledImageSource
+	deployed   DeployedImageSource // optional; when set, restrict to images running in the cluster
 	progressFn ProgressFunc
 }
 
@@ -128,6 +137,20 @@ func (a *Advisor) analyzeBundle(ctx context.Context, installed *Bundle, triggeri
 		return report, err
 	}
 
+	// Optionally restrict to images currently deployed/running in the cluster (one batched call).
+	if a.deployed != nil {
+		digests := make([]string, 0, len(installedImages))
+		for _, img := range installedImages {
+			digests = append(digests, img.Digest)
+		}
+		running, err := a.deployed.ListDeployedAmong(ctx, digests)
+		if err != nil {
+			return report, errors.Wrap(err, "resolving images running in the cluster")
+		}
+		installedImages = filterByDigests(installedImages, running)
+		a.progress("  %d image(s) running in the cluster", len(installedImages))
+	}
+
 	// Narrow to images actually used in the cluster: collectInstalledCVEs kept only the
 	// installed-bundle images the InstalledImageSource (ACS) has, i.e. the deployed/used ones.
 	// Scan and diff only the candidate images that match those (repository, name) keys.
@@ -151,6 +174,17 @@ func usedPairKeys(installed []ImageCVEs) map[string]struct{} {
 		keys[pairKey(img)] = struct{}{}
 	}
 	return keys
+}
+
+// filterByDigests keeps only the images whose digest is in the keep set.
+func filterByDigests(images []ImageCVEs, keep map[string]struct{}) []ImageCVEs {
+	out := make([]ImageCVEs, 0, len(images))
+	for _, img := range images {
+		if _, ok := keep[img.Digest]; ok {
+			out = append(out, img)
+		}
+	}
+	return out
 }
 
 // filterToUsed keeps only the candidate related images whose (repository, name) is in the used

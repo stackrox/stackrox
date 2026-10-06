@@ -1,7 +1,8 @@
 // Package central provides StackRox Central-backed implementations of the
-// operatorbundle.InstalledImageSource and operatorbundle.ImageScanner interfaces, using the
-// v1 ImageService (GetImage for already-scanned installed images, ScanImage to scan
-// update-candidate images).
+// operatorbundle.InstalledImageSource, operatorbundle.ImageScanner and
+// operatorbundle.DeployedImageSource interfaces, using the v1 ImageService (GetImage for
+// already-scanned installed images, ScanImage to scan update-candidate images, and ListImages
+// to resolve which images are deployed).
 package central
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/operatorbundle"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,4 +57,29 @@ func (c *Client) ScanImage(ctx context.Context, reference string) (*operatorbund
 		return nil, errors.Wrapf(err, "scanning image %s", reference)
 	}
 	return operatorbundle.ImageCVEsFromStorage(image), nil
+}
+
+// ListDeployedAmong returns the subset of the given image digests that are referenced by a
+// currently-running deployment in the cluster. It issues a single ListImages query: an OR of the
+// exact digests AND-ed with a match-any deployment predicate, which forces an inner join from
+// images to deployments so only deployed images are returned.
+func (c *Client) ListDeployedAmong(ctx context.Context, digests []string) (map[string]struct{}, error) {
+	if len(digests) == 0 {
+		return map[string]struct{}{}, nil
+	}
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, digests...).
+		// Match ANY deployment name: referencing a deployment-side field forces an INNER JOIN
+		// images->deployments, so only images that have a deployment are returned.
+		AddRegexes(search.DeploymentName, ".*").
+		Query()
+	resp, err := c.svc.ListImages(ctx, &v1.RawQuery{Query: query})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing deployed images from Central")
+	}
+	deployed := make(map[string]struct{}, len(resp.GetImages()))
+	for _, img := range resp.GetImages() {
+		deployed[img.GetId()] = struct{}{}
+	}
+	return deployed, nil
 }

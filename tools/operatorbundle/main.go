@@ -67,6 +67,7 @@ type diffOptions struct {
 	timeout            time.Duration
 	force              bool
 	quiet              bool
+	runningOnly        bool
 }
 
 func diffCommand(env environment.Environment) *cobra.Command {
@@ -86,6 +87,8 @@ func diffCommand(env environment.Environment) *cobra.Command {
 	c.Flags().DurationVar(&opts.timeout, "timeout", 5*time.Minute, "Overall timeout for the analysis")
 	c.Flags().BoolVar(&opts.force, "force", false, "Force re-scan of candidate images instead of using cached scans")
 	c.Flags().BoolVar(&opts.quiet, "quiet", false, "Suppress progress output on stderr")
+	c.Flags().BoolVar(&opts.runningOnly, "running-only", false,
+		"Restrict analysis to images currently deployed/running in the cluster")
 	utils.Must(c.MarkFlagRequired("digest"))
 	return c
 }
@@ -127,6 +130,9 @@ func (o *diffOptions) run() error {
 	var advisorOpts []operatorbundle.AdvisorOption
 	if !o.quiet {
 		advisorOpts = append(advisorOpts, operatorbundle.WithProgress(o.progress))
+	}
+	if o.runningOnly {
+		advisorOpts = append(advisorOpts, operatorbundle.WithRunningOnly(centralClient))
 	}
 	advisor := operatorbundle.NewAdvisor(catalogClient, centralClient, centralClient, advisorOpts...)
 

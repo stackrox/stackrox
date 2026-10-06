@@ -12,7 +12,9 @@
 //     InstalledImageSource/ACS already has scanned) and, restricted to that same
 //     (repository, name) set, scan the matching update-candidate images. Unused bundle
 //     images (e.g. the many Istio versions a multi-version bundle ships but the cluster does
-//     not run) are neither scanned nor diffed.
+//     not run) are neither scanned nor diffed. When a DeployedImageSource is configured
+//     (WithRunningOnly), the set is further restricted to images referenced by a currently
+//     running deployment.
 //  4. Diff the CVEs per image, pairing images by their (repository, bundle name) key so that
 //     multi-version bundles (many images sharing one repository) diff correctly, classifying
 //     each CVE as fixed, still active, or newly introduced.
