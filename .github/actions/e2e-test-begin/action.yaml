@@ -260,3 +260,48 @@ runs:
     - name: Create artifact directory
       shell: bash
       run: mkdir -p "$ARTIFACT_DIR"
+
+    # EXPERIMENT (ROX / PR #23099 review): auto-teardown via post hook.
+    # Composite actions have no native `post:` entry point, so we use
+    # gacts/run-and-post-run (a JS action) to register a post-step hook, the
+    # same bridge already used by job-preamble and cache-go-dependencies.
+    # The main run is a no-op; the post block tears the cluster down at job
+    # end. Post hooks run in LIFO order, so this runs before job-preamble's
+    # post hook (which records job state), as desired. CLUSTER_NAME and
+    # CLUSTER_PROVISIONING_METHOD are read from the job-wide environment
+    # (written to $GITHUB_ENV by earlier steps above).
+    #
+    # Kept as a standalone step rather than merged into cluster creation: the
+    # run:/post: blocks are shell-only, but infra creation goes through a
+    # `uses:` action (stackrox/actions/infra/create-cluster) that can't be
+    # called from shell. Merging would only work for direct-gke, forcing a
+    # separate infra teardown and splitting the logic. One unconditional
+    # registration keeps teardown uniform across providers and attempts it
+    # even when creation partially failed (matches e2e-test-end behavior).
+    - name: Register cluster teardown (post hook)
+      uses: gacts/run-and-post-run@fc6503862aba998e2f2123225ad63c09a92ed46e # v1.4.0
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      with:
+        shell: bash
+        run: echo "Cluster teardown registered as post-step hook."
+        post: |
+          echo "::group::Post-hook cluster teardown"
+          if [[ -z "${CLUSTER_NAME:-}" ]]; then
+            echo "No cluster to teardown"
+            exit 0
+          fi
+          case "${CLUSTER_PROVISIONING_METHOD:-}" in
+            direct-gke)
+              scripts/ci/gke.sh teardown_gke_cluster false \
+                || echo "::warning::Post-hook: could not delete direct-gke cluster ${CLUSTER_NAME}"
+              ;;
+            infra)
+              infractl delete "${CLUSTER_NAME}" \
+                || echo "::warning::Post-hook: could not delete infra cluster ${CLUSTER_NAME}"
+              ;;
+            dbg-existing-infra)
+              echo "Debug run — skipping cluster deletion"
+              ;;
+          esac
+          echo "::endgroup::"
