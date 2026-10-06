@@ -96,12 +96,13 @@ func toReportViews(reports []operatorbundle.BundleDiffReport) []reportView {
 	return views
 }
 
-// renderCSV writes one row per (image, CVE): installed_image,candidate_image,cve,status, where
-// status is fixed / not-fixed / new. Image cells are repository@digest, or empty when there is
-// no counterpart (candidate for a REMOVED image, installed for an ADDED one).
+// renderCSV writes one row per (image, CVE): installed_image,candidate_image,cve,severity,status,
+// where status is fixed / not-fixed / new and severity is the human-readable criticality label.
+// Image cells are repository@digest, or empty when there is no counterpart (candidate for a
+// REMOVED image, installed for an ADDED one).
 func renderCSV(w io.Writer, reports []operatorbundle.BundleDiffReport) error {
 	cw := csv.NewWriter(w)
-	if err := cw.Write([]string{"installed_image", "candidate_image", "cve", "status"}); err != nil {
+	if err := cw.Write([]string{"installed_image", "candidate_image", "cve", "severity", "status"}); err != nil {
 		return errors.Wrap(err, "writing CSV header")
 	}
 	for _, r := range reports {
@@ -117,7 +118,7 @@ func renderCSV(w io.Writer, reports []operatorbundle.BundleDiffReport) error {
 				{"new", d.New},
 			} {
 				for _, c := range group.cves {
-					if err := cw.Write([]string{installed, candidate, c.ID, group.status}); err != nil {
+					if err := cw.Write([]string{installed, candidate, c.ID, severityString(c.Severity), group.status}); err != nil {
 						return errors.Wrap(err, "writing CSV row")
 					}
 				}

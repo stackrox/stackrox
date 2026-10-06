@@ -47,9 +47,9 @@ func TestRenderCSV(t *testing.T) {
 
 	// header + 3 rows (paired) + 1 row (removed)
 	require.Len(t, records, 5)
-	assert.Equal(t, []string{"installed_image", "candidate_image", "cve", "status"}, records[0])
+	assert.Equal(t, []string{"installed_image", "candidate_image", "cve", "severity", "status"}, records[0])
 	for _, row := range records {
-		assert.Len(t, row, 4)
+		assert.Len(t, row, 5)
 	}
 
 	// Collect data rows keyed by CVE for order-independent assertions.
@@ -58,16 +58,16 @@ func TestRenderCSV(t *testing.T) {
 		byCVE[row[2]] = row
 	}
 
-	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-FIX", "fixed"}, byCVE["CVE-FIX"])
-	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-ACT", "not-fixed"}, byCVE["CVE-ACT"])
-	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-NEW", "new"}, byCVE["CVE-NEW"])
+	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-FIX", "Important", "fixed"}, byCVE["CVE-FIX"])
+	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-ACT", "Important", "not-fixed"}, byCVE["CVE-ACT"])
+	assert.Equal(t, []string{repo + "@sha256:old", repo + "@sha256:new", "CVE-NEW", "Important", "new"}, byCVE["CVE-NEW"])
 
 	// REMOVED image: candidate_image column is empty.
-	assert.Equal(t, []string{repo + "@sha256:gone", "", "CVE-RM", "fixed"}, byCVE["CVE-RM"])
+	assert.Equal(t, []string{repo + "@sha256:gone", "", "CVE-RM", "Important", "fixed"}, byCVE["CVE-RM"])
 }
 
 func TestRenderCSVEmpty(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, renderCSV(&buf, nil))
-	assert.Equal(t, "installed_image,candidate_image,cve,status\n", buf.String())
+	assert.Equal(t, "installed_image,candidate_image,cve,severity,status\n", buf.String())
 }
