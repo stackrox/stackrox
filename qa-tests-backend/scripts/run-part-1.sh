@@ -45,7 +45,7 @@ config_part_1() {
     setup_gcp
     setup_deployment_env false false
     if [[ "$use_roxie_deploy" == "true" ]]; then
-        # On GHA we usually install roxie as a workflow step. On Prow we have roxie available as part of the apollo-ci image,
+        # On GHA we already installed roxie in a previous workflow step. On Prow we have roxie available as part of the apollo-ci image,
         # but it might not be up to date, hence this invocation to make sure that we have a recent roxie version also on Prow.
         if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
             ensure_roxie_on_path
