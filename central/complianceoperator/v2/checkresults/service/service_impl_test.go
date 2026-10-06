@@ -638,12 +638,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				// Resolver built once and shared between the per-row "Data status"
+				// conversion and the banner count below.
 				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
 					[]*storage.ComplianceOperatorScanConfigurationV2{{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}}, nil,
-				).AnyTimes()
+				).Times(1)
 				// Banner count over the profile+check-scoped countQuery: a fresh
 				// MIN(last_started) against DAILY ⇒ CURRENT ⇒ count 0.
 				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
@@ -694,13 +696,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileCheckResult(
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
 				// Outdated-detection resolver loads the returned results' configs in a
-				// single bulk query.
+				// single bulk query, shared between the per-row "Data status" conversion
+				// and the banner count below.
 				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
 					[]*storage.ComplianceOperatorScanConfigurationV2{{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}}, nil,
-				).AnyTimes()
+				).Times(1)
 				// Banner count over the profile+check-scoped countQuery ⇒ CURRENT ⇒ count 0.
 				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), countQuery).Return(
 					[]*datastore.MinLastStartedTimeByConfigCluster{
@@ -800,14 +803,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))},
 					}, nil,
 				).Times(1)
-				// Loaded twice (each a single bulk query): once by the outdated-count
-				// helper, once by the per-check "Data status" column resolver.
+				// Loaded once (a single bulk query) and shared between the
+				// outdated-count helper and the per-check "Data status" column resolver.
 				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
 					[]*storage.ComplianceOperatorScanConfigurationV2{{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}}, nil,
-				).Times(2)
+				).Times(1)
 			},
 		},
 		{
@@ -854,14 +857,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 						{ScanConfigName: "scanConfig1", ClusterID: testconsts.Cluster1, MinLastStarted: new(time.Now().UTC())},
 					}, nil,
 				).Times(1)
-				// Loaded twice (each a single bulk query): once by the outdated-count
-				// helper, once by the per-check "Data status" column resolver.
+				// Loaded once (a single bulk query) and shared between the
+				// outdated-count helper and the per-check "Data status" column resolver.
 				s.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(
 					[]*storage.ComplianceOperatorScanConfigurationV2{{
 						ScanConfigName: "scanConfig1",
 						Schedule:       &storage.Schedule{IntervalType: storage.Schedule_DAILY, Hour: 2},
 					}}, nil,
-				).Times(2)
+				).Times(1)
 			},
 		},
 		{

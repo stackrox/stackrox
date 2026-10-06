@@ -474,8 +474,9 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		resolver = s.buildConfigResolver(ctx, configNames)
 
 		// Scope-level outdated-cluster count for the banner, over the unpaginated,
-		// profile+check-scoped countQuery. Best-effort: on error the banner is hidden.
-		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, nil)
+		// profile+check-scoped countQuery. Reuses the resolver above.
+		// Best-effort: on error the banner is hidden.
+		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, resolver)
 		if err != nil {
 			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
 			outdatedCount = 0
@@ -561,14 +562,6 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	var resolver *compliancedata.ConfigResolver
 	var outdatedCount int32
 	if features.ComplianceSurfaceStaleData.Enabled() {
-		// Single-cluster outdated signal for the inline note, over the unpaginated,
-		// profile+cluster-scoped countQuery (0 or 1). Best-effort: on error hidden.
-		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, nil)
-		if err != nil {
-			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
-			outdatedCount = 0
-		}
-
 		// Resolver for the per-check "Data status" column: load the configs referenced
 		// by the returned results so each row's assessment time can be compared to its
 		// config's expected refresh.
@@ -577,6 +570,15 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 			configNames[result.GetScanConfigName()] = struct{}{}
 		}
 		resolver = s.buildConfigResolver(ctx, configNames)
+
+		// Single-cluster outdated signal for the inline note, over the unpaginated,
+		// profile+cluster-scoped countQuery (0 or 1). Reuses the resolver above.
+		// Best-effort: on error hidden.
+		outdatedCount, err = s.computeOutdatedClusterCount(ctx, countQuery, resolver)
+		if err != nil {
+			log.Warnf("compliance outdated: failed to compute outdated cluster count: %v; outdated banner hidden", err)
+			outdatedCount = 0
+		}
 	}
 
 	return &v2.ListComplianceCheckResultResponse{
