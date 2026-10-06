@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/sync"
@@ -231,9 +232,9 @@ func TestClient_Reconfigure(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
-		assert.ElementsMatch(t, APICallCampaign{
-			MethodPattern("{put,delete}"),
-			HeaderPattern("Accept-Encoding", "*json*"),
+		assert.ElementsMatch(t, clientprofile.RuleSet{
+			clientprofile.MethodPattern("{put,delete}"),
+			clientprofile.HeaderPattern("Accept-Encoding", "*json*"),
 		}, lastRC.APICallCampaign)
 	})
 

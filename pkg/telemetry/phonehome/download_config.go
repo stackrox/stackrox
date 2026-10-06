@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
@@ -15,8 +16,8 @@ const hardcodedSelfManagedKey = "eDd6QP8uWm0jCkAowEvijOPgeqtlulwR"
 
 // RuntimeConfig defines some runtime features.
 type RuntimeConfig struct {
-	Key             string          `json:"storage_key_v1,omitempty"`
-	APICallCampaign APICallCampaign `json:"api_call_campaign,omitempty"`
+	Key             string                `json:"storage_key_v1,omitempty"`
+	APICallCampaign clientprofile.RuleSet `json:"api_call_campaign,omitempty"`
 }
 
 // downloadConfig downloads the configuration from the provided url.
