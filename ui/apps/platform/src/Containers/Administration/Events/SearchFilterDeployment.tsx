@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SearchInput } from '@patternfly/react-core';
 
 type SearchFilterDeploymentProps = {
@@ -13,6 +13,8 @@ function SearchFilterDeployment({
     setDeployment,
 }: SearchFilterDeploymentProps) {
     const [inputValue, setInputValue] = useState(deployment ?? '');
+
+    useEffect(() => setInputValue(deployment ?? ''), [deployment]);
 
     return (
         <SearchInput

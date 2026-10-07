@@ -200,6 +200,7 @@ func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filte
 		depQuery = depQuery.AddExactMatches(search.DeploymentName, deploymentNames...)
 	}
 
+	depQuery = depQuery.WithPagination(search.NewPagination().Limit(10000))
 	deployments, err := s.deployments.SearchRawDeployments(ctx, depQuery.ProtoQuery())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching deployments for workload filter")

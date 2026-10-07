@@ -87,7 +87,7 @@ function RelatedDeployments({ imageId }: RelatedDeploymentsProps) {
                 <Bullseye>
                     <Spinner size="md" />
                 </Bullseye>
-            ) : deployments.length === 0 ? (
+            ) : deploymentCount === 0 ? (
                 <Alert
                     variant="info"
                     title="No deployments currently use this image"

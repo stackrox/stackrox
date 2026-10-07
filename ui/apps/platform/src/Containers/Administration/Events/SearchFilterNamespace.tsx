@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SearchInput } from '@patternfly/react-core';
 
 type SearchFilterNamespaceProps = {
@@ -13,6 +13,8 @@ function SearchFilterNamespace({
     setNamespace,
 }: SearchFilterNamespaceProps) {
     const [inputValue, setInputValue] = useState(namespace ?? '');
+
+    useEffect(() => setInputValue(namespace ?? ''), [namespace]);
 
     return (
         <SearchInput
