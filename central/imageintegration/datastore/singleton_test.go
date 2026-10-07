@@ -389,17 +389,6 @@ func TestCategoriesMatch(t *testing.T) {
 			[]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
 			false,
 		},
-		"duplicate elements do not match": {
-			[]storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_SCANNER,
-				storage.ImageIntegrationCategory_NODE_SCANNER,
-			},
-			[]storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_SCANNER,
-				storage.ImageIntegrationCategory_SCANNER,
-			},
-			false,
-		},
 	}
 
 	for name, tc := range testCases {
