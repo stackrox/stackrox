@@ -232,7 +232,7 @@ else
                 --new-bindir="${NEW_BINARIES}" \
                 --old-datadir="${PGDATA}" \
                 --new-datadir="${PGDATA_NEW}" \
-                --clone -j 4 -k --check
+                -j 4 -k --check
 
         RESULT=$?
         if [ $RESULT -ne 0 ]; then
@@ -247,7 +247,7 @@ else
                 --new-bindir="${NEW_BINARIES}" \
                 --old-datadir="${PGDATA}" \
                 --new-datadir="${PGDATA_NEW}" \
-                --clone -j 4 -k
+                -j 4 -k
 
         RESULT=$?
         if [ $RESULT -ne 0 ]; then
