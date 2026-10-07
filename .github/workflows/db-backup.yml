@@ -108,6 +108,38 @@ jobs:
           sleep 2
         done
 
+    - name: Add authenticated Docker Hub integration
+      run: |
+        source "${{ steps.deploy-previous.outputs.envrc }}"
+
+        # Central's default "Public DockerHub" integration is anonymous and
+        # gets rate-limited (429) almost immediately when the image reprocessor
+        # tries to re-scan hundreds of images in a burst. An authenticated
+        # integration has a much higher rate limit.
+        auth_cfg_file="$(mktemp)"
+        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
+
+        payload=$(jq -n \
+          --arg username "$DOCKERHUB_USERNAME" \
+          --arg password "$DOCKERHUB_PASSWORD" \
+          '{
+            name: "Authenticated Docker Hub",
+            type: "docker",
+            categories: ["REGISTRY"],
+            docker: {
+              endpoint: "registry-1.docker.io",
+              username: $username,
+              password: $password
+            }
+          }')
+
+        curl -sk --config "$auth_cfg_file" \
+          -X POST "https://$API_ENDPOINT/v1/imageintegrations" \
+          -d "$payload"
+      env:
+        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+        DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
     - name: Upgrade operator to target version
       run: |
         source "${{ steps.deploy-previous.outputs.envrc }}"
@@ -131,6 +163,19 @@ jobs:
         done
         kubectl -n acs-central rollout status deploy/central --timeout=5m
 
+    - name: Wait for image reprocessing
+      run: |
+        source "${{ steps.deploy-previous.outputs.envrc }}"
+        # Central's image reprocessor runs immediately on every startup, racing
+        # Scanner V4's own readiness after the same operator-driven restart. A
+        # failed pass doesn't retry for another 4 hours (ReprocessInterval), so
+        # force one more Central restart once Scanner V4 is confirmed ready,
+        # giving the reprocessor a clean run before taking the final backup.
+        kubectl -n acs-central rollout status deploy/scanner-v4-indexer --timeout=5m
+
+        kubectl -n acs-central delete pod -l app=central --grace-period=0
+        kubectl -n acs-central rollout status deploy/central --timeout=5m
+
         # Recreate the port-forward
         if [[ -n "${ROXIE_PORT_FORWARD_PID:-}" ]]; then
           kill -9 "$ROXIE_PORT_FORWARD_PID" 2>/dev/null || true
@@ -147,6 +192,29 @@ jobs:
             exit 1
           fi
           sleep 2
+        done
+
+        # Poll images_v2 until its row count stabilizes across two consecutive
+        # checks, as a proxy for the reprocessor having finished its pass.
+        db_password=$(kubectl -n acs-central get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)
+        count_images_v2() {
+          kubectl -n acs-central exec deploy/central-db -c central-db -- \
+            bash -c "PGPASSWORD='${db_password}' psql -U postgres -d central_active -tAc 'SELECT count(*) FROM images_v2'" \
+            | tr -d '[:space:]'
+        }
+        previous=-1
+        deadline=$((SECONDS + 600))
+        while true; do
+          current=$(count_images_v2)
+          if [[ "$current" == "$previous" ]]; then
+            break
+          fi
+          previous="$current"
+          if (( SECONDS > deadline )); then
+            echo "images_v2 row count did not stabilize within 10m (last seen: ${current})" >&2
+            break
+          fi
+          sleep 20
         done
 
     - name: Wait for background migrations
