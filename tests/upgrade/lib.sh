@@ -108,6 +108,7 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
+<<<<<<< HEAD
     local roxie_envrc
     roxie_envrc="$(mktemp)"
     roxie deploy central --verbose \
@@ -122,6 +123,57 @@ deploy_earlier_tag_central() {
     # shellcheck disable=SC1090
     source "${roxie_envrc}"
     rm -f "${roxie_envrc}"
+=======
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    # Let's try helm
+    # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
+    # produces a value shared with Helm --set and later restore/auth.
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
+
+    # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
+    # because the later Helm upgrade cannot change an existing PVC's class.
+    local helm_extra_args=()
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+    if [[ -n "${STORAGE_CLASS:-}" ]]; then
+        helm_extra_args+=(--set "central.db.persistence.persistentVolumeClaim.storageClass=${STORAGE_CLASS}")
+    fi
+    if [[ "${SCANNER_V4_DB_STORAGE_CLASS:-}" == "faster" || "${STORAGE_CLASS:-}" == "faster" ]]; then
+        kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+    fi
+
+    # The generated chart can inherit the PR tag, which has no Scanner V2 images.
+    # Use the released Scanner V2 images for the initial deployment.
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         "${helm_extra_args[@]}" \
+         --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+         --set central.db.enabled=true \
+         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
+         --set central.persistence.none=true \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="${EARLIER_TAG}" \
+         --set scanner.dbImage.tag="${EARLIER_TAG}"
+
+    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
+    # the scripts.  So we will give it a minute for things to get started before we proceed
+    sleep 60
+
+    ROX_USERNAME="admin"
+>>>>>>> a27485ee55 (Try use faster storage class for central-db in upgrade tests)
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
