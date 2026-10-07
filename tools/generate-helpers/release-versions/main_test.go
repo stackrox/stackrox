@@ -269,6 +269,45 @@ func TestReleaseBranchLifecycle(t *testing.T) {
 	require.Equal(t, before, readOutput(), "newer release tags must not change old branch output")
 }
 
+func TestMultipleReleaseBranchesWithRCs(t *testing.T) {
+	dir, git, write := repository(t)
+	write(220, "4.10.0")
+	git("checkout", "-qb", "release-4.10")
+	git("checkout", "master")
+	write(225, "4.11.0")
+	git("checkout", "-qb", "release-4.11")
+	git("checkout", "master")
+	write(228, "5.1.x")
+
+	before, err := generate(dir, "5.1.x")
+	require.NoError(t, err)
+	require.Contains(t, string(before), `Version: "4.10", Sequence: 220`)
+	require.Contains(t, string(before), `Version: "4.11", Sequence: 225`)
+	require.Contains(t, string(before), `Version: "5.1", Sequence: 228`)
+	require.NotContains(t, string(before), `Version: "5.0"`)
+
+	// Each release line can advance independently while RCs are in flight.
+	git("checkout", "release-4.10")
+	write(221, "4.10.10-rc.1")
+	git("checkout", "release-4.11")
+	for sequence, tag := range []string{
+		"4.11.1-rc.0",
+		"4.11.1-rc.1",
+		"4.11.1-rc.2",
+		"4.11.1-rc.3",
+		"4.11.1-rc.4",
+	} {
+		write(226+sequence, tag)
+	}
+	git("checkout", "-qb", "release-5.0", "refs/tags/4.11.0")
+	write(227, "5.0.0-rc.2")
+	git("checkout", "master")
+
+	after, err := generate(dir, "5.1.x")
+	require.NoError(t, err)
+	require.Equal(t, before, after, "RC tags on multiple release branches must not change GA metadata")
+}
+
 func TestNightlyVersionDiscovery(t *testing.T) {
 	dir, git, write := repository(t)
 	versionMakefile(t, dir)
