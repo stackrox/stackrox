@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/views/vmcve"
 	componentDS "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore"
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -57,11 +58,12 @@ var (
 type serviceImpl struct {
 	v2.UnimplementedVirtualMachineV2ServiceServer
 
-	vmDS        vmDS.DataStore
-	cveDS       cveDS.DataStore
-	componentDS componentDS.DataStore
-	scanDS      scanDS.DataStore
-	cveView     vmcve.CveView
+	vmDS         vmDS.DataStore
+	cveDS        cveDS.DataStore
+	componentDS  componentDS.DataStore
+	scanDS       scanDS.DataStore
+	cveView      vmcve.CveView
+	pendingScans *scan.Tracker
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -523,9 +525,14 @@ func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMCo
 		return nil, err
 	}
 
+	isPending := s.pendingScans.IsPending(request.GetVmId())
 	items := make([]*v2.VMComponentRow, 0, len(components))
 	for _, comp := range components {
-		items = append(items, storagetov2.VirtualMachineComponentV2ToRow(comp))
+		item := storagetov2.VirtualMachineComponentV2ToRow(comp)
+		if isPending {
+			item.ScanStatus = v2.ScanStatus_SCAN_PENDING
+		}
+		items = append(items, item)
 	}
 
 	return &v2.ListVMComponentsResponse{

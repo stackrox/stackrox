@@ -24,8 +24,10 @@ const (
 type VirtualMachineComponentV2_Note int32
 
 const (
-	VirtualMachineComponentV2_UNSPECIFIED VirtualMachineComponentV2_Note = 0
-	VirtualMachineComponentV2_UNSCANNED   VirtualMachineComponentV2_Note = 1
+	VirtualMachineComponentV2_UNSPECIFIED  VirtualMachineComponentV2_Note = 0
+	VirtualMachineComponentV2_UNSCANNED    VirtualMachineComponentV2_Note = 1
+	VirtualMachineComponentV2_CPE_MISSING  VirtualMachineComponentV2_Note = 2
+	VirtualMachineComponentV2_REPO_UNKNOWN VirtualMachineComponentV2_Note = 3
 )
 
 // Enum value maps for VirtualMachineComponentV2_Note.
@@ -33,10 +35,14 @@ var (
 	VirtualMachineComponentV2_Note_name = map[int32]string{
 		0: "UNSPECIFIED",
 		1: "UNSCANNED",
+		2: "CPE_MISSING",
+		3: "REPO_UNKNOWN",
 	}
 	VirtualMachineComponentV2_Note_value = map[string]int32{
-		"UNSPECIFIED": 0,
-		"UNSCANNED":   1,
+		"UNSPECIFIED":  0,
+		"UNSCANNED":    1,
+		"CPE_MISSING":  2,
+		"REPO_UNKNOWN": 3,
 	}
 )
 
@@ -217,7 +223,7 @@ var File_storage_virtual_machine_component_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_component_v2_proto_rawDesc = "" +
 	"\n" +
-	"*storage/virtual_machine_component_v2.proto\x12\astorage\x1a\x13storage/image.proto\"\x9b\x03\n" +
+	"*storage/virtual_machine_component_v2.proto\x12\astorage\x1a\x13storage/image.proto\"\xbe\x03\n" +
 	"\x19VirtualMachineComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\n" +
@@ -230,10 +236,12 @@ const file_storage_virtual_machine_component_v2_proto_rawDesc = "" +
 	"\bfixed_by\x18\b \x01(\tR\afixedBy\x12\x1b\n" +
 	"\tcve_count\x18\t \x01(\x05R\bcveCount\x12=\n" +
 	"\x05notes\x18\n" +
-	" \x03(\x0e2'.storage.VirtualMachineComponentV2.NoteR\x05notes\"&\n" +
+	" \x03(\x0e2'.storage.VirtualMachineComponentV2.NoteR\x05notes\"I\n" +
 	"\x04Note\x12\x0f\n" +
 	"\vUNSPECIFIED\x10\x00\x12\r\n" +
-	"\tUNSCANNED\x10\x01B\x0e\n" +
+	"\tUNSCANNED\x10\x01\x12\x0f\n" +
+	"\vCPE_MISSING\x10\x02\x12\x10\n" +
+	"\fREPO_UNKNOWN\x10\x03B\x0e\n" +
 	"\fset_top_cvssB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
