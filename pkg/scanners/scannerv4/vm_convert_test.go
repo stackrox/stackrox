@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -154,6 +155,7 @@ func TestToVirtualMachineScan(t *testing.T) {
 			},
 			Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 			},
 		},
 	}
@@ -243,6 +245,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					Version: "2.68.4-14.el9",
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 			},
@@ -266,6 +269,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					Version: "2.68.4-14.el9",
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 			},
@@ -306,6 +310,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					Version: "2.68.4-14.el9",
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 				{
@@ -321,6 +326,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					},
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 			},
@@ -361,6 +367,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					Version: "2.68.4-14.el9",
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 				{
@@ -376,6 +383,7 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 					},
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+						storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
 					},
 				},
 			},
@@ -426,6 +434,65 @@ func TestToVirtualMachineScanComponents(t *testing.T) {
 		t.Run(tc.name, func(it *testing.T) {
 			actual := toVirtualMachineComponents(tc.report)
 			protoassert.ElementsMatch(it, tc.expected, actual)
+		})
+	}
+}
+
+func TestVMComponentScanReasons(t *testing.T) {
+	tests := map[string]struct {
+		repositories map[string]*v4.Repository
+		environments []*v4.Environment
+		wantNotes    []storage.EmbeddedVirtualMachineScanComponent_Note
+	}{
+		"no environment": {
+			wantNotes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
+			},
+		},
+		"environment without repositories": {
+			environments: []*v4.Environment{{PackageDb: "rpm"}},
+			wantNotes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
+			},
+		},
+		"repository absent from contents": {
+			environments: []*v4.Environment{{RepositoryIds: []string{"unknown"}}},
+			wantNotes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
+			},
+		},
+		"repository without CPE": {
+			repositories: map[string]*v4.Repository{"repo": {Name: "repo"}},
+			environments: []*v4.Environment{{RepositoryIds: []string{"repo"}}},
+			wantNotes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING,
+			},
+		},
+		"valid CPE in a later environment": {
+			repositories: map[string]*v4.Repository{
+				"no-cpe": {Name: "no-cpe"},
+				"rhel":   {Cpe: "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"},
+			},
+			environments: []*v4.Environment{
+				{RepositoryIds: []string{"unknown", "no-cpe"}},
+				{RepositoryIds: []string{"rhel"}},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			report := &v4.VulnerabilityReport{Contents: &v4.Contents{
+				Packages:     map[string]*v4.Package{"pkg": {Id: "pkg", Name: "curl"}},
+				Repositories: tt.repositories,
+				Environments: map[string]*v4.Environment_List{"pkg": {Environments: tt.environments}},
+			}}
+			result := ToVirtualMachineScan(report)
+			require.Len(t, result.GetComponents(), 1)
+			assert.Equal(t, tt.wantNotes, result.GetComponents()[0].GetNotes())
 		})
 	}
 }
