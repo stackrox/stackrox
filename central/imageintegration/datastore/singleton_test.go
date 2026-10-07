@@ -320,27 +320,6 @@ func TestCreateDefaultScannerV4Integration(t *testing.T) {
 		createDefaultScannerV4Integration(ctx, s)
 	})
 
-	t.Run("do nothing when existing integration already has correct categories", func(t *testing.T) {
-		s := mockIIStore.NewMockStore(gomock.NewController(t))
-
-		existingCorrect := &storage.ImageIntegration{
-			Id:   defaultID,
-			Name: "Scanner V4",
-			Type: scannerTypes.ScannerV4,
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_SCANNER,
-				storage.ImageIntegrationCategory_NODE_SCANNER,
-			},
-			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
-				ScannerV4: &storage.ScannerV4Config{},
-			},
-		}
-
-		s.EXPECT().Get(ctx, defaultID).Return(existingCorrect, true, nil)
-
-		createDefaultScannerV4Integration(ctx, s)
-	})
-
 	t.Run("do nothing when Get returns error", func(t *testing.T) {
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 

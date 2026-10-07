@@ -133,7 +133,7 @@ func setupScannerV4Integration(ctx context.Context, iiStore store.Store, iis []*
 }
 
 // createDefaultScannerV4Integration will create the default Scanner V4 integration if it does
-// not currently exist, or reconcile its categories if they have drifted from the canonical default.
+// not currently exist, or reconcile its categories if they differ from the default.
 func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store) {
 	defaultID := store.DefaultScannerV4Integration.GetId()
 	existing, exists, err := iiStore.Get(ctx, defaultID)
