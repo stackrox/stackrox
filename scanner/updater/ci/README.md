@@ -20,6 +20,15 @@ The generated file is
 `make go-generated-srcs` and `make generated-srcs` targets also rebuild it, and
 CI checks for uncommitted generated changes.
 
+The generator uses ClairCore's `jsonblob.Store` to write the same record format
+as production export, and both use `scanner/updater/bundle.WriteCompressed`.
+CI still groups, deduplicates and sorts native payloads, derives fingerprints and
+references from their canonical content, and normalizes only the store's random
+`Ref` and current `Date`. Unknown envelope fields and complete payloads are
+preserved. Each operation uses a separate store to avoid map iteration order.
+Fixed ZIP metadata and CI compression settings keep repeated generation
+byte-identical; production keeps its default compression settings.
+
 ## Update fixtures
 
 The `generate/fixtures_*.go` files are the source of truth. For each scenario,

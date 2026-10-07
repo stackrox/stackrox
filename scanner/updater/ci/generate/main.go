@@ -8,6 +8,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -23,7 +24,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	storeblob "github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/scanner/updater/bundle"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 )
 
@@ -44,15 +47,26 @@ type enrichmentFixture struct {
 	Payload any
 }
 
-type entry struct {
-	Updater     string
-	Fingerprint driver.Fingerprint
-	Date        time.Time
-	Ref         uuid.UUID
-	Kind        driver.UpdateKind
-	Vuln        *claircore.Vulnerability `json:",omitempty"`
-	Enrichment  *driver.EnrichmentRecord `json:",omitempty"`
-	member      string
+// fixtureOperation is an internal grouping, not the serialized bundle format.
+type fixtureOperation struct {
+	Member, Updater string
+	Fingerprint     driver.Fingerprint
+	Ref             uuid.UUID
+	Kind            driver.UpdateKind
+	Vulnerabilities []*claircore.Vulnerability
+	Enrichments     []driver.EnrichmentRecord
+}
+
+type fixtureRecord struct {
+	vuln       *claircore.Vulnerability
+	enrichment *driver.EnrichmentRecord
+}
+
+func (r fixtureRecord) canonical() ([]byte, error) {
+	if r.vuln != nil {
+		return json.Marshal(r.vuln)
+	}
+	return json.Marshal(r.enrichment)
 }
 
 func main() {
@@ -69,25 +83,24 @@ func main() {
 	}
 }
 
-func entries(fixtures []operation) ([]entry, error) {
-	groups := make(map[string][]entry)
+func entries(fixtures []operation) ([]fixtureOperation, error) {
+	groups := make(map[string][]fixtureRecord)
 	for _, op := range fixtures {
 		if len(op.Vulnerabilities) == 0 && len(op.Enrichments) == 0 {
 			return nil, fmt.Errorf("empty fixture operation %q/%q", op.Member, op.Updater)
 		}
-		if filepath.Base(op.Member) != op.Member || !strings.HasSuffix(op.Member, ".json.zst") || op.Updater == "" {
+		if filepath.Base(op.Member) != op.Member || !strings.HasSuffix(op.Member, ".json.zst") || op.Updater == "" || strings.ContainsRune(op.Updater, 0) {
 			return nil, fmt.Errorf("invalid member/updater %q/%q", op.Member, op.Updater)
 		}
-		add := func(e entry) {
-			e.member, e.Updater = op.Member, op.Updater
-			key := op.Member + "\x00" + op.Updater + "\x00" + string(e.Kind)
+		add := func(kind driver.UpdateKind, e fixtureRecord) {
+			key := op.Member + "\x00" + op.Updater + "\x00" + string(kind)
 			groups[key] = append(groups[key], e)
 		}
 		for _, v := range op.Vulnerabilities {
 			if err := validateVulnerability(v); err != nil {
 				return nil, fmt.Errorf("%s: %w", op.Member, err)
 			}
-			add(entry{Kind: driver.VulnerabilityKind, Vuln: v})
+			add(driver.VulnerabilityKind, fixtureRecord{vuln: v})
 		}
 		for _, e := range op.Enrichments {
 			payload, err := json.Marshal(e.Payload)
@@ -99,7 +112,7 @@ func entries(fixtures []operation) ([]entry, error) {
 			if err := validateEnrichment(record); err != nil {
 				return nil, err
 			}
-			add(entry{Kind: driver.EnrichmentKind, Enrichment: record})
+			add(driver.EnrichmentKind, fixtureRecord{enrichment: record})
 		}
 	}
 	if len(groups) == 0 {
@@ -110,15 +123,14 @@ func entries(fixtures []operation) ([]entry, error) {
 		keys = append(keys, key)
 	}
 	slices.Sort(keys)
-	var out []entry
+	var out []fixtureOperation
 	for _, key := range keys {
 		group := groups[key]
-		// Canonical JSON uses typed fields and sorted map keys. The zero metadata
-		// participates in neither importer cache identity nor fixture ordering.
-		encoded := make(map[string]entry, len(group))
+		// Canonical payloads use typed fields and sorted map keys.
+		encoded := make(map[string]fixtureRecord, len(group))
 		var records []string
 		for _, e := range group {
-			b, err := json.Marshal(e)
+			b, err := e.canonical()
 			if err != nil {
 				return nil, err
 			}
@@ -131,19 +143,25 @@ func entries(fixtures []operation) ([]entry, error) {
 		slices.Sort(records)
 		hash := sha256.New()
 		// Version the encoding, and scope to member, updater and operation kind.
-		fmt.Fprintf(hash, "scanner-ci-fixture-v1\x00%s\x00", key)
+		fmt.Fprintf(hash, "scanner-ci-fixture-v2\x00%s\x00", key)
 		for _, record := range records {
 			fmt.Fprintln(hash, record)
 		}
 		digest := hash.Sum(nil)
 		fingerprint := driver.Fingerprint(fmt.Sprintf("sha256:%x", digest))
 		ref := uuid.NewV5(namespaceOID, string(digest))
+		parts := strings.Split(key, "\x00")
+		op := fixtureOperation{Member: parts[0], Updater: parts[1], Kind: driver.UpdateKind(parts[2]), Fingerprint: fingerprint, Ref: ref}
 		for _, record := range records {
 			e := encoded[record]
-			e.Date = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-			e.Fingerprint, e.Ref = fingerprint, ref
-			out = append(out, e)
+			if e.vuln != nil {
+				op.Vulnerabilities = append(op.Vulnerabilities, e.vuln)
+			}
+			if e.enrichment != nil {
+				op.Enrichments = append(op.Enrichments, *e.enrichment)
+			}
 		}
+		out = append(out, op)
 	}
 	return out, nil
 }
@@ -185,37 +203,91 @@ func validateEnrichment(e *driver.EnrichmentRecord) error {
 	return nil
 }
 
-func writeArchive(w io.Writer, records []entry) error {
+func writeArchive(w io.Writer, records []fixtureOperation) error {
 	zw := zip.NewWriter(w)
 	for start := 0; start < len(records); {
 		end := start + 1
-		for end < len(records) && records[end].member == records[start].member {
+		for end < len(records) && records[end].Member == records[start].Member {
 			end++
 		}
-		header := &zip.FileHeader{Name: records[start].member, Method: zip.Store}
+		header := &zip.FileHeader{Name: records[start].Member, Method: zip.Store}
 		header.SetModTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
 		header.SetMode(0644)
 		member, err := zw.CreateHeader(header)
 		if err != nil {
 			return err
 		}
-		zs, err := zstd.NewWriter(member, zstd.WithEncoderConcurrency(1), zstd.WithEncoderLevel(zstd.SpeedBestCompression))
-		if err != nil {
-			return err
-		}
-		enc := json.NewEncoder(zs)
-		for _, record := range records[start:end] {
-			if err := enc.Encode(record); err != nil {
-				_ = zs.Close()
-				return err
+		err = bundle.WriteCompressed(member, func(w io.Writer) error {
+			for _, op := range records[start:end] {
+				if err := writeOperation(w, op); err != nil {
+					return err
+				}
 			}
-		}
-		if err := zs.Close(); err != nil {
+			return nil
+		}, zstd.WithEncoderConcurrency(1), zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+		if err != nil {
 			return err
 		}
 		start = end
 	}
 	return zw.Close()
+}
+
+// A fresh store for each operation avoids the store's map iteration order.
+func writeOperation(w io.Writer, op fixtureOperation) error {
+	store, err := storeblob.New()
+	if err != nil {
+		return err
+	}
+	switch op.Kind {
+	case driver.VulnerabilityKind:
+		_, err = store.UpdateVulnerabilities(context.Background(), op.Updater, op.Fingerprint, op.Vulnerabilities)
+	case driver.EnrichmentKind:
+		_, err = store.UpdateEnrichments(context.Background(), op.Updater, op.Fingerprint, op.Enrichments)
+	default:
+		return fmt.Errorf("unknown operation kind %q", op.Kind)
+	}
+	if err != nil {
+		return err
+	}
+	var serialized bytes.Buffer
+	if err := store.Store(&serialized); err != nil {
+		return err
+	}
+	return normalizeRecords(w, &serialized, op.Ref, time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+}
+
+// Preserve the production envelope and payload, normalizing only volatile metadata.
+func normalizeRecords(w io.Writer, r io.Reader, ref uuid.UUID, date time.Time) error {
+	refJSON, err := json.Marshal(ref)
+	if err != nil {
+		return err
+	}
+	dateJSON, err := json.Marshal(date)
+	if err != nil {
+		return err
+	}
+	dec := json.NewDecoder(r)
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	for {
+		var record map[string]json.RawMessage
+		if err := dec.Decode(&record); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		}
+		for _, field := range []string{"Ref", "Date"} {
+			if _, ok := record[field]; !ok {
+				return fmt.Errorf("production bundle record missing %s", field)
+			}
+		}
+		record["Ref"], record["Date"] = refJSON, dateJSON
+		if err := enc.Encode(record); err != nil {
+			return err
+		}
+	}
 }
 
 // validateArchive goes through the exact production reader, not merely JSON

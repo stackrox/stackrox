@@ -46,6 +46,7 @@ func TestInvalidFixturesPreserveOutput(t *testing.T) {
 		"missing package":  func(f []operation) { f[0].Vulnerabilities[0].Package = nil },
 		"missing identity": func(f []operation) { f[0].Vulnerabilities[0].Dist = nil },
 		"missing updater":  func(f []operation) { f[0].Updater = "" },
+		"invalid updater":  func(f []operation) { f[0].Updater = "updater\x00invalid" },
 		"invalid enrichment": func(f []operation) {
 			f[0].Enrichments = []enrichmentFixture{{Tags: []string{"CVE-2019-20372"}, Payload: make(chan int)}}
 		},
@@ -95,7 +96,8 @@ func TestCanonicalOrdering(t *testing.T) {
 	second, err := entries(b)
 	require.NoError(t, err)
 	require.Equal(t, first, second)
-	require.Equal(t, first[0].Ref, first[1].Ref)
+	require.Len(t, first, 1)
+	require.Len(t, first[0].Vulnerabilities, 2)
 }
 
 func TestFixtureArchive(t *testing.T) {
