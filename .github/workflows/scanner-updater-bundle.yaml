@@ -1,8 +1,7 @@
 name: Scanner updater bundle
 # Downloads per-source vulnerability data from GCS, validates each source,
 # and assembles vulnerabilities.zip for each bundle stream defined in
-# VULNERABILITY_BUNDLE_VERSION. Missing or empty sources are skipped with a
-# Slack notification; if no sources are valid the job fails.
+# VULNERABILITY_BUNDLE_VERSION. Invalid sources fail the job before publication.
 
 on:
   schedule:
@@ -171,19 +170,19 @@ jobs:
         failed_sources=()
         while IFS= read -r source; do
             dest="bundles/${source}.json.zst"
-            if [ ! -f "$dest" ] || [ ! -s "$dest" ]; then
-                echo "::error::${source}: missing or empty"
+            if ! record_count=$(./.github/workflows/scripts/scanner-updater-validate-source.sh "$dest"); then
+                echo "::error::${source}: invalid vulnerability source"
                 failed_sources+=("$source")
             else
-                echo "source '${source}': OK"
+                echo "source '${source}': OK (${record_count} records)"
                 valid_files+=("$dest")
             fi
         done < <(./.github/workflows/scripts/scanner-updater-config.sh sources "$STREAM")
 
         ( IFS=','; echo "failed=${failed_sources[*]}" >> "$GITHUB_OUTPUT" )
 
-        if [ "${#valid_files[@]}" -eq 0 ]; then
-            echo "::error::no valid source files found for stream '${STREAM}'; cannot assemble bundle"
+        if [ "${#failed_sources[@]}" -gt 0 ]; then
+            echo "::error::${#failed_sources[@]} invalid source(s) for stream '${STREAM}'; refusing to replace the existing bundle"
             exit 1
         fi
 
@@ -200,18 +199,6 @@ jobs:
         bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
         gcloud storage cp vulnerabilities.zip "$bundle_obj"
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
-
-    - name: Notify on partial failure
-      if: >-
-        always() && steps.download-validate.outcome == 'success' &&
-        steps.download-validate.outputs.failed != ''
-      uses: ./.github/actions/notify-slack-on-failure
-      with:
-        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        message: >-
-          Vulnerability bundler: validation failures for stream '${{ env.STREAM }}'
-          (sources: ${{ steps.download-validate.outputs.failed }}):
-          <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>
 
   notify:
     needs: [bundle]
