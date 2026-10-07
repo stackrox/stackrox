@@ -108,21 +108,50 @@ jobs:
           sleep 2
         done
 
-    - name: Upgrade Central to target version
-      id: deploy-target
+    - name: Upgrade operator to target version
       run: |
-          envrc="$(mktemp)"
-          echo "envrc=${envrc}" >> "$GITHUB_OUTPUT"
+        source "${{ steps.deploy-previous.outputs.envrc }}"
 
-          roxie deploy central \
-            --tag "${RELEASE}.${PATCH}" \
-            --resources auto \
-            --envrc "${envrc}" \
-            --central-wait 5m
+        # Upgrade operator only, otherwise roxie tears down the entire
+        # ACS deployment and recreates it.
+        roxie deploy operator --tag "${RELEASE}.${PATCH}"
+
+        # Wait for central to be updated
+        deadline=$((SECONDS + 300))
+        until kubectl -n acs-central get deploy/central \
+            -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}' \
+          | grep -q ":${RELEASE}.${PATCH}$"; do
+          if (( SECONDS > deadline )); then
+            echo "Central was not upgraded to ${RELEASE}.${PATCH} within 5m" >&2
+            kubectl -n acs-central get deploy/central \
+              -o jsonpath='{.spec.template.spec.containers[*].name}{"\n"}' >&2
+            exit 1
+          fi
+          sleep 5
+        done
+        kubectl -n acs-central rollout status deploy/central --timeout=5m
+
+        # Recreate the port-forward
+        if [[ -n "${ROXIE_PORT_FORWARD_PID:-}" ]]; then
+          kill -9 "$ROXIE_PORT_FORWARD_PID" 2>/dev/null || true
+        fi
+        local_port="${API_ENDPOINT##*:}"
+        nohup kubectl -n acs-central port-forward svc/central "${local_port}:443" \
+          > /tmp/central-port-forward.log 2>&1 &
+
+        deadline=$((SECONDS + 300))
+        until curl -sk "https://$API_ENDPOINT/v1/ping" | grep -q ok; do
+          if (( SECONDS > deadline )); then
+            echo "Central did not come back within 5m after operator upgrade" >&2
+            cat /tmp/central-port-forward.log >&2
+            exit 1
+          fi
+          sleep 2
+        done
 
     - name: Wait for background migrations
       run: |
-        source "${{ steps.deploy-target.outputs.envrc }}"
+        source "${{ steps.deploy-previous.outputs.envrc }}"
 
         target=$(git show "${RELEASE}.${PATCH}:central/backgroundmigrations/seq_num.go" 2>/dev/null \
           | sed -n 's/^const CurrentBgMigrationSeqNum = \([0-9]*\)$/\1/p')
@@ -130,9 +159,9 @@ jobs:
         if [[ -z "$target" ]]; then
           echo "No background migration seqnum found for ${RELEASE}.${PATCH} (feature may not exist at this version); skipping wait"
         else
-          db_password=$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)
+          db_password=$(kubectl -n acs-central get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)
           for _ in $(seq 1 20); do
-            seqnum=$(kubectl -n stackrox exec deploy/central-db -c central-db -- \
+            seqnum=$(kubectl -n acs-central exec deploy/central-db -c central-db -- \
               bash -c "PGPASSWORD='${db_password}' psql -U postgres -d central_active -tAc 'SELECT seqnum FROM background_migration_versions LIMIT 1'" | tr -d '[:space:]')
             [[ "$seqnum" -ge "$target" ]] 2>/dev/null && break
             sleep 15
@@ -141,7 +170,7 @@ jobs:
 
     - name: Strip transient cluster auth config
       run: |
-        source "${{ steps.deploy-target.outputs.envrc }}"
+        source "${{ steps.deploy-previous.outputs.envrc }}"
 
         # Central recreates this config for its own cluster on startup. Keeping the
         # snapshot cluster's issuer would make restores depend on that cluster.
@@ -150,12 +179,14 @@ jobs:
           | select(.type == "KUBE_SERVICE_ACCOUNT")
           | select(.mappings == [{
               "key": "sub",
-              "valueExpression": "system:serviceaccount:stackrox:config-controller",
+              "valueExpression": "system:serviceaccount:acs-central:config-controller",
               "role": "Configuration Controller"
             }])
           | .id
         '
-        auth_cfg=(--config <(printf 'user = "admin:%s"' "$ROX_ADMIN_PASSWORD"))
+        auth_cfg_file="$(mktemp)"
+        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
+        auth_cfg=(--config "$auth_cfg_file")
 
         ids=$(curl -sk "${auth_cfg[@]}" "https://$API_ENDPOINT/v1/auth/m2m" | jq -r "$query")
         for id in $ids; do
@@ -165,7 +196,7 @@ jobs:
 
     - name: Grab a central backup
       run: |
-        source "${{ steps.deploy-target.outputs.envrc }}"
+        source "${{ steps.deploy-previous.outputs.envrc }}"
         roxctl central backup --output "postgres_db_${RELEASE}.${PATCH}.sql.zip"
 
     - name: Upload backup as an artifact
@@ -174,3 +205,9 @@ jobs:
         # Remove the 4.11.0 fallback before merging
         name: postgres-db-${{ inputs.version || '4.11.0' }}-backup
         path: postgres_db_*.sql.zip
+
+    - name: Upload backup to GCS
+      # Remove fallback before merging
+      if: ${{ !(inputs.dry-run || true) }}
+      run: |
+        gsutil cp "postgres_db_${RELEASE}.${PATCH}.sql.zip" gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/
