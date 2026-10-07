@@ -152,10 +152,14 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
+// ContainerType lists container kinds a policy may skip during evaluation.
 // +kubebuilder:validation:Enum=REGULAR;INIT
 type ContainerType string
 
+// EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
+	// SkipContainerTypes lists container kinds to skip during evaluation.
+	// +optional
 	SkipContainerTypes []ContainerType `json:"skipContainerTypes,omitempty"`
 }
 
