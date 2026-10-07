@@ -141,10 +141,10 @@ upgrade_operator_to_head() {
 
     # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
     # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
-    kubectl -n stackrox patch centrals.platform.stackrox.io stackrox-central-services --type merge \
+    kubectl -n "${namespace}" patch centrals.platform.stackrox.io stackrox-central-services --type merge \
         -p '{"spec":{"customize":{"envVars":[{"name": "SCANNER_V4_MATCHER_READINESS","value":"vulnerability"}]}}}'
 
-    kubectl annotate -n stackrox centrals.platform.stackrox.io stackrox-central-services \
+    kubectl annotate -n "${namespace}" centrals.platform.stackrox.io stackrox-central-services \
         stackrox.io/pause-reconcile-
 
     export SCANNER_V4_VULN_READINESS=true
