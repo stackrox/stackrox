@@ -12,6 +12,7 @@ from common import enable_sfa_for_ocp
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
+os.environ["USE_ROXIE_DEPLOY"] = "true"
 # Workload identities are only set up for `openshift-4` infra clusters.
 if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"

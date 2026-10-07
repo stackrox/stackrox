@@ -60,14 +60,26 @@ test_ui_e2e() {
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
-
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
-    deploy_stackrox
+    ensure_roxie_on_path
+    local roxie_config; roxie_config="$(mktemp)"
+    cat <<EOF > "${roxie_config}"
+central:
+  pauseReconciliation: true
+  namespace: stackrox
+  resourceProfile: ci
+securedCluster:
+  pauseReconciliation: true
+  namespace: stackrox
+  resourceProfile: ci
+EOF
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
