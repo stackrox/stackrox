@@ -706,8 +706,8 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 func TestDeprecatedIndexContentsBecomeCurrentVulnerabilityContents(t *testing.T) {
 	const layerSHA = "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"
 	index, err := ToClairCoreIndexReport(&v4.Contents{
-		PackagesDEPRECATED:     []*v4.Package{{Id: "marker", Name: "image", Kind: "ancestry"}},
-		RepositoriesDEPRECATED: []*v4.Repository{{Id: "rhcc", Key: "rhcc-container-repository"}},
+		PackagesDEPRECATED:     []*v4.Package{{Id: "marker", Name: "image", Kind: "ancestry", Cpe: emptyCPE}},
+		RepositoriesDEPRECATED: []*v4.Repository{{Id: "rhcc", Key: "rhcc-container-repository", Cpe: emptyCPE}},
 		EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
 			"marker": {Environments: []*v4.Environment{{IntroducedIn: layerSHA, RepositoryIds: []string{"rhcc"}}}},
 		},
