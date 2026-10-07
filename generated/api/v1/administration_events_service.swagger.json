@@ -151,6 +151,39 @@
               ]
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.cluster",
+            "description": "Matches events whose resource is an image deployed in any of the specified clusters.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.namespace",
+            "description": "Matches events whose resource is an image deployed in any of the specified namespaces.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.deployment",
+            "description": "Matches events whose resource is an image used by any of the specified deployments (by name).",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -277,6 +310,39 @@
                 "ADMINISTRATION_EVENT_LEVEL_WARNING",
                 "ADMINISTRATION_EVENT_LEVEL_ERROR"
               ]
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.cluster",
+            "description": "Matches events whose resource is an image deployed in any of the specified clusters.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.namespace",
+            "description": "Matches events whose resource is an image deployed in any of the specified namespaces.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.deployment",
+            "description": "Matches events whose resource is an image used by any of the specified deployments (by name).",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
             },
             "collectionFormat": "multi"
           }
@@ -446,6 +512,27 @@
             "$ref": "#/definitions/v1AdministrationEventLevel"
           },
           "description": "Matches events based on their level."
+        },
+        "cluster": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches events whose resource is an image deployed in any of the specified clusters."
+        },
+        "namespace": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches events whose resource is an image deployed in any of the specified namespaces."
+        },
+        "deployment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches events whose resource is an image used by any of the specified deployments (by name)."
         }
       }
     },

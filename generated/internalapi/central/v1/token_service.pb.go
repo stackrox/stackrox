@@ -83,11 +83,11 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// For example, to grant read access to deployment-like objects,
 	// create a message of the form (example in golang):
 	//
-	//	&v1.GenerateTokenForPermissionsAndScopeRequest {
-	//	  Permissions: map[string]v1.Access{
-	//	    "Deployment": v1.Access_READ_ACCESS,
-	//	  },
-	//	}
+	//   &v1.GenerateTokenForPermissionsAndScopeRequest {
+	//     Permissions: map[string]v1.Access{
+	//       "Deployment": v1.Access_READ_ACCESS,
+	//     },
+	//   }
 	//
 	// Resources are listed in pkg/sac/resources/list.go
 	// The resource names can either be passed as direct string, or

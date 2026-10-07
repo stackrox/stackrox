@@ -94,6 +94,21 @@ func (m *AdministrationEventsFilter) CloneVT() *AdministrationEventsFilter {
 		copy(tmpContainer, rhs)
 		r.Level = tmpContainer
 	}
+	if rhs := m.Cluster; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Cluster = tmpContainer
+	}
+	if rhs := m.Namespace; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Namespace = tmpContainer
+	}
+	if rhs := m.Deployment; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Deployment = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -312,6 +327,33 @@ func (this *AdministrationEventsFilter) EqualVT(that *AdministrationEventsFilter
 	}
 	for i, vx := range this.Level {
 		vy := that.Level[i]
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.Cluster) != len(that.Cluster) {
+		return false
+	}
+	for i, vx := range this.Cluster {
+		vy := that.Cluster[i]
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.Namespace) != len(that.Namespace) {
+		return false
+	}
+	for i, vx := range this.Namespace {
+		vy := that.Namespace[i]
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.Deployment) != len(that.Deployment) {
+		return false
+	}
+	for i, vx := range this.Deployment {
+		vy := that.Deployment[i]
 		if vx != vy {
 			return false
 		}
@@ -627,6 +669,33 @@ func (m *AdministrationEventsFilter) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Deployment) > 0 {
+		for iNdEx := len(m.Deployment) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Deployment[iNdEx])
+			copy(dAtA[i:], m.Deployment[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Deployment[iNdEx])))
+			i--
+			dAtA[i] = 0x4a
+		}
+	}
+	if len(m.Namespace) > 0 {
+		for iNdEx := len(m.Namespace) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Namespace[iNdEx])
+			copy(dAtA[i:], m.Namespace[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespace[iNdEx])))
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if len(m.Cluster) > 0 {
+		for iNdEx := len(m.Cluster) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Cluster[iNdEx])
+			copy(dAtA[i:], m.Cluster[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Cluster[iNdEx])))
+			i--
+			dAtA[i] = 0x3a
+		}
 	}
 	if len(m.Level) > 0 {
 		var pksize2 int
@@ -1041,6 +1110,24 @@ func (m *AdministrationEventsFilter) SizeVT() (n int) {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
 		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	if len(m.Cluster) > 0 {
+		for _, s := range m.Cluster {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.Namespace) > 0 {
+		for _, s := range m.Namespace {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.Deployment) > 0 {
+		for _, s := range m.Deployment {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1915,6 +2002,102 @@ func (m *AdministrationEventsFilter) UnmarshalVT(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cluster", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Cluster = append(m.Cluster, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = append(m.Namespace, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deployment", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Deployment = append(m.Deployment, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3219,6 +3402,114 @@ func (m *AdministrationEventsFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cluster", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Cluster = append(m.Cluster, stringValue)
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Namespace = append(m.Namespace, stringValue)
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deployment", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Deployment = append(m.Deployment, stringValue)
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

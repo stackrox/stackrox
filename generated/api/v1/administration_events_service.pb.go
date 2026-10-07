@@ -277,7 +277,13 @@ type AdministrationEventsFilter struct {
 	// Matches events based on their type.
 	Type []AdministrationEventType `protobuf:"varint,5,rep,packed,name=type,proto3,enum=v1.AdministrationEventType" json:"type,omitempty"`
 	// Matches events based on their level.
-	Level         []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	Level []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	// Matches events whose resource is an image deployed in any of the specified clusters.
+	Cluster []string `protobuf:"bytes,7,rep,name=cluster,proto3" json:"cluster,omitempty"`
+	// Matches events whose resource is an image deployed in any of the specified namespaces.
+	Namespace []string `protobuf:"bytes,8,rep,name=namespace,proto3" json:"namespace,omitempty"`
+	// Matches events whose resource is an image used by any of the specified deployments (by name).
+	Deployment    []string `protobuf:"bytes,9,rep,name=deployment,proto3" json:"deployment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -350,6 +356,27 @@ func (x *AdministrationEventsFilter) GetType() []AdministrationEventType {
 func (x *AdministrationEventsFilter) GetLevel() []AdministrationEventLevel {
 	if x != nil {
 		return x.Level
+	}
+	return nil
+}
+
+func (x *AdministrationEventsFilter) GetCluster() []string {
+	if x != nil {
+		return x.Cluster
+	}
+	return nil
+}
+
+func (x *AdministrationEventsFilter) GetNamespace() []string {
+	if x != nil {
+		return x.Namespace
+	}
+	return nil
+}
+
+func (x *AdministrationEventsFilter) GetDeployment() []string {
+	if x != nil {
+		return x.Deployment
 	}
 	return nil
 }
@@ -676,14 +703,19 @@ const file_api_v1_administration_events_service_proto_rawDesc = "" +
 	"\bResource\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"\xa0\x02\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xf8\x02\n" +
 	"\x1aAdministrationEventsFilter\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x120\n" +
 	"\x05until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05until\x12\x16\n" +
 	"\x06domain\x18\x03 \x03(\tR\x06domain\x12#\n" +
 	"\rresource_type\x18\x04 \x03(\tR\fresourceType\x12/\n" +
 	"\x04type\x18\x05 \x03(\x0e2\x1b.v1.AdministrationEventTypeR\x04type\x122\n" +
-	"\x05level\x18\x06 \x03(\x0e2\x1c.v1.AdministrationEventLevelR\x05level\"Z\n" +
+	"\x05level\x18\x06 \x03(\x0e2\x1c.v1.AdministrationEventLevelR\x05level\x12\x18\n" +
+	"\acluster\x18\a \x03(\tR\acluster\x12\x1c\n" +
+	"\tnamespace\x18\b \x03(\tR\tnamespace\x12\x1e\n" +
+	"\n" +
+	"deployment\x18\t \x03(\tR\n" +
+	"deployment\"Z\n" +
 	" CountAdministrationEventsRequest\x126\n" +
 	"\x06filter\x18\x01 \x01(\v2\x1e.v1.AdministrationEventsFilterR\x06filter\"9\n" +
 	"!CountAdministrationEventsResponse\x12\x14\n" +

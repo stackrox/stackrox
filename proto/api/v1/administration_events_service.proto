@@ -99,6 +99,15 @@ message AdministrationEventsFilter {
 
   // Matches events based on their level.
   repeated AdministrationEventLevel level = 6;
+
+  // Matches events whose resource is an image deployed in any of the specified clusters.
+  repeated string cluster = 7;
+
+  // Matches events whose resource is an image deployed in any of the specified namespaces.
+  repeated string namespace = 8;
+
+  // Matches events whose resource is an image used by any of the specified deployments (by name).
+  repeated string deployment = 9;
 }
 
 message CountAdministrationEventsRequest {

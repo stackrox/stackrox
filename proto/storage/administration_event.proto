@@ -21,7 +21,7 @@ message AdministrationEvent {
   string domain = 6; // @gotags: search:"Event Domain,hidden"
   message Resource {
     string type = 1; // @gotags: search:"Resource Type,hidden"
-    string id = 2;
+    string id = 2; // @gotags: search:"Resource ID,hidden"
     string name = 3;
   }
   Resource resource = 7;
