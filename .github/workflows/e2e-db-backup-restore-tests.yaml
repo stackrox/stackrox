@@ -80,6 +80,7 @@ jobs:
       uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
