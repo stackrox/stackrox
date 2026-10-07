@@ -231,7 +231,8 @@ test_upgrade_paths() {
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     local init_bundle
     init_bundle="$(mktemp)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" central init-bundles generate remote --output-secrets "${init_bundle}"
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" \
+        central init-bundles generate remote --output-secrets - > "${init_bundle}"
     kubectl apply -n stackrox -f "${init_bundle}"
     rm -f "${init_bundle}"
 
