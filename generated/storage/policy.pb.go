@@ -1008,7 +1008,7 @@ func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
 // EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty"`
+	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty" crYaml:"skipContainerTypes,omitempty,stringer"` // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }

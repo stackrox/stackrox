@@ -180,12 +180,38 @@ func (s *InitContainerSuite) createPolicyWithCleanup(policy *storage.Policy) *st
 }
 
 func (s *InitContainerSuite) waitForViolationAlert(deploymentName, policyName string, expectedCount int) {
+	waitForAlert(s.T(), s.alertService, s.violationAlertRequest(deploymentName, policyName), expectedCount)
+}
+
+// activeViolationText waits until one active alert exists and returns its violation messages.
+func (s *InitContainerSuite) activeViolationText(deploymentName, policyName string) string {
+	s.waitForViolationAlert(deploymentName, policyName, 1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	listResp, err := s.alertService.ListAlerts(ctx, s.violationAlertRequest(deploymentName, policyName))
+	cancel()
+	s.Require().NoError(err)
+	s.Require().Len(listResp.GetAlerts(), 1)
+
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	alert, err := s.alertService.GetAlert(ctx, &v1.ResourceByID{Id: listResp.GetAlerts()[0].GetId()})
+	cancel()
+	s.Require().NoError(err)
+	s.Require().NotEmpty(alert.GetViolations())
+
+	messages := make([]string, 0, len(alert.GetViolations()))
+	for _, violation := range alert.GetViolations() {
+		messages = append(messages, violation.GetMessage())
+	}
+	return strings.Join(messages, "\n")
+}
+
+func (s *InitContainerSuite) violationAlertRequest(deploymentName, policyName string) *v1.ListAlertsRequest {
 	query := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deploymentName).
 		AddStrings(search.PolicyName, policyName).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
-
-	waitForAlert(s.T(), s.alertService, &v1.ListAlertsRequest{Query: query.Query()}, expectedCount)
+	return &v1.ListAlertsRequest{Query: query.Query()}
 }
 
 func (s *InitContainerSuite) TestInitContainerExtraction() {
@@ -381,28 +407,85 @@ func (s *InitContainerSuite) TestPolicyEvaluatesBothContainerTypes() {
 	t.Logf("Verified: both init and regular containers with :latest tag triggered policy violation")
 }
 
-func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
+func (s *InitContainerSuite) TestEvaluationFilterSkipsContainers() {
 	t := s.T()
 	ns := fmt.Sprintf("init-test-filter-%d", rand.IntN(10000))
 	createNamespaceWithLabels(t, ns, nil)
 	defer deleteNamespace(t, ns)
 
-	policy := s.newLatestTagPolicy(
-		fmt.Sprintf("Test - Skip Init %d", rand.IntN(10000)), ns,
-	)
-	policy.EvaluationFilter = &storage.EvaluationFilter{
-		SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
-	}
-	createdPolicy := s.createPolicyWithCleanup(policy)
+	unfiltered := s.createPolicyWithCleanup(s.newLatestTagPolicy(
+		fmt.Sprintf("Test - Evaluate Init %d", rand.IntN(10000)), ns,
+	))
 
-	// Init uses :latest (would violate), regular uses tagged image (no violation).
-	// With skip-init filter, the only violating container is skipped — expect 0 alerts.
+	s.Require().Empty(unfiltered.GetEvaluationFilter().GetSkipContainerTypes())
+
+	// Both containers use :latest. Require an alert naming both before checking filters.
 	deployName := fmt.Sprintf("init-filter-skip-%d", rand.IntN(10000))
-	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxTagged)
+	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
 
-	s.waitForDeploymentWithContainers(deployName, 2)
+	dep := s.waitForDeploymentWithContainers(deployName, 2)
+	var initContainer, regularContainer *storage.Container
+	for _, c := range dep.GetContainers() {
+		switch c.GetType() {
+		case storage.ContainerType_INIT:
+			initContainer = c
+		case storage.ContainerType_REGULAR:
+			regularContainer = c
+		}
+	}
+	s.Require().NotNil(initContainer, "expected an init container")
+	s.Require().NotNil(regularContainer, "expected a regular container")
+	s.Equal("init-0", initContainer.GetName())
+	s.Equal(deployName, regularContainer.GetName())
+	s.Contains(initContainer.GetImage().GetName().GetFullName(), "busybox")
+	s.Contains(regularContainer.GetImage().GetName().GetFullName(), "nginx")
 
-	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 0)
-	t.Logf("Verified: policy with skip init filter produced no violations")
+	regularContainerRef := fmt.Sprintf("Container '%s'", deployName)
+	unfilteredText := s.activeViolationText(deployName, unfiltered.GetName())
+	s.Require().Contains(unfilteredText, regularContainerRef)
+	s.Require().Contains(unfilteredText, "Container 'init-0'")
+	s.Require().Contains(unfilteredText, "tag 'latest'")
+	t.Logf("Verified unfiltered alert names both containers: %s", unfilteredText)
+
+	tests := map[string]struct {
+		skipType           storage.ContainerType
+		evaluatedContainer string
+		skippedContainer   string
+		skippedImage       string
+	}{
+		"skip init": {
+			skipType:           storage.ContainerType_INIT,
+			evaluatedContainer: deployName,
+			skippedContainer:   "init-0",
+			skippedImage:       "busybox",
+		},
+		"skip regular": {
+			skipType:           storage.ContainerType_REGULAR,
+			evaluatedContainer: "init-0",
+			skippedContainer:   deployName,
+			skippedImage:       "nginx",
+		},
+	}
+	for name, tc := range tests {
+		s.Run(name, func() {
+			policy := s.newLatestTagPolicy(fmt.Sprintf("Test - %s %d", name, rand.IntN(10000)), ns)
+			policy.EvaluationFilter = &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.ContainerType{tc.skipType},
+			}
+			filtered := s.createPolicyWithCleanup(policy)
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			storedPolicy, err := s.policyService.GetPolicy(ctx, &v1.ResourceByID{Id: filtered.GetId()})
+			cancel()
+			s.Require().NoError(err)
+			s.Require().Equal([]storage.ContainerType{tc.skipType}, storedPolicy.GetEvaluationFilter().GetSkipContainerTypes())
+
+			filteredText := s.activeViolationText(deployName, filtered.GetName())
+			s.Require().Contains(filteredText, fmt.Sprintf("Container '%s'", tc.evaluatedContainer))
+			s.Require().Contains(filteredText, "tag 'latest'")
+			s.Require().NotContains(filteredText, fmt.Sprintf("Container '%s'", tc.skippedContainer))
+			s.Require().NotContains(filteredText, tc.skippedImage)
+		})
+	}
 }

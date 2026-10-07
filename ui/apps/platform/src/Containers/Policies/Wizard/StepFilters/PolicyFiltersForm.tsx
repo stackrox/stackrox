@@ -16,6 +16,10 @@ import { useFormikContext } from 'formik';
 import type { ClientPolicy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { toggleItemInArray } from 'utils/arrayUtils';
+import { containerTypeFilterApplies } from '../../policies.utils';
+
+const containerTypeFilterMessage =
+    'Container type filters apply to deploy-time policies and to runtime policies with a deployment event source.';
 
 function PolicyFiltersForm() {
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
@@ -27,10 +31,10 @@ function PolicyFiltersForm() {
 
     const skipContainerTypes = values.evaluationFilter?.skipContainerTypes ?? [];
 
-    const hasDeployOrRuntime =
-        values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
-
-    const containerFilterDisabled = !hasDeployOrRuntime;
+    const containerFilterDisabled = !containerTypeFilterApplies(
+        values.lifecycleStages,
+        values.eventSource
+    );
 
     useEffect(() => {
         if (containerFilterDisabled && skipContainerTypes.length > 0) {
@@ -57,7 +61,7 @@ function PolicyFiltersForm() {
                 <Stack hasGutter>
                     <Title headingLevel="h2">Filters</Title>
                     <Content component="p">
-                        Control which parts of an image or workload this policy evaluates.
+                        Control which parts of a workload this policy evaluates.
                     </Content>
                 </Stack>
             </FlexItem>
@@ -74,7 +78,7 @@ function PolicyFiltersForm() {
                             <Alert
                                 isInline
                                 variant="info"
-                                title="Container type filters require the Deploy or Runtime lifecycle stage."
+                                title={containerTypeFilterMessage}
                                 component="p"
                             />
                         )}
@@ -88,17 +92,15 @@ function PolicyFiltersForm() {
                                         isDisabled={containerFilterDisabled}
                                         onChange={handleSkipInitChange}
                                     />
-                                    <Alert
-                                        isInline
-                                        isPlain
-                                        variant="info"
-                                        title={
-                                            containerFilterDisabled
-                                                ? 'Container type filtering is only available for policies with the Deploy or Runtime lifecycle stage.'
-                                                : containerTypeDescription
-                                        }
-                                        component="p"
-                                    />
+                                    {!containerFilterDisabled && (
+                                        <Alert
+                                            isInline
+                                            isPlain
+                                            variant="info"
+                                            title={containerTypeDescription}
+                                            component="p"
+                                        />
+                                    )}
                                 </Stack>
                             </FormGroup>
                         </Form>

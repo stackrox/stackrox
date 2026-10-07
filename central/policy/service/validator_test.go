@@ -1391,19 +1391,25 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
+		"deploy with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
+		},
 		"build + deploy with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
-			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
-		},
-		"runtime with skip init is allowed": {
-			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
 		"build-only with no filter is allowed": {
 			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		},
-		"no lifecycle stages with skip init is allowed": {
+		"runtime without event source with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
+		"no lifecycle stages with skip init is rejected": {
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
 		},
 		"audit log event with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
@@ -1421,6 +1427,11 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
 			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"deployment event with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
 		},
 	}
 

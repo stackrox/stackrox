@@ -78,6 +78,9 @@ func getTestPolicy() *storage.Policy {
 		ClusterLabel:   &storage.Scope_Label{Key: "env", Value: "prod"},
 		NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "platform"},
 	})
+	p.EvaluationFilter = &storage.EvaluationFilter{
+		SkipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR, storage.ContainerType_INIT},
+	}
 	return p
 }
 

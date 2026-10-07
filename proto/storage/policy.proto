@@ -180,7 +180,7 @@ enum Comparator {
 
 // EvaluationFilter pre-filters which entities a policy evaluates.
 message EvaluationFilter {
-  repeated ContainerType skip_container_types = 1;
+  repeated ContainerType skip_container_types = 1; // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
 }
 
 message Exclusion {
