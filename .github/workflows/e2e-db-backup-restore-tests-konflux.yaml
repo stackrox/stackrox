@@ -36,14 +36,7 @@ jobs:
       use-konflux-images: true
       cluster-provisioning-method: infra
       cluster-name-prefix: e2e-dbbr-ocp
-      infra-flavor: openshift-4
-      infra-args: |
-        openshift-version=ocp/stable-4.22
-        master-node-type=e2-standard-4
-        master-node-count=3
-        worker-node-type=e2-standard-8
-        worker-node-count=3
-        ssd-storage-class=true
+      infra-flavor: rosahcp
       cluster-wait-timeout-minutes: 50
       job-timeout-minutes: 120
       orchestrator-flavor: openshift
