@@ -2,6 +2,7 @@ package m2m
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -30,9 +31,11 @@ type TokenExchanger interface {
 	Config() *storage.AuthMachineToMachineConfig
 	Configs() []*storage.AuthMachineToMachineConfig
 	GetTokenExpirationDuration() time.Duration
+	GetType() storage.AuthMachineToMachineConfig_Type
 }
 
 type machineToMachineTokenExchanger struct {
+	exchangerType     storage.AuthMachineToMachineConfig_Type
 	configs           []*storage.AuthMachineToMachineConfig
 	configMappings    []*storage.AuthMachineToMachineConfig_Mapping
 	verifiers         []tokenVerifier
@@ -45,23 +48,47 @@ type machineToMachineTokenExchanger struct {
 }
 
 // newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
-func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig,
-	roleDS roleDataStore.DataStore, issuerFactory tokens.IssuerFactory) (TokenExchanger, error) {
+func newTokenExchanger(
+	ctx context.Context,
+	config *storage.AuthMachineToMachineConfig,
+	roleDS roleDataStore.DataStore,
+	issuerFactory tokens.IssuerFactory,
+) (TokenExchanger, error) {
 	configs := []*storage.AuthMachineToMachineConfig{config}
+	return newMultiConfigTokenExchanger(ctx, configs, roleDS, issuerFactory)
+}
+
+func newMultiConfigTokenExchanger(
+	ctx context.Context,
+	configs []*storage.AuthMachineToMachineConfig,
+	roleDS roleDataStore.DataStore,
+	issuerFactory tokens.IssuerFactory,
+) (TokenExchanger, error) {
+	if err := validateConfigConsistency(configs); err != nil {
+		return nil, errors.Wrap(err, "creating token exchanger")
+	}
+	// The step above should ensure that there is at least one config in input,
+	// and that all configs share the same issuer and type.
+	exchangerType := configs[0].GetType()
+	exchangerIssuer := configs[0].GetIssuer()
+
 	tokenTTL, err := getTTLFromConfigs(configs)
 	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
 	// data store).
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing token expiration duration")
 	}
-	exchangerType := config.GetType()
-	exchangerIssuer := config.GetIssuer()
 
 	audiences := set.NewStringSet()
 	mappings := make([]*storage.AuthMachineToMachineConfig_Mapping, 0)
+	parsedMappings := make([]parsedMapping, 0)
 	for _, cfg := range configs {
 		audiences.Add(cfg.GetAudience())
-		mappings = append(mappings, config.GetMappings()...)
+		mappings = append(mappings, cfg.GetMappings()...)
+		parsedMappings = append(
+			parsedMappings,
+			parseMappings(cfg.GetMappings(), cfg.GetAudience())...,
+		)
 	}
 	verifiers := make([]tokenVerifier, 0, audiences.Cardinality())
 	for audience := range audiences {
@@ -71,15 +98,16 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 		}
 		verifiers = append(verifiers, v)
 	}
-	claimToRoleMapper := newRoleMapperFromMappings(mappings, roleDS)
-	provider := newProvider(config.GetIssuer(), config.GetType().String(), claimToRoleMapper)
-	roxClaimExtractor := newClaimExtractorForConfigType(config.GetType())
+	claimToRoleMapper := newRoleMapperFromParsedMappings(parsedMappings, roleDS)
+	provider := newProvider(exchangerIssuer, exchangerType.String(), claimToRoleMapper)
+	roxClaimExtractor := newClaimExtractorForConfigType(exchangerType)
 	issuer, err := issuerFactory.CreateIssuer(provider, tokens.WithTTL(tokenTTL))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating token issuer")
 	}
 
 	return &machineToMachineTokenExchanger{
+		exchangerType:     exchangerType,
 		configs:           configs,
 		issuer:            issuer,
 		verifiers:         verifiers,
@@ -89,6 +117,36 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 		tokenTTL:          tokenTTL,
 		mappings:          claimToRoleMapper.mappings,
 	}, nil
+}
+
+func validateConfigConsistency(configs []*storage.AuthMachineToMachineConfig) error {
+	if len(configs) == 0 {
+		return errox.InvalidArgs.New("no auth machine to machine configuration provided for exchanger creation")
+	}
+	issuer := configs[0].GetIssuer()
+	exchangerType := configs[0].GetType()
+	var multiErr error
+	for _, config := range configs[1:] {
+		cfgIssuer := config.GetIssuer()
+		cfgType := config.GetType()
+		if issuer != cfgIssuer {
+			multiErr = multierror.Append(
+				multiErr,
+				errox.InvalidArgs.Newf("issuer mismatch %q vs %q", issuer, cfgIssuer),
+			)
+		}
+		if exchangerType != cfgType {
+			multiErr = multierror.Append(
+				multiErr,
+				errox.InvalidArgs.Newf("type mismatch %q vs %q", exchangerType.String(), cfgType.String()),
+			)
+		}
+	}
+
+	if multiErr != nil {
+		return multiErr
+	}
+	return nil
 }
 
 func getTTLFromConfigs(configs []*storage.AuthMachineToMachineConfig) (time.Duration, error) {
@@ -119,6 +177,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	idTokens := make([]*IDToken, 0, len(m.verifiers))
 	var subject string
 	var multiErr error
+	var verifiedAudiences set.StringSet
 	for _, verifier := range m.verifiers {
 		verifiedIDToken, err := verifier.VerifyIDToken(ctx, rawIDToken)
 		if err != nil {
@@ -126,6 +185,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 			continue
 		}
 		subject = verifiedIDToken.Subject
+		verifiedAudiences.Add(verifier.Audience())
 		idTokens = append(idTokens, verifiedIDToken)
 	}
 	if len(idTokens) == 0 {
@@ -143,6 +203,10 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 		mergeClaims(extractedClaims, tokenClaims)
 	}
 	pruneDuplicateClaims(extractedClaims)
+	// Only keep audience values that verified
+	extractedClaims["aud"] = slices.DeleteFunc(extractedClaims["aud"], func(audience string) bool {
+		return !verifiedAudiences.Contains(audience)
+	})
 
 	log.Debugf("String claims of the ID token (sub=%q): %+v", subject, extractedClaims)
 
@@ -199,4 +263,8 @@ func (m *machineToMachineTokenExchanger) GetTokenExpirationDuration() time.Durat
 
 func (m *machineToMachineTokenExchanger) Configs() []*storage.AuthMachineToMachineConfig {
 	return m.configs
+}
+
+func (m *machineToMachineTokenExchanger) GetType() storage.AuthMachineToMachineConfig_Type {
+	return m.exchangerType
 }
