@@ -393,7 +393,7 @@ func TestPhantomHistoricalStream(t *testing.T) {
 func TestCommandIgnoresSuccessfulStderr(t *testing.T) {
 	output, err := command(t.TempDir(), "sh", "-c", "printf '5.1.x'; printf 'warning' >&2")
 	require.NoError(t, err)
-	require.Equal(t, "5.1.x", string(output))
+	require.Equal(t, "5.1.x", output)
 }
 
 func TestMajorBoundaryAndReleaseCandidate(t *testing.T) {
@@ -436,7 +436,7 @@ func TestParseSequence(t *testing.T) {
 		"expression": {"package internal\nvar CurrentDBVersionSeqNum = 200 + 1", 0},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got, err := parseSequence([]byte(tc.source))
+			got, err := parseSequence(tc.source)
 			if tc.want == 0 {
 				require.Error(t, err)
 			} else {
