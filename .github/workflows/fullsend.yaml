@@ -1,4 +1,6 @@
-# This file is managed by fullsend. Do not edit it directly.
+# StackRox policy override to the Fullsend-managed workflow: agent work must
+# start only from an explicit, non-bot /fs-* issue or PR comment. Preserve this
+# trigger policy when updating the generated scaffold.
 # Upstream: https://github.com/fullsend-ai/fullsend/blob/main/internal/scaffold/fullsend-repo/.github/workflows/fullsend.yaml
 ---
 # fullsend shim workflow (per-repo installation mode)
@@ -20,25 +22,17 @@
 name: fullsend
 
 on:
-  issues:
-    types: [opened, edited, labeled]
   issue_comment:
     types: [created]
-  pull_request_target:
-    types: [opened, synchronize, ready_for_review, closed, labeled, unlabeled]
-  pull_request_review:
-    types: [submitted]
 
 permissions: {}
 
 jobs:
   dispatch:
     if: >-
-      (github.event_name != 'pull_request_target' && github.event_name != 'pull_request_review'
-       || github.event.pull_request.head.ref != 'fullsend/scaffold-install')
-      && (github.event_name != 'issue_comment'
-       || (startsWith(github.event.comment.body, '/fs-')
-           && github.event.comment.user.type != 'Bot'))
+      github.event_name == 'issue_comment'
+      && startsWith(github.event.comment.body, '/fs-')
+      && github.event.comment.user.type != 'Bot'
     cache-mode: read
     permissions:
       actions: write
