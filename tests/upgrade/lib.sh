@@ -128,10 +128,13 @@ deploy_earlier_postgres_central() {
     # because the later Helm upgrade cannot change an existing PVC's class.
     local helm_extra_args=()
     if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
-        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
-            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
-        fi
         helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+    if [[ -n "${STORAGE_CLASS:-}" ]]; then
+        helm_extra_args+=(--set "central.db.persistence.persistentVolumeClaim.storageClass=${STORAGE_CLASS}")
+    fi
+    if [[ "${SCANNER_V4_DB_STORAGE_CLASS:-}" == "faster" || "${STORAGE_CLASS:-}" == "faster" ]]; then
+        kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
     fi
 
     # The generated chart can inherit the PR tag, which has no Scanner V2 images.
