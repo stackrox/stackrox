@@ -117,7 +117,7 @@ jobs:
         setup_deployment_env false false
 
         roxie_config=$(mktemp)
-        patch_yaml "${roxie_config}" ".central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = premium-rwo"
+        patch_yaml "${roxie_config}" '.central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = "premium-rwo"'
         deploy_stackrox_with_roxie_compat "${roxie_config}"
         rm -f "${roxie_config}"
 
