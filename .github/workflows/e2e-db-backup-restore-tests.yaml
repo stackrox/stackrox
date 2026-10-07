@@ -162,7 +162,7 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Install oc
-      if: startsWith(inputs.infra-flavor || 'gke-default', 'openshift')
+      if: startsWith(inputs.infra-flavor || 'gke-default', 'openshift', 'rosa')
       run: |
         curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
           | tar xz -C /usr/local/bin oc
