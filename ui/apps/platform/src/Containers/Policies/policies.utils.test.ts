@@ -1,6 +1,5 @@
 import type { ClientPolicy, Policy } from 'types/policy.proto';
 import {
-    containerTypeFilterApplies,
     getClientWizardPolicy,
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
@@ -884,19 +883,6 @@ describe('policies.utils', () => {
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
             });
-        });
-    });
-
-    describe('containerTypeFilterApplies', () => {
-        it('applies to deploy-time policies and runtime policies with a deployment event source', () => {
-            expect(containerTypeFilterApplies(['DEPLOY'], 'NOT_APPLICABLE')).toBe(true);
-            expect(containerTypeFilterApplies(['BUILD', 'DEPLOY'], 'NOT_APPLICABLE')).toBe(true);
-            expect(containerTypeFilterApplies(['RUNTIME'], 'DEPLOYMENT_EVENT')).toBe(true);
-            expect(containerTypeFilterApplies(['BUILD'], 'NOT_APPLICABLE')).toBe(false);
-            expect(containerTypeFilterApplies(['RUNTIME'], 'NOT_APPLICABLE')).toBe(false);
-            expect(containerTypeFilterApplies(['RUNTIME'], 'AUDIT_LOG_EVENT')).toBe(false);
-            expect(containerTypeFilterApplies(['RUNTIME'], 'NODE_EVENT')).toBe(false);
-            expect(containerTypeFilterApplies([], 'NOT_APPLICABLE')).toBe(false);
         });
     });
 });

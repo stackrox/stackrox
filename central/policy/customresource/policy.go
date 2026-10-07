@@ -111,22 +111,6 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 	}
 }
 
-// EvaluationFilter represents storage.EvaluationFilter in the Custom Resource.
-type EvaluationFilter struct {
-	SkipContainerTypes []string `yaml:"skipContainerTypes,omitempty"`
-}
-
-// convertEvaluationFilter Converts storage.EvaluationFilter to *EvaluationFilter
-func convertEvaluationFilter(p *storage.EvaluationFilter) *EvaluationFilter {
-	if p == nil {
-		return nil
-	}
-
-	return &EvaluationFilter{
-		SkipContainerTypes: sliceutils.StringSlice(p.SkipContainerTypes...),
-	}
-}
-
 // Policy represents storage.Policy in the Custom Resource.
 type Policy struct {
 	Name               string       `yaml:"policyName"`
@@ -147,7 +131,7 @@ type Policy struct {
 	CriteriaLocked     bool                                 `yaml:"criteriaLocked"`
 	MitreVectorsLocked bool                                 `yaml:"mitreVectorsLocked"`
 	IsDefault          bool                                 `yaml:"isDefault"`
-	EvaluationFilter   *EvaluationFilter                    `yaml:"evaluationFilter,omitempty"`
+	EvaluationFilter   *storage.EvaluationFilter            `yaml:"evaluationFilter,omitempty"`
 }
 
 // convertPolicy Converts storage.Policy to *Policy
@@ -175,7 +159,7 @@ func convertPolicy(p *storage.Policy) *Policy {
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
-		EvaluationFilter:   convertEvaluationFilter(p.EvaluationFilter),
+		EvaluationFilter:   p.EvaluationFilter,
 	}
 }
 

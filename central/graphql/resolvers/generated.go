@@ -1448,7 +1448,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SkipContainerType(0)))
 	utils.Must(builder.AddType("SlimUser", []string{
 		"id: ID!",
 		"name: String!",
@@ -15628,24 +15627,6 @@ func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx conte
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx context.Context) string {
 	value := resolver.data.GetNamespaceName()
 	return value
-}
-
-func toSkipContainerType(value *string) storage.SkipContainerType {
-	if value != nil {
-		return storage.SkipContainerType(storage.SkipContainerType_value[*value])
-	}
-	return storage.SkipContainerType(0)
-}
-
-func toSkipContainerTypes(values *[]string) []storage.SkipContainerType {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.SkipContainerType, len(*values))
-	for i, v := range *values {
-		output[i] = toSkipContainerType(&v)
-	}
-	return output
 }
 
 type slimUserResolver struct {

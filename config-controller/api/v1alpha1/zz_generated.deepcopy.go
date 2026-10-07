@@ -45,7 +45,7 @@ func (in *EvaluationFilter) DeepCopyInto(out *EvaluationFilter) {
 	*out = *in
 	if in.SkipContainerTypes != nil {
 		in, out := &in.SkipContainerTypes, &out.SkipContainerTypes
-		*out = make([]SkipContainerType, len(*in))
+		*out = make([]ContainerType, len(*in))
 		copy(*out, *in)
 	}
 }

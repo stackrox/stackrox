@@ -96,12 +96,6 @@ func generateTemplateData(t reflect.Type, visited set.StringSet) []ConvertType {
 			fieldType = utils.IfThenElse(isSlice, "[]string", "string")
 		}
 
-		// A stringer or timestamp field is rewritten as a string. A message that
-		// contains only those fields still needs its own converted type, otherwise
-		// the parent embeds the proto and YAML uses the Go field name and wire value.
-		if isStringer || isTimeStamp {
-			needUpdate = true
-		}
 		needConversion := !isStringer && !isTimeStamp && checkForConversion(field)
 		if needConversion {
 			if !visited.Contains(field.Name) {

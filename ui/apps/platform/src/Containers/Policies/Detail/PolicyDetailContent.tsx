@@ -69,7 +69,6 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                 <PolicyFiltersSection
                     evaluationFilter={evaluationFilter}
                     lifecycleStages={lifecycleStages}
-                    eventSource={eventSource}
                 />
                 <Stack hasGutter>
                     <Title headingLevel="h2">Policy resources</Title>
