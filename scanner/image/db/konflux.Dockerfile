@@ -36,15 +36,7 @@ RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
     chown -R postgres:postgres /var/lib/postgresql && \
     chown -R postgres:postgres /var/run/postgresql && \
-    # TODO(cdu): review note, remove before the PR. The design doc says to add
-    # this chown to both Dockerfiles, but scanner/image/db/Dockerfile already
-    # had it (added by ROX-29205 when the image moved to the postgres base
-    # image), so only konflux.Dockerfile actually changes here.
-    #
-    # The image WORKDIR is /opt/app-root/src, owned by uid 26, but the container
-    # runs as uid 70. pg_upgrade writes delete_old_cluster.sh relative to the
-    # working directory, so it needs to be writable. Mirrors
-    # image/postgres/konflux.Dockerfile; scanner/image/db/Dockerfile already does this.
+    # Update ownership of directories that are owned by the original postgres uid.
     chown -R postgres /var/lib/pgsql && chown -R postgres /opt/app-root && \
     dnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
