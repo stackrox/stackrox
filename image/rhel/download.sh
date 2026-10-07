@@ -3,6 +3,7 @@
 set -euo pipefail
 
 arch=$(uname -m)
+postgres_major="${PG_VERSION:-15}"
 goarch="$arch"
 dnf_list_args=()
 if [[ "$arch" == "x86_64" ]]; then
@@ -35,11 +36,15 @@ fi
 mkdir -p "$output_dir/rpms"
 
 if [[ "$arch" == "s390x" ]]; then
+  # PGDG publishes no s390x RPMs, so the clients come from the CentOS Stream
+  # base image this stage runs on for that architecture. The module stream must
+  # be enabled explicitly: plain "postgresql" resolves to the distro default,
+  # which is older than the central-db server and so cannot dump it.
+  dnf module enable -y "postgresql:${postgres_major}"
   dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
-  postgres_major=15
   pg_rhel_major=8
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"
