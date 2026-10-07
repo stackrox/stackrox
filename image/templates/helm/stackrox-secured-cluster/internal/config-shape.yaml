@@ -182,6 +182,11 @@ customize:
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
+# Undocumented, test-only: when true, global (cluster-scoped) resources that opt in via
+# srox.optionalGlobalResourceName get namespace-prefixed names to avoid clashes when
+# multiple secured clusters are deployed into different namespaces of one cluster.
+# Defaults to false so production keeps stable, static names.
+namespacePrefixGlobalResources: null # bool
 enableOpenShiftMonitoring: null # bool
 monitoring:
   openshift:
