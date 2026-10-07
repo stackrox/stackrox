@@ -31,8 +31,17 @@ import (
 )
 
 const defaultOutput = "scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
+const defaultBundleRevision = "2026-10-07T00:00:00Z"
 
 var namespaceOID = uuid.FromStringOrPanic("6ba7b812-9dad-11d1-80b4-00c04fd430c8")
+
+func bundleRevision() time.Time {
+	revision, err := time.Parse(time.RFC3339, defaultBundleRevision)
+	if err != nil {
+		panic(err)
+	}
+	return revision
+}
 
 // Fixtures are explicit native records. Expectations live separately in the
 // Scanner and backend tests; this command never reads tests or a source bundle.
@@ -204,6 +213,10 @@ func validateEnrichment(e *driver.EnrichmentRecord) error {
 }
 
 func writeArchive(w io.Writer, records []fixtureOperation) error {
+	return writeArchiveAt(w, records, bundleRevision())
+}
+
+func writeArchiveAt(w io.Writer, records []fixtureOperation, revision time.Time) error {
 	zw := zip.NewWriter(w)
 	for start := 0; start < len(records); {
 		end := start + 1
@@ -211,7 +224,7 @@ func writeArchive(w io.Writer, records []fixtureOperation) error {
 			end++
 		}
 		header := &zip.FileHeader{Name: records[start].Member, Method: zip.Store}
-		header.SetModTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+		header.SetModTime(revision)
 		header.SetMode(0644)
 		member, err := zw.CreateHeader(header)
 		if err != nil {
@@ -219,7 +232,7 @@ func writeArchive(w io.Writer, records []fixtureOperation) error {
 		}
 		err = bundle.WriteCompressed(member, func(w io.Writer) error {
 			for _, op := range records[start:end] {
-				if err := writeOperation(w, op); err != nil {
+				if err := writeOperation(w, op, revision); err != nil {
 					return err
 				}
 			}
@@ -234,7 +247,7 @@ func writeArchive(w io.Writer, records []fixtureOperation) error {
 }
 
 // A fresh store for each operation avoids the store's map iteration order.
-func writeOperation(w io.Writer, op fixtureOperation) error {
+func writeOperation(w io.Writer, op fixtureOperation, revision time.Time) error {
 	store, err := storeblob.New()
 	if err != nil {
 		return err
@@ -254,7 +267,7 @@ func writeOperation(w io.Writer, op fixtureOperation) error {
 	if err := store.Store(&serialized); err != nil {
 		return err
 	}
-	return normalizeRecords(w, &serialized, op.Ref, time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+	return normalizeRecords(w, &serialized, op.Ref, revision)
 }
 
 // Preserve the production envelope and payload, normalizing only volatile metadata.
@@ -347,6 +360,11 @@ func validateMember(member *zip.File, seen map[string]bool) error {
 }
 
 func generate(output string, check bool, fixtures []operation) error {
+	return generateAt(output, check, fixtures, bundleRevision())
+}
+
+func generateAt(output string, check bool, fixtures []operation, revision time.Time) error {
+	revision = revision.UTC().Truncate(time.Second)
 	records, err := entries(fixtures)
 	if err != nil {
 		return err
@@ -357,7 +375,7 @@ func generate(output string, check bool, fixtures []operation) error {
 		return err
 	}
 	defer func() { _ = os.Remove(f.Name()) }()
-	writeErr := writeArchive(f, records)
+	writeErr := writeArchiveAt(f, records, revision)
 	closeErr := f.Close()
 	if writeErr != nil {
 		return writeErr
@@ -382,8 +400,46 @@ func generate(output string, check bool, fixtures []operation) error {
 		}
 		return nil
 	}
+	got, err := os.ReadFile(f.Name())
+	if err != nil {
+		return err
+	}
+	identical, err := checkExistingBundle(output, got, revision)
+	if err != nil {
+		return err
+	}
+	if identical {
+		return nil
+	}
 	if err := os.Chmod(f.Name(), 0644); err != nil {
 		return err
 	}
 	return os.Rename(f.Name(), output)
+}
+
+func checkExistingBundle(output string, candidate []byte, revision time.Time) (bool, error) {
+	existing, err := os.ReadFile(output)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("read existing bundle %s: %w", output, err)
+	}
+	if bytes.Equal(existing, candidate) {
+		return true, nil
+	}
+	if err := validateArchive(output); err != nil {
+		return false, fmt.Errorf("existing bundle %s is invalid; refusing to replace it: %w", output, err)
+	}
+	archive, err := zip.OpenReader(output)
+	if err != nil {
+		return false, fmt.Errorf("open existing bundle %s: %w", output, err)
+	}
+	defer func() { _ = archive.Close() }()
+	for _, member := range archive.File {
+		if !revision.After(member.Modified) {
+			return false, fmt.Errorf("bundle revision %s must be later than existing member %q timestamp %s; bump defaultBundleRevision before replacing the archive", revision.Format(time.RFC3339), member.Name, member.Modified.Format(time.RFC3339))
+		}
+	}
+	return false, nil
 }

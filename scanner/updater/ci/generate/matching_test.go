@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
@@ -98,6 +100,128 @@ func TestFixtureMatching(t *testing.T) {
 			})
 		}
 	}
+}
+
+// TestFixturePersistentUpdate imports a changed vulnerability and enrichment
+// over existing rows in the same database. A fixed Last-Modified header keeps
+// HTTP freshness independent from the member revision under test; the server
+// always returns 200 so repeat B reaches the ZIP member timestamp check.
+func TestFixturePersistentUpdate(t *testing.T) {
+	conn := os.Getenv("SCANNER_CI_TEST_DB")
+	if conn == "" {
+		t.Skip("SCANNER_CI_TEST_DB is required (creates isolated databases)")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	admin, err := pgxpool.New(ctx, conn)
+	require.NoError(t, err)
+	defer admin.Close()
+	dbName := "ci_fixture_update_" + strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+	_, err = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{dbName}.Sanitize())
+	require.NoError(t, err)
+	defer func() {
+		_, err := admin.Exec(context.Background(), "DROP DATABASE "+pgx.Identifier{dbName}.Sanitize())
+		require.NoError(t, err)
+	}()
+	dbConn := conn + " dbname=" + dbName
+	if strings.HasPrefix(conn, "postgres://") || strings.HasPrefix(conn, "postgresql://") {
+		u, err := url.Parse(conn)
+		require.NoError(t, err)
+		u.Path = "/" + dbName
+		q := u.Query()
+		q.Del("dbname")
+		u.RawQuery = q.Encode()
+		dbConn = u.String()
+	}
+	cfg, err := pgxpool.ParseConfig(dbConn)
+	require.NoError(t, err)
+
+	const (
+		member            = "persistent-fixture.json.zst"
+		updaterName       = "persistent-vulnerability-fixture"
+		enrichmentUpdater = "persistent-enrichment-fixture"
+		cve               = "CVE-2030-0001"
+	)
+	revisionA := time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC)
+	revisionB := time.Date(2026, 10, 7, 0, 0, 0, 0, time.UTC)
+	makeFixture := func(description, fixedVersion, enrichmentRevision string) []operation {
+		return []operation{
+			{Member: member, Updater: updaterName, Vulnerabilities: []*claircore.Vulnerability{{
+				Name: cve, Description: description,
+				Package:        &claircore.Package{Name: "persistent-fixture-package", Kind: types.BinaryPackage},
+				Dist:           &claircore.Distribution{DID: "persistent-fixture-distro", VersionID: "1"},
+				FixedInVersion: fixedVersion,
+			}}},
+			{Member: member, Updater: enrichmentUpdater, Enrichments: []enrichmentFixture{{
+				Tags: []string{cve}, Payload: map[string]string{"id": cve, "revision": enrichmentRevision},
+			}}},
+		}
+	}
+	bundleA := filepath.Join(t.TempDir(), "a.zip")
+	bundleB := filepath.Join(t.TempDir(), "b.zip")
+	require.NoError(t, generateAt(bundleA, false, makeFixture("revision A", "2.0", "A"), revisionA))
+	require.NoError(t, generateAt(bundleB, false, makeFixture("revision B", "3.0", "B"), revisionB))
+	bundleABytes, err := os.ReadFile(bundleA)
+	require.NoError(t, err)
+	bundleBBytes, err := os.ReadFile(bundleB)
+	require.NoError(t, err)
+
+	var servedBundle atomic.Value
+	servedBundle.Store(bundleABytes)
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Last-Modified", time.Date(2026, 10, 8, 0, 0, 0, 0, time.UTC).Format(http.TimeFormat))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(servedBundle.Load().([]byte))
+	}))
+	defer server.Close()
+
+	load := func() {
+		t.Helper()
+		require.NoError(t, updater.Load(ctx, cfg.ConnString(), server.URL))
+	}
+	load()
+
+	pool, err := postgres.Connect(ctx, cfg.ConnString(), "ci-fixture-persistent-update-test")
+	require.NoError(t, err)
+	defer pool.Close()
+	store, err := postgres.InitPostgresMatcherStore(ctx, pool, false)
+	require.NoError(t, err)
+	assertImported := func(description, fixedVersion, enrichmentRevision string, revision time.Time) {
+		t.Helper()
+		records, err := store.Get(ctx, []*claircore.IndexRecord{{
+			Package:      &claircore.Package{ID: "persistent-fixture-package-id", Name: "persistent-fixture-package", Version: "1", Kind: types.BinaryPackage, Source: &claircore.Package{}},
+			Distribution: &claircore.Distribution{DID: "persistent-fixture-distro", VersionID: "1"},
+		}}, datastore.GetOpts{})
+		require.NoError(t, err)
+		require.Len(t, records["persistent-fixture-package-id"], 1)
+		vuln := records["persistent-fixture-package-id"][0]
+		require.Equal(t, cve, vuln.Name)
+		require.Equal(t, description, vuln.Description)
+		require.Equal(t, fixedVersion, vuln.FixedInVersion)
+
+		enrichments, err := store.GetEnrichment(ctx, enrichmentUpdater, []string{cve})
+		require.NoError(t, err)
+		require.Len(t, enrichments, 1)
+		var enrichment map[string]string
+		require.NoError(t, json.Unmarshal(enrichments[0].Enrichment, &enrichment))
+		require.Equal(t, enrichmentRevision, enrichment["revision"])
+
+		var storedRevision time.Time
+		err = pool.QueryRow(ctx, "SELECT update_timestamp FROM last_vuln_update WHERE key = $1", member).Scan(&storedRevision)
+		require.NoError(t, err)
+		require.True(t, storedRevision.Equal(revision), "stored member timestamp")
+	}
+	assertImported("revision A", "2.0", "A", revisionA)
+
+	servedBundle.Store(bundleBBytes)
+	load()
+	assertImported("revision B", "3.0", "B", revisionB)
+	load()
+	assertImported("revision B", "3.0", "B", revisionB)
+	require.EqualValues(t, 3, requests.Load(), "each import, including repeat B, should receive HTTP 200")
 }
 
 func singlePackageReport(p *claircore.Package, d *claircore.Distribution, r *claircore.Repository) *claircore.IndexReport {

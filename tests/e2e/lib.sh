@@ -135,10 +135,12 @@ _scanner_v4_ci_vuln_bundle_url() {
     printf '%s\n' "$scanner_v4_ci_vuln_bundle_url"
 }
 
-# Installation tests historically use the CI pin even for local runs. Nightlies
-# omit it so each tested chart/version supplies its own production default.
+# Current-chart installation tests use the CI pin in regular and local runs.
+# Nightlies and older charts omit it so the deployed chart version uses its
+# production bundle URL.
 _scanner_v4_install_bundle_values() {
-    if is_nightly_run; then
+    local use_default_chart="${1:-true}"
+    if [[ "$use_default_chart" == "false" ]] || is_nightly_run; then
         echo "Scanner V4 bundle: production (deployed version default)" >&2
         return 0
     fi

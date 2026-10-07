@@ -1229,7 +1229,7 @@ EOT
         create_central_pull_secrets "$central_namespace"
 
         local scanner_bundle_values
-        scanner_bundle_values="$(_scanner_v4_install_bundle_values)" || return 1
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values "$use_default_chart")" || return 1
         base_helm_values=$(cat <<EOT
 central:
   resources:
@@ -1393,7 +1393,7 @@ EOT
         create_sensor_pull_secrets "$sensor_namespace"
 
         local scanner_bundle_values
-        scanner_bundle_values="$(_scanner_v4_install_bundle_values)" || return 1
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values "$use_default_chart")" || return 1
         base_helm_values=$(cat <<EOT
 clusterName: "$cluster_name"
 centralEndpoint: "$central_endpoint"

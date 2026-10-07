@@ -1,10 +1,11 @@
 # Offline Scanner E2E vulnerability bundle
 
-Regular E2E runs use the checked-in CI-minimal bundle. Nightlies use the
-production feed selected by the deployed Scanner version. The generator creates
-native Scanner update data from explicit fixtures; it does not download or filter
-a production feed, inspect test expectations, or change production updater
-configuration.
+Regular and local installation runs using the current chart use the checked-in
+CI-minimal bundle. Nightlies and installations using an older chart omit that
+override so the deployed chart and Scanner version use their production feed.
+The generator creates native Scanner update data from explicit fixtures; it does
+not download or filter a production feed, inspect test expectations, or change
+production updater configuration.
 
 ## Regenerate
 
@@ -21,12 +22,20 @@ The generated file is
 CI checks for uncommitted generated changes.
 
 The generator uses ClairCore's `jsonblob.Store` to write the same record format
-as production export, and both use `scanner/updater/bundle.WriteCompressed`.
-CI still groups, deduplicates and sorts native payloads, derives fingerprints and
-references from their canonical content, and normalizes only the store's random
-`Ref` and current `Date`. Unknown envelope fields and complete payloads are
-preserved. Each operation uses a separate store to avoid map iteration order.
-Fixed ZIP metadata and CI compression settings keep repeated generation
+as production export, and both use `scanner/updater/bundle.WriteCompressed` for
+compressed record bodies. Those are the exact shared serialization boundaries.
+Fixture preparation, record normalization, ZIP member metadata, and ZIP assembly
+remain specific to the generator; production updater paths are unchanged.
+CI groups, deduplicates and sorts native payloads, derives fingerprints and
+references from canonical content, and writes a checked-in UTC bundle revision
+into both each ZIP member timestamp and each normalized record `Date`. The
+initial revision is `2026-10-07T00:00:00Z`. When fixture changes alter archive
+bytes, advance that revision strictly beyond every member timestamp in the
+existing archive. Identical bytes are accepted without rewriting; invalid
+existing archives and stale or equal revisions fail while preserving the
+destination. Unknown envelope fields and complete payloads are preserved. Each
+operation uses a separate store to avoid map iteration order. Fixed revision,
+ZIP metadata, and CI compression settings keep repeated generation
 byte-identical; production keeps its default compression settings.
 
 ## Update fixtures
@@ -55,11 +64,15 @@ CI_MINIMAL_BUNDLE_PATH="$PWD/scanner/image/scanner/bundles/ci-minimal/vulnerabil
 go test ./scanner/matcher/updater/vuln -run '^TestCIMinimalBundleValid$' -count=1
 ```
 
-The optional `scanner_db_integration` test in `generate/matching_test.go` exercises
+The optional `scanner_db_integration` tests in `generate/matching_test.go` exercise
 the production importer and matchers against disposable PostgreSQL databases.
-Set `SCANNER_CI_TEST_DB` only to an explicitly selected disposable admin
-connection; the test creates and drops databases. See the test's comments for
-the optional baseline comparison.
+They include a persistent update from fixture A to changed fixture B,
+then repeat B in the same database and check vulnerability content, enrichment
+content, and the stored ZIP member timestamp. The HTTP fixture uses an explicit
+`Last-Modified` timestamp and always returns 200. Set `SCANNER_CI_TEST_DB` only
+to an explicitly selected disposable admin connection; the tests create and
+drop databases. See the test's comments for the
+optional baseline comparison.
 
 ## Update consumers
 

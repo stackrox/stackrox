@@ -364,6 +364,81 @@ EOF
     assert_output --partial "https://example.invalid/ci-minimal.zip"
 }
 
+@test "installation bundle values retain the pin by default for the current chart" {
+    run _scanner_v4_install_bundle_values true
+    assert_success
+    assert_output --partial "https://example.invalid/ci-minimal.zip"
+}
+
+@test "installation bundle values omit the pin when deploying an older chart" {
+    printf '{}\n' > "${TEST_ROOT}/deploy/common/ci-values.yaml"
+    yq() { echo "unexpected CI pin lookup" >&2; return 99; }
+    run _scanner_v4_install_bundle_values false
+    assert_success
+    refute_output --partial "SCANNER_V4_MATCHER_VULNERABILITIES_URL:"
+}
+
+@test "Central install caller passes whether the current chart is in use" {
+    for chart_case in current older; do
+        local chart_dir="" expected="true"
+        if [[ "$chart_case" == "older" ]]; then
+            chart_dir="${BATS_TEST_TMPDIR}/old-central-chart"
+            expected="false"
+        fi
+        local capture="${BATS_TEST_TMPDIR}/central-${chart_case}-chart-arg"
+        run exercise_central_install_bundle_call "$chart_dir" "$capture"
+        assert_failure
+        run cat "$capture"
+        assert_output "$expected"
+    done
+}
+
+@test "Sensor install caller passes whether the current chart is in use" {
+    for chart_case in current older; do
+        local chart_dir="" expected="true"
+        if [[ "$chart_case" == "older" ]]; then
+            chart_dir="${BATS_TEST_TMPDIR}/old-sensor-chart"
+            expected="false"
+        fi
+        local capture="${BATS_TEST_TMPDIR}/sensor-${chart_case}-chart-arg"
+        run exercise_sensor_install_bundle_call "$chart_dir" "$capture"
+        assert_failure
+        run cat "$capture"
+        assert_output "$expected"
+    done
+}
+
+exercise_central_install_bundle_call() {
+    local chart_dir="$1" capture="$2"
+    local install_script="${BATS_TEST_DIRNAME}/../run-scanner-v4-install.bats"
+    eval "$(sed -n '/^deploy_central_with_helm() {/,/^}/p' "$install_script")"
+    _scanner_v4_install_bundle_values() { printf '%s\n' "${1:-}" > "$capture"; return 1; }
+    helm() { return 1; }
+    jq() { return 1; }
+    create_central_pull_secrets() { :; }
+    export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR="${BATS_TEST_TMPDIR}/head-central-chart"
+    export DEFAULT_IMAGE_REGISTRY="example.invalid"
+    deploy_central_with_helm test-central test-tag "$chart_dir"
+}
+
+exercise_sensor_install_bundle_call() {
+    local chart_dir="$1" capture="$2"
+    local install_script="${BATS_TEST_DIRNAME}/../run-scanner-v4-install.bats"
+    eval "$(sed -n '/^deploy_sensor_with_helm() {/,/^}/p' "$install_script")"
+    _scanner_v4_install_bundle_values() { printf '%s\n' "${1:-}" > "$capture"; return 1; }
+    helm() { return 1; }
+    jq() { return 1; }
+    create_sensor_pull_secrets() { :; }
+    export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR="${BATS_TEST_TMPDIR}/head-sensor-chart"
+    ORCH_CMD="${BATS_TEST_TMPDIR}/orch"
+    cat > "$ORCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+printf 'init-bundle\n'
+EOF
+    chmod +x "$ORCH_CMD"
+    deploy_sensor_with_helm test-central test-sensor test-tag "$chart_dir" test-cluster test-password test-endpoint
+}
+
 @test "installation bundle values omit the CI override for nightlies" {
     export BUILD_TAG=4.11.x-nightly-20261001
     run _scanner_v4_install_bundle_values
