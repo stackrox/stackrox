@@ -10,6 +10,16 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.11.6]
+
+### Added Features
+
+- ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
+
+**Full Changelog**: [4.11.5...4.11.6](https://github.com/stackrox/stackrox/compare/4.11.5...4.11.6)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [4.11.5]
 
 **Full Changelog**: [4.11.4...4.11.5](https://github.com/stackrox/stackrox/compare/4.11.4...4.11.5)
