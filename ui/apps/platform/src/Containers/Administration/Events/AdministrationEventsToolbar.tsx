@@ -9,15 +9,21 @@ import {
 
 import {
     getAdministrationEventsFilter,
+    replaceSearchFilterCluster,
+    replaceSearchFilterDeployment,
     replaceSearchFilterDomain,
     replaceSearchFilterLevel,
+    replaceSearchFilterNamespace,
     replaceSearchFilterResourceType,
 } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 import type { SearchFilter } from 'types/search';
 
+import SearchFilterCluster from './SearchFilterCluster';
+import SearchFilterDeployment from './SearchFilterDeployment';
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';
+import SearchFilterNamespace from './SearchFilterNamespace';
 import SearchFilterResourceType from './SearchFilterResourceType';
 import UpdatedTimeOrUpdateButton from './UpdatedTimeOrUpdateButton';
 
@@ -48,6 +54,14 @@ function AdministrationEventsToolbar({
     setSearchFilter,
     updateEvents,
 }: AdministrationEventsToolbarProps): ReactElement {
+    function setCluster(cluster: string | undefined) {
+        setSearchFilter(replaceSearchFilterCluster(searchFilter, cluster));
+    }
+
+    function setDeploymentFilter(deployment: string | undefined) {
+        setSearchFilter(replaceSearchFilterDeployment(searchFilter, deployment));
+    }
+
     function setDomain(domain: string | undefined) {
         setSearchFilter(replaceSearchFilterDomain(searchFilter, domain));
     }
@@ -56,11 +70,16 @@ function AdministrationEventsToolbar({
         setSearchFilter(replaceSearchFilterLevel(searchFilter, level));
     }
 
+    function setNamespace(namespace: string | undefined) {
+        setSearchFilter(replaceSearchFilterNamespace(searchFilter, namespace));
+    }
+
     function setResourceType(resourceType: string | undefined) {
         setSearchFilter(replaceSearchFilterResourceType(searchFilter, resourceType));
     }
 
-    const { domain, level, resourceType } = getAdministrationEventsFilter(searchFilter);
+    const { cluster, deployment, domain, level, namespace, resourceType } =
+        getAdministrationEventsFilter(searchFilter);
 
     return (
         <Toolbar>
@@ -89,6 +108,33 @@ function AdministrationEventsToolbar({
                             isDisabled={isDisabled}
                             level={level && level[0]}
                             setLevel={setLevel}
+                        />
+                    </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup variant="filter-group">
+                    <ToolbarItem>
+                        <SearchFilterCluster
+                            cluster={cluster && cluster[0]}
+                            isDisabled={isDisabled}
+                            setCluster={setCluster}
+                        />
+                    </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup variant="filter-group">
+                    <ToolbarItem>
+                        <SearchFilterNamespace
+                            isDisabled={isDisabled}
+                            namespace={namespace && namespace[0]}
+                            setNamespace={setNamespace}
+                        />
+                    </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup variant="filter-group">
+                    <ToolbarItem>
+                        <SearchFilterDeployment
+                            deployment={deployment && deployment[0]}
+                            isDisabled={isDisabled}
+                            setDeployment={setDeploymentFilter}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>

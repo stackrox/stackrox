@@ -95,13 +95,19 @@ export type AdministrationEventsFilter = {
     resourceType?: string[];
     type?: AdministrationEventType[];
     level?: AdministrationEventLevel[];
+    cluster?: string[];
+    namespace?: string[];
+    deployment?: string[];
 };
 
 // For consistency with useURLSort hook, especially in case the table columns become sortable,
 // useURLSearch hook also uses search strings.
 // See proto/storage/administration_event.proto
+const clusterField = 'Cluster';
+const deploymentField = 'Deployment';
 const domainField = 'Event Domain';
 const levelField = 'Event Level';
+const namespaceField = 'Namespace';
 const resourceTypeField = 'Resource Type';
 const typeField = 'Event Type';
 
@@ -179,6 +185,9 @@ export function getAdministrationEventsFilter(
         level: getLevel(searchFilter[levelField]),
         resourceType: getValue(searchFilter[resourceTypeField]),
         type: getType(searchFilter[typeField]),
+        cluster: getValue(searchFilter[clusterField]),
+        namespace: getValue(searchFilter[namespaceField]),
+        deployment: getValue(searchFilter[deploymentField]),
     };
 }
 
@@ -188,14 +197,18 @@ function hasItems(arg: unknown[] | undefined) {
 
 export function hasAdministrationEventsFilter(searchFilter: SearchFilter) {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const { from, until, domain, level, resourceType, type } = filter;
+    const { from, until, domain, level, resourceType, type, cluster, namespace, deployment } =
+        filter;
     return (
         Boolean(from) ||
         Boolean(until) ||
         hasItems(domain) ||
         hasItems(level) ||
         hasItems(resourceType) ||
-        hasItems(type)
+        hasItems(type) ||
+        hasItems(cluster) ||
+        hasItems(namespace) ||
+        hasItems(deployment)
     );
 }
 
@@ -278,6 +291,33 @@ export function replaceSearchFilterResourceType(
     resourceType: string | undefined
 ): SearchFilter {
     return { ...searchFilter, [resourceTypeField]: resourceType };
+}
+
+// cluster
+
+export function replaceSearchFilterCluster(
+    searchFilter: SearchFilter,
+    cluster: string | undefined
+): SearchFilter {
+    return { ...searchFilter, [clusterField]: cluster };
+}
+
+// namespace
+
+export function replaceSearchFilterNamespace(
+    searchFilter: SearchFilter,
+    namespace: string | undefined
+): SearchFilter {
+    return { ...searchFilter, [namespaceField]: namespace };
+}
+
+// deployment
+
+export function replaceSearchFilterDeployment(
+    searchFilter: SearchFilter,
+    deployment: string | undefined
+): SearchFilter {
+    return { ...searchFilter, [deploymentField]: deployment };
 }
 
 // domain and resourceType
