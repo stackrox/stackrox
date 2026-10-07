@@ -194,6 +194,23 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 	assert.Contains(t, rawQuery, `Resource Type:"resourceType"`)
 }
 
+func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
+	svc := &serviceImpl{}
+	filter := &v1.AdministrationEventsFilter{
+		ResourceType: []string{"Node"},
+		Cluster:      []string{"prod"},
+	}
+	queryBuilder, err := svc.getQueryBuilderFromFilter(context.Background(), filter)
+	require.NoError(t, err)
+
+	rawQuery, err := queryBuilder.RawQuery()
+	require.NoError(t, err)
+
+	assert.Contains(t, rawQuery, `Resource Type:"Node"`)
+	assert.NotContains(t, rawQuery, `Resource Type:"Image"`)
+	assert.NotContains(t, rawQuery, `Resource ID:`)
+}
+
 func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
 	svc := &serviceImpl{}
 	queryBuilder, err := svc.getQueryBuilderFromFilter(context.Background(), nil)

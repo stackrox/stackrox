@@ -176,6 +176,19 @@ func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filte
 		return nil, nil
 	}
 
+	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
+		hasImage := false
+		for _, rt := range resourceTypes {
+			if rt == "Image" {
+				hasImage = true
+				break
+			}
+		}
+		if !hasImage {
+			return nil, nil
+		}
+	}
+
 	depQuery := search.NewQueryBuilder()
 	if len(clusters) != 0 {
 		depQuery = depQuery.AddExactMatches(search.Cluster, clusters...)

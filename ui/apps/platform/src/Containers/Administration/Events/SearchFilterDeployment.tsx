@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { SearchInput } from '@patternfly/react-core';
 
 type SearchFilterDeploymentProps = {
@@ -11,13 +12,19 @@ function SearchFilterDeployment({
     deployment,
     setDeployment,
 }: SearchFilterDeploymentProps) {
+    const [inputValue, setInputValue] = useState(deployment ?? '');
+
     return (
         <SearchInput
             aria-label="Deployment filter"
             placeholder="Filter by deployment"
-            value={deployment ?? ''}
-            onChange={(_event, value) => setDeployment(value || undefined)}
-            onClear={() => setDeployment(undefined)}
+            value={inputValue}
+            onChange={(_event, value) => setInputValue(value)}
+            onSearch={() => setDeployment(inputValue || undefined)}
+            onClear={() => {
+                setInputValue('');
+                setDeployment(undefined);
+            }}
             isDisabled={isDisabled}
         />
     );

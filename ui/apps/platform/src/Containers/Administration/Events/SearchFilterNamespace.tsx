@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { SearchInput } from '@patternfly/react-core';
 
 type SearchFilterNamespaceProps = {
@@ -11,13 +12,19 @@ function SearchFilterNamespace({
     namespace,
     setNamespace,
 }: SearchFilterNamespaceProps) {
+    const [inputValue, setInputValue] = useState(namespace ?? '');
+
     return (
         <SearchInput
             aria-label="Namespace filter"
             placeholder="Filter by namespace"
-            value={namespace ?? ''}
-            onChange={(_event, value) => setNamespace(value || undefined)}
-            onClear={() => setNamespace(undefined)}
+            value={inputValue}
+            onChange={(_event, value) => setInputValue(value)}
+            onSearch={() => setNamespace(inputValue || undefined)}
+            onClear={() => {
+                setInputValue('');
+                setNamespace(undefined);
+            }}
             isDisabled={isDisabled}
         />
     );
