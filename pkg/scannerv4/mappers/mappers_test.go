@@ -1,8 +1,6 @@
 package mappers
 
 import (
-	"slices"
-	"strings"
 	"testing"
 	"time"
 
@@ -468,361 +466,6 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 	}
 }
 
-func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.ScannerV4RedHatLayers, true)
-
-	layerA := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
-	layerB := claircore.MustParseDigest("sha256:" + strings.Repeat("b", 64))
-
-	tests := map[string]struct {
-		arg     *claircore.VulnerabilityReport
-		want    *v4.VulnerabilityReport
-		wantErr string
-	}{
-		"filter non-RPM packages in Red Hat layers": {
-			arg: &claircore.VulnerabilityReport{
-				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
-				Vulnerabilities: map[string]*claircore.Vulnerability{
-					"0": {
-						ID:      "0",
-						Name:    "0",
-						Updater: "rhel-vex",
-					},
-					"1": {
-						ID:      "1",
-						Name:    "1",
-						Updater: "rhel-vex",
-					},
-					"2": {
-						ID:      "2",
-						Name:    "2",
-						Updater: "something else",
-					},
-					"3": {
-						ID:      "3",
-						Name:    "3",
-						Updater: "something different",
-					},
-				},
-				Packages: map[string]*claircore.Package{
-					"0": {
-						ID:      "0",
-						Name:    "my go binary",
-						Version: "0",
-					},
-					"1": {
-						ID:      "1",
-						Name:    "my java jar",
-						Version: "1",
-					},
-					"2": {
-						ID:      "2",
-						Name:    "my python egg",
-						Version: "2",
-					},
-					"3": {
-						ID:      "3",
-						Name:    "my ruby gem",
-						Version: "3",
-					},
-				},
-				Repositories: map[string]*claircore.Repository{
-					"0": {
-						ID:   "0",
-						Name: "Red Hat Container Catalog",
-						URI:  `https://catalog.redhat.com/software/containers/explore`,
-					},
-					"something else": {
-						ID:   "1",
-						Name: "something else",
-						Key:  "rhel-cpe-repository",
-						URI:  "somethingelse.com",
-					},
-				},
-				Environments: map[string][]*claircore.Environment{
-					"0": {
-						{
-							RepositoryIDs: []string{"0", "something else"},
-							IntroducedIn:  layerA,
-						},
-					},
-					"1": {
-						{
-							RepositoryIDs: []string{"something else"},
-							IntroducedIn:  layerB,
-						},
-					},
-					"2": {
-						{
-							RepositoryIDs: []string{"0"},
-							IntroducedIn:  layerA,
-						},
-					},
-					"3": {
-						{
-							RepositoryIDs: []string{"something else"},
-							IntroducedIn:  layerB,
-						},
-					},
-				},
-				PackageVulnerabilities: map[string][]string{
-					"0": {"2", "0", "3", "1"},
-					"1": {"1", "2"},
-					"2": {"2", "3"},
-					"3": {"0", "1", "2", "3"},
-				},
-			},
-			want: &v4.VulnerabilityReport{
-				// Converter doesn't set HashId to empty.
-				HashId: "",
-				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
-						Id:      "0",
-						Name:    "0",
-						Updater: "rhel-vex",
-					},
-					"1": {
-						Id:      "1",
-						Name:    "1",
-						Updater: "rhel-vex",
-					},
-					"2": {
-						Id:      "2",
-						Name:    "2",
-						Updater: "something else",
-					},
-					"3": {
-						Id:      "3",
-						Name:    "3",
-						Updater: "something different",
-					},
-				},
-				PackageVulnerabilities: map[string]*v4.StringList{
-					"0": {
-						Values: []string{"0", "1"},
-					},
-					"1": {
-						Values: []string{"1", "2"},
-					},
-					"3": {
-						Values: []string{"0", "1", "2", "3"},
-					},
-				},
-				Contents: &v4.Contents{
-					Packages: map[string]*v4.Package{
-						"0": {
-							Id:      "0",
-							Name:    "my go binary",
-							Version: "0",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						"1": {
-							Id:      "1",
-							Name:    "my java jar",
-							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						"2": {
-							Id:      "2",
-							Name:    "my python egg",
-							Version: "2",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						"3": {
-							Id:      "3",
-							Name:    "my ruby gem",
-							Version: "3",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-					},
-					PackagesDEPRECATED: []*v4.Package{
-						{
-							Id:      "0",
-							Name:    "my go binary",
-							Version: "0",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						{
-							Id:      "1",
-							Name:    "my java jar",
-							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						{
-							Id:      "2",
-							Name:    "my python egg",
-							Version: "2",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-						{
-							Id:      "3",
-							Name:    "my ruby gem",
-							Version: "3",
-							NormalizedVersion: &v4.NormalizedVersion{
-								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
-							Kind: "unknown",
-							Cpe:  emptyCPE,
-						},
-					},
-					Repositories: map[string]*v4.Repository{
-						"0": {
-							Id:   "0",
-							Name: "Red Hat Container Catalog",
-							Uri:  `https://catalog.redhat.com/software/containers/explore`,
-							Cpe:  emptyCPE,
-						},
-						"something else": {
-							Id:   "1",
-							Name: "something else",
-							Key:  "rhel-cpe-repository",
-							Uri:  "somethingelse.com",
-							Cpe:  emptyCPE,
-						},
-					},
-					RepositoriesDEPRECATED: []*v4.Repository{
-						{
-							Id:   "0",
-							Name: "Red Hat Container Catalog",
-							Uri:  `https://catalog.redhat.com/software/containers/explore`,
-							Cpe:  emptyCPE,
-						},
-						{
-							Id:   "1",
-							Name: "something else",
-							Key:  "rhel-cpe-repository",
-							Uri:  "somethingelse.com",
-							Cpe:  emptyCPE,
-						},
-					},
-					Environments: map[string]*v4.Environment_List{
-						"0": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"0", "something else"},
-									IntroducedIn:  layerA.String(),
-								},
-							},
-						},
-						"1": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"something else"},
-									IntroducedIn:  layerB.String(),
-								},
-							},
-						},
-						"2": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"0"},
-									IntroducedIn:  layerA.String(),
-								},
-							},
-						},
-						"3": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"something else"},
-									IntroducedIn:  layerB.String(),
-								},
-							},
-						},
-					},
-					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-						"0": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"0", "1"},
-									IntroducedIn:  layerA.String(),
-								},
-							},
-						},
-						"1": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"1"},
-									IntroducedIn:  layerB.String(),
-								},
-							},
-						},
-						"2": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"0"},
-									IntroducedIn:  layerA.String(),
-								},
-							},
-						},
-						"3": {
-							Environments: []*v4.Environment{
-								{
-									RepositoryIds: []string{"1"},
-									IntroducedIn:  layerB.String(),
-								},
-							},
-						},
-					},
-				},
-			},
-			wantErr: "",
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			ctx := test.Logging(t)
-			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
-			if tt.wantErr != "" {
-				assert.ErrorContains(t, err, tt.wantErr)
-				return
-			}
-			assert.NoError(t, err)
-
-			// The assert library cannot compare elements in slices like the ones below
-			// while ignoring order. So, sort each slice.
-			for _, pkgVulns := range got.GetPackageVulnerabilities() {
-				slices.Sort(pkgVulns.GetValues())
-			}
-			slices.SortFunc(got.GetContents().GetPackagesDEPRECATED(), func(a, b *v4.Package) int {
-				return strings.Compare(a.GetId(), b.GetId())
-			})
-			slices.SortFunc(got.GetContents().GetRepositoriesDEPRECATED(), func(a, b *v4.Repository) int {
-				return strings.Compare(a.GetId(), b.GetId())
-			})
-
-			protoassert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func Test_ToClairCoreIndexReport(t *testing.T) {
 	tests := map[string]struct {
 		arg     *v4.Contents
@@ -1058,6 +701,28 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestDeprecatedIndexContentsBecomeCurrentVulnerabilityContents(t *testing.T) {
+	const layerSHA = "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"
+	index, err := ToClairCoreIndexReport(&v4.Contents{
+		PackagesDEPRECATED:     []*v4.Package{{Id: "marker", Name: "image", Kind: "ancestry"}},
+		RepositoriesDEPRECATED: []*v4.Repository{{Id: "rhcc", Key: "rhcc-container-repository"}},
+		EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+			"marker": {Environments: []*v4.Environment{{IntroducedIn: layerSHA, RepositoryIds: []string{"rhcc"}}}},
+		},
+	})
+	require.NoError(t, err)
+
+	report, err := ToProtoV4VulnerabilityReport(test.Logging(t), &claircore.VulnerabilityReport{
+		Packages:     index.Packages,
+		Repositories: index.Repositories,
+		Environments: index.Environments,
+	})
+	require.NoError(t, err)
+	require.Contains(t, report.GetContents().GetPackages(), "marker")
+	require.Equal(t, "rhcc-container-repository", report.GetContents().GetRepositories()["rhcc"].GetKey())
+	require.Equal(t, layerSHA, report.GetContents().GetEnvironments()["marker"].GetEnvironments()[0].GetIntroducedIn())
 }
 
 func Test_toProtoV4Package(t *testing.T) {
