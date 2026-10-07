@@ -153,7 +153,6 @@ test_upgrade_path() {
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
     cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
     echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
-    echo "connect: connection refused" >> /tmp/allowlist-patterns
     echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
     echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
     echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
@@ -272,7 +271,6 @@ test_not_enough_disk_space() {
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
     cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
     echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
-    echo "connect: connection refused" >> /tmp/allowlist-patterns
     echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
     echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
     echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
