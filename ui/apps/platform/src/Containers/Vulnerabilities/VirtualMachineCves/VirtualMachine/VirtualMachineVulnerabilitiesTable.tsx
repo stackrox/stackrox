@@ -34,7 +34,7 @@ export const defaultColumns = {
         isUntoggleAble: true,
     },
     cveSeverity: {
-        title: 'CVE severity',
+        title: 'Top CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -42,7 +42,7 @@ export const defaultColumns = {
         isShownByDefault: true,
     },
     cvss: {
-        title: 'CVSS',
+        title: 'Top CVSS',
         isShownByDefault: true,
     },
     epssProbability: {
@@ -90,14 +90,14 @@ function VirtualMachineVulnerabilitiesTable({
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}
                     >
-                        CVE severity
+                        Top CVE severity
                     </Th>
                     <Th className={getVisibilityClass('cveStatus')}>CVE status</Th>
                     <Th
                         className={getVisibilityClass('cvss')}
                         sort={getSortParams(CVSS_SORT_FIELD)}
                     >
-                        CVSS
+                        Top CVSS
                     </Th>
                     <Th
                         className={getVisibilityClass('epssProbability')}
@@ -140,7 +140,7 @@ function VirtualMachineVulnerabilitiesTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
-                                        dataLabel="CVE severity"
+                                        dataLabel="Top CVE severity"
                                     >
                                         <VulnerabilitySeverityIconText
                                             severity={vulnerability.severity}
@@ -154,7 +154,7 @@ function VirtualMachineVulnerabilitiesTable({
                                             isFixable={vulnerability.isFixable}
                                         />
                                     </Td>
-                                    <Td className={getVisibilityClass('cvss')} dataLabel="CVSS">
+                                    <Td className={getVisibilityClass('cvss')} dataLabel="Top CVSS">
                                         <CvssFormatted
                                             cvss={vulnerability.cvss}
                                             scoreVersion="v3"
