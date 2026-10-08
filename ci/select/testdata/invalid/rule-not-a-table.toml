@@ -1,0 +1,3 @@
+version = 1
+jobs = ["unit"]
+rules = ["nope"]

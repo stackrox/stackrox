@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -33,6 +35,9 @@ jobs:
         ^.github/workflows/unit-tests.yaml$
         ^.github/actions/job-preamble/
 
+  # The label ci-dispatcher-enforce makes this job follow the decision.
+  # Without the label the job runs as it does today. A skip still starts
+  # the job and exits successfully, so the required check can merge.
   go:
     needs: detect-changes
     strategy:
@@ -47,56 +52,80 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        # A pull request needs both commits so the decision can see the diff.
+        # The 0 stays quoted: a bare 0 is treated as false and the fetch becomes shallow.
+        fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh go
 
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
     - name: Cache Go dependencies
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # ratchet:codecov/codecov-action@v7.0.0
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:

@@ -82,3 +82,7 @@ shellcheck-reports
 # These files need to be ignored in order for `make tag` return a clean version string.
 repository-to-cpe.json
 container-name-repos-map.json
+
+# Python bytecode from ci/select and local ci/exploration runs
+ci/**/__pycache__/
+ci/**/*.pyc

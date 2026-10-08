@@ -1,0 +1,39 @@
+# Decision paths the sample rules do not contain.
+# An empty diff is its own condition. A running suite pulls images, and
+# images pulls extra. The catch-all skips whatever no earlier rule mentioned.
+
+version = 1
+
+jobs = ["unit", "lint", "suite", "images", "extra"]
+
+[[rules]]
+name = "nothing-changed"
+when = "no-file-changed"
+run = ["unit"]
+
+[[rules]]
+name = "go-wildcard"
+when = "any-file-matches"
+paths = ['.*\.go$']
+run = ["unit"]
+
+[[rules]]
+name = "shapes"
+when = "any-file-matches"
+paths = ['^keep/exact.go$', '^pkg/', 'notes']
+run = ["lint"]
+
+[[rules]]
+name = "run-suite"
+when = "label-exists"
+label = "ci-suite"
+run = ["suite"]
+
+[[rules]]
+name = "remaining"
+when = "remaining"
+skip = ["*"]
+
+[requires]
+suite = ["images"]
+images = ["extra"]
