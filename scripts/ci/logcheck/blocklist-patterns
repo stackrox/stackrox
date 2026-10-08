@@ -12,7 +12,7 @@ data race
 should (not|never) happen
 OMITTED.*LOG LINES DUE TO THROTTLING
 
-# See pkg/logging/log_once.go
+# Our use of LogOnce* should be revised. See pkg/logging/log_once.go
 logOnceMaxMemory.* limit reached
 
 # Following is the list of deprecated k8s and OCP APIs that are getting signalled in the product logs by k8s client
