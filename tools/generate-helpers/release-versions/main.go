@@ -84,7 +84,7 @@ func generate(dir, target string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("validate target stream %s: %w", targetXy, err)
 	}
-	if closestXy != targetXy {
+	if closestXy.Compare(targetXy) != 0 {
 		return nil, fmt.Errorf("invalid release stream %s", targetXy)
 	}
 	shallow, err := command(dir, "git", "rev-parse", "--is-shallow-repository")
