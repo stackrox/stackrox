@@ -16,7 +16,7 @@ on:
         type: string
         required: false
       extra-env-vars:
-        description: "Additional environment variables as multi-line KEY=VALUE pairs (e.g., USE_ROXIE_DEPLOY=true)"
+        description: Additional environment variables as multi-line KEY=VALUE pairs (e.g., USE_ROXIE_DEPLOY=true)
         type: string
         required: false
   workflow_dispatch:
