@@ -46,15 +46,15 @@ var _ suite.SetupTestSuite = (*logOnceTestSuite)(nil)
 var _ suite.TearDownTestSuite = (*logOnceTestSuite)(nil)
 
 func (s *logOnceTestSuite) TestLogOncef() {
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "hello world %d, %s", 6, "yes!").MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "hello world %d, %s", 6, "yes!").Times(1)
 
 	LogOncef(s.mockLogger, zapcore.WarnLevel, "hello world %d, %s", 6, "yes!")
 	LogOncef(s.mockLogger, zapcore.WarnLevel, "hello world %d, %s", 500, "really?")
 }
 
 func (s *logOnceTestSuite) TestLogOncePerKeyf() {
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4).MinTimes(1).MaxTimes(1)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1).MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4).Times(1)
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1).Times(1)
 
 	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4)
 	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 34)
@@ -65,7 +65,7 @@ func (s *logOnceTestSuite) TestLogOncePerKeyf() {
 func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	testCount := logOnceDefaultMaxMemory * 2
 	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	s.mockLogger.EXPECT().Warnf("maxLogOnceMemory=%d limit reached", logOnceDefaultMaxMemory).MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Warnf("maxLogOnceMemory=%d limit reached", logOnceDefaultMaxMemory).Times(1)
 	for i := range testCount {
 		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(int(i))) //nolint:govet
 	}
