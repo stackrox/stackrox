@@ -92,6 +92,7 @@ jobs:
     - name: Restore previous backup
       run: |
         source "${{ steps.deploy-previous.outputs.envrc }}"
+        source scripts/lib.sh
 
         gsutil cp "gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_${PREVIOUS_VERSION}.sql.zip" .
 
@@ -100,7 +101,7 @@ jobs:
 
         # The restore bounces Central; wait for it to come back before continuing.
         deadline=$((SECONDS + 300))
-        until curl -sk "https://$API_ENDPOINT/v1/ping" | grep -q ok; do
+        until roxcurl /v1/ping | grep -q ok; do
           if (( SECONDS > deadline )); then
             echo "Central did not come back within 5m after restore" >&2
             exit 1
@@ -111,14 +112,12 @@ jobs:
     - name: Add authenticated Docker Hub integration
       run: |
         source "${{ steps.deploy-previous.outputs.envrc }}"
+        source scripts/lib.sh
 
         # Central's default "Public DockerHub" integration is anonymous and
         # gets rate-limited (429) almost immediately when the image reprocessor
         # tries to re-scan hundreds of images in a burst. An authenticated
         # integration has a much higher rate limit.
-        auth_cfg_file="$(mktemp)"
-        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
-
         payload=$(jq -n \
           --arg username "$DOCKERHUB_USERNAME" \
           --arg password "$DOCKERHUB_PASSWORD" \
@@ -133,9 +132,7 @@ jobs:
             }
           }')
 
-        curl -sk --config "$auth_cfg_file" \
-          -X POST "https://$API_ENDPOINT/v1/imageintegrations" \
-          -d "$payload"
+        roxcurl /v1/imageintegrations -X POST -d "$payload"
       env:
         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
         DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -166,25 +163,38 @@ jobs:
     - name: Wait for image reprocessing
       run: |
         source "${{ steps.deploy-previous.outputs.envrc }}"
+        source scripts/lib.sh
         # Central's image reprocessor runs immediately on every startup, racing
         # Scanner V4's own readiness after the same operator-driven restart. A
         # failed pass doesn't retry for another 4 hours (ReprocessInterval), so
         # force one more Central restart once Scanner V4 is confirmed ready,
         # giving the reprocessor a clean run before taking the final backup.
-        if ! kubectl -n acs-central wait deploy/scanner-v4-indexer \
-            --for=condition=available --timeout=10m; then
-          echo "scanner-v4-indexer did not become available within 10m" >&2
-          kubectl -n acs-central get pods -l app=scanner-v4-indexer -o wide >&2
-          kubectl -n acs-central describe deploy/scanner-v4-indexer >&2
-          kubectl -n acs-central describe pods -l app=scanner-v4-indexer >&2
-          for pod in $(kubectl -n acs-central get pods -l app=scanner-v4-indexer -o jsonpath='{.items[*].metadata.name}'); do
+        #
+        # scanner-v4-indexer depends on scanner-v4-db, which is rolled by the
+        # same operator upgrade. Wait for the db first: otherwise a slow db
+        # rollout just shows up as the indexer failing to connect, with no
+        # indication that the db itself is the thing not ready yet.
+        wait_for_deploy() {
+          local deploy="$1"
+          local label="$2"
+          if kubectl -n acs-central wait "deploy/${deploy}" --for=condition=available --timeout=10m; then
+            return 0
+          fi
+          echo "${deploy} did not become available within 10m" >&2
+          kubectl -n acs-central get pods -l "${label}" -o wide >&2
+          kubectl -n acs-central describe "deploy/${deploy}" >&2
+          kubectl -n acs-central describe pods -l "${label}" >&2
+          for pod in $(kubectl -n acs-central get pods -l "${label}" -o jsonpath='{.items[*].metadata.name}'); do
             echo "=== logs: $pod (current) ===" >&2
-            kubectl -n acs-central logs "$pod" -c indexer --tail=200 >&2 || true
+            kubectl -n acs-central logs "$pod" --all-containers --tail=200 >&2 || true
             echo "=== logs: $pod (previous) ===" >&2
-            kubectl -n acs-central logs "$pod" -c indexer --previous --tail=200 >&2 || true
+            kubectl -n acs-central logs "$pod" --all-containers --previous --tail=200 >&2 || true
           done
-          exit 1
-        fi
+          return 1
+        }
+
+        wait_for_deploy scanner-v4-db app=scanner-v4-db || exit 1
+        wait_for_deploy scanner-v4-indexer app=scanner-v4-indexer || exit 1
 
         kubectl -n acs-central delete pod -l app=central --grace-period=0
         kubectl -n acs-central rollout status deploy/central --timeout=5m
@@ -198,7 +208,7 @@ jobs:
           > /tmp/central-port-forward.log 2>&1 &
 
         deadline=$((SECONDS + 300))
-        until curl -sk "https://$API_ENDPOINT/v1/ping" | grep -q ok; do
+        until roxcurl /v1/ping | grep -q ok; do
           if (( SECONDS > deadline )); then
             echo "Central did not come back within 5m after operator upgrade" >&2
             cat /tmp/central-port-forward.log >&2
@@ -209,10 +219,8 @@ jobs:
 
         # Poll /v1/imagescount until it stabilizes across two consecutive
         # checks, as a proxy for the reprocessor having finished its pass.
-        auth_cfg_file="$(mktemp)"
-        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
         count_images() {
-          curl -sk --config "$auth_cfg_file" "https://$API_ENDPOINT/v1/imagescount" | jq -r '.count'
+          roxcurl /v1/imagescount | jq -r '.count'
         }
 
         previous=-1
@@ -262,6 +270,7 @@ jobs:
     - name: Strip transient cluster auth config
       run: |
         source "${{ steps.deploy-previous.outputs.envrc }}"
+        source scripts/lib.sh
 
         # Central recreates this config for its own cluster on startup. Keeping the
         # snapshot cluster's issuer would make restores depend on that cluster.
@@ -275,14 +284,11 @@ jobs:
             }])
           | .id
         '
-        auth_cfg_file="$(mktemp)"
-        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
-        auth_cfg=(--config "$auth_cfg_file")
 
-        ids=$(curl -sk "${auth_cfg[@]}" "https://$API_ENDPOINT/v1/auth/m2m" | jq -r "$query")
+        ids=$(roxcurl /v1/auth/m2m | jq -r "$query")
         for id in $ids; do
           [[ -n "$id" ]] || continue
-          curl -sk "${auth_cfg[@]}" -X DELETE "https://$API_ENDPOINT/v1/auth/m2m/$id" > /dev/null
+          roxcurl "/v1/auth/m2m/$id" -X DELETE > /dev/null
         done
 
     - name: Grab a central backup
