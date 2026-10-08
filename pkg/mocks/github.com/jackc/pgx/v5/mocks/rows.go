@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // This file was copied and fixed
@@ -218,6 +219,10 @@ func (rs *rowSets) NextResultSet() error {
 
 // Conn implements the pgx.Row interface
 func (rs *rowSets) Conn() *pgx.Conn {
+	return nil
+}
+
+func (rs *rowSets) TypeMap() *pgtype.Map {
 	return nil
 }
 
