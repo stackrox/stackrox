@@ -39,10 +39,12 @@ import org.junit.Assume
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
+import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step
+@Stepwise
 @Tag("PZ")
 class NetworkFlowTest extends BaseSpecification {
 
