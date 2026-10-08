@@ -149,7 +149,8 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 		return
 	}
 
-	// Restore default categories even if an API update changed them. Preserve other settings.
+	// Restore default categories on records that predate them. The API rejects category changes,
+	// so this only repairs older data. Preserve other settings.
 	if categoriesMatch(existing.GetCategories(), store.DefaultScannerV4Integration.GetCategories()) {
 		return
 	}
