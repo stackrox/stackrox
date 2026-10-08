@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	logOnceSeen          sync.Map
+	logOnceMemory        sync.Map
 	logOnceMemoryUsed    atomic.Int32
 	logOnceLimitNotified atomic.Bool
 
 	// logOnceMaxMemory sets the maximum number of unique entries to track.
-	// When the use exceeds this amount, some previously logOnceSeen entries will be randomly dropped and so subsequent
-	// calls to LogOnce* will result in previously seen messages again appearing in the log.
+	// When the use exceeds this amount, some previously logOnceMemory entries will be randomly dropped and so
+	// subsequent calls to LogOnce* will result in previously seen messages again appearing in the log.
 	// If we see a warning in the logs (ref logOnceLimitNotified) that we reached this limit, we should check our use of
 	// LogOncef / LogOncePerKeyf and remove any cases when the same line sends varying templates, or bump the limit if
 	// there are no such cases.
@@ -80,7 +80,7 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 		fullKey = key + "\x00" + template
 	}
 
-	_, seen := logOnceSeen.LoadOrStore(fullKey, nil)
+	_, seen := logOnceMemory.LoadOrStore(fullKey, nil)
 	if !seen {
 		logger.Logf(level, template, args...)
 
@@ -93,12 +93,12 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 					logOnceMaxMemoryVarName,
 					logOnceMaxMemory)
 			}
-			logOnceSeen.Range(func(randomKey, _ any) bool {
+			logOnceMemory.Range(func(randomKey, _ any) bool {
 				if randomKey == fullKey {
 					// Don't forget what we just added, iterate to try another randomKey.
 					return true
 				}
-				if _, deleted := logOnceSeen.LoadAndDelete(randomKey); deleted {
+				if _, deleted := logOnceMemory.LoadAndDelete(randomKey); deleted {
 					logOnceMemoryUsed.Add(-1)
 					return false // Stop iterating.
 				}

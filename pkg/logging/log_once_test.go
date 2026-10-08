@@ -48,7 +48,7 @@ var _ suite.SetupTestSuite = (*logOnceTestSuite)(nil)
 var _ suite.TearDownTestSuite = (*logOnceTestSuite)(nil)
 
 func clearMemory() {
-	logOnceSeen.Clear()
+	logOnceMemory.Clear()
 	logOnceMemoryUsed.Store(0)
 	logOnceLimitNotified.Store(false)
 	logOnceMaxMemory = logOnceDefaultMaxMemory
@@ -89,7 +89,7 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	s.Equal(logOnceDefaultMaxMemory, logOnceMemoryUsed.Load())
 
 	var countInMap int32 = 0
-	logOnceSeen.Range(func(_ any, _ any) bool {
+	logOnceMemory.Range(func(_ any, _ any) bool {
 		countInMap++
 		return true
 	})
