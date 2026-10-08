@@ -171,7 +171,14 @@ jobs:
         # failed pass doesn't retry for another 4 hours (ReprocessInterval), so
         # force one more Central restart once Scanner V4 is confirmed ready,
         # giving the reprocessor a clean run before taking the final backup.
-        kubectl -n acs-central rollout status deploy/scanner-v4-indexer --timeout=10m
+        if ! kubectl -n acs-central wait deploy/scanner-v4-indexer \
+            --for=condition=available --timeout=10m; then
+          echo "scanner-v4-indexer did not become available within 10m" >&2
+          kubectl -n acs-central get pods -l app=scanner-v4-indexer -o wide >&2
+          kubectl -n acs-central describe deploy/scanner-v4-indexer >&2
+          kubectl -n acs-central describe pods -l app=scanner-v4-indexer >&2
+          exit 1
+        fi
 
         kubectl -n acs-central delete pod -l app=central --grace-period=0
         kubectl -n acs-central rollout status deploy/central --timeout=5m
