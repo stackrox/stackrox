@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// TestLogOncefReal and TestLogOncePerKeyfReal demonstrate the usage of LogOncef and LogOncePerKeyf. The use real
+// logger so you can run them and see what actually gets written to the output.
 func TestLogOncefReal(t *testing.T) {
 	logger := LoggerForModule()
 	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
