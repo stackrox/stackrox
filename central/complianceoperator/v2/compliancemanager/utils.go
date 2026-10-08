@@ -2,7 +2,8 @@ package compliancemanager
 
 import "github.com/stackrox/rox/generated/internalapi/central"
 
-func buildScanConfigSensorMsg(msgID string, cron string, profiles []string, profileRefs []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, configName string, createConfig bool) *central.MsgToSensor {
+func buildScanConfigSensorMsg(msgID string, cron string, profiles []string, profileRefs []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, configName string, createConfig bool, nodeRoles []string) *central.MsgToSensor {
+
 	if createConfig {
 		return &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ComplianceRequest{
@@ -17,6 +18,7 @@ func buildScanConfigSensorMsg(msgID string, cron string, profiles []string, prof
 										StrictNodeScan: true,
 										Profiles:       profiles,
 										ProfileRefs:    profileRefs,
+										NodeRoles:      nodeRoles,
 									},
 									Cron: cron,
 								},
@@ -41,6 +43,7 @@ func buildScanConfigSensorMsg(msgID string, cron string, profiles []string, prof
 									StrictNodeScan: true,
 									Profiles:       profiles,
 									ProfileRefs:    profileRefs,
+									NodeRoles:      nodeRoles,
 								},
 								Cron: cron,
 							},
