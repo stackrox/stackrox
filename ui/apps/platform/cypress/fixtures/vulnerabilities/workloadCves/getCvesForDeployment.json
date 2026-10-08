@@ -1,0 +1,79 @@
+{
+    "data": {
+        "deployment": {
+            "imageVulnerabilityCount": 1,
+            "id": "mock-deployment-001",
+            "images": [
+                {
+                    "id": "sha256:abcxyz",
+                    "digest": "sha256:abcxyz",
+                    "name": {
+                        "registry": "docker.io",
+                        "remote": "cypress-test/image",
+                        "tag": "v0.0.1",
+                        "__typename": "ImageName"
+                    },
+                    "metadata": {
+                        "v1": {
+                            "layers": [
+                                {
+                                    "instruction": "ADD",
+                                    "value": "file:abc123 in /",
+                                    "__typename": "ImageLayer"
+                                }
+                            ],
+                            "__typename": "V1Metadata"
+                        },
+                        "__typename": "ImageMetadata"
+                    },
+                    "__typename": "Image"
+                }
+            ],
+            "imageVulnerabilities": [
+                {
+                    "vulnerabilityId": "MOCK-2023-123456#debian:11",
+                    "cve": "MOCK-2023-123456",
+                    "cveBaseInfo": {
+                        "epss": null,
+                        "__typename": "CveBaseInfo"
+                    },
+                    "operatingSystem": "debian:11",
+                    "publishedOn": "2023-10-14T02:15:00Z",
+                    "summary": "Mocked CVE for Cypress testing",
+                    "pendingExceptionCount": 0,
+                    "images": [
+                        {
+                            "imageId": "sha256:abcxyz",
+                            "imageComponents": [
+                                {
+                                    "name": "openssl",
+                                    "version": "3.0.8-r0",
+                                    "location": "",
+                                    "source": "OS",
+                                    "layerIndex": 0,
+                                    "imageVulnerabilities": [
+                                        {
+                                            "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                            "cvss": 7.5,
+                                            "scoreVersion": "V3",
+                                            "fixedByVersion": "3.0.8-r1",
+                                            "advisory": null,
+                                            "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
+                                            "publishedOn": "2023-03-22T17:15:00Z",
+                                            "pendingExceptionCount": 0,
+                                            "__typename": "ImageVulnerability"
+                                        }
+                                    ],
+                                    "__typename": "ImageComponent"
+                                }
+                            ],
+                            "__typename": "Image"
+                        }
+                    ],
+                    "__typename": "ImageVulnerability"
+                }
+            ],
+            "__typename": "Deployment"
+        }
+    }
+}
