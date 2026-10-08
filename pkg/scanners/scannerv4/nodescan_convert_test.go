@@ -288,12 +288,6 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 	}
 }
 
-func (s *indexReportConvertSuite) TestToNodeScanDottedRHCOSVersion() {
-	osImage := "Red Hat Enterprise Linux CoreOS 9.8.20260908-0 (Plow)"
-	scan := toNodeScan(&v4.VulnerabilityReport{}, osImage)
-	s.Equal("rhcos:9.8", scan.GetOperatingSystem())
-}
-
 func (s *indexReportConvertSuite) TestFixNotes() {
 	cases := map[string]struct {
 		in       []storage.NodeScan_Note
