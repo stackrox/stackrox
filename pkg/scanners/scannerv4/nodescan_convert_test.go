@@ -267,6 +267,10 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 			in:       "Red Hat Enterprise Linux CoreOS 10.1.20260908-0 (Plow)",
 			expected: "rhcos:10.1",
 		},
+		"RHCOS dotted version without build suffix": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.8 (Plow)",
+			expected: "rhcos:9.8",
+		},
 		"non-RHCOS": {
 			in:       "Oracle Linux Server release 6.8",
 			expected: "",
