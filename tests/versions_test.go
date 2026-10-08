@@ -5,6 +5,7 @@ package tests
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -26,12 +27,13 @@ func TestVersions(t *testing.T) {
 	var versions version.Versions
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&versions))
 
+	mainVersion := versions.MainVersion
 	if usingKonfluxImages() {
-		t.Skipf("nothing to be checked on Konflux -fast build %s", versions.MainVersion)
+		mainVersion = strings.TrimSuffix(mainVersion, "-fast")
 	}
 
-	kind := version.GetVersionKind(versions.MainVersion)
-	require.NotEqualf(t, version.InvalidKind, kind, "invalid main version %s", versions.MainVersion)
+	kind := version.GetVersionKind(mainVersion)
+	require.NotEqualf(t, version.InvalidKind, kind, "invalid main version %s", mainVersion)
 	if kind == version.DevelopmentKind || kind == version.NightlyKind {
 		t.Skip("nothing to be checked on development versions")
 	}

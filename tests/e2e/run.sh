@@ -15,8 +15,6 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
-# shellcheck source=../../tests/e2e/lib-compat.sh
-source "$ROOT/tests/e2e/lib-compat.sh"
 # shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
 source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
