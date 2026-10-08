@@ -86,7 +86,12 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 
 		if logOnceMemoryUsed.Add(1) > logOnceMaxMemory {
 			if !logOnceLimitNotified.Swap(true) {
-				logger.Warnf("maxLogOnceMemory=%d limit reached", logOnceMaxMemory)
+				logger.Warnf("logOnceMaxMemory=%d limit reached. "+
+					"If you see logs flooded with repeated messages after this, set %s "+
+					"environment variable to a value higher than %d.",
+					logOnceMaxMemory,
+					logOnceMaxMemoryVarName,
+					logOnceMaxMemory)
 			}
 			logOnceSeen.Range(func(randomKey, _ any) bool {
 				if randomKey == fullKey {
