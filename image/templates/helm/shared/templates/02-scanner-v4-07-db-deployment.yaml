@@ -60,8 +60,6 @@ spec:
         - name: SCANNER_DB_INIT_BUNDLE_ENABLED
           value: "true"
 {{- end }}
-        - name: SCANNER_V4_DB_VERSION
-          value: {{ last (splitList ":" ._rox.scannerV4.db.image.fullRef) | quote }}
         command:
         - init-entrypoint.sh
         volumeMounts:

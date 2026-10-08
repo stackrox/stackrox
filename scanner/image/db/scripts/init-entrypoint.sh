@@ -61,6 +61,9 @@ main() {
     local init_bundle="/db-init.dump.zst"
     local version_file="$PGDATA/.scanner-db-version"
 
+    # SCANNER_V4_DB_VERSION is baked into the image at build time (see the DB
+    # Dockerfiles), so it reflects the actual running image regardless of how the
+    # image is referenced (tag, digest, or override).
     local current_mm
     current_mm=$(extract_major_minor "${SCANNER_V4_DB_VERSION:-}")
 
