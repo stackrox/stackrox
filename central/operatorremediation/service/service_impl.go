@@ -83,7 +83,7 @@ func (s *serviceImpl) GetImageRemediation(ctx context.Context, request *v1.GetIm
 		return nil, errors.Wrapf(errox.NotFound, "image %q is not shipped by an installed operator bundle", imageID)
 	}
 
-	addr, err := olm.ResolveCatalogGRPCAddress(elevatedCtx, s.dyn, installed.Package)
+	addr, err := olm.ResolveCatalogGRPCAddress(elevatedCtx, s.dyn, installed.Package, installed.CSVName)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolving operator catalog address")
 	}

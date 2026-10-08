@@ -21,27 +21,57 @@ var catalogSourceGVR = schema.GroupVersionResource{Group: "operators.coreos.com"
 // one in status.registryService.
 const defaultCatalogRegistryPort = 50051
 
-// ResolveCatalogGRPCAddress determines the in-cluster address of the catalog index gRPC service
-// backing the given package. It reads the package's Subscription to find the CatalogSource
-// (spec.source / spec.sourceNamespace), then the CatalogSource's status.registryService to build
-// "<serviceName>.<namespace>.svc:<port>". This lets Central dial the catalog directly in-cluster,
-// without a port-forward.
-func ResolveCatalogGRPCAddress(ctx context.Context, dyn dynamic.Interface, pkg string) (string, error) {
+// findSubscription returns the Subscription that governs the installed operator. It prefers the
+// Subscription whose status.installedCSV (or currentCSV) matches csvName — i.e. the one that
+// actually installed this operator — so stale or duplicate Subscriptions for the same package
+// (e.g. a broken dev CatalogSource) are not picked. It falls back to any Subscription for the
+// package with a non-empty installedCSV, then to the first Subscription for the package. Returns
+// (nil, nil) when none exists.
+func findSubscription(ctx context.Context, dyn dynamic.Interface, pkg, csvName string) (*unstructured.Unstructured, error) {
 	subs, err := dyn.Resource(subGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "listing Subscriptions")
+		return nil, errors.Wrap(err, "listing Subscriptions")
 	}
-	var source, sourceNS string
+	var pkgMatch, installedMatch *unstructured.Unstructured
 	for i := range subs.Items {
 		s := &subs.Items[i]
-		if nestedString(s, "spec", "name") == pkg {
-			source = nestedString(s, "spec", "source")
-			sourceNS = nestedString(s, "spec", "sourceNamespace")
-			break
+		if nestedString(s, "spec", "name") != pkg {
+			continue
+		}
+		installedCSV := nestedString(s, "status", "installedCSV")
+		if csvName != "" && (installedCSV == csvName || nestedString(s, "status", "currentCSV") == csvName) {
+			return s, nil
+		}
+		if installedMatch == nil && installedCSV != "" {
+			installedMatch = s
+		}
+		if pkgMatch == nil {
+			pkgMatch = s
 		}
 	}
+	if installedMatch != nil {
+		return installedMatch, nil
+	}
+	return pkgMatch, nil
+}
+
+// ResolveCatalogGRPCAddress determines the in-cluster address of the catalog index gRPC service
+// backing the operator that installed csvName. It reads the governing Subscription to find the
+// CatalogSource (spec.source / spec.sourceNamespace), then the CatalogSource's
+// status.registryService to build "<serviceName>.<namespace>.svc:<port>". This lets Central dial
+// the catalog directly in-cluster, without a port-forward.
+func ResolveCatalogGRPCAddress(ctx context.Context, dyn dynamic.Interface, pkg, csvName string) (string, error) {
+	sub, err := findSubscription(ctx, dyn, pkg, csvName)
+	if err != nil {
+		return "", err
+	}
+	if sub == nil {
+		return "", errors.Errorf("no Subscription found for package %q", pkg)
+	}
+	source := nestedString(sub, "spec", "source")
+	sourceNS := nestedString(sub, "spec", "sourceNamespace")
 	if source == "" || sourceNS == "" {
-		return "", errors.Errorf("no Subscription with a CatalogSource found for package %q", pkg)
+		return "", errors.Errorf("Subscription for package %q has no CatalogSource (source/sourceNamespace)", pkg)
 	}
 
 	cs, err := dyn.Resource(catalogSourceGVR).Namespace(sourceNS).Get(ctx, source, metav1.GetOptions{})

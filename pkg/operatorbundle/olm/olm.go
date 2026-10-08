@@ -92,7 +92,7 @@ func (c *Client) FindInstalledBundle(ctx context.Context, digest string) (*opera
 	pkg, version := packageAndVersionFromCSV(csv)
 	return &operatorbundle.Bundle{
 		Package:         pkg,
-		ChannelName:     c.channelForPackage(ctx, pkg),
+		ChannelName:     c.channelForCSV(ctx, pkg, csv.GetName()),
 		Version:         version,
 		VersionOriginal: version,
 		CSVName:         csv.GetName(),
@@ -170,21 +170,16 @@ func (c *Client) bundleFromAPI(ctx context.Context, b *api.Bundle) (operatorbund
 	}, nil
 }
 
-// channelForPackage returns the subscribed channel for a package, resolved from its
-// Subscription. Best-effort: an empty result still lets FindCandidateBundles enumerate the
-// package (selection is by version, not channel).
-func (c *Client) channelForPackage(ctx context.Context, pkg string) string {
-	subs, err := c.dyn.Resource(subGVR).List(ctx, metav1.ListOptions{})
-	if err != nil {
+// channelForCSV returns the subscribed channel for the installed operator, resolved from the
+// Subscription that actually installed csvName (see findSubscription). Best-effort: an empty
+// result still lets FindCandidateBundles enumerate the package (selection is by version, not
+// channel).
+func (c *Client) channelForCSV(ctx context.Context, pkg, csvName string) string {
+	sub, err := findSubscription(ctx, c.dyn, pkg, csvName)
+	if err != nil || sub == nil {
 		return ""
 	}
-	for i := range subs.Items {
-		s := &subs.Items[i]
-		if nestedString(s, "spec", "name") == pkg {
-			return nestedString(s, "spec", "channel")
-		}
-	}
-	return ""
+	return nestedString(sub, "spec", "channel")
 }
 
 // csvShipsDigest reports whether any spec.relatedImages entry of the CSV references the

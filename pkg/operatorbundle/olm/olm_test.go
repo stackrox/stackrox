@@ -54,6 +54,39 @@ func relatedImage(name, image string) interface{} {
 	return map[string]interface{}{"name": name, "image": image}
 }
 
+func subscriptionWithStatus(namespace, name, pkg, channel, source, sourceNS, installedCSV string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "operators.coreos.com/v1alpha1",
+		"kind":       "Subscription",
+		"metadata":   map[string]interface{}{"name": name, "namespace": namespace},
+		"spec": map[string]interface{}{
+			"name": pkg, "channel": channel, "source": source, "sourceNamespace": sourceNS,
+		},
+		"status": map[string]interface{}{"installedCSV": installedCSV},
+	}}
+}
+
+// TestFindSubscriptionPrefersInstalledCSV reproduces the two-subscriptions-for-one-package case: a
+// stale dev subscription (empty installedCSV) and the real one that installed the operator. The
+// resolver must pick the one whose installedCSV matches, not merely the first package match.
+func TestFindSubscriptionPrefersInstalledCSV(t *testing.T) {
+	ctx := context.Background()
+	stale := subscriptionWithStatus("op-system", "stale-sub", "mypkg", "latest", "dev-index", "op-system", "")
+	real := subscriptionWithStatus("stackrox", "real-sub", "mypkg", "stable", "redhat-operators", "openshift-marketplace", "mypkg.v4.11.4")
+	dyn := newFakeDynamic(stale, real)
+
+	sub, err := findSubscription(ctx, dyn, "mypkg", "mypkg.v4.11.4")
+	require.NoError(t, err)
+	require.NotNil(t, sub)
+	assert.Equal(t, "redhat-operators", nestedString(sub, "spec", "source"))
+	assert.Equal(t, "stable", nestedString(sub, "spec", "channel"))
+
+	// Even without a csvName, a subscription with a non-empty installedCSV wins over an empty one.
+	sub, err = findSubscription(ctx, dyn, "mypkg", "")
+	require.NoError(t, err)
+	assert.Equal(t, "redhat-operators", nestedString(sub, "spec", "source"))
+}
+
 const olmPackageProps = `{"properties":[{"type":"olm.package","value":{"packageName":"mypkg","version":"1.2.3"}}]}`
 
 func newFakeDynamic(objs ...runtime.Object) *dynamicfake.FakeDynamicClient {
