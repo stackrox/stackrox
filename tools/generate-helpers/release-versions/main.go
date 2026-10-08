@@ -94,7 +94,10 @@ func generate(dir, target string) ([]byte, error) {
 	if strings.TrimSpace(shallow) != "false" {
 		return nil, errors.New("release generation requires a full checkout with release tags")
 	}
-	tags, err := command(dir, "git", "tag", "--list")
+	tags, err := command(dir, "git", "tag", "--list",
+		"[0-9]*.[0-9]*.0",
+		"[0-9]*.[0-9]*.0-rc.[0-9]*",
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list release tags: %w", err)
 	}
