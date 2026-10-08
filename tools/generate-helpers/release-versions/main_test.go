@@ -86,7 +86,7 @@ func TestGenerationFailures(t *testing.T) {
 		completeHistory           bool
 	}{
 		"missing floor":                  {target: "5.1.x", want: "4.10.0"},
-		"RC is not GA":                   {target: "5.1.x", tag: "4.10.0-rc.1", want: "4.10.0"},
+		"nightly is not release":         {target: "5.1.x", tag: "4.10.0-nightly-20260930", want: "4.10.0"},
 		"missing patch baseline":         {target: "5.1.1", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch RC missing baseline":      {target: "5.1.1-rc.0", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch nightly missing baseline": {target: "5.1.1-nightly-20260930", tag: "4.10.0", want: "5.1.0", completeHistory: true},
@@ -125,20 +125,24 @@ func TestPendingStreams(t *testing.T) {
 			write(220, tc.floor+".0")
 			write(225, tc.latest+".0")
 			if tc.withRC {
-				write(0, tc.pending+".0-rc.1") // Historical RC sequences must not be read.
+				write(226, tc.pending+".0-rc.1")
 			}
 			write(227, "")
 			data, err := generate(dir, tc.target)
+			if !tc.withRC {
+				require.ErrorContains(t, err, tc.pending+".0")
+				return
+			}
 			require.NoError(t, err)
 			require.Contains(t, string(data), fmt.Sprintf(`Version: %q, Sequence: 220`, tc.floor))
 			require.Contains(t, string(data), fmt.Sprintf(`Version: %q, Sequence: 225`, tc.latest))
-			require.NotContains(t, string(data), fmt.Sprintf(`Version: %q`, tc.pending))
+			require.Contains(t, string(data), fmt.Sprintf(`Version: %q, Sequence: 226`, tc.pending))
 			require.Contains(t, string(data), fmt.Sprintf(`Version: %q, Sequence: 227`, strings.Join(strings.Split(tc.target, ".")[:2], ".")))
 		})
 	}
 }
 
-func TestMissingIntermediateGA(t *testing.T) {
+func TestMissingIntermediateRelease(t *testing.T) {
 	for name, rc := range map[string]bool{"no tags": false, "old RC tags": true} {
 		t.Run(name, func(t *testing.T) {
 			dir, _, write := repository(t)
@@ -149,7 +153,11 @@ func TestMissingIntermediateGA(t *testing.T) {
 			write(225, "5.5.0")
 			write(227, "")
 			_, err := generate(dir, "5.6.x")
-			require.ErrorContains(t, err, "missing initial GA tag 5.4.0")
+			if rc {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, "missing initial release tag 5.4.0")
+			}
 		})
 	}
 }
@@ -162,7 +170,7 @@ func TestPendingStreamLifecycle(t *testing.T) {
 	write(230, "")
 	before, err := generate(dir, "5.6.x")
 	require.NoError(t, err)
-	require.NotContains(t, string(before), `Version: "5.5"`)
+	require.Contains(t, string(before), `Version: "5.5", Sequence: 226`)
 	write(228, "5.5.0")
 	write(230, "")
 	baseline, err := generate(dir, "5.6.x")
@@ -277,6 +285,7 @@ func TestMultipleReleaseBranchesWithRCs(t *testing.T) {
 	write(225, "4.11.0")
 	git("checkout", "-qb", "release-4.11")
 	git("checkout", "master")
+	write(227, "5.0.0-rc.0")
 	write(228, "5.1.x")
 
 	before, err := generate(dir, "5.1.x")
@@ -284,7 +293,7 @@ func TestMultipleReleaseBranchesWithRCs(t *testing.T) {
 	require.Contains(t, string(before), `Version: "4.10", Sequence: 220`)
 	require.Contains(t, string(before), `Version: "4.11", Sequence: 225`)
 	require.Contains(t, string(before), `Version: "5.1", Sequence: 228`)
-	require.NotContains(t, string(before), `Version: "5.0"`)
+	require.Contains(t, string(before), `Version: "5.0", Sequence: 227`)
 
 	// Each release line can advance independently while RCs are in flight.
 	git("checkout", "release-4.10")
@@ -305,7 +314,7 @@ func TestMultipleReleaseBranchesWithRCs(t *testing.T) {
 
 	after, err := generate(dir, "5.1.x")
 	require.NoError(t, err)
-	require.Equal(t, before, after, "RC tags on multiple release branches must not change GA metadata")
+	require.Equal(t, before, after, "patch RCs must not change baselines, and an unchanged initial RC sequence is stable")
 }
 
 func TestNightlyVersionDiscovery(t *testing.T) {
@@ -445,4 +454,46 @@ func TestParseSequence(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInitialReleaseCandidateSelection(t *testing.T) {
+	dir, _, write := repository(t)
+	write(220, "4.10.0")
+	write(225, "4.11.0")
+	write(226, "5.0.0-rc.2")
+	write(227, "5.0.0-rc.10")
+	write(229, "5.0.1-rc.0")
+	write(0, "5.0.0-rc.11-nightly-20261008")
+	write(230, "")
+	data, err := generate(dir, "5.1.x")
+	require.NoError(t, err)
+	require.Contains(t, string(data), `Version: "5.0", Sequence: 227`)
+	// GA is authoritative even when its sequence differs from the last RC.
+	write(228, "5.0.0")
+	write(230, "")
+	data, err = generate(dir, "5.1.x")
+	require.NoError(t, err)
+	require.Contains(t, string(data), `Version: "5.0", Sequence: 228`)
+}
+
+func TestDecreasingReleaseCandidateSequence(t *testing.T) {
+	dir, _, write := repository(t)
+	write(220, "4.10.0")
+	write(225, "4.11.0")
+	write(229, "5.0.0-rc.0")
+	write(228, "")
+	_, err := generate(dir, "5.1.x")
+	require.ErrorContains(t, err, "less than previous sequence")
+}
+
+func TestPatchTargetWithReleaseCandidateBaseline(t *testing.T) {
+	dir, _, write := repository(t)
+	write(213, "4.9.0")
+	write(220, "4.10.0")
+	write(225, "4.11.0")
+	write(227, "5.0.0-rc.0")
+	write(229, "5.0.1-rc.0")
+	data, err := generate(dir, "5.0.1-rc.0")
+	require.NoError(t, err)
+	require.Contains(t, string(data), `Version: "5.0", Sequence: 227`)
 }

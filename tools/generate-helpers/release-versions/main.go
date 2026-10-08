@@ -24,7 +24,7 @@ import (
 
 const sequencePath = "pkg/migrations/internal/seq_num.go"
 
-var initialRelease = regexp.MustCompile(`^[1-9][0-9]*\.(0|[1-9][0-9]*)\.0$`)
+var initialRelease = regexp.MustCompile(`^[1-9][0-9]*\.(0|[1-9][0-9]*)\.0(-rc\.(0|[1-9][0-9]*))?$`)
 var targetVersion = regexp.MustCompile(`^[1-9][0-9]*\.(0|[1-9][0-9]*)\.(x|0|[1-9][0-9]*)(-[A-Za-z0-9.-]+)?$`)
 
 func main() {
@@ -92,14 +92,14 @@ func generate(dir, target string) ([]byte, error) {
 		return nil, fmt.Errorf("check whether checkout is shallow: %w", err)
 	}
 	if strings.TrimSpace(shallow) != "false" {
-		return nil, errors.New("release generation requires a full checkout with GA tags")
+		return nil, errors.New("release generation requires a full checkout with release tags")
 	}
 	tags, err := command(dir, "git", "tag", "--list")
 	if err != nil {
 		return nil, fmt.Errorf("list release tags: %w", err)
 	}
 	sequences := make(map[productstreams.XYVersion]int)
-	var newestGA productstreams.XYVersion
+	releaseTags := make(map[productstreams.XYVersion]string)
 	for tag := range strings.FieldsSeq(tags) {
 		if !initialRelease.MatchString(tag) {
 			continue
@@ -118,6 +118,11 @@ func generate(dir, target string) ([]byte, error) {
 		if previous != stream {
 			return nil, fmt.Errorf("invalid historical release stream %s", stream)
 		}
+		if selected, exists := releaseTags[stream]; !exists || newerInitialRelease(tag, selected) {
+			releaseTags[stream] = tag
+		}
+	}
+	for stream, tag := range releaseTags {
 		data, err := command(dir, "git", "show", "refs/tags/"+tag+":"+sequencePath)
 		if err != nil {
 			return nil, fmt.Errorf("read %s from release tag %s: %w", sequencePath, tag, err)
@@ -127,14 +132,11 @@ func generate(dir, target string) ([]byte, error) {
 			return nil, fmt.Errorf("release %s: %w", tag, err)
 		}
 		sequences[stream] = sequence
-		if stream.Compare(newestGA) > 0 {
-			newestGA = stream
-		}
 	}
 	if _, exists := sequences[xy]; !exists {
 		patch, _, _ := strings.Cut(strings.Split(target, ".")[2], "-")
 		if patch != "0" && patch != "x" {
-			return nil, fmt.Errorf("missing initial GA tag %s.0 for patch target %s", xy, target)
+			return nil, fmt.Errorf("missing initial release tag %s.0 for patch target %s", xy, target)
 		}
 		data, err := os.ReadFile(filepath.Join(dir, sequencePath))
 		if err != nil {
@@ -154,9 +156,9 @@ func generate(dir, target string) ([]byte, error) {
 		}
 	}
 	for stream := floor; ; {
-		// Pending streams after the newest GA have no historical baseline yet.
-		if _, exists := sequences[stream]; !exists && (stream == floor || stream.Compare(newestGA) <= 0) {
-			return nil, fmt.Errorf("missing initial GA tag %s.0 required by %s; fetch release tags before generation", stream, target)
+		// Every supported stream needs a baseline; RC-only streams count too.
+		if _, exists := sequences[stream]; !exists {
+			return nil, fmt.Errorf("missing initial release tag %s.0 required by %s; fetch release tags before generation", stream, target)
 		}
 		if stream == xy {
 			break
@@ -182,6 +184,21 @@ func generate(dir, target string) ([]byte, error) {
 		return nil, fmt.Errorf("format generated release versions: %w", err)
 	}
 	return formatted, nil
+}
+
+// GA supersedes RCs; otherwise select the highest numeric RC ordinal.
+func newerInitialRelease(candidate, selected string) bool {
+	_, candidateRC, candidateIsRC := strings.Cut(candidate, "-rc.")
+	_, selectedRC, selectedIsRC := strings.Cut(selected, "-rc.")
+	if !candidateIsRC {
+		return true
+	}
+	if !selectedIsRC {
+		return false
+	}
+	// Ordinals are canonical non-negative decimal strings, so comparing lengths
+	// avoids integer overflow while preserving numeric ordering.
+	return len(candidateRC) > len(selectedRC) || (len(candidateRC) == len(selectedRC) && candidateRC > selectedRC)
 }
 
 func parseSequence(data string) (int, error) {

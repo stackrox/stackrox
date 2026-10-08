@@ -11,5 +11,6 @@ var releaseVersions = []ReleaseVersion{
 	{Version: "4.9", Sequence: 213},
 	{Version: "4.10", Sequence: 220},
 	{Version: "4.11", Sequence: 225},
+	{Version: "5.0", Sequence: 227},
 	{Version: "5.1", Sequence: 227},
 }
