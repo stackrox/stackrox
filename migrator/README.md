@@ -19,18 +19,6 @@ When a previously-supported version can no longer tolerate the current schema, u
 `MinimumSupportedDBVersionSeqNum` in `pkg/migrations/internal/fallback_seq_num.go`.
 The migrator will reject upgrades from versions below this threshold.
 
-After a startup migration or stream bump, run `make go-generated-srcs` with a full
-checkout and GA tags; commit `pkg/migrations/release_versions.go`, never edit it.
-The generator uses `make tag`: published streams retain their initial `X.Y.0`
-sequence; an unpublished current stream uses the working tree's sequence.
-GA tagging leaves output unchanged, and patch migrations cannot move the baseline.
-Historical streams after the newest GA are omitted until their initial GA is
-published, even if RC tags exist. The N-3 floor must have a GA baseline, and all
-streams from that floor through the newest GA must be present. Compatibility
-still counts product streams, not available GA tags. A complete tag inventory is
-required: missing GA tags cannot be distinguished from unpublished releases.
-Keep `pkg/version/productstreams` major-transition metadata current.
-
 ## Do you need a migration?
 
 **Most changes do NOT require a migration.**
