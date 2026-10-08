@@ -80,12 +80,8 @@ func generate(dir, target string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse target stream from %q: %w", target, err)
 	}
-	closestXy, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(targetXy))
-	if err != nil {
+	if err := validateReleaseStream(targetXy); err != nil {
 		return nil, fmt.Errorf("validate target stream %s: %w", targetXy, err)
-	}
-	if closestXy.Compare(targetXy) != 0 {
-		return nil, fmt.Errorf("invalid release stream %s", targetXy)
 	}
 	shallow, err := command(dir, "git", "rev-parse", "--is-shallow-repository")
 	if err != nil {
@@ -114,12 +110,8 @@ func generate(dir, target string) ([]byte, error) {
 		if stream.Compare(productstreams.XYVersion{X: 4, Y: 4}) < 0 || stream.Compare(targetXy) > 0 {
 			continue
 		}
-		previous, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(stream))
-		if err != nil {
+		if err := validateReleaseStream(stream); err != nil {
 			return nil, fmt.Errorf("validate historical release stream %s: %w", stream, err)
-		}
-		if previous != stream {
-			return nil, fmt.Errorf("invalid historical release stream %s", stream)
 		}
 		if selected, exists := releaseTags[stream]; !exists || newerInitialRelease(tag, selected) {
 			releaseTags[stream] = tag
@@ -187,6 +179,17 @@ func generate(dir, target string) ([]byte, error) {
 		return nil, fmt.Errorf("format generated release versions: %w", err)
 	}
 	return formatted, nil
+}
+
+func validateReleaseStream(stream productstreams.XYVersion) error {
+	previous, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(stream))
+	if err != nil {
+		return err
+	}
+	if previous != stream {
+		return fmt.Errorf("invalid release stream %s", stream)
+	}
+	return nil
 }
 
 // GA supersedes RCs; otherwise select the highest numeric RC ordinal.
