@@ -251,6 +251,10 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 			in:       "Red Hat Enterprise Linux CoreOS 41712345.94.2024",
 			expected: "rhcos:4.1712345",
 		},
+		"RHCOS 9.6 (OCP 4.19)": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.6.20250701-0 (Plow)",
+			expected: "rhcos:9.6",
+		},
 		"RHCOS 9.8": {
 			in:       "Red Hat Enterprise Linux CoreOS 9.8.20260908-0 (Plow)",
 			expected: "rhcos:9.8",
