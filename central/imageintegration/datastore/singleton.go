@@ -157,11 +157,8 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 	log.Warnf("Reconciling categories for default Scanner V4 integration %q (%s): updating from %v to %v",
 		existing.GetName(), defaultID, existing.GetCategories(), store.DefaultScannerV4Integration.GetCategories())
 
-	// Clone the existing integration, update categories, and upsert. Clone the default's category
-	// slice as well so the stored object does not share backing storage with the package-global default.
-	reconciled := existing.CloneVT()
-	reconciled.Categories = slices.Clone(store.DefaultScannerV4Integration.GetCategories())
-	err = iiStore.Upsert(ctx, reconciled)
+	existing.Categories = store.DefaultScannerV4Integration.GetCategories()
+	err = iiStore.Upsert(ctx, existing)
 	utils.Should(errors.Wrap(err, "unable to reconcile default ScannerV4 integration categories"))
 }
 
