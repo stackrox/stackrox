@@ -87,10 +87,15 @@ jobs:
             --tag "${PREVIOUS_VERSION}" \
             --resources small \
             --set central.spec.central.resources.requests.cpu=300m \
+            --set central.spec.central.resources.requests.memory=1Gi \
             --set central.spec.central.db.resources.requests.cpu=300m \
+            --set central.spec.central.db.resources.requests.memory=1Gi \
             --set central.spec.scannerV4.db.resources.requests.cpu=200m \
+            --set central.spec.scannerV4.db.resources.requests.memory=512Mi \
             --set central.spec.scannerV4.indexer.resources.requests.cpu=150m \
+            --set central.spec.scannerV4.indexer.resources.requests.memory=512Mi \
             --set central.spec.scannerV4.matcher.resources.requests.cpu=150m \
+            --set central.spec.scannerV4.matcher.resources.requests.memory=512Mi \
             --port-forwarding \
             --envrc "${envrc}" \
             --central-wait 5m
