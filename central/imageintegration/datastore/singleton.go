@@ -154,7 +154,7 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 		return
 	}
 
-	log.Infof("Reconciling categories for default Scanner V4 integration %q (%s): updating from %v to %v",
+	log.Warnf("Reconciling categories for default Scanner V4 integration %q (%s): updating from %v to %v",
 		existing.GetName(), defaultID, existing.GetCategories(), store.DefaultScannerV4Integration.GetCategories())
 
 	// Clone the existing integration, update categories, and upsert. Clone the default's category
