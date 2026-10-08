@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-postgres_major=15
+postgres_major=16
 pg_rhel_major=9
 
 arch="$(uname -m)"
@@ -16,6 +16,7 @@ output_dir="/rpms"
 mkdir $output_dir
 
 if [[ "$arch" == "s390x" ]]; then
+  dnf module enable -y postgresql:16
   dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs postgresql-server postgresql-contrib
   mv /tmp/postgresql-contrib-*.rpm "${output_dir}/postgres-contrib.rpm"
   mv /tmp/postgresql-server-*.rpm "${output_dir}/postgres-server.rpm"

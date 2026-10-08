@@ -15,8 +15,25 @@ runs:
     - name: Determine Go cache paths
       id: cache-paths
       run: |
-        echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-        echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
+        # Keep assignments separate from echo so Go failures are not masked.
+        if ! gocache=$(go env GOCACHE); then
+          echo "::error::Failed to determine GOCACHE: go env GOCACHE failed. See the Go error above."
+          exit 1
+        fi
+        if [[ -z "$gocache" ]]; then
+          echo "::error::go env GOCACHE returned an empty value. Cannot configure the Go build cache."
+          exit 1
+        fi
+        if ! goarch=$(go env GOARCH); then
+          echo "::error::Failed to determine GOARCH: go env GOARCH failed. See the Go error above."
+          exit 1
+        fi
+        if [[ -z "$goarch" ]]; then
+          echo "::error::go env GOARCH returned an empty value. Cannot configure the Go build cache."
+          exit 1
+        fi
+        echo "GOCACHE=$gocache" >> "$GITHUB_OUTPUT"
+        echo "GOARCH=$goarch" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
         # Hash go.mod once for use in cache keys. When dependencies change,
         # the GOCACHE must be invalidated because Go's module index caches

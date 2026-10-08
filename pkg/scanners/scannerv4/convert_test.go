@@ -1847,6 +1847,177 @@ func TestNotes(t *testing.T) {
 	}
 }
 
+func TestFilterRedHatLayerVulnerabilities(t *testing.T) {
+	layers := map[string]int32{
+		"base": 0, "rh-base": 1, "middle": 2, "rh-top": 3, "user": 4,
+	}
+	newReport := func() *v4.VulnerabilityReport {
+		packages := map[string]*v4.Package{}
+		environments := map[string]*v4.Environment_List{}
+		pkgVulns := map[string]*v4.StringList{}
+		for layer := range layers {
+			packages[layer] = &v4.Package{Id: layer, Kind: "binary"}
+			environments[layer] = &v4.Environment_List{Environments: []*v4.Environment{{IntroducedIn: layer}}}
+			pkgVulns[layer] = &v4.StringList{Values: []string{"osv", "redhat"}}
+		}
+		// These layers have only OSV findings.
+		pkgVulns["base"] = &v4.StringList{Values: []string{"osv"}}
+		pkgVulns["middle"] = &v4.StringList{Values: []string{"osv"}}
+		for _, layer := range []string{"rh-base", "rh-top"} {
+			id := layer + "-ancestry"
+			packages[id] = &v4.Package{Id: id, Kind: "ancestry"}
+			environments[id] = &v4.Environment_List{Environments: []*v4.Environment{{IntroducedIn: layer, RepositoryIds: []string{"rhcc"}}}}
+		}
+		return &v4.VulnerabilityReport{
+			Contents: &v4.Contents{
+				Packages:     packages,
+				Repositories: map[string]*v4.Repository{"rhcc": {Key: "rhcc-container-repository"}},
+				Environments: environments,
+			},
+			Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"osv": {Updater: "osv/go"}, "redhat": {Updater: "rhel-vex"},
+			},
+			PackageVulnerabilities: pkgVulns,
+		}
+	}
+
+	tests := map[string]struct {
+		prepare  func(*v4.VulnerabilityReport)
+		indices  map[string]int32
+		filtered []string
+	}{
+		"unmarked layer between Red Hat markers needs no VEX assertion": {
+			indices: layers, filtered: []string{"base", "rh-base", "middle", "rh-top"},
+		},
+		"single marker includes every lower layer": {
+			prepare: func(r *v4.VulnerabilityReport) { delete(r.GetContents().GetEnvironments(), "rh-top-ancestry") },
+			indices: layers, filtered: []string{"base", "rh-base"},
+		},
+		"RHCC-marked binary above ancestry does not extend boundary": {
+			prepare: func(r *v4.VulnerabilityReport) { r.Contents.Packages["rh-top-ancestry"].Kind = "binary" },
+			indices: layers, filtered: []string{"base", "rh-base"},
+		},
+		"RHCC-marked binaries without ancestry leave findings alone": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				r.Contents.Packages["rh-base-ancestry"].Kind = "binary"
+				r.Contents.Packages["rh-top-ancestry"].Kind = "binary"
+			},
+			indices: layers,
+		},
+		"top marker includes unmarked lower layers": {
+			prepare: func(r *v4.VulnerabilityReport) { delete(r.GetContents().GetEnvironments(), "rh-base-ancestry") },
+			indices: layers, filtered: []string{"base", "rh-base", "middle", "rh-top"},
+		},
+		"marker in layer zero": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				delete(r.GetContents().GetEnvironments(), "rh-top-ancestry")
+				r.Contents.Environments["rh-base-ancestry"].Environments[0].IntroducedIn = "base"
+			},
+			indices: layers, filtered: []string{"base"},
+		},
+		"legacy Gold Repository marker uses RHCC key": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				r.Contents.Repositories["rhcc"] = &v4.Repository{
+					Name: "Red Hat Container Catalog",
+					Uri:  "https://catalog.redhat.com/software/containers/explore",
+					Key:  "rhcc-container-repository",
+				}
+			},
+			indices: layers, filtered: []string{"base", "rh-base", "middle", "rh-top"},
+		},
+		"no Red Hat marker leaves findings alone": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				delete(r.GetContents().GetEnvironments(), "rh-base-ancestry")
+				delete(r.GetContents().GetEnvironments(), "rh-top-ancestry")
+			},
+			indices: layers,
+		},
+		"orphaned environments do not mark Red Hat layers": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				delete(r.GetContents().GetPackages(), "rh-base-ancestry")
+				delete(r.GetContents().GetPackages(), "rh-top-ancestry")
+			},
+			indices: layers,
+		},
+		"deprecated environments retain the boundary": {
+			prepare: func(r *v4.VulnerabilityReport) {
+				for _, pkg := range r.GetContents().GetPackages() {
+					r.Contents.PackagesDEPRECATED = append(r.Contents.PackagesDEPRECATED, pkg)
+				}
+				r.Contents.Packages = nil
+				r.Contents.EnvironmentsDEPRECATED = r.GetContents().GetEnvironments()
+				r.Contents.Environments = nil
+			},
+			indices: layers, filtered: []string{"base", "rh-base", "middle", "rh-top"},
+		},
+		"SBOM without image layer order leaves findings alone": {
+			indices: nil,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			report := newReport()
+			if tc.prepare != nil {
+				tc.prepare(report)
+			}
+			filterRedHatLayerVulnerabilities(report, tc.indices)
+			filtered := make(map[string]bool)
+			for _, layer := range tc.filtered {
+				filtered[layer] = true
+			}
+			for layer := range layers {
+				want := []string{"osv", "redhat"}
+				if layer == "base" || layer == "middle" {
+					want = []string{"osv"}
+				}
+				if filtered[layer] {
+					want = []string{"redhat"}
+					if layer == "base" || layer == "middle" {
+						want = nil
+					}
+				}
+				assert.Equal(t, want, report.GetPackageVulnerabilities()[layer].GetValues(), "layer %s", layer)
+				if want == nil {
+					assert.NotContains(t, report.GetPackageVulnerabilities(), layer)
+				}
+			}
+		})
+	}
+}
+
+func TestImageScanRedHatLayerFlag(t *testing.T) {
+	newReport := func() *v4.VulnerabilityReport {
+		return &v4.VulnerabilityReport{
+			Contents: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"marker":  {Kind: "ancestry"},
+					"package": {Kind: "binary"},
+				},
+				Repositories: map[string]*v4.Repository{"rhcc": {Key: "rhcc-container-repository"}},
+				Environments: map[string]*v4.Environment_List{
+					"marker":  {Environments: []*v4.Environment{{IntroducedIn: "layer", RepositoryIds: []string{"rhcc"}}}},
+					"package": {Environments: []*v4.Environment{{IntroducedIn: "layer"}}},
+				},
+			},
+			Vulnerabilities:        map[string]*v4.VulnerabilityReport_Vulnerability{"osv": {Updater: "osv/go"}},
+			PackageVulnerabilities: map[string]*v4.StringList{"package": {Values: []string{"osv"}}},
+		}
+	}
+	metadata := &storage.ImageMetadata{
+		V1:        &storage.V1Metadata{Layers: []*storage.ImageLayer{{}}},
+		LayerShas: []string{"layer"},
+	}
+
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatLayers, true)
+	imageReport := newReport()
+	imageScan(metadata, imageReport, scannerVersion)
+	assert.Empty(t, imageReport.GetPackageVulnerabilities())
+
+	sbomReport := newReport()
+	imageScan(nil, sbomReport, scannerVersion)
+	assert.Equal(t, []string{"osv"}, sbomReport.GetPackageVulnerabilities()["package"].GetValues())
+}
+
 func TestFilterNotAffectedVulnerabilities(t *testing.T) {
 	// Layer SHAs for test scenarios:
 	// layer0 (index 0) - base layer
