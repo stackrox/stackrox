@@ -84,7 +84,7 @@ jobs:
 
           roxie deploy central \
             --tag "${PREVIOUS_VERSION}" \
-            --resources auto \
+            --resources small \
             --port-forwarding \
             --envrc "${envrc}" \
             --central-wait 5m
@@ -169,11 +169,6 @@ jobs:
         # failed pass doesn't retry for another 4 hours (ReprocessInterval), so
         # force one more Central restart once Scanner V4 is confirmed ready,
         # giving the reprocessor a clean run before taking the final backup.
-        #
-        # scanner-v4-indexer depends on scanner-v4-db, which is rolled by the
-        # same operator upgrade. Wait for the db first: otherwise a slow db
-        # rollout just shows up as the indexer failing to connect, with no
-        # indication that the db itself is the thing not ready yet.
         wait_for_deploy() {
           local deploy="$1"
           local label="$2"
