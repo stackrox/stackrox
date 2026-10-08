@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
+	rhcosOSImageRegexp       = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (4)(\d{2,})`)
+	rhcosDottedOSImageRegexp = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (\d+)\.(\d+)\.`)
 )
 
 const (
@@ -40,10 +41,14 @@ func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan 
 
 func toOperatingSystem(ref string) string {
 	r := rhcosOSImageRegexp.FindStringSubmatch(ref)
-	if len(r) != 5 {
-		return ""
+	if len(r) == 3 {
+		return fmt.Sprintf("rhcos:%s.%s", r[1], r[2])
 	}
-	return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
+	r = rhcosDottedOSImageRegexp.FindStringSubmatch(ref)
+	if len(r) == 3 {
+		return fmt.Sprintf("rhcos:%s.%s", r[1], r[2])
+	}
+	return ""
 }
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {

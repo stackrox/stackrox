@@ -251,6 +251,14 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 			in:       "Red Hat Enterprise Linux CoreOS 41712345.94.2024",
 			expected: "rhcos:4.1712345",
 		},
+		"RHCOS 9.8": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.8.20260908-0 (Plow)",
+			expected: "rhcos:9.8",
+		},
+		"RHCOS 10.1": {
+			in:       "Red Hat Enterprise Linux CoreOS 10.1.20260908-0 (Plow)",
+			expected: "rhcos:10.1",
+		},
 		"non-RHCOS": {
 			in:       "Oracle Linux Server release 6.8",
 			expected: "",
@@ -266,6 +274,12 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 			s.Equal(c.expected, actual)
 		})
 	}
+}
+
+func (s *indexReportConvertSuite) TestToNodeScanDottedRHCOSVersion() {
+	osImage := "Red Hat Enterprise Linux CoreOS 9.8.20260908-0 (Plow)"
+	scan := toNodeScan(&v4.VulnerabilityReport{}, osImage)
+	s.Equal("rhcos:9.8", scan.GetOperatingSystem())
 }
 
 func (s *indexReportConvertSuite) TestFixNotes() {
