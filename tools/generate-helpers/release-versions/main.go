@@ -76,16 +76,16 @@ func generate(dir, target string) ([]byte, error) {
 	if !targetVersion.MatchString(target) {
 		return nil, fmt.Errorf("invalid target version %q", target)
 	}
-	xy, err := productstreams.ParseXYFromVersionString(target)
+	targetXy, err := productstreams.ParseXYFromVersionString(target)
 	if err != nil {
 		return nil, fmt.Errorf("parse target stream from %q: %w", target, err)
 	}
-	previous, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(xy))
+	closestXy, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(targetXy))
 	if err != nil {
-		return nil, fmt.Errorf("validate target stream %s: %w", xy, err)
+		return nil, fmt.Errorf("validate target stream %s: %w", targetXy, err)
 	}
-	if previous != xy {
-		return nil, fmt.Errorf("invalid release stream %s", xy)
+	if closestXy != targetXy {
+		return nil, fmt.Errorf("invalid release stream %s", targetXy)
 	}
 	shallow, err := command(dir, "git", "rev-parse", "--is-shallow-repository")
 	if err != nil {
@@ -108,7 +108,7 @@ func generate(dir, target string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse release stream from tag %q: %w", tag, err)
 		}
-		if stream.Compare(productstreams.XYVersion{X: 4, Y: 4}) < 0 || stream.Compare(xy) > 0 {
+		if stream.Compare(productstreams.XYVersion{X: 4, Y: 4}) < 0 || stream.Compare(targetXy) > 0 {
 			continue
 		}
 		previous, err := productstreams.GetPreviousYStream(productstreams.GetNextYStream(stream))
@@ -133,10 +133,10 @@ func generate(dir, target string) ([]byte, error) {
 		}
 		sequences[stream] = sequence
 	}
-	if _, exists := sequences[xy]; !exists {
+	if _, exists := sequences[targetXy]; !exists {
 		patch, _, _ := strings.Cut(strings.Split(target, ".")[2], "-")
 		if patch != "0" && patch != "x" {
-			return nil, fmt.Errorf("missing initial release tag %s.0 for patch target %s", xy, target)
+			return nil, fmt.Errorf("missing initial release tag %s.0 for patch target %s", targetXy, target)
 		}
 		data, err := os.ReadFile(filepath.Join(dir, sequencePath))
 		if err != nil {
@@ -146,9 +146,9 @@ func generate(dir, target string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse current database sequence from %s: %w", sequencePath, err)
 		}
-		sequences[xy] = sequence
+		sequences[targetXy] = sequence
 	}
-	floor := xy
+	floor := targetXy
 	for range 3 {
 		floor, err = productstreams.GetPreviousYStream(floor)
 		if err != nil {
@@ -160,7 +160,7 @@ func generate(dir, target string) ([]byte, error) {
 		if _, exists := sequences[stream]; !exists {
 			return nil, fmt.Errorf("missing initial release tag %s.0 required by %s; fetch release tags before generation", stream, target)
 		}
-		if stream == xy {
+		if stream == targetXy {
 			break
 		}
 		stream = productstreams.GetNextYStream(stream)
