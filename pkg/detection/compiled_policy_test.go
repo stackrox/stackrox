@@ -316,14 +316,14 @@ func initAndRegularDeployment() (*storage.Deployment, []*storage.Image) {
 	return dep, images
 }
 
-func TestEvaluationFilterSkipsInitContainers(t *testing.T) {
+func TestEvaluationFilterSkipsContainers(t *testing.T) {
 	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
 
 	dep, images := initAndRegularDeployment()
 	ed := booleanpolicy.EnhancedDeployment{Deployment: dep, Images: images}
 
 	skipInit := &storage.EvaluationFilter{
-		SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+		SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 	}
 	privilegedPolicy := &storage.Policy{
 		PolicyVersion:   policyversion.CurrentVersion().String(),
@@ -352,10 +352,23 @@ func TestEvaluationFilterSkipsInitContainers(t *testing.T) {
 	require.Len(t, violations.AlertViolations, 1)
 	assert.Contains(t, violations.AlertViolations[0].GetMessage(), "app")
 
-	unfiltered := privilegedPolicy.CloneVT()
-	unfiltered.EvaluationFilter = nil
+	skipRegular := privilegedPolicy.CloneVT()
+	skipRegular.EvaluationFilter.SkipContainerTypes = []storage.ContainerType{storage.ContainerType_REGULAR}
+	compiled, err = CompilePolicy(skipRegular, nil, nil)
+	require.NoError(t, err)
+	violations, err = compiled.MatchAgainstDeployment(nil, ed)
+	require.NoError(t, err)
+	assert.Empty(t, violations.AlertViolations, "privileged regular container is skipped")
+
 	dep.Containers[0].SecurityContext.Privileged = true
 	dep.Containers[1].SecurityContext.Privileged = false
+	violations, err = compiled.MatchAgainstDeployment(nil, ed)
+	require.NoError(t, err)
+	require.Len(t, violations.AlertViolations, 1)
+	assert.Contains(t, violations.AlertViolations[0].GetMessage(), "init-setup")
+
+	unfiltered := privilegedPolicy.CloneVT()
+	unfiltered.EvaluationFilter = nil
 	compiled, err = CompilePolicy(unfiltered, nil, nil)
 	require.NoError(t, err)
 	violations, err = compiled.MatchAgainstDeployment(nil, ed)

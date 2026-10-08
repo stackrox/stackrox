@@ -1244,6 +1244,14 @@
       },
       "title": "Next tag: 13"
     },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
+    },
     "storageEnforcementAction": {
       "type": "string",
       "enum": [
@@ -1265,7 +1273,7 @@
         "skipContainerTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageSkipContainerType"
+            "$ref": "#/definitions/storageContainerType"
           }
         }
       },
@@ -1862,14 +1870,6 @@
         "CRITICAL_SEVERITY"
       ],
       "default": "UNSET_SEVERITY"
-    },
-    "storageSkipContainerType": {
-      "type": "string",
-      "enum": [
-        "SKIP_INIT"
-      ],
-      "default": "SKIP_INIT",
-      "description": "SkipContainerType lists container kinds a policy may skip during evaluation.\nThe set is independent of ContainerType and currently contains only init containers.\nAn empty skip_container_types list evaluates every container type."
     },
     "storageViolationState": {
       "type": "string",
