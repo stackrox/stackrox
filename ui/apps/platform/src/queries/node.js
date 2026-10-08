@@ -54,15 +54,6 @@ export const NODES_QUERY = gql`
     }
 `;
 
-export const NODE_QUERY = gql`
-    query getNode($id: ID!) {
-        node(id: $id) {
-            ...nodeFields
-        }
-    }
-    ${NODE_FRAGMENT}
-`;
-
 export const NODES_BY_CLUSTER = gql`
     query getNodesByCluster($id: ID!) {
         results: cluster(id: $id) {

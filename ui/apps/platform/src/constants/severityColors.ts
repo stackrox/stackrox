@@ -18,8 +18,6 @@ export const CRITICAL_SEVERITY_COLOR =
 export const UNKNOWN_SEVERITY_COLOR =
     'var(--pf-t--global--icon--color--severity--undefined--default)';
 
-export const COMPLIANCE_PASS_COLOR = LOW_SEVERITY_COLOR; // so long as LOW_SEVERITY_COLOR is blue!
-
 export const policySeverityColorMap: Record<PolicySeverity, string> = {
     LOW_SEVERITY: LOW_SEVERITY_COLOR,
     MEDIUM_SEVERITY: MODERATE_MEDIUM_SEVERITY_COLOR,
