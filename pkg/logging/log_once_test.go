@@ -38,6 +38,13 @@ func (s *logOnceTestSuite) SetupTest() {
 	clearMemory()
 }
 
+func (s *logOnceTestSuite) TearDownTest() {
+	clearMemory()
+}
+
+var _ suite.SetupTestSuite = (*logOnceTestSuite)(nil)
+var _ suite.TearDownTestSuite = (*logOnceTestSuite)(nil)
+
 func (s *logOnceTestSuite) TestLogOncef() {
 	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "hello world %d, %s", 6, "yes!").MinTimes(1).MaxTimes(1)
 
@@ -78,6 +85,7 @@ func clearMemory() {
 	logOnceSeen.Clear()
 	logOnceMemoryUsed.Store(0)
 	logOnceLimitNotified.Store(false)
+	logOnceMaxMemory = logOnceDefaultMaxMemory
 }
 
 func BenchmarkLogOnce(b *testing.B) {
