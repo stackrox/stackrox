@@ -23,8 +23,19 @@ jobs = [
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
   "ocp-vm-scanning-e2e-tests",
+  "check-generated-files",
+  "check-crd-compatibility",
+  "golangci-lint",
+  "github-actions-lint",
+  "openshift-ci-lint",
+  "shell-unit-tests",
+  "ui",
+  "ui-component",
+  "local-roxctl-tests",
+  "db-integration-tests",
 ]
 
+# Tier 1: Label Overrides (highest priority)
 # The label votes run for every target. A skip from another rule clashes,
 # and that clash runs the job.
 [[rules]]
@@ -33,6 +44,43 @@ when = "label-exists"
 label = "ci-run-all-tests"
 run = ["*"]
 
+[[rules]]
+name = "area-label-sensor"
+when = "label-exists"
+label = "area/sensor"
+run = ["sensor-integration-tests"]
+
+[[rules]]
+name = "area-label-central"
+when = "label-exists"
+label = "area/central"
+run = ["go-postgres"]
+
+[[rules]]
+name = "area-label-scanner"
+when = "label-exists"
+label = "area/scanner"
+run = ["db-integration-tests"]
+
+[[rules]]
+name = "area-label-ui"
+when = "label-exists"
+label = "area/ui"
+run = ["ui", "ui-component", "gke-ui-e2e-tests"]
+
+[[rules]]
+name = "area-label-operator"
+when = "label-exists"
+label = "area/operator"
+run = ["check-crd-compatibility"]
+
+[[rules]]
+name = "area-label-roxctl"
+when = "label-exists"
+label = "area/roxctl"
+run = ["local-roxctl-tests"]
+
+# Tier 2: High-Impact Changes (run everything)
 # These files can change code the path rules do not name.
 [[rules]]
 name = "tree-may-have-changed"
@@ -40,16 +88,41 @@ when = "any-file-matches"
 paths = ['^go\.mod$', '^go\.sum$', '^proto/', '^generated/']
 run = ["*"]
 
-# A docs-only change skips every target. style-check and wait-for-images
-# still get a run vote, so those clashes run.
+# Tier 3: Docs-Only (aggressive skip)
+# A docs-only change skips almost everything. style-check still runs due to clash with always-run rule.
 [[rules]]
 name = "docs-only"
 when = "every-file-matches"
-paths = ['\.md$', '^docs/', '^CHANGELOG']
-skip = ["*"]
+paths = ['\.md$', '^docs/', '^CHANGELOG', '^README']
+skip = [
+  "go",
+  "go-postgres",
+  "sensor-integration-tests",
+  "db-integration-tests",
+  "check-generated-files",
+  "check-crd-compatibility",
+  "golangci-lint",
+  "github-actions-lint",
+  "openshift-ci-lint",
+  "ui",
+  "ui-component",
+  "local-roxctl-tests",
+  "shell-unit-tests",
+  "e2e-byodb-tests",
+  "e2e-db-backup-restore-tests",
+  "e2e-gke-upgrade-tests",
+  "e2e-nongroovy-tests",
+  "e2e-qa-tests-gke",
+  "e2e-qa-tests-gke-konflux",
+  "e2e-qa-tests-ocp-4-22",
+  "gke-nongroovy-e2e-tests",
+  "gke-qa-e2e-tests",
+  "gke-ui-e2e-tests",
+  "ocp-vm-scanning-e2e-tests",
+]
 
+# Tier 4: CI Tooling Changes
 # Workflow hooks and the selector do not change the product under test.
-# The rule applies only when every changed file is one of these paths.
 [[rules]]
 name = "ci-tooling"
 when = "every-file-matches"
@@ -72,8 +145,36 @@ skip = [
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
   "ocp-vm-scanning-e2e-tests",
+  "db-integration-tests",
+  "go-postgres",
+  "sensor-integration-tests",
 ]
 
+# Tier 5: Always-Run Tests
+[[rules]]
+name = "style"
+when = "always"
+run = ["style-check"]
+
+[[rules]]
+name = "shell-tests"
+when = "any-file-matches"
+paths = ['\.sh$', '^scripts/', '^tests/.*\.sh$']
+run = ["shell-unit-tests"]
+
+[[rules]]
+name = "github-actions-linting"
+when = "any-file-matches"
+paths = ['^\.github/workflows/']
+run = ["github-actions-lint"]
+
+[[rules]]
+name = "openshift-ci-linting"
+when = "any-file-matches"
+paths = ['^\.openshift-ci/']
+run = ["openshift-ci-lint"]
+
+# Tier 6: Go Code & Linting
 [[rules]]
 name = "go-sources"
 when = "any-file-matches"
@@ -81,29 +182,179 @@ paths = ['\.go$']
 run = ["go"]
 
 [[rules]]
-name = "style"
-when = "always"
-run = ["style-check"]
+name = "go-linting"
+when = "any-file-matches"
+paths = ['\.go$', '^\.golangci\.yml$']
+run = ["golangci-lint"]
 
 [[rules]]
-name = "sensor"
-when = "any-file-matches"
-paths = ['^sensor/']
-run = ["sensor-integration-tests"]
-skip = ["go-postgres"]
+name = "skip-golangci-for-non-go"
+when = "every-file-matches"
+paths = ['^ui/', '^docs/', '\.md$', '^\.github/', '^\.openshift-ci/', '^scripts/ci/']
+skip = ["golangci-lint"]
 
+# Tier 7: Generated Files
 [[rules]]
-name = "central-policy"
+name = "generated-files"
 when = "any-file-matches"
-paths = ['^central/policy/']
+paths = ['^proto/', '^generated/', '\.proto$']
+run = ["*"]
+
+# Tier 8: Subsystem-Specific Rules
+
+# UI-Only
+[[rules]]
+name = "ui-only"
+when = "every-file-matches"
+paths = ['^ui/']
+run = ["ui", "ui-component", "gke-ui-e2e-tests"]
+skip = [
+  "go",
+  "sensor-integration-tests",
+  "go-postgres",
+  "db-integration-tests",
+  "check-generated-files",
+  "check-crd-compatibility",
+  "golangci-lint",
+  "github-actions-lint",
+  "openshift-ci-lint",
+  "local-roxctl-tests",
+  "shell-unit-tests",
+  "e2e-byodb-tests",
+  "e2e-db-backup-restore-tests",
+  "e2e-gke-upgrade-tests",
+  "e2e-nongroovy-tests",
+  "gke-nongroovy-e2e-tests",
+  "gke-qa-e2e-tests",
+  "e2e-qa-tests-gke",
+  "e2e-qa-tests-gke-konflux",
+  "e2e-qa-tests-ocp-4-22",
+  "ocp-vm-scanning-e2e-tests",
+]
+
+# Scanner-Only
+[[rules]]
+name = "scanner-only"
+when = "every-file-matches"
+paths = ['^scanner/']
+run = ["db-integration-tests", "go"]
+skip = ["sensor-integration-tests", "go-postgres", "e2e-gke-upgrade-tests", "e2e-db-backup-restore-tests", "e2e-byodb-tests"]
+
+# Operator/CRD-Only
+[[rules]]
+name = "operator-only"
+when = "every-file-matches"
+paths = ['^operator/', '\.crd\.yaml$', '^config-controller/']
+run = ["check-crd-compatibility", "go"]
+skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "e2e-nongroovy-tests", "gke-nongroovy-e2e-tests"]
+
+# roxctl-Only
+[[rules]]
+name = "roxctl-only"
+when = "every-file-matches"
+paths = ['^roxctl/']
+run = ["local-roxctl-tests", "go", "e2e-nongroovy-tests"]
+skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "gke-ui-e2e-tests", "e2e-byodb-tests", "e2e-db-backup-restore-tests", "e2e-gke-upgrade-tests"]
+
+# Tier 9: Central/Sensor Separation (Aggressive)
+
+# Central-Only Paths
+[[rules]]
+name = "central-only-domains"
+when = "every-file-matches"
+paths = [
+  '^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/',
+  '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/',
+  '^central/(notifier|notifiers|reports|reportconfigurations)/',
+  '^central/(externalbackups|declarativeconfig|config|installation)/',
+  '^central/(ui|graphql|grpc|endpoints)/',
+  '^central/(featureflags|development|audit|logimbue|trace)/',
+  '^central/(helmcharts|ping|version|systeminfo|docs|internal)/',
+  '^pkg/(sac|search|postgres|notifiers|migrations|renderer|backup)/',
+]
 run = ["go-postgres"]
 skip = ["sensor-integration-tests"]
 
+# Sensor-Only Paths
+[[rules]]
+name = "sensor-only-domains"
+when = "every-file-matches"
+paths = [
+  '^sensor/(admission-control|upgrader|debugger|testutils|tests)/',
+  '^sensor/kubernetes/(fake|client|enforcer)/',
+  '^pkg/(admissioncontrol|docker|enforcers|complianceoperator|k8sintrospect|protocompat|compliance/checks|binenc)/',
+]
+run = ["sensor-integration-tests"]
+skip = ["go-postgres"]
+
+# Central-Sensor Shared Paths (run both)
+[[rules]]
+name = "central-sensor-shared-pkg"
+when = "any-file-matches"
+paths = [
+  '^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/',
+  '^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/',
+]
+run = ["go-postgres", "sensor-integration-tests"]
+
+# Central domains that talk to Sensor (run both)
+[[rules]]
+name = "central-sensor-communication"
+when = "any-file-matches"
+paths = [
+  '^central/(cluster|deployment|image|baseimage|node|pod|namespace|secret|serviceaccount|virtualmachine)/',
+  '^central/(alert|detection|policy|policycat)/',
+  '^central/(networkbaseline|networkgraph|networkpolicies)/',
+  '^central/(complianceoperator|processindicator)/',
+  '^central/(imageintegration|delegatedregistryconfig|enrichment|reprocessor)/',
+  '^central/(sensor|sensorupgrade|clusterinit|securedclustercertgen)/',
+  '^central/(metrics|telemetry|debug|scrape|vulnmgmt|hash)/',
+]
+run = ["go-postgres", "sensor-integration-tests"]
+
+# Sensor domains that talk to Central (run both)
+[[rules]]
+name = "sensor-central-communication"
+when = "any-file-matches"
+paths = [
+  '^sensor/common/(admissioncontroller|centralclient|centralproxy|compliance|config|detector|enforcer|networkflow|sensor|image|scannerclient|virtualmachine)/',
+  '^sensor/kubernetes/(eventpipeline|listener|complianceoperator|networkpolicies|telemetry|upgrade|clusterhealth|clustermetrics|clusterstatus|certrefresh)/',
+]
+run = ["go-postgres", "sensor-integration-tests"]
+
+# Tier 10: E2E Test Selective Execution
+
+[[rules]]
+name = "skip-e2e-byodb"
+when = "every-file-matches"
+paths = ['^ui/', '^roxctl/', '^operator/', '^sensor/', '^docs/', '^scripts/ci/', '^\.github/', '\.md$']
+skip = ["e2e-byodb-tests"]
+
+[[rules]]
+name = "skip-e2e-db-backup-restore"
+when = "every-file-matches"
+paths = ['^ui/', '^roxctl/', '^operator/', '^sensor/', '^scanner/', '^docs/', '\.md$']
+skip = ["e2e-db-backup-restore-tests"]
+
+[[rules]]
+name = "skip-e2e-nongroovy"
+when = "every-file-matches"
+paths = ['^ui/', '^docs/', '\.md$', '^operator/']
+skip = ["e2e-nongroovy-tests", "gke-nongroovy-e2e-tests"]
+
+[[rules]]
+name = "skip-e2e-upgrade-all"
+when = "every-file-matches"
+paths = ['^ui/', '^docs/', '\.md$']
+skip = ["e2e-gke-upgrade-tests"]
+
+# Tier 11: Image Wait (always run)
 [[rules]]
 name = "image-wait"
 when = "always"
 run = ["wait-for-images"]
 
+# Tier 12: Remaining (default fallback)
 [[rules]]
 name = "remaining"
 when = "remaining"
