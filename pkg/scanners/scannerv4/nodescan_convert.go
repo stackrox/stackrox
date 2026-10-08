@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	rhcosOSImageRegexp       = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (4)(\d{2,})`)
+	rhcosOSImageRegexp       = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (4)(\d+)`)
 	rhcosDottedOSImageRegexp = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (\d+)\.(\d+)\.`)
 )
 
