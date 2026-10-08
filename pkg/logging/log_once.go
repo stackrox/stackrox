@@ -59,8 +59,8 @@ func getLogOnceMaxMemory() int32 {
 // It is important that repeated messages are prevented for the same template string which is used before formatting
 // args into it. This is intentional compromise: LogOncef and LogOncePerKeyf are more performant than RateLimitedLogger
 // because they don't rely on heavy synchronization with Mutex and use relatively small memory of seen messages
-// (capped by maxLogOnceMemory). If you want to prevent repeated varied messages considering args, LogOncef and
-// LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent something else.
+// (capped by logOnceMaxMemory). If you want to prevent repeated varied messages considering args or level, LogOncef
+// and LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent something else.
 // Note that level also does not participate in de-duplication (similar to args).
 func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) {
 	LogOncePerKeyf("", logger, level, template, args...)
@@ -71,7 +71,7 @@ func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) 
 // The combination of the key and the template string would be the thing which prevents logging the same message
 // multiple times. Use this function when you want to log once for a certain object that can be identified by the key.
 // Make sure you understand when to use and not to use this function - read doc/comment for LogOncef.
-// It's important to make sure the number of keys is bounded. For example, the use of cluster IDs is ok there as we
+// It's important to make sure the number of keys is bounded. For example, the use of cluster IDs is ok because we
 // know that the number of clusters is limited, but the use of container IDs is not because many new containers are
 // likely to appear during the run time of the process.
 func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template string, args ...any) {

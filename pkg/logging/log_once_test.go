@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// TestLogOncefReal and TestLogOncePerKeyfReal demonstrate the usage of LogOncef and LogOncePerKeyf. The use real
+// TestLogOncefReal and TestLogOncePerKeyfReal demonstrate the usage of LogOncef and LogOncePerKeyf. They use real
 // logger so you can run them and see what actually gets written to the output.
 func TestLogOncefReal(t *testing.T) {
 	logger := LoggerForModule()
@@ -20,9 +20,9 @@ func TestLogOncefReal(t *testing.T) {
 
 func TestLogOncePerKeyfReal(t *testing.T) {
 	logger := LoggerForModule()
-	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
-	LogOncePerKeyf("key2", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key2")
-	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per key %d", 1)
+	LogOncePerKeyf("key2", logger, zapcore.InfoLevel, "this message is only logged once per key %d", 2)
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per key %d", 1)
 }
 
 func TestLogOnce(t *testing.T) {
@@ -79,9 +79,9 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 		capturedWarning = fmt.(string)
 	}).Times(1)
 
-	testCount := logOnceDefaultMaxMemory * 2
+	testCount := int(logOnceDefaultMaxMemory * 2)
 	for i := range testCount {
-		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(int(i))) //nolint:govet
+		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(i)) //nolint:govet
 	}
 
 	s.Regexp("logOnceMaxMemory.* limit reached", capturedWarning)
