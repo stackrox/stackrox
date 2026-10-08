@@ -82,9 +82,15 @@ jobs:
           envrc="$(mktemp)"
           echo "envrc=${envrc}" >> "$GITHUB_OUTPUT"
 
+          # Adjust resource requests so they fit within a GHA runner.
           roxie deploy central \
             --tag "${PREVIOUS_VERSION}" \
             --resources small \
+            --set central.spec.central.resources.requests.cpu=300m \
+            --set central.spec.central.db.resources.requests.cpu=300m \
+            --set central.spec.scannerV4.db.resources.requests.cpu=200m \
+            --set central.spec.scannerV4.indexer.resources.requests.cpu=150m \
+            --set central.spec.scannerV4.matcher.resources.requests.cpu=150m \
             --port-forwarding \
             --envrc "${envrc}" \
             --central-wait 5m
