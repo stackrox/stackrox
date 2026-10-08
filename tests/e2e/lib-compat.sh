@@ -191,9 +191,14 @@ roxie_config_from_environment_compat() {
     handle_storage_classes "$config_file"
 
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
-    handle_scanner_v4_vuln_readiness "$config_file"
+    if [[ ${ROX_SCANNER_V4:-} == false ]]; then
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Disabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "Disabled"
+    else
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
+        handle_scanner_v4_vuln_readiness "$config_file"
+    fi
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
