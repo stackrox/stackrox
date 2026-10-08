@@ -207,28 +207,38 @@ jobs:
           sleep 2
         done
 
-        # Poll images_v2 until its row count stabilizes across two consecutive
+        # Poll /v1/imagescount until it stabilizes across two consecutive
         # checks, as a proxy for the reprocessor having finished its pass.
-        db_password=$(kubectl -n acs-central get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)
-        count_images_v2() {
-          kubectl -n acs-central exec deploy/central-db -c central-db -- \
-            bash -c "PGPASSWORD='${db_password}' psql -U postgres -d central_active -tAc 'SELECT count(*) FROM images_v2'" \
-            | tr -d '[:space:]'
+        auth_cfg_file="$(mktemp)"
+        printf 'user = "admin:%s"\n' "$ROX_ADMIN_PASSWORD" > "$auth_cfg_file"
+        count_images() {
+          curl -sk --config "$auth_cfg_file" "https://$API_ENDPOINT/v1/imagescount" | jq -r '.count'
         }
+
         previous=-1
+        stabilized=0
         deadline=$((SECONDS + 600))
         while true; do
-          current=$(count_images_v2)
-          if [[ "$current" == "$previous" ]]; then
+          current=$(count_images)
+          echo "images count: ${current}"
+          if [[ "$current" != "0" && "$current" == "$previous" ]]; then
+            stabilized=1
             break
           fi
           previous="$current"
           if (( SECONDS > deadline )); then
-            echo "images_v2 row count did not stabilize within 10m (last seen: ${current})" >&2
+            echo "image count did not stabilize at a nonzero value within 10m (last seen: ${current})" >&2
             break
           fi
           sleep 20
         done
+
+        if [[ "$stabilized" != "1" ]]; then
+          echo "Image reprocessing did not populate images_v2; dumping reprocessor logs" >&2
+          kubectl -n acs-central logs deploy/central -c central --tail=500 2>&1 \
+            | grep -i "reprocess" >&2 || true
+          exit 1
+        fi
 
     - name: Wait for background migrations
       run: |
