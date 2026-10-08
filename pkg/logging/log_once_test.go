@@ -97,6 +97,28 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	s.Equal(logOnceDefaultMaxMemory, countInMap)
 }
 
+func (s *logOnceTestSuite) TestGetLogOnceMaxMemory() {
+	s.Run("default", func() {
+		s.Assert().Equal((int32)(10000), getLogOnceMaxMemory())
+	})
+
+	cases := map[string]int32{
+		"15":             15,
+		"2000000000":     2000000000,
+		"3000000000":     10000,
+		"-6":             10000,
+		"plenty, maybe?": 10000,
+		"":               10000,
+	}
+
+	for input, expected := range cases {
+		s.Run(input, func() {
+			s.T().Setenv("ROX_MAX_LOG_ONCE_MEMORY", input)
+			s.Assert().Equal(expected, getLogOnceMaxMemory())
+		})
+	}
+}
+
 func BenchmarkLogOnce(b *testing.B) {
 	logger := LoggerForModule()
 
