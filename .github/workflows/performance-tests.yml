@@ -123,10 +123,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # ROX-29641: We are facing issues with workload generation on GKE when Scanner v4 is enabled.
-          roxie deploy central --single-namespace --verbose --envrc .roxie.env \
-            --set central.spec.scannerV4.scannerComponent=Disabled
-
+          ./scale/dev/launch_central.sh
           source .roxie.env
           # Required for k6 tests to run.
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
