@@ -205,11 +205,11 @@ jobs:
         wait_for_deploy scanner-v4-matcher app=scanner-v4-matcher || exit 1
 
         echo "Waiting for scanner-v4-matcher's initial vulnerability bundle import to complete..."
-        deadline=$((SECONDS + 900))
+        deadline=$((SECONDS + 1500))
         until kubectl -n acs-central logs deploy/scanner-v4-matcher -c matcher --tail=-1 2>/dev/null \
             | grep -q '"message":"completed update"'; do
           if (( SECONDS > deadline )); then
-            echo "scanner-v4-matcher did not finish its initial vulnerability import within 15m" >&2
+            echo "scanner-v4-matcher did not finish its initial vulnerability import within 25m" >&2
             kubectl -n acs-central logs deploy/scanner-v4-matcher -c matcher --tail=100 >&2
             exit 1
           fi
