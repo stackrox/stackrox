@@ -51,7 +51,7 @@ func (s *logOnceTestSuite) TestLogOncef() {
 	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "hello world %d, %s", 6, "yes!").Times(1)
 
 	LogOncef(s.mockLogger, zapcore.WarnLevel, "hello world %d, %s", 6, "yes!")
-	LogOncef(s.mockLogger, zapcore.WarnLevel, "hello world %d, %s", 500, "really?")
+	LogOncef(s.mockLogger, zapcore.PanicLevel, "hello world %d, %s", 500, "really?")
 }
 
 func (s *logOnceTestSuite) TestLogOncePerKeyf() {
@@ -59,7 +59,7 @@ func (s *logOnceTestSuite) TestLogOncePerKeyf() {
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1).Times(1)
 
 	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4)
-	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 34)
+	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.WarnLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 34)
 
 	LogOncePerKeyf("sensor 2", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1)
 }
