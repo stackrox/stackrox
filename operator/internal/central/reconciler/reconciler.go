@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	statusController "github.com/stackrox/rox/operator/internal/common/status"
 	"github.com/stackrox/rox/operator/internal/legacy"
+	"github.com/stackrox/rox/operator/internal/openshift"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
 	"github.com/stackrox/rox/operator/internal/route"
@@ -78,6 +79,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		translation.WithEnrichment(
 			centralTranslation.New(mgr.GetClient()),
+			openshift.NewEnricher(mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			tlsprofile.NewEnricher(tlsProfile),
 			// Using uncached UncachedClient since this is reading secrets not

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	statusController "github.com/stackrox/rox/operator/internal/common/status"
 	"github.com/stackrox/rox/operator/internal/legacy"
+	"github.com/stackrox/rox/operator/internal/openshift"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
 	"github.com/stackrox/rox/operator/internal/securedcluster/extensions"
@@ -107,6 +108,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 		image.SecuredClusterServicesChartPrefix,
 		translation.WithEnrichment(
 			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader()),
+			openshift.NewEnricher(mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			tlsprofile.NewEnricher(tlsProfile),
 			pullSecretRefInjector,

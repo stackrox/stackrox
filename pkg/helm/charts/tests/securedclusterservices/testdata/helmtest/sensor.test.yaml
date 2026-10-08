@@ -24,3 +24,24 @@ tests:
   - name: "Sensor has secure container security context"
     expect: |
       .deployments["sensor"].spec.template.spec.containers[] | select(.name == "sensor") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+  - name: "ROX-37460: missing OpenShift discovery selects Kubernetes UID defaults"
+    server:
+      visibleSchemas:
+      - kubernetes-1.20.2
+    set:
+      monitoring.openshift.enabled: false
+    expect: |
+      .deployments["sensor"].spec.template.spec.securityContext.runAsUser | assertThat(. == 4000)
+      .deployments["sensor"].spec.template.spec.securityContext.fsGroup | assertThat(. == 4000)
+
+  - name: "OpenShift leaves UID and fsGroup assignment to the namespace SCC"
+    server:
+      visibleSchemas:
+      - kubernetes-1.20.2
+    set:
+      env.openshift: true
+      monitoring.openshift.enabled: false
+    expect: |
+      .deployments["sensor"].spec.template.metadata.annotations["openshift.io/required-scc"] | assertThat(. == "restricted-v2")
+      .deployments["sensor"].spec.template.spec.securityContext | assertThat(. == null)
