@@ -940,28 +940,15 @@ EOM
         rm -f "${query}"
     fi
     info "Now retrieving prefetcher metrics..."
-    local attempt=0
-    local service="service/${name}-metrics"
-    while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
-        if [ "$attempt" -lt "60" ]; then
-            info "Waiting for ${service} to obtain endpoint ..."
-            ((attempt++))
-            sleep 10
-        else
-            info "Something is wrong with the ${service} service. See the following 'describe' output."
-            kubectl -n "${ns}" describe "${service}" || true
-            die "Timeout waiting for ${service} to obtain endpoint!"
-        fi
-    done
-    local endpoint
-    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | service_get_endpoint)"
+    make image-prefetcher-deploy-bin
+    local image_prefetcher_deploy_bin
+    image_prefetcher_deploy_bin="$(make print-image-prefetcher-deploy-bin)"
     local fetcher_metrics
     fetcher_metrics="$(mktemp --suffix=.csv)"
     local fetcher_metrics_json
     fetcher_metrics_json="$(mktemp --suffix=.json)"
-    local metrics_url="http://${endpoint}:8080/metrics"
-    if ! curl --silent --show-error --fail --retry 3 --retry-connrefused "${metrics_url}" > "${fetcher_metrics_json}"; then
-        die "Failed to fetch prefetcher metrics from ${metrics_url}"
+    if ! "${image_prefetcher_deploy_bin}" --fetch-metrics --namespace="${ns}" "${name}" > "${fetcher_metrics_json}"; then
+        die "Failed to fetch prefetcher metrics for set ${name}"
     fi
     # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
     # for the order of columns.
@@ -2755,6 +2742,26 @@ _record_cluster_info() {
     local containerRuntimeVersion
     containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
     set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
+}
+
+# list_vm_scan_namespaces prints VM-scanning e2e namespace names, one per line.
+# Returns 1 when kubectl cannot list namespaces, distinct from zero matches.
+list_vm_scan_namespaces() {
+    local prefix="${VM_SCAN_NAMESPACE_PREFIX:-vm-scan-e2e}"
+    local out err
+    out="$(mktemp)"
+    err="$(mktemp)"
+    if ! kubectl --request-timeout=30s get ns \
+        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
+        > "$out" 2>"$err"; then
+        info "kubectl get ns failed: $(<"$err")" >&2
+        rm -f "$out" "$err"
+        return 1
+    fi
+    rm -f "$err"
+    grep -E "^${prefix}(-|$)" "$out" || true
+    rm -f "$out"
+    return 0
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

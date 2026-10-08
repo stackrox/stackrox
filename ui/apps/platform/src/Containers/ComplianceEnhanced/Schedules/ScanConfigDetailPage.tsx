@@ -8,7 +8,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getComplianceScanConfiguration } from 'services/ComplianceScanConfigurationService';
 import EditScanConfigDetail from './EditScanConfigDetail';
 import ViewScanConfigDetail from './ViewScanConfigDetail';
-import type { PageActions } from './compliance.scanConfigs.utils';
+import type { SchedulePageAction } from './compliance.scanConfigs.utils';
 
 type ScanConfigDetailPageProps = {
     hasWriteAccessForCompliance: boolean;
@@ -18,7 +18,7 @@ function ScanConfigDetailPage({
     hasWriteAccessForCompliance,
 }: ScanConfigDetailPageProps): ReactElement {
     const { scanConfigId } = useParams() as { scanConfigId: string };
-    const { pageAction } = usePageAction<PageActions>();
+    const { pageAction } = usePageAction<SchedulePageAction>();
 
     const scanConfigFetcher = useCallback(() => {
         const { request, cancel } = getComplianceScanConfiguration(scanConfigId);
