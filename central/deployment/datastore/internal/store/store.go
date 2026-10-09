@@ -18,6 +18,7 @@ type Store interface {
 	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
 	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error

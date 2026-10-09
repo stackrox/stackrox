@@ -1,23 +1,16 @@
-ARG TARGETARCH
 ARG PG_VERSION=16
 
 FROM registry.access.redhat.com/ubi9:latest AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
-# PGDG does not publish s390x RPMs, and UBI only provides PostgreSQL 13.
-# Use CentOS Stream's PostgreSQL module for that architecture's download stage.
-FROM ubi-base AS downloads-amd64
-FROM ubi-base AS downloads-arm64
-FROM ubi-base AS downloads-ppc64le
-FROM quay.io/centos/centos:stream9 AS downloads-s390x
-
-FROM downloads-${TARGETARCH} AS downloads
+FROM ubi-base AS downloads
 
 ARG DEBUG_BUILD=no
 ARG PG_VERSION
 
 WORKDIR /
 COPY download.sh /download.sh
+COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 RUN /download.sh
 
 FROM ubi-base AS stackrox_data

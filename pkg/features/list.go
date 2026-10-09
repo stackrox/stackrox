@@ -36,6 +36,9 @@ var (
 	// ComplianceRemediationV2 enables the remediation feature of the compliance v2 integration.
 	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", enabled)
 
+	// ComplianceSurfaceStaleData gates surfacing stale compliance data in Coverage views (ROX-35712). Default off.
+	ComplianceSurfaceStaleData = registerFeature("Surface stale compliance data in Coverage views", "ROX_COMPLIANCE_SURFACE_STALE_DATA")
+
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
 
@@ -146,8 +149,8 @@ var (
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 
-	// PolicyWorkloadTypeExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
-	PolicyWorkloadTypeExclusion = registerFeature("Enable excluding all workloads of a given type from a policy", "ROX_POLICY_WORKLOAD_TYPE_EXCLUSION")
+	// PolicyWorkloadKindExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
+	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
 
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")

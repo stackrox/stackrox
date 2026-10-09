@@ -1683,30 +1683,6 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
-		{
-			name: "Plop does not have a poduid so it is removed",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				{
-					Id:                 plopID1,
-					Port:               1234,
-					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:     nil,
-					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-					Closed:             false,
-					Process: &storage.ProcessIndicatorUniqueKey{
-						PodId:               fixtureconsts.PodUID1,
-						ContainerName:       "test_container1",
-						ProcessName:         "test_process1",
-						ProcessArgs:         "test_arguments1",
-						ProcessExecFilePath: "test_path1",
-					},
-					DeploymentId: fixtureconsts.Deployment1,
-				},
-			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
-			expectedDeletions: []string{plopID1},
-		},
 	}
 
 	for _, c := range cases {
@@ -1718,7 +1694,6 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 				postgres: db,
 				plops:    plopDS,
 			}
-			prunedPLOPsWithoutPodUIDs = false
 
 			// Populate some actual data so the query returns what needs deleted
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)

@@ -152,11 +152,15 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=REGULAR;INIT
-type ContainerType string
+// SkipContainerType lists container kinds a policy may skip during evaluation.
+// +kubebuilder:validation:Enum=SKIP_INIT
+type SkipContainerType string
 
+// EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
-	SkipContainerTypes []ContainerType `json:"skipContainerTypes,omitempty"`
+	// SkipContainerTypes lists container kinds to skip during evaluation.
+	// +optional
+	SkipContainerTypes []SkipContainerType `json:"skipContainerTypes,omitempty"`
 }
 
 type SecurityPolicyConditionType string
@@ -433,9 +437,9 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	if p.EvaluationFilter != nil && len(p.EvaluationFilter.SkipContainerTypes) > 0 {
 		protoFilter := &storage.EvaluationFilter{}
 		for _, ct := range p.EvaluationFilter.SkipContainerTypes {
-			val, found := storage.ContainerType_value[string(ct)]
+			val, found := storage.SkipContainerType_value[string(ct)]
 			if found {
-				protoFilter.SkipContainerTypes = append(protoFilter.SkipContainerTypes, storage.ContainerType(val))
+				protoFilter.SkipContainerTypes = append(protoFilter.SkipContainerTypes, storage.SkipContainerType(val))
 			}
 		}
 		proto.EvaluationFilter = protoFilter

@@ -475,7 +475,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 func (pc *PolicyAsCodeSuite) TestCRWithEvaluationFilter() {
 	k8sPolicy := createBasePolicyStruct("test-eval-filter-cr")
 	k8sPolicy.Spec.EvaluationFilter = &v1alpha1.EvaluationFilter{
-		SkipContainerTypes: []v1alpha1.ContainerType{"INIT"},
+		SkipContainerTypes: []v1alpha1.SkipContainerType{"SKIP_INIT"},
 	}
 
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
@@ -487,7 +487,7 @@ func (pc *PolicyAsCodeSuite) TestCRWithEvaluationFilter() {
 
 	pc.Require().NotNil(policy.GetEvaluationFilter())
 	pc.Require().Equal(
-		[]storage.ContainerType{storage.ContainerType_INIT},
+		[]storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 		policy.GetEvaluationFilter().GetSkipContainerTypes(),
 	)
 }

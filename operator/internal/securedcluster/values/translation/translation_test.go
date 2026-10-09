@@ -257,6 +257,31 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
+		"namespace-prefix-global-resources annotation enabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:   "stackrox",
+						Annotations: map[string]string{namespacePrefixGlobalResourcesAnnotation: "true"},
+					},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":                    "test-cluster",
+				"ca":                             map[string]string{"cert": "ca central content"},
+				"createSecrets":                  false,
+				"namespacePrefixGlobalResources": true,
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
 		"local scanner autosense suppression": {
 			args: args{
 				client: newDefaultFakeClientWithCentral(t),

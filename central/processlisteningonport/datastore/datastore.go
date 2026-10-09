@@ -29,12 +29,9 @@ type DataStore interface {
 		deployment string,
 	) ([]*storage.ProcessListeningOnPort, error)
 	WalkAll(ctx context.Context, fn WalkFn) error
-	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
 	RemovePlopsByPod(ctx context.Context, id string) error
 	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64
-	PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration)
 	RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error)
-	RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error)
 }
 
 // New creates a data store object to access the database. Since some
