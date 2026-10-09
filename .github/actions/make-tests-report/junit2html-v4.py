@@ -17,10 +17,26 @@ def main():
     xml_files = sorted(input_dir.rglob('*.xml'), key=lambda p: str(p))
     print(f'Found XML files: {len(xml_files)}')
 
+    grand_totals = make_counts()
+    valid_files = []
+
     for f in xml_files:
-        print(f'Parsing {f}')
-        suites = parse_file_pass1(f)
-        print(suites)
+        print(f'Parsing {f} ... ', end='')
+        ok, suites = parse_file_pass1(f)
+        if not ok:
+            print('not a JUnit XML file')
+            continue
+        file_totals = make_counts()
+        for s in suites:
+            sum_up(grand_totals, s.counts)
+            sum_up(file_totals, s.counts)
+        print(f'found {file_totals[Ctr.TESTS]} tests')
+        valid_files.append((f, suites))
+
+    if not valid_files:
+        raise RuntimeError('No valid JUnit reports found')
+
+    print(grand_totals)
 
     return 0
 
@@ -33,11 +49,6 @@ def parse_args():
     return parser.parse_args(sys.argv[1:])
 
 
-class Pass1State(Enum):
-    OK = 1
-    NOT_JUNIT = 2
-
-
 class Ctr(Enum):
     """Counter"""
     TESTS = 1
@@ -45,6 +56,21 @@ class Ctr(Enum):
     FAILURES = 3
     ERRORS = 4
     SKIPPED = 5
+
+
+def make_counts():
+    return {
+        Ctr.TESTS: 0,
+        Ctr.PASSED: 0,
+        Ctr.FAILURES: 0,
+        Ctr.ERRORS: 0,
+        Ctr.SKIPPED: 0,
+    }
+
+
+def sum_up(acc, item):
+    for k in acc.keys():
+        acc[k] += item[k]
 
 
 @dataclass
@@ -69,7 +95,7 @@ def parse_file_pass1(file):
                 if root_tag is None:
                     root_tag = tag
                     if tag not in ('testsuites', 'testsuite'):
-                        return Pass1State.NOT_JUNIT, []
+                        return False, []
                 if tag == 'testsuite':
                     ensure(test_suite is None, 'nested testsuite-s are not supported')
                     test_suite = make_test_suite(elem)
@@ -99,9 +125,9 @@ def parse_file_pass1(file):
                 elif tag == 'properties':
                     if test_case is None:
                         test_suite.props.extend(extract_props(elem))
-        return Pass1State.OK, suites
+        return True, suites
     except ET.ParseError:
-        return Pass1State.NOT_JUNIT, []
+        return False, []
 
 
 def ensure(cond, message):
@@ -113,7 +139,7 @@ def ensure(cond, message):
 def make_test_suite(el):
     props = []
     for k, v in el.items():
-        if k in {'name', 'time', 'tests', 'failures', 'errors', 'skipped'}:
+        if k in {'name', 'time'}:
             continue
         props.append((k, v))
 
@@ -125,16 +151,6 @@ def make_test_suite(el):
         sysout='',
         syserr='',
     )
-
-
-def make_counts():
-    return {
-        Ctr.TESTS: 0,
-        Ctr.PASSED: 0,
-        Ctr.FAILURES: 0,
-        Ctr.ERRORS: 0,
-        Ctr.SKIPPED: 0,
-    }
 
 
 def text_of(el):
@@ -152,11 +168,11 @@ def extract_props(el):
 
 
 def classify(testcase_el):
-    if testcase_el.find('failure'):
+    if testcase_el.find('failure') is not None:
         return Ctr.FAILURES
-    elif testcase_el.find('error'):
+    elif testcase_el.find('error') is not None:
         return Ctr.ERRORS
-    elif testcase_el.find('skipped'):
+    elif testcase_el.find('skipped') is not None:
         return Ctr.SKIPPED
     ensure(not testcase_el.get('status'), 'status override attribute is not supported')
     return Ctr.PASSED
