@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
@@ -658,7 +659,9 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return err
 	}
 
+	release := lifecycle.Singleton().BeginDeletion(id)
 	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
+		release()
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
@@ -666,11 +669,12 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
-	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
+	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done, release)
 	return nil
 }
 
-func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
+func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal, release func()) {
+	defer release()
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
 		ds.cm.CloseConnection(cluster.GetId())
