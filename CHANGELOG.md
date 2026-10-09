@@ -18,7 +18,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
-- ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
+- ROX-37265: To get additional filtering coverage for Red Hat layers in newer Konflux-built images, the `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` flag must now be set on Central. The existing Scanner V4 Matcher setting remains for backward compatibility, but its filtering has coverage gaps for these images.
 
 **Full Changelog**: [4.11.5...4.11.6](https://github.com/stackrox/stackrox/compare/4.11.5...4.11.6)
 
