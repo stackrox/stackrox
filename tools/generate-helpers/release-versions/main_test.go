@@ -610,3 +610,8 @@ var releaseVersions = []ReleaseVersion{
 }
 `, string(got))
 }
+
+func TestInitialReleaseOrdinalOverflow(t *testing.T) {
+	_, err := selectReleaseTags("5.1.0-rc.1 5.1.0-rc.999999999999999999999999999999", productstreams.XYVersion{X: 5, Y: 1})
+	require.ErrorContains(t, err, "parse RC ordinal")
+}

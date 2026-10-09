@@ -143,7 +143,16 @@ func selectReleaseTags(tags string, targetXy productstreams.XYVersion) (map[prod
 		if err := validateReleaseStream(stream); err != nil {
 			return nil, fmt.Errorf("validate historical release stream %s: %w", stream, err)
 		}
-		if selected, exists := releaseTags[stream]; !exists || newerInitialRelease(tag, selected) {
+		selected, exists := releaseTags[stream]
+		if !exists {
+			releaseTags[stream] = tag
+			continue
+		}
+		newer, err := newerInitialRelease(tag, selected)
+		if err != nil {
+			return nil, err
+		}
+		if newer {
 			releaseTags[stream] = tag
 		}
 	}
@@ -252,18 +261,24 @@ func validateReleaseStream(stream productstreams.XYVersion) error {
 }
 
 // GA supersedes RCs; otherwise select the highest numeric RC ordinal.
-func newerInitialRelease(candidate, selected string) bool {
+func newerInitialRelease(candidate, selected string) (bool, error) {
 	_, candidateRC, candidateIsRC := strings.Cut(candidate, "-rc.")
 	_, selectedRC, selectedIsRC := strings.Cut(selected, "-rc.")
 	if !candidateIsRC {
-		return true
+		return true, nil
 	}
 	if !selectedIsRC {
-		return false
+		return false, nil
 	}
-	// Ordinals are canonical non-negative decimal strings, so comparing lengths
-	// avoids integer overflow while preserving numeric ordering.
-	return len(candidateRC) > len(selectedRC) || (len(candidateRC) == len(selectedRC) && candidateRC > selectedRC)
+	candidateOrdinal, err := strconv.Atoi(candidateRC)
+	if err != nil {
+		return false, fmt.Errorf("parse RC ordinal from %q: %w", candidate, err)
+	}
+	selectedOrdinal, err := strconv.Atoi(selectedRC)
+	if err != nil {
+		return false, fmt.Errorf("parse RC ordinal from %q: %w", selected, err)
+	}
+	return candidateOrdinal > selectedOrdinal, nil
 }
 
 func parseSequence(data string) (int, error) {
