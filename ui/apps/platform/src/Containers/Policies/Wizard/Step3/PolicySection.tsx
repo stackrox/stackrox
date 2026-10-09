@@ -13,13 +13,10 @@ import {
 } from '@patternfly/react-core';
 import { CheckIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import useModal from 'hooks/useModal';
 import type { Policy } from 'types/policy.proto';
 import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyGroupCard from './PolicyGroupCard';
 import PolicySectionDropTarget from './PolicySectionDropTarget';
-import PolicyCriteriaModal from './PolicyCriteriaModal';
 
 import './PolicySection.css';
 import { PolicySectionValidationError } from './PolicySectionValidationError';
@@ -32,12 +29,8 @@ type PolicySectionProps = {
 
 function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = useState(false);
-    const { isModalOpen, openModal, closeModal } = useModal();
     const { values, errors, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
 
     function onEditSectionName(_, e) {
         handleChange(e);
@@ -48,13 +41,6 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
             'policySections',
             values.policySections.filter((_, i) => i !== sectionIndex)
         );
-    }
-
-    function addPolicyFieldCardHandler(fieldCard) {
-        setFieldValue(`policySections[${sectionIndex.toString()}].policyGroups`, [
-            ...policyGroups,
-            fieldCard,
-        ]);
     }
 
     return (
@@ -147,39 +133,14 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             )
                         );
                     })}
-                    {!showPolicyCriteriaModal && !readOnly && (
+                    {!readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}
                             descriptors={descriptors}
                         />
                     )}
-                    {showPolicyCriteriaModal && !readOnly && (
-                        <Flex
-                            className="pf-v6-u-mt-md"
-                            justifyContent={{ default: 'justifyContentCenter' }}
-                        >
-                            <FlexItem>
-                                <Button
-                                    key={`policySections[${sectionIndex}].sectionName-add-policy-field`}
-                                    variant="secondary"
-                                    onClick={openModal}
-                                >
-                                    Add policy field
-                                </Button>
-                            </FlexItem>
-                        </Flex>
-                    )}
                 </CardBody>
             </Card>
-            {showPolicyCriteriaModal && (
-                <PolicyCriteriaModal
-                    descriptors={descriptors}
-                    existingGroups={policyGroups}
-                    isModalOpen={isModalOpen}
-                    onClose={closeModal}
-                    addPolicyFieldCardHandler={addPolicyFieldCardHandler}
-                />
-            )}
         </>
     );
 }
