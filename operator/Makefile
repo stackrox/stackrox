@@ -430,19 +430,19 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | $(PROJECT_DIR)/hack/retry-kubectl.sh delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: deploy-via-olm
-deploy-via-olm: ## Deploy operator image to the cluster using OLM.
+.PHONY: deploy-via-olmv0
+deploy-via-olmv0: ## Deploy operator image to the cluster using OLMv0.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
-.PHONY: deploy-dirty-tag-via-olm
-deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
+.PHONY: deploy-dirty-tag-via-olmv0
+deploy-dirty-tag-via-olmv0: ## Deploy operator dirty tagged image to the cluster using OLMv0.
 # This target ignores filter for dirty tagged images.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
-.PHONY: deploy-previous-via-olm
-deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
+.PHONY: deploy-previous-via-olmv0
+deploy-previous-via-olmv0: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv0.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
@@ -461,13 +461,45 @@ deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version 
 	set -x ;\
 	TEST_NAMESPACE=$(TEST_NAMESPACE) ./hack/generate-and-install-chart.sh "$${replaced_version}"
 
-.PHONY: upgrade-via-olm
-upgrade-via-olm: kuttl
+.PHONY: upgrade-via-olmv0
+upgrade-via-olmv0: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
-.PHONY: upgrade-dirty-tag-via-olm
-upgrade-dirty-tag-via-olm: kuttl
+.PHONY: upgrade-dirty-tag-via-olmv0
+upgrade-dirty-tag-via-olmv0: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
+
+.PHONY: deploy-previous-via-olmv1
+deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv1.
+# This requires operator, bundle and index images to already be pushed, but we do not depend on the
+# target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
+	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	set -x ;\
+	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+
+.PHONY: upgrade-via-olmv1
+upgrade-via-olmv1: kuttl
+	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
+
+.PHONY: upgrade-dirty-tag-via-olmv1
+upgrade-dirty-tag-via-olmv1: kuttl
+	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
+
+# Backwards-compatible stubs for renamed targets (point to OLMv0 versions)
+.PHONY: deploy-via-olm
+deploy-via-olm: deploy-via-olmv0 ## Backwards-compatible stub for deploy-via-olmv0
+
+.PHONY: deploy-dirty-tag-via-olm
+deploy-dirty-tag-via-olm: deploy-dirty-tag-via-olmv0 ## Backwards-compatible stub for deploy-dirty-tag-via-olmv0
+
+.PHONY: deploy-previous-via-olm
+deploy-previous-via-olm: deploy-previous-via-olmv0 ## Backwards-compatible stub for deploy-previous-via-olmv0
+
+.PHONY: upgrade-via-olm
+upgrade-via-olm: upgrade-via-olmv0 ## Backwards-compatible stub for upgrade-via-olmv0
+
+.PHONY: upgrade-dirty-tag-via-olm
+upgrade-dirty-tag-via-olm: upgrade-dirty-tag-via-olmv0 ## Backwards-compatible stub for upgrade-dirty-tag-via-olmv0
 
 ##@ Bundle and Index build
 
