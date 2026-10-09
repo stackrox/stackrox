@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +47,12 @@ const (
 	waitForDoneTimeout  = 5 * time.Minute
 	waitForDoneInterval = 30 * time.Second
 	knownRuleName       = "ocp4-api-server-encryption-provider-cipher"
+
+	// The outdated grace window is the sum of these two compliance watcher timeouts
+	// (see central/complianceoperator/v2/compliancedata/resolver.go grace()). The
+	// staleness E2E shortens both so OUTDATED / on-demand states surface in-window.
+	scanWatcherTimeoutEnv         = "ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT"
+	scanScheduleWatcherTimeoutEnv = "ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT"
 )
 
 var (
@@ -1026,6 +1034,255 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
 	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+}
+
+// complianceStaleDataFeatureEnabled reports whether Central has the
+// ROX_COMPLIANCE_SURFACE_STALE_DATA feature flag enabled, by querying the
+// feature-flag service. Outdated-data e2e tests (this one and PR-2's, which is
+// stacked on this branch) use it to skip cheaply when the flag is off, before
+// creating any scan configs.
+func complianceStaleDataFeatureEnabled(t *testing.T, conn *grpc.ClientConn) bool {
+	resp, err := v1.NewFeatureFlagServiceClient(conn).GetFeatureFlags(context.Background(), &v1.Empty{})
+	require.NoError(t, err)
+	for _, f := range resp.GetFeatureFlags() {
+		if f.GetEnvVar() == features.ComplianceSurfaceStaleData.EnvVar() {
+			return f.GetEnabled()
+		}
+	}
+	return false
+}
+
+// TestComplianceV2OutdatedDataScheduledCurrent creates a scheduled ocp4-cis scan,
+// runs it to completion, then asserts the freshly-scanned cluster reports
+// data_state == COMPLIANCE_DATA_STATE_CURRENT and outdated_cluster_count == 0.
+//
+// The outdated-data signal is gated behind ROX_COMPLIANCE_SURFACE_STALE_DATA
+// (default off). The test probes the flag first and skips cheaply (before
+// creating any scan config) when it is off. When the flag is on it performs the
+// real assertion and does NOT skip on UNKNOWN — a persistent UNKNOWN then is a
+// genuine failure.
+func TestComplianceV2OutdatedDataScheduledCurrent(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	// Cheap flag probe before doing any real work.
+	if !complianceStaleDataFeatureEnabled(t, conn) {
+		t.Skip("ROX_COMPLIANCE_SURFACE_STALE_DATA not enabled on Central; skipping outdated-data assertion")
+	}
+
+	dynClient := createDynamicClient(t)
+	client := v2.NewComplianceScanConfigurationServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+
+	const profileName = "ocp4-cis"
+	testID := fmt.Sprintf("outdated-current-%s", uuid.NewV4().String())
+	sc := v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			Profiles:    []string{profileName},
+			ScanSchedule: &v2.Schedule{
+				IntervalType: v2.Schedule_DAILY,
+				Hour:         0,
+				Minute:       0,
+			},
+			Description: "Scheduled ocp4-cis scan for outdated-data detection E2E.",
+		},
+		Clusters: []string{clusterID},
+	}
+	scanConfig, err := client.CreateComplianceScanConfiguration(ctx, &sc)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _ = client.DeleteComplianceScanConfiguration(context.Background(), &v2.ResourceByID{Id: scanConfig.GetId()})
+		cleanUpResources(context.Background(), t, dynClient, testID, coNamespaceV2)
+	})
+
+	// Ensure the scheduled scan actually runs to completion on the cluster.
+	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+
+	resultsClient := v2.NewComplianceResultsServiceClient(conn)
+	// Scope the query to THIS test's scan config: sibling tests run in parallel and
+	// create their own ocp4-cis configs on the same cluster, which would otherwise
+	// contaminate the profile+cluster result set and the outdated count.
+	req := &v2.ComplianceProfileClusterRequest{
+		ProfileName: profileName,
+		ClusterId:   clusterID,
+		Query:       &v2.RawQuery{Query: "Compliance Scan Config Name:" + testID},
+	}
+
+	// Flag is on: wait for the freshly-scanned results to sync, then require CURRENT
+	// everywhere with no outdated clusters. A persistent UNKNOWN fails when the
+	// timeout is hit (not skipped).
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+		require.NoError(c, err)
+		require.NotEmpty(c, resp.GetCheckResults(), "expected check results for freshly scanned cluster")
+		assert.Equal(c, int32(0), resp.GetOutdatedClusterCount(), "freshly scanned cluster must not be counted outdated")
+		for _, cr := range resp.GetCheckResults() {
+			assert.Equalf(c, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, cr.GetDataState(),
+				"check %q on freshly scanned cluster should be CURRENT", cr.GetCheckName())
+		}
+	}, 10*time.Minute, 30*time.Second)
+}
+
+// TestComplianceV2OutdatedDataStaleness exercises the two grace-dependent outdated-data
+// states end to end: the on-demand ("Scan now") term that makes a no-schedule config
+// evaluable (-> CURRENT), and the OUTDATED state when an expected refresh never lands.
+//
+// Both depend on the outdated grace window, which is the sum of the two compliance
+// watcher timeouts (see central/complianceoperator/v2/compliancedata/resolver.go
+// grace()). With production defaults that window is 85m, far longer than a test run, so
+// this test temporarily shortens both timeouts on Central and restores them afterwards.
+//
+// It is intentionally NOT t.Parallel(): it restarts Central (to apply the env change) and
+// scales Sensor to 0, which would disrupt the parallel TestComplianceV2* tests. The Go test
+// runner runs non-parallel tests to completion before resuming parallel test bodies, so those
+// tests are still paused at t.Parallel() — before they dial gRPC — while this one mutates the
+// cluster. Gated behind ROX_COMPLIANCE_SURFACE_STALE_DATA; skips cheaply when off.
+func TestComplianceV2OutdatedDataStaleness(t *testing.T) {
+	// NOTE: intentionally NOT t.Parallel(); see doc comment.
+	ctx := context.Background()
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	// Cheap flag probe before doing any real work (and before restarting Central).
+	if !complianceStaleDataFeatureEnabled(t, conn) {
+		t.Skip("ROX_COMPLIANCE_SURFACE_STALE_DATA not enabled on Central; skipping outdated-data staleness assertions")
+	}
+
+	ks := &KubernetesSuite{k8s: createK8sClient(t)}
+	ks.SetT(t)
+	k8sClient := ks.k8s
+
+	// Shorten the grace window (= scan-watcher + scan-schedule-watcher timeout sum) so
+	// staleness surfaces in-window. One combined patch = one Central rollout; restored below.
+	const shortWatcherTimeout = "30s"
+	patchCtx, cancelPatch := context.WithTimeout(ctx, waitTimeout+time.Minute)
+	ks.mustSetDeploymentEnvVals(patchCtx, stackroxNamespace, "central", "central", map[string]string{
+		scanWatcherTimeoutEnv:         shortWatcherTimeout,
+		scanScheduleWatcherTimeoutEnv: shortWatcherTimeout,
+	})
+	cancelPatch()
+	t.Cleanup(func() {
+		restoreCtx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
+		defer cancel()
+		ks.mustDeleteDeploymentEnvVar(restoreCtx, stackroxNamespace, "central", scanWatcherTimeoutEnv)
+		ks.mustDeleteDeploymentEnvVar(restoreCtx, stackroxNamespace, "central", scanScheduleWatcherTimeoutEnv)
+		ks.waitUntilK8sDeploymentReady(restoreCtx, stackroxNamespace, "central")
+		// Parallel siblings resume as soon as this test (incl. cleanups) returns and
+		// immediately dial gRPC, so make sure Central is actually answering again
+		// (not just k8s-ready; the OCP route lags) before we hand control back.
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			rpcCtx, cancel := context.WithTimeout(restoreCtx, 5*time.Second)
+			defer cancel()
+			_, err := v1.NewFeatureFlagServiceClient(conn).GetFeatureFlags(rpcCtx, &v1.Empty{})
+			assert.NoError(c, err)
+		}, 3*time.Minute, 5*time.Second)
+	})
+
+	// Wait for Central to come back: k8s rollout + gRPC responsiveness (on OCP the gRPC
+	// route lags k8s readiness by 10-30s). The existing conn auto-reconnects.
+	readyCtx, cancelReady := context.WithTimeout(ctx, waitTimeout+time.Minute)
+	defer cancelReady()
+	ks.waitUntilK8sDeploymentReady(readyCtx, stackroxNamespace, "central")
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		rpcCtx, cancel := context.WithTimeout(readyCtx, 5*time.Second)
+		defer cancel()
+		_, err := v1.NewFeatureFlagServiceClient(conn).GetFeatureFlags(rpcCtx, &v1.Empty{})
+		assert.NoError(c, err)
+	}, 3*time.Minute, 5*time.Second)
+
+	dynClient := createDynamicClient(t)
+	client := v2.NewComplianceScanConfigurationServiceClient(conn)
+	resultsClient := v2.NewComplianceResultsServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+
+	const profileName = "ocp4-cis"
+	testID := fmt.Sprintf("outdated-staleness-%s", uuid.NewV4().String())
+	// No cron schedule: only the on-demand ("Scan now") term can make it evaluable.
+	sc := v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: true,
+			Profiles:    []string{profileName},
+			Description: "One-time ocp4-cis scan for outdated-data staleness E2E.",
+		},
+		Clusters: []string{clusterID},
+	}
+	scanConfig, err := client.CreateComplianceScanConfiguration(ctx, &sc)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _ = client.DeleteComplianceScanConfiguration(context.Background(), &v2.ResourceByID{Id: scanConfig.GetId()})
+		cleanUpResources(context.Background(), t, dynClient, testID, coNamespaceV2)
+	})
+
+	// Baseline: let the creation-triggered scan complete so the cluster has fresh results.
+	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+
+	// Scope every query to THIS config: sibling (parallel) tests create their own ocp4-cis
+	// configs on the same cluster that would otherwise contaminate the counts.
+	req := &v2.ComplianceProfileClusterRequest{
+		ProfileName: profileName,
+		ClusterId:   clusterID,
+		Query:       &v2.RawQuery{Query: "Compliance Scan Config Name:" + testID},
+	}
+
+	// On-demand term: a Scan-now on a no-schedule config makes it evaluable; once the request
+	// ages past the (now short) grace and the scan has refreshed the data, it reads CURRENT.
+	// Without the on-demand term the config would stay UNKNOWN forever.
+	t.Run("OnDemandCurrent", func(t *testing.T) {
+		_, err := client.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfig.GetId()})
+		require.NoErrorf(t, err, "failed to run on-demand scan for %s", testID)
+		waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
+
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+			require.NoError(c, err)
+			require.NotEmpty(c, resp.GetCheckResults(), "expected check results for freshly scanned cluster")
+			assert.Equal(c, int32(0), resp.GetOutdatedClusterCount(), "freshly scanned cluster must not be outdated")
+			for _, cr := range resp.GetCheckResults() {
+				assert.Equalf(c, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_CURRENT, cr.GetDataState(),
+					"check %q should be CURRENT after an on-demand scan", cr.GetCheckName())
+			}
+		}, 5*time.Minute, 15*time.Second)
+	})
+
+	// OUTDATED: an expected refresh that never lands. Scaling Sensor to 0 cuts the results
+	// pipeline, but the on-demand request still stamps last_scan_requested_time Central-side
+	// (that reference is deliberately independent of sensor health), so the stored results go
+	// stale relative to it and the cluster flips OUTDATED once the short grace elapses.
+	t.Run("Outdated", func(t *testing.T) {
+		scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
+		t.Cleanup(func() {
+			scaleToN(context.Background(), t, k8sClient, "sensor", stackroxNamespace, 1)
+			// Wait for Sensor to actually come back up (not just the scale update) before
+			// this test returns: parallel siblings resume right after and need a connected
+			// Sensor for their own scan configurations to be applied.
+			sensorCtx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
+			defer cancel()
+			ks.waitUntilK8sDeploymentReady(sensorCtx, stackroxNamespace, "sensor")
+		})
+
+		// Sensor's connection to Central may already be gone by the time this is sent
+		// (scaleToN does not wait for Central to notice), in which case the manager
+		// returns a send error even though it already recorded last_scan_requested_time,
+		// which is what drives the OUTDATED assertion below. Don't fail on that race;
+		// let the assertion decide the outcome.
+		if _, err := client.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: scanConfig.GetId()}); err != nil {
+			t.Logf("on-demand scan request for %s returned an error while Sensor is scaled to 0: %v", testID, err)
+		}
+
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := resultsClient.GetComplianceProfileClusterResults(ctx, req)
+			require.NoError(c, err)
+			require.NotEmpty(c, resp.GetCheckResults(), "stale results should still be served, just flagged")
+			assert.Equal(c, int32(1), resp.GetOutdatedClusterCount(), "disconnected cluster must be counted outdated")
+			for _, cr := range resp.GetCheckResults() {
+				assert.Equalf(c, v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED, cr.GetDataState(),
+					"check %q should be OUTDATED after a missed refresh", cr.GetCheckName())
+			}
+		}, 5*time.Minute, 15*time.Second)
+	})
 }
 
 // TestComplianceV2TailoredProfileVariants verifies that ACS correctly tracks
