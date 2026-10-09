@@ -28,21 +28,40 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh db-integration-tests
 
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
+      if: steps.ci-decision.outputs.action != 'skip'
       run: pg_isready -h 127.0.0.1
 
     - name: DB Integration tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make -C scanner db-integration-test

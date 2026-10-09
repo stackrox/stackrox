@@ -37,20 +37,37 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh check-generated-files
+
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create artifacts dir
+      if: steps.ci-decision.outputs.action != 'skip'
       run: mkdir -p "$ARTIFACT_DIR"
 
     # No GOCACHE here — this job must validate go.mod/go.sum against
     # real source files, not a cached module index that may be stale.
 
     - name: Download scanner module for proto generation
+      if: steps.ci-decision.outputs.action != 'skip'
       run: go mod download github.com/stackrox/scanner
 
     - name: Check Generated
+      if: steps.ci-decision.outputs.action != 'skip'
       run: scripts/ci/jobs/check-generated.sh
 
   misc-checks:
@@ -191,16 +208,34 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh golangci-lint
 
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Check Cache golangci-lint
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+      if: (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) && steps.ci-decision.outputs.action != 'skip'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
@@ -209,7 +244,7 @@ jobs:
           go-lint-v2-
 
     - name: Restore golangci-lint analysis cache
-      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+      if: (!(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && steps.ci-decision.outputs.action != 'skip'
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
@@ -218,16 +253,20 @@ jobs:
           go-lint-v2-
 
     - name: Check cache golangci-lint
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make golangci-lint-cache-status
 
     - name: Check Go version is in sync in .golangci.yml and go.mod
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
     - name: make golangci-lint
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make golangci-lint
 
     - name: Check Cache golangci-lint
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make golangci-lint-cache-status
 
   check-dependent-images-exist:
@@ -284,10 +323,29 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Read the CI decision
+        id: ci-decision
+        if: github.event_name == 'pull_request'
+        env:
+          CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+          CI_REPO: ${{ github.repository }}
+          CI_PR: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ci/select/gha-gate.sh github-actions-lint
+
       - uses: ./.github/actions/job-preamble
+        if: steps.ci-decision.outputs.action != 'skip'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       - name: Check workflow files
+        if: steps.ci-decision.outputs.action != 'skip'
         run: make github-actions-lint
 
   github-actions-shellcheck:
@@ -317,18 +375,50 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Read the CI decision
+        id: ci-decision
+        if: github.event_name == 'pull_request'
+        env:
+          CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+          CI_REPO: ${{ github.repository }}
+          CI_PR: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ci/select/gha-gate.sh openshift-ci-lint
+
       - uses: ./.github/actions/job-preamble
+        if: steps.ci-decision.outputs.action != 'skip'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Install Python linters
+        if: steps.ci-decision.outputs.action != 'skip'
         run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
+        if: steps.ci-decision.outputs.action != 'skip'
         run: make -C .openshift-ci style
 
       - name: Pylint
+        if: steps.ci-decision.outputs.action != 'skip'
         run: make -C .openshift-ci lint
+
+  validate-test-domains:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Validate test-domains.toml
+        run: python3 ci/select/validate_rules.py --rules ci/test-domains.toml --defaults ci/decision-defaults
+
+      - name: Run resolver unit tests
+        run: python3 -m unittest discover -s ci/select -p 'test_*.py'
 
   slack-on-style-failure:
     env:
