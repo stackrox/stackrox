@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -35,6 +36,10 @@ const (
 	defaultMaxRetries     = 5
 	defaultAPICallTimeout = 5 * time.Second
 	defaultRetryTimeout   = 30 * time.Second
+
+	// nodeRoleReconcileInterval is how often Sensor recomputes the auto-discovered node roles and reconciles them into
+	// the ACS-managed ScanSettings. Only used when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled.
+	nodeRoleReconcileInterval = 1 * time.Minute
 )
 
 type handlerImpl struct {
@@ -43,6 +48,11 @@ type handlerImpl struct {
 
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
+
+	// reconcileRoles is signaled by the node-role reconcile ticker so that reconciliation runs on the single-writer
+	// run() loop, serialized with create/update/delete request processing.
+	reconcileRoles  chan struct{}
+	reconcileTicker *time.Ticker
 
 	disabled              concurrency.Signal
 	stopSignal            concurrency.Signal
@@ -74,6 +84,8 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
+		reconcileRoles: make(chan struct{}),
+
 		started:               &atomic.Bool{},
 		disabled:              concurrency.NewSignal(),
 		stopSignal:            concurrency.NewSignal(),
@@ -88,10 +100,19 @@ func (m *handlerImpl) Start() error {
 	defer m.started.Store(true)
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
+	// Only drive node-role reconciliation when auto-discovery is enabled; otherwise behavior is identical to today
+	// (no ticker, no writes). The env var is read once at startup, consistent with the rest of the env usage.
+	if env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
+		m.reconcileTicker = time.NewTicker(nodeRoleReconcileInterval)
+		go m.runNodeRoleReconciler(m.reconcileTicker.C)
+	}
 	return nil
 }
 
 func (m *handlerImpl) Stop() {
+	if m.reconcileTicker != nil {
+		m.reconcileTicker.Stop()
+	}
 	m.stopSignal.Signal()
 }
 
@@ -162,6 +183,25 @@ func (m *handlerImpl) run() {
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
 			}
+		case <-m.reconcileRoles:
+			m.reconcileNodeRoles()
+		case <-m.stopSignal.Done():
+			return
+		}
+	}
+}
+
+// runNodeRoleReconciler signals the run() loop to reconcile node roles on every tick. Sending on reconcileRoles keeps
+// reconciliation on the single writer so it never races with request processing.
+func (m *handlerImpl) runNodeRoleReconciler(tickerC <-chan time.Time) {
+	for {
+		select {
+		case <-tickerC:
+			select {
+			case m.reconcileRoles <- struct{}{}:
+			case <-m.stopSignal.Done():
+				return
+			}
 		case <-m.stopSignal.Done():
 			return
 		}
@@ -224,11 +264,11 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.defaultNodeRoles())
 }
 
-func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) bool {
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -263,6 +303,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
+	// Compute the node roles once for this request and reuse them below.
+	roles := m.defaultNodeRoles()
+
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
@@ -288,7 +331,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
-		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), roles)
 	}
 
 	// Invalid case because scan setting is created first, so we should not have a situation where
@@ -298,7 +341,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -331,7 +374,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
 			}
@@ -757,6 +800,15 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
+	// Compute the node roles once for this sync batch and reuse them for every ScanSetting below.
+	roles := m.defaultNodeRoles()
+	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+		return convertCentralRequestToScanSetting(namespace, req, cron, roles)
+	}
+	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+		return updateScanSettingFromUpdateRequest(obj, req, roles)
+	}
+
 	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
@@ -771,8 +823,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
-			updateScanSettingFromUpdateRequest,
-			convertCentralRequestToScanSetting,
+			updateScanSetting,
+			convertScanSetting,
 			complianceoperator.ScanSetting,
 		); err != nil {
 			errList.AddError(err)

@@ -15,6 +15,15 @@ rules:
   - '*'
   verbs:
   - '*'
+# Read-only access to MachineConfigPools so Sensor can auto-discover node roles for ScanSettings (OpenShift only).
+- apiGroups:
+  - 'machineconfiguration.openshift.io'
+  resources:
+  - 'machineconfigpools'
+  verbs:
+  - 'get'
+  - 'list'
+  - 'watch'
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
