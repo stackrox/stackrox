@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
@@ -132,19 +133,46 @@ func setupScannerV4Integration(ctx context.Context, iiStore store.Store, iis []*
 }
 
 // createDefaultScannerV4Integration will create the default Scanner V4 integration if it does
-// not currently exist.
+// not currently exist, or reconcile its categories if they differ from the default.
 func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store) {
-	if _, exists, err := iiStore.Get(ctx, store.DefaultScannerV4Integration.GetId()); err != nil {
+	defaultID := store.DefaultScannerV4Integration.GetId()
+	existing, exists, err := iiStore.Get(ctx, defaultID)
+	if err != nil {
 		utils.Should(errors.Wrap(err, "unable to detect if default Scanner V4 integration exists"))
-		return
-	} else if exists {
-		// Nothing to do, integration exists.
 		return
 	}
 
-	log.Infof("Upserting default Scanner V4 integration %q (%s)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
-	err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration)
-	utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
+	if !exists {
+		log.Infof("Upserting default Scanner V4 integration %q (%s)", store.DefaultScannerV4Integration.GetName(), defaultID)
+		err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration)
+		utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
+		return
+	}
+
+	// Restore default categories on records that predate them. The API rejects category changes,
+	// so this only repairs older data. Preserve other settings.
+	if categoriesMatch(existing.GetCategories(), store.DefaultScannerV4Integration.GetCategories()) {
+		return
+	}
+
+	log.Warnf("Reconciling categories for default Scanner V4 integration %q (%s): updating from %v to %v",
+		existing.GetName(), defaultID, existing.GetCategories(), store.DefaultScannerV4Integration.GetCategories())
+
+	existing.Categories = store.DefaultScannerV4Integration.GetCategories()
+	err = iiStore.Upsert(ctx, existing)
+	utils.Should(errors.Wrap(err, "unable to reconcile default ScannerV4 integration categories"))
+}
+
+// categoriesMatch returns true if two category slices contain the same elements (order-independent).
+func categoriesMatch(a, b []storage.ImageIntegrationCategory) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	a = slices.Clone(a)
+	b = slices.Clone(b)
+	slices.Sort(a)
+	slices.Sort(b)
+	return slices.Equal(a, b)
 }
 
 // deleteScannerV4Integrations will delete all Scanner V4 integrations except for
