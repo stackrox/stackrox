@@ -273,11 +273,11 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 func (d *delegatorImpl) ValidateCluster(ctx context.Context, clusterID string) error {
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
-		return errors.Errorf("no connection to cluster %q, verify the cluster is healthy and connected", d.clusterName(ctx, clusterID))
+		return errors.Errorf("no connection to cluster %q (%s), verify the cluster is healthy and connected", d.clusterName(ctx, clusterID), clusterID)
 	}
 
 	if !deleConnection.ValidForDelegation(conn) {
-		return errors.Errorf("cluster %q does not support delegated scanning", d.clusterName(ctx, clusterID))
+		return errors.Errorf("cluster %q (%s) does not support delegated scanning", d.clusterName(ctx, clusterID), clusterID)
 	}
 
 	return nil
