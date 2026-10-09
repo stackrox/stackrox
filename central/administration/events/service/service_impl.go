@@ -200,21 +200,18 @@ func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filte
 		depQuery = depQuery.AddExactMatches(search.DeploymentName, deploymentNames...)
 	}
 
-	depQuery = depQuery.WithPagination(search.NewPagination().Limit(10000))
-	deployments, err := s.deployments.SearchRawDeployments(ctx, depQuery.ProtoQuery())
+	imageViews, err := s.deployments.GetContainerImageViews(ctx, depQuery.ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrap(err, "searching deployments for workload filter")
+		return nil, errors.Wrap(err, "searching container images for workload filter")
 	}
 
 	imageIDSet := set.NewStringSet()
-	for _, dep := range deployments {
-		for _, container := range dep.GetContainers() {
-			if id := container.GetImage().GetId(); id != "" { //nolint:staticcheck // SA1019: GetId is deprecated but still used for legacy images.
-				imageIDSet.Add(id)
-			}
-			if id := container.GetImage().GetIdV2(); id != "" {
-				imageIDSet.Add(id)
-			}
+	for _, view := range imageViews {
+		if id := view.GetImageID(); id != "" {
+			imageIDSet.Add(id)
+		}
+		if digest := view.GetImageDigest(); digest != "" {
+			imageIDSet.Add(digest)
 		}
 	}
 	return imageIDSet.AsSlice(), nil
