@@ -159,12 +159,12 @@ export type PolicyMitreAttackVector = {
     techniques: string[]; // technique ids
 };
 
-export type SkipContainerType = 'SKIP_INIT';
+export type ContainerType = 'REGULAR' | 'INIT';
 
 export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
 
 export type EvaluationFilter = {
-    skipContainerTypes: SkipContainerType[];
+    skipContainerTypes: ContainerType[];
     // TODO: reimplement once backend support is available - demo code was deleted at the same time this comment was added
     // skipImageLayers: SkipImageLayers;
 };
