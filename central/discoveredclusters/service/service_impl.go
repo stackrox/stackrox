@@ -108,12 +108,12 @@ func getQueryBuilderFromFilter(filter *v1.DiscoveredClustersFilter) *search.Quer
 	}
 	if types := filter.GetTypes(); len(types) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.ClusterType,
-			sliceutils.Unique(sliceutils.StringSlice(types...))...,
+			sliceutils.Unique(sliceutils.SortedStringSlice(types...))...,
 		)
 	}
 	if statuses := filter.GetStatuses(); len(statuses) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.ClusterStatus,
-			sliceutils.Unique(sliceutils.StringSlice(statuses...))...,
+			sliceutils.Unique(sliceutils.SortedStringSlice(statuses...))...,
 		)
 	}
 	if sources := filter.GetSourceIds(); len(sources) != 0 {

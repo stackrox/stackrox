@@ -34,7 +34,7 @@ func convert{{.TypeName}}(p *storage.{{.TypeName}}) *{{.TypeName}} {
          {{ .Name }}:
          {{- if .IsStringer -}}
              {{- if .IsSlice -}}
-                 sliceutils.StringSlice({{ $fieldName }}...)
+                 sliceutils.SortedStringSlice({{ $fieldName }}...)
              {{- else -}}
                  {{ $fieldName }}.String()
              {{- end -}}

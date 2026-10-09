@@ -251,7 +251,7 @@ func getQueryBuilderFromFilter(filter *v1.CloudSourcesFilter) *search.QueryBuild
 	}
 	if types := filter.GetTypes(); len(types) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.IntegrationType,
-			sliceutils.Unique(sliceutils.StringSlice(types...))...,
+			sliceutils.Unique(sliceutils.SortedStringSlice(types...))...,
 		)
 	}
 	return queryBuilder
