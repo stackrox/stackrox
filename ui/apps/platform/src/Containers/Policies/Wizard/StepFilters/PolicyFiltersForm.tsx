@@ -42,7 +42,7 @@ function PolicyFiltersForm() {
         }
     }, [containerFilterDisabled, skipContainerTypes.length, setFieldValue]);
 
-    const skipInit = skipContainerTypes.includes('SKIP_INIT');
+    const skipInit = skipContainerTypes.includes('INIT');
 
     const containerTypeDescription = skipInit
         ? 'Policy will skip init containers.'
@@ -51,7 +51,7 @@ function PolicyFiltersForm() {
     function handleSkipInitChange() {
         setFieldValue(
             'evaluationFilter.skipContainerTypes',
-            toggleItemInArray(skipContainerTypes, 'SKIP_INIT')
+            toggleItemInArray(skipContainerTypes, 'INIT')
         );
     }
 

@@ -452,6 +452,12 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
         customize_envVars+=$'\n        value: "true"'
         ```
 
+    * Add `env_with_default ROX_WHATEVER "true"` to `collect_feature_flags` function in tests/e2e/lib-compat.sh
+
+        roxie-based e2e deployments read feature flag overrides from this separate list, not from
+        `export_test_environment`. Skipping this step makes `TestFeatureFlagSettings` fail in
+        roxie-based jobs because the Go test process and the deployed Central disagree on the flag's value.
+
     The value of feature flags for **demo** and **release** builds is in pkg/features/list.go
 
 5. To turn on a feature flag for **local deployment**, do either or both of the following:
@@ -522,6 +528,8 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```
+
+    * Delete `env_with_default ROX_WHATEVER "true"` from `collect_feature_flags` function in tests/e2e/lib-compat.sh
 
 ### Routes
 

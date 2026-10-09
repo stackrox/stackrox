@@ -788,7 +788,6 @@ module.exports = [
     },
     {
         files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
-        ignores: ['src/Containers/Compliance/**'],
 
         // languageOptions from previous configuration object
 
@@ -797,14 +796,13 @@ module.exports = [
             limited: pluginLimited,
         },
         rules: {
-            'import/no-cycle': ['error', { maxDepth: '∞' }], // classic compliance has 7 errors
+            'import/no-cycle': ['error', { maxDepth: '∞' }],
             'limited/react-export-default': 'error',
         },
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
         ignores: [
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
         ],
 
@@ -823,7 +821,6 @@ module.exports = [
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -869,7 +866,6 @@ module.exports = [
             'src/Components/GroupedTabs.jsx', // deprecated
             'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
             'src/sagas/authSagas.js', // deprecated
             'src/sagas/groupSagas.js', // deprecated
@@ -937,7 +933,6 @@ module.exports = [
             'src/Components/visuals/**', // deprecated
             'src/Components/workflow/**', // deprecated
 
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
@@ -963,7 +958,6 @@ module.exports = [
         ignores: [
             'cypress/constants/**',
             'cypress/integration/clusters/**', // delete obsolete tests
-            'cypress/integration/compliance/**', // deprecated
             'cypress/integration/configmanagement/**', // deprecated/modernized
             'cypress/integration/integrations/**', // replace
             'cypress/integration/networkGraph/**', // replace
@@ -974,7 +968,6 @@ module.exports = [
             'src/Components/**', // replace non-deprecated
             'src/Containers/AccessControl/**', // replace
             'src/Containers/Clusters/**', // delete obsolete tests
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**', // deprecated/modernized
             'src/Containers/Integrations/**', // replace
             'src/Containers/Login/**', // replace
@@ -1014,7 +1007,6 @@ module.exports = [
             'src/Components/Tabs.jsx', // deprecated
             'src/Components/visuals/Sunburst.jsx', // deprecated
             'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite
             'src/Containers/MainPage/asyncComponent.tsx', // replace
             'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
@@ -1037,7 +1029,6 @@ module.exports = [
             'src/**/*.test.jsx', // unit test
             'src/**/*.cy.jsx', // component test
             'src/Components/**', // research
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**', // deferred
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
@@ -1126,7 +1117,6 @@ module.exports = [
             'src/Components/**', // most or all deprecated
             'src/constants/entityPageProps.js', // deprecated
             'src/constants/reduxFormPropTypes.js', // deprecated
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**', // deprecated
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
@@ -1160,7 +1150,6 @@ module.exports = [
             'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
             'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
             'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace
             'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace

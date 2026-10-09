@@ -2,8 +2,8 @@
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add or delete strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
-    | 'ROX_CVE_FIX_TIMESTAMP'
-    | 'ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
+    | 'ROX_COMPLIANCE_CUSTOM_NODE_ROLES'
+    | 'ROX_COMPLIANCE_SURFACE_STALE_DATA'
     | 'ROX_EVALUATION_FILTER'
     | 'ROX_INIT_CONTAINER_SUPPORT'
     | 'ROX_LABEL_BASED_POLICY_SCOPING'

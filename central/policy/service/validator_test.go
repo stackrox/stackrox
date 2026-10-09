@@ -1379,45 +1379,59 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 	tests := map[string]struct {
 		lifecycleStages    []storage.LifecycleStage
 		eventSource        storage.EventSource
-		skipContainerTypes []storage.SkipContainerType
+		skipContainerTypes []storage.ContainerType
 		expectError        bool
 	}{
 		"build-only with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"deploy with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"deploy with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
 		},
 		"build + deploy with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
 		"build-only with no filter is allowed": {
 			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		},
+		"runtime without event source with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
 		"no lifecycle stages with skip init is rejected": {
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"audit log event with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_AUDIT_LOG_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"node event with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_NODE_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"deployment event with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"deployment event with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
 		},
 	}
 
