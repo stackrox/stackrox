@@ -173,21 +173,22 @@ func readReleaseSequences(dir string, releaseTags map[productstreams.XYVersion]s
 // ensureTargetSequence adds a working-tree baseline only when no tag baseline exists.
 // The target must have been validated by parseTargetStream.
 func ensureTargetSequence(dir, target string, targetXy productstreams.XYVersion, sequences map[productstreams.XYVersion]int) error {
-	if _, exists := sequences[targetXy]; !exists {
-		patch, _, _ := strings.Cut(strings.Split(target, ".")[2], "-")
-		if patch != "0" && patch != "x" {
-			return fmt.Errorf("missing initial release tag %s.0 for patch target %s", targetXy, target)
-		}
-		data, err := os.ReadFile(filepath.Join(dir, sequencePath))
-		if err != nil {
-			return fmt.Errorf("read current database sequence from %s: %w", sequencePath, err)
-		}
-		sequence, err := parseSequence(string(data))
-		if err != nil {
-			return fmt.Errorf("parse current database sequence from %s: %w", sequencePath, err)
-		}
-		sequences[targetXy] = sequence
+	if _, exists := sequences[targetXy]; exists {
+		return nil
 	}
+	patch, _, _ := strings.Cut(strings.Split(target, ".")[2], "-")
+	if patch != "0" && patch != "x" {
+		return fmt.Errorf("missing initial release tag %s.0 for patch target %s", targetXy, target)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, sequencePath))
+	if err != nil {
+		return fmt.Errorf("read current database sequence from %s: %w", sequencePath, err)
+	}
+	sequence, err := parseSequence(string(data))
+	if err != nil {
+		return fmt.Errorf("parse current database sequence from %s: %w", sequencePath, err)
+	}
+	sequences[targetXy] = sequence
 	return nil
 }
 
