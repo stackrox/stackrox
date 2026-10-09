@@ -50,6 +50,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
+- ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
 
 ## [4.11.0]
 
