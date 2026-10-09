@@ -403,6 +403,10 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_COMPLIANCE_SURFACE_STALE_DATA "${ROX_COMPLIANCE_SURFACE_STALE_DATA:-true}"
     ci_export ROX_COMPLIANCE_CUSTOM_NODE_ROLES "${ROX_COMPLIANCE_CUSTOM_NODE_ROLES:-true}"
+    # Sensor-side setting (not a Central feature flag): auto-discover compliance node roles from
+    # MachineConfigPools. Harmless off-OpenShift / without the Compliance Operator (falls back to
+    # master+worker). Applied to the Sensor deployment in deploy/common/k8sbased.sh.
+    ci_export ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES "${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"

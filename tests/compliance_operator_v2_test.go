@@ -5,16 +5,20 @@ package tests
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis"
 	complianceoperatorv1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	machineconfigurationv1client "github.com/openshift/client-go/machineconfiguration/clientset/versioned/typed/machineconfiguration/v1"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -1178,4 +1182,107 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		assert.Empty(t, resp.GetName())
 		assert.Equal(t, v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED, resp.GetOperatorKind())
 	})
+}
+
+// nodeRoleLabelPrefix mirrors Compliance Operator / Sensor's node-role label prefix used to map a
+// ScanSetting role to the nodes it targets. Keep in sync with sensor/kubernetes/complianceoperator.
+const nodeRoleLabelPrefix = "node-role.kubernetes.io/"
+
+// deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
+// node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
+// label in spec.nodeSelector.matchLabels, deduplicated and sorted. This is the expected value for a
+// ScanSetting's .roles when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled, so the test tracks
+// whatever pools the cluster actually has instead of asserting the hardcoded master+worker literal.
+func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []string {
+	mcfgClient, err := machineconfigurationv1client.NewForConfig(getConfig(t))
+	require.NoError(t, err, "failed to create machineconfiguration client")
+
+	poolList, err := mcfgClient.MachineConfigPools().List(ctx, metav1.ListOptions{})
+	require.NoError(t, err, "failed to list MachineConfigPools")
+
+	roles := set.NewStringSet()
+	for i := range poolList.Items {
+		selector := poolList.Items[i].Spec.NodeSelector
+		if selector == nil {
+			continue
+		}
+		for k := range selector.MatchLabels {
+			if strings.HasPrefix(k, nodeRoleLabelPrefix) {
+				// Mirror Sensor's getFirstNodeRole: take the first node-role label per pool.
+				roles.Add(strings.TrimPrefix(k, nodeRoleLabelPrefix))
+				break
+			}
+		}
+	}
+	require.NotEmpty(t, roles, "no node roles could be derived from MachineConfigPools")
+	return roles.AsSortedSlice(func(i, j string) bool { return i < j })
+}
+
+// TestComplianceV2AutodiscoverNodeRoles verifies that, with ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES
+// enabled on Sensor, a scan config created without explicit node roles yields a Compliance Operator
+// ScanSetting whose .roles equal the roles DISCOVERED from the cluster's MachineConfigPools, rather
+// than the legacy hardcoded master+worker literal. Deriving the expectation live means the test
+// genuinely exercises discovery and tracks whatever pools the cluster has (e.g. a custom "infra").
+//
+// The Sensor env var is wired on by the e2e deploy path (see export_test_environment in
+// tests/e2e/lib.sh and the sensor env wiring in deploy/common/k8sbased.sh). On a standard cluster
+// with only master+worker pools the discovered set coincides with the legacy default, so the run is
+// a regression guard; on a cluster with a custom pool it is a conclusive discovery check.
+//
+// Not parallel: it creates a scan config using a node profile. Running in the serial phase avoids
+// colliding with the parallel tests that also use node profiles (Central rejects two scan configs
+// that share a profile on the same cluster).
+func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+
+	expectedRoles := deriveNodeRolesFromMachineConfigPools(ctx, t)
+	t.Logf("node roles derived from MachineConfigPools: %v", expectedRoles)
+
+	testID := fmt.Sprintf("autodiscover-roles-%s", uuid.NewV4().String())
+	req := &v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			// Node profile, deliberately with no node roles specified so Sensor fills them in.
+			Profiles:     []string{"ocp4-cis-node"},
+			Description:  "e2e auto-discover node roles",
+			ScanSchedule: initialSchedule,
+		},
+	}
+
+	resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	var actualRoles []string
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var scanSetting complianceoperatorv1.ScanSetting
+		err := dynClient.Get(ctx, types.NamespacedName{Name: testID, Namespace: coNamespaceV2}, &scanSetting)
+		require.NoErrorf(c, err, "failed to get ScanSetting %s", testID)
+		require.NotEmptyf(c, scanSetting.Roles, "ScanSetting %s has no roles yet", testID)
+		actualRoles = append([]string(nil), scanSetting.Roles...)
+	}, defaultTimeout, defaultInterval)
+
+	sort.Strings(actualRoles)
+	t.Logf("ScanSetting %s roles: %v", testID, actualRoles)
+
+	if set.NewStringSet(expectedRoles...).Equal(set.NewStringSet("master", "worker")) {
+		// Standard cluster: the discovered set coincides with the legacy hardcoded default, so this run
+		// cannot by itself prove discovery ran. The equality assertion below is still a valid regression
+		// guard. Run on a cluster with a custom pool (e.g. "infra") for a conclusive discovery check.
+		t.Logf("NOTE: cluster has only master+worker pools; discovery coincides with the legacy default, " +
+			"so this run is a regression guard rather than a conclusive discovery test")
+	}
+
+	assert.ElementsMatch(t, expectedRoles, actualRoles,
+		"ScanSetting.roles should equal the roles discovered from the cluster's MachineConfigPools; "+
+			"a mismatch means auto-discovery is disabled or broken")
 }
