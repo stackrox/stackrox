@@ -11,6 +11,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.10.10]
 
+### Technical Changes
+
+- ROX-36432: Fixed node scan results (`scan.scanTime`) silently freezing on installs whose default Scanner V4 integration lacked the `NODE_SCANNER` category. Central now restores the default categories on startup. Affected nodes move from Scanner V2 results to Scanner V4 results, so their vulnerability counts may change.
+
 **Full Changelog**: [4.10.9...4.10.10](https://github.com/stackrox/stackrox/compare/4.10.9...4.10.10)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.10/html/release_notes/index) on the Red Hat Documentation portal.
