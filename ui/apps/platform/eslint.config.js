@@ -842,6 +842,30 @@ module.exports = [
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
+            'src/Components/CompoundSearchFilter/attributes/imageCVE.ts', // refactor: originDisplayNames
+            'src/Components/CompoundSearchFilter/attributes/imageComponent.ts', // refactor: sourceTypeLabels, sourceTypes
+            'src/Components/CompoundSearchFilter/attributes/virtualMachine.ts', // refactor: sourceTypeLabels, sourceTypes
+            'src/Components/EmailNotifier/EmailNotifierForm.tsx', // refactor
+            'src/Components/EmailNotifier/EmailNotifierModal.tsx', // refactor
+            'src/Components/RelatedEntity.jsx', // deprecated
+            'src/Components/RelatedEntityListCount.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Components/workflow/EntitiesMenu/EntitiesMenu.jsx', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-import-from-Containers-in-Components': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
             'src/Components/GroupedTabs.jsx', // deprecated
             'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated

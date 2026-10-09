@@ -29,7 +29,7 @@ defaults:
 jobs:
   gke-byodb-qa-e2e-tests:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -75,7 +75,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
+        NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -97,6 +97,16 @@ jobs:
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Retrieve roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ github.token }}
 
     - name: Run pre-test
       shell: python
@@ -141,6 +151,7 @@ jobs:
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
+        USE_ROXIE_DEPLOY: true
       timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 

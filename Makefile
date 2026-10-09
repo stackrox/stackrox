@@ -138,7 +138,7 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, RATCHET_BIN, github.com/sethvargo/ratchet, tools/linters)
-$(call go-tool, ACTIONLINT_BIN, github.com/rhysd/actionlint/cmd/actionlint, tools/linters)
+$(call go-tool, ACTIONLINT_BIN, actionlint.kjanat.dev/cmd/actionlint, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
@@ -871,14 +871,6 @@ roxvet: $(ROXVET_BIN)
 ##########
 ## Misc ##
 ##########
-.PHONY: clean-offline-bundle
-clean-offline-bundle:
-	$(SILENT)find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
-
-.PHONY: offline-bundle
-offline-bundle: clean-offline-bundle
-	$(SILENT)./scripts/offline-bundle/create.sh
-
 .PHONY: check-debugger
 check-debugger:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh

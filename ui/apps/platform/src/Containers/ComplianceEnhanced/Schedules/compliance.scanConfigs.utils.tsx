@@ -1,5 +1,4 @@
 import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
-import { getProductBranding } from 'constants/productBranding';
 import type {
     ComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
@@ -36,7 +35,7 @@ export type ScanConfigFormValues = {
     report: ScanReportConfiguration;
 };
 
-export type PageActions = 'create' | 'edit' | 'clone';
+export type SchedulePageAction = 'create' | 'edit';
 
 export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
     // Given an ISO 8601 date time string from response,
@@ -181,16 +180,4 @@ export function convertScanConfigToFormik(
             notifierConfigurations: notifiers,
         },
     };
-}
-
-// report
-
-const { reportName } = getProductBranding();
-
-export function getBodyDefault(profiles: string[]) {
-    return `${reportName} has scanned your clusters for compliance with the profiles in your scan configuration. The attached report lists those checks and associated details to help with remediation. Profiles: ${profiles.join(',')}`;
-}
-
-export function getSubjectDefault(scanName: string, profiles: string[]) {
-    return `${reportName} Compliance Report for ${scanName} with ${profiles.length} Profiles`;
 }

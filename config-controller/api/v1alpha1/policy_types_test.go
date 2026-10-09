@@ -239,6 +239,14 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"INIT"}},
 			expectedTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
+		"skip regular containers": {
+			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"REGULAR"}},
+			expectedTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
+		},
+		"skip both container types": {
+			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"REGULAR", "INIT"}},
+			expectedTypes: []storage.ContainerType{storage.ContainerType_REGULAR, storage.ContainerType_INIT},
+		},
 		"nil filter": {
 			filter:         nil,
 			expectNilProto: true,

@@ -7,7 +7,7 @@ import (
 )
 
 func IsProtoMessage(msgType reflect.Type) bool {
-	_, ok := reflect.New(msgType).Interface().(protocompat.Message)
+	_, ok := reflect.TypeAssert[protocompat.Message](reflect.New(msgType))
 
 	return ok
 }

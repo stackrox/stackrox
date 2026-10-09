@@ -1,7 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Button, Wizard, WizardFooter, WizardStep, useWizardContext } from '@patternfly/react-core';
+import {
+    Button,
+    PageSection,
+    Wizard,
+    WizardFooter,
+    WizardStep,
+    useWizardContext,
+} from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
@@ -19,27 +26,29 @@ import { listComplianceIntegrations } from 'services/ComplianceIntegrationServic
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ScanConfigOptions from './ScanConfigOptions';
-import ClusterSelection from './ClusterSelection';
-import ProfileSelection from './ProfileSelection';
-import ReportConfiguration from './ReportConfiguration';
-import ReviewConfig from './ReviewConfig';
+import ScanConfigClustersStep from './ScanConfigClustersStep';
+import ScanConfigProfilesStep from './ScanConfigProfilesStep';
+import ScanConfigDeliveryStep from './ScanConfigDeliveryStep';
+import ScanConfigReviewStep from './ScanConfigReviewStep';
 import useFormikScanConfig from './useFormikScanConfig';
 import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
-import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues, SchedulePageAction } from '../compliance.scanConfigs.utils';
 
-const PARAMETERS = 'Set parameters';
+// Parameters (and so on) for step label are consistent with the corresponding step heading and view heading.
+const PARAMETERS = 'Parameters';
 const PARAMETERS_ID = 'parameters';
-const SELECT_CLUSTERS = 'Select clusters';
+const SELECT_CLUSTERS = 'Clusters';
 const SELECT_CLUSTERS_ID = 'clusters';
-const SELECT_PROFILES = 'Select profiles';
+const SELECT_PROFILES = 'Profiles';
 const SELECT_PROFILES_ID = 'profiles';
-const CONFIGURE_REPORT = 'Configure report';
+const CONFIGURE_REPORT = 'Delivery';
 const CONFIGURE_REPORT_ID = 'report';
 const REVIEW_CONFIG = 'Review';
 const REVIEW_CONFIG_ID = 'review';
 
-type ScanConfigWizardFormProps = {
+type ScanConfigWizardPageSectionProps = {
     initialFormValues?: ScanConfigFormValues;
+    pageAction: SchedulePageAction;
 };
 
 type CustomWizardFooterProps = {
@@ -115,7 +124,10 @@ function CustomWizardFooter({
     );
 }
 
-function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
+function ScanConfigWizardPageSection({
+    initialFormValues,
+    pageAction,
+}: ScanConfigWizardPageSectionProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
@@ -133,6 +145,8 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         setIsCreating(true);
         setCreateScanConfigError('');
         const complianceScanConfig = convertFormikToScanConfig(formik.values);
+        const { clusters, scanConfig } = complianceScanConfig;
+        const { notifiers, profiles, scanSchedule } = scanConfig;
 
         try {
             await saveScanConfig(complianceScanConfig);
@@ -141,6 +155,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 properties: {
                     success: true,
                     errorMessage: '',
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
                 },
             });
             navigate(complianceEnhancedSchedulesPath);
@@ -150,6 +169,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 properties: {
                     success: false,
                     errorMessage: getAxiosErrorMessage(error),
+                    action: pageAction,
+                    clusters: clusters.length,
+                    intervalType: scanSchedule.intervalType,
+                    notifiers: notifiers.length,
+                    profiles: profiles.length,
                 },
             });
             setCreateScanConfigError(getAxiosErrorMessage(error));
@@ -182,20 +206,20 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         navigate(complianceEnhancedSchedulesPath);
     }
 
-    function canJumpToSelectClusters() {
+    function canJumpToClusters() {
         return Object.keys(formik.errors?.parameters ?? {}).length === 0;
     }
 
-    function canJumpToSelectProfiles() {
-        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
+    function canJumpToProfiles() {
+        return canJumpToClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
     }
 
-    function canJumpToConfigureReport() {
-        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
+    function canJumpToDelivery() {
+        return canJumpToProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
     }
 
-    function canJumpToReviewConfig() {
-        return canJumpToConfigureReport() && Object.keys(formik.errors?.report ?? {}).length === 0;
+    function canJumpToReview() {
+        return canJumpToDelivery() && Object.keys(formik.errors?.report ?? {}).length === 0;
     }
 
     function allClustersAreUnhealthy(): boolean {
@@ -203,7 +227,13 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     return (
-        <>
+        <PageSection
+            hasBodyWrapper={false}
+            hasOverflowScroll
+            isFilled
+            padding={{ default: 'noPadding' }}
+            type="wizard"
+        >
             <FormikProvider value={formik}>
                 <Wizard
                     navAriaLabel="Scan schedule configuration steps"
@@ -229,7 +259,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         name={SELECT_CLUSTERS}
                         id={SELECT_CLUSTERS_ID}
                         body={{ hasNoPadding: true }}
-                        isDisabled={!canJumpToSelectClusters()}
+                        isDisabled={!canJumpToClusters()}
                         footer={
                             <CustomWizardFooter
                                 stepId={SELECT_CLUSTERS_ID}
@@ -240,7 +270,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             />
                         }
                     >
-                        <ClusterSelection
+                        <ScanConfigClustersStep
                             alertRef={alertRef}
                             clusters={clusters ?? []}
                             isFetchingClusters={isFetchingClusters}
@@ -250,7 +280,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         name={SELECT_PROFILES}
                         id={SELECT_PROFILES_ID}
                         body={{ hasNoPadding: true }}
-                        isDisabled={!canJumpToSelectProfiles()}
+                        isDisabled={!canJumpToProfiles()}
                         footer={
                             <CustomWizardFooter
                                 stepId={SELECT_PROFILES_ID}
@@ -260,7 +290,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             />
                         }
                     >
-                        <ProfileSelection
+                        <ScanConfigProfilesStep
                             alertRef={alertRef}
                             clusterIds={clustersUsedForProfileData}
                         />
@@ -269,7 +299,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         name={CONFIGURE_REPORT}
                         id={CONFIGURE_REPORT_ID}
                         body={{ hasNoPadding: true }}
-                        isDisabled={!canJumpToConfigureReport()}
+                        isDisabled={!canJumpToDelivery()}
                         footer={
                             <CustomWizardFooter
                                 stepId={CONFIGURE_REPORT_ID}
@@ -279,20 +309,20 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             />
                         }
                     >
-                        <ReportConfiguration />
+                        <ScanConfigDeliveryStep />
                     </WizardStep>
                     <WizardStep
                         name={REVIEW_CONFIG}
                         id={REVIEW_CONFIG_ID}
                         body={{ hasNoPadding: true }}
-                        isDisabled={!canJumpToReviewConfig()}
+                        isDisabled={!canJumpToReview()}
                         footer={{
                             nextButtonProps: { isLoading: isCreating },
                             nextButtonText: 'Save',
                             onClose: openModal,
                         }}
                     >
-                        <ReviewConfig
+                        <ScanConfigReviewStep
                             clusters={clusters ?? []}
                             errorMessage={createScanConfigError}
                         />
@@ -318,8 +348,8 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     taken back to the list of scan configurations.
                 </p>
             </Modal>
-        </>
+        </PageSection>
     );
 }
 
-export default ScanConfigWizardForm;
+export default ScanConfigWizardPageSection;

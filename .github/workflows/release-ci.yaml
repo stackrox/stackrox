@@ -9,19 +9,23 @@ on:
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - run: |
           echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
 
   build:
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
     name: Build
     uses: ./.github/workflows/build.yaml
     secrets: inherit
 
   check-is-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
     steps:
@@ -40,7 +44,7 @@ jobs:
           fi
 
   check-collector-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -53,7 +57,7 @@ jobs:
             check_collector_version
 
   check-fact-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -68,7 +72,7 @@ jobs:
   publish-helm-charts:
     needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -97,7 +101,7 @@ jobs:
   publish-cli:
     needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -123,7 +127,7 @@ jobs:
   publish-openapispec:
     needs: [build, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0

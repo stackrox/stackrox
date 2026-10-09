@@ -284,7 +284,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	s.NoError(err)
 	s.NotEmpty(orphanedCVEs)
 	for _, cve := range orphanedCVEs {
-		s.NotNil(cve.OrphanedTime)
+		s.NotNil(cve.GetOrphanedTime())
 		s.True(vulnNames.Contains(cve.GetCveBaseInfo().GetCve()))
 	}
 
@@ -311,8 +311,8 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	s.NoError(err)
 	s.NotEmpty(nodeCVEs)
 	for _, cve := range nodeCVEs {
-		s.False(cve.Orphaned)
-		s.Nil(cve.OrphanedTime)
+		s.False(cve.GetOrphaned())
+		s.Nil(cve.GetOrphanedTime())
 		val, ok := orphanedCveIDToCve[cve.GetId()]
 		s.True(ok)
 		s.Equal(val.GetCveBaseInfo().GetCreatedAt(), cve.GetCveBaseInfo().GetCreatedAt())
