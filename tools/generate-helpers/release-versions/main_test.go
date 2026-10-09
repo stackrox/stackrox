@@ -91,7 +91,7 @@ func TestGenerationFailures(t *testing.T) {
 		"missing patch baseline":         {target: "5.1.1", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch RC missing baseline":      {target: "5.1.1-rc.0", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch nightly missing baseline": {target: "5.1.1-nightly-20260930", tag: "4.10.0", want: "5.1.0", completeHistory: true},
-		"invalid target":                 {target: "garbage", want: "version"},
+		"invalid target":                 {target: "garbage", want: "parse target stream"},
 		"phantom target":                 {target: "4.12.x", want: "stream"},
 		"malformed sequence":             {target: "5.1.x", tag: "4.10.0", source: "package internal\nvar CurrentDBVersionSeqNum = 0", want: "positive"},
 	} {
@@ -505,10 +505,11 @@ func TestParseTargetStream(t *testing.T) {
 		want      productstreams.XYVersion
 		wantError string
 	}{
+		"stream":         {target: "5.1", want: productstreams.XYVersion{X: 5, Y: 1}},
 		"development":    {target: "5.1.x-106-gabcdef-dirty", want: productstreams.XYVersion{X: 5, Y: 1}},
 		"patch RC":       {target: "5.1.2-rc.1", want: productstreams.XYVersion{X: 5, Y: 1}},
 		"nightly":        {target: "5.1.x-nightly-20260930", want: productstreams.XYVersion{X: 5, Y: 1}},
-		"invalid syntax": {target: "garbage", wantError: `invalid target version "garbage"`},
+		"invalid syntax": {target: "garbage", wantError: `parse target stream from "garbage"`},
 		"phantom stream": {target: "4.12.x", wantError: "validate target stream 4.12"},
 	} {
 		t.Run(name, func(t *testing.T) {

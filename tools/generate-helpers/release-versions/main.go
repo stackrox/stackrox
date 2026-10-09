@@ -25,7 +25,6 @@ import (
 const sequencePath = "pkg/migrations/internal/seq_num.go"
 
 var initialRelease = regexp.MustCompile(`^[1-9][0-9]*\.(0|[1-9][0-9]*)\.0(-rc\.(0|[1-9][0-9]*))?$`)
-var targetVersion = regexp.MustCompile(`^[1-9][0-9]*\.(0|[1-9][0-9]*)\.(x|0|[1-9][0-9]*)(-[A-Za-z0-9.-]+)?$`)
 
 func main() {
 	target := flag.String("target", "", "target version (defaults to make tag)")
@@ -100,9 +99,6 @@ func generate(dir, target string) ([]byte, error) {
 }
 
 func parseTargetStream(target string) (productstreams.XYVersion, error) {
-	if !targetVersion.MatchString(target) {
-		return productstreams.XYVersion{}, fmt.Errorf("invalid target version %q", target)
-	}
 	targetXy, err := productstreams.ParseXYFromVersionString(target)
 	if err != nil {
 		return productstreams.XYVersion{}, fmt.Errorf("parse target stream from %q: %w", target, err)
