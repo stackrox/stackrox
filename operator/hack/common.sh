@@ -180,3 +180,146 @@ function run_oc_adm_must_gather() {
     log "Running oc adm must-gather failed, perhaps this is not an OpenShift cluster?"
   fi
 }
+
+# OLMv1-specific functions
+
+function get_ocp_version() {
+  # Returns OCP version as X.Y.Z, or empty string if not an OpenShift cluster
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null || echo ""
+}
+
+function should_use_olmv1() {
+  # Returns 0 (true) if OLMv1 should be used based on OCP version >= 4.20.1
+  # Returns 1 (false) otherwise
+  local ocp_version
+  ocp_version="$(get_ocp_version)"
+
+  if [[ -z "$ocp_version" ]]; then
+    log "Not an OpenShift cluster, using OLMv0"
+    return 1
+  fi
+
+  if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+    log "Could not parse OCP version '$ocp_version', defaulting to OLMv0"
+    return 1
+  fi
+
+  local major="${BASH_REMATCH[1]}"
+  local minor="${BASH_REMATCH[2]}"
+  local patch="${BASH_REMATCH[3]}"
+
+  # Check if version >= 4.20.1
+  if [[ $major -gt 4 ]] || \
+     [[ $major -eq 4 && $minor -gt 20 ]] || \
+     [[ $major -eq 4 && $minor -eq 20 && $patch -ge 1 ]]; then
+    log "OCP version $ocp_version >= 4.20.1, using OLMv1"
+    return 0
+  fi
+
+  log "OCP version $ocp_version < 4.20.1, using OLMv0"
+  return 1
+}
+
+function wait_for_clusterextension_installed() {
+  local -r operator_ns="$1"
+  local -r extension_name="$2"
+  local -r expected_version="$3"
+
+  log "Waiting for ClusterExtension ${extension_name} to reach Installed status..."
+
+  # Wait for up to 10 minutes for the extension to install
+  # Catalog unpacking can take 60-90 seconds on first use
+  local max_attempts=60
+  local attempt=0
+  while (( attempt < max_attempts )); do
+    (( attempt++ ))
+
+    local installed_status
+    installed_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Installed")].status}' 2>/dev/null || echo "")
+
+    if [[ "$installed_status" == "True" ]]; then
+      local installed_version
+      installed_version=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.install.bundle.version}' 2>/dev/null || echo "")
+
+      if [[ "$installed_version" == "$expected_version" ]]; then
+        log "ClusterExtension ${extension_name} successfully installed version ${installed_version}"
+        return 0
+      else
+        log "ClusterExtension installed with version ${installed_version} (expected ${expected_version}), continuing to wait..."
+        # Continue waiting - version might update as catalog unpacks
+      fi
+    fi
+
+    # Check if it's in a failed state (but not Retrying, which is normal during catalog unpacking)
+    local progressing_status
+    local progressing_reason
+    progressing_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].status}' 2>/dev/null || echo "")
+    progressing_reason=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].reason}' 2>/dev/null || echo "")
+
+    if [[ "$progressing_status" == "False" ]] && [[ "$progressing_reason" == "Failed" ]]; then
+      log "ClusterExtension ${extension_name} installation failed"
+      local error_msg
+      error_msg=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].message}' 2>/dev/null || echo "")
+      log "Error: ${error_msg}"
+      gather_olmv1_resources "${operator_ns}" "${extension_name}"
+      return 1
+    fi
+
+    if (( attempt % 6 == 0 )); then
+      # Log progress every minute (6 attempts × 10 seconds)
+      log "Still waiting for ClusterExtension to install (${attempt}/${max_attempts} attempts, status: Installed=${installed_status}, Progressing=${progressing_reason})..."
+    fi
+
+    sleep 10
+  done
+
+  log "ClusterExtension ${extension_name} failed to install within timeout"
+  gather_olmv1_resources "${operator_ns}" "${extension_name}"
+  return 1
+}
+
+function inject_test_env_vars() {
+  local -r operator_ns="$1"
+  local -r deployment_name="${2:-rhacs-operator-controller-manager}"
+
+  log "Injecting test environment variables into operator deployment..."
+
+  # Patch the deployment to add NO_PROXY and ROX_ADMISSION_CONTROLLER_CONFIG env vars
+  # These are required for operator e2e test assertions
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null patch deployment "${deployment_name}" -n "${operator_ns}" --type='json' -p='[
+    {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "NO_PROXY", "value": "127.1.2.3/8"}},
+    {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_ADMISSION_CONTROLLER_CONFIG", "value": "true"}}
+  ]'
+
+  if [[ $? -eq 0 ]]; then
+    log "Successfully injected test environment variables"
+  else
+    log "Warning: Failed to inject test environment variables, tests may fail"
+  fi
+}
+
+function gather_olmv1_resources() {
+  local -r operator_ns="$1"
+  local -r extension_name="$2"
+  local -r msg="Gathering OLMv1 resources for troubleshooting..."
+
+  log "${msg}"
+  log "Dumping ClusterExtension..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null describe clusterextension "${extension_name}" || true
+  log "Dumping ClusterExtension status..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o yaml || true
+  log "Dumping operator deployment..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe deployments || true
+  log "Dumping pod descriptions..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods || true
+  log "Dumping pod logs..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" logs -l app=rhacs-operator --tail=100 || true
+
+  if [[ -n ${CI:-} ]]; then
+    local -r path="${ROX_CI_OUTPUT_DIR:-/tmp/k8s-service-logs}/olmv1-must-gather"
+    log "Running oc adm must-gather in ${path} (which will be collected along with other CI artifacts)..."
+    mkdir -p "${path}"
+    ( cd "${path}" && run_oc_adm_must_gather >> "oc-adm-must-gather-output.txt"; )
+  fi
+  log "Resource collection completed, look before '${msg}' above for the cause of the failure."
+}
