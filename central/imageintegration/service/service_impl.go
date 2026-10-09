@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -129,6 +130,18 @@ func sortCategories(categories []storage.ImageIntegrationCategory) {
 	sort.SliceStable(categories, func(i, j int) bool {
 		return int32(categories[i]) < int32(categories[j])
 	})
+}
+
+// sameCategories returns true if both slices contain the same categories, ignoring order.
+func sameCategories(a, b []storage.ImageIntegrationCategory) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	a = slices.Clone(a)
+	b = slices.Clone(b)
+	slices.Sort(a)
+	slices.Sort(b)
+	return slices.Equal(a, b)
 }
 
 func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *storage.ImageIntegration) error {
@@ -397,6 +410,9 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		oldType := integration.GetType()
 		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
 			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
+		}
+		if oldType == scannerTypes.ScannerV4 && !sameCategories(integration.GetCategories(), updateRequest.GetConfig().GetCategories()) {
+			return errors.Wrap(errox.InvalidArgs, "cannot change categories of scanner V4 integration")
 		}
 
 		// Note that integrations of type "azure" support both `DockerConfig` (deprecated in 4.7) and `AzureConfig`.
