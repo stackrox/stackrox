@@ -38,8 +38,7 @@ class SplunkUtil {
         // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
         // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
         // See https://github.com/splunk/splunk-ansible/issues/349
-        "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",
-        "SPLUNK_FIPS_VERSION": "140-3",]
+        "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
 
     private static RequestSpecification splunkAdminRequest() {
         given()
