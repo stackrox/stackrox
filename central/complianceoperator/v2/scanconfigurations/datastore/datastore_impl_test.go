@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -519,6 +520,127 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 			s.Require().NoError(err)
 		}
 	}
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanRequestedTime() {
+	// The preserve-on-edit path only runs with the flag on; enable it here.
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	configID := uuid.NewV4().String()
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+
+	ctx := s.testContexts[unrestrictedReadWriteCtx]
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, scanConfig))
+	defer func() {
+		_, err := s.dataStore.DeleteScanConfiguration(ctx, configID)
+		s.Require().NoError(err)
+	}()
+
+	// The initial upsert stamps last_updated_time and leaves last_scan_requested_time unset.
+	original, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Nil(original.GetLastScanRequestedTime())
+	originalUpdated := original.GetLastUpdatedTime()
+	s.Require().NotNil(originalUpdated)
+
+	// Record an on-demand "Scan now" time.
+	requested := protocompat.TimestampNow()
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, requested))
+
+	updated, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+
+	// last_scan_requested_time is now set...
+	s.Require().NotNil(updated.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(updated.GetLastScanRequestedTime().AsTime()))
+	// ...and last_updated_time is preserved: a rescan is not a configuration edit.
+	s.Require().True(originalUpdated.AsTime().Equal(updated.GetLastUpdatedTime().AsTime()))
+
+	// A later "Scan now" advances the stamp forward (normal forward-advance case).
+	later := protocompat.GetProtoTimestampFromSeconds(requested.GetSeconds() + 60)
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, later))
+	afterLater, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().True(later.AsTime().Equal(afterLater.GetLastScanRequestedTime().AsTime()))
+
+	// An EARLIER "Scan now" must NOT regress the stamp. Two concurrent rescans can reach the
+	// keyed lock in an order that inverts their captured timestamps; the write is monotonic so
+	// an older stamp never overwrites a newer one (which would keep stale checks CURRENT longer).
+	earlier := protocompat.GetProtoTimestampFromSeconds(requested.GetSeconds() - 60)
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, earlier))
+	afterEarlier, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	// The stored value remains the LATER timestamp (no regression).
+	s.Require().True(later.AsTime().Equal(afterEarlier.GetLastScanRequestedTime().AsTime()))
+
+	// Simulate an unrelated config edit: a fresh object that cannot carry the blob-only
+	// last_scan_requested_time. UpsertScanConfiguration must preserve it atomically under
+	// the lock (so a concurrent "Scan now" is not clobbered) while bumping last_updated_time.
+	edit := s.getTestRec(mockScanName)
+	edit.Id = configID
+	edit.Description = "edited description"
+	s.Require().Nil(edit.GetLastScanRequestedTime())
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, edit))
+
+	afterEdit, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal("edited description", afterEdit.GetDescription())
+	// The on-demand time (the latest stamp) survived the edit...
+	s.Require().NotNil(afterEdit.GetLastScanRequestedTime())
+	s.Require().True(later.AsTime().Equal(afterEdit.GetLastScanRequestedTime().AsTime()))
+	// ...and last_updated_time advanced (an edit bumps it, unlike a rescan).
+	s.Require().False(afterEdit.GetLastUpdatedTime().AsTime().Before(updated.GetLastUpdatedTime().AsTime()))
+}
+
+// TestRemoveClusterPreservesLastScanRequestedTime guards the delete-cluster writer against the
+// same blob clobber UpsertScanConfiguration handles: RemoveClusterFromScanConfig reads the config
+// OUTSIDE the keyed mutex, then deleteClusterFromScanConfigWithLock upserts that (possibly stale)
+// blob back under the lock. A concurrent "Scan now" stamped in between must not be dropped.
+func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterPreservesLastScanRequestedTime() {
+	// The preserve-on-delete path only runs with the flag on; enable it here.
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	configID := uuid.NewV4().String()
+	scanConfig := s.getTestRec(mockScanName) // two clusters: clusterID1, clusterID2
+	scanConfig.Id = configID
+
+	ctx := s.testContexts[unrestrictedReadWriteCtx]
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, scanConfig))
+	defer func() {
+		_, err := s.dataStore.DeleteScanConfiguration(ctx, configID)
+		s.Require().NoError(err)
+	}()
+
+	// Stamp an on-demand "Scan now" time in the store.
+	requested := protocompat.TimestampNow()
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, requested))
+
+	// Model the race: deleteClusterFromScanConfigWithLock receives a config object read BEFORE the
+	// stamp (last_scan_requested_time nil), as RemoveClusterFromScanConfig reads outside the keyed
+	// lock. Removing an unrelated cluster must not clobber the stored stamp.
+	stale := s.getTestRec(mockScanName)
+	stale.Id = configID
+	s.Require().Nil(stale.GetLastScanRequestedTime())
+
+	impl, ok := s.dataStore.(*datastoreImpl)
+	s.Require().True(ok)
+	s.Require().NoError(impl.deleteClusterFromScanConfigWithLock(ctx, s.clusterID2, stale))
+
+	afterDelete, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	// The removed cluster is gone...
+	s.Require().Len(afterDelete.GetClusters(), 1)
+	s.Require().Equal(s.clusterID1, afterDelete.GetClusters()[0].GetClusterId())
+	// ...and the on-demand time survived the delete (would be nil without the re-read fix).
+	s.Require().NotNil(afterDelete.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(afterDelete.GetLastScanRequestedTime().AsTime()))
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
