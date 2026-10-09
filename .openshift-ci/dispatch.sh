@@ -19,16 +19,6 @@ fi
 ci_job="$1"
 shift
 
-# Skip non-UI jobs early when the PR only touches files under ui/.
-case "$ci_job" in
-    *nongroovy*|*upgrade*)
-        if changes_limited_to "ui/"; then
-            info "Skipping $ci_job: all changes are under ui/"
-            exit 0
-        fi
-        ;;
-esac
-
 # On a pull request, skip before credentials and cluster setup when the
 # decision leaves this job off the list. The label ci-dispatcher-enforce
 # is what makes that skip real. Without it the job runs as it does today.
