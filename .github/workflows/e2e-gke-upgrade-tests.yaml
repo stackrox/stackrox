@@ -58,7 +58,7 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-16
+        MACHINE_TYPE: e2-highmem-16
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "1"
         GKE_SPOT: "false"
@@ -227,7 +227,7 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-16
+        MACHINE_TYPE: e2-highmem-16
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "1"
         GKE_SPOT: "false"
