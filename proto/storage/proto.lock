@@ -14054,14 +14054,6 @@
                 "integer": 4
               }
             ]
-          },
-          {
-            "name": "SkipContainerType",
-            "enum_fields": [
-              {
-                "name": "SKIP_INIT"
-              }
-            ]
           }
         ],
         "messages": [
@@ -14366,7 +14358,7 @@
               {
                 "id": 1,
                 "name": "skip_container_types",
-                "type": "SkipContainerType",
+                "type": "ContainerType",
                 "is_repeated": true
               }
             ]
@@ -14451,6 +14443,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"
