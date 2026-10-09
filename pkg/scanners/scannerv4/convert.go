@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/quay/claircore/rhel/rhcc"
+
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
@@ -21,16 +23,23 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// vulnDataSourceDelimiter separates the parts of a vuln's datasource.
-// IMPORTANT: This delimiter was chosen because it does not appear in any known
-// Claircore or StackRox updater names.
-const vulnDataSourceDelimiter = "::"
+const (
+	// vulnDataSourceDelimiter separates the parts of a vuln's datasource.
+	// IMPORTANT: This delimiter was chosen because it does not appear in any known
+	// Claircore or StackRox updater names.
+	vulnDataSourceDelimiter = "::"
+	// redHatVEXUpdaterName identifies vulnerabilities from Claircore's Red Hat VEX updater.
+	redHatVEXUpdaterName = "rhel-vex"
+)
 
 // digitSegment matches contiguous runs of digits for numeric segment comparisons.
 var digitSegment = regexp.MustCompile(`\d+`)
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
+	if features.ScannerV4RedHatLayers.Enabled() {
+		filterRedHatLayerVulnerabilities(report, layerSHAToIndex)
+	}
 	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
 		filterNotAffectedVulnerabilities(report, layerSHAToIndex)
 	}
@@ -50,14 +59,7 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 }
 
 func componentsWithLayerMap(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) []*storage.EmbeddedImageScanComponent {
-	pkgs := report.GetContents().GetPackages()
-	if len(pkgs) == 0 {
-		pkgs = make(map[string]*v4.Package, len(report.GetContents().GetPackagesDEPRECATED()))
-		// Fallback to the deprecated slice, if needed.
-		for _, pkg := range report.GetContents().GetPackagesDEPRECATED() {
-			pkgs[pkg.GetId()] = pkg
-		}
-	}
+	pkgs := packagesByID(report.GetContents())
 	// Filter out packages that should not become user-facing components.
 	// Unreferenced source packages are kept defensively.
 	dedupe := features.ScannerV4Dedupe.Enabled()
@@ -147,6 +149,21 @@ func envOS(env *v4.Environment, report *v4.VulnerabilityReport) string {
 	}
 
 	return dist.GetDid() + ":" + dist.GetVersionId()
+}
+
+// packagesByID returns the current package map, falling back to the deprecated
+// package list when the map is empty.
+func packagesByID(contents *v4.Contents) map[string]*v4.Package {
+	packages := contents.GetPackages()
+	if len(packages) > 0 {
+		return packages
+	}
+
+	packages = make(map[string]*v4.Package, len(contents.GetPackagesDEPRECATED()))
+	for _, pkg := range contents.GetPackagesDEPRECATED() {
+		packages[pkg.GetId()] = pkg
+	}
+	return packages
 }
 
 // environmentList returns the *v4.Environment_List associated with the given
@@ -550,6 +567,51 @@ func getPackageLayerIndex(report *v4.VulnerabilityReport, layerSHAToIndex map[st
 	return layerIdx, ok
 }
 
+// filterRedHatLayerVulnerabilities removes non-Red Hat VEX findings at or below the
+// highest RHCC-marked ancestry layer. Findings above it are unchanged.
+func filterRedHatLayerVulnerabilities(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
+	contents := report.GetContents()
+	if len(layerSHAToIndex) == 0 || contents == nil {
+		return
+	}
+
+	packages := packagesByID(contents)
+	maxLayerIdx := int32(-1)
+	for pkgID, pkg := range packages {
+		if pkg == nil || pkg.GetKind() != "ancestry" || !packageHasRepositoryKey(report, pkgID, rhcc.RepositoryKey) {
+			continue
+		}
+		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok {
+			continue
+		}
+		if layerIdx > maxLayerIdx {
+			maxLayerIdx = layerIdx
+		}
+	}
+	if maxLayerIdx < 0 {
+		return
+	}
+
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok || pkgLayerIdx > maxLayerIdx {
+			continue
+		}
+		filtered := make([]string, 0, len(vulnIDs.GetValues()))
+		for _, vulnID := range vulnIDs.GetValues() {
+			if report.GetVulnerabilities()[vulnID].GetUpdater() == redHatVEXUpdaterName {
+				filtered = append(filtered, vulnID)
+			}
+		}
+		if len(filtered) == 0 {
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+		} else {
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+		}
+	}
+}
+
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
 // A package is covered if it was introduced at or below the AncestryPackage's layer
@@ -634,14 +696,7 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 // PackageVulnerabilities when a rhel-vex updater vulnerability shares a
 // CVE alias at or above the OSV package's layer.
 func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
-	const (
-		osvUpdaterPrefix     = "osv/"
-		redHatVEXUpdaterName = "rhel-vex"
-		// redHatContainerRepositoryKey matches
-		// github.com/quay/claircore/rhel/rhcc.RepositoryKey: it is set on
-		// every Repository indexed by claircore's RHCC (container) ecosystem.
-		redHatContainerRepositoryKey = "rhcc-container-repository"
-	)
+	const osvUpdaterPrefix = "osv/"
 
 	if len(report.GetPackageVulnerabilities()) == 0 {
 		return
@@ -652,7 +707,7 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
 		// Only consider OCI (RHCC) packages.
-		if !packageHasRepositoryKey(report, pkgID, redHatContainerRepositoryKey) {
+		if !packageHasRepositoryKey(report, pkgID, rhcc.RepositoryKey) {
 			continue
 		}
 

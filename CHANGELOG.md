@@ -16,6 +16,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
 
+### Technical Changes
+
+- ROX-37265: To get additional filtering coverage for Red Hat layers in newer Konflux-built images, the `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` flag must now be set on Central. The existing Scanner V4 Matcher setting remains for backward compatibility, but its filtering has coverage gaps for these images.
+
 **Full Changelog**: [4.11.5...4.11.6](https://github.com/stackrox/stackrox/compare/4.11.5...4.11.6)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.
