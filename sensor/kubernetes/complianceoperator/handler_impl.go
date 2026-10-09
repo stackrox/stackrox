@@ -224,11 +224,11 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.defaultNodeRoles())
 }
 
-func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) bool {
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -263,6 +263,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
+	// Compute the node roles once for this request and reuse them below.
+	roles := m.defaultNodeRoles()
+
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
@@ -288,7 +291,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
-		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), roles)
 	}
 
 	// Invalid case because scan setting is created first, so we should not have a situation where
@@ -298,7 +301,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -331,7 +334,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
 			}
@@ -757,6 +760,15 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
+	// Compute the node roles once for this sync batch and reuse them for every ScanSetting below.
+	roles := m.defaultNodeRoles()
+	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+		return convertCentralRequestToScanSetting(namespace, req, cron, roles)
+	}
+	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+		return updateScanSettingFromUpdateRequest(obj, req, roles)
+	}
+
 	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
@@ -771,8 +783,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
-			updateScanSettingFromUpdateRequest,
-			convertCentralRequestToScanSetting,
+			updateScanSetting,
+			convertScanSetting,
 			complianceoperator.ScanSetting,
 		); err != nil {
 			errList.AddError(err)
