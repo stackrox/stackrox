@@ -8,9 +8,4 @@ export const standardLabels = {
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS Kubernetes v1.5',
 };
 
-export const standardShortLabels = {
-    ...standardLabels,
-    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s v1.5',
-};
-
 export default standardLabels;
