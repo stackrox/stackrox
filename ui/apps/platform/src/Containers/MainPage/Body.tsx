@@ -50,6 +50,7 @@ import {
     vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesOperatorRemediationPath,
+    vulnerabilitiesClusterRemediationPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
@@ -285,6 +286,15 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
                 )
         ),
         path: vulnerabilitiesOperatorRemediationPath,
+    },
+    'vulnerabilities/cluster-remediation': {
+        component: asyncComponent(
+            () =>
+                import(
+                    'Containers/Vulnerabilities/ClusterRemediation/ClusterRemediationPage'
+                )
+        ),
+        path: vulnerabilitiesClusterRemediationPath,
     },
     'vulnerabilities/all-images': {
         component: makeVulnMgmtUserWorkloadView('all-images'),

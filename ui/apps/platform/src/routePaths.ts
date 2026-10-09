@@ -90,6 +90,7 @@ export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platf
 export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
 export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesOperatorRemediationPath = `${vulnerabilitiesBasePath}/operator-remediation`;
+export const vulnerabilitiesClusterRemediationPath = `${vulnerabilitiesBasePath}/cluster-remediation`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
 export const vulnerabilitiesVirtualMachineCvesPath = `${vulnerabilitiesBasePath}/virtual-machine-cves`;
 // System defined "views"
@@ -207,6 +208,7 @@ export type RouteKey =
     | 'vulnerabilities/user-workloads'
     | 'vulnerabilities/platform'
     | 'vulnerabilities/operator-remediation'
+    | 'vulnerabilities/cluster-remediation'
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/images-without-cves'
@@ -398,6 +400,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/operator-remediation': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/cluster-remediation': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/all-images': {

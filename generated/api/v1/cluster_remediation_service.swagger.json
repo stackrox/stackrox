@@ -1,13 +1,13 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/operator_remediation_service.proto",
+    "title": "api/v1/cluster_remediation_service.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "OperatorRemediationService",
-      "description": "OperatorRemediationService reports, for an operator image, which images to update and the CVE\nimpact, computed live from in-cluster OLM data and Central scan results."
+      "name": "ClusterRemediationService",
+      "description": "ClusterRemediationService generates, asynchronously, which component images an OpenShift upgrade\nchanges and the CVE impact per image. Generation can take minutes (it scans candidate images),\nso it is split into a create + poll flow backed by an in-memory cache (demo-grade)."
     }
   ],
   "consumes": [
@@ -17,15 +17,15 @@
     "application/json"
   ],
   "paths": {
-    "/v1/operator-remediation/image/{imageId}": {
-      "get": {
-        "summary": "GetImageRemediation resolves the operator bundle shipping image_id and returns the per-image\nCVE diff against the recommended update.",
-        "operationId": "OperatorRemediationService_GetImageRemediation",
+    "/v1/cluster-remediation/reports": {
+      "post": {
+        "summary": "CreateClusterRemediationReport starts report generation and returns a RUNNING job.",
+        "operationId": "ClusterRemediationService_CreateClusterRemediationReport",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ImageRemediationResponse"
+              "$ref": "#/definitions/v1ClusterRemediationJob"
             }
           },
           "default": {
@@ -37,22 +37,48 @@
         },
         "parameters": [
           {
-            "name": "imageId",
-            "description": "image_id is the image sha (or Central image ID) the user is viewing; it is resolved to the\noperator bundle that ships it.",
-            "in": "path",
+            "name": "body",
+            "description": "ClusterRemediationRequest starts generation of an OpenShift cluster-upgrade remediation report.",
+            "in": "body",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "runningOnly",
-            "description": "running_only restricts the result to images referenced by a currently-running deployment.",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "schema": {
+              "$ref": "#/definitions/v1ClusterRemediationRequest"
+            }
           }
         ],
         "tags": [
-          "OperatorRemediationService"
+          "ClusterRemediationService"
+        ]
+      }
+    },
+    "/v1/cluster-remediation/reports/{jobId}": {
+      "get": {
+        "summary": "GetClusterRemediationReport returns the current state (and result, when COMPLETE) of a job.",
+        "operationId": "ClusterRemediationService_GetClusterRemediationReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ClusterRemediationJob"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ClusterRemediationService"
         ]
       }
     }
@@ -88,6 +114,67 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
+    "v1ClusterRemediationJob": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1ClusterRemediationJobStatus"
+        },
+        "error": {
+          "type": "string"
+        },
+        "report": {
+          "$ref": "#/definitions/v1ClusterRemediationReport"
+        }
+      },
+      "description": "ClusterRemediationJob is an in-memory, poll-able report-generation job."
+    },
+    "v1ClusterRemediationJobStatus": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNSPECIFIED",
+        "RUNNING",
+        "COMPLETE",
+        "FAILED"
+      ],
+      "default": "STATUS_UNSPECIFIED"
+    },
+    "v1ClusterRemediationReport": {
+      "type": "object",
+      "properties": {
+        "currentVersion": {
+          "type": "string"
+        },
+        "targetVersion": {
+          "type": "string"
+        },
+        "noUpdateReason": {
+          "type": "string"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ImageRemediation"
+          },
+          "description": "images reuses the operator-remediation per-image shape (repository = shared release repo,\nname = release component, current/fixed/new_cves severity counts)."
+        }
+      },
+      "description": "ClusterRemediationReport is the per-image CVE diff between the current OpenShift release and the\nrecommended update."
+    },
+    "v1ClusterRemediationRequest": {
+      "type": "object",
+      "properties": {
+        "runningOnly": {
+          "type": "boolean",
+          "description": "running_only restricts the report to component images currently running in the cluster."
+        }
+      },
+      "description": "ClusterRemediationRequest starts generation of an OpenShift cluster-upgrade remediation report."
+    },
     "v1ImageRemediation": {
       "type": "object",
       "properties": {
@@ -122,33 +209,6 @@
         }
       },
       "description": "ImageRemediation describes one operator image and how updating changes its CVEs."
-    },
-    "v1ImageRemediationResponse": {
-      "type": "object",
-      "properties": {
-        "operatorPackage": {
-          "type": "string"
-        },
-        "installedVersion": {
-          "type": "string"
-        },
-        "updateVersion": {
-          "type": "string",
-          "description": "update_version is the recommended update target; empty when there is none."
-        },
-        "noUpdateReason": {
-          "type": "string",
-          "description": "no_update_reason is set when update_version is empty."
-        },
-        "images": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1ImageRemediation"
-          }
-        }
-      },
-      "description": "ImageRemediationResponse is the per-operator remediation summary."
     },
     "v1SeverityCounts": {
       "type": "object",

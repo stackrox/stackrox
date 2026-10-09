@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/operator_remediation_service.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// ClusterRemediationRequest starts generation of an OpenShift cluster-upgrade remediation report.
+message ClusterRemediationRequest {
+  // running_only restricts the report to component images currently running in the cluster.
+  bool running_only = 1;
+}
+
+// GetClusterRemediationJobRequest fetches a previously started report job.
+message GetClusterRemediationJobRequest {
+  string job_id = 1;
+}
+
+// ClusterRemediationReport is the per-image CVE diff between the current OpenShift release and the
+// recommended update.
+message ClusterRemediationReport {
+  string current_version = 1;
+  string target_version = 2;
+  string no_update_reason = 3;
+  // images reuses the operator-remediation per-image shape (repository = shared release repo,
+  // name = release component, current/fixed/new_cves severity counts).
+  repeated ImageRemediation images = 4;
+}
+
+// ClusterRemediationJob is an in-memory, poll-able report-generation job.
+message ClusterRemediationJob {
+  string id = 1;
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    RUNNING = 1;
+    COMPLETE = 2;
+    FAILED = 3;
+  }
+  Status status = 2;
+  string error = 3;
+  ClusterRemediationReport report = 4;
+}
+
+// ClusterRemediationService generates, asynchronously, which component images an OpenShift upgrade
+// changes and the CVE impact per image. Generation can take minutes (it scans candidate images),
+// so it is split into a create + poll flow backed by an in-memory cache (demo-grade).
+service ClusterRemediationService {
+  // CreateClusterRemediationReport starts report generation and returns a RUNNING job.
+  rpc CreateClusterRemediationReport(ClusterRemediationRequest) returns (ClusterRemediationJob) {
+    option (google.api.http) = {
+      post: "/v1/cluster-remediation/reports"
+      body: "*"
+    };
+  }
+  // GetClusterRemediationReport returns the current state (and result, when COMPLETE) of a job.
+  rpc GetClusterRemediationReport(GetClusterRemediationJobRequest) returns (ClusterRemediationJob) {
+    option (google.api.http) = {get: "/v1/cluster-remediation/reports/{job_id}"};
+  }
+}

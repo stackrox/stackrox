@@ -45,6 +45,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
+	clusterRemediationService "github.com/stackrox/rox/central/clusterremediation/service"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -430,6 +431,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		cloudSourcesService.Singleton(),
 		clusterCVEService.Singleton(),
 		clusterInitService.Singleton(),
+		clusterRemediationService.Singleton(),
 		clusterService.Singleton(),
 		collectionService.Singleton(),
 		complianceManagerService.Singleton(),
