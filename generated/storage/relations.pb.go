@@ -29,7 +29,7 @@ type ImageComponentEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// id is base 64 encoded Image:Component ids.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	/// Layer that contains this component
+	// / Layer that contains this component
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
 	//

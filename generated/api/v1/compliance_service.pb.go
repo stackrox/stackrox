@@ -605,7 +605,8 @@ type GetComplianceRunResultsRequest struct {
 	StandardId string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
 	// Specifies the run ID for which to return results. If empty, the most recent run is returned.
 	// CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
-	//         increased memory pressure and decreased performance.
+	//
+	//	increased memory pressure and decreased performance.
 	RunId         string `protobuf:"bytes,3,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
