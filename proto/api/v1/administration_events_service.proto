@@ -100,14 +100,10 @@ message AdministrationEventsFilter {
   // Matches events based on their level.
   repeated AdministrationEventLevel level = 6;
 
-  // Matches events whose resource is an image deployed in any of the specified clusters.
-  repeated string cluster = 7;
-
-  // Matches events whose resource is an image deployed in any of the specified namespaces.
-  repeated string namespace = 8;
-
-  // Matches events whose resource is an image used by any of the specified deployments (by name).
-  repeated string deployment = 9;
+  // Raw search query scoped to workload context (cluster, namespace, deployment).
+  // Matches events whose resource is an image deployed in workloads matching this query.
+  // Uses the same search query format as the deployment service (e.g. "Cluster:prod+Namespace:default").
+  string workload_query = 7;
 }
 
 message CountAdministrationEventsRequest {

@@ -153,37 +153,11 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "filter.cluster",
-            "description": "Matches events whose resource is an image deployed in any of the specified clusters.",
+            "name": "filter.workloadQuery",
+            "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\").",
             "in": "query",
             "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "filter.namespace",
-            "description": "Matches events whose resource is an image deployed in any of the specified namespaces.",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "filter.deployment",
-            "description": "Matches events whose resource is an image used by any of the specified deployments (by name).",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
+            "type": "string"
           }
         ],
         "tags": [
@@ -314,37 +288,11 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "filter.cluster",
-            "description": "Matches events whose resource is an image deployed in any of the specified clusters.",
+            "name": "filter.workloadQuery",
+            "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\").",
             "in": "query",
             "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "filter.namespace",
-            "description": "Matches events whose resource is an image deployed in any of the specified namespaces.",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "filter.deployment",
-            "description": "Matches events whose resource is an image used by any of the specified deployments (by name).",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
+            "type": "string"
           }
         ],
         "tags": [
@@ -513,26 +461,9 @@
           },
           "description": "Matches events based on their level."
         },
-        "cluster": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Matches events whose resource is an image deployed in any of the specified clusters."
-        },
-        "namespace": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Matches events whose resource is an image deployed in any of the specified namespaces."
-        },
-        "deployment": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Matches events whose resource is an image used by any of the specified deployments (by name)."
+        "workloadQuery": {
+          "type": "string",
+          "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\")."
         }
       }
     },

@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import {
+    Content,
+    Divider,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -129,7 +131,11 @@ function AdministrationEventsToolbar({
                     </ToolbarItem>
                 </ToolbarGroup>
             </ToolbarContent>
+            <Divider />
             <ToolbarContent>
+                <ToolbarItem>
+                    <Content component="small">Filter by related workload context</Content>
+                </ToolbarItem>
                 <CompoundSearchFilter
                     config={workloadSearchFilterConfig}
                     isDisabled={isDisabled}

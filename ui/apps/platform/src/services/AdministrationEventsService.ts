@@ -3,7 +3,7 @@ import qs from 'qs';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import type { SortOption } from 'types/table';
 
-import { getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 
 import type { Pagination } from './types';
@@ -95,21 +95,25 @@ export type AdministrationEventsFilter = {
     resourceType?: string[];
     type?: AdministrationEventType[];
     level?: AdministrationEventLevel[];
-    cluster?: string[];
-    namespace?: string[];
-    deployment?: string[];
+    workloadQuery?: string;
 };
 
 // For consistency with useURLSort hook, especially in case the table columns become sortable,
 // useURLSearch hook also uses search strings.
 // See proto/storage/administration_event.proto
-const clusterField = 'Cluster';
-const deploymentField = 'Deployment';
 const domainField = 'Event Domain';
 const levelField = 'Event Level';
-const namespaceField = 'Namespace';
 const resourceTypeField = 'Resource Type';
 const typeField = 'Event Type';
+
+const eventFilterFields = new Set([
+    domainField,
+    levelField,
+    resourceTypeField,
+    typeField,
+    'from',
+    'until',
+]);
 
 export type CountAdministrationEventsRequest = {
     filter: AdministrationEventsFilter;
@@ -178,6 +182,11 @@ export function getListAdministrationEventsArg({
 export function getAdministrationEventsFilter(
     searchFilter: SearchFilter
 ): AdministrationEventsFilter {
+    const workloadFilter: SearchFilter = Object.fromEntries(
+        Object.entries(searchFilter).filter(([key]) => !eventFilterFields.has(key))
+    );
+    const workloadQuery = getRequestQueryStringForSearchFilter(workloadFilter) || undefined;
+
     return {
         from: getDateTime(searchFilter.from),
         until: getDateTime(searchFilter.until),
@@ -185,9 +194,7 @@ export function getAdministrationEventsFilter(
         level: getLevel(searchFilter[levelField]),
         resourceType: getValue(searchFilter[resourceTypeField]),
         type: getType(searchFilter[typeField]),
-        cluster: getUnquotedValue(searchFilter[clusterField]),
-        namespace: getUnquotedValue(searchFilter[namespaceField]),
-        deployment: getUnquotedValue(searchFilter[deploymentField]),
+        workloadQuery,
     };
 }
 
@@ -197,8 +204,7 @@ function hasItems(arg: unknown[] | undefined) {
 
 export function hasAdministrationEventsFilter(searchFilter: SearchFilter) {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const { from, until, domain, level, resourceType, type, cluster, namespace, deployment } =
-        filter;
+    const { from, until, domain, level, resourceType, type, workloadQuery } = filter;
     return (
         Boolean(from) ||
         Boolean(until) ||
@@ -206,9 +212,7 @@ export function hasAdministrationEventsFilter(searchFilter: SearchFilter) {
         hasItems(level) ||
         hasItems(resourceType) ||
         hasItems(type) ||
-        hasItems(cluster) ||
-        hasItems(namespace) ||
-        hasItems(deployment)
+        Boolean(workloadQuery)
     );
 }
 
@@ -291,18 +295,6 @@ export function replaceSearchFilterResourceType(
     resourceType: string | undefined
 ): SearchFilter {
     return { ...searchFilter, [resourceTypeField]: resourceType };
-}
-
-function stripQuotes(value: string): string {
-    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
-        return value.slice(1, -1);
-    }
-    return value;
-}
-
-function getUnquotedValue(arg: SearchFilterValue): string[] | undefined {
-    const values = getValue(arg);
-    return values?.map(stripQuotes);
 }
 
 // domain and resourceType

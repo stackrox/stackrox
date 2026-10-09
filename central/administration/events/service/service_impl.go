@@ -165,14 +165,11 @@ func (s *serviceImpl) getQueryBuilderFromFilter(ctx context.Context, filter *v1.
 }
 
 // resolveWorkloadFilterToImageIDs returns image IDs for deployments matching
-// the cluster/namespace/deployment filter. Returns nil if no workload filter
-// is set. Returns empty slice if the filter matched zero deployments.
+// the workload query. Returns nil if no workload query is set. Returns empty
+// slice if the query matched zero deployments.
 func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filter *v1.AdministrationEventsFilter) ([]string, error) {
-	clusters := filter.GetCluster()
-	namespaces := filter.GetNamespace()
-	deploymentNames := filter.GetDeployment()
-
-	if len(clusters) == 0 && len(namespaces) == 0 && len(deploymentNames) == 0 {
+	rawQuery := filter.GetWorkloadQuery()
+	if rawQuery == "" {
 		return nil, nil
 	}
 
@@ -189,18 +186,12 @@ func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filte
 		}
 	}
 
-	depQuery := search.NewQueryBuilder()
-	if len(clusters) != 0 {
-		depQuery = depQuery.AddExactMatches(search.Cluster, clusters...)
-	}
-	if len(namespaces) != 0 {
-		depQuery = depQuery.AddExactMatches(search.Namespace, namespaces...)
-	}
-	if len(deploymentNames) != 0 {
-		depQuery = depQuery.AddExactMatches(search.DeploymentName, deploymentNames...)
+	parsedQuery, err := search.ParseQuery(rawQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing workload query")
 	}
 
-	imageViews, err := s.deployments.GetContainerImageViews(ctx, depQuery.ProtoQuery())
+	imageViews, err := s.deployments.GetContainerImageViews(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching container images for workload filter")
 	}

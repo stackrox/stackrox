@@ -292,7 +292,7 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 
 	resp, err := s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Cluster: []string{"test-cluster"},
+			WorkloadQuery: `Cluster:"test-cluster"`,
 		},
 	})
 	s.NoError(err)
@@ -301,7 +301,7 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Cluster: []string{"nonexistent"},
+			WorkloadQuery: `Cluster:"nonexistent"`,
 		},
 	})
 	s.NoError(err)

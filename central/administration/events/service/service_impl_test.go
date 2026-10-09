@@ -197,8 +197,8 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
 	svc := &serviceImpl{}
 	filter := &v1.AdministrationEventsFilter{
-		ResourceType: []string{"Node"},
-		Cluster:      []string{"prod"},
+		ResourceType:  []string{"Node"},
+		WorkloadQuery: `Cluster:"prod"`,
 	}
 	queryBuilder, err := svc.getQueryBuilderFromFilter(context.Background(), filter)
 	require.NoError(t, err)
