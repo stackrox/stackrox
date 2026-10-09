@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -56,33 +55,6 @@ describe('Configuration Management Dashboard', () => {
             });
     });
 
-    it('should show same number of controls between the tile and the controls list', function () {
-        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'controls';
-
-        visitConfigurationManagementDashboard();
-
-        cy.get(`${selectors.tileLinks}:eq(1) ${selectors.tileLinkValue}`)
-            .invoke('text')
-            .then((value) => {
-                const numControls = value;
-
-                interactAndWaitForConfigurationManagementEntities(() => {
-                    cy.get(`${selectors.tileLinks}:eq(1)`).click();
-                }, entitiesKey);
-
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
-                    .invoke('text')
-                    .then((panelHeaderText) => {
-                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numControls, 10));
-                    });
-            });
-    });
-
     it('should properly navigate to the policies list', () => {
         const entitiesKey = 'policies';
 
@@ -90,21 +62,6 @@ describe('Configuration Management Dashboard', () => {
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(`${selectors.tileLinks}:eq(0)`).click();
-        }, entitiesKey);
-    });
-
-    it('should properly navigate to the cis controls list', function () {
-        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'controls';
-
-        visitConfigurationManagementDashboard();
-
-        interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(`${selectors.tileLinks}:eq(1)`).click();
         }, entitiesKey);
     });
 
@@ -219,23 +176,6 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('go to controls list from View link in CIS widget', function () {
-        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'controls';
-
-        visitConfigurationManagementDashboard();
-
-        interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.cisStandardsAcrossClusters.widget)
-                .find('a:contains("View standard")')
-                .click();
-        }, entitiesKey);
-    });
-
     it('should go to subjects (users and groups) list from View link in Users widget', () => {
         const entitiesKey = 'subjects';
 
@@ -287,62 +227,6 @@ describe('Configuration Management Dashboard', () => {
         );
 
         cy.location('search').should('contain', '[Policy%20Status]='); // either Fail (for rated as Whatever) or Pass (for policies without violations)
-    });
-
-    it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', function () {
-        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
-
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'controls';
-
-        visitConfigurationManagementDashboard();
-
-        // This and the following test assumes that scan results are available
-        // ROX-24912
-        // Comment out for now and assume that scan results are available from compliance tests.
-        // See function for more details.
-        /*
-        interactAndWaitForConfigurationManagementScan(() => {
-            cy.get('[data-testid="scan-button"]').click();
-        });
-        */
-
-        interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.cisStandardsAcrossClusters.widget)
-                .find(selectors.cisStandardsAcrossClusters.passingControlsLink)
-                .click();
-        }, entitiesKey);
-
-        cy.location('search').should('contain', '[Compliance%20State]=Pass');
-    });
-
-    it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', function () {
-        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
-
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'controls';
-
-        visitConfigurationManagementDashboard();
-
-        interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.cisStandardsAcrossClusters.widget)
-                .find(selectors.cisStandardsAcrossClusters.failingControlsLinks)
-                .click();
-        }, entitiesKey);
-
-        cy.location('search').should('contain', '[Compliance%20State]=Fail');
     });
 
     it('should open side panel from link in Secrets widget', () => {
