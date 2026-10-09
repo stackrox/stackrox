@@ -185,9 +185,9 @@ export function getAdministrationEventsFilter(
         level: getLevel(searchFilter[levelField]),
         resourceType: getValue(searchFilter[resourceTypeField]),
         type: getType(searchFilter[typeField]),
-        cluster: getValue(searchFilter[clusterField]),
-        namespace: getValue(searchFilter[namespaceField]),
-        deployment: getValue(searchFilter[deploymentField]),
+        cluster: getUnquotedValue(searchFilter[clusterField]),
+        namespace: getUnquotedValue(searchFilter[namespaceField]),
+        deployment: getUnquotedValue(searchFilter[deploymentField]),
     };
 }
 
@@ -291,6 +291,18 @@ export function replaceSearchFilterResourceType(
     resourceType: string | undefined
 ): SearchFilter {
     return { ...searchFilter, [resourceTypeField]: resourceType };
+}
+
+function stripQuotes(value: string): string {
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+        return value.slice(1, -1);
+    }
+    return value;
+}
+
+function getUnquotedValue(arg: SearchFilterValue): string[] | undefined {
+    const values = getValue(arg);
+    return values?.map(stripQuotes);
 }
 
 // domain and resourceType
