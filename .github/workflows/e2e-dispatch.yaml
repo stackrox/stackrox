@@ -112,6 +112,7 @@ jobs:
             Job(name='e2e-qa-tests-gke', require_pr_label=True),
             Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
             Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
+            Job(name='e2e-ui-tests-gke', require_pr_label=True, is_ui_test=True),
             Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
         ]
 
@@ -305,6 +306,17 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-ui-tests-gke:
+    needs: [ wait-for-gha-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-ui-tests-gke.yaml
+    with:
+      tag: ${{ needs.wait-for-gha-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-ui-tests-gke }}
+    secrets: inherit
+    concurrency:
+      group: e2e-ui-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-ui-tests-gke-konflux:

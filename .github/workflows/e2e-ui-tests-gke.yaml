@@ -1,12 +1,10 @@
-name: e2e-ui-tests-gke-konflux
+name: e2e-ui-tests-gke
 
 on:
   workflow_call:
     inputs:
       tag:
-        description: |
-          Image tag to test. The caller needs to make sure that the tag carries the
-          "-fast" Konflux suffix if required (e.g. for development builds).
+        description: Image tag to test.
         type: string
         required: true
       should-run:
@@ -16,9 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: |
-          Image tag to test. You need to make sure that the tag carries the
-          "-fast" Konflux suffix if required (e.g. for development builds).
+        description: Image tag to test.
         type: string
         required: true
 
@@ -28,8 +24,6 @@ jobs:
     with:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
-      ci-job-name: gke-ui-e2e-tests-konflux
-      cluster-name-prefix: e2e-ui-gke-konflux
-      extra-env-vars: |
-        USE_KONFLUX_IMAGES=true
+      ci-job-name: gke-ui-e2e-tests
+      cluster-name-prefix: e2e-ui-gke
     secrets: inherit
