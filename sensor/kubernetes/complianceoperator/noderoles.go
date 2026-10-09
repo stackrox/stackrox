@@ -2,9 +2,13 @@ package complianceoperator
 
 import (
 	"context"
+	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -74,4 +78,86 @@ func (m *handlerImpl) discoverNodeRoles(ctx context.Context) []string {
 	}
 
 	return roles.AsSortedSlice(func(i, j string) bool { return i < j })
+}
+
+// reconcileNodeRoles recomputes the auto-discovered node roles and brings every ACS-managed ScanSetting in line with the
+// current cluster topology, so new or removed MachineConfigPools are reflected without the user recreating scan configs.
+// It runs on the single-writer run() loop and is a no-op unless ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled.
+func (m *handlerImpl) reconcileNodeRoles() {
+	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
+		return
+	}
+	// Mirror the gating used by the create/update/sync paths: do nothing while compliance is disabled, before the
+	// compliance operator is ready, or while its namespace is unknown.
+	if m.disabled.IsDone() || !m.complianceIsReady.IsDone() {
+		return
+	}
+	if m.complianceOperatorInfo.GetNamespace() == "" {
+		return
+	}
+
+	desiredRoles := m.defaultNodeRoles()
+	sort.Strings(desiredRoles)
+	desiredSet := set.NewStringSet(desiredRoles...)
+
+	scanSettings, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
+	if err != nil {
+		// The compliance operator CRDs may be absent (e.g. non-OpenShift). Log and return gracefully; never crash.
+		log.Warnf("Could not list ScanSettings to reconcile node roles: %v", err)
+		return
+	}
+
+	var errList errorhelpers.ErrorList
+	for _, scanSetting := range scanSettings {
+		if err := m.reconcileScanSettingRoles(scanSetting, desiredRoles, desiredSet); err != nil {
+			errList.AddError(err)
+		}
+	}
+	if err := errList.ToError(); err != nil {
+		log.Errorf("Failed to reconcile node roles for one or more ScanSettings: %v", err)
+	}
+}
+
+// reconcileScanSettingRoles updates a single ScanSetting's top-level roles to the desired set when they differ. The
+// comparison is order-insensitive so an equivalent role set never triggers an update (idempotent, avoids CO churn).
+func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstructured, desiredRoles []string, desiredSet set.Set[string]) error {
+	name := scanSetting.GetName()
+	namespace := scanSetting.GetNamespace()
+
+	currentRoles, _, err := unstructured.NestedStringSlice(scanSetting.Object, "roles")
+	if err != nil {
+		return errors.Wrapf(err, "reading roles from namespaces/%s/scansettings/%s", namespace, name)
+	}
+	if desiredSet.Equal(set.NewStringSet(currentRoles...)) {
+		return nil
+	}
+
+	updated := scanSetting.DeepCopy()
+	if err := setScanSettingRoles(updated, desiredRoles); err != nil {
+		return err
+	}
+
+	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(namespace)
+	return m.callWithRetryWithOnConflictCallback(
+		func(ctx context.Context) error {
+			_, err := resI.Update(ctx, updated, v1.UpdateOptions{})
+			return errors.Wrapf(err, "Could not update roles on namespaces/%s/scansettings/%s", namespace, name)
+		},
+		func(ctx context.Context) error {
+			current, err := resI.Get(ctx, name, v1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", namespace, name)
+			}
+			updated = current
+			return setScanSettingRoles(updated, desiredRoles)
+		})
+}
+
+// setScanSettingRoles writes the desired roles to the ScanSetting's top-level `roles` field (json tag `roles,omitempty`
+// on v1alpha1.ScanSetting), not under `spec`.
+func setScanSettingRoles(scanSetting *unstructured.Unstructured, roles []string) error {
+	if err := unstructured.SetNestedStringSlice(scanSetting.Object, roles, "roles"); err != nil {
+		return errors.Wrapf(err, "setting roles on scansettings/%s", scanSetting.GetName())
+	}
+	return nil
 }
