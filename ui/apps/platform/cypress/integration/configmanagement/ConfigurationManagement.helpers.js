@@ -152,12 +152,8 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
     return `${opnameForEntity[entitiesKey1]}_${typeOfEntity[entitiesKey2]}`;
 }
 
-const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapForGraphQL([
-    'complianceByControls',
-]);
-
 export function visitConfigurationManagementDashboard() {
-    visit(basePath, routeMatcherMapForConfigurationManagementDashboard);
+    visit(basePath);
 
     cy.get('h1:contains("Configuration Management")');
 }
@@ -243,22 +239,6 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
     const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
 
     interactAndWaitForResponses(interactionCallback, routeMatcherMap);
-}
-
-export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
-    interactAndWaitForResponses(
-        interactionCallback,
-        routeMatcherMapForConfigurationManagementDashboard
-    );
-
-    // ROX-24912
-    // Comment out for now and assume that scan results are available from compliance tests.
-    // Maybe interactAndWaitForResponses waits only for the first pair of responses from page visit.
-    // Apparently the negative assertion sometimes passes before ComplianceScanProgress renders.
-    // But auto-disappears prevents positive assertion as in scanCompliance helper function.
-    cy.get('div:contains("Compliance scanning in progress")', {
-        timeout: 60000,
-    }).should('not.exist');
 }
 
 export function navigateToSingleEntityPage(entitiesKey) {
