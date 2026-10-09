@@ -86,8 +86,8 @@ func TestGenerationFailures(t *testing.T) {
 		target, tag, source, want string
 		completeHistory           bool
 	}{
-		"missing floor":                  {target: "5.1.x", want: "4.10.0"},
-		"nightly is not release":         {target: "5.1.x", tag: "4.10.0-nightly-20260930", want: "4.10.0"},
+		"missing floor":                  {target: "5.1.x", want: "4.10.0", completeHistory: true},
+		"nightly is not release":         {target: "5.1.x", tag: "4.10.0-nightly-20260930", want: "4.10.0", completeHistory: true},
 		"missing patch baseline":         {target: "5.1.1", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch RC missing baseline":      {target: "5.1.1-rc.0", tag: "4.10.0", want: "5.1.0", completeHistory: true},
 		"patch nightly missing baseline": {target: "5.1.1-nightly-20260930", tag: "4.10.0", want: "5.1.0", completeHistory: true},
@@ -208,7 +208,7 @@ func TestGenerationCommand(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, before, after)
 	t.Setenv("BUILD_TAG", "5.5.x")
-	require.ErrorContains(t, run(""), "5.2.0")
+	require.ErrorContains(t, run(""), "5.4.0")
 	after, err = os.ReadFile(output)
 	require.NoError(t, err)
 	require.Equal(t, before, after, "failed generation must not overwrite the output")
@@ -593,6 +593,11 @@ func TestValidateReleaseSequences(t *testing.T) {
 			require.Equal(t, []productstreams.XYVersion{{X: 4, Y: 9}, {X: 4, Y: 10}, {X: 4, Y: 11}, {X: 5, Y: 0}, {X: 5, Y: 1}}, got)
 		})
 	}
+}
+
+func TestValidateReleaseSequencesRejectsPhantomTarget(t *testing.T) {
+	_, err := validateReleaseSequences("4.12.x", productstreams.XYVersion{X: 4, Y: 12}, nil)
+	require.ErrorContains(t, err, "validate release stream 4.12 required by 4.12.x: invalid release stream 4.12")
 }
 
 func TestRenderReleaseVersions(t *testing.T) {

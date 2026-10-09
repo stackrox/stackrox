@@ -198,23 +198,23 @@ func ensureTargetSequence(dir, target string, targetXy productstreams.XYVersion,
 }
 
 func validateReleaseSequences(target string, targetXy productstreams.XYVersion, sequences map[productstreams.XYVersion]int) ([]productstreams.XYVersion, error) {
-	var err error
-	floor := targetXy
-	for range 3 {
-		floor, err = productstreams.GetPreviousYStream(floor)
-		if err != nil {
-			return nil, fmt.Errorf("find minimum supported stream for %s: %w", target, err)
+	stream := targetXy
+	for i := range 4 {
+		if err := validateReleaseStream(stream); err != nil {
+			return nil, fmt.Errorf("validate release stream %s required by %s: %w", stream, target, err)
 		}
-	}
-	for stream := floor; ; {
 		// Every supported stream needs a baseline; RC-only streams count too.
 		if _, exists := sequences[stream]; !exists {
 			return nil, fmt.Errorf("missing initial release tag %s.0 required by %s; fetch release tags before generation", stream, target)
 		}
-		if stream == targetXy {
+		if i == 3 {
 			break
 		}
-		stream = productstreams.GetNextYStream(stream)
+		var err error
+		stream, err = productstreams.GetPreviousYStream(stream)
+		if err != nil {
+			return nil, fmt.Errorf("find minimum supported stream for %s: %w", target, err)
+		}
 	}
 	streams := slices.Collect(maps.Keys(sequences))
 	slices.SortFunc(streams, productstreams.XYVersion.Compare)
