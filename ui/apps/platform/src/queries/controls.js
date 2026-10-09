@@ -9,3 +9,20 @@ export const CONTROL_NAME = gql`
         }
     }
 `;
+
+export const CONTROL_FRAGMENT = gql`
+    fragment controlFields on ControlResult {
+        resource {
+            __typename
+        }
+        control {
+            id
+            standardId
+            name
+            description
+        }
+        value {
+            overallState
+        }
+    }
+`;
