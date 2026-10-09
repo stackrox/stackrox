@@ -293,33 +293,6 @@ export function replaceSearchFilterResourceType(
     return { ...searchFilter, [resourceTypeField]: resourceType };
 }
 
-// cluster
-
-export function replaceSearchFilterCluster(
-    searchFilter: SearchFilter,
-    cluster: string | undefined
-): SearchFilter {
-    return { ...searchFilter, [clusterField]: cluster };
-}
-
-// namespace
-
-export function replaceSearchFilterNamespace(
-    searchFilter: SearchFilter,
-    namespace: string | undefined
-): SearchFilter {
-    return { ...searchFilter, [namespaceField]: namespace };
-}
-
-// deployment
-
-export function replaceSearchFilterDeployment(
-    searchFilter: SearchFilter,
-    deployment: string | undefined
-): SearchFilter {
-    return { ...searchFilter, [deploymentField]: deployment };
-}
-
 // domain and resourceType
 
 function getValue(arg: SearchFilterValue): string[] | undefined {

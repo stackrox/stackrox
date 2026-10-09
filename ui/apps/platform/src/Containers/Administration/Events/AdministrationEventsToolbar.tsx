@@ -7,23 +7,23 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     getAdministrationEventsFilter,
-    replaceSearchFilterCluster,
-    replaceSearchFilterDeployment,
     replaceSearchFilterDomain,
     replaceSearchFilterLevel,
-    replaceSearchFilterNamespace,
     replaceSearchFilterResourceType,
 } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 import type { SearchFilter } from 'types/search';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
-import SearchFilterCluster from './SearchFilterCluster';
-import SearchFilterDeployment from './SearchFilterDeployment';
+import { workloadSearchFilterConfig } from './workloadSearchFilterConfig';
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';
-import SearchFilterNamespace from './SearchFilterNamespace';
 import SearchFilterResourceType from './SearchFilterResourceType';
 import UpdatedTimeOrUpdateButton from './UpdatedTimeOrUpdateButton';
 
@@ -54,14 +54,6 @@ function AdministrationEventsToolbar({
     setSearchFilter,
     updateEvents,
 }: AdministrationEventsToolbarProps): ReactElement {
-    function setCluster(cluster: string | undefined) {
-        setSearchFilter(replaceSearchFilterCluster(searchFilter, cluster));
-    }
-
-    function setDeploymentFilter(deployment: string | undefined) {
-        setSearchFilter(replaceSearchFilterDeployment(searchFilter, deployment));
-    }
-
     function setDomain(domain: string | undefined) {
         setSearchFilter(replaceSearchFilterDomain(searchFilter, domain));
     }
@@ -70,16 +62,15 @@ function AdministrationEventsToolbar({
         setSearchFilter(replaceSearchFilterLevel(searchFilter, level));
     }
 
-    function setNamespace(namespace: string | undefined) {
-        setSearchFilter(replaceSearchFilterNamespace(searchFilter, namespace));
-    }
-
     function setResourceType(resourceType: string | undefined) {
         setSearchFilter(replaceSearchFilterResourceType(searchFilter, resourceType));
     }
 
-    const { cluster, deployment, domain, level, namespace, resourceType } =
-        getAdministrationEventsFilter(searchFilter);
+    function onWorkloadFilterApplied(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
+    }
+
+    const { domain, level, resourceType } = getAdministrationEventsFilter(searchFilter);
 
     return (
         <Toolbar>
@@ -111,33 +102,6 @@ function AdministrationEventsToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup variant="filter-group">
-                    <ToolbarItem>
-                        <SearchFilterCluster
-                            cluster={cluster && cluster[0]}
-                            isDisabled={isDisabled}
-                            setCluster={setCluster}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
-                <ToolbarGroup variant="filter-group">
-                    <ToolbarItem>
-                        <SearchFilterNamespace
-                            isDisabled={isDisabled}
-                            namespace={namespace && namespace[0]}
-                            setNamespace={setNamespace}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
-                <ToolbarGroup variant="filter-group">
-                    <ToolbarItem>
-                        <SearchFilterDeployment
-                            deployment={deployment && deployment[0]}
-                            isDisabled={isDisabled}
-                            setDeployment={setDeploymentFilter}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
                 <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                     {lastUpdatedTime && (
                         <ToolbarItem>
@@ -164,6 +128,24 @@ function AdministrationEventsToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
+            </ToolbarContent>
+            <ToolbarContent>
+                <CompoundSearchFilter
+                    config={workloadSearchFilterConfig}
+                    isDisabled={isDisabled}
+                    searchFilter={searchFilter}
+                    onSearch={onWorkloadFilterApplied}
+                />
+                {getHasSearchApplied(searchFilter) && (
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[]}
+                            config={workloadSearchFilterConfig}
+                            onFilterChange={setSearchFilter}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                )}
             </ToolbarContent>
         </Toolbar>
     );
