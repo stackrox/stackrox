@@ -36,6 +36,12 @@ var (
 	// ComplianceRemediationV2 enables the remediation feature of the compliance v2 integration.
 	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", enabled)
 
+	// ComplianceSurfaceStaleData gates surfacing stale compliance data in Coverage views (ROX-35712). Default off.
+	ComplianceSurfaceStaleData = registerFeature("Surface stale compliance data in Coverage views", "ROX_COMPLIANCE_SURFACE_STALE_DATA")
+
+	// ComplianceCustomNodeRoles gates configurable node roles in compliance scan configurations (ROX-34167). Default off.
+	ComplianceCustomNodeRoles = registerFeature("Enable configurable node roles in compliance scan configurations", "ROX_COMPLIANCE_CUSTOM_NODE_ROLES")
+
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
 

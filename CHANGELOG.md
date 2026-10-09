@@ -25,6 +25,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
+- ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
 
 ## [5.0.0]
 
@@ -43,6 +44,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
 - ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
 

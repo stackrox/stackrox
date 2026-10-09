@@ -187,10 +187,18 @@ roxie_config_from_environment_compat() {
         fi
     )
 
+    info "Configuring storage classes..."
+    handle_storage_classes "$config_file"
+
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
-    handle_scanner_v4_vuln_readiness "$config_file"
+    if [[ ${ROX_SCANNER_V4:-} == false ]]; then
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Disabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "Disabled"
+    else
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
+        handle_scanner_v4_vuln_readiness "$config_file"
+    fi
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -240,10 +248,11 @@ collect_feature_flags() {
     env_with_default ROX_POLICY_WORKLOAD_KIND_EXCLUSION "true"
     env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
-    env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
     env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
+    env_with_default ROX_COMPLIANCE_SURFACE_STALE_DATA "true"
+    env_with_default ROX_COMPLIANCE_CUSTOM_NODE_ROLES "true"
     env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
     env_with_default ROX_AI_INTEGRATIONS "true"
     env_with_default ROX_LIGHTSPEED_RISK_SUMMARY "true"
@@ -263,6 +272,28 @@ handle_pod_security_policies() {
     fi
     export POD_SECURITY_POLICIES="false"
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
+}
+
+handle_storage_classes() {
+    local config_file="$1"
+    local storage_class="${STORAGE_CLASS:-}"
+    local scanner_v4_db_storage_class="${SCANNER_V4_DB_STORAGE_CLASS:-}"
+
+    if [[ "$storage_class" == "faster" || "$scanner_v4_db_storage_class" == "faster" ]]; then
+        info "  applying SSD StorageClass manifest"
+        retrying_kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml" </dev/null
+    fi
+
+    if [[ -n "$storage_class" ]]; then
+        info "  central DB storageClassName=${storage_class}"
+        patch_yaml "$config_file" ".central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = \"${storage_class}\""
+    fi
+
+    if [[ -n "$scanner_v4_db_storage_class" ]]; then
+        info "  scanner V4 DB storageClassName=${scanner_v4_db_storage_class}"
+        patch_yaml "$config_file" ".central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+        patch_yaml "$config_file" ".securedCluster.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+    fi
 }
 
 # handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is

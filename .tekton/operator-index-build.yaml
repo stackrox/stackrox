@@ -98,7 +98,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:18defc6b58a3792ef4d1c7268ce22167c833e7846523b97e0f3219094df0d510
         - name: kind
           value: task
         resolver: bundles
@@ -214,7 +214,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:18defc6b58a3792ef4d1c7268ce22167c833e7846523b97e0f3219094df0d510
         - name: kind
           value: task
         resolver: bundles
@@ -230,7 +230,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:18defc6b58a3792ef4d1c7268ce22167c833e7846523b97e0f3219094df0d510
         - name: kind
           value: task
         resolver: bundles
@@ -249,7 +249,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:1d7c5517a4a1a8e2688620b39ee980e82505ca1ab7ae5541b5463120ae9b3897
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:5ed244b62bbf4095080144d9d35eb8fcd3d39a9801f94aadd63b9d10978a01ae
           imagePullPolicy: IfNotPresent
           script: |
             #!/bin/bash
@@ -276,7 +276,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:14df43be5e1eba0c3be14af378f46f9228b84c4badd976f398e7aeddab9a8a91
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:18defc6b58a3792ef4d1c7268ce22167c833e7846523b97e0f3219094df0d510
         - name: kind
           value: task
         resolver: bundles
@@ -334,7 +334,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1791182877@sha256:d45bb2ba2e518d3edf14ad3baf6c57fdc7cc44c996cad1200f71036f7c1c8d29
+          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1791479310@sha256:6f246e8913d082df463b62a74c72f0d2b410583e1b2ac48add39cd7ede59ce62
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
