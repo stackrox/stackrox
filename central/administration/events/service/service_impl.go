@@ -9,13 +9,11 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -40,16 +38,7 @@ var (
 	})
 )
 
-var (
-	errNoMatchingImages = errors.New("no images match the workload filter")
-
-	deploymentReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-		),
-	)
-)
+var errNoMatchingImages = errors.New("no images match the workload filter")
 
 type serviceImpl struct {
 	v1.UnimplementedAdministrationEventServiceServer
@@ -211,7 +200,7 @@ func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filte
 		depQuery = depQuery.AddExactMatches(search.DeploymentName, deploymentNames...)
 	}
 
-	imageViews, err := s.deployments.GetContainerImageViews(deploymentReadCtx, depQuery.ProtoQuery())
+	imageViews, err := s.deployments.GetContainerImageViews(ctx, depQuery.ProtoQuery())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching container images for workload filter")
 	}
