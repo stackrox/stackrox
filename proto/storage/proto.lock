@@ -19842,6 +19842,14 @@
               {
                 "name": "UNSCANNED",
                 "integer": 1
+              },
+              {
+                "name": "CPE_MISSING",
+                "integer": 2
+              },
+              {
+                "name": "REPO_UNKNOWN",
+                "integer": 3
               }
             ]
           }
@@ -20144,6 +20152,14 @@
               {
                 "name": "UNSCANNED",
                 "integer": 1
+              },
+              {
+                "name": "CPE_MISSING",
+                "integer": 2
+              },
+              {
+                "name": "REPO_UNKNOWN",
+                "integer": 3
               }
             ]
           }

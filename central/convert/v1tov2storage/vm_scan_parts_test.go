@@ -136,6 +136,28 @@ func TestScanPartsFromV1Scan_PreservesComponentNotes(t *testing.T) {
 		"should treat a component with no notes as scanned": {
 			wantScanStatus: v2.ScanStatus_SCANNED,
 		},
+		"missing CPE reason survives normalization": {
+			notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING,
+			},
+			wantNotes: []storage.VirtualMachineComponentV2_Note{
+				storage.VirtualMachineComponentV2_UNSCANNED,
+				storage.VirtualMachineComponentV2_CPE_MISSING,
+			},
+			wantScanStatus: v2.ScanStatus_CPE_MISSING,
+		},
+		"unknown repository reason survives normalization": {
+			notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN,
+			},
+			wantNotes: []storage.VirtualMachineComponentV2_Note{
+				storage.VirtualMachineComponentV2_UNSCANNED,
+				storage.VirtualMachineComponentV2_REPO_UNKNOWN,
+			},
+			wantScanStatus: v2.ScanStatus_REPO_UNKNOWN,
+		},
 	}
 
 	for name, tt := range tests {

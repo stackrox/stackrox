@@ -181,8 +181,10 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 type EmbeddedVirtualMachineScanComponent_Note int32
 
 const (
-	EmbeddedVirtualMachineScanComponent_UNSPECIFIED EmbeddedVirtualMachineScanComponent_Note = 0
-	EmbeddedVirtualMachineScanComponent_UNSCANNED   EmbeddedVirtualMachineScanComponent_Note = 1
+	EmbeddedVirtualMachineScanComponent_UNSPECIFIED  EmbeddedVirtualMachineScanComponent_Note = 0
+	EmbeddedVirtualMachineScanComponent_UNSCANNED    EmbeddedVirtualMachineScanComponent_Note = 1
+	EmbeddedVirtualMachineScanComponent_CPE_MISSING  EmbeddedVirtualMachineScanComponent_Note = 2
+	EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN EmbeddedVirtualMachineScanComponent_Note = 3
 )
 
 // Enum value maps for EmbeddedVirtualMachineScanComponent_Note.
@@ -190,10 +192,14 @@ var (
 	EmbeddedVirtualMachineScanComponent_Note_name = map[int32]string{
 		0: "UNSPECIFIED",
 		1: "UNSCANNED",
+		2: "CPE_MISSING",
+		3: "REPO_UNKNOWN",
 	}
 	EmbeddedVirtualMachineScanComponent_Note_value = map[string]int32{
-		"UNSPECIFIED": 0,
-		"UNSCANNED":   1,
+		"UNSPECIFIED":  0,
+		"UNSCANNED":    1,
+		"CPE_MISSING":  2,
+		"REPO_UNKNOWN": 3,
 	}
 )
 
@@ -953,7 +959,7 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05UNSET\x10\x00\x12\x0e\n" +
 	"\n" +
 	"OS_UNKNOWN\x10\x01\x12\x12\n" +
-	"\x0eOS_UNSUPPORTED\x10\x02\"\x8d\x03\n" +
+	"\x0eOS_UNSUPPORTED\x10\x02\"\xb0\x03\n" +
 	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
@@ -962,10 +968,12 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"risk_score\x18\x04 \x01(\x02R\triskScore\x12N\n" +
 	"\x0fvulnerabilities\x18\x05 \x03(\v2$.storage.VirtualMachineVulnerabilityR\x0fvulnerabilities\x12+\n" +
 	"\x06source\x18\x06 \x01(\x0e2\x13.storage.SourceTypeR\x06source\x12G\n" +
-	"\x05notes\x18\a \x03(\x0e21.storage.EmbeddedVirtualMachineScanComponent.NoteR\x05notes\"&\n" +
+	"\x05notes\x18\a \x03(\x0e21.storage.EmbeddedVirtualMachineScanComponent.NoteR\x05notes\"I\n" +
 	"\x04Note\x12\x0f\n" +
 	"\vUNSPECIFIED\x10\x00\x12\r\n" +
-	"\tUNSCANNED\x10\x01B\x0e\n" +
+	"\tUNSCANNED\x10\x01\x12\x0f\n" +
+	"\vCPE_MISSING\x10\x02\x12\x10\n" +
+	"\fREPO_UNKNOWN\x10\x03B\x0e\n" +
 	"\fset_top_cvss\"\xde\x01\n" +
 	"\x1bVirtualMachineVulnerability\x12B\n" +
 	"\rcve_base_info\x18\x01 \x01(\v2\x1e.storage.VirtualMachineCVEInfoR\vcveBaseInfo\x12:\n" +

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/views/vmcve"
 	componentDS "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore"
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -30,10 +31,11 @@ func New(
 	cveView vmcve.CveView,
 ) Service {
 	return &serviceImpl{
-		vmDS:        vmDataStore,
-		cveDS:       cveDataStore,
-		componentDS: componentDataStore,
-		scanDS:      scanDataStore,
-		cveView:     cveView,
+		vmDS:         vmDataStore,
+		cveDS:        cveDataStore,
+		componentDS:  componentDataStore,
+		scanDS:       scanDataStore,
+		cveView:      cveView,
+		pendingScans: scan.Singleton(),
 	}
 }
