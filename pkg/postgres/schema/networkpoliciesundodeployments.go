@@ -3,9 +3,6 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,7 +21,16 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicyApplicationUndoDeploymentRecord)(nil)), "networkpoliciesundodeployments")
+		schema = &walker.Schema{
+			Table:    "networkpoliciesundodeployments",
+			Type:     "*storage.NetworkPolicyApplicationUndoDeploymentRecord",
+			TypeName: "NetworkPolicyApplicationUndoDeploymentRecord",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeploymentId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpoliciesundodeploymentsStmt)
 		return schema

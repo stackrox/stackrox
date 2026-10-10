@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,8 +28,27 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "network_entities")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
+		schema = &walker.Schema{
+			Table:    "network_entities",
+			Type:     "*storage.NetworkEntity",
+			TypeName: "NetworkEntity",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Info_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetInfo().GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Cidr", ProtoBufName: "cidr", ColumnName: "Info_ExternalSource_Cidr", Type: "string", DataType: postgres.String, SQLType: "cidr", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetInfo().GetExternalSource().GetCidr()", false), Options: walker.PostgresOptions{ColumnType: "cidr"}, Search: walker.SearchField{FieldName: "External Source Address", Enabled: true}},
+			{Schema: schema, Name: "Default", ProtoBufName: "default", ColumnName: "Info_ExternalSource_Default", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetInfo().GetExternalSource().GetDefault()", false), Search: walker.SearchField{FieldName: "Default External Source", Enabled: true}},
+			{Schema: schema, Name: "Discovered", ProtoBufName: "discovered", ColumnName: "Info_ExternalSource_Discovered", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetInfo().GetExternalSource().GetDiscovered()", false), Search: walker.SearchField{FieldName: "Discovered External Source", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_ENTITY, map[search.FieldLabel]*search.Field{
+			"Default External Source":    {FieldPath: "networkentity.info.Desc.ExternalSource.default", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_NETWORK_ENTITY},
+			"Discovered External Source": {FieldPath: "networkentity.info.Desc.ExternalSource.discovered", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_NETWORK_ENTITY},
+			"External Source Address":    {FieldPath: "networkentity.info.Desc.ExternalSource.Source.Cidr", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NETWORK_ENTITY},
+		}))
+		enumregistry.AddValues("networkentity.info.Desc.Deployment.listen_ports.l4protocol", map[string]int32{"L4_PROTOCOL_ANY": -1, "L4_PROTOCOL_ICMP": 3, "L4_PROTOCOL_RAW": 4, "L4_PROTOCOL_SCTP": 5, "L4_PROTOCOL_TCP": 1, "L4_PROTOCOL_UDP": 2, "L4_PROTOCOL_UNKNOWN": 0})
+		enumregistry.AddValues("networkentity.info.type", map[string]int32{"DEPLOYMENT": 1, "EXTERNAL_SOURCE": 4, "INTERNAL_ENTITIES": 5, "INTERNET": 2, "LISTEN_ENDPOINT": 3, "UNKNOWN_TYPE": 0})
+
 		schema.ScopingResource = resources.NetworkEntity
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)

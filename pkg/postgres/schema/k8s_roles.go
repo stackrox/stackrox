@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,8 +27,33 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), "k8s_roles")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLES, "k8srole", (*storage.K8SRole)(nil)))
+		schema = &walker.Schema{
+			Table:    "k8s_roles",
+			Type:     "*storage.K8SRole",
+			TypeName: "K8SRole",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Role ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Role", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "ClusterRole", ProtoBufName: "cluster_role", ColumnName: "ClusterRole", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetClusterRole()", false), Search: walker.SearchField{FieldName: "Cluster Role", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Role Label", Enabled: true}},
+			{Schema: schema, Name: "Annotations", ProtoBufName: "annotations", ColumnName: "Annotations", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetAnnotations()", false), Search: walker.SearchField{FieldName: "Role Annotation", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ROLES, map[search.FieldLabel]*search.Field{
+			"Cluster":         {FieldPath: "k8srole.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLES},
+			"Cluster ID":      {FieldPath: "k8srole.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ROLES},
+			"Cluster Role":    {FieldPath: "k8srole.cluster_role", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_ROLES},
+			"Namespace":       {FieldPath: "k8srole.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLES},
+			"Role":            {FieldPath: "k8srole.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ROLES},
+			"Role Annotation": {FieldPath: "k8srole.annotations", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_ROLES},
+			"Role ID":         {FieldPath: "k8srole.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ROLES},
+			"Role Label":      {FieldPath: "k8srole.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_ROLES},
+		}))
 		schema.ScopingResource = resources.K8sRole
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)

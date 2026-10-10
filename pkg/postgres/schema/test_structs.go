@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -34,8 +34,75 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestStruct)(nil)), "test_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(101), "teststruct", (*storage.TestStruct)(nil)))
+		schema = &walker.Schema{
+			Table:    "test_structs",
+			Type:     "*storage.TestStruct",
+			TypeName: "TestStruct",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "test_structs_nesteds",
+			Type:         "*storage.TestStruct_Nested",
+			TypeName:     "TestStruct_Nested",
+			ObjectGetter: "GetNested()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "testStructKey1", ProtoBufName: "", ColumnName: "test_structs_Key1", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("testStructKey1", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Nested", ProtoBufName: "nested", ColumnName: "Nested", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNested()", false), Search: walker.SearchField{FieldName: "Test Nested String", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test nested string count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: child0, Name: "IsNested", ProtoBufName: "is_nested", ColumnName: "IsNested", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetIsNested()", false), Search: walker.SearchField{FieldName: "Test Nested Bool", Enabled: true}},
+			{Schema: child0, Name: "Int64", ProtoBufName: "int64", ColumnName: "Int64", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetInt64()", false), Search: walker.SearchField{FieldName: "Test Nested Int64", Enabled: true}},
+			{Schema: child0, Name: "Nested2", ProtoBufName: "nested2", ColumnName: "Nested2_Nested2", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNested2().GetNested2()", false), Search: walker.SearchField{FieldName: "Test Nested String 2", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test nested string 2 count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: child0, Name: "IsNested", ProtoBufName: "is_nested", ColumnName: "Nested2_IsNested", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetNested2().GetIsNested()", false), Search: walker.SearchField{FieldName: "Test Nested Bool 2", Enabled: true}},
+			{Schema: child0, Name: "Int64", ProtoBufName: "int64", ColumnName: "Nested2_Int64", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetNested2().GetInt64()", false), Search: walker.SearchField{FieldName: "Test Nested Int64 2", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Key1")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Key1", ProtoBufName: "key1", ColumnName: "Key1", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey1()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test Key", Enabled: true}},
+			{Schema: schema, Name: "Key2", ProtoBufName: "key2", ColumnName: "Key2", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey2()", false), Search: walker.SearchField{FieldName: "Test Key 2", Enabled: true}},
+			{Schema: schema, Name: "StringSlice", ProtoBufName: "string_slice", ColumnName: "StringSlice", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetStringSlice()", false), Search: walker.SearchField{FieldName: "Test String Slice", Enabled: true}},
+			{Schema: schema, Name: "Bool", ProtoBufName: "bool", ColumnName: "Bool", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetBool()", false), Search: walker.SearchField{FieldName: "Test Bool", Enabled: true}},
+			{Schema: schema, Name: "Uint64", ProtoBufName: "uint64", ColumnName: "Uint64", Type: "uint64", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "uint64", ObjectGetter: walker.MakeObjectGetter("GetUint64()", false), Search: walker.SearchField{FieldName: "Test Uint64", Enabled: true}},
+			{Schema: schema, Name: "Int64", ProtoBufName: "int64", ColumnName: "Int64", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetInt64()", false), Search: walker.SearchField{FieldName: "Test Int64", Enabled: true}},
+			{Schema: schema, Name: "Float", ProtoBufName: "float", ColumnName: "Float", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetFloat()", false), Search: walker.SearchField{FieldName: "Test Float", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Test Labels", Enabled: true}},
+			{Schema: schema, Name: "Timestamp", ProtoBufName: "timestamp", ColumnName: "Timestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamp()", false), Search: walker.SearchField{FieldName: "Test Timestamp", Enabled: true}},
+			{Schema: schema, Name: "Enum", ProtoBufName: "enum", ColumnName: "Enum", Type: "storage.TestStruct_Enum", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TestStruct_Enum", ObjectGetter: walker.MakeObjectGetter("GetEnum()", false), Search: walker.SearchField{FieldName: "Test Enum", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "invalid test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "test string affected by enum2", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "Enums", ProtoBufName: "enums", ColumnName: "Enums", Type: "[]storage.TestStruct_Enum", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetEnums()", false), Search: walker.SearchField{FieldName: "Test Enum Slice", Enabled: true}},
+			{Schema: schema, Name: "String_", ProtoBufName: "string", ColumnName: "String_", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetString_()", false), Search: walker.SearchField{FieldName: "Test String", Enabled: true}},
+			{Schema: schema, Name: "Int32Slice", ProtoBufName: "int32_slice", ColumnName: "Int32Slice", Type: "[]int32", DataType: postgres.IntArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetInt32Slice()", false), Search: walker.SearchField{FieldName: "Test Int32 Slice", Enabled: true}},
+			{Schema: schema, Name: "Timestamptz", ProtoBufName: "timestamptz", ColumnName: "Timestamptz", Type: "*timestamppb.Timestamp", DataType: postgres.DateTimeTZ, SQLType: "timestamptz", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamptz()", false), Options: walker.PostgresOptions{ColumnType: "timestamptz"}, Search: walker.SearchField{FieldName: "Test TimestampTZ", Enabled: true}},
+			{Schema: schema, Name: "Nested", ProtoBufName: "nested", ColumnName: "Oneofnested_Nested", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetOneofnested().GetNested()", false), Search: walker.SearchField{FieldName: "Test Oneof Nested String", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(101), map[search.FieldLabel]*search.Field{
+			"Test Bool":                {FieldPath: "teststruct.bool", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory(101)},
+			"Test Enum":                {FieldPath: "teststruct.enum", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory(101)},
+			"Test Enum Slice":          {FieldPath: "teststruct.enums", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory(101)},
+			"Test Float":               {FieldPath: "teststruct.float", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+			"Test Int32 Slice":         {FieldPath: "teststruct.int32_slice", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+			"Test Int64":               {FieldPath: "teststruct.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+			"Test Key":                 {FieldPath: "teststruct.key1", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test Key 2":               {FieldPath: "teststruct.key2", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory(101)},
+			"Test Labels":              {FieldPath: "teststruct.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory(101)},
+			"Test Nested Bool":         {FieldPath: "teststruct.nested.is_nested", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory(101)},
+			"Test Nested Bool 2":       {FieldPath: "teststruct.nested.nested2.is_nested", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory(101)},
+			"Test Nested Int64":        {FieldPath: "teststruct.nested.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+			"Test Nested Int64 2":      {FieldPath: "teststruct.nested.nested2.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+			"Test Nested String":       {FieldPath: "teststruct.nested.nested", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test Nested String 2":     {FieldPath: "teststruct.nested.nested2.nested2", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test Oneof Nested String": {FieldPath: "teststruct.Oneof.Oneofnested.nested", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test String":              {FieldPath: "teststruct.string", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test String Slice":        {FieldPath: "teststruct.string_slice", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(101)},
+			"Test Timestamp":           {FieldPath: "teststruct.timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory(101)},
+			"Test TimestampTZ":         {FieldPath: "teststruct.timestamptz.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory(101)},
+			"Test Uint64":              {FieldPath: "teststruct.uint64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(101)},
+		}))
+		enumregistry.AddValues("teststruct.enum", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
+		enumregistry.AddValues("teststruct.enums", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
+
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(101), schema)

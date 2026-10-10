@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -29,7 +29,23 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.DiscoveredCluster)(nil)), "discovered_clusters")
+		schema = &walker.Schema{
+			Table:    "discovered_clusters",
+			Type:     "*storage.DiscoveredCluster",
+			TypeName: "DiscoveredCluster",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Metadata_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Metadata_Type", Type: "storage.ClusterMetadata_Type", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterMetadata_Type", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetType()", false), Search: walker.SearchField{FieldName: "Cluster Type", Enabled: true}},
+			{Schema: schema, Name: "FirstDiscoveredAt", ProtoBufName: "first_discovered_at", ColumnName: "Metadata_FirstDiscoveredAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetMetadata().GetFirstDiscoveredAt()", false), Search: walker.SearchField{FieldName: "Cluster Discovered Time", Enabled: true}},
+			{Schema: schema, Name: "Status", ProtoBufName: "status", ColumnName: "Status", Type: "storage.DiscoveredCluster_Status", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.DiscoveredCluster_Status", ObjectGetter: walker.MakeObjectGetter("GetStatus()", false), Search: walker.SearchField{FieldName: "Cluster Status", Enabled: true}},
+			{Schema: schema, Name: "SourceId", ProtoBufName: "source_id", ColumnName: "SourceId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSourceId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Integration ID", Enabled: true}},
+			{Schema: schema, Name: "LastUpdatedAt", ProtoBufName: "last_updated_at", ColumnName: "LastUpdatedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdatedAt()", false), Search: walker.SearchField{FieldName: "Last Updated", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[5].SetReference("CloudSource", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.CloudSource": CloudSourcesSchema,
 		}
@@ -37,7 +53,18 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DISCOVERED_CLUSTERS, "discoveredcluster", (*storage.DiscoveredCluster)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_DISCOVERED_CLUSTERS, map[search.FieldLabel]*search.Field{
+			"Cluster":                 {FieldPath: "discoveredcluster.metadata.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+			"Cluster Discovered Time": {FieldPath: "discoveredcluster.metadata.first_discovered_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+			"Cluster Status":          {FieldPath: "discoveredcluster.status", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+			"Cluster Type":            {FieldPath: "discoveredcluster.metadata.type", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+			"Integration ID":          {FieldPath: "discoveredcluster.source_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+			"Last Updated":            {FieldPath: "discoveredcluster.last_updated_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_DISCOVERED_CLUSTERS},
+		}))
+		enumregistry.AddValues("discoveredcluster.metadata.provider_type", map[string]int32{"PROVIDER_TYPE_AWS": 1, "PROVIDER_TYPE_AZURE": 3, "PROVIDER_TYPE_GCP": 2, "PROVIDER_TYPE_UNSPECIFIED": 0})
+		enumregistry.AddValues("discoveredcluster.metadata.type", map[string]int32{"AKS": 1, "ARO": 2, "EKS": 3, "GKE": 4, "OCP": 5, "OSD": 6, "ROSA": 7, "UNSPECIFIED": 0})
+		enumregistry.AddValues("discoveredcluster.status", map[string]int32{"STATUS_SECURED": 1, "STATUS_UNSECURED": 2, "STATUS_UNSPECIFIED": 0})
+
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableDiscoveredClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DISCOVERED_CLUSTERS, schema)

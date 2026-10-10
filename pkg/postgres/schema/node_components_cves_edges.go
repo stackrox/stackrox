@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -32,7 +30,22 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentCVEEdge)(nil)), "node_components_cves_edges")
+		schema = &walker.Schema{
+			Table:    "node_components_cves_edges",
+			Type:     "*storage.NodeComponentCVEEdge",
+			TypeName: "NodeComponentCVEEdge",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}},
+			{Schema: schema, Name: "IsFixable", ProtoBufName: "is_fixable", ColumnName: "IsFixable", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetIsFixable()", false), Search: walker.SearchField{FieldName: "Fixable", Enabled: true}},
+			{Schema: schema, Name: "FixedBy", ProtoBufName: "fixed_by", ColumnName: "FixedBy", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetFixedBy()", false), Search: walker.SearchField{FieldName: "Fixed By", Enabled: true}},
+			{Schema: schema, Name: "NodeComponentId", ProtoBufName: "node_component_id", ColumnName: "NodeComponentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNodeComponentId()", false)},
+			{Schema: schema, Name: "NodeCveId", ProtoBufName: "node_cve_id", ColumnName: "NodeCveId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNodeCveId()", false)},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[3].SetReference("NodeComponent", "id", false, false, false, false)
+		schema.Fields[4].SetReference("NodeCVE", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.NodeComponent": NodeComponentsSchema,
 			"storage.NodeCVE":       NodeCvesSchema,
@@ -41,7 +54,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "nodecomponentcveedge", (*storage.NodeComponentCVEEdge)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, map[search.FieldLabel]*search.Field{
+			"Fixable":  {FieldPath: "nodecomponentcveedge.is_fixable", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_NODE_COMPONENT_CVE_EDGE},
+			"Fixed By": {FieldPath: "nodecomponentcveedge.HasFixedBy.FixedBy", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_NODE_COMPONENT_CVE_EDGE},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,

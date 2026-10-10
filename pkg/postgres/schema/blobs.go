@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,8 +26,23 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Blob)(nil)), "blobs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_BLOB, "blob", (*storage.Blob)(nil)))
+		schema = &walker.Schema{
+			Table:    "blobs",
+			Type:     "*storage.Blob",
+			TypeName: "Blob",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Blob Name", Enabled: true}},
+			{Schema: schema, Name: "Length", ProtoBufName: "length", ColumnName: "Length", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetLength()", false), Search: walker.SearchField{FieldName: "Blob Length", Enabled: true}},
+			{Schema: schema, Name: "ModifiedTime", ProtoBufName: "modified_time", ColumnName: "ModifiedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetModifiedTime()", false), Search: walker.SearchField{FieldName: "Blob Modified On", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_BLOB, map[search.FieldLabel]*search.Field{
+			"Blob Length":      {FieldPath: "blob.length", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_BLOB},
+			"Blob Modified On": {FieldPath: "blob.modified_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_BLOB},
+			"Blob Name":        {FieldPath: "blob.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_BLOB},
+		}))
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableBlobsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BLOB, schema)
