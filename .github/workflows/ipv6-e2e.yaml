@@ -1,0 +1,401 @@
+# IPv6-only E2E tests on KinD
+#
+# Validates that ACS deploys and operates correctly on a single-stack
+# IPv6 Kubernetes cluster. Runs on GHA runners (no cloud infra needed).
+#
+# Test suites:
+#   smoke       — deploy + verify IPv6 networking + API + sensor health (~7 min)
+#   qa-e2e      — Groovy/Spock QA tests (BAT group) (~30 min)
+#   nongroovy   — Go e2e tests (~30 min)
+#   ui-e2e      — Cypress UI tests (uses ui-e2e.yaml workflow_call)
+#
+# Triggered by label 'e2e-ipv6' on PRs, or manually via workflow_dispatch.
+
+name: IPv6 E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to test"
+        required: true
+        type: string
+      suite:
+        description: "Test suite to run"
+        type: choice
+        options:
+          - smoke
+          - qa-e2e
+          - nongroovy
+          - all
+        default: smoke
+  pull_request:
+    types: [labeled]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  resolve-tag:
+    name: Resolve image tag
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - id: tag
+        run: |
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(git describe --tags --abbrev=10 origin/master)" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Smoke test: deploy + verify IPv6 + API + sensor ────────────────
+  smoke:
+    name: IPv6 smoke
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'smoke' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLUSTER_NAME: ipv6-smoke-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          ip-family: ipv6
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Verify IPv6-only networking + NAT64
+        run: |
+          kubectl get nodes -o wide
+          kubectl -n stackrox get pods -o wide
+          ipv4_pods=$(kubectl -n stackrox get pods -o jsonpath='{.items[*].status.podIP}' | tr ' ' '\n' | grep -c '\.' || true)
+          if [[ "$ipv4_pods" -gt 0 ]]; then
+            echo "ERROR: Found $ipv4_pods pods with IPv4 addresses on an IPv6-only cluster"
+            exit 1
+          fi
+          echo "All pods are using IPv6 addresses"
+
+          echo "=== NAT64 DaemonSet ==="
+          kubectl -n kube-system get ds nat64 || { echo "ERROR: NAT64 DaemonSet not found"; exit 1; }
+
+          echo "=== Testing external connectivity via NAT64 ==="
+          CENTRAL_POD=$(kubectl -n stackrox get pods -l app=central -o name | head -1)
+          kubectl -n stackrox exec "$CENTRAL_POD" -- curl -sk --connect-timeout 10 https://quay.io/health/instance && echo "NAT64: quay.io reachable" || echo "WARNING: NAT64 may not be working — quay.io unreachable"
+
+      - name: Smoke test — Central API + Sensor
+        run: |
+          ROX_ADMIN_PASSWORD=$(cat /tmp/rox-admin-password)
+          API_ENDPOINT=$(cat /tmp/rox-api-endpoint)
+          curl -sk "https://${API_ENDPOINT}/v1/metadata" -u "admin:${ROX_ADMIN_PASSWORD}" | jq .
+          for i in $(seq 1 30); do
+            status=$(curl -sk "https://${API_ENDPOINT}/v1/clusters" \
+              -u "admin:${ROX_ADMIN_PASSWORD}" | jq -r '.clusters[0].healthStatus.sensorHealthStatus // "UNKNOWN"')
+            echo "Attempt $i: sensor status = $status"
+            [[ "$status" == "HEALTHY" ]] && break
+            sleep 10
+          done
+          [[ "$status" == "HEALTHY" ]] || { echo "Sensor not healthy after 5 minutes"; exit 1; }
+
+      - if: always()
+        run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
+
+  # ── QA E2E: Groovy/Spock tests (BAT group) ────────────────────────
+  qa-e2e:
+    name: "QA ${{ matrix.shard.name }} (${{ matrix.ip-family }})"
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'qa-e2e' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        ip-family: [ipv4, ipv6]
+        shard:
+          - { name: policy-config,  tests: "--tests PolicyConfigurationTest" }
+          - { name: enforcement,    tests: "--tests Enforcement" }
+          - { name: runtime,        tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest" }
+          - { name: vuln-scan,      tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest" }
+          - { name: network,        tests: "--tests NetworkFlowTest --tests NetworkSimulator" }
+          - { name: deployment,     tests: "--tests DeploymentCheck --tests DeploymentTest" }
+          - { name: auth,           tests: "--tests AuthServiceTest --tests K8sRbacTest --tests ServiceAccountTest" }
+          - { name: integrations,   tests: "--tests IntegrationsTest" }
+
+    env:
+      CLUSTER_NAME: qa-${{ matrix.ip-family }}-${{ github.run_id }}-${{ strategy.job-index }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          ip-family: ${{ matrix.ip-family }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Copy scanner protos + generate proto classes
+        working-directory: qa-tests-backend
+        run: |
+          go mod download github.com/stackrox/scanner
+          scripts/copy_scanner_protos.sh
+          ./gradlew generateProto
+
+      - name: Wait for DNS64+NAT64 readiness
+        if: matrix.ip-family == 'ipv6'
+        run: |
+          echo "Waiting for KinD cluster + DNS64 + NAT64..."
+          for _ in $(seq 1 120); do kubectl cluster-info &>/dev/null && break; sleep 2; done
+          NAT64_POD=""
+          for i in $(seq 1 60); do
+            NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+            if [[ -n "$NAT64_POD" ]] && kubectl -n kube-system exec "$NAT64_POD" -- \
+              wget -qO /dev/null --timeout=10 http://quay.io/health/instance 2>/dev/null; then
+              echo "DNS64+NAT64 verified (attempt $i)"
+              break
+            fi
+            echo "DNS64+NAT64 not ready (attempt $i/60)"
+            sleep 5
+          done
+
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          scanner: v2
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Patch Scanner V4 for IPv6 dual-stack listen
+        if: matrix.ip-family == 'ipv6'
+        run: |
+          for cm in scanner-v4-indexer-config scanner-v4-matcher-config; do
+            if kubectl -n stackrox get configmap "$cm" &>/dev/null; then
+              echo "Patching $cm: 0.0.0.0 → dual-stack"
+              kubectl -n stackrox get configmap "$cm" -o yaml \
+                | sed 's/0\.0\.0\.0:/:/g' \
+                | kubectl apply -f -
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout restart deploy/"$deploy"
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout status deploy/"$deploy" --timeout=3m
+            fi
+          done
+          # Wait for Scanner V4 to reload vulnerability data and register with Central
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          for i in $(seq 1 60); do
+            scanners=$(curl -sk "https://localhost:8443/v1/imageintegrations" \
+              -u "admin:${ROX_ADMIN_PASSWORD}" 2>/dev/null \
+              | jq '[.integrations[] | select(.categories[] == "SCANNER")] | length' 2>/dev/null || echo 0)
+            if [[ "$scanners" -gt 0 ]]; then
+              echo "Scanner integration available after restart (attempt $i)"
+              break
+            fi
+            echo "Waiting for scanner integration... (attempt $i/60)"
+            sleep 5
+          done
+
+      - name: Add registry integration + pull secrets
+        env:
+          QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          for attempt in 1 2 3; do
+            curl -sk --retry 3 --retry-delay 5 -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v1/imageintegrations" \
+              -X POST -d "{
+                \"name\": \"quay-ci\",
+                \"type\": \"docker\",
+                \"categories\": [\"REGISTRY\"],
+                \"docker\": {
+                  \"endpoint\": \"https://quay.io\",
+                  \"username\": \"${QUAY_USER}\",
+                  \"password\": \"${QUAY_PASS}\"
+                }
+              }" 2>/dev/null | jq -r '.id // .error' && break
+            sleep 5
+          done
+          for ns in qa default; do
+            kubectl create namespace "$ns" 2>/dev/null || true
+            kubectl -n "$ns" create secret docker-registry quay-pull-secret \
+              --docker-server=quay.io \
+              --docker-username="${QUAY_USER}" \
+              --docker-password="${QUAY_PASS}" 2>/dev/null || true
+            kubectl -n "$ns" patch serviceaccount default \
+              -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+          done
+
+      - name: "Run QA tests: ${{ matrix.shard.name }}"
+        working-directory: qa-tests-backend
+        env:
+          ROX_USERNAME: admin
+          API_HOSTNAME: localhost
+          API_PORT: "8443"
+          ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+          CLUSTER: K8S
+          POD_SECURITY_POLICIES: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+          GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
+          GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ECR_REGISTRY_NAME: ${{ secrets.AWS_ECR_REGISTRY_NAME }}
+          AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
+          AWS_ASSUME_ROLE_ACCESS_KEY_ID: ${{ secrets.AWS_ASSUME_ROLE_ACCESS_KEY_ID }}
+          AWS_ASSUME_ROLE_SECRET_ACCESS_KEY: ${{ secrets.AWS_ASSUME_ROLE_SECRET_ACCESS_KEY }}
+          AWS_ASSUME_ROLE_ROLE_ID: ${{ secrets.AWS_ASSUME_ROLE_ROLE_ID }}
+          AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
+          AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
+          REMOTE_CLUSTER_ARCH: multi-arch
+          SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
+        run: |
+          export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+          ./gradlew testBAT ${{ matrix.shard.tests }}
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p /tmp/test-artifacts
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "/tmp/test-artifacts/$(basename "$pod").log" || true
+          done
+          cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
+          cp -r qa-tests-backend/build/test-results/ /tmp/test-artifacts/test-results/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-${{ matrix.shard.name }}-${{ matrix.ip-family }}-${{ github.run_id }}
+          path: /tmp/test-artifacts
+          retention-days: 7
+
+      - if: always()
+        run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
+
+  # ── Non-groovy E2E: Go-based tests ────────────────────────────────
+  nongroovy:
+    name: "nongroovy (${{ matrix.ip-family }})"
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'nongroovy' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        ip-family: [ipv4, ipv6]
+    env:
+      CLUSTER_NAME: nongroovy-${{ matrix.ip-family }}-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          ip-family: ${{ matrix.ip-family }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Run non-groovy e2e tests
+        env:
+          API_ENDPOINT: localhost:8443
+          ROX_PASSWORD: ""
+        run: |
+          export ROX_PASSWORD="$(cat /tmp/rox-admin-password)"
+          make -C tests 2>&1 | tee /tmp/nongroovy-e2e.log
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p /tmp/test-artifacts
+          cp /tmp/nongroovy-e2e.log /tmp/test-artifacts/ 2>/dev/null || true
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "/tmp/test-artifacts/$(basename "$pod").log" || true
+          done
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nongroovy-${{ matrix.ip-family }}-${{ github.run_id }}
+          path: /tmp/test-artifacts
+          retention-days: 7
+
+      - if: always()
+        run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
