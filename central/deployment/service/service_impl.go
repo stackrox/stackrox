@@ -289,6 +289,18 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	return keyValuesMap, values
 }
 
+// BuildQuery build query with sanitaztion to allow usage of this functionality in other tools.
+func BuildQuery(deployment *storage.Deployment, risk *storage.Risk) (string, error) {
+	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	if err != nil {
+		return "", errors.Wrap(err, "building risk context for AI summary")
+	}
+
+	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
+
+	return query, nil
+}
+
 // GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
 func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v1.ResourceByID) (*v1.DeploymentRiskAISummaryResponse, error) {
 	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
@@ -318,12 +330,11 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		}, nil
 	}
 
-	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	query, err := BuildQuery(deployment, risk)
 	if err != nil {
-		return nil, errors.Wrap(err, "building risk context for AI summary")
+		return nil, errors.Wrap(err, "build AI summary query")
 	}
 
-	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
 	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
 		Query: query,
 	})
