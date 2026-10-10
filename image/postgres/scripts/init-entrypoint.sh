@@ -2,6 +2,9 @@
 
 set -Eeo pipefail
 
+# shellcheck source=backup-cleanup.sh
+source "$(dirname "${BASH_SOURCE[0]}")/backup-cleanup.sh"
+
 # Return the list of possible backup locations based on the mounted volumes.
 # The result is either two locations, if the backup volume is mounted, or only
 # one otherwise.
@@ -13,7 +16,7 @@ get_backup_locations () {
 
     local -n locations=$1
 
-    if $(df | grep "${BACKUP_VOLUME_MOUNT}"); then
+    if df | grep -q "${BACKUP_VOLUME_MOUNT}"; then
         locations+=("${BACKUP_VOLUME_MOUNT}");
     fi
 
@@ -67,6 +70,7 @@ else
 
     PG_DATA_VERSION=$(cat "${PGDATA}/PG_VERSION")
 
+    backup_locations=()
     get_backup_locations backup_locations
 
     if [[ -v FORCE_CLEANUP && "${FORCE_CLEANUP}" == "true" ]]; then
@@ -83,7 +87,7 @@ else
         # since we could be asked to restore a backup after an upgrade.
         # $POSTGRESQL_PREV_VERSION is an env variable set by the
         # postgresql-container image itself.
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
             echo "Removing ${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
             rm -rf "${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
@@ -97,7 +101,7 @@ else
         # since we could be asked to restore a backup after an upgrade.
         # $POSTGRESQL_PREV_VERSION is an env variable set by the
         # postgresql-container image itself.
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
             BACKUP_DIR="${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
 
@@ -141,17 +145,58 @@ else
             exit 1
         fi
 
+        # Validate the supported source version and binaries before deleting backups.
+        if [ "${PG_DATA_VERSION}" != "${POSTGRESQL_PREV_VERSION:-}" ]; then
+            echo "Unsupported PostgreSQL upgrade from ${PG_DATA_VERSION} to ${PG_BINARY_VERSION}."
+            exit 1
+        fi
+        OLD_BINARIES="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin"
+        NEW_BINARIES="/usr/bin"
+        for binary in "${OLD_BINARIES}/postgres" "${OLD_BINARIES}/pg_ctl" \
+            "${OLD_BINARIES}/pg_isready" "${OLD_BINARIES}/pg_controldata" \
+            "${NEW_BINARIES}/initdb" "${NEW_BINARIES}/pg_upgrade"; do
+            if [ ! -x "${binary}" ]; then
+                echo "Required PostgreSQL upgrade binary is missing: ${binary}"
+                exit 1
+            fi
+        done
+
+        # Recovery operations must not automatically discard other recovery backups.
+        ALLOW_BACKUP_CLEANUP=true
+        if [[ "${RESTORE_BACKUP:-}" == true || "${FORCE_CLEANUP:-}" == true ||
+            "${FORCE_NEW_BACKUP:-}" == true ]]; then
+            ALLOW_BACKUP_CLEANUP=false
+        fi
+
+        # Upgrade requires restrictive permissions and a cleanly stopped source DB.
+        # Check its health before reclaiming space from any older backups.
+        chmod 0700 "${PGDATA}"
+        echo "Make sure PostgreSQL is shutdown clearly."
+        "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
+        "${OLD_BINARIES}/pg_isready" -h 127.0.0.1
+        "${OLD_BINARIES}/pg_ctl" stop -w
+
+        STATUS=$("${OLD_BINARIES}/pg_controldata" -D "${PGDATA}" |\
+                    grep "Database cluster state" |\
+                    awk -F ':' '{print $2}' |\
+                    tr -d '[:space:]')
+        if [ "$STATUS" != "shutdown" ]; then
+            echo "Cluster was not shutdown cleanly."
+            exit 1
+        fi
+
         # This is the amount of disk space we currently consume. Normally we
         # could use df as well, since the data will be the only disk space
         # consumer, but in testing environment it might not be the case.
         PG_DATA_USED=$(du -s "${PGDATA}" | awk '{print $1}')
 
+        PG_BACKUP_VOLUME=""
         echo "Verifying backup locations ${backup_locations[*]}"
-        for location in ${backup_locations[*]}
+        for location in "${backup_locations[@]}"
         do
-            # The backup volume needs to accomodate two copies of data, one is the
+            # The backup volume needs to accommodate two copies of data, one is the
             # actual backup, and one is a restored copy, which will be deleted later.
-            echo "${location}: Checking avaibale disk space..."
+            echo "${location}: Checking available disk space..."
             if check_available_space "${location}" $((PG_DATA_USED * 2)); then
                 echo "Location has enough space."
                 PG_BACKUP_VOLUME="${location}"
@@ -161,35 +206,24 @@ else
             fi
         done
 
+        # Reclaim space only if no location can hold the backup and verification copy.
+        # Otherwise preserve older backups until the new backup has been verified.
+        if [[ -z "${PG_BACKUP_VOLUME}" && "${ALLOW_BACKUP_CLEANUP}" == true ]]; then
+            for location in "${backup_locations[@]}"; do
+                cleanup_stale_upgrade_backups \
+                    "${PG_DATA_VERSION}-${PG_BINARY_VERSION}" "${location}"
+                if check_available_space "${location}" $((PG_DATA_USED * 2)); then
+                    PG_BACKUP_VOLUME="${location}"
+                    break
+                fi
+            done
+        fi
+
         if [ -z "${PG_BACKUP_VOLUME}" ]; then
             echo "Not enough disk space, upgrade is cancelled."
             exit 1
         else
             echo "Backup will be stored in ${PG_BACKUP_VOLUME}"
-        fi
-
-        # After this point we know there is enough available disk space.
-        OLD_BINARIES="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin"
-        NEW_BINARIES="/usr/bin"
-
-        # Not sure how it works now, but during the upgrade group permissions
-        # are rejected.
-        chmod 0700 "${PGDATA}"
-
-        echo "Make sure PostgreSQL is shutdown clearly."
-        # Try to restart cluster temporary to make sure it was shutdown properly
-        "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
-        "${OLD_BINARIES}/pg_isready" -h 127.0.0.1
-        "${OLD_BINARIES}/pg_ctl" stop -w
-
-        STATUS=$("${OLD_BINARIES}/pg_controldata" -D "${PGDATA}" |\
-                    grep "Database cluster state" |\
-                    awk -F ':' '{print $2}' |\
-                    tr -d '[:space:]')
-
-        if [ "$STATUS" != "shutdown" ]; then
-            echo "Cluster was not shutdown cleanly."
-            exit 1
         fi
 
         BACKUP_DIR="${PG_BACKUP_VOLUME}/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
@@ -220,6 +254,11 @@ else
             -w stop
 
         rm -rf "${BACKUP_VERIFY_PGDATA}"
+
+        if [ "${ALLOW_BACKUP_CLEANUP}" == true ]; then
+            cleanup_stale_upgrade_backups \
+                "${PG_DATA_VERSION}-${PG_BINARY_VERSION}" "${backup_locations[@]}"
+        fi
 
         echo "Upgrade..."
         # Good idea to --check first
