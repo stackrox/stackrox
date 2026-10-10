@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestNoSerializedsSchema() })
+}
 
 var (
 	// CreateTableTestNoSerializedsStmt holds the create statement for table `test_no_serializeds`.
@@ -29,7 +34,7 @@ var (
 	}
 
 	// TestNoSerializedsSchema is the go schema for table `test_no_serializeds`.
-	TestNoSerializedsSchema = func() *walker.Schema {
+	TestNoSerializedsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_no_serializeds")
 		if schema != nil {
 			return schema
@@ -40,7 +45,7 @@ var (
 		RegisterTable(schema, CreateTableTestNoSerializedsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(200), schema)
 		return schema
-	}()
+	})
 )
 
 const (

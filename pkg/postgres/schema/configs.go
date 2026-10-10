@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { ConfigsSchema() })
+}
 
 var (
 	// CreateTableConfigsStmt holds the create statement for table `configs`.
@@ -22,7 +27,7 @@ var (
 	}
 
 	// ConfigsSchema is the go schema for table `configs`.
-	ConfigsSchema = func() *walker.Schema {
+	ConfigsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("configs")
 		if schema != nil {
 			return schema
@@ -31,7 +36,7 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableConfigsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

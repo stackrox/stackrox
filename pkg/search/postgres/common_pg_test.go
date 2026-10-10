@@ -165,24 +165,24 @@ func TestRunDistinctCountForSchema(t *testing.T) {
 	}
 
 	// 4 structs with unique keys
-	count, err := pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, search.EmptyQuery(), search.TestKey)
+	count, err := pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema(), search.EmptyQuery(), search.TestKey)
 	require.NoError(t, err)
 	assert.Equal(t, 4, count)
 
 	// 4 structs with 2 distinct string values ("acs", "bcs")
-	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, search.EmptyQuery(), search.TestString)
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema(), search.EmptyQuery(), search.TestString)
 	require.NoError(t, err)
 	assert.Equal(t, 2, count)
 
 	// Filtered: only "acs" strings, 2 distinct keys
 	q := search.NewQueryBuilder().AddExactMatches(search.TestString, "acs").ProtoQuery()
-	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, q, search.TestKey)
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema(), q, search.TestKey)
 	require.NoError(t, err)
 	assert.Equal(t, 2, count)
 
 	// Empty result set
 	q = search.NewQueryBuilder().AddExactMatches(search.TestString, "nonexistent").ProtoQuery()
-	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, q, search.TestKey)
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema(), q, search.TestKey)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count)
 }

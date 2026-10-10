@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SimpleAccessScopesSchema
+	schema         = pkgSchema.SimpleAccessScopesSchema()
 	targetResource = resources.Access
 )
 

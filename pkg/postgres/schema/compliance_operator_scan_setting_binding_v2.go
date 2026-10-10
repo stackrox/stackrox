@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorScanSettingBindingV2Schema() })
+}
 
 var (
 	// CreateTableComplianceOperatorScanSettingBindingV2Stmt holds the create statement for table `compliance_operator_scan_setting_binding_v2`.
@@ -27,14 +32,14 @@ var (
 	}
 
 	// ComplianceOperatorScanSettingBindingV2Schema is the go schema for table `compliance_operator_scan_setting_binding_v2`.
-	ComplianceOperatorScanSettingBindingV2Schema = func() *walker.Schema {
+	ComplianceOperatorScanSettingBindingV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_scan_setting_binding_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanSettingBindingV2)(nil)), "compliance_operator_scan_setting_binding_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
+			"storage.Cluster": ClustersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -45,7 +50,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorScanSettingBindingV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

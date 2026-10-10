@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { VirtualMachineComponentV2Schema() })
+}
 
 var (
 	// CreateTableVirtualMachineComponentV2Stmt holds the create statement for table `virtual_machine_component_v2`.
@@ -29,14 +34,14 @@ var (
 	}
 
 	// VirtualMachineComponentV2Schema is the go schema for table `virtual_machine_component_v2`.
-	VirtualMachineComponentV2Schema = func() *walker.Schema {
+	VirtualMachineComponentV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("virtual_machine_component_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineComponentV2)(nil)), "virtual_machine_component_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.VirtualMachineScanV2": VirtualMachineScanV2Schema,
+			"storage.VirtualMachineScanV2": VirtualMachineScanV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -55,7 +60,7 @@ var (
 		RegisterTable(schema, CreateTableVirtualMachineComponentV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

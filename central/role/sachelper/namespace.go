@@ -54,5 +54,5 @@ func listNamespaceNamesInScope(
 }
 
 func getNamespacesOptionsMap() search.OptionsMap {
-	return schema.NamespacesSchema.OptionsMap
+	return schema.NamespacesSchema().OptionsMap
 }

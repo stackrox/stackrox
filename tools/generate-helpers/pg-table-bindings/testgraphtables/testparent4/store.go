@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestParent4Schema
+	schema         = pkgSchema.TestParent4Schema()
 	targetResource = resources.Namespace
 )
 

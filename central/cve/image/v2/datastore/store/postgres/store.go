@@ -28,7 +28,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCvesV2Schema
+	schema         = pkgSchema.ImageCvesV2Schema()
 	targetResource = resources.Image
 )
 
@@ -74,7 +74,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		nil,
-		pkgSchema.ImagesSchema.OptionsMap,
+		pkgSchema.ImagesSchema().OptionsMap,
 	)
 }
 

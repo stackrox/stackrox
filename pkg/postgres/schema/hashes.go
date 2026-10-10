@@ -9,8 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { HashesSchema() })
+}
 
 var (
 	// CreateTableHashesStmt holds the create statement for table `hashes`.
@@ -20,7 +25,7 @@ var (
 	}
 
 	// HashesSchema is the go schema for table `hashes`.
-	HashesSchema = func() *walker.Schema {
+	HashesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("hashes")
 		if schema != nil {
 			return schema
@@ -29,7 +34,7 @@ var (
 		schema.ScopingResource = resources.Hash
 		RegisterTable(schema, CreateTableHashesStmt, features.StoreEventHashes.Enabled)
 		return schema
-	}()
+	})
 )
 
 const (

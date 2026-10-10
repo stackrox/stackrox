@@ -29,7 +29,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestStructsSchema
+	schema         = pkgSchema.TestStructsSchema()
 	targetResource = resources.Namespace
 )
 
