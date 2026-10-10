@@ -25,14 +25,7 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
     const workflowState = useContext(workflowStateContext);
     const entityType = workflowState.getCurrentEntityType();
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
-    const {
-        deploymentCount,
-        imageCount,
-        componentCount,
-        nodeCount = 0,
-        clusterCount = 0,
-        id,
-    } = row;
+    const { deploymentCount, imageCount, componentCount, nodeCount = 0, id } = row;
 
     // TODO: refactor check for vulnerability types in follow-up PR
     const isLegacyVuln = entityType === entityTypes.CVE;
@@ -40,8 +33,6 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
         entityType === entityTypes.IMAGE_CVE || fixableVulnType === entityTypes.IMAGE_CVE;
     const isNodeVuln =
         entityType === entityTypes.NODE_CVE || fixableVulnType === entityTypes.NODE_CVE;
-    const isClusterVuln =
-        entityType === entityTypes.CLUSTER_CVE || fixableVulnType === entityTypes.CLUSTER_CVE;
 
     // Only show entity counts on relevant pages. Node count is not currently supported.
     return (
@@ -76,17 +67,14 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
             )}
             {/* TODO: strengthen check for COMPONENT context to distinguish check
                 between IMAGE_COMPONENT and NODE_COMPONENT in later PR */}
-            {!isImageVuln &&
-                !isClusterVuln &&
-                !isNodeVuln &&
-                !entityContext[resourceTypes.COMPONENT] && (
-                    <TableCountLink
-                        entityType={resourceTypes.COMPONENT}
-                        count={componentCount}
-                        textOnly={textOnly}
-                        selectedRowId={id}
-                    />
-                )}
+            {!isImageVuln && !isNodeVuln && !entityContext[resourceTypes.COMPONENT] && (
+                <TableCountLink
+                    entityType={resourceTypes.COMPONENT}
+                    count={componentCount}
+                    textOnly={textOnly}
+                    selectedRowId={id}
+                />
+            )}
             {isImageVuln && !entityContext[resourceTypes.IMAGE_COMPONENT] && (
                 <TableCountLink
                     entityType={resourceTypes.IMAGE_COMPONENT}
@@ -99,14 +87,6 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
                 <TableCountLink
                     entityType={resourceTypes.NODE_COMPONENT}
                     count={componentCount}
-                    textOnly={textOnly}
-                    selectedRowId={id}
-                />
-            )}
-            {isClusterVuln && !entityContext[resourceTypes.CLUSTER] && (
-                <TableCountLink
-                    entityType={resourceTypes.CLUSTER}
-                    count={clusterCount}
                     textOnly={textOnly}
                     selectedRowId={id}
                 />
