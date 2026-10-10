@@ -62,4 +62,60 @@ subjects:
     name: scanner-v4
     namespace: "{{ ._rox._namespace }}"
   {{- end }}
+{{- /*
+Scanner V4 DB PVC space alerting. Evaluated by the platform Prometheus (this rule
+lives in openshift-monitoring), which scrapes kubelet_volume_stats_* for every
+namespace, so it can see the scanner-v4-db PVC in .Release.Namespace. This chart
+is shared by central- and secured-cluster-services, so the alert follows the
+Scanner V4 DB wherever it runs (including a secured cluster with a local Scanner
+V4). The claim name is resolved from the volume config so it honours a custom
+claimName, and the group is only emitted when the DB is actually PVC-backed
+(skipped for hostPath or emptyDir persistence, which have no PVC volume stats).
+*/}}
+{{- if ._rox.scannerV4._dbEnabled }}
+{{- $scannerV4DBClaimName := "" -}}
+{{- with ._rox.scannerV4.db.persistence._volumeCfg -}}
+{{- with .persistentVolumeClaim -}}
+{{- $scannerV4DBClaimName = .claimName -}}
+{{- end -}}
+{{- end -}}
+{{- if $scannerV4DBClaimName }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "scanner-v4-db-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "scanner-v4-db-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "scanner-v4-db-" .Release.Namespace)) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.scanner-v4-db
+      rules:
+        - alert: ScannerV4DBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              > 0.8
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Scanner V4 DB persistent volume is filling up"
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (warning threshold 80%)."
+        - alert: ScannerV4DBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              > 0.9
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Scanner V4 DB persistent volume is almost full"
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
+{{- end }}
+{{- end }}
 {{- end }}
