@@ -61,6 +61,9 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, r
 // 3. sensor-tls (legacy init bundle fallback)
 // Returns (hash, fromRuntimeSecret, error) where fromRuntimeSecret indicates if the hash came from tls-cert-sensor
 func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ctrlClient.Reader, namespace string) (string, bool, error) {
+	if crs.IsFakeCRSEnabled() {
+		return confighash.ComputeCAHash([]byte(crs.CreateFakeCRS().CAs[0])), false, nil
+	}
 	caSources := []struct {
 		name            string
 		isRuntimeSecret bool
