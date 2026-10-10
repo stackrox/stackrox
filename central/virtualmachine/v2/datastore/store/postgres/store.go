@@ -13,12 +13,16 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,10 +36,15 @@ const (
 
 	getVMStmt   = "SELECT serialized FROM " + vmTable + " WHERE Id = $1"
 	getScanStmt = "SELECT serialized FROM " + scanTable + " WHERE VmV2Id = $1"
+
+	getVMWithLatestScanStmt = "SELECT vm.serialized, scan.serialized FROM " + vmTable + " AS vm" +
+		" LEFT JOIN LATERAL (SELECT serialized FROM " + scanTable +
+		" WHERE VmV2Id = vm.Id ORDER BY Id DESC LIMIT 1) AS scan ON true WHERE vm.Id = $1"
 )
 
 var (
 	schema = pkgSchema.VirtualMachineV2Schema
+	vmSAC  = sac.ForResource(resources.VirtualMachine)
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -696,6 +705,45 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.VirtualMachine
 			return nil, false, nil
 		}
 		return vm, true, nil
+	})
+}
+
+// GetWithLatestScan reads both serialized objects in one snapshot. A lateral
+// left join retains VMs with no scan and selects the latest UUIDv7 scan ID.
+func (s *storeImpl) GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "VirtualMachineV2WithLatestScan")
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresVMStatementTimeout.DurationSetting())
+	defer cancel()
+	return pgutils.Retry3(queryCtx, func() (*common.VMWithLatestScan, bool, error) {
+		var db postgres.Queryable = s.db
+		if tx, exists := postgres.TxFromContext(queryCtx); exists {
+			db = tx
+		}
+		var vmBytes, scanBytes []byte
+		err := db.QueryRow(queryCtx, getVMWithLatestScanStmt, pgutils.NilOrUUID(id)).Scan(&vmBytes, &scanBytes)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		if err != nil {
+			return nil, false, errors.Wrap(err, "reading VM and latest scan")
+		}
+		vm := &storage.VirtualMachineV2{}
+		if err := vm.UnmarshalVT(vmBytes); err != nil {
+			return nil, false, errors.Wrap(err, "decoding VM")
+		}
+		// Match the scope filtering of Get: inaccessible VMs are not found, and
+		// neither their metadata nor their scan is returned to the caller.
+		if allowed, err := vmSAC.ReadAllowed(queryCtx, sac.ClusterScopeKey(vm.GetClusterId()), sac.NamespaceScopeKey(vm.GetNamespace())); err != nil || !allowed {
+			return nil, false, err
+		}
+		result := &common.VMWithLatestScan{VM: vm}
+		if scanBytes != nil {
+			result.Scan = &storage.VirtualMachineScanV2{}
+			if err := result.Scan.UnmarshalVT(scanBytes); err != nil {
+				return nil, false, errors.Wrap(err, "decoding latest VM scan")
+			}
+		}
+		return result, true, nil
 	})
 }
 

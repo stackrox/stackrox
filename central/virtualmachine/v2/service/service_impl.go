@@ -14,7 +14,6 @@ import (
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -680,7 +679,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		return nil, status.Errorf(codes.InvalidArgument, "id must be a valid UUID (got: %q)", request.GetId())
 	}
 
-	vm, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetId())
+	vmWithScan, exists, err := s.vmDS.GetVirtualMachineWithLatestScan(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -688,6 +687,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		return nil, status.Errorf(codes.NotFound, "virtual machine %q not found", request.GetId())
 	}
 
+	vm := vmWithScan.VM
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
 	detail.AgentStatus = storagetov2.AgentStatusFromLastContact(
 		vm.GetLastAgentContact(),
@@ -695,22 +695,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		env.VirtualMachinesAgentStaleAfter.DurationSetting(),
 	)
 
-	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
-	// so sorting by the primary key is equivalent to sorting by time and avoids
-	// a separate index scan.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
-	scanQuery.Pagination = &v1.QueryPagination{
-		Limit: 1,
-		SortOptions: []*v1.QuerySortOption{
-			{Field: search.VirtualMachineScanID.String(), Reversed: true},
-		},
-	}
-	scans, err := s.scanDS.SearchRawVMScans(ctx, scanQuery)
-	if err != nil {
-		return nil, err
-	}
-	if len(scans) > 0 {
-		scan := scans[0]
+	if scan := vmWithScan.Scan; scan != nil {
 		scanNotes := make([]v2.VMScanNote, 0, len(scan.GetNotes()))
 		for _, n := range scan.GetNotes() {
 			scanNotes = append(scanNotes, storagetov2.ConvertScanNote(n))

@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -46,6 +48,117 @@ func (s *VMStoreTestSuite) SetupTest() {
 	_, err := s.testDB.Exec(s.ctx, "TRUNCATE virtual_machine_v2 CASCADE")
 	s.Require().NoError(err)
 	s.store = New(s.testDB.DB, concurrency.NewKeyFence()).(*storeImpl)
+}
+
+func (s *VMStoreTestSuite) TestGetWithLatestScan_MissingVM() {
+	result, found, err := s.store.GetWithLatestScan(s.ctx, uuid.NewV4().String())
+	s.Require().NoError(err)
+	s.False(found)
+	s.Nil(result)
+}
+
+func (s *VMStoreTestSuite) TestGetWithLatestScan_NoScan() {
+	vm := s.newVM()
+	vm.Facts = map[string]string{"agentVersion": "1.0"}
+	s.Require().NoError(s.store.UpsertVM(s.ctx, vm))
+	expected, found, err := s.store.Get(s.ctx, vm.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	result, found, err := s.store.GetWithLatestScan(s.ctx, vm.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	protoassert.Equal(s.T(), expected, result.VM)
+	s.Nil(result.Scan)
+}
+
+func (s *VMStoreTestSuite) TestGetWithLatestScan_UsesScanID() {
+	vm := s.newVM()
+	s.Require().NoError(s.store.UpsertVM(s.ctx, vm))
+	expected, found, err := s.store.Get(s.ctx, vm.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	ids := []string{uuid.NewV7().String(), uuid.NewV7().String()}
+	slices.Sort(ids)
+	old := &storage.VirtualMachineScanV2{
+		Id: ids[0], VmV2Id: vm.GetId(), ScanTime: timestamppb.Now(),
+	}
+	latest := &storage.VirtualMachineScanV2{
+		Id: ids[1], VmV2Id: vm.GetId(), ScanOs: "rhel:9", TopCvss: 9.8,
+		ScanTime: timestamppb.New(time.Now().Add(-time.Hour)),
+		Notes:    []storage.VirtualMachineScanV2_Note{storage.VirtualMachineScanV2_OS_UNKNOWN},
+	}
+	tx, err := s.testDB.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() { _ = tx.Rollback(s.ctx) }()
+	s.Require().NoError(s.store.insertScan(s.ctx, tx, old))
+	s.Require().NoError(s.store.insertScan(s.ctx, tx, latest))
+	s.Require().NoError(tx.Commit(s.ctx))
+	result, found, err := s.store.GetWithLatestScan(s.ctx, vm.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	protoassert.Equal(s.T(), expected, result.VM)
+	protoassert.Equal(s.T(), latest, result.Scan)
+}
+
+func (s *VMStoreTestSuite) TestGetWithLatestScan_ScopedAccess() {
+	vm := s.newVM()
+	s.Require().NoError(s.store.UpsertVM(s.ctx, vm))
+	s.Require().NoError(s.store.UpsertScan(s.ctx, vm.GetId(), s.newScanParts(vm.GetId())))
+	allowedScope := func(cluster, namespace string) context.Context {
+		return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.VirtualMachine),
+			sac.ClusterScopeKeys(cluster),
+			sac.NamespaceScopeKeys(namespace),
+		))
+	}
+	tests := map[string]struct {
+		ctx   context.Context
+		found bool
+	}{
+		"all access":          {ctx: s.ctx, found: true},
+		"own namespace":       {ctx: allowedScope(vm.GetClusterId(), vm.GetNamespace()), found: true},
+		"different namespace": {ctx: allowedScope(vm.GetClusterId(), "other")},
+		"different cluster":   {ctx: allowedScope(uuid.NewV4().String(), vm.GetNamespace())},
+		"no access":           {ctx: sac.WithNoAccess(context.Background())},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			result, found, err := s.store.GetWithLatestScan(tt.ctx, vm.GetId())
+			s.Require().NoError(err)
+			s.Equal(tt.found, found)
+			if tt.found {
+				s.NotNil(result.VM)
+				s.NotNil(result.Scan)
+			} else {
+				s.Nil(result, "VM metadata and scan must both be hidden")
+			}
+			_, oldFound, err := s.store.Get(tt.ctx, vm.GetId())
+			s.Require().NoError(err)
+			s.Equal(oldFound, found, "joined read must match existing Get scope filtering")
+		})
+	}
+}
+
+func (s *VMStoreTestSuite) TestGetWithLatestScan_TransactionContext() {
+	vm := s.newVM()
+	scan := s.newScanParts(vm.GetId()).Scan
+	tx, txCtx, err := s.store.begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() { _ = tx.Rollback(s.ctx) }()
+	s.Require().NoError(s.store.insertVM(txCtx, tx, vm))
+	s.Require().NoError(s.store.insertScan(txCtx, tx, scan))
+
+	result, found, err := s.store.GetWithLatestScan(txCtx, vm.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	protoassert.Equal(s.T(), vm, result.VM)
+	protoassert.Equal(s.T(), scan, result.Scan)
+
+	s.Require().NoError(tx.Rollback(s.ctx))
+	_, found, err = s.store.GetWithLatestScan(s.ctx, vm.GetId())
+	s.Require().NoError(err)
+	s.False(found, "uncommitted VM must only be visible through the transaction context")
 }
 
 func (s *VMStoreTestSuite) newVM() *storage.VirtualMachineV2 {
