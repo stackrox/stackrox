@@ -26,9 +26,9 @@ import (
 )
 
 var (
-	preVer         = versionPair{version: "4.7.22.0", seqNum: 63, minSeqNum: 0}
-	currVer        = versionPair{version: "4.10.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
-	futureVer      = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
+	preVer         = versionPair{version: "4.10.0", seqNum: 220, minSeqNum: 209}
+	currVer        = versionPair{version: "5.1.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: 220}
+	futureVer      = versionPair{version: "5.2.0", seqNum: 6533, minSeqNum: 2011}
 	unsupportedVer = versionPair{version: "4.3.1", seqNum: 194, minSeqNum: 0} // Below minimum supported version (209 / 4.6)
 )
 
@@ -152,6 +152,39 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromUnsupportedVersion() {
 	err := dbm.Scan()
 	s.Require().Error(err, "Expected error when scanning restore from unsupported version")
 	s.Require().Contains(err.Error(), "not supported", "Error message should indicate version not supported")
+}
+
+func (s *PostgresCloneManagerSuite) TestRestoreCompatibility() {
+	// A valid restore must not be blocked by the new gate on the replaced database.
+	migVer.SetVersionPostgres(s.ctx, CurrentClone, &storage.Version{Version: "4.9.0", SeqNum: 213})
+	migVer.SetVersionPostgres(s.ctx, RestoreClone, &storage.Version{Version: "4.10.0", SeqNum: 220})
+	dbm := New("", s.config, s.sourceMap)
+	s.Require().NoError(dbm.Scan())
+	selected, err := dbm.GetCloneToMigrate()
+	s.Require().NoError(err)
+	s.Equal(RestoreClone, selected)
+
+	// Even an equal sequence must not make an N-4 restore compatible.
+	migVer.SetVersionPostgres(s.ctx, RestoreClone, &storage.Version{Version: "4.9.0", SeqNum: 220})
+	dbm = New("", s.config, s.sourceMap)
+	s.Require().ErrorContains(dbm.Scan(), "4.9")
+	ver, err := migVer.ReadVersionPostgres(s.ctx, RestoreClone)
+	s.Require().NoError(err)
+	s.Equal("4.9.0", ver.MainVersion)
+	s.Equal(220, ver.SeqNum)
+
+	// The unsafe product-version override must not weaken the restore sequence floor.
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	migVer.SetVersionPostgres(s.ctx, RestoreClone, &storage.Version{Version: "4.9.0", SeqNum: 213})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "not supported")
+}
+
+func (s *PostgresCloneManagerSuite) TestUpgradeCompatibility() {
+	pgtest.DropDatabase(s.T(), RestoreClone)
+	migVer.SetVersionPostgres(s.ctx, CurrentClone, &storage.Version{Version: "4.9.0", SeqNum: 227})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "4.9")
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	s.Require().NoError(New("", s.config, s.sourceMap).Scan())
 }
 
 func (s *PostgresCloneManagerSuite) TestGetRestoreClone() {

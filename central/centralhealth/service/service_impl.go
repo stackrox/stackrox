@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -37,12 +39,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetUpgradeStatus returns the upgrade status for Central.
 func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
+	minimum, err := migrations.MinimumSupportedDBVersion()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	upgradeStatus := &v1.CentralUpgradeStatus{
 		Version: version.GetMainVersion(),
 		// Due to backwards compatibility going forward we can assume
 		// we can rollback after an upgrade
 		CanRollbackAfterUpgrade: true,
-		ForceRollbackTo:         migrations.MinimumSupportedDBVersion(),
+		ForceRollbackTo:         minimum,
 	}
 
 	return &v1.GetUpgradeStatusResponse{
