@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/memlimit"
-	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/metrics"
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
 	gogrpc "google.golang.org/grpc"
@@ -106,11 +106,10 @@ func main() {
 	}
 
 	features.LogFeatureFlags()
-	// Initialize metrics and metrics server.
-	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
-	metricsSrv.RunForever()
-	defer metricsSrv.Stop(ctx)
-	metrics.GatherThrottleMetricsForever(metrics.ScannerSubsystem.String())
+
+	// Initialize metrics
+	metricsCleanup := metrics.Initialize()
+	defer metricsCleanup(ctx)
 
 	// Create backends.
 	backends, err := createBackends(ctx, cfg)

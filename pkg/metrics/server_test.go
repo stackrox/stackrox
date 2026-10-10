@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls/verifier/mocks"
@@ -152,6 +153,26 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, string(msg), "go_gc_duration_seconds")
 	}, 1*time.Second, 50*time.Millisecond)
+}
+
+func TestRegisterAdditionalCollector_RegistersWithPrometheus(t *testing.T) {
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
+	counter := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_registers_with_prometheus"})
+
+	err := server.RegisterAdditionalCollector(counter)
+
+	require.NoError(t, err)
+}
+
+func TestRegisterAdditionalCollector_DuplicateReturnsError(t *testing.T) {
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
+	first := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_duplicate_returns_error"})
+	second := prometheus.NewCounter(prometheus.CounterOpts{Name: "test_register_additional_collector_duplicate_returns_error"})
+	require.NoError(t, server.RegisterAdditionalCollector(first))
+
+	err := server.RegisterAdditionalCollector(second)
+
+	assert.Error(t, err)
 }
 
 func fakeTLSConfig() (*tls.Config, error) {
