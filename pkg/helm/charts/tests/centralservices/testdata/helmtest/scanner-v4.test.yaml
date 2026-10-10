@@ -236,8 +236,33 @@ tests:
 - name: "matcher should be using central endpoint when deployed"
   set:
     scannerV4.disable: false
-    expect: |
-      .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
+  expect: |
+    .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION")
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | assertThat(length == 0)
+
+- name: "matcher vulnerability URL can be customized through its environment variable"
+  values:
+    customize:
+      scanner-v4-matcher:
+        envVars:
+          SCANNER_V4_MATCHER_VULNERABILITIES_URL: https://example.com/ci-default.zip
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | assertThat(length == 1 and .[0].value == "https://example.com/ci-default.zip")
+    .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION")
+
+- name: "explicit matcher URL customization overrides the CI default"
+  values:
+    customize:
+      scanner-v4-matcher:
+        envVars:
+          SCANNER_V4_MATCHER_VULNERABILITIES_URL: https://example.com/ci-default.zip
+  set:
+    scannerV4.disable: false
+    customize.scanner-v4-matcher.envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL: https://example.com/explicit.zip
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | assertThat(length == 1 and .[0].value == "https://example.com/explicit.zip")
 
 - name: "Scanner V4 defaults to"
   set:

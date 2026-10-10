@@ -57,6 +57,19 @@ tests:
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
+- name: "matcher URL customization does not leak into secured-cluster indexer"
+  values:
+    customize:
+      scanner-v4-matcher:
+        envVars:
+          SCANNER_V4_MATCHER_VULNERABILITIES_URL: https://example.com/ci-minimal.zip
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[] | select(.name == "indexer") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | assertThat(length == 0)
+
 - name: "Scanner V4 Indexer can find Sensor"
   release:
     namespace: "other"

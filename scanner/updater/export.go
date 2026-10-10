@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
@@ -23,6 +22,7 @@ import (
 	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	bundlewriter "github.com/stackrox/rox/scanner/updater/bundle"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 
@@ -124,7 +124,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	// Export to bundle(s).
 	for name, o := range bundles {
 		ctx = log.With(ctx, "bundle", name)
-		w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
+		w, err := os.Create(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
 		if err != nil {
 			return err
 		}
@@ -278,19 +278,6 @@ func filterSources(bundles map[string][]updates.ManagerOption, selected []string
 	return filtered, nil
 }
 
-func zstdWriter(filename string) (io.WriteCloser, error) {
-	f, err := os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-	w, err := zstd.NewWriter(f)
-	if err != nil {
-		_ = f.Close()
-		return nil, err
-	}
-	return w, nil
-}
-
 func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []updates.ManagerOption) error {
 	jsonStore, err := jsonblob.New()
 	if err != nil {
@@ -304,7 +291,7 @@ func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []update
 	if err != nil {
 		return fmt.Errorf("run: %w", err)
 	}
-	err = jsonStore.Store(w)
+	err = bundlewriter.WriteCompressed(w, jsonStore.Store)
 	if err != nil {
 		return fmt.Errorf("json store: %w", err)
 	}

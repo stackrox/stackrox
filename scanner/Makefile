@@ -459,11 +459,18 @@ e2e-deploy: timeout := 30m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
+	@if bash -c 'source ../scripts/ci/nightly.sh; is_nightly_run'; then \
+	    echo "Scanner V4 bundle: production (deployed version default)"; \
+	else \
+	    printf 'Scanner V4 bundle: CI fixture '; \
+	    sed -n 's/^    vulnerabilitiesUrl: "\(.*\)"/\1/p' $(e2e-chart-d)/values.yaml; \
+	fi
 	helm $(if $(debug-templates),template,upgrade --install) --debug $(release) $< \
 	    --namespace $(namespace) \
 	    --create-namespace \
 	    $(if $(CI),,--atomic) \
 	    --timeout $(timeout) \
+	    $(shell bash -c 'source ../scripts/ci/nightly.sh; is_nightly_run && echo "-f $(e2e-chart-d)/values-full.yaml"') \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \

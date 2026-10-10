@@ -1228,6 +1228,8 @@ EOT
     else
         create_central_pull_secrets "$central_namespace"
 
+        local scanner_bundle_values
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values "$use_default_chart")" || return 1
         base_helm_values=$(cat <<EOT
 central:
   resources:
@@ -1279,6 +1281,8 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
+
+${scanner_bundle_values}
 
 allowNonstandardNamespace: true
 EOT
@@ -1388,6 +1392,8 @@ EOT
         fi
         create_sensor_pull_secrets "$sensor_namespace"
 
+        local scanner_bundle_values
+        scanner_bundle_values="$(_scanner_v4_install_bundle_values "$use_default_chart")" || return 1
         base_helm_values=$(cat <<EOT
 clusterName: "$cluster_name"
 centralEndpoint: "$central_endpoint"
@@ -1423,6 +1429,8 @@ scannerV4:
   db:
     persistence:
       none: true
+
+${scanner_bundle_values}
 
 admissionControl:
   replicas: 1

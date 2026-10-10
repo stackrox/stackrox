@@ -24,8 +24,11 @@ export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
-# Can be overridden by individual jobs. Setting to "" will load data from all sources.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+# Nightlies use the deployed Scanner's production defaults. Explicit caller values are preserved;
+# setting the variable to "" loads data from all sources.
+if [[ ! -v SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST ]] && ! is_nightly_run; then
+    export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu"
+fi
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
@@ -124,6 +127,60 @@ ensure_roxie_on_path() {
     check_for_roxie
 }
 
+_scanner_v4_ci_vuln_bundle_url() {
+    local scanner_v4_ci_vuln_bundle_url
+    scanner_v4_ci_vuln_bundle_url="$(yq eval '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL // ""' "$TEST_ROOT/deploy/common/ci-values.yaml")" \
+        || die "Unable to read the CI Scanner V4 vulnerability bundle URL"
+    [[ -n "$scanner_v4_ci_vuln_bundle_url" ]] || die "CI Scanner V4 vulnerability bundle URL is empty"
+    printf '%s\n' "$scanner_v4_ci_vuln_bundle_url"
+}
+
+# Current-chart installation tests use the CI pin in regular and local runs.
+# Nightlies and older charts omit it so the deployed chart version uses its
+# production bundle URL.
+_scanner_v4_install_bundle_values() {
+    local use_default_chart="${1:-true}"
+    if [[ "$use_default_chart" == "false" ]] || is_nightly_run; then
+        echo "Scanner V4 bundle: production (deployed version default)" >&2
+        return 0
+    fi
+    local url
+    url="$(_scanner_v4_ci_vuln_bundle_url)" || return 1
+    echo "Scanner V4 bundle: CI fixture ${url}" >&2
+    SCANNER_INSTALL_BUNDLE_URL="$url" yq eval -n '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITIES_URL = strenv(SCANNER_INSTALL_BUNDLE_URL)'
+}
+
+_configure_roxie_ci_vuln_bundle() {
+    local config_file="$1"
+    [[ "${CI:-}" == "true" ]] || return 0
+    if is_nightly_run; then
+        echo "Scanner V4 bundle: production default unless explicitly overridden in Roxie config" >&2
+        return 0
+    fi
+
+    local scanner_v4_component
+    if ! scanner_v4_component="$(yq eval '.central.spec.scannerV4.scannerComponent // ""' "$config_file")"; then
+        return 1
+    fi
+    [[ "$scanner_v4_component" != "Disabled" ]] || return 0
+
+    local env_var_count
+    if ! env_var_count="$(yq eval '[((.central.spec.customize.envVars // [])[]) | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL")] | length' "$config_file")"; then
+        return 1
+    fi
+    if [[ "$env_var_count" != "0" ]]; then
+        echo "Scanner V4 bundle: explicit override $(yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL") | .value' "$config_file")" >&2
+        return 0
+    fi
+
+    local scanner_v4_ci_vuln_bundle_url
+    if ! scanner_v4_ci_vuln_bundle_url="$(_scanner_v4_ci_vuln_bundle_url)"; then
+        return 1
+    fi
+    echo "Scanner V4 bundle: CI fixture ${scanner_v4_ci_vuln_bundle_url}" >&2
+    set_custom_env "$config_file" central SCANNER_V4_MATCHER_VULNERABILITIES_URL "$scanner_v4_ci_vuln_bundle_url"
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
@@ -158,6 +215,10 @@ deploy_stackrox_with_roxie() {
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
     workaround_label_length_limitation "$config_file"
+
+    if ! _configure_roxie_ci_vuln_bundle "$config_file"; then
+        return 1
+    fi
 
     # Print out the config file in use for transparency.
     # This does not contain secrets.
@@ -632,6 +693,19 @@ deploy_central_via_operator() {
     esac
 
     if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${CI:-}" == "true" ]] && ! is_nightly_run; then
+            # Keep Operator deployments aligned with Helm by reading the shared CI pin.
+            local scannerV4CiVulnBundleURL
+            if ! scannerV4CiVulnBundleURL="$(_scanner_v4_ci_vuln_bundle_url)"; then
+                return 1
+            fi
+            customize_envVars+=$'\n'
+            echo "Scanner V4 bundle: CI fixture ${scannerV4CiVulnBundleURL}" >&2
+            customize_envVars+=$'      - name: SCANNER_V4_MATCHER_VULNERABILITIES_URL'
+            customize_envVars+=$'\n        value: "'"${scannerV4CiVulnBundleURL}"'"'
+        else
+            echo "Scanner V4 bundle: production (deployed version default)" >&2
+        fi
         if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
             customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
             customize_envVars+=$'\n        value: "vulnerability"'

@@ -41,3 +41,10 @@ scannerV4:
     resources:
       requests:
         cpu: "500m"
+
+# Import all sources from the reduced bundle used by CI image-scanning tests.
+customize:
+  scanner-v4-matcher:
+    envVars:
+      # Use the repaired ci-minimal bundle from GitHub for fast CI testing.
+      SCANNER_V4_MATCHER_VULNERABILITIES_URL: "https://raw.githubusercontent.com/stackrox/stackrox/d06c3089138a09cb0d0fe5d9fe501157b2ca80bc/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
