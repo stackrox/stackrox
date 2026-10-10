@@ -672,9 +672,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "clusterNodeRoles": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v2NodeRoleSet"
+          },
+          "description": "cluster_node_roles maps each cluster_id to the node roles its compliance\nnode scans should target. Keys must be a subset of clusters."
         }
       },
-      "title": "Next available tag: 5"
+      "title": "Next available tag: 6"
     },
     "protobufAny": {
       "type": "object",
@@ -751,7 +758,7 @@
           }
         }
       },
-      "title": "Next available tag: 5"
+      "title": "Next available tag: 6"
     },
     "v2ClusterScanStatus": {
       "type": "object",
@@ -986,9 +993,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "clusterNodeRoles": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v2NodeRoleSet"
+          },
+          "description": "cluster_node_roles maps each cluster_id to the node roles its compliance\nnode scans should target. Keys must be a subset of clusters."
         }
       },
-      "title": "Next available tag: 5"
+      "title": "Next available tag: 6"
     },
     "v2ComplianceScanConfigurationStatus": {
       "type": "object",
@@ -1024,9 +1038,16 @@
         "lastExecutedTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "clusterNodeRoles": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v2NodeRoleSet"
+          },
+          "description": "cluster_node_roles maps each cluster_id to the node roles targeted by its\ncompliance node scans."
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 10"
     },
     "v2EmailNotifierConfiguration": {
       "type": "object",
@@ -1121,6 +1142,18 @@
           "format": "int32"
         }
       }
+    },
+    "v2NodeRoleSet": {
+      "type": "object",
+      "properties": {
+        "nodeRoles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "NodeRoleSet wraps node roles for per-cluster configuration.\nNext available tag: 2"
     },
     "v2NotificationMethod": {
       "type": "string",
