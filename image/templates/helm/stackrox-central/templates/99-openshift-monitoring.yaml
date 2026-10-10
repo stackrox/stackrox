@@ -145,5 +145,45 @@ spec:
               rox_central_secured_vcpus{branding="RHACS"}
             )
           record: rhacs:telemetry:rox_central_secured_vcpus
+{{- /*
+Central DB PVC space alerting. Evaluated by the platform Prometheus (this rule
+lives in openshift-monitoring), which scrapes kubelet_volume_stats_* for every
+namespace, so it can see the central-db PVC in .Release.Namespace. The claim
+name is resolved from the volume config so it honours a custom claimName, and
+the group is only emitted when central-db is actually PVC-backed (skipped for
+external, hostPath or emptyDir persistence, which have no PVC volume stats).
+*/}}
+{{- $centralDBClaimName := "" -}}
+{{- with ._rox.central.db.persistence._volumeCfg -}}
+{{- with .persistentVolumeClaim -}}
+{{- $centralDBClaimName = .claimName -}}
+{{- end -}}
+{{- end -}}
+{{- if $centralDBClaimName }}
+    - name: rhacs.central-db
+      rules:
+        - alert: CentralDBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $centralDBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $centralDBClaimName }}"}
+              > 0.8
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Central DB persistent volume is filling up"
+            description: "The Central DB PVC {{ $centralDBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (warning threshold 80%)."
+        - alert: CentralDBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $centralDBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $centralDBClaimName }}"}
+              > 0.9
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Central DB persistent volume is almost full"
+            description: "The Central DB PVC {{ $centralDBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
+{{- end }}
 
 {{- end -}}
