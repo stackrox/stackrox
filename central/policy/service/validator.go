@@ -286,7 +286,7 @@ func (s *policyValidator) validateExclusions(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *storage.Exclusion) error {
-	if exclusion.GetDeployment() == nil && exclusion.GetImage() == nil {
+	if exclusion.GetDeployment() == nil && exclusion.GetImage() == nil && exclusion.GetExcludeByKind() == nil {
 		return errors.New("all excluded scopes must have some criteria to match on")
 	}
 	if exclusion.GetDeployment() != nil {
@@ -297,12 +297,43 @@ func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *s
 			return err
 		}
 	}
+	if exclusion.GetExcludeByKind() != nil {
+		if !features.PolicyWorkloadKindExclusion.Enabled() {
+			return errors.New("exclude_by_kind requires feature flag ROX_POLICY_WORKLOAD_KIND_EXCLUSION to be enabled")
+		}
+		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
+			return errors.New("excluding by workload kind is only valid during the DEPLOY and RUNTIME lifecycles")
+		}
+		if err := validateExcludeByKind(exclusion.GetExcludeByKind()); err != nil {
+			return err
+		}
+	}
 	if exclusion.GetImage() != nil {
 		if !policies.AppliesAtBuildTime(policy) {
 			return errors.New("excluding an image is only valid during the BUILD lifecycle")
 		}
 		if exclusion.GetImage().GetName() == "" {
 			return errors.New("image excluded scope must have nonempty name")
+		}
+	}
+	return nil
+}
+
+func validateExcludeByKind(excludeByKind *storage.Exclusion_ExcludeByKind) error {
+	kinds := excludeByKind.GetKinds()
+	if len(kinds) == 0 {
+		return errors.New("exclude_by_kind must specify at least one workload kind")
+	}
+	seen := set.NewSet[storage.Exclusion_WorkloadKind]()
+	for _, kind := range kinds {
+		if kind == storage.Exclusion_WORKLOAD_KIND_UNSPECIFIED {
+			return errors.New("exclude_by_kind cannot include WORKLOAD_KIND_UNSPECIFIED")
+		}
+		if kind != storage.Exclusion_CRON_JOB && kind != storage.Exclusion_JOB {
+			return errors.Errorf("exclude_by_kind contains unknown workload kind %s", kind)
+		}
+		if !seen.Add(kind) {
+			return errors.New("exclude_by_kind contains duplicate workload kinds")
 		}
 	}
 	return nil
