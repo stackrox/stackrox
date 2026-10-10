@@ -39,7 +39,6 @@ jobs:
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
       ARTIFACT_DIR: ./junit-reports
-      SCANNER_V4_DB_STORAGE_CLASS: faster
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
@@ -81,6 +80,16 @@ jobs:
     - name: Build roxctl
       run: make roxctl_linux-amd64
 
+    - name: Retrieve roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
       run: |
@@ -109,7 +118,6 @@ jobs:
 
     - name: Run central upgrade test
       env:
-        LONGTERM_LICENSE: todo - remove me
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -118,7 +126,6 @@ jobs:
         GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-        LOAD_BALANCER: lb
       run: |
         tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
@@ -250,6 +257,16 @@ jobs:
     - name: Build roxctl
       run: make roxctl_linux-amd64
 
+    - name: Retrieve roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
       run: |
@@ -278,7 +295,6 @@ jobs:
 
     - name: Run postgres version upgrade test
       env:
-        LONGTERM_LICENSE: todo - remove me
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -286,7 +302,6 @@ jobs:
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-        LOAD_BALANCER: lb
       run: |
         tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
