@@ -336,11 +336,25 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 
 	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
 
+	// Build a map of clusterID -> node roles from the storage clusters for quick lookup
+	clusterNodeRolesMap := make(map[string][]string, len(scanRequest.GetClusters()))
+	for _, cluster := range scanRequest.GetClusters() {
+		clusterNodeRolesMap[cluster.GetClusterId()] = cluster.GetNodeRoles()
+	}
+
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
+		// When the feature is disabled, do not forward node roles to Sensor so it
+		// falls back to the hardcoded master+worker default, matching pre-feature
+		// behavior even for configs whose stored blob already carries custom roles
+		// (e.g. created while the flag was on, then disabled).
+		var nodeRoles []string
+		if features.ComplianceCustomNodeRoles.Enabled() {
+			nodeRoles = clusterNodeRolesMap[clusterID]
+		}
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest, nodeRoles)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {

@@ -521,6 +521,37 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 	}
 }
 
+// TestUpsertScanConfigurationNodeRoles verifies per-cluster node_roles survive
+// a storage round-trip. node_roles is a blob-only field (no sql: gotag, no column),
+// so this guards the serialized-proto persistence path.
+func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfigurationNodeRoles() {
+	configID := uuid.NewV4().String()
+
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+	// Set per-cluster node roles: the first cluster gets custom roles, the second defaults
+	scanConfig.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+		{ClusterId: fixtureconsts.Cluster1, NodeRoles: []string{"infra", "control-plane"}},
+		{ClusterId: fixtureconsts.Cluster2, NodeRoles: nil},
+	}
+
+	err := s.dataStore.UpsertScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig)
+	s.Require().NoError(err)
+
+	foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	// Verify per-cluster roles persisted correctly
+	s.Require().Len(foundConfig.GetClusters(), 2)
+	s.Require().Equal([]string{"infra", "control-plane"}, foundConfig.GetClusters()[0].GetNodeRoles())
+	s.Require().Nil(foundConfig.GetClusters()[1].GetNodeRoles())
+	protoassert.Equal(s.T(), scanConfig, foundConfig)
+
+	// Clean up
+	_, err = s.dataStore.DeleteScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], configID)
+	s.Require().NoError(err)
+}
+
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	testCases := []struct {
 		desc        string
