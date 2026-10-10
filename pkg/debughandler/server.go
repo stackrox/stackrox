@@ -19,7 +19,7 @@ func StartServer(port string) error {
 		port = "9999"
 	}
 
-	addr := fmt.Sprintf("127.0.0.1:%s", port)
+	addr := fmt.Sprintf("localhost:%s", port)
 	return http.ListenAndServe(addr, Handler(""))
 }
 
