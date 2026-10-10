@@ -5,7 +5,6 @@ describe('roles reducer', () => {
         const expected = {
             roles: [],
             userRolePermissions: null,
-            error: null,
             isLoading: true,
         };
         const state = reducer(undefined, {});
