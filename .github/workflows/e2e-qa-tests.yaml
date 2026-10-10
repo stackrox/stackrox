@@ -156,8 +156,8 @@ jobs:
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
-          MACHINE_TYPE: "e2-standard-8"
-          NUM_NODES: "3"
+          MACHINE_TYPE: "e2-standard-16"
+          NUM_NODES: "1"
           GKE_SPOT: "true"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
