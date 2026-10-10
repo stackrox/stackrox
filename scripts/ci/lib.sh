@@ -682,7 +682,7 @@ _image_prefetcher_prebuilt_start() {
         image_prefetcher_start_set qa-e2e
         _set_quay_pull_policy
         ;;
-    *nongroovy-e2e-tests)
+    *nongroovy-e2e-tests*)
         image_prefetcher_start_set qa-nongroovy-e2e
         _set_quay_pull_policy
         ;;
@@ -850,7 +850,7 @@ _image_prefetcher_prebuilt_await() {
     *qa-e2e-tests*)
         image_prefetcher_await_set qa-e2e
         ;;
-    *nongroovy-e2e-tests)
+    *nongroovy-e2e-tests*)
         image_prefetcher_await_set qa-nongroovy-e2e
         ;;
     *compatibility-tests)
@@ -1067,7 +1067,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
