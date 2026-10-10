@@ -12,9 +12,22 @@ import (
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"gopkg.in/robfig/cron.v2"
 )
+
+type blockingReportSemaphore struct {
+	acquireStarted chan struct{}
+}
+
+func (s *blockingReportSemaphore) Acquire(ctx context.Context, _ int64) error {
+	close(s.acquireStarted)
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (*blockingReportSemaphore) Release(int64) {}
 
 func TestFindPreviousFireTime(t *testing.T) {
 	// Note: robfig/cron.v2 interprets cron specs in the system's local timezone.
@@ -334,4 +347,79 @@ func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, cancelled)
 	assert.Equal(t, 0, imageQueue.Len())
+}
+
+func TestSaturatedNodeReportRemainsCancellable(t *testing.T) {
+	t.Setenv("ROX_NODE_VULNERABILITY_REPORTS", "true")
+
+	ctrl := gomock.NewController(t)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+	mockNodeReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+
+	cronScheduler := cron.New()
+	s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, mockNodeReportGen, nil, cronScheduler)
+	s.isStarted.Store(true)
+	blockingSemaphore := &blockingReportSemaphore{acquireStarted: make(chan struct{})}
+	s.concurrencySema = blockingSemaphore
+
+	nodeQueue := s.queueByType[storage.ReportSnapshot_NODE_VULNERABILITY]
+	req := &reportGen.ReportRequest{
+		ReportSnapshot: &storage.ReportSnapshot{
+			ReportId:              "waiting-node-report-id",
+			ReportConfigurationId: "node-config-id",
+			Name:                  "waiting-node-report",
+			Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+			ReportStatus: &storage.ReportStatus{
+				RunState:          storage.ReportStatus_WAITING,
+				ReportRequestType: storage.ReportStatus_ON_DEMAND,
+			},
+		},
+	}
+	nodeQueue.Enqueue(req)
+
+	mockSnapshotStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, snap *storage.ReportSnapshot) error {
+			assert.Equal(t, storage.ReportStatus_FAILURE, snap.GetReportStatus().GetRunState())
+			return nil
+		})
+
+	s.readyForReports.Signal()
+	go s.runReports()
+	<-blockingSemaphore.acquireStarted
+
+	cancelled, err := s.CancelReportRequest(context.Background(), req.ReportSnapshot.GetReportId())
+	require.NoError(t, err)
+	require.True(t, cancelled)
+	assert.Equal(t, 0, nodeQueue.Len())
+
+	s.Stop()
+}
+
+func TestStopInterruptsReportCapacityWait(t *testing.T) {
+	t.Setenv("ROX_NODE_VULNERABILITY_REPORTS", "true")
+
+	ctrl := gomock.NewController(t)
+	mockNodeReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+	cronScheduler := cron.New()
+	s := newSchedulerImpl(nil, nil, nil, nil, nil, mockNodeReportGen, nil, cronScheduler)
+	s.isStarted.Store(true)
+	blockingSemaphore := &blockingReportSemaphore{acquireStarted: make(chan struct{})}
+	s.concurrencySema = blockingSemaphore
+
+	nodeQueue := s.queueByType[storage.ReportSnapshot_NODE_VULNERABILITY]
+	nodeQueue.Enqueue(&reportGen.ReportRequest{
+		ReportSnapshot: &storage.ReportSnapshot{
+			ReportId: "waiting-node-report-id",
+			Type:     storage.ReportSnapshot_NODE_VULNERABILITY,
+			ReportStatus: &storage.ReportStatus{
+				ReportRequestType: storage.ReportStatus_ON_DEMAND,
+			},
+		},
+	})
+	s.readyForReports.Signal()
+	go s.runReports()
+	<-blockingSemaphore.acquireStarted
+
+	s.Stop()
+	assert.Equal(t, 1, nodeQueue.Len())
 }
