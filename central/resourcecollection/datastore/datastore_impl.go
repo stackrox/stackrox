@@ -117,7 +117,7 @@ func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollect
 		return nil, err
 	}
 	if obj.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "new collection must not have a pre-set `id`")
+		return nil, errox.InvalidArgs.New("new collection must not have a pre-set `id`")
 	}
 
 	// create graph copy to do this operation on
@@ -520,7 +520,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 
 			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
-				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
+				return nil, errox.InvalidArgs.Newf("unsupported field name %q", selectorRule.GetFieldName())
 			}
 
 			ruleValueQueries, err := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
@@ -535,7 +535,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 				case storage.BooleanOperator_AND:
 					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
 				default:
-					return nil, errors.Wrap(errox.InvalidArgs, "unsupported boolean operator")
+					return nil, errox.InvalidArgs.New("unsupported boolean operator")
 				}
 			}
 		}
@@ -558,7 +558,7 @@ func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.R
 				key, value := stringutils.Split2(ruleValue.GetValue(), "=")
 				query = pkgSearch.NewQueryBuilder().AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).ProtoQuery()
 			default:
-				return nil, errors.Wrap(errox.InvalidArgs, "label rules should only use exact mating")
+				return nil, errox.InvalidArgs.New("label rules should only use exact mating")
 			}
 		} else {
 			switch ruleValue.GetMatchType() {
@@ -567,7 +567,7 @@ func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.R
 			case storage.MatchType_REGEX:
 				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
 			default:
-				return nil, errors.Wrapf(errox.InvalidArgs, "unknown match type encountered %q", ruleValue.GetMatchType())
+				return nil, errox.InvalidArgs.Newf("unknown match type encountered %q", ruleValue.GetMatchType())
 			}
 		}
 		ret = append(ret, query)
@@ -601,7 +601,7 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 	// currently we only support one resource selector per collection from UX
 	if collection.GetResourceSelectors() != nil && len(collection.GetResourceSelectors()) > 1 {
-		return errors.Wrap(errox.InvalidArgs, "only 1 resource selector is supported per collection")
+		return errox.InvalidArgs.New("only 1 resource selector is supported per collection")
 	}
 
 	for _, resourceSelector := range collection.GetResourceSelectors() {
@@ -609,18 +609,18 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 			// currently we only support disjunction (OR) operations
 			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return errors.Wrapf(errox.InvalidArgs, "%q boolean operator unsupported", selectorRule.GetOperator().String())
+				return errox.InvalidArgs.Newf("%q boolean operator unsupported", selectorRule.GetOperator().String())
 			}
 
 			// we have a short list of supported field name values
 			labelVal, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
-				return errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
+				return errox.InvalidArgs.Newf("unsupported field name %q", selectorRule.GetFieldName())
 			}
 
 			// we require at least one value if a field name is set
 			if len(selectorRule.GetValues()) == 0 {
-				return errors.Wrap(errox.InvalidArgs, "rule values required with a set field name")
+				return errox.InvalidArgs.New("rule values required with a set field name")
 			}
 			for _, ruleValue := range selectorRule.GetValues() {
 
@@ -635,10 +635,10 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				// label rules only support exact matching and should be of the form 'key=value'
 				if labelVal.labelType {
 					if ruleValue.GetMatchType() != storage.MatchType_EXACT {
-						return errors.Wrap(errox.InvalidArgs, "label types should only use exact matching")
+						return errox.InvalidArgs.New("label types should only use exact matching")
 					}
 					if -1 == strings.IndexRune(ruleValue.GetValue(), '=') {
-						return errors.Wrap(errox.InvalidArgs, "label values should be of the form 'key=value'")
+						return errox.InvalidArgs.New("label values should be of the form 'key=value'")
 					}
 				}
 			}

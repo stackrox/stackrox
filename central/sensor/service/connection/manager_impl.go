@@ -285,7 +285,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	clusterName := cluster.GetName()
 
 	if !m.initSyncMgr.Add(clusterID) {
-		return errors.Wrap(errox.ResourceExhausted, "Central has reached the maximum number of allowed Sensors in init sync state")
+		return errox.ResourceExhausted.New("Central has reached the maximum number of allowed Sensors in init sync state")
 	}
 
 	conn :=

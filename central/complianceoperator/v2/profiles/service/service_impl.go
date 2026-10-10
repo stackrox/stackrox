@@ -67,7 +67,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetComplianceProfile retrieves the specified compliance profile
 func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceProfile, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required for retrieval")
+		return nil, errox.InvalidArgs.New("Scan configuration name is required for retrieval")
 	}
 
 	profile, found, err := s.complianceProfilesDS.GetProfile(ctx, req.GetId())
@@ -75,7 +75,7 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 		return nil, errors.Wrapf(err, "failed to retrieve compliance profile with id %q.", req.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "compliance profile with id %q does not exist", req.GetId())
+		return nil, errox.NotFound.Newf("compliance profile with id %q does not exist", req.GetId())
 	}
 
 	// Get the benchmark
@@ -90,13 +90,13 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 // ListComplianceProfiles returns profiles matching given query
 func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.ProfilesForClusterRequest) (*v2.ListComplianceProfilesResponse, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
+		return nil, errox.InvalidArgs.New("cluster is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the cluster ids as an exact match
@@ -113,7 +113,7 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 
 	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for cluster %v", request.GetClusterId())
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles for cluster %v", request.GetClusterId())
 	}
 
 	// Get the benchmarks
@@ -124,7 +124,7 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 
 	totalCount, err := s.complianceProfilesDS.CountProfiles(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles counts for %v", request)
 	}
 
 	return &v2.ListComplianceProfilesResponse{
@@ -136,13 +136,13 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 // ListProfileSummaries returns profile summaries matching incoming clusters
 func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.ClustersProfileSummaryRequest) (*v2.ListComplianceProfileSummaryResponse, error) {
 	if len(request.GetClusterIds()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
+		return nil, errox.InvalidArgs.New("cluster is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// To get total count, need the parsed query without the paging.
@@ -161,7 +161,7 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 
 	profileNames, err := s.complianceProfilesDS.GetProfilesNames(ctx, parsedQuery, request.GetClusterIds())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles for %v", request)
 	}
 	if len(profileNames) == 0 {
 		return &v2.ListComplianceProfileSummaryResponse{}, nil
@@ -175,7 +175,7 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 
 	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, profileQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles for %v", request)
 	}
 
 	// Get the benchmarks
@@ -186,7 +186,7 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 
 	totalCount, err := s.complianceProfilesDS.CountDistinctProfiles(ctx, countQuery, request.GetClusterIds())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance profiles counts for %v", request)
 	}
 
 	return &v2.ListComplianceProfileSummaryResponse{

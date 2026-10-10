@@ -91,14 +91,14 @@ func scrubImageIntegration(i *storage.ImageIntegration) {
 // GetImageIntegration returns the image integration given its ID.
 func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*storage.ImageIntegration, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "image integration id must be provided")
+		return nil, errox.InvalidArgs.New("image integration id must be provided")
 	}
 	integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "image integration %s not found", request.GetId())
+		return nil, errox.NotFound.Newf("image integration %s not found", request.GetId())
 	}
 	scrubImageIntegration(integration)
 	return integration, nil
@@ -167,27 +167,26 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration 
 // PostImageIntegration creates an image integration.
 func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
 	if request.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new image integration")
+		return nil, errox.InvalidArgs.New("id field should be empty when posting a new image integration")
 	}
 
 	// Do not allow manual creation of a scanner v4 integration.
 	if request.GetType() == scannerTypes.ScannerV4 {
-		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be manually created")
+		return nil, errox.InvalidArgs.New("scanner V4 integration cannot be manually created")
 	}
 
 	if request.GetType() == types.GoogleType {
-		return nil, errors.Wrap(errox.InvalidArgs,
-			"Google Container Registry (GCR) has been deprecated by Google and new integrations cannot be created. "+
-				"Use Google Artifact Registry instead")
+		return nil, errox.InvalidArgs.New("Google Container Registry (GCR) has been deprecated by Google and new integrations cannot be created. " +
+			"Use Google Artifact Registry instead")
 	}
 
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	id, err := s.datastore.AddImageIntegration(ctx, request)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	request.Id = id
@@ -205,7 +204,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 // DeleteImageIntegration removes a image integration given its ID.
 func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "image integration id must be provided")
+		return nil, errox.InvalidArgs.New("image integration id must be provided")
 	}
 
 	// Pull the existing integration to determine if should broadcast the delete to sensors.
@@ -217,7 +216,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 	// Do not allow manual deletion of a scanner v4 integration.
 	if existed && ii.GetType() == scannerTypes.ScannerV4 {
-		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be deleted")
+		return nil, errox.InvalidArgs.New("scanner V4 integration cannot be deleted")
 	}
 
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
@@ -238,13 +237,13 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
 func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
 	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
 		return nil, err
 	}
 	if err := s.validateTestAndNormalize(ctx, request.GetConfig()); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
 		return nil, err
@@ -267,7 +266,7 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration
 // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
 func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
 	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
 		return nil, err
@@ -282,21 +281,21 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 	for _, category := range request.GetCategories() {
 		if category == storage.ImageIntegrationCategory_REGISTRY {
 			if err := s.testRegistryIntegration(request); err != nil {
-				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "registry integration").Error())
+				return errox.InvalidArgs.New(errors.Wrap(err, "registry integration").Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_SCANNER {
 			if err := s.testScannerIntegration(request); err != nil {
-				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "image scanner integration").Error())
+				return errox.InvalidArgs.New(errors.Wrap(err, "image scanner integration").Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
 			nodeIntegration, err := enrichment.ImageIntegrationToNodeIntegration(request)
 			if err != nil {
-				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "node scanner integration").Error())
+				return errox.InvalidArgs.New(errors.Wrap(err, "node scanner integration").Error())
 			}
 			if err := s.testNodeScannerIntegration(nodeIntegration); err != nil {
-				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "node scanner integration").Error())
+				return errox.InvalidArgs.New(errors.Wrap(err, "node scanner integration").Error())
 			}
 		}
 	}
@@ -306,10 +305,10 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
 	registry, err := s.registryFactory.CreateRegistry(integration, types.WithGCPTokenManager(gcp.Singleton()))
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := registry.Test(); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	return nil
 }
@@ -317,10 +316,10 @@ func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegrat
 func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegration) error {
 	scanner, err := s.scannerFactory.CreateScanner(integration)
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := scanner.GetScanner().Test(); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	return nil
 }
@@ -328,10 +327,10 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegration) error {
 	scanner, err := s.nodeEnricher.CreateNodeScanner(integration)
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := scanner.GetNodeScanner().TestNodeScanner(); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	return nil
 }
@@ -409,13 +408,13 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 			return err
 		}
 		if !exists {
-			return errors.Wrapf(errox.NotFound, "image integration %q not found", updateRequest.GetConfig().GetId())
+			return errox.NotFound.Newf("image integration %q not found", updateRequest.GetConfig().GetId())
 		}
 
 		newType := updateRequest.GetConfig().GetType()
 		oldType := integration.GetType()
 		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
-			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
+			return errox.InvalidArgs.New("cannot change integration type to/from scanner V4")
 		}
 		if oldType == scannerTypes.ScannerV4 && !sameCategories(integration.GetCategories(), updateRequest.GetConfig().GetCategories()) {
 			return errors.Wrap(errox.InvalidArgs, "cannot change categories of scanner V4 integration")
@@ -434,13 +433,13 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		return nil
 	}
 	if updateRequest.GetConfig() == nil {
-		return errors.Wrap(errox.InvalidArgs, "request is missing image integration config")
+		return errox.InvalidArgs.New("request is missing image integration config")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "id required for stored credential reconciliation")
+		return errox.InvalidArgs.New("id required for stored credential reconciliation")
 	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	return nil
 }
