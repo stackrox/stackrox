@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.26.7
+go 1.27
 
 require (
 	cloud.google.com/go/artifactregistry v1.27.0
@@ -38,7 +38,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.10.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/cloudflare/cfssl v1.6.5
+	github.com/cloudflare/cfssl v1.7.0
 	github.com/cockroachdb/pebble/v2 v2.1.7
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.20.0
