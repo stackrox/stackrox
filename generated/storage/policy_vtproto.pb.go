@@ -325,15 +325,38 @@ func (m *Exclusion_Image) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (m *Exclusion_ExcludeByKind) CloneVT() *Exclusion_ExcludeByKind {
+	if m == nil {
+		return (*Exclusion_ExcludeByKind)(nil)
+	}
+	r := new(Exclusion_ExcludeByKind)
+	if rhs := m.Kinds; rhs != nil {
+		tmpContainer := make([]Exclusion_WorkloadKind, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Kinds = tmpContainer
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *Exclusion_ExcludeByKind) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *Exclusion) CloneVT() *Exclusion {
 	if m == nil {
 		return (*Exclusion)(nil)
 	}
 	r := new(Exclusion)
 	r.Name = m.Name
-	r.Deployment = m.Deployment.CloneVT()
 	r.Image = m.Image.CloneVT()
 	r.Expiration = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Expiration).CloneVT())
+	if m.Matcher != nil {
+		r.Matcher = m.Matcher.(interface{ CloneVT() isExclusion_Matcher }).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -343,6 +366,24 @@ func (m *Exclusion) CloneVT() *Exclusion {
 
 func (m *Exclusion) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *Exclusion_Deployment_) CloneVT() isExclusion_Matcher {
+	if m == nil {
+		return (*Exclusion_Deployment_)(nil)
+	}
+	r := new(Exclusion_Deployment_)
+	r.Deployment = m.Deployment.CloneVT()
+	return r
+}
+
+func (m *Exclusion_ExcludeByKind_) CloneVT() isExclusion_Matcher {
+	if m == nil {
+		return (*Exclusion_ExcludeByKind_)(nil)
+	}
+	r := new(Exclusion_ExcludeByKind_)
+	r.ExcludeByKind = m.ExcludeByKind.CloneVT()
+	return r
 }
 
 func (m *ExportPoliciesResponse) CloneVT() *ExportPoliciesResponse {
@@ -849,16 +890,50 @@ func (this *Exclusion_Image) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *Exclusion_ExcludeByKind) EqualVT(that *Exclusion_ExcludeByKind) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if len(this.Kinds) != len(that.Kinds) {
+		return false
+	}
+	for i, vx := range this.Kinds {
+		vy := that.Kinds[i]
+		if vx != vy {
+			return false
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *Exclusion_ExcludeByKind) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Exclusion_ExcludeByKind)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *Exclusion) EqualVT(that *Exclusion) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Name != that.Name {
+	if this.Matcher == nil && that.Matcher != nil {
 		return false
+	} else if this.Matcher != nil {
+		if that.Matcher == nil {
+			return false
+		}
+		if !this.Matcher.(interface {
+			EqualVT(isExclusion_Matcher) bool
+		}).EqualVT(that.Matcher) {
+			return false
+		}
 	}
-	if !this.Deployment.EqualVT(that.Deployment) {
+	if this.Name != that.Name {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.Expiration).EqualVT((*timestamppb1.Timestamp)(that.Expiration)) {
@@ -877,6 +952,56 @@ func (this *Exclusion) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *Exclusion_Deployment_) EqualVT(thatIface isExclusion_Matcher) bool {
+	that, ok := thatIface.(*Exclusion_Deployment_)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.Deployment, that.Deployment; p != q {
+		if p == nil {
+			p = &Exclusion_Deployment{}
+		}
+		if q == nil {
+			q = &Exclusion_Deployment{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Exclusion_ExcludeByKind_) EqualVT(thatIface isExclusion_Matcher) bool {
+	that, ok := thatIface.(*Exclusion_ExcludeByKind_)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ExcludeByKind, that.ExcludeByKind; p != q {
+		if p == nil {
+			p = &Exclusion_ExcludeByKind{}
+		}
+		if q == nil {
+			q = &Exclusion_ExcludeByKind{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *ExportPoliciesResponse) EqualVT(that *ExportPoliciesResponse) bool {
 	if this == that {
 		return true
@@ -1797,6 +1922,60 @@ func (m *Exclusion_Image) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Exclusion_ExcludeByKind) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Exclusion_ExcludeByKind) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Exclusion_ExcludeByKind) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Kinds) > 0 {
+		var pksize2 int
+		for _, num := range m.Kinds {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
+		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.Kinds {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Exclusion) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1827,6 +2006,15 @@ func (m *Exclusion) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.Matcher.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
 	if m.Image != nil {
 		size, err := m.Image.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -1847,16 +2035,6 @@ func (m *Exclusion) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x32
 	}
-	if m.Deployment != nil {
-		size, err := m.Deployment.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x2a
-	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
@@ -1867,6 +2045,52 @@ func (m *Exclusion) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Exclusion_Deployment_) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Exclusion_Deployment_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Deployment != nil {
+		size, err := m.Deployment.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Exclusion_ExcludeByKind_) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Exclusion_ExcludeByKind_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ExcludeByKind != nil {
+		size, err := m.ExcludeByKind.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x42
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x42
+	}
+	return len(dAtA) - i, nil
+}
 func (m *ExportPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -2253,6 +2477,23 @@ func (m *Exclusion_Image) SizeVT() (n int) {
 	return n
 }
 
+func (m *Exclusion_ExcludeByKind) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Kinds) > 0 {
+		l = 0
+		for _, e := range m.Kinds {
+			l += protohelpers.SizeOfVarint(uint64(e))
+		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *Exclusion) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2263,9 +2504,8 @@ func (m *Exclusion) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Deployment != nil {
-		l = m.Deployment.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if vtmsg, ok := m.Matcher.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
 	}
 	if m.Expiration != nil {
 		l = (*timestamppb1.Timestamp)(m.Expiration).SizeVT()
@@ -2279,6 +2519,34 @@ func (m *Exclusion) SizeVT() (n int) {
 	return n
 }
 
+func (m *Exclusion_Deployment_) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Deployment != nil {
+		l = m.Deployment.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *Exclusion_ExcludeByKind_) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ExcludeByKind != nil {
+		l = m.ExcludeByKind.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
 func (m *ExportPoliciesResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4551,6 +4819,126 @@ func (m *Exclusion_Image) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *Exclusion_ExcludeByKind) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Exclusion_ExcludeByKind: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Exclusion_ExcludeByKind: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v Exclusion_WorkloadKind
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= Exclusion_WorkloadKind(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Kinds = append(m.Kinds, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Kinds) == 0 {
+					m.Kinds = make([]Exclusion_WorkloadKind, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v Exclusion_WorkloadKind
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= Exclusion_WorkloadKind(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Kinds = append(m.Kinds, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Kinds", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Exclusion) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4641,11 +5029,16 @@ func (m *Exclusion) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Deployment == nil {
-				m.Deployment = &Exclusion_Deployment{}
-			}
-			if err := m.Deployment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if oneof, ok := m.Matcher.(*Exclusion_Deployment_); ok {
+				if err := oneof.Deployment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Exclusion_Deployment{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Matcher = &Exclusion_Deployment_{Deployment: v}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -4718,6 +5111,47 @@ func (m *Exclusion) UnmarshalVT(dAtA []byte) error {
 			}
 			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeByKind", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Matcher.(*Exclusion_ExcludeByKind_); ok {
+				if err := oneof.ExcludeByKind.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Exclusion_ExcludeByKind{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Matcher = &Exclusion_ExcludeByKind_{ExcludeByKind: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -7167,6 +7601,126 @@ func (m *Exclusion_Image) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *Exclusion_ExcludeByKind) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Exclusion_ExcludeByKind: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Exclusion_ExcludeByKind: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v Exclusion_WorkloadKind
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= Exclusion_WorkloadKind(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Kinds = append(m.Kinds, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Kinds) == 0 {
+					m.Kinds = make([]Exclusion_WorkloadKind, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v Exclusion_WorkloadKind
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= Exclusion_WorkloadKind(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Kinds = append(m.Kinds, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Kinds", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Exclusion) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7261,11 +7815,16 @@ func (m *Exclusion) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Deployment == nil {
-				m.Deployment = &Exclusion_Deployment{}
-			}
-			if err := m.Deployment.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if oneof, ok := m.Matcher.(*Exclusion_Deployment_); ok {
+				if err := oneof.Deployment.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Exclusion_Deployment{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Matcher = &Exclusion_Deployment_{Deployment: v}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -7338,6 +7897,47 @@ func (m *Exclusion) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			if err := m.Image.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeByKind", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Matcher.(*Exclusion_ExcludeByKind_); ok {
+				if err := oneof.ExcludeByKind.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Exclusion_ExcludeByKind{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Matcher = &Exclusion_ExcludeByKind_{ExcludeByKind: v}
 			}
 			iNdEx = postIndex
 		default:

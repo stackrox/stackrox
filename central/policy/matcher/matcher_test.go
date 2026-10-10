@@ -26,7 +26,7 @@ func TestImageOnlyExclusionDoesNotExcludeEntities(t *testing.T) {
 		{Image: &storage.Exclusion_Image{Name: "docker.io/library/nginx"}},
 	}}
 	clusterExclusion := &storage.Policy{Exclusions: []*storage.Exclusion{
-		{Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Cluster: "cluster1"}}},
+		{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Cluster: "cluster1"}}}},
 	}}
 
 	for name, m := range matchers {

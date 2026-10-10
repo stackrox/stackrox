@@ -143,6 +143,23 @@ spec:
                               type: object
                           type: object
                       type: object
+                    excludeByKind:
+                      description: ExcludeByKind excludes all workloads of the selected
+                        Kubernetes kinds.
+                      properties:
+                        kinds:
+                          description: Kinds is the list of Kubernetes workload kinds
+                            to exclude.
+                          items:
+                            enum:
+                            - CRON_JOB
+                            - JOB
+                            type: string
+                          minItems: 1
+                          type: array
+                      required:
+                      - kinds
+                      type: object
                     expiration:
                       format: date-time
                       type: string

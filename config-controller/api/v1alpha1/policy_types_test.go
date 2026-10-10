@@ -106,22 +106,24 @@ func TestToProtobuf(t *testing.T) {
 		Exclusions: []*storage.Exclusion{
 			{
 				Name: "Don't alert on deployment collector in namespace stackrox",
-				Deployment: &storage.Exclusion_Deployment{
-					Name: "collector",
-					Scope: &storage.Scope{
-						Namespace: "stackrox",
-						Cluster:   clusterID,
-						Label: &storage.Scope_Label{
-							Key:   "app",
-							Value: "collector",
-						},
-						ClusterLabel: &storage.Scope_Label{
-							Key:   "env",
-							Value: "dev",
-						},
-						NamespaceLabel: &storage.Scope_Label{
-							Key:   "team",
-							Value: "platform",
+				Matcher: &storage.Exclusion_Deployment_{
+					Deployment: &storage.Exclusion_Deployment{
+						Name: "collector",
+						Scope: &storage.Scope{
+							Namespace: "stackrox",
+							Cluster:   clusterID,
+							Label: &storage.Scope_Label{
+								Key:   "app",
+								Value: "collector",
+							},
+							ClusterLabel: &storage.Scope_Label{
+								Key:   "env",
+								Value: "dev",
+							},
+							NamespaceLabel: &storage.Scope_Label{
+								Key:   "team",
+								Value: "platform",
+							},
 						},
 					},
 				},
@@ -286,4 +288,73 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestToProtobufRejectsDeploymentAndExcludeByKind(t *testing.T) {
+	spec := SecurityPolicySpec{
+		PolicyName:      "both-matchers",
+		Categories:      []string{"Security Best Practices"},
+		LifecycleStages: []LifecycleStage{"DEPLOY"},
+		Severity:        "LOW_SEVERITY",
+		Exclusions: []Exclusion{
+			{
+				Name: "invalid dual matcher",
+				Deployment: Deployment{
+					Name: "collector",
+				},
+				ExcludeByKind: &ExcludeByKind{
+					Kinds: []WorkloadKind{"JOB"},
+				},
+			},
+		},
+	}
+
+	_, err := spec.ToProtobuf(map[CacheType]map[string]string{
+		Notifier: {},
+		Cluster:  {},
+	})
+	assert.EqualError(t, err, "exclusion cannot set both 'deployment' and 'excludeByKind'")
+}
+
+func TestToProtobufExcludeByKind(t *testing.T) {
+	caches := map[CacheType]map[string]string{
+		Notifier: {},
+		Cluster:  {},
+	}
+	baseSpec := func(exclude *ExcludeByKind) SecurityPolicySpec {
+		return SecurityPolicySpec{
+			PolicyName:      "kind-exclusion",
+			Categories:      []string{"Security Best Practices"},
+			LifecycleStages: []LifecycleStage{"DEPLOY"},
+			Severity:        "LOW_SEVERITY",
+			Exclusions: []Exclusion{{
+				Name:          "by kind",
+				ExcludeByKind: exclude,
+			}},
+		}
+	}
+
+	t.Run("converts JOB and CRON_JOB", func(t *testing.T) {
+		proto, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"JOB", "CRON_JOB"}}).ToProtobuf(caches)
+		assert.NoError(t, err)
+		assert.Equal(t, []storage.Exclusion_WorkloadKind{
+			storage.Exclusion_JOB,
+			storage.Exclusion_CRON_JOB,
+		}, proto.GetExclusions()[0].GetExcludeByKind().GetKinds())
+	})
+
+	t.Run("rejects empty kind list", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{}).ToProtobuf(caches)
+		assert.EqualError(t, err, "excludeByKind must specify at least one workload kind")
+	})
+
+	t.Run("rejects unknown kind", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"CRONJOB"}}).ToProtobuf(caches)
+		assert.EqualError(t, err, `excludeByKind contains unknown workload kind "CRONJOB"`)
+	})
+
+	t.Run("rejects mixed valid and unknown kinds", func(t *testing.T) {
+		_, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"JOB", "CRONJOB"}}).ToProtobuf(caches)
+		assert.EqualError(t, err, `excludeByKind contains unknown workload kind "CRONJOB"`)
+	})
 }

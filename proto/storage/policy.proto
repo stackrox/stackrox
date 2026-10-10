@@ -36,7 +36,7 @@ message Policy {
   EventSource event_source = 22; // @gotags: crYaml:"eventSource,stringer"
 
   reserved 10; //was repeated Exclusion whitelists
-  // Define deployments or images that should be excluded from this policy.
+  // Define deployments, images, or workload kinds that should be excluded from this policy.
   repeated Exclusion exclusions = 21; // @gotags: crYaml:",omitempty"
   // Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
   repeated Scope scope = 11; // @gotags: crYaml:",omitempty"
@@ -195,7 +195,6 @@ message Exclusion {
     string name = 3; // @gotags: crYaml:",omitempty"
     Scope scope = 4; // @gotags: crYaml:",omitempty"
   }
-  Deployment deployment = 5; // @gotags: crYaml:",omitempty"
 
   message Image {
     string name = 1;
@@ -203,6 +202,25 @@ message Exclusion {
   Image image = 7; // @gotags: crYaml:",omitempty"
 
   google.protobuf.Timestamp expiration = 6; // @gotags: crYaml:",timestamp,omitempty"
+
+  // WorkloadKind is a Kubernetes workload kind that can be excluded from a policy in bulk.
+  enum WorkloadKind {
+    WORKLOAD_KIND_UNSPECIFIED = 0;
+    CRON_JOB = 1;
+    JOB = 2;
+  }
+
+  // ExcludeByKind excludes all workloads of the selected Kubernetes kinds.
+  message ExcludeByKind {
+    repeated WorkloadKind kinds = 1; // @gotags: crYaml:",omitempty,stringer"
+  }
+
+  // matcher is either a name/scope exclusion or an exclusion by Kubernetes kind.
+  // Image stays outside the oneof because existing payloads may set both image and deployment.
+  oneof matcher {
+    Deployment deployment = 5; // @gotags: crYaml:",omitempty"
+    ExcludeByKind exclude_by_kind = 8; // @gotags: crYaml:"excludeByKind,omitempty"
+  }
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.

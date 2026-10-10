@@ -24,6 +24,29 @@ func TestConvertToCR(t *testing.T) {
 	assert.YAMLEq(t, templateFile, converted)
 }
 
+func TestConvertExcludeByKind(t *testing.T) {
+	policy := fixtures.GetPolicy()
+	policy.Exclusions = []*storage.Exclusion{
+		{
+			Name: "skip-batch",
+			Matcher: &storage.Exclusion_ExcludeByKind_{
+				ExcludeByKind: &storage.Exclusion_ExcludeByKind{
+					Kinds: []storage.Exclusion_WorkloadKind{
+						storage.Exclusion_CRON_JOB,
+						storage.Exclusion_JOB,
+					},
+				},
+			},
+		},
+	}
+	cr := ConvertPolicyToCustomResource(policy)
+	require.Len(t, cr.SecurityPolicySpec.Exclusions, 1)
+	exclusion := cr.SecurityPolicySpec.Exclusions[0]
+	require.NotNil(t, exclusion.ExcludeByKind)
+	assert.Equal(t, []string{"CRON_JOB", "JOB"}, exclusion.ExcludeByKind.Kinds)
+	assert.Nil(t, exclusion.Deployment)
+}
+
 func getTestPolicy() *storage.Policy {
 	p := fixtures.GetPolicy()
 	p.Notifiers = []string{
@@ -45,8 +68,7 @@ func getTestPolicy() *storage.Policy {
 	}
 	p.Exclusions = []*storage.Exclusion{
 		{
-			Name: "exclusionName1",
-			Deployment: &storage.Exclusion_Deployment{
+			Name: "exclusionName1", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 				Name: "deployment1",
 				Scope: &storage.Scope{
 					Cluster:   "cluster1",
@@ -56,12 +78,10 @@ func getTestPolicy() *storage.Policy {
 						Value: "value1",
 					},
 				},
-			},
-			Expiration: protocompat.GetProtoTimestampFromSeconds(2334221123),
+			}}, Expiration: protocompat.GetProtoTimestampFromSeconds(2334221123),
 		},
 		{
-			Name: "exclusionName2",
-			Deployment: &storage.Exclusion_Deployment{
+			Name: "exclusionName2", Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
 				Name: "deployment2",
 				Scope: &storage.Scope{
 					Cluster:   "cluster2",
@@ -71,7 +91,7 @@ func getTestPolicy() *storage.Policy {
 						Value: "value2",
 					},
 				},
-			},
+			}},
 		},
 	}
 	p.Scope = append(p.Scope, &storage.Scope{
