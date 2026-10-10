@@ -164,6 +164,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -238,6 +239,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -333,6 +335,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
 				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
+				s.resultDatastore.EXPECT().MinLastStartedTimeByConfigCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 			},
 		},
 		{
@@ -766,7 +769,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				Query:       &apiV2.RawQuery{Query: ""},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, 0),
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").
@@ -791,7 +794,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
 			expectedErr:  nil,
-			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis"),
+			expectedResp: convertUtils.GetComplianceProfileResultsV2(s.T(), "ocp4-cis", apiV2.ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN, 0),
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 				expectedQ = search.ConjunctionQuery(

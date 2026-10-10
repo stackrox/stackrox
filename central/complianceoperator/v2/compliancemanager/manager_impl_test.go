@@ -732,6 +732,16 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			desc: "Rerun existing scan config succeeds",
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Rerun succeeds even when recording scan request time fails (best-effort)",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(errors.New("db write failed")).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 			},
 			isErrorTest: false,
@@ -754,6 +764,7 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			desc: "Rerun scan config continues when sensor message fails and logs message",
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(multiCluster, true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Failed to send message to sensor")).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster3, gomock.Any()).Return(nil).Times(1)
 			},

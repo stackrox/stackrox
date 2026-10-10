@@ -142,6 +142,17 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
+	// Preserve last_scan_requested_time atomically under the lock. It is a blob-only field
+	// the v2 API cannot carry, written independently by UpdateScanConfigLastScanRequestedTime
+	// ("Scan now"). Reading the current value here (instead of trusting the caller's copy,
+	// which was read earlier without the lock) prevents a concurrent rescan stamp from being
+	// clobbered by an unrelated config edit. Elevated read: internal field carry-over, not
+	// user-facing data. Missing row (create) leaves the caller's value (nil) untouched.
+	elevatedReadCtx := sac.WithAllAccess(context.Background())
+	if existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId()); err == nil && found {
+		scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
+	}
+
 	// Update the last updated time
 	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
 }
@@ -149,6 +160,27 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 // upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
 func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = protocompat.TimestampNow()
+	return ds.storage.Upsert(ctx, scanConfig)
+}
+
+// UpdateScanConfigLastScanRequestedTime records an on-demand "Scan now" time on the scan
+// configuration. It re-reads the config under the keyed mutex (minimizing clobber vs a
+// concurrent edit) and writes via the store directly, deliberately NOT going through
+// upsertNoLockScanConfiguration so last_updated_time is preserved: triggering a rescan is
+// not a configuration edit.
+func (ds *datastoreImpl) UpdateScanConfigLastScanRequestedTime(ctx context.Context, id string, requestedTime *protocompat.Timestamp) error {
+	ds.keyedMutex.Lock(id)
+	defer ds.keyedMutex.Unlock(id)
+
+	scanConfig, found, err := ds.GetScanConfiguration(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to retrieve scan configuration id %q", id)
+	}
+	if !found {
+		return errors.Errorf("Unable to find scan configuration id %q", id)
+	}
+
+	scanConfig.LastScanRequestedTime = requestedTime
 	return ds.storage.Upsert(ctx, scanConfig)
 }
 

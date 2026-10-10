@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
+	compliancedata "github.com/stackrox/rox/central/complianceoperator/v2/compliancedata"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -160,7 +163,15 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for result %q", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls), nil
+	// Build resolver for outdated detection
+	var resolver *compliancedata.ConfigResolver
+	if configName := scanResult.GetScanConfigName(); configName != "" {
+		if cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, configName); cfgErr == nil {
+			resolver = compliancedata.NewConfigResolver([]*storage.ComplianceOperatorScanConfigurationV2{cfg}, time.Now().UTC())
+		}
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls, resolver), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
@@ -234,11 +245,107 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
 
+	// Per-check freshness rollup for the Checks tab. Computed over countQuery
+	// (unpaginated, profile-scoped) so a check's state reflects every reporting
+	// cluster, not just the current page. Best-effort: on error the column is blank.
+	checkDataStates, err := s.computeCheckDataStates(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute per-check data states: %v", err)
+		checkDataStates = make(map[string]v2.ComplianceDataState)
+	}
+
+	// Scope-level outdated-cluster count for the banner. Cluster-scoped signal
+	// (grouped by config,cluster), NOT the per-check aggregate above; over the
+	// unpaginated, profile-scoped countQuery. Best-effort: on error the banner
+	// is hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
 	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
-		ProfileName:    request.GetProfileName(),
-		TotalCount:     int32(count),
+		ProfileResults:       storagetov2.ComplianceV2ProfileResults(scanResults, controls, checkDataStates),
+		ProfileName:          request.GetProfileName(),
+		TotalCount:           int32(count),
+		OutdatedClusterCount: outdatedCount,
 	}, nil
+}
+
+// computeCheckDataStates returns a map check_name → rolled-up freshness state,
+// mirroring computeClusterDataStates in the stats service but grouped by
+// (scan_config_name, cluster_id, check_name) so a stale sibling check in the
+// same cluster does not drag a current check to OUTDATED.
+func (s *serviceImpl) computeCheckDataStates(ctx context.Context, query *v1.Query) (map[string]v2.ComplianceDataState, error) {
+	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByCheckCluster(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	configNames := make(map[string]struct{})
+	for _, mt := range minTimes {
+		configNames[mt.ScanConfigName] = struct{}{}
+	}
+	resolver := s.buildConfigResolver(ctx, configNames)
+
+	perCheckStates := make(map[string][]compliancedata.State)
+	for _, mt := range minTimes {
+		state := resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted)
+		perCheckStates[mt.CheckName] = append(perCheckStates[mt.CheckName], state)
+	}
+
+	result := make(map[string]v2.ComplianceDataState, len(perCheckStates))
+	for checkName, states := range perCheckStates {
+		result[checkName] = compliancedata.RollupState(states...).ToProto()
+	}
+	return result, nil
+}
+
+// computeOutdatedClusterCount returns the number of clusters with OUTDATED data
+// in the query's scope, rolled up per cluster over the (scan_config_name,
+// cluster_id) MIN aggregate. Used to gate the outdated-data banner across the
+// Coverage views. For a single-cluster-scoped query this returns 0 or 1.
+func (s *serviceImpl) computeOutdatedClusterCount(ctx context.Context, query *v1.Query) (int32, error) {
+	minTimes, err := s.complianceResultsDS.MinLastStartedTimeByConfigCluster(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	configNames := make(map[string]struct{})
+	for _, mt := range minTimes {
+		configNames[mt.ScanConfigName] = struct{}{}
+	}
+	resolver := s.buildConfigResolver(ctx, configNames)
+
+	perClusterStates := make(map[string][]compliancedata.State)
+	for _, mt := range minTimes {
+		state := resolver.ResolveGroupedMin(mt.ScanConfigName, mt.MinLastStarted)
+		perClusterStates[mt.ClusterID] = append(perClusterStates[mt.ClusterID], state)
+	}
+
+	var outdated int32
+	for _, states := range perClusterStates {
+		if compliancedata.RollupState(states...).ToProto() == v2.ComplianceDataState_COMPLIANCE_DATA_STATE_OUTDATED {
+			outdated++
+		}
+	}
+	return outdated, nil
+}
+
+// buildConfigResolver loads the named scan configs (best-effort; unloadable
+// configs are skipped and resolve to UNKNOWN) and returns a resolver anchored
+// at the current time.
+func (s *serviceImpl) buildConfigResolver(ctx context.Context, configNames map[string]struct{}) *compliancedata.ConfigResolver {
+	var configs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil {
+			log.Warnf("compliance outdated: cannot load config %q: %v", name, cfgErr)
+			continue
+		}
+		configs = append(configs, cfg)
+	}
+	return compliancedata.NewConfigResolver(configs, time.Now().UTC())
 }
 
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result
@@ -315,12 +422,36 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		convertedControls = storagetov2.GetControls(ruleNames[0], controls)
 	}
 
+	// Build resolver for outdated detection
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	var scanConfigs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil {
+			continue
+		}
+		scanConfigs = append(scanConfigs, cfg)
+	}
+	resolver := compliancedata.NewConfigResolver(scanConfigs, time.Now().UTC())
+
+	// Scope-level outdated-cluster count for the banner, over the unpaginated,
+	// profile+check-scoped countQuery. Best-effort: on error the banner is hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
 	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
-		ProfileName:  request.GetProfileName(),
-		CheckName:    request.GetCheckName(),
-		TotalCount:   int32(resultCount),
-		Controls:     convertedControls,
+		CheckResults:         storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan, resolver),
+		ProfileName:          request.GetProfileName(),
+		CheckName:            request.GetCheckName(),
+		TotalCount:           int32(resultCount),
+		Controls:             convertedControls,
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -388,12 +519,30 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, err
 	}
 
+	// Single-cluster outdated signal for the inline note, over the unpaginated,
+	// profile+cluster-scoped countQuery (0 or 1). Best-effort: on error hidden.
+	outdatedCount, err := s.computeOutdatedClusterCount(ctx, countQuery)
+	if err != nil {
+		log.Warnf("compliance outdated: failed to compute outdated cluster count: %v", err)
+		outdatedCount = 0
+	}
+
+	// Resolver for the per-check "Data status" column: load the configs referenced
+	// by the returned results so each row's assessment time can be compared to its
+	// config's expected refresh.
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	resolver := s.buildConfigResolver(ctx, configNames)
+
 	return &v2.ListComplianceCheckResultResponse{
-		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
-		ProfileName:  request.GetProfileName(),
-		ClusterId:    request.GetClusterId(),
-		TotalCount:   int32(resultCount),
-		LastScanTime: lastExecutedTime,
+		CheckResults:         storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls, resolver),
+		ProfileName:          request.GetProfileName(),
+		ClusterId:            request.GetClusterId(),
+		TotalCount:           int32(resultCount),
+		LastScanTime:         lastExecutedTime,
+		OutdatedClusterCount: outdatedCount,
 	}, nil
 }
 
@@ -464,7 +613,22 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		convertedControls = storagetov2.GetControls(rules[0].GetName(), controls)
 	}
 
-	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName(), convertedControls), nil
+	// Build resolver for outdated detection across the returned clusters' configs.
+	configNames := make(map[string]struct{})
+	for _, result := range scanResults {
+		configNames[result.GetScanConfigName()] = struct{}{}
+	}
+	var scanConfigs []*storage.ComplianceOperatorScanConfigurationV2
+	for name := range configNames {
+		cfg, cfgErr := s.scanConfigDS.GetScanConfigurationByName(ctx, name)
+		if cfgErr != nil || cfg == nil {
+			continue
+		}
+		scanConfigs = append(scanConfigs, cfg)
+	}
+	resolver := compliancedata.NewConfigResolver(scanConfigs, time.Now().UTC())
+
+	return storagetov2.ComplianceV2SpecificCheckResult(scanResults, request.GetCheckName(), convertedControls, resolver), nil
 }
 
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
