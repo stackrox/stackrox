@@ -42,7 +42,6 @@ var (
 )
 
 const (
-	connectTimeout  = 5 * time.Second
 	emailLineLength = 78
 )
 
@@ -445,14 +444,16 @@ func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
 	// This particular failure mode seems sufficiently unlikely.
 	// Importantly, a net.Conn can have multiple clients safely call methods
 	// on it at the same time, including Close().
-	t := time.AfterFunc(connectTimeout, func() {
+	timeout := env.EmailConnectTimeout.DurationSetting()
+	t := time.AfterFunc(timeout, func() {
 		timedOut.Toggle()
 		defer utils.IgnoreError(conn.Close)
 	})
 	defer func() {
 		t.Stop()
 		if timedOut.Get() {
-			err = errors.New("timeout: possibly speaking unencrypted to a server running TLS")
+			err = errors.Errorf("timeout waiting for SMTP server greeting after %s (consider increasing %s)",
+				timeout, env.EmailConnectTimeout.EnvVar())
 		}
 	}()
 
@@ -460,7 +461,7 @@ func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
 }
 
 func (e *email) connection(ctx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
-	ctx, cancel := context.WithTimeout(ctx, connectTimeout)
+	ctx, cancel := context.WithTimeout(ctx, env.EmailConnectTimeout.DurationSetting())
 	defer cancel()
 
 	if e.config.GetDisableTLS() {
