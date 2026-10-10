@@ -88,15 +88,15 @@ func (mr *MockDelegatorMockRecorder) GetDelegateClusterID(ctx, imgName any) *gom
 }
 
 // ValidateCluster mocks base method.
-func (m *MockDelegator) ValidateCluster(clusterID string) error {
+func (m *MockDelegator) ValidateCluster(ctx context.Context, clusterID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateCluster", clusterID)
+	ret := m.ctrl.Call(m, "ValidateCluster", ctx, clusterID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ValidateCluster indicates an expected call of ValidateCluster.
-func (mr *MockDelegatorMockRecorder) ValidateCluster(clusterID any) *gomock.Call {
+func (mr *MockDelegatorMockRecorder) ValidateCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateCluster", reflect.TypeOf((*MockDelegator)(nil).ValidateCluster), clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateCluster", reflect.TypeOf((*MockDelegator)(nil).ValidateCluster), ctx, clusterID)
 }
