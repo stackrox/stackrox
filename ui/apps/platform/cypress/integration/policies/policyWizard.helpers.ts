@@ -1,5 +1,6 @@
-import { selectors } from './Policies.selectors';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import { hasFeatureFlag } from '../../helpers/features';
+import { selectors } from './Policies.selectors';
 
 // --- Form Interaction ---
 
@@ -61,7 +62,29 @@ export function addInclusionWithNamespace(namespace: string) {
 
 export function addExclusionWithDeployment(deploymentName: string) {
     cy.contains('button', 'Add exclusion').click();
-    cy.get('[aria-label="Deployment name"]').type(deploymentName);
+    cy.get('[aria-label="Workload name"]').type(deploymentName);
+}
+
+export function toggleWorkloadKindExclusion(label: 'CronJobs' | 'Jobs') {
+    cy.contains('h4', 'By workload kind');
+    cy.contains('label', label).click();
+}
+
+export function assertWorkloadKindExclusion(label: 'CronJobs' | 'Jobs', isChecked: boolean) {
+    const id =
+        label === 'CronJobs' ? 'exclude-workload-kind-CRON_JOB' : 'exclude-workload-kind-JOB';
+    cy.get(`#${id}`).should(isChecked ? 'be.checked' : 'not.be.checked');
+}
+
+export function goToWizardStep(stepName: string) {
+    cy.get(`.pf-v6-c-wizard__nav-link:contains("${stepName}")`).click();
+}
+
+export function skipFiltersStepIfPresent() {
+    if (hasFeatureFlag('ROX_EVALUATION_FILTER') && hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')) {
+        assertStepHeading('Filters');
+        clickNext();
+    }
 }
 
 // --- Step 5: Actions ---
