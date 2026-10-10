@@ -4,6 +4,7 @@ import { useFormikContext } from 'formik';
 import {
     Alert,
     Button,
+    Checkbox,
     Divider,
     Flex,
     FlexItem,
@@ -19,6 +20,7 @@ import {
     Select,
     SelectList,
     SelectOption,
+    Stack,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
@@ -30,13 +32,19 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-import type { ClientPolicy } from 'types/policy.proto';
+import { policyWorkloadKindLabels, policyWorkloadKinds } from 'types/policy.proto';
+import type { ClientPolicy, PolicyWorkloadKind } from 'types/policy.proto';
 import type { ListImage } from 'types/image.proto';
 import { getImages } from 'services/imageService';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 
-import { initialExcludedDeployment, initialScope } from '../../policies.utils';
+import {
+    formatWorkloadKindExclusionMessage,
+    initialExcludedDeployment,
+    initialScope,
+} from '../../policies.utils';
 import PolicyScopeCardLegacy from './PolicyScopeCardLegacy';
 import InclusionScopeCard from './InclusionScopeCard';
 import ExclusionScopeCard from './ExclusionScopeCard';
@@ -67,6 +75,9 @@ function PolicyScopeForm(): ReactElement {
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, handleChange, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
+    const excludedWorkloadKinds = values.excludedWorkloadKinds ?? [];
+
+    const showWorkloadKindExclusion = isFeatureFlagEnabled('ROX_POLICY_WORKLOAD_KIND_EXCLUSION');
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
     const hasNodeEventSource = values.eventSource === 'NODE_EVENT';
@@ -86,6 +97,21 @@ function PolicyScopeForm(): ReactElement {
     const hasResults = filteredImages?.length > 0 || shouldShowCreateOption;
 
     const isAllScopingDisabled = hasNodeEventSource;
+    const isWorkloadKindExclusionDisabled =
+        isAllScopingDisabled || hasAuditLogEventSource || !hasDeployOrRuntimeLifecycle;
+
+    function getWorkloadKindExclusionInfo(): string {
+        if (hasNodeEventSource) {
+            return 'The selected event source does not support resource targeting.';
+        }
+        if (hasAuditLogEventSource) {
+            return 'Workload kind exclusions are not available for audit log event sources.';
+        }
+        if (!hasDeployOrRuntimeLifecycle) {
+            return 'Workload kind exclusions require the Deploy or Runtime lifecycle stage.';
+        }
+        return formatWorkloadKindExclusionMessage(excludedWorkloadKinds);
+    }
 
     function addNewInclusionScope() {
         setFieldValue('scope', [...scope, initialScope]);
@@ -125,6 +151,10 @@ function PolicyScopeForm(): ReactElement {
         setFilterValue('');
     }
 
+    function handleChangeWorkloadKind(kind: PolicyWorkloadKind) {
+        setFieldValue('excludedWorkloadKinds', toggleItemInArray(excludedWorkloadKinds, kind));
+    }
+
     useEffect(() => {
         getImages()
             .then((response) => {
@@ -134,6 +164,12 @@ function PolicyScopeForm(): ReactElement {
                 // TODO
             });
     }, []);
+
+    useEffect(() => {
+        if (isWorkloadKindExclusionDisabled && excludedWorkloadKinds.length > 0) {
+            setFieldValue('excludedWorkloadKinds', []);
+        }
+    }, [isWorkloadKindExclusionDisabled, excludedWorkloadKinds.length, setFieldValue]);
 
     // @TODO: Consider using a custom component for the multi-select typeahead dropdown. PolicyCategoriesSelectField.tsx is a good example too.
     return (
@@ -213,22 +249,86 @@ function PolicyScopeForm(): ReactElement {
                         <Flex direction={{ default: 'column' }}>
                             <Title headingLevel="h3">Excluded resources</Title>
                             <div>
-                                Define one or more clusters, namespaces or workloads (if applicable)
-                                to be excluded from this policy.
+                                {showWorkloadKindExclusion
+                                    ? 'Exclude resources from this policy by workload kind, by scope, or both.'
+                                    : 'Define one or more clusters, namespaces or workloads (if applicable) to be excluded from this policy.'}
                             </div>
-                            <PolicyScopeRE2Description />
+                            {!showWorkloadKindExclusion && <PolicyScopeRE2Description />}
                         </Flex>
                     </FlexItem>
-                    <FlexItem className="pf-v6-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button
-                            variant="secondary"
-                            isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
-                            onClick={addNewExclusionDeploymentScope}
+                    {!showWorkloadKindExclusion && (
+                        <FlexItem
+                            className="pf-v6-u-pr-md"
+                            alignSelf={{ default: 'alignSelfCenter' }}
                         >
-                            Add exclusion
-                        </Button>
-                    </FlexItem>
+                            <Button
+                                variant="secondary"
+                                isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
+                                onClick={addNewExclusionDeploymentScope}
+                            >
+                                Add exclusion
+                            </Button>
+                        </FlexItem>
+                    )}
                 </Flex>
+                {showWorkloadKindExclusion && (
+                    <>
+                        <FlexItem>
+                            <Stack hasGutter>
+                                <Title headingLevel="h4">By workload kind</Title>
+                                <div>Exclude workload kinds when evaluating this policy.</div>
+                                <FormGroup fieldId="workload-kind-exclusion" role="group">
+                                    <Stack hasGutter>
+                                        {policyWorkloadKinds.map((kind) => (
+                                            <Checkbox
+                                                key={kind}
+                                                id={`exclude-workload-kind-${kind}`}
+                                                label={policyWorkloadKindLabels[kind]}
+                                                isChecked={excludedWorkloadKinds.includes(kind)}
+                                                isDisabled={isWorkloadKindExclusionDisabled}
+                                                onChange={() => handleChangeWorkloadKind(kind)}
+                                            />
+                                        ))}
+                                        <Alert
+                                            isInline
+                                            isPlain
+                                            variant="info"
+                                            title={getWorkloadKindExclusionInfo()}
+                                            component="p"
+                                        />
+                                    </Stack>
+                                </FormGroup>
+                            </Stack>
+                        </FlexItem>
+                        <Divider component="div" />
+                        <Flex>
+                            <FlexItem flex={{ default: 'flex_1' }}>
+                                <Flex direction={{ default: 'column' }}>
+                                    <Title headingLevel="h4">By scope</Title>
+                                    <div>
+                                        Define one or more clusters, namespaces or workloads (if
+                                        applicable) to be excluded from this policy.
+                                    </div>
+                                    <PolicyScopeRE2Description />
+                                </Flex>
+                            </FlexItem>
+                            <FlexItem
+                                className="pf-v6-u-pr-md"
+                                alignSelf={{ default: 'alignSelfCenter' }}
+                            >
+                                <Button
+                                    variant="secondary"
+                                    isDisabled={
+                                        !hasDeployOrRuntimeLifecycle || isAllScopingDisabled
+                                    }
+                                    onClick={addNewExclusionDeploymentScope}
+                                >
+                                    Add exclusion
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+                    </>
+                )}
                 <FlexItem>
                     <Grid hasGutter md={6} xl={4}>
                         {excludedDeploymentScopes?.map((_, index) => (

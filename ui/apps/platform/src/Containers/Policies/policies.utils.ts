@@ -8,6 +8,11 @@ import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/i
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import type { ClusterScopeObject } from 'services/RolesService';
 import type { NotifierIntegration } from 'types/notifier.proto';
+import {
+    isPolicyWorkloadKind,
+    policyWorkloadKindLabels,
+    policyWorkloadKinds,
+} from 'types/policy.proto';
 import type {
     ClientPolicy,
     EnforcementAction,
@@ -22,6 +27,7 @@ import type {
     PolicyImageExclusion,
     PolicyScope,
     PolicyScopeLabel,
+    PolicyWorkloadKind,
     ValueObj,
 } from 'types/policy.proto';
 import type { SearchFilter } from 'types/search';
@@ -60,6 +66,7 @@ export const initialPolicy: ClientPolicy = {
     enforcementActions: [],
     excludedImageNames: [],
     excludedDeploymentScopes: [],
+    excludedWorkloadKinds: [],
     SORTName: '', // For internal use only.
     SORTLifecycleStage: '', // For internal use only.
     SORTEnforcement: false, // For internal use only.
@@ -206,6 +213,41 @@ export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
     return excludedImageNames;
 }
 
+export function getExcludedWorkloadKinds(exclusions: PolicyExclusion[]): PolicyWorkloadKind[] {
+    const selected = new Set<PolicyWorkloadKind>();
+
+    exclusions.forEach((exclusion) => {
+        exclusion.excludeByKind?.kinds?.forEach((kind) => {
+            if (isPolicyWorkloadKind(kind)) {
+                selected.add(kind);
+            }
+        });
+    });
+
+    return policyWorkloadKinds.filter((kind) => selected.has(kind));
+}
+
+export function formatWorkloadKindList(kinds: PolicyWorkloadKind[]): string {
+    return policyWorkloadKinds
+        .filter((kind) => kinds.includes(kind))
+        .map((kind) => policyWorkloadKindLabels[kind])
+        .join(', ');
+}
+
+export function formatWorkloadKindExclusionMessage(kinds: PolicyWorkloadKind[]): string {
+    const labels = policyWorkloadKinds
+        .filter((kind) => kinds.includes(kind))
+        .map((kind) => policyWorkloadKindLabels[kind]);
+
+    if (labels.length === 0) {
+        return 'Policy will not exclude any workload kinds.';
+    }
+    if (labels.length === 1) {
+        return `Policy will exclude ${labels[0]}.`;
+    }
+    return `Policy will exclude ${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}.`;
+}
+
 // lifecycleStages
 
 export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string {
@@ -288,6 +330,7 @@ export type WizardPolicyStep4 = {
     scope: PolicyScope[];
     excludedDeploymentScopes: PolicyExcludedDeployment[];
     excludedImageNames: string[];
+    excludedWorkloadKinds?: PolicyWorkloadKind[];
 };
 
 // The exclusion UI does not show cluster or namespace label yet, but inclusion and exclusion both
@@ -442,6 +485,7 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
 function getExclusionFields({ exclusions }: Policy): {
     excludedImageNames: ClientPolicy['excludedImageNames'];
     excludedDeploymentScopes: ClientPolicy['excludedDeploymentScopes'];
+    excludedWorkloadKinds: ClientPolicy['excludedWorkloadKinds'];
 } {
     const excludedImageNames = exclusions
         .filter((o): o is PolicyImageExclusion => !!o.image)
@@ -454,6 +498,7 @@ function getExclusionFields({ exclusions }: Policy): {
     return {
         excludedImageNames,
         excludedDeploymentScopes,
+        excludedWorkloadKinds: getExcludedWorkloadKinds(exclusions),
     };
 }
 
@@ -491,6 +536,17 @@ export function isExcludedDeploymentScopeEmpty(scope: PolicyScope | null | undef
  */
 export function getServerPolicyExclusions(policy: ClientPolicy): Policy['exclusions'] {
     const exclusions: Policy['exclusions'] = [];
+
+    const excludedWorkloadKinds = policyWorkloadKinds.filter((kind) =>
+        (policy.excludedWorkloadKinds ?? []).includes(kind)
+    );
+    if (excludedWorkloadKinds.length > 0) {
+        exclusions.push({
+            deployment: null,
+            image: null,
+            excludeByKind: { kinds: excludedWorkloadKinds },
+        });
+    }
 
     policy.excludedDeploymentScopes.forEach((deployment) => {
         const deploymentForServer = isExcludedDeploymentScopeEmpty(deployment.scope)
@@ -641,13 +697,15 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
 }
 
 export function getClientWizardPolicy(policy: Policy): ClientPolicy {
-    const { excludedImageNames, excludedDeploymentScopes } = getExclusionFields(policy);
+    const { excludedImageNames, excludedDeploymentScopes, excludedWorkloadKinds } =
+        getExclusionFields(policy);
     const { serverPolicySections, policySections } = getFormattedClientPolicyFields(policy);
 
     const clientPolicy = {
         ...cloneDeep(policy),
         excludedImageNames,
         excludedDeploymentScopes,
+        excludedWorkloadKinds,
         serverPolicySections,
         policySections,
     };
@@ -664,6 +722,7 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     const fieldsToOmit = [
         'excludedImageNames',
         'excludedDeploymentScopes',
+        'excludedWorkloadKinds',
         'serverPolicySections',
     ] as const;
 
@@ -698,7 +757,11 @@ export function isRuntimePolicy(lifecycleStages: LifecycleStage[]): lifecycleSta
 export function getLifeCyclesUpdates<
     T extends Pick<
         ClientPolicy,
-        'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
+        | 'lifecycleStages'
+        | 'eventSource'
+        | 'excludedImageNames'
+        | 'excludedWorkloadKinds'
+        | 'enforcementActions'
     >,
 >(values: T, selectedStages: ValidPolicyLifeCycle): T {
     /*
@@ -713,6 +776,14 @@ export function getLifeCyclesUpdates<
 
     if (!isBuildPolicy(selectedStages) && !isBuildAndDeployPolicy(selectedStages)) {
         changedValues.excludedImageNames = [];
+    }
+
+    if (
+        !isDeployPolicy(selectedStages) &&
+        !isBuildAndDeployPolicy(selectedStages) &&
+        !isRuntimePolicy(selectedStages)
+    ) {
+        changedValues.excludedWorkloadKinds = [];
     }
 
     values.lifecycleStages.forEach((stage) => {
