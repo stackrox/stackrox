@@ -1623,3 +1623,102 @@ func TestGetPodsOwnershipFallback(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertDeploymentWithCRDOwner(t *testing.T) {
+	controllerTrue := true
+
+	cases := map[string]struct {
+		inputObj         interface{}
+		deploymentType   string
+		expectedNil      bool
+		expectedManaging *storage.ManagingResource
+	}{
+		"deployment owned by InferenceService has ManagingResource": {
+			inputObj: &v1beta1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					UID:       types.UID("deploy-uid"),
+					Name:      "granite-predictor-default",
+					Namespace: "namespace",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "serving.kserve.io/v1beta1",
+							Kind:       "InferenceService",
+							Name:       "granite-model",
+							UID:        types.UID("isvc-uid-123"),
+							Controller: &controllerTrue,
+						},
+					},
+				},
+				Spec: v1beta1.DeploymentSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{{Name: "kserve-container", Image: "model-server:latest"}},
+						},
+					},
+				},
+			},
+			deploymentType: kubernetes.Deployment,
+			expectedManaging: &storage.ManagingResource{
+				Kind:       "InferenceService",
+				ApiGroup:   "serving.kserve.io",
+				ApiVersion: "v1beta1",
+				Name:       "granite-model",
+				Uid:        "isvc-uid-123",
+			},
+		},
+		"deployment without owner references has nil ManagingResource": {
+			inputObj: &v1beta1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					UID:       types.UID("deploy-uid"),
+					Name:      "standalone-deploy",
+					Namespace: "namespace",
+				},
+				Spec: v1beta1.DeploymentSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{{Name: "app", Image: "nginx:latest"}},
+						},
+					},
+				},
+			},
+			deploymentType:   kubernetes.Deployment,
+			expectedManaging: nil,
+		},
+		"replica set owned by native deployment is suppressed": {
+			inputObj: &v1beta1.ReplicaSet{
+				ObjectMeta: metav1.ObjectMeta{
+					UID:       types.UID("rs-uid"),
+					Name:      "my-rs",
+					Namespace: "namespace",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "apps/v1",
+							Kind:       kubernetes.Deployment,
+							Name:       "my-deploy",
+							UID:        types.UID("deploy-uid"),
+							Controller: &controllerTrue,
+						},
+					},
+				},
+			},
+			deploymentType: kubernetes.ReplicaSet,
+			expectedNil:    true,
+		},
+	}
+
+	storeProvider := InitializeStore(nil)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			action := central.ResourceAction_CREATE_RESOURCE
+			wrap := newDeploymentEventFromResource(tc.inputObj, &action, tc.deploymentType, testClusterID,
+				&mockPodLister{}, mockNamespaceStore, references.NewParentHierarchy(), "",
+				storeProvider.orchestratorNamespaces)
+			if tc.expectedNil {
+				assert.Nil(t, wrap, "expected nil wrap for suppressed resource")
+				return
+			}
+			require.NotNil(t, wrap)
+			protoassert.Equal(t, tc.expectedManaging, wrap.GetDeployment().GetManagingResource())
+		})
+	}
+}
