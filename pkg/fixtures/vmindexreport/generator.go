@@ -3,6 +3,7 @@
 package vmindexreport
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -15,6 +16,9 @@ import (
 const (
 	// MockDigest is kept in sync with pkg/virtualmachine/enricher/enricher_impl.go
 	MockDigest = "sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
+
+	// MockDigestWithRegistry is MockDigest prefixed with a registry for use with go-containerregistry.
+	MockDigestWithRegistry = "registry.example.com/image@" + MockDigest
 )
 
 // numericRegex matches sequences of digits in a version string.
@@ -52,7 +56,7 @@ type Generator struct {
 	environments map[string]*v4.Environment_List
 }
 
-// selectPackageIndices returns a slice of indices into packagesFixture based on numRequested.
+// selectPackageIndices returns a slice of indices into PackagesData based on numRequested.
 // - numRequested <= 0: returns empty slice (no packages)
 // - numRequested < totalAvailable: randomly samples numRequested indices
 // - numRequested >= totalAvailable: uses all indices, then duplicates randomly to fill
@@ -94,74 +98,19 @@ func buildRepositories() map[string]*v4.Repository {
 	return repositories
 }
 
-// NewGeneratorWithSeed creates a new Generator with a specific random seed.
-// The numPackages parameter specifies how many packages to include.
-// When numPackages == 0, no packages are included (empty report).
-// When numPackages < available, packages are randomly sampled.
-// When numPackages > available, packages are duplicated to reach the requested count.
-// All packages use the two real RHEL repositories from the fixture.
-// The seed parameter controls random selection for reproducibility.
-func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
+// NewGeneratorWithSeed builds a report of numPackages fixture packages.
+// Selection is seeded: sampled when fewer than the fixture, repeated when more.
+// Zero packages yields an empty package set and still includes the fixture repositories.
+func NewGeneratorWithSeed(numPackages int, seed int64) (*Generator, error) {
 	if numPackages < 0 {
-		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
+		return nil, fmt.Errorf("numPackages must be non-negative, got %d", numPackages)
+	}
+	totalPkgs := len(PackagesData)
+	if totalPkgs <= 0 {
+		return nil, errors.New("no package fixtures available")
 	}
 	rng := rand.New(rand.NewSource(seed))
-
-	totalPkgs := len(packagesFixture)
-	indices := selectPackageIndices(rng, numPackages, totalPkgs)
-	repositories := buildRepositories()
-
-	// Build packages from fixture data using selected indices
-	// All packages use their original repo from the fixture
-	packages := make(map[string]*v4.Package, len(indices))
-	environments := make(map[string]*v4.Environment_List, len(indices))
-
-	for i, idx := range indices {
-		pkg := packagesFixture[idx]
-		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
-
-		// All packages use their original repo from the fixture
-		repoCPE := repositories[pkg.Repo].GetCpe()
-
-		packages[pkgID] = &v4.Package{
-			Id:             pkgID,
-			Name:           pkg.Name,
-			Version:        pkg.Version,
-			Kind:           "binary",
-			Arch:           "x86_64",
-			RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
-			Cpe:            repoCPE,
-			PackageDb:      "sqlite:usr/share/rpm",
-			Source: &v4.Package{
-				Id:      pkgID + "-src",
-				Name:    pkg.Name,
-				Version: pkg.Version,
-				Kind:    "source",
-				Cpe:     repoCPE,
-			},
-			NormalizedVersion: &v4.NormalizedVersion{
-				Kind: "rpm",
-				V:    NormalizeRPMVersion(pkg.Version),
-			},
-		}
-
-		// Environment maps package ID to its repository
-		environments[pkgID] = &v4.Environment_List{
-			Environments: []*v4.Environment{
-				{
-					PackageDb:     "sqlite:usr/share/rpm",
-					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					RepositoryIds: []string{pkg.Repo},
-				},
-			},
-		}
-	}
-
-	return &Generator{
-		repositories: repositories,
-		packages:     packages,
-		environments: environments,
-	}
+	return newGenerator(selectPackageIndices(rng, numPackages, totalPkgs))
 }
 
 // GenerateV4IndexReport creates a fake v4.IndexReport (used by Scanner V4).
@@ -186,4 +135,70 @@ func (g *Generator) NumPackages() int {
 // NumRepositories returns the number of repositories in the generator.
 func (g *Generator) NumRepositories() int {
 	return len(g.repositories)
+}
+
+// NewGeneratorWithPackageIndices builds a report from PackagesData at the given indices.
+// An out-of-range index is an error so a stale learned-data file fails instead of silently shrinking the report.
+func NewGeneratorWithPackageIndices(indices []int) (*Generator, error) {
+	if len(PackagesData) == 0 {
+		return nil, errors.New("no package fixtures available")
+	}
+	return newGenerator(indices)
+}
+
+// newGenerator builds one package and environment per index. Both public constructors use it so report fields cannot drift.
+func newGenerator(indices []int) (*Generator, error) {
+	repositories := buildRepositories()
+	packages := make(map[string]*v4.Package, len(indices))
+	environments := make(map[string]*v4.Environment_List, len(indices))
+
+	for i, idx := range indices {
+		if idx < 0 || idx >= len(PackagesData) {
+			return nil, fmt.Errorf("package index %d out of range [0,%d)", idx, len(PackagesData))
+		}
+		pkg := PackagesData[idx]
+		repo, ok := repositories[pkg.Repo]
+		if !ok {
+			return nil, fmt.Errorf("package %q references unknown repository %q", pkg.Name, pkg.Repo)
+		}
+		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
+		repoCPE := repo.GetCpe()
+
+		packages[pkgID] = &v4.Package{
+			Id:             pkgID,
+			Name:           pkg.Name,
+			Version:        pkg.Version,
+			Kind:           "binary",
+			Arch:           "x86_64",
+			RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+			Cpe:            repoCPE,
+			PackageDb:      "sqlite:usr/share/rpm",
+			Source: &v4.Package{
+				Id:      pkgID + "-src",
+				Name:    pkg.Name,
+				Version: pkg.Version,
+				Kind:    "source",
+				Cpe:     repoCPE,
+			},
+			NormalizedVersion: &v4.NormalizedVersion{
+				Kind: "rpm",
+				V:    NormalizeRPMVersion(pkg.Version),
+			},
+		}
+		environments[pkgID] = &v4.Environment_List{
+			Environments: []*v4.Environment{
+				{
+					PackageDb:     "sqlite:usr/share/rpm",
+					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					RepositoryIds: []string{pkg.Repo},
+				},
+			},
+		}
+	}
+
+	return &Generator{
+		repositories: repositories,
+		packages:     packages,
+		environments: environments,
+	}, nil
 }
