@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -85,14 +84,14 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	restConfig.Burst = k8sClientBurst
 	retryablehttp.ConfigureRESTConfig(restConfig)
 
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
+	authorizer, err := newK8sAuthorizer(restConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating kubernetes client")
+		return nil, errors.Wrap(err, "creating k8s authorizer")
 	}
 
 	return &Handler{
 		clusterIDGetter: clusterIDGetter,
-		authorizer:      newK8sAuthorizer(k8sClient),
+		authorizer:      authorizer,
 		transport:       transport,
 		proxy:           proxy,
 	}, nil
