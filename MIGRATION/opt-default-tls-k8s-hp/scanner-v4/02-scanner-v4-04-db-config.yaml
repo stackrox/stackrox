@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-db-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  postgresql.conf: |
+    #------------------------------------------------------------------------------
+    # FILE LOCATIONS
+    #------------------------------------------------------------------------------
+    
+    hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+    
+    #------------------------------------------------------------------------------
+    # CONNECTIONS AND AUTHENTICATION
+    #------------------------------------------------------------------------------
+    
+    # - Connection Settings -
+    
+    listen_addresses = '*'
+    max_connections = 500
+    
+    # - Authentication -
+    
+    password_encryption = 'scram-sha-256'
+    
+    # - SSL -
+    
+    ssl = on
+    ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+    ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+    ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+    
+    #------------------------------------------------------------------------------
+    # RESOURCE USAGE (except WAL)
+    #------------------------------------------------------------------------------
+    
+    # - Memory -
+    
+    shared_buffers = 750MB
+    work_mem = 16MB
+    maintenance_work_mem = 128MB
+    autovacuum_work_mem = 256MB
+    dynamic_shared_memory_type = posix
+    
+    #------------------------------------------------------------------------------
+    # WRITE-AHEAD LOG
+    #------------------------------------------------------------------------------
+    
+    # - Checkpoints -
+    
+    max_wal_size = 3GB
+    min_wal_size = 80MB
+    
+    #------------------------------------------------------------------------------
+    # AUTOMATIC VACUUMING
+    #------------------------------------------------------------------------------
+    
+    autovacuum_max_workers = 2
+    
+    #------------------------------------------------------------------------------
+    # REPORTING AND LOGGING
+    #------------------------------------------------------------------------------
+    
+    # - When to Log -
+    
+    log_min_duration_statement = 1min
+    
+    # - What to Log -
+    
+    log_autovacuum_min_duration = 500ms
+    log_checkpoints = 'on'
+    log_connections = 'on'
+    log_disconnections = 'on'
+    log_lock_waits = 'on'
+    log_parameter_max_length = 0
+    log_temp_files = 1024
+    log_timezone = 'Etc/UTC'
+    
+    #------------------------------------------------------------------------------
+    # CLIENT CONNECTION DEFAULTS
+    #------------------------------------------------------------------------------
+    
+    # - Locale and Formatting -
+    
+    datestyle = 'iso, mdy'
+    timezone = 'Etc/UTC'
+    
+    lc_messages = 'en_US.utf8'
+    lc_monetary = 'en_US.utf8'
+    lc_numeric = 'en_US.utf8'
+    lc_time = 'en_US.utf8'
+    
+    default_text_search_config = 'pg_catalog.english'
+    
+    # - Shared Library Preloading -
+    
+    shared_preload_libraries = 'pg_stat_statements'
+    
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    
+    # "local" is for Unix domain socket connections only
+    local   all             all                                     scram-sha-256
+    # IPv4 local connections:
+    host    all             all             127.0.0.1/32            scram-sha-256
+    # IPv6 local connections:
+    host    all             all             ::1/128                 scram-sha-256
+    # Allow replication connections from localhost, by a user with the
+    # replication privilege.
+    local   replication     all                                     reject
+    host    replication     all             127.0.0.1/32            reject
+    host    replication     all             ::1/128                 reject
+    
+    ### STACKROX MODIFIED
+    # Reject all non ssl connections from IPs
+    hostnossl  all       all   0.0.0.0/0     reject
+    hostnossl  all       all   ::0/0         reject
+    
+    # Accept connections from ssl with password
+    hostssl    all       all   0.0.0.0/0     scram-sha-256
+    hostssl    all       all   ::0/0         scram-sha-256
+    ###
