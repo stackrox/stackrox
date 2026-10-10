@@ -9,9 +9,12 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/filter"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // CompiledPolicy is a compiled policy, which means it can match a policy, as well as check whether a policy is applicable.
@@ -46,11 +49,14 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 
 	exclusions := make([]*compiledExclusion, 0, len(policy.GetExclusions()))
 	for _, w := range policy.GetExclusions() {
-		w, err := newCompiledExclusion(w)
+		if w.GetExcludeByKind() != nil && !features.PolicyWorkloadKindExclusion.Enabled() {
+			continue
+		}
+		compiledExclusion, err := newCompiledExclusion(w)
 		if err != nil {
 			return nil, errors.Wrapf(err, "compiling exclusion list %+v for policy %s", w, policy.GetName())
 		}
-		exclusions = append(exclusions, w)
+		exclusions = append(exclusions, compiledExclusion)
 	}
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
@@ -477,6 +483,7 @@ type compiledExclusion struct {
 	exclusion             *storage.Exclusion
 	deploymentNameMatcher regexutils.StringMatcher
 	cs                    *scopecomp.CompiledScope
+	excludedKinds         set.Set[string]
 }
 
 type alwaysFalseMatcher struct{}
@@ -488,6 +495,18 @@ func (a *alwaysFalseMatcher) MatchString(_ string) bool {
 func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, error) {
 	cx := &compiledExclusion{
 		exclusion: exclusion,
+	}
+	if exclusion.GetExcludeByKind() != nil {
+		if features.PolicyWorkloadKindExclusion.Enabled() {
+			excludedKinds, err := kubernetesKindsForExcludeByKind(exclusion.GetExcludeByKind())
+			if err != nil {
+				return nil, err
+			}
+			cx.excludedKinds = excludedKinds
+		} else {
+			cx.excludedKinds = set.NewSet[string]()
+		}
+		return cx, nil
 	}
 	if name := exclusion.GetDeployment().GetName(); name != "" {
 		deploymentNameMatcher, err := regexutils.CompileWholeStringMatcher(name, regexutils.Flags{CaseInsensitive: true})
@@ -514,16 +533,21 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 	return cx, nil
 }
 
-// appliesToDeployments reports whether the exclusion has a deployment part. Image-only exclusions are
-// applied to images, so they must not match deployments or audit events. Without this check, the nil
-// deployment scope matches everything and the exclusion turns the policy off for every deployment.
+// appliesToDeployments reports whether the exclusion can match a deployment.
+// Image-only exclusions are applied to images, so they must not match deployments or audit events.
+// Without this check, the nil deployment scope matches everything and the exclusion turns the policy off for every deployment.
+// Kind exclusions have no deployment matcher, but they still apply to deployments of the selected kinds.
 func (cw *compiledExclusion) appliesToDeployments() bool {
-	return cw.exclusion.GetDeployment() != nil
+	return cw.exclusion.GetDeployment() != nil || cw.excludedKinds != nil
 }
 
 func (cw *compiledExclusion) MatchesDeployment(ctx context.Context, deployment *storage.Deployment) bool {
 	if !cw.appliesToDeployments() || exclusionIsExpired(cw.exclusion) {
 		return false
+	}
+
+	if cw.excludedKinds != nil {
+		return cw.excludedKinds.Contains(deployment.GetType())
 	}
 
 	if cw.deploymentNameMatcher != nil && !cw.deploymentNameMatcher.MatchString(deployment.GetName()) {
@@ -537,10 +561,33 @@ func (cw *compiledExclusion) MatchesAuditEvent(ctx context.Context, auditEvent *
 	if !cw.appliesToDeployments() || exclusionIsExpired(cw.exclusion) {
 		return false
 	}
+	// Kind exclusions apply to workload detections, not audit-log events.
+	if cw.excludedKinds != nil {
+		return false
+	}
 	if !cw.cs.MatchesAuditEvent(ctx, auditEvent) {
 		return false
 	}
 	return true
+}
+
+func kubernetesKindsForExcludeByKind(excludeByKind *storage.Exclusion_ExcludeByKind) (set.Set[string], error) {
+	kinds := excludeByKind.GetKinds()
+	if len(kinds) == 0 {
+		return nil, errors.New("exclude_by_kind must specify at least one workload kind")
+	}
+	kubernetesKinds := set.NewSet[string]()
+	for _, kind := range kinds {
+		switch kind {
+		case storage.Exclusion_CRON_JOB:
+			kubernetesKinds.Add(kubernetes.CronJob)
+		case storage.Exclusion_JOB:
+			kubernetesKinds.Add(kubernetes.Job)
+		default:
+			return nil, errors.Errorf("exclude_by_kind contains unknown workload kind %s", kind)
+		}
+	}
+	return kubernetesKinds, nil
 }
 
 // Predicate for deployments.

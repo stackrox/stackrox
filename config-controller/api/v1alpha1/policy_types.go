@@ -91,7 +91,8 @@ type SecurityPolicySpec struct {
 }
 
 type Exclusion struct {
-	Name       string     `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
+	// +optional
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
 	// +optional
