@@ -60,35 +60,63 @@ const addValidationSchema = yup.object({
     baseImagePath: yup
         .string()
         .required('Base image path is required')
-        .test(
-            'has-colon',
-            'Base image path must include both repository and tag separated by ":"',
-            (value) => {
-                if (!value?.includes(':')) {
-                    return false;
-                }
-                const lastColonIndex = value.lastIndexOf(':');
-                const tagPattern = value.substring(lastColonIndex + 1);
-                return tagPattern.length > 0;
+        .test('has-tag', 'Base image path must include a tag pattern after ":"', (value) => {
+            if (!value) {
+                return false;
             }
-        ),
+            const { tagPattern } = parseBaseImagePath(value);
+            return tagPattern.length > 0;
+        })
+        .test('valid-tag-pattern', function (value) {
+            if (!value) {
+                return true;
+            }
+            const { tagPattern } = parseBaseImagePath(value);
+            const error = tagPattern && getTagPatternError(tagPattern);
+            return error ? this.createError({ message: error }) : true;
+        }),
 });
 
 const editValidationSchema = yup.object({
-    baseImageTagPattern: yup.string().required('Tag pattern is required'),
+    baseImageTagPattern: yup
+        .string()
+        .required('Tag pattern is required')
+        .test('valid-tag-pattern', function (value) {
+            const error = value && getTagPatternError(value);
+            return error ? this.createError({ message: error }) : true;
+        }),
 });
 
 type AddFormData = yup.InferType<typeof addValidationSchema>;
 type EditFormData = yup.InferType<typeof editValidationSchema>;
 
+export function getTagPatternError(tagPattern: string): string | undefined {
+    if (new TextEncoder().encode(tagPattern).length > 128) {
+        return 'Tag pattern must be at most 128 bytes';
+    }
+    if (/[/:@\p{White_Space}]/u.test(tagPattern)) {
+        return 'Tag pattern must not contain "/", ":", "@", or whitespace';
+    }
+    return undefined;
+}
+
 /**
  * Parses a base image path into repository path and tag pattern.
- * Format: "docker.io/library/ubuntu:22.04" -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
+ * Only a colon in the final path segment separates the tag; a colon before the last
+ * "/" belongs to a registry port. Returns an empty tagPattern when no tag is present.
+ * Examples:
+ *   "docker.io/library/ubuntu:22.04"      -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
+ *   "registry:5000/library/ubuntu:1.*"    -> { repoPath: "registry:5000/library/ubuntu", tagPattern: "1.*" }
+ *   "registry:5000/library/ubuntu"        -> { repoPath: "registry:5000/library/ubuntu", tagPattern: "" }
  */
 export function parseBaseImagePath(path: string): { repoPath: string; tagPattern: string } {
-    const lastColonIndex = path.lastIndexOf(':');
-    const repoPath = path.substring(0, lastColonIndex);
-    const tagPattern = path.substring(lastColonIndex + 1);
+    const lastSlashIndex = path.lastIndexOf('/');
+    const tagColonIndex = path.indexOf(':', lastSlashIndex + 1);
+    if (tagColonIndex === -1) {
+        return { repoPath: path, tagPattern: '' };
+    }
+    const repoPath = path.substring(0, tagColonIndex);
+    const tagPattern = path.substring(tagColonIndex + 1);
     return { repoPath, tagPattern };
 }
 
@@ -297,9 +325,9 @@ function BaseImagesModal({
                                                 </HelperTextItem>
                                             )}
                                         <HelperTextItem>
-                                            Include repository path and tag (e.g.,
-                                            example-registry.io/path/to/image:tag). Tag can be a
-                                            pattern (e.g., 1.*)
+                                            For registries with a port, use registry:port/repo:tag
+                                            (e.g., registry:5000/repo:1.*). The tag pattern can be a
+                                            specific version or a pattern such as 1.*
                                         </HelperTextItem>
                                     </HelperText>
                                 </FormHelperText>
