@@ -1,0 +1,44 @@
+name: e2e-db-backup-restore-tests-konflux
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: |
+          Konflux image tag to test. The caller needs to include the "-fast" suffix
+          when required for development builds.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: |
+          Konflux image tag to test. Include the "-fast" suffix when required for
+          development builds.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  run:
+    uses: ./.github/workflows/e2e-db-backup-restore-tests.yaml
+    with:
+      tag: ${{ inputs.tag }}
+      should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
+      ci-job-name: ocp-db-backup-restore-tests-konflux
+      use-konflux-images: true
+      cluster-provisioning-method: infra
+      cluster-name-prefix: e2e-dbbr-ocp
+      infra-flavor: rosahcp
+      cluster-wait-timeout-minutes: 50
+      job-timeout-minutes: 120
+      orchestrator-flavor: openshift
+      kubernetes-provider: ocp
+    secrets: inherit

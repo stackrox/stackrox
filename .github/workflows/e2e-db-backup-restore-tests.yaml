@@ -11,12 +11,56 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+      ci-job-name:
+        description: Unique CI job name.
+        type: string
+        default: gke-db-backup-restore-tests
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
+      cluster-provisioning-method:
+        description: Selects cluster provisioning method (direct-gke or infra).
+        type: string
+        default: direct-gke
+      cluster-name-prefix:
+        description: Prefix for the provisioned cluster name. Maximum 20 characters.
+        type: string
+        default: dbbr
+      infra-flavor:
+        description: Infra cluster flavor when cluster-provisioning-method is infra.
+        type: string
+        default: gke-default
+      infra-args:
+        description: Infra cluster arguments as multi-line KEY=VALUE pairs.
+        type: string
+        default: ''
+      cluster-wait-timeout-minutes:
+        description: Timeout for cluster provisioning.
+        type: number
+        default: 20
+      job-timeout-minutes:
+        description: Overall job timeout.
+        type: number
+        default: 60
+      orchestrator-flavor:
+        description: Orchestrator flavor used for deployment.
+        type: string
+        default: k8s
+      kubernetes-provider:
+        description: Kubernetes provider used for deployment.
+        type: string
+        default: gke
   workflow_dispatch:
     inputs:
       tag:
         description: Image tag to test.
         type: string
         required: true
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,12 +77,34 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-tests
+      CI_JOB_NAME: ${{ inputs.ci-job-name || 'gke-db-backup-restore-tests' }}
+      USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
+      DEPLOY_STACKROX_VIA_OPERATOR: ${{ inputs.use-konflux-images && 'true' || 'false' }}
+      ORCHESTRATOR_FLAVOR: ${{ inputs.orchestrator-flavor || 'k8s' }}
+      KUBERNETES_PROVIDER: ${{ inputs.kubernetes-provider || 'gke' }}
+      CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix || 'dbbr' }}
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.job-timeout-minutes || 60 }}
     steps:
+
+    - name: Validate workflow input
+      run: |
+        case "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" in
+          direct-gke|infra) ;;
+          *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method || 'direct-gke' }}'. Supported: direct-gke, infra"; exit 1 ;;
+        esac
+
+        if [[ "${#CLUSTER_NAME_PREFIX}" -gt 20 ]]; then
+          echo "::error::Workflow input cluster-name-prefix must not be larger than 20 characters."
+          exit 1
+        fi
+
+        if [[ "${{ inputs.use-konflux-images }}" == 'true' && "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" != 'infra' ]]; then
+          echo "::error::Konflux images require an Infra-provisioned OpenShift cluster because OLM is not supported on GKE."
+          exit 1
+        fi
 
     - name: Checkout repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -56,15 +122,65 @@ jobs:
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
+    - name: Compute cluster name for infra-provisioned cluster
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      run: |
+        cluster_name_max=28
+        hash_length=$(( cluster_name_max - 1 - ${#CLUSTER_NAME_PREFIX} ))
+        hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+        hash="$(echo "$hash_input" | sha256sum)"
+        echo "CLUSTER_NAME=${CLUSTER_NAME_PREFIX}-${hash:0:$hash_length}" >> "$GITHUB_ENV"
+
+    - name: Prepare infra args
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      id: prepare-infra-args
+      env:
+        INFRA_ARGS: ${{ inputs.infra-args }}
+      run: |
+        echo "args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)" >> "$GITHUB_OUTPUT"
+
+    - name: Trigger cluster creation via infra
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+      with:
+        token: ${{ secrets.INFRA_TOKEN }}
+        flavor: ${{ inputs.infra-flavor || 'gke-default' }}
+        name: ${{ env.CLUSTER_NAME }}
+        lifespan: 5h
+        args: ${{ steps.prepare-infra-args.outputs.args }}
+        wait: false
+
     - name: Create GKE cluster
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'direct-gke'
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        scripts/ci/gke.sh provision_gke_cluster dbbr
+        scripts/ci/gke.sh provision_gke_cluster "${CLUSTER_NAME_PREFIX}"
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+
+    - name: Install oc
+      if: startsWith(inputs.infra-flavor || 'gke-default', 'openshift') || startsWith(inputs.infra-flavor || 'gke-default', 'rosa')
+      run: |
+        curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+          | tar xz -C /usr/local/bin oc
+        oc version --client
+
+    - name: Install infractl
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+
+    - name: Wait for infra cluster and get kubeconfig
+      if: (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      env:
+        INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes || 20 }}
+      run: |
+        infractl wait "${CLUSTER_NAME}"
+        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+        echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
     - name: Build roxctl
       # The test uses roxctl for central backup/restore operations
@@ -87,7 +203,9 @@ jobs:
       run: |
         kubectl cluster-info
         kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
+        if [[ "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" == 'direct-gke' ]]; then
+          scripts/ci/gke.sh wait_for_cluster
+        fi
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -145,7 +263,7 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && (inputs.cluster-provisioning-method || 'direct-gke') == 'direct-gke'
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -156,6 +274,13 @@ jobs:
           echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
           exit 6
         fi
+
+    - name: Delete cluster via infra
+      if: always() && (inputs.cluster-provisioning-method || 'direct-gke') == 'infra'
+      continue-on-error: true
+      env:
+        INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish summary for all tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
