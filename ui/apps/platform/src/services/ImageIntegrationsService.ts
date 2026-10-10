@@ -1,11 +1,8 @@
 import axios from './instance';
 
-import type { IntegrationBase, IntegrationOptions } from './IntegrationsService';
-import type { Empty } from './types';
+import type { IntegrationBase } from './IntegrationsService';
 
 const imageIntegrationsUrl = '/v1/imageintegrations';
-
-const updateIntegrationKey = 'config';
 
 // See proto/storage/image_integration.proto
 
@@ -20,86 +17,10 @@ export type ImageIntegrationBase = {
 } & IntegrationBase;
 
 /*
- * Create integration.
- * The id of argument is empty string and the id of response is assigned by server.
- */
-export function createImageIntegration(
-    integration: ImageIntegrationBase
-): Promise<ImageIntegrationBase> {
-    return axios.post(imageIntegrationsUrl, integration);
-}
-
-/*
  * Read integrations (plural).
  */
 export function fetchImageIntegrations(): Promise<ImageIntegrationBase[]> {
     return axios
         .get<{ integrations: ImageIntegrationBase[] }>(imageIntegrationsUrl)
         .then((response) => response?.data?.integrations ?? []);
-}
-
-/*
- * Update integration.
- *
- * Call with options argument if integration has stored credentials, aka password:
- * true to update credentials on the server from the request payload
- * false not to update credentials on the server
- *
- * Call without options argument if integration does not have stored credentials.
- */
-export function saveImageIntegration(
-    integration: ImageIntegrationBase,
-    { updatePassword }: IntegrationOptions = {}
-): Promise<Empty> {
-    const { id } = integration;
-
-    if (!id) {
-        throw new Error('Integration entity must have an id to be saved');
-    }
-
-    if (typeof updatePassword === 'boolean') {
-        return axios.patch(`${imageIntegrationsUrl}/${id}`, {
-            [updateIntegrationKey]: integration,
-            updatePassword,
-        });
-    }
-
-    return axios.put(`${imageIntegrationsUrl}/${id}`, integration);
-}
-
-/*
- * Test integration.
- *
- * Call with options argument if integration has stored credentials, aka password:
- * true to use credentials in the request payload
- * false to use credentials on the server
- *
- * Call without options argument if integration does not have stored credentials.
- */
-export function testImageIntegration(
-    integration: ImageIntegrationBase,
-    { updatePassword }: IntegrationOptions = {}
-): Promise<Empty> {
-    if (typeof updatePassword === 'boolean') {
-        return axios.post(`${imageIntegrationsUrl}/test/updated`, {
-            [updateIntegrationKey]: integration,
-            updatePassword,
-        });
-    }
-
-    return axios.post(`${imageIntegrationsUrl}/test`, integration);
-}
-
-/*
- * Delete integration (singular).
- */
-export function deleteImageIntegration(id: string): Promise<Empty> {
-    return axios.delete(`${imageIntegrationsUrl}/${id}`);
-}
-
-/*
- * Delete integrations (plural).
- */
-export function deleteImageIntegrations(ids: string[]): Promise<Empty[]> {
-    return Promise.all(ids.map((id) => deleteImageIntegration(id)));
 }
