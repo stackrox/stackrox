@@ -23,6 +23,7 @@ var (
 		"networkpolicies":            storage.KubernetesEvent_Object_NETWORK_POLICIES,
 		"securitycontextconstraints": storage.KubernetesEvent_Object_SECURITY_CONTEXT_CONSTRAINTS,
 		"egressfirewalls":            storage.KubernetesEvent_Object_EGRESS_FIREWALLS,
+		"events":                     storage.KubernetesEvent_Object_EVENTS,
 	}
 )
 

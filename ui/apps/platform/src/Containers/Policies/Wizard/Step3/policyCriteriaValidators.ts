@@ -1,5 +1,7 @@
 import type { ClientPolicy, ClientPolicyGroup, ClientPolicySection } from 'types/policy.proto';
 
+import { auditLogAllowedVerbsByResource } from './policyCriteriaDescriptors';
+
 function policyGroupsHasCriterion(
     policyGroups: ClientPolicyGroup[],
     criterionName: string
@@ -40,6 +42,41 @@ export const policySectionValidators: PolicySectionValidator[] = [
                 return 'Criterion must be present for audit log policies: Kubernetes API verb';
             }
             return undefined;
+        },
+    },
+    {
+        name: 'Audit log verb/resource combination',
+        appliesTo: (context) => context.eventSource === 'AUDIT_LOG_EVENT',
+        validate: ({ policyGroups }) => {
+            const resourceGroup = policyGroups.find((g) => g.fieldName === 'Kubernetes Resource');
+            const verbGroup = policyGroups.find((g) => g.fieldName === 'Kubernetes API Verb');
+
+            if (!resourceGroup || !verbGroup) {
+                return undefined;
+            }
+
+            const resources = resourceGroup.values
+                .map((v) => (typeof v.value === 'string' ? v.value.toUpperCase() : ''))
+                .filter(Boolean);
+            const verbs = verbGroup.values
+                .map((v) => (typeof v.value === 'string' ? v.value.toUpperCase() : ''))
+                .filter(Boolean);
+
+            const errors = resources.flatMap((resource) => {
+                const allowedVerbs = auditLogAllowedVerbsByResource[resource];
+                if (!allowedVerbs) {
+                    return [];
+                }
+                const verbWord = allowedVerbs.length === 1 ? 'is' : 'are';
+                return verbs
+                    .filter((verb) => !allowedVerbs.includes(verb))
+                    .map(
+                        (verb) =>
+                            `Kubernetes API Verb '${verb}' is not supported for resource '${resource}'; only ${allowedVerbs.join(', ')} ${verbWord} forwarded for this resource`
+                    );
+            });
+
+            return errors.length > 0 ? errors.join('; ') : undefined;
         },
     },
     {
