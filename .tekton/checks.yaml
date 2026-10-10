@@ -48,15 +48,14 @@ spec:
         operator: in
         values: ["Failed"]
       taskRef:
+        resolver: git
         params:
-        - name: name
-          value: slack-webhook-notification
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:02842e9c752056c47a409f69ed462cfd38cbd6b15facb796564a610b549222ea
-        - name: kind
-          value: task
-        resolver: bundles
-
+        - name: url
+          value: https://github.com/konflux-ci/tekton-integration-catalog.git
+        - name: revision
+          value: 5d9486140df10bc8a0b8e78b6ee6a6138de5bf53
+        - name: pathInRepo
+          value: tasks/slack-webhook-notification/0.1/slack-webhook-notification.yaml
     - name: post-metric-end
       params:
       - name: AGGREGATE_TASKS_STATUS
@@ -146,7 +145,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.12.2@sha256:e1bbe61a3a4bc543be9b5f6fc4174acaa2dd08fb5f7fe4d9db9f3193a7e1b03c
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.13.0@sha256:5962a3531a56ab393e6590c4ecedebd5d7ace3fe57f6cc37bec6b4ea838204cf
         - name: kind
           value: task
         resolver: bundles
