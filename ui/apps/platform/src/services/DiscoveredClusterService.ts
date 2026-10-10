@@ -75,16 +75,6 @@ export function countDiscoveredClusters(filter: DiscoveredClustersFilter): Promi
         .then((response) => response.data.count);
 }
 
-export type GetDiscoveredClusterResponse = {
-    cluster: DiscoveredCluster;
-};
-
-export function getDiscoveredCluster(id: string): Promise<DiscoveredCluster> {
-    return axios
-        .get<GetDiscoveredClusterResponse>(`${basePath}/${id}`)
-        .then((response) => response.data.cluster);
-}
-
 export type ListDiscoveredClustersRequest = {
     filter: DiscoveredClustersFilter;
     pagination: Pagination;
@@ -163,10 +153,6 @@ function getValues(arg: SearchFilterValue): string[] | undefined {
     return undefined;
 }
 
-export function replaceSearchFilterNames(searchFilter: SearchFilter, names: string[] | undefined) {
-    return { ...searchFilter, [nameField]: names };
-}
-
 // statuses
 
 function getStatuses(arg: SearchFilterValue): DiscoveredClusterStatus[] | undefined {
@@ -185,13 +171,6 @@ export function isStatus(arg: string): arg is DiscoveredClusterStatus {
     return statuses.some((level) => level === arg);
 }
 
-export function replaceSearchFilterStatuses(
-    searchFilter: SearchFilter,
-    statuses: DiscoveredClusterStatus[] | undefined
-): SearchFilter {
-    return { ...searchFilter, [statusField]: statuses };
-}
-
 // types
 
 function getTypes(arg: SearchFilterValue): DiscoveredClusterType[] | undefined {
@@ -208,13 +187,6 @@ function getTypes(arg: SearchFilterValue): DiscoveredClusterType[] | undefined {
 
 export function isType(arg: string): arg is DiscoveredClusterType {
     return types.some((level) => level === arg);
-}
-
-export function replaceSearchFilterTypes(
-    searchFilter: SearchFilter,
-    types: DiscoveredClusterType[] | undefined
-): SearchFilter {
-    return { ...searchFilter, [typeField]: types };
 }
 
 // For useURLSort hook.
