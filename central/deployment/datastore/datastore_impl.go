@@ -22,6 +22,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -199,9 +201,12 @@ func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]
 // SearchRawDeployments
 func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchRawDeployments")
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresDefaultCursorTimeout.DurationSetting())
+	defer cancel()
 
 	var deployments []*storage.Deployment
-	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
+	// This method retains the full result, so a cursor does not bound its memory.
+	err := ds.deploymentStore.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
 		deployments = append(deployments, deployment)
 		return nil
 	})
