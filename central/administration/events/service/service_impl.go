@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
@@ -36,10 +38,13 @@ var (
 	})
 )
 
+var errNoMatchingImages = errors.New("no images match the workload filter")
+
 type serviceImpl struct {
 	v1.UnimplementedAdministrationEventServiceServer
 
-	ds datastore.DataStore
+	ds          datastore.DataStore
+	deployments deploymentDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -59,7 +64,14 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // CountAdministrationEvents returns the number of events matching the request query.
 func (s *serviceImpl) CountAdministrationEvents(ctx context.Context, request *v1.CountAdministrationEventsRequest) (*v1.CountAdministrationEventsResponse, error) {
-	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
+	qb, err := s.getQueryBuilderFromFilter(ctx, request.GetFilter())
+	if err != nil {
+		if errors.Is(err, errNoMatchingImages) {
+			return &v1.CountAdministrationEventsResponse{Count: 0}, nil
+		}
+		return nil, errors.Wrap(err, "building query from filter")
+	}
+	query := qb.ProtoQuery()
 	count, err := s.ds.CountEvents(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count administration events")
@@ -79,7 +91,14 @@ func (s *serviceImpl) GetAdministrationEvent(ctx context.Context, resource *v1.R
 
 // ListAdministrationEvents returns all administration events matching the request query.
 func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.ListAdministrationEventsRequest) (*v1.ListAdministrationEventsResponse, error) {
-	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
+	qb, err := s.getQueryBuilderFromFilter(ctx, request.GetFilter())
+	if err != nil {
+		if errors.Is(err, errNoMatchingImages) {
+			return &v1.ListAdministrationEventsResponse{}, nil
+		}
+		return nil, errors.Wrap(err, "building query from filter")
+	}
+	query := qb.ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
 	query = paginated.FillDefaultSortOption(
 		query,
@@ -100,10 +119,10 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 	return &v1.ListAdministrationEventsResponse{Events: respEvents}, nil
 }
 
-func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.QueryBuilder {
+func (s *serviceImpl) getQueryBuilderFromFilter(ctx context.Context, filter *v1.AdministrationEventsFilter) (*search.QueryBuilder, error) {
 	queryBuilder := search.NewQueryBuilder()
 	if filter == nil {
-		return queryBuilder
+		return queryBuilder, nil
 	}
 
 	queryBuilder = queryBuilder.
@@ -119,7 +138,6 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, sliceutils.Unique(domains)...)
 	}
 	if levels := filter.GetLevel(); len(levels) != 0 {
-
 		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel,
 			sliceutils.Unique(sliceutils.StringSlice(levels...))...)
 	}
@@ -130,5 +148,65 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
 		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, sliceutils.Unique(resourceTypes)...)
 	}
-	return queryBuilder
+
+	imageIDs, err := s.resolveWorkloadFilterToImageIDs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if imageIDs != nil {
+		if len(imageIDs) == 0 {
+			return nil, errNoMatchingImages
+		}
+		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, "Image")
+		queryBuilder = queryBuilder.AddExactMatches(search.ResourceID, imageIDs...)
+	}
+
+	return queryBuilder, nil
+}
+
+// resolveWorkloadFilterToImageIDs returns image IDs for deployments matching
+// the workload query. Returns nil if no workload query is set. Returns empty
+// slice if the query matched zero deployments.
+func (s *serviceImpl) resolveWorkloadFilterToImageIDs(ctx context.Context, filter *v1.AdministrationEventsFilter) ([]string, error) {
+	rawQuery := filter.GetWorkloadQuery()
+	if rawQuery == "" {
+		return nil, nil
+	}
+
+	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
+		hasImage := false
+		for _, rt := range resourceTypes {
+			if rt == "Image" {
+				hasImage = true
+				break
+			}
+		}
+		if !hasImage {
+			return nil, nil
+		}
+	}
+
+	parsedQuery, err := search.ParseQuery(rawQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing workload query")
+	}
+
+	imageViews, err := s.deployments.GetContainerImageViews(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "searching container images for workload filter")
+	}
+	if len(imageViews) == 0 {
+		return []string{}, nil
+	}
+
+	imageIDSet := set.NewStringSet()
+	for _, view := range imageViews {
+		if id := view.GetImageID(); id != "" {
+			imageIDSet.Add(id)
+		}
+		if digest := view.GetImageDigest(); digest != "" {
+			imageIDSet.Add(digest)
+		}
+	}
+	return imageIDSet.AsSlice(), nil
 }

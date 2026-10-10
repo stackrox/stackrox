@@ -277,7 +277,11 @@ type AdministrationEventsFilter struct {
 	// Matches events based on their type.
 	Type []AdministrationEventType `protobuf:"varint,5,rep,packed,name=type,proto3,enum=v1.AdministrationEventType" json:"type,omitempty"`
 	// Matches events based on their level.
-	Level         []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	Level []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	// Raw search query scoped to workload context (cluster, namespace, deployment).
+	// Matches events whose resource is an image deployed in workloads matching this query.
+	// Uses the same search query format as the deployment service (e.g. "Cluster:prod+Namespace:default").
+	WorkloadQuery string `protobuf:"bytes,7,opt,name=workload_query,json=workloadQuery,proto3" json:"workload_query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -352,6 +356,13 @@ func (x *AdministrationEventsFilter) GetLevel() []AdministrationEventLevel {
 		return x.Level
 	}
 	return nil
+}
+
+func (x *AdministrationEventsFilter) GetWorkloadQuery() string {
+	if x != nil {
+		return x.WorkloadQuery
+	}
+	return ""
 }
 
 type CountAdministrationEventsRequest struct {
@@ -676,14 +687,15 @@ const file_api_v1_administration_events_service_proto_rawDesc = "" +
 	"\bResource\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"\xa0\x02\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xc7\x02\n" +
 	"\x1aAdministrationEventsFilter\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x120\n" +
 	"\x05until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05until\x12\x16\n" +
 	"\x06domain\x18\x03 \x03(\tR\x06domain\x12#\n" +
 	"\rresource_type\x18\x04 \x03(\tR\fresourceType\x12/\n" +
 	"\x04type\x18\x05 \x03(\x0e2\x1b.v1.AdministrationEventTypeR\x04type\x122\n" +
-	"\x05level\x18\x06 \x03(\x0e2\x1c.v1.AdministrationEventLevelR\x05level\"Z\n" +
+	"\x05level\x18\x06 \x03(\x0e2\x1c.v1.AdministrationEventLevelR\x05level\x12%\n" +
+	"\x0eworkload_query\x18\a \x01(\tR\rworkloadQuery\"Z\n" +
 	" CountAdministrationEventsRequest\x126\n" +
 	"\x06filter\x18\x01 \x01(\v2\x1e.v1.AdministrationEventsFilterR\x06filter\"9\n" +
 	"!CountAdministrationEventsResponse\x12\x14\n" +

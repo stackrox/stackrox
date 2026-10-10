@@ -106,13 +106,14 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 		obj.GetLevel(),
 		obj.GetDomain(),
 		obj.GetResource().GetType(),
+		obj.GetResource().GetId(),
 		obj.GetNumOccurrences(),
 		protocompat.NilOrTime(obj.GetLastOccurredAt()),
 		protocompat.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, NumOccurrences, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, NumOccurrences = EXCLUDED.NumOccurrences, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, Resource_Id, NumOccurrences, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, Resource_Id = EXCLUDED.Resource_Id, NumOccurrences = EXCLUDED.NumOccurrences, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -124,6 +125,7 @@ var copyColsAdministrationEvents = []string{
 	"level",
 	"domain",
 	"resource_type",
+	"resource_id",
 	"numoccurrences",
 	"lastoccurredat",
 	"createdat",
@@ -166,6 +168,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetLevel(),
 			obj.GetDomain(),
 			obj.GetResource().GetType(),
+			obj.GetResource().GetId(),
 			obj.GetNumOccurrences(),
 			protocompat.NilOrTime(obj.GetLastOccurredAt()),
 			protocompat.NilOrTime(obj.GetCreatedAt()),

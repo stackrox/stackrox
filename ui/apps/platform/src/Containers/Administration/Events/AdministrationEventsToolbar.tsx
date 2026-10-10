@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import {
+    Content,
+    Divider,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -7,6 +9,10 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     getAdministrationEventsFilter,
     replaceSearchFilterDomain,
@@ -15,7 +21,9 @@ import {
 } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 import type { SearchFilter } from 'types/search';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
+import { workloadSearchFilterConfig } from './workloadSearchFilterConfig';
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';
 import SearchFilterResourceType from './SearchFilterResourceType';
@@ -58,6 +66,10 @@ function AdministrationEventsToolbar({
 
     function setResourceType(resourceType: string | undefined) {
         setSearchFilter(replaceSearchFilterResourceType(searchFilter, resourceType));
+    }
+
+    function onWorkloadFilterApplied(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     }
 
     const { domain, level, resourceType } = getAdministrationEventsFilter(searchFilter);
@@ -118,6 +130,28 @@ function AdministrationEventsToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
+            </ToolbarContent>
+            <Divider />
+            <ToolbarContent>
+                <ToolbarItem>
+                    <Content component="small">Filter by related workload context</Content>
+                </ToolbarItem>
+                <CompoundSearchFilter
+                    config={workloadSearchFilterConfig}
+                    isDisabled={isDisabled}
+                    searchFilter={searchFilter}
+                    onSearch={onWorkloadFilterApplied}
+                />
+                {getHasSearchApplied(searchFilter) && (
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[]}
+                            config={workloadSearchFilterConfig}
+                            onFilterChange={setSearchFilter}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                )}
             </ToolbarContent>
         </Toolbar>
     );

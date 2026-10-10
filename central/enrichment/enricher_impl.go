@@ -56,6 +56,7 @@ func (e *enricherImpl) EnrichDeployment(ctx context.Context, enrichCtx enricher.
 			if env.AdministrationEventsAdHocScans.BooleanSetting() {
 				log.Errorw("Enriching image",
 					logging.ImageName(imgToProcess.GetName().GetFullName()),
+					logging.ImageID(imgToProcess.GetId()),
 					logging.Err(err),
 					logging.Bool("ad_hoc", true),
 				)
@@ -98,6 +99,7 @@ func (e *enricherImpl) EnrichDeploymentV2(ctx context.Context, enrichCtx enriche
 			if env.AdministrationEventsAdHocScans.BooleanSetting() {
 				log.Errorw("Enriching image",
 					logging.ImageName(imgToProcess.GetName().GetFullName()),
+					logging.ImageID(imgToProcess.GetId()),
 					logging.Err(err),
 					logging.Bool("ad_hoc", true),
 				)
