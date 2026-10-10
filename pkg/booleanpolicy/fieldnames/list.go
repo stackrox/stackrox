@@ -40,6 +40,7 @@ var (
 	HostIPC                        = newFieldName("Host IPC")
 	HostNetwork                    = newFieldName("Host Network")
 	HostPID                        = newFieldName("Host PID")
+	ContainerAge                   = newFieldName("Container Age")
 	ImageAge                       = newFieldName("Image Age")
 	ImageComponent                 = newFieldName("Image Component")
 	ImageOS                        = newFieldName("Image OS")
