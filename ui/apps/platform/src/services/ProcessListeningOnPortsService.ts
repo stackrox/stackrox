@@ -46,17 +46,32 @@ export type ProcessListeningOnPort = {
     containerStartTime: string | null;
 };
 
+type ListeningEndpointsResponse = {
+    listeningEndpoints: ProcessListeningOnPort[];
+    totalListeningEndpoints: number;
+};
+
 /**
- * Get all listening endpoints for a deployment
+ * Get paginated listening endpoints for a deployment.
  */
 export function getListeningEndpointsForDeployment(
-    deploymentId: string
-): CancellableRequest<ProcessListeningOnPort[]> {
+    deploymentId: string,
+    pagination?: { offset: number; limit: number }
+): CancellableRequest<ListeningEndpointsResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{
-                listeningEndpoints: ProcessListeningOnPort[];
-            }>(`${listeningEndpointsBaseUrl}/deployment/${deploymentId}`, { signal })
-            .then((response) => response.data.listeningEndpoints)
+            .get<ListeningEndpointsResponse>(
+                `${listeningEndpointsBaseUrl}/deployment/${deploymentId}`,
+                {
+                    signal,
+                    params: pagination
+                        ? {
+                              'pagination.offset': pagination.offset,
+                              'pagination.limit': pagination.limit,
+                          }
+                        : undefined,
+                }
+            )
+            .then((response) => response.data)
     );
 }
