@@ -268,12 +268,12 @@ def read_events_rate_from_bundles(run_dir, metric_name='rox_sensor_file_access_e
     return (v_last - v_first) / elapsed
 
 def _to_gb(values):
-    """Convert a list of byte values to GB, preserving None entries."""
+    """Convert a list of byte values to GiB, preserving None entries."""
     return [v / (1024**3) if v else None for v in values]
 
 
 def _to_mb(values):
-    """Convert a list of byte values to MB, preserving None entries."""
+    """Convert a list of byte values to MiB, preserving None entries."""
     return [v / (1024**2) if v else None for v in values]
 
 
@@ -355,47 +355,47 @@ STANDARD_PLOTS = [
     ('central_cpu',   'central_cpu_vs_rate.png',
      'Central CPU Usage vs File Activity Event Rate\n(averaged over {win})', 'Average CPU Usage (cores)'),
     ('central_mem',   'central_mem_vs_rate.png',
-     'Central Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GB)'),
+     'Central Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GiB)'),
     ('central_ws',    'central_ws_vs_rate.png',
-     'Central Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GB)'),
+     'Central Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GiB)'),
     ('central_heap',  'central_heap_vs_rate.png',
-     'Central Go Heap In-Use vs File Activity Event Rate\n(averaged over {win})', 'Average Go Heap In-Use (GB)'),
+     'Central Go Heap In-Use vs File Activity Event Rate\n(averaged over {win})', 'Average Go Heap In-Use (GiB)'),
     ('centraldb_cpu', 'centraldb_cpu_vs_rate.png',
      'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {win})', 'Average CPU Usage (cores)'),
     ('centraldb_mem', 'centraldb_mem_vs_rate.png',
-     'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GB)'),
+     'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GiB)'),
     ('centraldb_ws',  'centraldb_ws_vs_rate.png',
-     'Central-DB Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GB)'),
+     'Central-DB Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GiB)'),
     ('sensor_cpu',    'sensor_cpu_vs_rate.png',
      'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {win})', 'Average CPU Usage (cores)'),
     ('sensor_mem',    'sensor_mem_vs_rate.png',
-     'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GB)'),
+     'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {win})', 'Average Memory Usage (GiB)'),
     ('sensor_ws',     'sensor_ws_vs_rate.png',
-     'Sensor Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GB)'),
+     'Sensor Working Set Memory vs File Activity Event Rate\n(averaged over {win})', 'Average Working Set (GiB)'),
     ('sensor_heap',   'sensor_heap_vs_rate.png',
-     'Sensor Go Heap In-Use vs File Activity Event Rate\n(averaged over {win})', 'Average Go Heap In-Use (GB)'),
+     'Sensor Go Heap In-Use vs File Activity Event Rate\n(averaged over {win})', 'Average Go Heap In-Use (GiB)'),
     ('collector_cpu', 'collector_cpu_vs_rate.png',
      'Collector CPU Usage vs File Activity Event Rate\n(summed across pods, averaged over {win})',
      'Average CPU Usage (cores, all pods)'),
     ('collector_mem', 'collector_mem_vs_rate.png',
      'Collector Memory Usage vs File Activity Event Rate\n(summed across pods, averaged over {win})',
-     'Average Memory Usage (GB, all pods)'),
+     'Average Memory Usage (GiB, all pods)'),
     ('fact_cpu',      'fact_cpu_vs_rate.png',
-     'Fact (file-activity monitor) CPU Usage vs Event Rate\n(summed across pods, averaged over {win})',
+     'Fact CPU Usage vs Event Rate\n(summed across pods, averaged over {win})',
      'Average CPU Usage (cores, all pods)'),
     ('fact_mem',      'fact_mem_vs_rate.png',
-     'Fact (file-activity monitor) Memory Usage vs Event Rate\n(summed across pods, averaged over {win})',
-     'Average Memory Usage (GB, all pods)'),
+     'Fact Memory Usage vs Event Rate\n(summed across pods, averaged over {win})',
+     'Average Memory Usage (GiB, all pods)'),
     ('alerts_count',  'alerts_count_vs_rate.png',
      'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {win})', 'Maximum Alert Count'),
     ('alerts_size',   'alerts_size_vs_rate.png',
-     'Alerts Table Size vs File Activity Event Rate\n(maximum within {win})', 'Maximum Table Size (MB)'),
+     'Alerts Table Size vs File Activity Event Rate\n(maximum within {win})', 'Maximum Table Size (MiB)'),
     ('process_indicators_count', 'process_indicators_count_vs_rate.png',
      'Process Indicators Table Row Count vs File Activity Event Rate\n(maximum within {win})',
      'Maximum Row Count'),
     ('process_indicators_size',  'process_indicators_size_vs_rate.png',
      'Process Indicators Table Size vs File Activity Event Rate\n(maximum within {win})',
-     'Maximum Table Size (MB)'),
+     'Maximum Table Size (MiB)'),
     ('network_flows_received', 'network_flows_received_vs_rate.png',
      'Sensor Network Flows Received Rate vs File Activity Event Rate\n(averaged over {win})',
      'Network Flows Received (flows/sec)'),
@@ -406,7 +406,7 @@ STANDARD_PLOTS = [
 
 
 def _convert(v, conv):
-    """Post-scale a value to GB/MB, preserving None."""
+    """Post-scale a value to GiB/MiB (binary, 1024-based), preserving None."""
     if v is None:
         return None
     if conv == 'gb':

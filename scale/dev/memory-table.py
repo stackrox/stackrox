@@ -43,8 +43,8 @@ def load_plot_helpers():
     return mod
 
 
-def avg_gb(mod, run_dir, component, metric):
-    """Average of a memory series (GB) over the test-length window, or None."""
+def avg_gib(mod, run_dir, component, metric):
+    """Average of a memory series (GiB) over the test-length window, or None."""
     if run_dir is None:
         return None
     # Window matched to the test length parsed from the dir name (see trend_window).
@@ -53,7 +53,8 @@ def avg_gb(mod, run_dir, component, metric):
     v = mod.read_metric_average(
         os.path.join(run_dir, f'metrics_{component}_{metric}.txt'),
         START_OFFSET, end, baseline)
-    return None if v is None else v / 1e9
+    # Binary GiB (1024**3), matching plot-batch-comparison.py's memory axes.
+    return None if v is None else v / (1024 ** 3)
 
 
 def main():
@@ -74,18 +75,18 @@ def main():
 
     order = "/".join(label for _, label in MODES)
     print(f"Results dir: {base}")
-    print(f"Average GB over the test-length window. Cells are {order}.")
+    print(f"Average GiB over the test-length window. Cells are {order}.")
     print("usage = container_memory_usage_bytes; wset = container_memory_working_set_bytes.\n")
 
     col_w = 22
-    for metric, header in [('mem', 'Usage (GB)'), ('mem_workingset', 'Working Set (GB)')]:
+    for metric, header in [('mem', 'Usage (GiB)'), ('mem_workingset', 'Working Set (GiB)')]:
         print(f"=== {header} ===")
         print(f"{'rate':>6} " + " ".join(f"{c:>{col_w}}" for c in COMPONENTS))
         for r in rates:
             run_dirs = [find_run_dir(r, suffix) for suffix, _ in MODES]
             cells = []
             for c in COMPONENTS:
-                cell = "/".join(fmt(avg_gb(mod, rd, c, metric)) for rd in run_dirs)
+                cell = "/".join(fmt(avg_gib(mod, rd, c, metric)) for rd in run_dirs)
                 cells.append(f"{cell:>{col_w}}")
             print(f"{r:>6} " + " ".join(cells))
         print()
