@@ -1105,7 +1105,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"apiKey: String!",
 	}))
 	utils.Must(builder.AddInput("Pagination", []string{
-		"limit: Int",
+		"Limit: Int",
 		"offset: Int",
 		"sortOption: SortOption",
 		"sortOptions: [SortOption]",
