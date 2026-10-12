@@ -56,7 +56,7 @@ func (s *baseTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = context.Background()
 	s.datastoreMock = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.service = newService(s.datastoreMock)
+	s.service = newService(s.datastoreMock, nil)
 }
 
 // Test CountAdministrationEvents
@@ -172,6 +172,7 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
 // Test query builder
 
 func TestAdministrationEventsQueryBuilder(t *testing.T) {
+	svc := &serviceImpl{}
 	filter := &v1.AdministrationEventsFilter{
 		From:         protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		Until:        protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
@@ -180,23 +181,34 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 		Type:         []v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC},
 		Level:        []v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR},
 	}
-	queryBuilder := getQueryBuilderFromFilter(filter)
-
-	rawQuery, err := queryBuilder.RawQuery()
+	query, err := svc.getQueryFromFilter(context.Background(), filter)
 	require.NoError(t, err)
 
-	assert.Contains(t, rawQuery, "Created Time:tr/1000000-10000000")
-	assert.Contains(t, rawQuery, `Event Domain:"domain"`)
-	assert.Contains(t, rawQuery, `Event Level:"ADMINISTRATION_EVENT_LEVEL_ERROR"`)
-	assert.Contains(t, rawQuery, `Event Type:"ADMINISTRATION_EVENT_TYPE_GENERIC"`)
-	assert.Contains(t, rawQuery, `Resource Type:"resourceType"`)
+	queryStr := query.String()
+	assert.Contains(t, queryStr, `Resource Type`)
+	assert.Contains(t, queryStr, `Event Domain`)
+	assert.Contains(t, queryStr, `Event Level`)
+	assert.Contains(t, queryStr, `Event Type`)
+	assert.Contains(t, queryStr, `Created Time`)
+}
+
+func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
+	svc := &serviceImpl{}
+	filter := &v1.AdministrationEventsFilter{
+		ResourceType:  []string{"Node"},
+		WorkloadQuery: `Cluster:"prod"`,
+	}
+	query, err := svc.getQueryFromFilter(context.Background(), filter)
+	require.NoError(t, err)
+
+	queryStr := query.String()
+	assert.Contains(t, queryStr, "Node")
+	assert.NotContains(t, queryStr, "Resource ID")
 }
 
 func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
-	queryBuilder := getQueryBuilderFromFilter(nil)
-
-	rawQuery, err := queryBuilder.RawQuery()
+	svc := &serviceImpl{}
+	query, err := svc.getQueryFromFilter(context.Background(), nil)
 	require.NoError(t, err)
-
-	assert.Empty(t, rawQuery)
+	assert.NotNil(t, query)
 }

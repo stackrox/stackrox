@@ -3,7 +3,7 @@ import qs from 'qs';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import type { SortOption } from 'types/table';
 
-import { getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 
 import type { Pagination } from './types';
@@ -95,6 +95,7 @@ export type AdministrationEventsFilter = {
     resourceType?: string[];
     type?: AdministrationEventType[];
     level?: AdministrationEventLevel[];
+    workloadQuery?: string;
 };
 
 // For consistency with useURLSort hook, especially in case the table columns become sortable,
@@ -104,6 +105,15 @@ const domainField = 'Event Domain';
 const levelField = 'Event Level';
 const resourceTypeField = 'Resource Type';
 const typeField = 'Event Type';
+
+const eventFilterFields = new Set([
+    domainField,
+    levelField,
+    resourceTypeField,
+    typeField,
+    'from',
+    'until',
+]);
 
 export type CountAdministrationEventsRequest = {
     filter: AdministrationEventsFilter;
@@ -172,6 +182,11 @@ export function getListAdministrationEventsArg({
 export function getAdministrationEventsFilter(
     searchFilter: SearchFilter
 ): AdministrationEventsFilter {
+    const workloadFilter: SearchFilter = Object.fromEntries(
+        Object.entries(searchFilter).filter(([key]) => !eventFilterFields.has(key))
+    );
+    const workloadQuery = getRequestQueryStringForSearchFilter(workloadFilter) || undefined;
+
     return {
         from: getDateTime(searchFilter.from),
         until: getDateTime(searchFilter.until),
@@ -179,6 +194,7 @@ export function getAdministrationEventsFilter(
         level: getLevel(searchFilter[levelField]),
         resourceType: getValue(searchFilter[resourceTypeField]),
         type: getType(searchFilter[typeField]),
+        workloadQuery,
     };
 }
 
@@ -188,14 +204,15 @@ function hasItems(arg: unknown[] | undefined) {
 
 export function hasAdministrationEventsFilter(searchFilter: SearchFilter) {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const { from, until, domain, level, resourceType, type } = filter;
+    const { from, until, domain, level, resourceType, type, workloadQuery } = filter;
     return (
         Boolean(from) ||
         Boolean(until) ||
         hasItems(domain) ||
         hasItems(level) ||
         hasItems(resourceType) ||
-        hasItems(type)
+        hasItems(type) ||
+        Boolean(workloadQuery)
     );
 }
 
