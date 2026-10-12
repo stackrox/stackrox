@@ -36,7 +36,7 @@ so you can use roxie CLI flags even with `deploy.sh`, e.g.:
 ```
 
 The roxie backend in `deploy.sh` is **opt-out**. Set `USE_ROXIE_DEPLOY=false` to fall
-back to the legacy flow. Eventually the legacy deployment scripts will be removed entirely.
+back to the legacy flow. The legacy deployment scripts will be removed entirely soon.
 
 If you would like to use roxie directly, but roxie is not installed on your system, all `roxie`
 commands below can also be run via `scripts/roxie.sh` instead:
