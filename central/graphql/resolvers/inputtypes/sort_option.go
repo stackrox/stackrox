@@ -9,15 +9,15 @@ import (
 
 // SortOption is the sort option input type.
 type SortOption struct {
-	Field       *string
-	AggregateBy *AggregateBy
-	Reversed    *bool
+	Field       *string      `json:"field"`
+	AggregateBy *AggregateBy `json:"aggregateBy"`
+	Reversed    *bool        `json:"reversed"`
 }
 
 // AggregateBy is the input type to specifies the aggregation to be applied to sort field. e.g. count, min, max.
 type AggregateBy struct {
-	AggregateFunc *string
-	Distinct      *bool
+	AggregateFunc *string `json:"aggregateFunc"`
+	Distinct      *bool   `json:"distinct"`
 }
 
 // AsV1SortOption converts the sort option to proto.

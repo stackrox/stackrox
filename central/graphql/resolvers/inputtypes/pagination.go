@@ -6,12 +6,12 @@ import (
 
 // Pagination struct contains limit, offset and sort options
 type Pagination struct {
-	Offset      *int32
-	Limit       *int32
-	SortOptions *[]*SortOption
+	Offset      *int32         `json:"offset"`
+	Limit       *int32         `json:"limit"`
+	SortOptions *[]*SortOption `json:"sortOptions"`
 
 	// Retained for backward compatibility.
-	SortOption *SortOption
+	SortOption *SortOption `json:"sortOption"`
 }
 
 // AsV1Pagination returns a proto Pagination struct

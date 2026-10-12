@@ -8,8 +8,8 @@ import (
 
 // VulnReqExpiry represents when a vulnerability request can expire.
 type VulnReqExpiry struct {
-	ExpiresWhenFixed *bool
-	ExpiresOn        *graphql.Time
+	ExpiresWhenFixed *bool         `json:"expiresWhenFixed"`
+	ExpiresOn        *graphql.Time `json:"expiresOn"`
 }
 
 // AsRequestExpiry converts vulnerability request expiry to proto.
@@ -37,24 +37,24 @@ func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
 
 // DeferVulnRequest encapsulates the request data for vulnerability deferral request.
 type DeferVulnRequest struct {
-	Cve              *string
-	Comment          *string
-	Scope            *VulnReqScope
-	ExpiresWhenFixed *bool
-	ExpiresOn        *graphql.Time
+	Cve              *string       `json:"cve"`
+	Comment          *string       `json:"comment"`
+	Scope            *VulnReqScope `json:"scope"`
+	ExpiresWhenFixed *bool         `json:"expiresWhenFixed"`
+	ExpiresOn        *graphql.Time `json:"expiresOn"`
 }
 
 // FalsePositiveVulnRequest encapsulates the request data to mark the vulnerability as false-positive.
 type FalsePositiveVulnRequest struct {
-	Cve     *string
-	Comment *string
-	Scope   *VulnReqScope
+	Cve     *string       `json:"cve"`
+	Comment *string       `json:"comment"`
+	Scope   *VulnReqScope `json:"scope"`
 }
 
 // VulnReqScope represents the scope of vulnerability request.
 type VulnReqScope struct {
-	ImageScope  *VulnReqImageScope
-	GlobalScope *VulnReqGlobalScope
+	ImageScope  *VulnReqImageScope  `json:"imageScope"`
+	GlobalScope *VulnReqGlobalScope `json:"globalScope"`
 }
 
 // AsV1VulnerabilityRequestScope converts vulnerability request scope to proto.
@@ -81,9 +81,9 @@ func (rs *VulnReqScope) AsV1VulnerabilityRequestScope() *storage.VulnerabilityRe
 
 // VulnReqImageScope represents the image scope of a vulnerability request.
 type VulnReqImageScope struct {
-	Registry *string
-	Remote   *string
-	Tag      *string
+	Registry *string `json:"registry"`
+	Remote   *string `json:"remote"`
+	Tag      *string `json:"tag"`
 }
 
 // AsV1VulnerabilityRequestImageScope converts vulnerability request image scope to proto.
@@ -115,7 +115,7 @@ func (rs *VulnReqImageScope) AsV1VulnerabilityRequestImageScope() *storage.Vulne
 
 // VulnReqGlobalScope represents the global scope of a vulnerability request.
 type VulnReqGlobalScope struct {
-	Images *VulnReqImageScope
+	Images *VulnReqImageScope `json:"images"`
 }
 
 // AsV1VulnerabilityRequestGlobalScope converts vulnerability request global scope to proto.
