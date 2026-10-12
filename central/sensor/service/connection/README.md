@@ -69,12 +69,23 @@ N clusters × M resource types seen × 17 workers
 For 10 clusters each sending 15 resource types that is 2 550 goroutines just for workers,
 plus Layer-2 queues and their goroutines on top.
 
-**Gotcha (unbounded queues):** the Layer-4 `DedupingQueue` slots have no capacity cap.
-Items flow through Layers 2 and 3 quickly (dispatch only), but sit in Layer 4 until a
-worker goroutine runs the pipeline fragment — which involves DB writes and can be slow. If
-events arrive faster than the pipeline can process them, the queues grow without limit and
-will eventually cause an OOM. Replace-in-place dedup provides partial relief for messages
-that carry a `DedupeKey`, but messages with an empty key are always appended.
+**Gotcha (unbounded queues):** by default the Layer-4 `DedupingQueue` slots have no
+capacity cap. Items flow through Layers 2 and 3 quickly (dispatch only), but sit in Layer 4
+until a worker goroutine runs the pipeline fragment — which involves DB writes and can be
+slow. If events arrive faster than the pipeline can process them, an uncapped queue grows
+without limit and will eventually cause an OOM. Replace-in-place dedup provides partial
+relief for messages that carry a `DedupeKey`, but messages with an empty key are always
+appended.
+
+The **alerts** queue (`AlertResults`) is the exception: each of its shards is capped via
+`dedupingqueue.WithMaxSize`, configured by `ROX_ALERT_QUEUE_MAX_SHARD_SIZE` (default 10000
+per shard, 0 to disable). On overflow a shard evicts its oldest message, keeping the most
+recent ones — acceptable for alerts because Sensor re-sends current violations and the alert
+manager already retains only the most recent per alert. The cap is **per shard**, not a
+shared total, so a single noisy deployment (whose alerts all hash to one shard) cannot evict
+unique messages queued for other deployments on other shards. Other resource types stay
+uncapped for now: dropping their events could lose non-regenerable data or desync
+reconciliation, so a general cap needs a separate design discussion.
 
 ### Layer 5 — Pipeline fragments
 

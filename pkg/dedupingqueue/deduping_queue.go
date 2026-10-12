@@ -46,6 +46,15 @@ func WithQueueName[K comparable](name string) OptionFunc[K] {
 	}
 }
 
+// WithMaxSize caps the number of items the queue retains. When a push would exceed the
+// cap, the oldest item is evicted to make room, keeping the most recent items. A value
+// of 0 (the default) leaves the queue unbounded.
+func WithMaxSize[K comparable](maxSize int) OptionFunc[K] {
+	return func(queue *DedupingQueue[K]) {
+		queue.maxSize = maxSize
+	}
+}
+
 // DedupingQueue a queue with unique values.
 type DedupingQueue[K comparable] struct {
 	lock            sync.Mutex
@@ -55,6 +64,8 @@ type DedupingQueue[K comparable] struct {
 	sizeMetric      prometheus.Gauge
 	operationMetric func(ops.Op, string)
 	name            string
+	// maxSize caps the number of retained items; 0 means unbounded. See WithMaxSize.
+	maxSize int
 }
 
 // NewDedupingQueue creates a new DedupingQueue
@@ -127,23 +138,43 @@ func (q *DedupingQueue[K]) Push(item Item[K]) {
 			q.operationMetric(ops.Add, q.name)
 		}
 		q.queue.PushBack(item)
-		return
-	}
-	var msgInserted *list.Element
-	if oldItem, ok := q.indexer[key]; ok {
+	} else if oldItem, ok := q.indexer[key]; ok {
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Dedupe, q.name)
 		}
 		if m, ok := item.(Mergeable[K]); ok {
 			m.MergeFrom(oldItem.Value.(Item[K]))
 		}
-		msgInserted = q.queue.InsertBefore(item, oldItem)
+		q.indexer[key] = q.queue.InsertBefore(item, oldItem)
 		q.queue.Remove(oldItem)
 	} else {
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Add, q.name)
 		}
-		msgInserted = q.queue.PushBack(item)
+		q.indexer[key] = q.queue.PushBack(item)
 	}
-	q.indexer[key] = msgInserted
+
+	// Enforce the cap (if any) by evicting the oldest item. Only a unique add grows the
+	// queue, so at most one eviction is ever needed per push, and the item just pushed
+	// (at the back) is never the one evicted.
+	if q.maxSize > 0 && q.queue.Len() > q.maxSize {
+		q.evictOldestNoLock()
+	}
+}
+
+// evictOldestNoLock removes the item at the front of the queue to enforce maxSize.
+// The caller must hold q.lock. The eviction is reported via the Dropped operation
+// metric so that overflow is observable.
+func (q *DedupingQueue[K]) evictOldestNoLock() {
+	front := q.queue.Front()
+	if front == nil {
+		return
+	}
+	evicted := q.queue.Remove(front).(Item[K])
+	if q.operationMetric != nil {
+		q.operationMetric(ops.Dropped, q.name)
+	}
+	if key := evicted.GetDedupeKey(); key != *new(K) {
+		delete(q.indexer, key)
+	}
 }

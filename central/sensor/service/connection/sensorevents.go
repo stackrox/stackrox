@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -22,9 +23,22 @@ import (
 const workerQueueSize = 16
 
 var (
-	deploymentEventType = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
-	nodeEventType       = reflectutils.Type((*central.SensorEvent_Node)(nil))
+	deploymentEventType   = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
+	nodeEventType         = reflectutils.Type((*central.SensorEvent_Node)(nil))
+	alertResultsEventType = reflectutils.Type((*central.SensorEvent_AlertResults)(nil))
 )
+
+// maxShardSizeForType returns the per-shard cap (number of buffered messages per shard)
+// for a worker queue of the given type, or 0 for unbounded. Only the alerts queue is
+// capped today: Sensor can emit runtime alerts far faster than Central drains them, and
+// all of a deployment's alerts hash to a single shard, so an unbounded alerts queue is
+// the dominant source of Central heap growth under load.
+func maxShardSizeForType(workerType string) int {
+	if workerType == alertResultsEventType {
+		return env.AlertQueueMaxShardSize.IntegerSetting()
+	}
+	return 0
+}
 
 type sensorEventHandler struct {
 	cluster       *storage.Cluster
@@ -161,7 +175,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		concurrency.WithLock(&s.workerQueuesMutex, func() {
 			queue = s.workerQueues[workerType]
 			if queue == nil {
-				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
+				queue = newWorkerQueue(workerQueueSize, workerType, s.injector)
 				s.workerQueues[workerType] = queue
 				go queue.run(ctx, s.stopSig, s.deduper, s.handleMessages)
 			}
