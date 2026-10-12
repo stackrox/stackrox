@@ -26,6 +26,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
 - ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
+- ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
+
+- ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
 
 ## [5.0.0]
 
@@ -70,6 +73,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
+- ROX-36432: Fixed node scan results (`scan.scanTime`) silently freezing on installs whose default Scanner V4 integration lacked the `NODE_SCANNER` category. Central now restores the default categories on startup. Affected nodes move from Scanner V2 results to Scanner V4 results, so their vulnerability counts may change.
 
 ## [4.11.0]
 

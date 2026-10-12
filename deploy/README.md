@@ -24,8 +24,9 @@ Installation of roxie is straightforward:
    the hood.
 1. there is also a containerized version of roxie living at quay.io/rhacs-eng/roxie, which can be used ad-hoc.
 
-Furthermore, the `deploy/deploy.sh` shell script supports a roxie backend: set `USE_ROXIE_DEPLOY=true` in the
-environment and it will automatically download and run the roxie version specified in the `ROXIE_VERSION` file.
+Furthermore, the `deploy/deploy.sh` shell script uses a roxie backend by default. It will automatically
+download and run the roxie version specified in the `ROXIE_VERSION` file. To fall back to the legacy
+deploy flow, set `USE_ROXIE_DEPLOY=false` in the environment.
 
 Any extra arguments you pass to `deploy.sh` are forwarded directly to roxie,
 so you can use roxie CLI flags even with `deploy.sh`, e.g.:
@@ -34,8 +35,8 @@ so you can use roxie CLI flags even with `deploy.sh`, e.g.:
 ./deploy/deploy.sh --tag 4.11.0
 ```
 
-The roxie backend in `deploy.sh` is **opt-in** for now. Over time, we expect it to
-become opt-out, and eventually the legacy deployment scripts will be removed entirely.
+The roxie backend in `deploy.sh` is **opt-out**. Set `USE_ROXIE_DEPLOY=false` to fall
+back to the legacy flow. The legacy deployment scripts will be removed entirely soon.
 
 If you would like to use roxie directly, but roxie is not installed on your system, all `roxie`
 commands below can also be run via `scripts/roxie.sh` instead:
@@ -124,7 +125,6 @@ roxie deploy [ <roxie args> ... ] --tag <main tag>
 ```
 or alternatively
 ```
-export USE_ROXIE_DEPLOY=true
 MAIN_IMAGE_TAG=<main tag> ./deploy/deploy.sh [ <roxie args> ... ]
 ```
 
