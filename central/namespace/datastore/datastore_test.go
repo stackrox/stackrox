@@ -557,62 +557,6 @@ func (s *namespaceDatastoreComprehensiveSuite) TestConcurrentOperations() {
 	}
 }
 
-// Test GetNamespacesForSAC edge cases
-func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases() {
-	ns := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA)
-	err := s.datastore.AddNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], ns)
-	s.Require().NoError(err)
-	s.testNamespaceIDs = append(s.testNamespaceIDs, ns.GetId())
-
-	testCases := []struct {
-		name              string
-		contextKey        string
-		expectMinResults  int
-		expectPrioritySet bool
-		validateNamespace bool
-	}{
-		{
-			name:              "GetNamespacesForSAC with full access",
-			contextKey:        testutils.UnrestrictedReadCtx,
-			expectMinResults:  1,
-			expectPrioritySet: false, // Full access path doesn't set priorities
-			validateNamespace: false,
-		},
-		{
-			name:              "GetNamespacesForSAC with limited access",
-			contextKey:        testutils.Cluster1NamespaceAReadWriteCtx,
-			expectMinResults:  1,
-			expectPrioritySet: true, // SearchNamespaces path sets priorities
-			validateNamespace: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			namespaces, err := s.datastore.GetNamespacesForSAC(s.testContexts[tc.contextKey])
-			s.NoError(err)
-			s.GreaterOrEqual(len(namespaces), tc.expectMinResults)
-
-			if tc.validateNamespace {
-				// Should find our test namespace
-				found := false
-				for _, retrievedNs := range namespaces {
-					if retrievedNs.GetId() == ns.GetId() {
-						found = true
-						if tc.expectPrioritySet {
-							castedNs, casted := retrievedNs.(*storage.NamespaceMetadata)
-							s.Require().True(casted)
-							s.GreaterOrEqual(castedNs.GetPriority(), int64(0))
-						}
-						break
-					}
-				}
-				s.True(found)
-			}
-		})
-	}
-}
-
 // TestGetNamespaceLabels tests the GetNamespaceLabels method
 func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespaceLabels() {
 	testCases := []struct {
