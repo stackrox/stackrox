@@ -234,10 +234,14 @@ jobs:
         export_test_environment
         setup_deployment_env false false
 
-        roxie_config=$(mktemp)
-        patch_yaml "${roxie_config}" '.central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = "premium-rwo"'
-        deploy_stackrox_with_roxie_compat "${roxie_config}"
-        rm -f "${roxie_config}"
+        if [[ "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" == 'direct-gke' ]]; then
+          roxie_config=$(mktemp)
+          patch_yaml "${roxie_config}" '.central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = "premium-rwo"'
+          deploy_stackrox_with_roxie_compat "${roxie_config}"
+          rm -f "${roxie_config}"
+        else
+          deploy_stackrox_with_roxie_compat
+        fi
 
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
