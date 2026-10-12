@@ -31,12 +31,6 @@ type workerQueue struct {
 	sync.WaitGroup
 }
 
-// newWorkerQueue creates a worker queue of poolSize+1 sharded DedupingQueues for the given
-// SensorEvent worker type. The shards are named after the type (stripped of its prefix) and
-// each shard caps its buffered messages at maxShardSizeForType(workerType) (0 means
-// unbounded). The cap is per shard rather than a shared total so that one busy shard cannot
-// evict messages queued for other shards; see pkg/env/alert_queue.go for why only the alerts
-// queue is capped today.
 func newWorkerQueue(poolSize int, workerType string, injector common.MessageInjector) *workerQueue {
 	totalSize := poolSize + 1
 	name := stripTypePrefix(workerType)
@@ -65,11 +59,7 @@ func (w *workerQueue) indexFromKey(key string) int {
 	return (int(h.Sum32()) % w.poolSize) + 1
 }
 
-// push adds a message to the appropriate shard of the queue. Each shard enforces its own
-// size cap (see dedupingqueue.WithMaxSize): on overflow the shard evicts its oldest message,
-// keeping the most recent ones -- matching the alert manager, which retains the most recent
-// violations per alert. For the alerts queue this bounds Central's heap when Sensor produces
-// alerts faster than the pipeline drains them.
+// push attempts to add an item to the queue, and returns an error if it is unable.
 func (w *workerQueue) push(msg *central.MsgFromSensor) {
 	// The zeroth index is reserved for objects that do not match the if statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index
@@ -77,6 +67,7 @@ func (w *workerQueue) push(msg *central.MsgFromSensor) {
 	if msg.GetHashKey() != "" {
 		idx = w.indexFromKey(msg.GetHashKey())
 	}
+
 	w.queues[idx].Push(msg)
 }
 

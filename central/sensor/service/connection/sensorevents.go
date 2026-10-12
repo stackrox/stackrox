@@ -30,9 +30,7 @@ var (
 
 // maxShardSizeForType returns the per-shard cap (number of buffered messages per shard)
 // for a worker queue of the given type, or 0 for unbounded. Only the alerts queue is
-// capped today: Sensor can emit runtime alerts far faster than Central drains them, and
-// all of a deployment's alerts hash to a single shard, so an unbounded alerts queue is
-// the dominant source of Central heap growth under load.
+// capped.
 func maxShardSizeForType(workerType string) int {
 	if workerType == alertResultsEventType {
 		return env.AlertQueueMaxShardSize.IntegerSetting()

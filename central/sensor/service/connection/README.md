@@ -80,12 +80,7 @@ appended.
 The **alerts** queue (`AlertResults`) is the exception: each of its shards is capped via
 `dedupingqueue.WithMaxSize`, configured by `ROX_ALERT_QUEUE_MAX_SHARD_SIZE` (default 10000
 per shard, 0 to disable). On overflow a shard evicts its oldest message, keeping the most
-recent ones — acceptable for alerts because Sensor re-sends current violations and the alert
-manager already retains only the most recent per alert. The cap is **per shard**, not a
-shared total, so a single noisy deployment (whose alerts all hash to one shard) cannot evict
-unique messages queued for other deployments on other shards. Other resource types stay
-uncapped for now: dropping their events could lose non-regenerable data or desync
-reconciliation, so a general cap needs a separate design discussion.
+recent ones. The cap is **per shard**, not a shared total.
 
 ### Layer 5 — Pipeline fragments
 
