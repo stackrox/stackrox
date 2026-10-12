@@ -5,25 +5,47 @@ package authorizer
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
-// Run with -cpu=4 -benchtime=30s to include repeated snapshot refreshes under
-// concurrent restricted-user traffic, rather than measuring cache hits alone.
+// Run with -cpu=4 -benchtime=30s to measure SQL scope evaluation under
+// sustained concurrent restricted-user traffic.
 func BenchmarkScopeInventoryAuthorization(b *testing.B) {
+	benchmarkSQLScope(b, func(_ []*storage.Cluster) *storage.SimpleAccessScope_Rules {
+		return &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+			Requirements: []*storage.SetBasedLabelSelector_Requirement{{Key: "team", Op: storage.SetBasedLabelSelector_IN, Values: []string{"allowed"}}},
+		}}}
+	}, 0, "namespace-0")
+}
+
+func BenchmarkScopeNamespaceName(b *testing.B) {
+	benchmarkSQLScope(b, func(clusters []*storage.Cluster) *storage.SimpleAccessScope_Rules {
+		return &storage.SimpleAccessScope_Rules{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
+			ClusterId: clusters[0].GetId(), NamespaceName: "namespace-0",
+		}}}
+	}, 0, "namespace-0")
+}
+
+func BenchmarkScopeBroadNamespaceLabel(b *testing.B) {
+	benchmarkSQLScope(b, func(_ []*storage.Cluster) *storage.SimpleAccessScope_Rules {
+		return &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+			Requirements: []*storage.SetBasedLabelSelector_Requirement{{Key: "team", Op: storage.SetBasedLabelSelector_NOT_IN, Values: []string{"allowed"}}},
+		}}}
+	}, 1, "namespace-1")
+}
+
+func benchmarkSQLScope(b *testing.B, rules func([]*storage.Cluster) *storage.SimpleAccessScope_Rules, clusterIndex int, namespaceName string) {
 	ctx := sac.WithAllAccess(context.Background())
 	db := pgtest.ForT(b)
 	clusters := make([]*storage.Cluster, 16)
@@ -55,42 +77,19 @@ func BenchmarkScopeInventoryAuthorization(b *testing.B) {
 	connection.Release()
 	require.NoError(b, err)
 
-	clusterDS, err := clusterStore.GetTestPostgresDataStore(b, db)
-	require.NoError(b, err)
-	namespaceDS, err := namespaceStore.GetTestPostgresDataStore(b, db)
-	require.NoError(b, err)
-	var loads atomic.Int64
-	cache := &scopeInventoryCache{load: func(ctx context.Context) (inventory, error) {
-		loads.Add(1)
-		clusters, err := clusterDS.GetClustersForSAC(ctx)
-		if err != nil {
-			return inventory{}, err
-		}
-		namespaces, err := namespaceDS.GetNamespacesForSAC(ctx)
-		return inventory{clusters: clusters, namespaces: namespaces}, err
-	}}
-	roles := []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{
-		Id: "label-scope",
-		Rules: &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
-			Requirements: []*storage.SetBasedLabelSelector_Requirement{{Key: "team", Op: storage.SetBasedLabelSelector_IN, Values: []string{"allowed"}}},
-		}}},
-	})}
+	roles := []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "scope", Rules: rules(clusters)})}
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			inventory, err := cache.get(ctx)
-			if err != nil {
-				b.Error(err)
-				return
-			}
-			checker := newGlobalScopeCheckerCore(inventory.clusters, inventory.namespaces, roles, nil)
+			checker := newScopeChecker(roles, nil, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+				return computeSQLScope(ctx, db, rules)
+			})
 			requestCtx := sac.WithGlobalAccessScopeChecker(ctx, checker)
 			if !sac.ForResource(resources.Deployment).ScopeChecker(requestCtx, storage.Access_READ_ACCESS,
-				sac.ClusterScopeKey(clusters[0].GetId()), sac.NamespaceScopeKey("namespace-0")).IsAllowed() {
+				sac.ClusterScopeKey(clusters[clusterIndex].GetId()), sac.NamespaceScopeKey(namespaceName)).IsAllowed() {
 				b.Error("allowed namespace was denied")
 				return
 			}
 		}
 	})
-	b.ReportMetric(float64(loads.Load()), "inventory-loads")
 }

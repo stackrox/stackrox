@@ -1,19 +1,28 @@
-# SAC inventory
+# SAC scope lookups
 
-The built-in scope checker evaluates access scopes using cluster and namespace
-IDs, names, and labels. Each request has its own effective access scope trees;
-requests share an immutable inventory snapshot for five seconds after a successful
-database refresh. Ordinary cluster and namespace store reads go to PostgreSQL.
+The built-in scope checker evaluates cluster and namespace scope rules with
+parameterized PostgreSQL queries. It selects matching IDs and names and builds
+the existing effective access scope tree from those results. Labels and serialized
+objects stay in the database; no complete inventory or shared inventory cache is
+required. Ordinary cluster and namespace store reads also go to PostgreSQL.
 
-The inventory is loaded with an unrestricted SAC context because it is the input
-to authorization, while retaining the requesting context's cancellation and
-deadline. Only one refresh runs at a time. Clusters and namespaces are published
-together after both reads succeed; an expired snapshot is never used as a fallback
-when refreshing fails. Changes to inventory labels and names can take five seconds
-plus the duration of a refresh to affect new requests. Role permissions and access
-scope rules are not cached here.
+Scope metadata is read on first use of an access scope in a request. The resulting
+tree or query error is cached by scope ID for the rest of that request and shared
+across resources and access modes. Concurrent checks cannot duplicate a lookup.
+Permissions remain paired with their role's scope. Built-in unrestricted/deny-all
+scopes and global resources do not query cluster or namespace metadata. Queries
+retain request cancellation and deadlines; failures never grant access.
 
-This snapshot keeps the existing in-memory scope evaluator usable while the
-whole-store caches are removed. A subsequent change will evaluate scope selectors
-using SQL and the label GIN indexes. Name and ID scopes already have the cluster
-primary key/name indexes and the namespace `(name, clusterid)` index available.
+The predicates preserve selector AND/OR composition, empty selectors matching
+nothing, missing labels matching `NOT_IN`/`NOT_EXISTS`, ID precedence in namespace
+rules, and the virtual name labels overriding stored labels. Parent clusters are
+resolved by the namespace's recorded cluster name, as in the original evaluator.
+The GIN indexes support JSONB containment and key existence; negative selectors
+can require database scans and broad scopes still return many matches. Existing
+name and ID indexes cover direct scopes.
+
+Authorization tracing additionally reads cluster IDs/names and a namespace count
+to preserve the existing inventory totals and human-readable decisions. It does
+not load namespace objects. Subsequent requests observe inventory changes without
+the former five-second snapshot delay; an already-computed request scope remains
+stable for that request.

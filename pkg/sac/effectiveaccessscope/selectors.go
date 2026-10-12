@@ -31,7 +31,7 @@ func (s *selectors) matchCluster(cluster Cluster) scopeState {
 	}
 
 	// Augment cluster labels with cluster's name.
-	augmentedClusterLabels := augmentLabels(cluster.GetLabels(), clusterNameLabel, clusterName)
+	augmentedClusterLabels := augmentLabels(cluster.GetLabels(), ClusterNameLabel, clusterName)
 	return matchLabels(s.clustersByLabel, augmentedClusterLabels)
 }
 
@@ -54,7 +54,7 @@ func (s *selectors) matchNamespace(namespace Namespace) scopeState {
 
 	// Augment namespace labels with namespace's FQSN.
 	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
-	namespaceLabels := augmentLabels(namespace.GetLabels(), namespaceNameLabel, namespaceFQSN)
+	namespaceLabels := augmentLabels(namespace.GetLabels(), NamespaceNameLabel, namespaceFQSN)
 
 	return matchLabels(s.namespacesByLabel, namespaceLabels)
 }
