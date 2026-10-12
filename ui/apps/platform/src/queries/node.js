@@ -25,11 +25,6 @@ export const NODE_FRAGMENT = gql`
             key
             value
         }
-        nodeComplianceControlCount(query: "Standard:CIS") {
-            failingCount
-            passingCount
-            unknownCount
-        }
     }
 `;
 
@@ -38,22 +33,6 @@ export const NODE_NAME = gql`
         node(id: $id) {
             id
             name
-        }
-    }
-`;
-
-export const NODE_COMPLIANCE = gql`
-    query compliance {
-        aggregatedResults(groupBy: [STANDARD, NODE], unit: CONTROL) {
-            results {
-                aggregationKeys {
-                    id
-                }
-                numFailing
-                numPassing
-                numSkipped
-                unit
-            }
         }
     }
 `;

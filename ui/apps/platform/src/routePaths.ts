@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { rbacConfigTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
+import { rbacConfigTypes, resourceTypes } from 'constants/entityTypes';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import type { HasReadAccess } from 'hooks/usePermissions';
 import type { ResourceName } from 'types/roleResources';
@@ -38,7 +38,6 @@ export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluster-crs`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const complianceBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -268,7 +267,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: someResource([
             everyResource(['Alert', 'WorkflowAdministration']), // PolicyViolationsBySeverity
             // 'Cluster',
-            'Compliance',
             // 'Deployment',
             // 'Image',
             // 'K8sRole',
@@ -449,7 +447,6 @@ export const urlEntityListTypes: Record<string, string> = {
     [resourceTypes.COMPONENT]: 'components', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-components',
     [resourceTypes.IMAGE_COMPONENT]: 'image-components',
-    [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
     [rbacConfigTypes.SUBJECT]: 'subjects',
     [rbacConfigTypes.ROLE]: 'roles',
@@ -470,8 +467,6 @@ export const urlEntityTypes: Record<string, string> = {
     [resourceTypes.COMPONENT]: 'component', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-component',
     [resourceTypes.IMAGE_COMPONENT]: 'image-component',
-    [standardEntityTypes.CONTROL]: 'control',
-    [standardEntityTypes.STANDARD]: 'standard',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
     [rbacConfigTypes.SUBJECT]: 'subject',
     [rbacConfigTypes.ROLE]: 'role',
@@ -495,8 +490,6 @@ export const basePathToLabelMap: Record<string, string> = {
     [networkBasePath]: 'Network Graph',
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
-    [complianceBasePath]: 'Compliance',
-    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
