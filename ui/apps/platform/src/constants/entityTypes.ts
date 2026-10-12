@@ -66,14 +66,6 @@ export const standardTypes = {
     CIS_Docker_v1_2_0: 'CIS_Docker_v1_2_0',
 };
 
-export const standardBaseTypes = {
-    [standardTypes.PCI_DSS_3_2]: 'PCI',
-    [standardTypes.NIST_800_190]: 'NIST SP 800-190',
-    [standardTypes.NIST_SP_800_53_Rev_4]: 'NIST SP 800-53',
-    [standardTypes.HIPAA_164]: 'HIPAA',
-    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
-};
-
 export const searchCategories: Record<string, SearchCategory> = {
     NAMESPACE: 'NAMESPACES',
     NODE: 'NODES',

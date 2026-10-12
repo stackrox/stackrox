@@ -283,8 +283,8 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
-    # Do not rollback central-db image, since downgrade from PG15 to PG13 is
-    # not possible.
+    # Keep the upgraded central-db image when rolling Central back, since the
+    # upgraded data directory cannot be used by an older PostgreSQL major version.
 }
 
 deploy_scaled_workload() {

@@ -730,6 +730,47 @@ func (suite *AlertManagerTestSuite) TestDeploymentMarkedInactiveOnRemoval() {
 	suite.True(modified.Contains("dep-to-remove"), "removed deployment should appear in modified set")
 }
 
+func (suite *AlertManagerTestSuite) TestRepeatedDeploymentRemovalPreservesRuntimeAlert() {
+	stored := &storage.Alert{
+		Id:             "runtime-alert-1",
+		Policy:         fixtures.GetNetworkFlowPolicy(),
+		Entity:         &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Id: "dep-to-remove"}},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		State:          storage.ViolationState_ACTIVE,
+		Time:           protocompat.GetProtoTimestampFromSeconds(100),
+	}
+	suite.Require().NoError(suite.policySet.UpsertPolicy(stored.GetPolicy()))
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	// Each removal reads the current persisted state. Only the first should write.
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		DoAndReturn(func(context.Context, *v1.Query, bool) ([]*alertviews.AlertMatchKey, error) {
+			return alertsToMatchKeys([]*storage.Alert{stored}), nil
+		}).Times(2)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{stored.CloneVT()}, nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).
+		DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+			suite.True(a.GetDeployment().GetInactive())
+			suite.Equal(storage.ViolationState_ACTIVE, a.GetState())
+			stored = a.CloneVT()
+			return nil
+		})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil,
+		WithDeploymentID("dep-to-remove", true))
+	suite.Require().NoError(err)
+	suite.True(modified.Contains("dep-to-remove"))
+
+	modified, err = suite.alertManager.AlertAndNotify(suite.ctx, nil,
+		WithDeploymentID("dep-to-remove", true))
+	suite.Require().NoError(err)
+	suite.Empty(modified.AsSlice())
+	suite.True(stored.GetDeployment().GetInactive())
+	suite.Equal(storage.ViolationState_ACTIVE, stored.GetState())
+}
+
 // TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone covers a first runtime
 // alert arriving after the deployment is already gone.
 func (suite *AlertManagerTestSuite) TestNewRuntimeAlertMarkedInactiveWhenDeploymentGone() {
@@ -764,6 +805,29 @@ func (suite *AlertManagerTestSuite) TestMergedRuntimeAlertMarkedInactiveWhenDepl
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
 		suite.True(a.GetDeployment().GetInactive(), "merged runtime alert should be marked inactive")
 		suite.Len(a.GetProcessViolation().GetProcesses(), 2, "inactive stamp must not replace the merged processes")
+		return nil
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{incoming})
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-gone"))
+}
+
+func (suite *AlertManagerTestSuite) TestUnchangedRuntimeAlertMarkedInactiveWhenDeploymentGone() {
+	previous := runtimeDeploymentAlert("runtime-alert-1", "dep-gone", false, yesterdayProcess)
+	incoming := runtimeDeploymentAlert("runtime-alert-incoming", "dep-gone", false, yesterdayProcess)
+
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		Return(alertsToMatchKeys([]*storage.Alert{previous}), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{previous.CloneVT()}, nil)
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-gone").Return(true)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{previous.CloneVT()}, nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, stored *storage.Alert) error {
+		suite.Equal(previous.GetId(), stored.GetId())
+		suite.True(stored.GetDeployment().GetInactive(), "stored runtime alert should be marked inactive")
 		return nil
 	})
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()

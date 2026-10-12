@@ -30,7 +30,6 @@ var (
 			Revision:  1,
 			IsInstall: true,
 		},
-		APIVersions: chartutil.DefaultVersionSet,
 	}
 )
 

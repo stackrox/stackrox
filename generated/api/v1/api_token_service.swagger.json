@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "APITokenService"
+      "name": "APITokenService",
+      "description": "APITokenService APIs can be used to manage API tokens."
     }
   ],
   "consumes": [

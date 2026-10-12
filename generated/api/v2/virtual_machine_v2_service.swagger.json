@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "VirtualMachineV2Service"
+      "name": "VirtualMachineV2Service",
+      "description": "NOTE: RPC ordering matters for grpc-gateway routing. The gateway prepends\neach handler (last registered = first matched), so wildcard routes like\n{id} must be defined FIRST to end up at the back of the matching list.\nLiteral routes defined after will match before the wildcard."
     }
   ],
   "consumes": [

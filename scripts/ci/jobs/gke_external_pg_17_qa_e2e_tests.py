@@ -15,6 +15,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["POSTGRES_VERSION"] = "17"
 os.environ["BYODB_TEST"] = "true"
+os.environ["USE_ROXIE_DEPLOY"] = "true"
 
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"

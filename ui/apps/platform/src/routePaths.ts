@@ -178,7 +178,6 @@ export type RouteKey =
     | 'clusters/secure-a-cluster-crs'
     | 'clusters'
     | 'collections'
-    | 'compliance'
     | 'compliance-coverage'
     | 'compliance-schedules'
     | 'configmanagement'
@@ -257,25 +256,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     collections: {
         resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
-    },
-    compliance: {
-        featureFlagRequirements: allEnabled(['ROX_DEPRECATED_COMPLIANCE_DASHBOARD']),
-        // Same resources as compliance-enhanced although lack of commented-out resources affects entire list or entity pages.
-        resourceAccessRequirements: everyResource([
-            // 'Alert', // for Deployment
-            // 'Cluster',
-            'Compliance',
-            // 'Deployment',
-            // 'Image', // for Deployment and Namespace
-            // 'K8sRole', // for Cluster
-            // 'K8sRoleBinding', // for Cluster
-            // 'K8sSubject', // for Cluster
-            // 'Namespace',
-            // 'NetworkPolicy', // for Namespace
-            // 'Node',
-            // 'Secret', // for Deployment and Namespace
-            // 'ServiceAccount', // for Cluster and Deployment
-        ]),
     },
     'compliance-coverage': {
         resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
