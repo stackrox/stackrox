@@ -83,7 +83,7 @@ test_upgrade_paths() {
     ########################################################################################
     # Use roxie to deploy older central                                                    #
     ########################################################################################
-    deploy_earlier_postgres_central
+    deploy_earlier_tag_central
     wait_for_api
     setup_client_TLS_certs
 

@@ -105,7 +105,7 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
-deploy_earlier_postgres_central() {
+deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
     local roxie_envrc

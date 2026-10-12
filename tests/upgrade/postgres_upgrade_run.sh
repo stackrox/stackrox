@@ -124,7 +124,7 @@ test_upgrade_path() {
     ########################################################################################
     # Use roxie to deploy older central                                                    #
     ########################################################################################
-    deploy_earlier_postgres_central
+    deploy_earlier_tag_central
     wait_for_api
     check_postgres_version "$EARLIER_POSTGRES_VERSION"
     setup_client_TLS_certs
@@ -242,7 +242,7 @@ test_not_enough_disk_space() {
     ########################################################################################
     # Deploy older central using small PVC to face disk space shortage                     #
     ########################################################################################
-    deploy_earlier_postgres_central \
+    deploy_earlier_tag_central \
         --set central.spec.central.db.persistence.persistentVolumeClaim.size=1Gi
     wait_for_api
     check_postgres_version "$EARLIER_POSTGRES_VERSION"
