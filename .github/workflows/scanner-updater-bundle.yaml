@@ -9,8 +9,8 @@ on:
   - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
-      force:
-        description: "Force rebuild even if no sources are newer than the bundle"
+      force-stage:
+        description: "Replace the staged candidate regardless of validation or freshness"
         required: false
         type: boolean
         default: false
@@ -78,24 +78,27 @@ jobs:
     # ROX-36961: evaluate the previous staged candidate before freshness.
     - name: Evaluate staged bundle
       id: staging
+      env:
+        FORCE_STAGE: ${{ inputs['force-stage'] == true }}
       run: |
         ./.github/workflows/scripts/scanner-updater-bundle-staging.sh evaluate "$STREAM"
 
-    # Publish the exact generation approved by Evaluate; do not query Grafana again.
+    # Publish only the exact generation evaluated above; no second health check.
     - name: Publish staged bundle
       id: publish
       if: steps.staging.outputs.action == 'publish'
       run: |
         set -euo pipefail
         sc=./.github/workflows/scripts/scanner-updater-config.sh
-        bucket=$("$sc" bucket)
-        prefix=$("$sc" prefix)
-        staging_obj="gs://${bucket}/${prefix}/${STREAM}-staging/vulnerabilities.zip"
-        bundle_obj="gs://${bucket}/${prefix}/${STREAM}/vulnerabilities.zip"
+        staging_obj=$("$sc" bundle-object "${STREAM}-staging")
+        bundle_obj=$("$sc" bundle-object "$STREAM")
+        generation="${{ steps.staging.outputs.generation }}"
 
-        # TODO: Validate generation-qualified copy syntax/preconditions and
-        # replace this placeholder with a real copy + generation-safe cleanup.
-        echo "TODO: publish ${staging_obj}#${{ steps.staging.outputs.generation }} -> ${bundle_obj}"
+        # Pin the source version; a replacement cannot be promoted by accident.
+        gcloud storage cp "${staging_obj}#${generation}" "$bundle_obj"
+        echo "Published bundle for stream '${STREAM}' -> ${bundle_obj}"
+        # Remove only the generation just published, not a newer candidate.
+        gcloud storage rm "$staging_obj" --if-generation-match="$generation"
 
     # Keep the existing freshness logic unchanged; only its gate changes.
     # If publication was required, it must have succeeded before checking
@@ -106,7 +109,7 @@ jobs:
         (steps.staging.outputs.action != 'publish' || steps.publish.outcome == 'success')
       id: check-changes
       env:
-        FORCE: ${{ inputs.force == true }}
+        FORCE: ${{ inputs['force-stage'] == true }}
       run: |
         set -euo pipefail
 
@@ -226,6 +229,8 @@ jobs:
 
     - name: Stage assembled bundle
       if: steps.check-changes.outputs.changed == 'true'
+      env:
+        FORCE_STAGE: ${{ inputs['force-stage'] == true }}
       run: |
         ./.github/workflows/scripts/scanner-updater-bundle-staging.sh stage "$STREAM" vulnerabilities.zip
 
