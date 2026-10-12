@@ -139,11 +139,23 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 	return root, nil
 }
 
+// MatchedNamespace contains the metadata needed for a minimal namespace node.
+type MatchedNamespace struct {
+	ID   string
+	Name string
+}
+
+// MatchedNamespaceGroup contains matched namespaces with the same recorded parent.
+type MatchedNamespaceGroup struct {
+	ClusterName string
+	Namespaces  []MatchedNamespace
+}
+
 // FromMatchingScopes constructs a minimal tree from scopes already matched by
 // a selector evaluator. clusters includes the known parents of matching
 // namespaces; only includedClusterIDs grant access to entire clusters.
 // Namespaces retain the existing grouping by their recorded cluster name.
-func FromMatchingScopes(clusters []Cluster, includedClusterIDs []string, namespaces []Namespace) *ScopeTree {
+func FromMatchingScopes(clusters []Cluster, includedClusterIDs []string, namespaces []MatchedNamespaceGroup) *ScopeTree {
 	root := newEffectiveAccessScopeTree(Excluded)
 	included := make(map[string]bool, len(includedClusterIDs))
 	for _, id := range includedClusterIDs {
@@ -156,16 +168,26 @@ func FromMatchingScopes(clusters []Cluster, includedClusterIDs []string, namespa
 		}
 		root.populateCluster(cluster, state, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 	}
-	for _, namespace := range namespaces {
-		clusterName := namespace.GetClusterName()
-		parent := root.Clusters[clusterName]
+	for _, group := range namespaces {
+		parent := root.Clusters[group.ClusterName]
 		if parent == nil {
-			parent = newClusterScopeSubTree(Excluded, treeNodeAttributes{Name: clusterName})
-			root.Clusters[clusterName] = parent
+			parent = newClusterScopeSubTree(Excluded, treeNodeAttributes{Name: group.ClusterName})
+			root.Clusters[group.ClusterName] = parent
 		}
-		if parent.Namespaces[namespace.GetName()] == nil {
-			parent.Namespaces[namespace.GetName()] = newNamespacesScopeSubTree(Included,
-				nodeAttributesForNamespace(namespace, v1.ComputeEffectiveAccessScopeRequest_MINIMAL))
+		if len(parent.Namespaces) == 0 {
+			parent.Namespaces = make(map[string]*namespacesScopeSubTree, len(group.Namespaces))
+		}
+		for _, namespace := range group.Namespaces {
+			if existing := parent.Namespaces[namespace.Name]; existing != nil {
+				// Choose the smallest matching ID for duplicate recorded names
+				// so metadata does not depend on SQL result order.
+				if namespace.ID < existing.Attributes.ID {
+					existing.Attributes.ID = namespace.ID
+				}
+				continue
+			}
+			parent.Namespaces[namespace.Name] = newNamespacesScopeSubTree(Included,
+				treeNodeAttributes{ID: namespace.ID})
 		}
 	}
 	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
