@@ -127,7 +127,7 @@ deploy_earlier_postgres_central() {
 }
 
 # upgrade_operator_to_head upgrades the operator to the HEAD version
-# and resumes central reconciliation so Scanner V4 is installed.
+# and resumes central reconciliation so the upgrade is processed.
 upgrade_operator_to_head() {
     local namespace="${1:-stackrox}"
     local image_tag="${2:-$CURRENT_TAG}"
