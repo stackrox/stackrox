@@ -136,8 +136,7 @@ upgrade_operator_to_head() {
 
     roxie deploy operator --verbose \
         --single-namespace \
-        --tag "${image_tag}" \
-        --resources ci
+        --tag "${image_tag}"
 
     # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
     # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
