@@ -34,6 +34,8 @@ type DataStore interface {
 	ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
 
 	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	// DeploymentExists reports whether the deployment is stored, without fetching or copying it.
+	DeploymentExists(ctx context.Context, id string) (bool, error)
 	GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error)
 	CountDeployments(ctx context.Context) (int, error)
 	// UpsertDeployment adds or updates a deployment. If the deployment exists, the tags in the deployment are taken from

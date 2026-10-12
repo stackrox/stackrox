@@ -47,6 +47,8 @@ test_vm_scanning_e2e() {
     deploy_stackrox
 
     cd "$ROOT"
+    ensure_vm_scan_ssh_identity
+    persist_vm_scan_virtctl
     rm -f FAIL
     # Run the full VM scanning e2e suite.
     make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL

@@ -147,3 +147,7 @@ spec:
   criteriaLocked: false
   mitreVectorsLocked: false
   isDefault: false
+  evaluationFilter:
+    skipContainerTypes:
+    - INIT
+    - REGULAR

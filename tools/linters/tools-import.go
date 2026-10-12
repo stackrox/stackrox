@@ -8,9 +8,9 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
+	_ "actionlint.kjanat.dev/cmd/actionlint"
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "github.com/nilslice/protolock"
-	_ "github.com/rhysd/actionlint/cmd/actionlint"
 	_ "github.com/sethvargo/ratchet"
 	_ "golang.org/x/vuln/cmd/govulncheck"
 )

@@ -434,7 +434,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 
 			ctx := sac.WithAllAccess(s.T().Context())
 			doneSignal := concurrency.NewSignal()
-			s.datastore.postRemoveCluster(ctx, removedCluster, &doneSignal)
+			s.datastore.postRemoveCluster(ctx, removedCluster, &doneSignal, func() {})
 
 			doneSignal.Wait()
 		})

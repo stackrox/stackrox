@@ -1,12 +1,16 @@
+ARG PG_VERSION=16
+
 FROM registry.access.redhat.com/ubi9:latest AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
 FROM ubi-base AS downloads
 
 ARG DEBUG_BUILD=no
+ARG PG_VERSION
 
 WORKDIR /
 COPY download.sh /download.sh
+COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 RUN /download.sh
 
 FROM ubi-base AS stackrox_data
@@ -39,6 +43,23 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
+FROM ubi-micro-base AS runtime-base
+
+ARG PG_VERSION
+
+COPY --from=package_installer /out/ /
+
+# Execute the clients in the final runtime to check their version and libraries.
+RUN set -eu; \
+    for client in pg_dump pg_restore; do \
+        version="$("$client" --version)"; \
+        echo "$version"; \
+        case "$version" in \
+            "$client (PostgreSQL) ${PG_VERSION}."*) ;; \
+            *) echo "Expected PostgreSQL ${PG_VERSION} client: $client" >&2; exit 1 ;; \
+        esac; \
+    done
+
 FROM ubi-base AS cli-tarballs
 
 RUN dnf install -y pigz
@@ -50,7 +71,7 @@ RUN cd /tmp/roxctl && \
         tar -I pigz -cvf "${f%.exe}.tar.gz" "$f"; \
     done
 
-FROM ubi-micro-base
+FROM runtime-base
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -72,8 +93,6 @@ ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
     ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
-
-COPY --from=package_installer /out/ /
 
 COPY static-bin /stackrox/
 COPY --from=downloads /output/go/ /go/
