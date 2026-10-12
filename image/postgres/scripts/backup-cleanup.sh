@@ -15,7 +15,7 @@ cleanup_stale_upgrade_backups() {
     local current_new_version="${BASH_REMATCH[2]}"
     (( current_old_version < current_new_version )) || return 0
 
-    local location old_backup backup_name old_version new_version
+    local location old_backup backup_name backup_old_version backup_new_version
     for location in "$@"; do
         # Strip trailing slashes before testing for symlinks, including on roots.
         while [[ "${location}" == */ ]]; do location="${location%/}"; done
@@ -25,11 +25,11 @@ cleanup_stale_upgrade_backups() {
             [[ -d "${old_backup}" && ! -L "${old_backup}" ]] || continue
             backup_name="${old_backup##*/}"
             [[ "${backup_name}" =~ ${upgrade_pattern} ]] || continue
-            old_version="${BASH_REMATCH[1]}"
-            new_version="${BASH_REMATCH[2]}"
+            backup_old_version="${BASH_REMATCH[1]}"
+            backup_new_version="${BASH_REMATCH[2]}"
             # Preserve the current rollback version and any newer or ambiguous pair.
-            (( old_version < new_version && old_version < current_old_version &&
-                new_version <= current_old_version )) || continue
+            (( backup_old_version < backup_new_version && backup_old_version < current_old_version &&
+                backup_new_version <= current_old_version )) || continue
             [[ -f "${old_backup}/backup.tar" && -s "${old_backup}/backup.tar" &&
                 ! -L "${old_backup}/backup.tar" ]] || continue
 

@@ -163,8 +163,7 @@ else
 
         # Recovery operations must not automatically discard other recovery backups.
         ALLOW_BACKUP_CLEANUP=true
-        if [[ "${RESTORE_BACKUP:-}" == true || "${FORCE_CLEANUP:-}" == true ||
-            "${FORCE_NEW_BACKUP:-}" == true ]]; then
+        if [[ "${RESTORE_BACKUP:-}" == true || "${FORCE_NEW_BACKUP:-}" == true ]]; then
             ALLOW_BACKUP_CLEANUP=false
         fi
 
