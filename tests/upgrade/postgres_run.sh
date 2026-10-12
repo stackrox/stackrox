@@ -222,7 +222,7 @@ test_upgrade_paths() {
     roxie teardown secured-cluster --verbose --single-namespace
 
     # Remove scaled Sensor from Central
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" cluster delete --name scale-remote
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name scale-remote
 
     info "Fetching an init bundle for cluster 'remote'"
     # This is necessary since the cluster already exists in the database restored from backup, so the CRS
@@ -231,8 +231,7 @@ test_upgrade_paths() {
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     local init_bundle
     init_bundle="$(mktemp)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" \
-        central init-bundles generate remote --output-secrets - > "${init_bundle}"
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" central init-bundles generate remote --output-secrets - > "${init_bundle}"
     kubectl apply -n stackrox -f "${init_bundle}"
     rm -f "${init_bundle}"
 
