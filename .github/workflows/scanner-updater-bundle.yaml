@@ -75,7 +75,35 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
+    # ROX-36961: evaluate the previous staged candidate before freshness.
+    - name: Evaluate staged bundle
+      id: staging
+      run: |
+        ./.github/workflows/scripts/scanner-updater-bundle-staging.sh evaluate "$STREAM"
+
+    # Publish the exact generation approved by Evaluate; do not query Grafana again.
+    - name: Publish staged bundle
+      id: publish
+      if: steps.staging.outputs.action == 'publish'
+      run: |
+        set -euo pipefail
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
+        bucket=$("$sc" bucket)
+        prefix=$("$sc" prefix)
+        staging_obj="gs://${bucket}/${prefix}/${STREAM}-staging/vulnerabilities.zip"
+        bundle_obj="gs://${bucket}/${prefix}/${STREAM}/vulnerabilities.zip"
+
+        # TODO: Validate generation-qualified copy syntax/preconditions and
+        # replace this placeholder with a real copy + generation-safe cleanup.
+        echo "TODO: publish ${staging_obj}#${{ steps.staging.outputs.generation }} -> ${bundle_obj}"
+
+    # Keep the existing freshness logic unchanged; only its gate changes.
+    # If publication was required, it must have succeeded before checking
+    # freshness against the updated production bundle.
     - name: Check for changes
+      if: >-
+        steps.staging.outputs.should_stage == 'true' &&
+        (steps.staging.outputs.action != 'publish' || steps.publish.outcome == 'success')
       id: check-changes
       env:
         FORCE: ${{ inputs.force == true }}
@@ -190,16 +218,16 @@ jobs:
         printf '%s\n' "${valid_files[@]}" > valid-files.txt
         echo "Validated: ${#valid_files[@]} of $(( ${#valid_files[@]} + ${#failed_sources[@]} )) source(s) OK"
 
-    - name: Assemble and upload bundle
+    - name: Assemble bundle
       if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
-
         zip vulnerabilities.zip -@ < valid-files.txt
 
-        bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
-        gcloud storage cp vulnerabilities.zip "$bundle_obj"
-        echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
+    - name: Stage assembled bundle
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        ./.github/workflows/scripts/scanner-updater-bundle-staging.sh stage "$STREAM" vulnerabilities.zip
 
     - name: Notify on partial failure
       if: >-
