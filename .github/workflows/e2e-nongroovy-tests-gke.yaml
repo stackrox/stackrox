@@ -18,6 +18,10 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   run:
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
