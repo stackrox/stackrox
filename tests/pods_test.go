@@ -205,6 +205,8 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 			Field: &field,
 		},
 	}
+	_ = pagination
+	paginationString := `{"offset": 0, "limit": 10, "sortOption": {"field": "Pod Name"}}`
 
 	makeGraphQLRequest(t, `
 		query getPods($podsQuery: String, $pagination: Pagination) {
@@ -221,7 +223,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		}
 	`, map[string]interface{}{
 		"podsQuery":  fmt.Sprintf("Deployment ID: %s", deploymentID),
-		"pagination": pagination,
+		"pagination": paginationString,
 	}, &respData, timeout)
 	t.Logf("%+v", respData)
 
