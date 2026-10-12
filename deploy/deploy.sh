@@ -50,7 +50,7 @@ fi
 cat <<EOF
 -------------------------------------------------------------------------------------
 Using legacy flow to deploy StackRox (USE_ROXIE_DEPLOY=false).
-The legacy flow is deprecated. Please consider using the roxie-based deployment
+The legacy flow is deprecated and WILL BE REMOVED SOON. Please use the roxie-based deployment
 by unsetting USE_ROXIE_DEPLOY or setting it to true.
 
 You can find quick start instructions for roxie in:
