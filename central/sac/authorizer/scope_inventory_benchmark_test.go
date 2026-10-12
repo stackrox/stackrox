@@ -5,12 +5,14 @@ package authorizer
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -32,7 +34,7 @@ func BenchmarkScopeInventoryAuthorization(b *testing.B) {
 func BenchmarkScopeNamespaceName(b *testing.B) {
 	benchmarkSQLScope(b, func(clusters []*storage.Cluster) *storage.SimpleAccessScope_Rules {
 		return &storage.SimpleAccessScope_Rules{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
-			ClusterId: clusters[0].GetId(), NamespaceName: "namespace-0",
+			ClusterName: clusters[0].GetName(), NamespaceName: "namespace-0",
 		}}}
 	}, 0, "namespace-0")
 }
@@ -47,7 +49,16 @@ func BenchmarkScopeBroadNamespaceLabel(b *testing.B) {
 
 func benchmarkSQLScope(b *testing.B, rules func([]*storage.Cluster) *storage.SimpleAccessScope_Rules, clusterIndex int, namespaceName string) {
 	ctx := sac.WithAllAccess(context.Background())
-	db := pgtest.ForT(b)
+	testDB := pgtest.ForT(b)
+	var databaseName string
+	require.NoError(b, testDB.QueryRow(ctx, "SELECT current_database()").Scan(&databaseName))
+	parallelism := runtime.GOMAXPROCS(0)
+	// Integration tests use a single connection by default. Give each benchmark
+	// client a connection so scope queries do not queue behind that test limit.
+	db, err := postgres.Connect(ctx, fmt.Sprintf("%s pool_min_conns=%d pool_max_conns=%d",
+		pgtest.GetConnectionStringWithDatabaseName(b, databaseName), parallelism, parallelism))
+	require.NoError(b, err)
+	b.Cleanup(db.Close)
 	clusters := make([]*storage.Cluster, 16)
 	for i := range clusters {
 		clusters[i] = &storage.Cluster{Id: uuid.NewV4().String(), Name: fmt.Sprintf("cluster-%d", i)}

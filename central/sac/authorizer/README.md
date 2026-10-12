@@ -26,3 +26,10 @@ to preserve the existing inventory totals and human-readable decisions. It does
 not load namespace objects. Subsequent requests observe inventory changes without
 the former five-second snapshot delay; an already-computed request scope remains
 stable for that request.
+
+Matching namespaces are aggregated per recorded parent into one text array. Each
+entry contains a fixed-width UUID followed by the namespace name, avoiding two
+ordered aggregates and keeping IDs/names paired for arbitrary names. The tree is
+built directly from compact groups with namespace maps sized for the result.
+Duplicate recorded names retain the smallest matching ID without sorting SQL
+results. Debug scope strings are formatted only when tracing is enabled.
