@@ -164,11 +164,11 @@ func scopeQuery(rules *storage.SimpleAccessScope_Rules) (string, []any, error) {
 	query := `WITH included_clusters AS (
 		SELECT c.id, c.name FROM clusters c WHERE ` + clusters + `
 	)
-	SELECT c.id, c.name, NULL::text, NULL::text[], NULL::text[]
+	SELECT c.id, c.name, NULL::text, NULL::text[]
 	FROM included_clusters c
 	UNION ALL
 	SELECT c.id, c.name, n.clustername,
-		array_agg(n.id::text ORDER BY n.id), array_agg(COALESCE(n.name, '') ORDER BY n.id)
+		array_agg(n.id::text || COALESCE(n.name, ''))
 	FROM namespaces n LEFT JOIN clusters c ON c.name = n.clustername
 	WHERE ` + namespaces + `
 	AND NOT EXISTS (SELECT 1 FROM included_clusters i WHERE i.name = n.clustername)
@@ -190,28 +190,34 @@ func computeSQLScope(ctx context.Context, db postgres.DB, rules *storage.SimpleA
 	}
 	defer rows.Close()
 	var clusters []effectiveaccessscope.Cluster
-	var namespaces []effectiveaccessscope.Namespace
+	var namespaces []effectiveaccessscope.MatchedNamespaceGroup
 	var includedClusterIDs []string
 	seenClusters := make(map[string]bool)
 	for rows.Next() {
 		var clusterID, clusterName, namespaceClusterName *string
-		var namespaceIDs, namespaceNames []string
-		if err := rows.Scan(&clusterID, &clusterName, &namespaceClusterName, &namespaceIDs, &namespaceNames); err != nil {
+		var namespaceMatches []string
+		if err := rows.Scan(&clusterID, &clusterName, &namespaceClusterName, &namespaceMatches); err != nil {
 			return nil, errors.Wrap(err, "reading access scope metadata")
 		}
 		if clusterID != nil && !seenClusters[*clusterID] {
 			clusters = append(clusters, &storage.Cluster{Id: *clusterID, Name: scopeString(clusterName)})
 			seenClusters[*clusterID] = true
 		}
-		if len(namespaceIDs) > 0 {
-			// Aggregate matching namespaces per parent to avoid decoding repeated
-			// cluster metadata for every namespace in broad scopes. Both arrays
-			// use the same ordering, so names remain paired with their IDs.
-			for i, id := range namespaceIDs {
-				namespaces = append(namespaces, namespaceMatch{
-					id: id, name: namespaceNames[i], clusterName: scopeString(namespaceClusterName),
-				})
+		if len(namespaceMatches) > 0 {
+			// UUIDs have a fixed-width text representation. Return each ID/name
+			// pair as one array element, so pairing needs neither two array
+			// decoders nor SQL ORDER BY. Names can contain arbitrary characters.
+			matches := make([]effectiveaccessscope.MatchedNamespace, len(namespaceMatches))
+			for i, match := range namespaceMatches {
+				const idLength = len("00000000-0000-0000-0000-000000000000")
+				if len(match) < idLength {
+					return nil, errors.New("invalid namespace metadata from access scope query")
+				}
+				matches[i] = effectiveaccessscope.MatchedNamespace{ID: match[:idLength], Name: match[idLength:]}
 			}
+			namespaces = append(namespaces, effectiveaccessscope.MatchedNamespaceGroup{
+				ClusterName: scopeString(namespaceClusterName), Namespaces: matches,
+			})
 		} else if clusterID != nil {
 			includedClusterIDs = append(includedClusterIDs, *clusterID)
 		}
@@ -223,23 +229,6 @@ func computeSQLScope(ctx context.Context, db postgres.DB, rules *storage.SimpleA
 	// objects stay in PostgreSQL; no inventory-wide matching runs in Go.
 	return effectiveaccessscope.FromMatchingScopes(clusters, includedClusterIDs, namespaces), nil
 }
-
-// Only these fields are used to construct a minimal namespace scope node.
-// Keeping matches separate from storage protos avoids allocating unused fields
-// when a broad access scope matches many namespaces.
-type namespaceMatch struct {
-	id          string
-	name        string
-	clusterName string
-}
-
-var _ effectiveaccessscope.Namespace = namespaceMatch{}
-
-func (n namespaceMatch) GetId() string                { return n.id }
-func (n namespaceMatch) GetName() string              { return n.name }
-func (n namespaceMatch) GetClusterName() string       { return n.clusterName }
-func (n namespaceMatch) GetClusterId() string         { return "" }
-func (n namespaceMatch) GetLabels() map[string]string { return nil }
 
 func scopeString(value *string) string {
 	if value == nil {

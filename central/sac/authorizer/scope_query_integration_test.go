@@ -41,6 +41,8 @@ func scopeQueryFixtures(t testing.TB, db *pgtest.TestPostgres) ([]effectiveacces
 		{Id: uuid.NewV4().String(), Name: "inconsistent", ClusterId: clusters[0].GetId(), ClusterName: "Arrakis", Labels: map[string]string{"focus": "melange"}},
 		{Id: uuid.NewV4().String(), Name: "glorp", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Labels: map[string]string{"focus": "research"}},
 		{Id: uuid.NewV4().String(), Name: "glorp' OR TRUE --", ClusterId: clusters[0].GetId(), ClusterName: "Earth"},
+		{Id: uuid.NewV4().String(), Name: "", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Labels: map[string]string{"focus": "melange"}},
+		{Id: uuid.NewV4().String(), Name: "café::'namespace", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Labels: map[string]string{"focus": "melange"}},
 	}
 	rows := make([][]any, 0, len(namespaces))
 	for _, namespace := range namespaces {
@@ -161,6 +163,27 @@ func TestSQLScopeMatchesInventoryEvaluator(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Packing matched IDs/names must preserve arbitrary names and the deterministic
+// ID chosen for duplicate recorded namespace names even without SQL sorting.
+func TestSQLScopePreservesNamespaceMetadata(t *testing.T) {
+	db := pgtest.ForT(t)
+	clusters, namespaces := scopeQueryFixtures(t, db)
+	rules := &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_EXISTS)},
+	}}}
+	tree, err := computeSQLScope(context.Background(), db, rules)
+	require.NoError(t, err)
+	earth := tree.GetClusterByID(clusters[0].GetId())
+	require.NotNil(t, earth)
+	require.Equal(t, min(namespaces[0].GetId(), namespaces[6].GetId()), earth.Namespaces["glorp"].Attributes.ID)
+	require.Equal(t, namespaces[8].GetId(), earth.Namespaces[""].Attributes.ID)
+	require.Equal(t, namespaces[9].GetId(), earth.Namespaces["café::'namespace"].Attributes.ID)
+	require.Equal(t, namespaces[4].GetId(), tree.Clusters["Deleted"].Namespaces["orphan"].Attributes.ID)
+	arrakis := tree.GetClusterByID(clusters[1].GetId())
+	require.NotNil(t, arrakis)
+	require.Equal(t, namespaces[5].GetId(), arrakis.Namespaces["inconsistent"].Attributes.ID)
 }
 
 func TestSQLScopeFreshnessAndCancellation(t *testing.T) {

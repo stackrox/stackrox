@@ -303,7 +303,9 @@ func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.Simpl
 	if err != nil {
 		return nil, err
 	}
-	c.trace.RecordEffectiveAccessScope(accessScope.GetId(), accessScope.GetName(), eas.String())
+	if c.trace != nil {
+		c.trace.RecordEffectiveAccessScope(accessScope.GetId(), accessScope.GetName(), eas.String())
+	}
 
 	return eas, nil
 }
