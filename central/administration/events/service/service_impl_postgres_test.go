@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/administration/events/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
@@ -26,23 +27,27 @@ func TestServicePostgres(t *testing.T) {
 type servicePostgresTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	pool      *pgtest.TestPostgres
-	datastore datastore.DataStore
-	service   Service
+	ctx          context.Context
+	pool         *pgtest.TestPostgres
+	datastore    datastore.DataStore
+	deploymentDS deploymentDatastore.DataStore
+	service      Service
 }
 
 func (s *servicePostgresTestSuite) SetupTest() {
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration),
+			sac.ResourceScopeKeys(resources.Administration, resources.Deployment, resources.Image),
 		),
 	)
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 	s.datastore = datastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.service = newService(s.datastore)
+	var err error
+	s.deploymentDS, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.service = newService(s.datastore, s.deploymentDS)
 }
 
 func (s *servicePostgresTestSuite) TestCount() {
@@ -243,6 +248,64 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 	})
 	s.NoError(err)
 	s.assertMatchEvents(listEvents, resp.GetEvents())
+}
+
+func (s *servicePostgresTestSuite) TestFilterByCluster() {
+	dep := &storage.Deployment{
+		Id:          "dep-1",
+		Name:        "my-app",
+		Namespace:   "default",
+		ClusterId:   "cluster-1",
+		ClusterName: "test-cluster",
+		Containers: []*storage.Container{
+			{
+				Name: "main",
+				Image: &storage.ContainerImage{
+					Id: "sha256:abc",
+				},
+			},
+		},
+	}
+	s.Require().NoError(s.deploymentDS.UpsertDeployment(s.ctx, dep))
+
+	imgEvent := &events.AdministrationEvent{
+		Domain:       "Image Scanning",
+		Hint:         "hint",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "scan failed for sha256:abc",
+		ResourceID:   "sha256:abc",
+		ResourceType: "Image",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+	}
+	otherEvent := &events.AdministrationEvent{
+		Domain:       "Image Scanning",
+		Hint:         "hint",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "scan failed for sha256:xyz",
+		ResourceID:   "sha256:xyz",
+		ResourceType: "Image",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+	}
+	s.Require().NoError(s.datastore.AddEvent(s.ctx, imgEvent))
+	s.Require().NoError(s.datastore.AddEvent(s.ctx, otherEvent))
+	s.Require().NoError(s.datastore.Flush(s.ctx))
+
+	resp, err := s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{
+			WorkloadQuery: `Cluster:"test-cluster"`,
+		},
+	})
+	s.NoError(err)
+	s.Require().Len(resp.GetEvents(), 1)
+	s.Equal("sha256:abc", resp.GetEvents()[0].GetResource().GetId())
+
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{
+			WorkloadQuery: `Cluster:"nonexistent"`,
+		},
+	})
+	s.NoError(err)
+	s.Empty(resp.GetEvents())
 }
 
 func (s *servicePostgresTestSuite) addListEvents() []*events.AdministrationEvent {

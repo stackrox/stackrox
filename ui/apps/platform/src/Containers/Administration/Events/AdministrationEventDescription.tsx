@@ -1,17 +1,21 @@
 import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     Flex,
 } from '@patternfly/react-core';
 
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import type { AdministrationEvent } from 'services/AdministrationEventsService';
 
 import { getLevelText, getLevelVariant, getTypeText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
+import RelatedDeployments from './RelatedDeployments';
 
 export type AdministrationEventDescriptionProps = {
     event: AdministrationEvent;
@@ -47,7 +51,17 @@ function AdministrationEventDescription({
                 {resourceID && (
                     <DescriptionListGroup>
                         <DescriptionListTerm>Resource ID</DescriptionListTerm>
-                        <DescriptionListDescription>{resourceID}</DescriptionListDescription>
+                        <DescriptionListDescription>
+                            {resourceType === 'Image' ? (
+                                <Link
+                                    to={`${vulnerabilitiesWorkloadCvesPath}/images/${resourceID}`}
+                                >
+                                    {resourceID}
+                                </Link>
+                            ) : (
+                                resourceID
+                            )}
+                        </DescriptionListDescription>
                     </DescriptionListGroup>
                 )}
                 <DescriptionListGroup>
@@ -71,6 +85,12 @@ function AdministrationEventDescription({
                     <DescriptionListDescription>{numOccurrences}</DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
+            {resourceType === 'Image' && resourceID && (
+                <>
+                    <Divider />
+                    <RelatedDeployments imageId={resourceID} />
+                </>
+            )}
         </Flex>
     );
 }
