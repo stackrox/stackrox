@@ -57,6 +57,7 @@ deploy_stackrox_with_roxie_compat() {
     merge_yaml "$config_file" <<EOF
 roxie:
   version: "$MAIN_IMAGE_TAG"
+  konfluxImages: ${USE_KONFLUX_IMAGES:-false}
 central:
   namespace: "$namespace"
 securedCluster:
