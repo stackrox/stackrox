@@ -36,7 +36,6 @@ import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsCloudSource,
-    getIsGCR,
     getIsMachineAccessConfig,
     getIsS3,
     getIsS3Compatible,
@@ -73,7 +72,6 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
-    const isGCR = getIsGCR(source, type);
     const isCloudSource = getIsCloudSource(source);
     const isS3 = getIsS3(source, type);
     const isS3Compatible = getIsS3Compatible(source, type);
@@ -154,24 +152,6 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     </Title>
                 )}
             </PageSection>
-            {isGCR && (
-                <PageSection>
-                    <Alert title="Deprecation notice" component="p" variant="warning" isInline>
-                        Google Container Registry has been deprecated by Google. New integrations
-                        cannot be created. Use Google Artifact Registry instead. See the{' '}
-                        <ExternalLink>
-                            <a
-                                href="https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Container Registry deprecation notice
-                            </a>
-                        </ExternalLink>{' '}
-                        for more information.
-                    </Alert>
-                </PageSection>
-            )}
             {isS3 && (
                 <PageSection>
                     <Alert title="AWS S3 backup storage" component="p" variant="info" isInline>
@@ -222,7 +202,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={onTriggerBackup}
                     isReadOnly={isScannerV4}
-                    isCreationDisabled={isGCR}
+                    isCreationDisabled={false}
                     source={source}
                     type={type}
                 />
