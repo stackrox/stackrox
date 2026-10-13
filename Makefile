@@ -646,6 +646,28 @@ ui-component-tests:
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
 
+# check-changed tests and lints only the Go packages in the working diff.
+# UNIT_TEST_IGNORE, GOTAGS, and RELEASE_GOTAGS are passed through so the
+# script does not keep a second copy of those lists.
+.PHONY: check-changed
+check-changed:
+	@echo "+ $@"
+	@UNIT_TEST_IGNORE=$(UNIT_TEST_IGNORE) \
+		GOTAGS="$(GOTAGS)" \
+		RELEASE_GOTAGS="$(RELEASE_GOTAGS)" \
+		NESTED_GO_MODULE_DIRS="$(NESTED_GO_MODULE_DIRS)" \
+		GOLANGCILINT_BIN="$(GOLANGCILINT_BIN)" \
+		GOLANGCILINT_FLAGS="$(GOLANGCILINT_FLAGS)" \
+		$(CURDIR)/scripts/check-changed.sh
+
+.PHONY: print-check-changed-config
+print-check-changed-config:
+	@printf 'UNIT_TEST_IGNORE=%s\n' $(UNIT_TEST_IGNORE)
+	@printf 'GOTAGS=%s\n' '$(GOTAGS)'
+	@printf 'RELEASE_GOTAGS=%s\n' '$(RELEASE_GOTAGS)'
+	@printf 'NESTED_GO_MODULE_DIRS=%s\n' '$(NESTED_GO_MODULE_DIRS)'
+	@printf 'GOLANGCILINT_FLAGS=%s\n' '$(GOLANGCILINT_FLAGS)'
+
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
