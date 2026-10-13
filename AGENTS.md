@@ -128,7 +128,7 @@ in `ui/`.
 
 Exit `2` names the make target and does not run it. `proto/` needs
 `make proto-generated-srcs`, and `proto/storage/` also needs
-`make storage-protos-compatible`. A `//go:generate` line, or a Go interface
+`make storage-protos-compatible`. A Go file with a `//go:generate` line, or a Go interface
 in a directory that already has `mocks/`, needs `make go-generated-srcs`.
 The same target covers `central/graphql/schema`, `central/graphql/generator`,
 and `central/graphql/resolvers/gen` (that last path is the generator main).

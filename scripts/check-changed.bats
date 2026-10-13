@@ -326,6 +326,16 @@ PY
     assert_output --partial "exit: 2"
 
     rm -rf "${demo}/proto"
+    printf 'mentions //go:generate but is not a Go file\n' > "${demo}/NOTES.md"
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "exit: 0"
+    refute_output --partial "make go-generated-srcs"
+    rm -f "${demo}/NOTES.md"
     mkdir -p "${demo}/central/graphql/resolvers/gen" "${demo}/config-controller/api" "${demo}/pkg/a/mocks"
     printf 'package main\nfunc main() {}\n' > "${demo}/central/graphql/resolvers/gen/main.go"
     printf 'package api\n' > "${demo}/config-controller/api/types.go"

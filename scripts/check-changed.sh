@@ -794,7 +794,8 @@ scan_codegen() {
                 note_codegen go-generated-srcs "${f}"
                 ;;
         esac
-        if [[ -f "${root}/${f}" ]] && grep -q '//go:generate' "${root}/${f}"; then
+        # go:generate is a line directive. Docs that mention it are not inputs.
+        if [[ "${f}" == *.go && -f "${root}/${f}" ]] && grep -qE '^[[:space:]]*//go:generate' "${root}/${f}"; then
             note_codegen go-generated-srcs "${f}"
         fi
         if [[ "${f}" == *.go && -f "${root}/${f}" ]]; then
