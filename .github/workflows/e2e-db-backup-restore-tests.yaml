@@ -101,9 +101,15 @@ jobs:
           exit 1
         fi
 
-        if [[ "${{ inputs.use-konflux-images }}" == 'true' && "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" != 'infra' ]]; then
-          echo "::error::Konflux images require an Infra-provisioned OpenShift cluster because OLM is not supported on GKE."
-          exit 1
+        if [[ "${{ inputs.use-konflux-images }}" == 'true' ]]; then
+          if [[ "${{ inputs.cluster-provisioning-method || 'direct-gke' }}" != 'infra' ]]; then
+            echo "::error::Konflux images require an Infra-provisioned OpenShift cluster because OLM is not supported on GKE."
+            exit 1
+          fi
+          case "${{ inputs.infra-flavor || 'gke-default' }}" in
+            openshift*|rosa*) ;;
+            *) echo "::error::Konflux images require an Infra flavor that provisions OpenShift (e.g. openshift-on-gcp, rosahcp). Got infra-flavor: '${{ inputs.infra-flavor || 'gke-default' }}'."; exit 1 ;;
+          esac
         fi
 
     - name: Checkout repo
