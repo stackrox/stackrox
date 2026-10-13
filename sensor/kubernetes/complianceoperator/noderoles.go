@@ -30,8 +30,8 @@ var machineConfigPoolGVR = schema.GroupVersionResource{
 // GetFirstNodeRole: the first key with the node-role prefix, returned with the prefix trimmed. Returns "" if none.
 func getFirstNodeRole(matchLabels map[string]string) string {
 	for k := range matchLabels {
-		if strings.HasPrefix(k, nodeRolePrefix) {
-			return strings.TrimPrefix(k, nodeRolePrefix)
+		if role, ok := strings.CutPrefix(k, nodeRolePrefix); ok {
+			return role
 		}
 	}
 	return ""

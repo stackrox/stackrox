@@ -1207,9 +1207,9 @@ func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []
 			continue
 		}
 		for k := range selector.MatchLabels {
-			if strings.HasPrefix(k, nodeRoleLabelPrefix) {
+			if role, ok := strings.CutPrefix(k, nodeRoleLabelPrefix); ok {
 				// Mirror Sensor's getFirstNodeRole: take the first node-role label per pool.
-				roles.Add(strings.TrimPrefix(k, nodeRoleLabelPrefix))
+				roles.Add(role)
 				break
 			}
 		}
