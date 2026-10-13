@@ -125,6 +125,14 @@ func TestGetFirstNodeRole(t *testing.T) {
 			matchLabels: nil,
 			expected:    "",
 		},
+		"multiple node-role labels picks the lexicographically first, deterministically": {
+			matchLabels: map[string]string{
+				nodeRolePrefix + "worker": "",
+				nodeRolePrefix + "infra":  "",
+				nodeRolePrefix + "master": "",
+			},
+			expected: "infra",
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -299,6 +307,23 @@ func TestReconcileNodeRoles(t *testing.T) {
 		m.reconcileNodeRoles()
 
 		assert.Zero(t, countActions(client.Actions(), "list", "scansettings"))
+		assert.Zero(t, countActions(client.Actions(), "update", "scansettings"))
+	})
+
+	t.Run("does not clobber existing roles when MachineConfigPool listing fails", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		m, client := newReconcileHandler(reconcileNamespace, newScanSetting("ss", []string{"infra", masterRole, workerRole}, true))
+		client.PrependReactor("list", "machineconfigpools", func(k8stesting.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("the server could not find the requested resource")
+		})
+		client.ClearActions()
+
+		m.reconcileNodeRoles()
+
+		// A failed MCP list must never be treated as "the cluster now only has master+worker": that would strip the
+		// custom "infra" role from every managed ScanSetting on a transient API hiccup.
+		assert.Equal(t, []string{"infra", masterRole, workerRole}, scanSettingRoles(t, client, "ss"))
+		assert.Zero(t, countActions(client.Actions(), "list", "scansettings"), "reconciliation must bail out before listing ScanSettings")
 		assert.Zero(t, countActions(client.Actions(), "update", "scansettings"))
 	})
 

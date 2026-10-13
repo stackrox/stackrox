@@ -1190,9 +1190,11 @@ const nodeRoleLabelPrefix = "node-role.kubernetes.io/"
 
 // deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
 // node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
-// label in spec.nodeSelector.matchLabels, deduplicated and sorted. This is the expected value for a
-// ScanSetting's .roles when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled, so the test tracks
-// whatever pools the cluster actually has instead of asserting the hardcoded master+worker literal.
+// label in spec.nodeSelector.matchLabels (sorted when a pool matches more than one, to mirror Sensor's
+// deterministic tie-break), deduplicated and sorted. Falls back to master+worker when no pool yields a
+// role, mirroring Sensor's own fallback. This is the expected value for a ScanSetting's .roles when
+// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled, so the test tracks whatever pools the cluster
+// actually has instead of asserting the hardcoded master+worker literal.
 func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []string {
 	mcfgClient, err := machineconfigurationv1client.NewForConfig(getConfig(t))
 	require.NoError(t, err, "failed to create machineconfiguration client")
@@ -1206,15 +1208,22 @@ func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []
 		if selector == nil {
 			continue
 		}
+		var keys []string
 		for k := range selector.MatchLabels {
-			if role, ok := strings.CutPrefix(k, nodeRoleLabelPrefix); ok {
-				// Mirror Sensor's getFirstNodeRole: take the first node-role label per pool.
-				roles.Add(role)
-				break
+			if strings.HasPrefix(k, nodeRoleLabelPrefix) {
+				keys = append(keys, k)
 			}
 		}
+		if len(keys) == 0 {
+			continue
+		}
+		// Mirror Sensor's getFirstNodeRole: take the first (sorted) node-role label per pool.
+		sort.Strings(keys)
+		roles.Add(strings.TrimPrefix(keys[0], nodeRoleLabelPrefix))
 	}
-	require.NotEmpty(t, roles, "no node roles could be derived from MachineConfigPools")
+	if roles.Cardinality() == 0 {
+		return []string{"master", "worker"}
+	}
 	return roles.AsSortedSlice(func(i, j string) bool { return i < j })
 }
 

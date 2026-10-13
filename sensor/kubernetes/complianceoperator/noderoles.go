@@ -27,41 +27,67 @@ var machineConfigPoolGVR = schema.GroupVersionResource{
 }
 
 // getFirstNodeRole extracts the node role from an MCP's spec.nodeSelector.matchLabels, mirroring Compliance Operator's
-// GetFirstNodeRole: the first key with the node-role prefix, returned with the prefix trimmed. Returns "" if none.
+// GetFirstNodeRole: the first key with the node-role prefix (sorted, since Go map iteration order is random and a
+// non-deterministic pick here would make discovery flap between roles across reconcile ticks for a pool that somehow
+// matches more than one node-role label), returned with the prefix trimmed. Returns "" if none.
 func getFirstNodeRole(matchLabels map[string]string) string {
+	var keys []string
 	for k := range matchLabels {
-		if role, ok := strings.CutPrefix(k, nodeRolePrefix); ok {
-			return role
+		if strings.HasPrefix(k, nodeRolePrefix) {
+			keys = append(keys, k)
 		}
 	}
-	return ""
+	if len(keys) == 0 {
+		return ""
+	}
+	sort.Strings(keys)
+	return strings.TrimPrefix(keys[0], nodeRolePrefix)
 }
 
 // defaultNodeRoles computes the node roles for a ScanSetting, bounding the discovery List so it can never block the
 // single-writer handler loop.
 func (m *handlerImpl) defaultNodeRoles() []string {
-	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
-	defer cancel()
-	return m.discoverNodeRoles(ctx)
+	roles, _ := m.defaultNodeRolesWithStatus()
+	return roles
 }
 
-// discoverNodeRoles returns the node roles to target when creating or updating a ScanSetting.
+// defaultNodeRolesWithStatus is like defaultNodeRoles but also reports whether discovery actually listed
+// MachineConfigPools successfully, as opposed to falling back to master+worker because the list failed. The
+// reconciler uses this to avoid treating a transient failure as "the cluster now has no custom roles".
+func (m *handlerImpl) defaultNodeRolesWithStatus() ([]string, bool) {
+	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
+	defer cancel()
+	return m.discoverNodeRolesWithStatus(ctx)
+}
+
+// discoverNodeRoles returns the node roles to target when creating or updating a ScanSetting. See
+// discoverNodeRolesWithStatus for the full behavior; create/update paths don't need to distinguish a successful
+// fallback (no MCPs, no roles) from a failed one (list error) since they always apply some roles either way.
+func (m *handlerImpl) discoverNodeRoles(ctx context.Context) []string {
+	roles, _ := m.discoverNodeRolesWithStatus(ctx)
+	return roles
+}
+
+// discoverNodeRolesWithStatus returns the node roles to target when creating, updating, or reconciling a ScanSetting,
+// plus whether discovery succeeded.
 //
 // When ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is off, it returns the hardcoded master+worker roles without touching the
-// cluster (today's behavior). When on, it lists the cluster's MachineConfigPools and derives one role per pool from its
-// nodeSelector (including zero-node pools, skipping pools with no node-role label). Discovery must never make applying a
-// scan config fail: on any error (MCP API absent, list failure, or no roles found) it logs a warning and falls back to
-// master+worker. It never returns an empty role list.
-func (m *handlerImpl) discoverNodeRoles(ctx context.Context) []string {
+// cluster (today's behavior); this counts as success since no discovery was attempted. When on, it lists the cluster's
+// MachineConfigPools and derives one role per pool from its nodeSelector (including zero-node pools, skipping pools
+// with no node-role label). Discovery must never make applying a scan config fail: on any error (MCP API absent or
+// list failure) it logs a warning, falls back to master+worker, and reports failure so callers that must not clobber
+// existing state (the reconciler) can skip. Finding zero roles among otherwise-listable MCPs also falls back to
+// master+worker but is reported as success. It never returns an empty role list.
+func (m *handlerImpl) discoverNodeRolesWithStatus(ctx context.Context) ([]string, bool) {
 	fallback := []string{masterRole, workerRole}
 	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
-		return fallback
+		return fallback, true
 	}
 
 	mcpList, err := m.client.Resource(machineConfigPoolGVR).List(ctx, v1.ListOptions{})
 	if err != nil {
 		log.Warnf("Could not list MachineConfigPools to auto-discover node roles, falling back to %v: %v", fallback, err)
-		return fallback
+		return fallback, false
 	}
 
 	roles := set.NewStringSet()
@@ -74,10 +100,10 @@ func (m *handlerImpl) discoverNodeRoles(ctx context.Context) []string {
 
 	if roles.Cardinality() == 0 {
 		log.Warnf("No node roles discovered from MachineConfigPools, falling back to %v", fallback)
-		return fallback
+		return fallback, true
 	}
 
-	return roles.AsSortedSlice(func(i, j string) bool { return i < j })
+	return roles.AsSortedSlice(func(i, j string) bool { return i < j }), true
 }
 
 // reconcileNodeRoles recomputes the auto-discovered node roles and brings every ACS-managed ScanSetting in line with the
@@ -96,7 +122,15 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		return
 	}
 
-	desiredRoles := m.defaultNodeRoles()
+	desiredRoles, ok := m.defaultNodeRolesWithStatus()
+	if !ok {
+		// Discovery fell back to master+worker because MachineConfigPools could not be listed. Treating that as the
+		// desired state would strip every custom role (e.g. "infra") from managed ScanSettings on a transient API
+		// failure, churning Compliance Operator's per-role scans until the next successful tick. Skip this round;
+		// the existing ScanSettings are left as-is and get re-evaluated on the next tick.
+		log.Warn("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles")
+		return
+	}
 	sort.Strings(desiredRoles)
 	desiredSet := set.NewStringSet(desiredRoles...)
 
