@@ -65,3 +65,99 @@ function setup() {
 
     assert_success
 }
+
+stub_central_image() {
+    KUBECTL_CENTRAL_IMAGE="$1"
+    kubectl() {
+        [[ "$*" == *'deploy/central'* ]] || {
+            echo "unexpected kubectl: $*" >&2
+            return 1
+        }
+        [[ "$*" == *'name=="central"'* ]] || {
+            echo "jsonpath did not select the central container: $*" >&2
+            return 1
+        }
+        printf '%s\n' "${KUBECTL_CENTRAL_IMAGE}"
+    }
+}
+
+@test "detect_image_tag keeps a provided tag without calling kubectl" {
+    kubectl() {
+        echo "kubectl should not be called" >&2
+        return 1
+    }
+
+    run detect_image_tag
+
+    assert_success
+    assert_output --partial "Using provided image tag: 4.12.x-123-gdeadbeef"
+}
+
+@test "detect_image_tag rejects a provided value that is not a Docker tag" {
+    IMAGE_TAG='foo&bar'
+
+    run detect_image_tag
+
+    assert_failure
+    assert_output --partial "Invalid image tag"
+}
+
+@test "detect_image_tag reads a tag from a Central image reference" {
+    IMAGE_TAG=""
+    stub_central_image "quay.io/stackrox-io/main:4.8.0"
+
+    run detect_image_tag
+
+    assert_success
+    assert_output --partial "Detected image tag: 4.8.0"
+}
+
+@test "detect_image_tag keeps the tag when the Central image is digest-pinned" {
+    IMAGE_TAG=""
+    stub_central_image "quay.io/stackrox-io/main:4.8.0@sha256:deadbeef"
+
+    run detect_image_tag
+
+    assert_success
+    assert_output --partial "Detected image tag: 4.8.0"
+}
+
+@test "detect_image_tag reads a tag from a host:port reference" {
+    IMAGE_TAG=""
+    stub_central_image "localhost:5000/stackrox/main:abc"
+
+    run detect_image_tag
+
+    assert_success
+    assert_output --partial "Detected image tag: abc"
+}
+
+@test "detect_image_tag rejects a digest reference with no tag" {
+    IMAGE_TAG=""
+    stub_central_image "quay.io/stackrox-io/main@sha256:0123456789abcdef"
+
+    run detect_image_tag
+
+    assert_failure
+    assert_output --partial "Cannot parse tag from Central image"
+}
+
+@test "detect_image_tag rejects a host:port reference with no tag" {
+    IMAGE_TAG=""
+    stub_central_image "localhost:5000/stackrox/main"
+
+    run detect_image_tag
+
+    assert_failure
+    assert_output --partial "Cannot parse tag from Central image"
+}
+
+@test "detect_image_tag rejects a parsed tag sed would treat as syntax" {
+    IMAGE_TAG=""
+    stub_central_image "quay.io/stackrox-io/main:foo&bar"
+
+    run detect_image_tag
+
+    assert_failure
+    assert_output --partial "Invalid image tag"
+}

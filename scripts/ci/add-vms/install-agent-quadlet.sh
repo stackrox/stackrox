@@ -57,8 +57,31 @@ cleanup_rendered_quadlet_dir() {
     rm -rf "${RENDERED_QUADLET_DIR:-}"
 }
 
+# image_tag_from_ref prints the tag of a Kubernetes image reference.
+# The last colon may belong to a registry port or a digest algorithm, so the
+# tag is taken only from the final path segment, after a @digest is removed.
+image_tag_from_ref() {
+    local ref="${1%%@*}"
+    local last="${ref##*/}"
+    if [[ "$last" != *:* || "$last" == *: ]]; then
+        return 1
+    fi
+    printf '%s\n' "${last##*:}"
+}
+
+# require_docker_tag rejects values sed would treat as syntax, or that would
+# add extra lines to the Quadlet unit when written into Image=.
+require_docker_tag() {
+    local tag="$1"
+    local tag_re='^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
+    if [[ ! "$tag" =~ $tag_re ]]; then
+        die "Invalid image tag '${tag}'. Pass a Docker tag, not a registry path or digest."
+    fi
+}
+
 detect_image_tag() {
     if [[ -n "$IMAGE_TAG" ]]; then
+        require_docker_tag "$IMAGE_TAG"
         echo "Using provided image tag: $IMAGE_TAG"
         return 0
     fi
@@ -66,16 +89,18 @@ detect_image_tag() {
     echo "Auto-detecting image tag from Central deployment..."
     local central_image
     central_image="$(kubectl get deploy/central -n stackrox \
-        -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)"
+        -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}' 2>/dev/null || true)"
 
     if [[ -z "$central_image" ]]; then
         die "Cannot auto-detect image tag: Central deployment not found in stackrox namespace. Provide --image-tag explicitly."
     fi
 
-    IMAGE_TAG="${central_image##*:}"
-    if [[ -z "$IMAGE_TAG" || "$IMAGE_TAG" == "$central_image" ]]; then
-        die "Cannot parse tag from Central image: $central_image"
+    local parsed=""
+    if ! parsed="$(image_tag_from_ref "$central_image")"; then
+        die "Cannot parse tag from Central image: ${central_image}. Provide --image-tag explicitly."
     fi
+    require_docker_tag "$parsed"
+    IMAGE_TAG="$parsed"
     echo "Detected image tag: $IMAGE_TAG"
 }
 
@@ -153,10 +178,16 @@ install_on_vm() {
         fi
     fi
 
+    # install.sh forwards these flags to virtctl scp and ssh. Probes send
+    # known hosts to /dev/null, so they never seed known_hosts for this call.
     if ! QUADLET_FILES_DIR="$RENDERED_QUADLET_DIR" \
         "${RENDERED_QUADLET_DIR}/install.sh" --virtctl \
         -n "$NAMESPACE" \
         --identity-file "$AUTOMATION_SSH_PRIVKEY" \
+        --local-ssh-opts="-o StrictHostKeyChecking=no" \
+        --local-ssh-opts="-o UserKnownHostsFile=/dev/null" \
+        --local-ssh-opts="-o BatchMode=yes" \
+        --local-ssh-opts="-o ConnectTimeout=10" \
         "${SSH_USER}@vmi/${vm_name}"; then
         echo "  Quadlet install failed on $vm_name" >&2
         QUADLET_AGENT_FAILED_VMS+=("$vm_name")
@@ -177,6 +208,7 @@ install_on_vm() {
     while ! quadlet_agent_service_verified "$vm_name"; do
         ((retries--))
         if ((retries == 0)); then
+            echo "  roxagent.service did not become active on $vm_name" >&2
             QUADLET_AGENT_FAILED_VMS+=("$vm_name")
             return
         fi
@@ -203,4 +235,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     fi
     trap cleanup_rendered_quadlet_dir EXIT
     install_agent_quadlet "$@"
+    # The function returns success so a sourcing caller can finish its own
+    # summary under set -e. This entry point owns the process exit status.
+    if [[ ${#QUADLET_AGENT_FAILED_VMS[@]} -gt 0 ]]; then
+        exit 1
+    fi
 fi
