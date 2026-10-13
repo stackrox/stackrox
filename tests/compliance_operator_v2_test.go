@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -17,12 +18,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1188,6 +1191,12 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 // ScanSetting role to the nodes it targets. Keep in sync with sensor/kubernetes/complianceoperator.
 const nodeRoleLabelPrefix = "node-role.kubernetes.io/"
 
+// mcpListFailureLog matches Sensor's noderoles.go warning logged when it falls back to master+worker
+// because it could not list MachineConfigPools (e.g. missing RBAC on the ClusterRole). On a cluster with
+// only master+worker pools, a successful discovery and this fallback produce the same ScanSetting.roles,
+// so TestComplianceV2AutodiscoverNodeRoles also checks Sensor's logs for this warning to tell them apart.
+var mcpListFailureLog = regexp.MustCompile(`Could not list MachineConfigPools to auto-discover node roles`)
+
 // deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
 // node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
 // label in spec.nodeSelector.matchLabels (sorted when a pool matches more than one, to mirror Sensor's
@@ -1251,6 +1260,19 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 	expectedRoles := deriveNodeRolesFromMachineConfigPools(ctx, t)
 	t.Logf("node roles derived from MachineConfigPools: %v", expectedRoles)
 
+	// On a standard cluster (master+worker only) the discovered roles coincide with Sensor's legacy
+	// master+worker fallback, so the roles assertion below can't by itself tell "discovery ran" apart
+	// from "discovery was silently denied by RBAC and fell back". Catch that case directly: fail if
+	// Sensor logged the fallback warning, which only fires when the MachineConfigPool List errors
+	// (e.g. the sensor-compliance ClusterRole is missing the machineconfigpools read rule).
+	ks := &KubernetesSuite{}
+	ks.SetT(t)
+	ks.k8s = createK8sClient(t)
+	sensorPod, err := ks.getSensorPod(ctx, namespaces.StackRox)
+	require.NoError(t, err, "failed to find the Sensor pod to watch its logs for MCP discovery failures")
+	sensorLogFromByte, err := ks.getLastLogBytePos(ctx, namespaces.StackRox, sensorPod.GetName(), sensorContainer)
+	require.NoError(t, err, "failed to get Sensor's current log position")
+
 	testID := fmt.Sprintf("autodiscover-roles-%s", uuid.NewV4().String())
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testID,
@@ -1294,4 +1316,8 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 	assert.ElementsMatch(t, expectedRoles, actualRoles,
 		"ScanSetting.roles should equal the roles discovered from the cluster's MachineConfigPools; "+
 			"a mismatch means auto-discovery is disabled or broken")
+
+	ks.checkLogsMatch(ctx, namespaces.StackRox, sensorPodLabels, sensorContainer,
+		"Sensor did not fail to list MachineConfigPools while auto-discovering node roles",
+		logmatchers.ContainsNoLinesMatchingAfter(mcpListFailureLog, sensorLogFromByte))
 }
