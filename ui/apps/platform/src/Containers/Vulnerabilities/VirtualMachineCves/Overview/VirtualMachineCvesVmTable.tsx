@@ -8,7 +8,6 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -26,7 +25,6 @@ import {
 } from '../../utils/sortFields';
 import VirtualMachineCvesFilterToolbar from './VirtualMachineCvesFilterToolbar';
 import VirtualMachineCvesToggleGroup from './VirtualMachineCvesToggleGroup';
-import VirtualMachinesCvesTableLegacy from './VirtualMachinesCvesTableLegacy';
 
 const sortFields = [VIRTUAL_MACHINE_SORT_FIELD, CLUSTER_SORT_FIELD, NAMESPACE_SORT_FIELD];
 
@@ -68,15 +66,13 @@ type VirtualMachineCvesVmTableProps = {
     onClearFilters: () => void;
 };
 
-type VirtualMachineCvesVmTableEnhancedProps = VirtualMachineCvesVmTableProps;
-
-function VirtualMachineCvesVmTableEnhanced({
+function VirtualMachineCvesVmTable({
     searchFilter,
     pagination,
     managedColumnState,
     isFiltered,
     onClearFilters,
-}: VirtualMachineCvesVmTableEnhancedProps) {
+}: VirtualMachineCvesVmTableProps) {
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -239,19 +235,6 @@ function VirtualMachineCvesVmTableEnhanced({
             </InnerScrollContainer>
         </>
     );
-}
-
-function VirtualMachineCvesVmTable(props: VirtualMachineCvesVmTableProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEnhancedDataModelEnabled = isFeatureFlagEnabled(
-        'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
-    );
-
-    if (isEnhancedDataModelEnabled) {
-        return <VirtualMachineCvesVmTableEnhanced {...props} />;
-    }
-
-    return <VirtualMachinesCvesTableLegacy />;
 }
 
 export default VirtualMachineCvesVmTable;
