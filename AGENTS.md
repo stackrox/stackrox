@@ -94,9 +94,12 @@ a warning; run `make go-postgres-unit-tests` for them. This command does not run
 `integration`, `test_e2e`, `test_e2e_vm`, `scanner_db_integration`, or
 `destructive` tests, and it does not repeat the logging-level matrix.
 
-Exit codes: `0` pass, `1` test or lint failure, `2` codegen needed (reserved;
-codegen detection is not implemented yet), `3` setup error. `DRY_RUN=1` prints
-the planned commands and does not run them.
+Exit codes from `scripts/check-changed.sh`: `0` pass, `1` test or lint failure,
+`2` codegen needed (reserved; codegen detection is not implemented yet),
+`3` setup error. GNU make exits `2` for any recipe failure, so
+`make check-changed` is `0` on success and `2` when the script fails. The
+summary line `exit:` is the script status. `DRY_RUN=1` prints the planned
+commands and does not run them.
 
 ### Development Commands
 - `make fast-central` - Quickly recompile and restart Central component

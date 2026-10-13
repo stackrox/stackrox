@@ -84,12 +84,24 @@ print_summary() {
         fi
     done
     printf '\nexit: %s\n' "${final_exit}"
+    if [[ "${final_exit}" -ne 0 ]]; then
+        printf 'GNU make exits 2 when a recipe fails. The exit line above is the script status.\n'
+    fi
 }
 
 # with_test_tag matches the Makefile: GOTAGS=$(GOTAGS),test
 # An empty GOTAGS becomes ",test". scripts/go-test.sh turns commas into spaces.
 with_test_tag() {
     printf '%s,test' "${1-}"
+}
+
+package_scope() {
+    local n=$1
+    if [[ "${n}" -eq 1 ]]; then
+        printf '1 package'
+    else
+        printf '%s packages' "${n}"
+    fi
 }
 
 normalize_ignore() {
@@ -407,7 +419,7 @@ go_test_root() {
         step="go test -race"
     fi
     rerun="CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${tags} scripts/go-test.sh ${args[*]} ${pkgs[*]}"
-    run_recorded "${step}" "${#pkgs[@]} packages" "${rerun}" \
+    run_recorded "${step}" "$(package_scope "${#pkgs[@]}")" "${rerun}" \
         env CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS="${MUTEX_WATCHDOG_TIMEOUT_SECS:-30}" GOTAGS="${tags}" \
         "${SCRIPT_DIR}/go-test.sh" "${args[@]}" "${pkgs[@]}"
 }
@@ -464,7 +476,7 @@ lint_packages() {
     fi
     cmd+=("${rels[@]}")
     rerun="${cmd[*]}"
-    run_recorded "${name}" "${#rels[@]} packages" "${rerun}" "${cmd[@]}"
+    run_recorded "${name}" "$(package_scope "${#rels[@]}")" "${rerun}" "${cmd[@]}"
 }
 
 finish_ok_notes() {
@@ -559,17 +571,17 @@ main() {
     if [[ ${#ignored_packages[@]} -gt 0 ]]; then
         printf 'WARN: dropped UNIT_TEST_IGNORE packages:\n'
         printf '  %s\n' "${ignored_packages[@]}"
-        summary_add "unit-test-ignore" "${#ignored_packages[@]} packages" "skip" "-" ""
+        summary_add "unit-test-ignore" "$(package_scope "${#ignored_packages[@]}")" "skip" "-" ""
     fi
     if [[ ${#sql_only_packages[@]} -gt 0 ]]; then
         printf 'WARN: skipping sql_integration packages. Postgres is not started. Run make go-postgres-unit-tests.\n'
         printf '  %s\n' "${sql_only_packages[@]}"
-        summary_add "sql_integration" "${#sql_only_packages[@]} packages" "skip" "-" "make go-postgres-unit-tests"
+        summary_add "sql_integration" "$(package_scope "${#sql_only_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
     fi
     if [[ ${#sql_mixed_packages[@]} -gt 0 ]]; then
         printf 'WARN: these packages also contain sql_integration tests, which were not run:\n'
         printf '  %s\n' "${sql_mixed_packages[@]}"
-        summary_add "sql_integration (mixed)" "${#sql_mixed_packages[@]} packages" "skip" "-" "make go-postgres-unit-tests"
+        summary_add "sql_integration (mixed)" "$(package_scope "${#sql_mixed_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
     fi
 
     if [[ ${#root_kept[@]} -gt 0 ]]; then
