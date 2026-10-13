@@ -90,6 +90,7 @@ type SecurityPolicySpec struct {
 	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
 }
 
+// +kubebuilder:validation:AtMostOneOf=deployment;excludeByKind
 type Exclusion struct {
 	Name       string     `json:"name,omitempty"`
 	Deployment Deployment `json:"deployment,omitempty"`
