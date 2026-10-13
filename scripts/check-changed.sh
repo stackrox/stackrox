@@ -842,6 +842,85 @@ finish_run() {
     exit "${final_exit}"
 }
 
+run_flake() {
+    local name=${FLAKE}
+    local pkg=${PKG:-}
+    local count=${COUNT:-20}
+    local extra_tags=${TAGS:-}
+    local i status pass=0 fail=0
+    local log safe first="" tags step
+    local -a args
+    if [[ -z "${pkg}" ]]; then
+        setup_error "PKG is required when FLAKE is set. Example: FLAKE=TestFoo PKG=./pkg/foo COUNT=20"
+    fi
+    if [[ ! "${count}" =~ ^[1-9][0-9]*$ ]]; then
+        setup_error "COUNT must be a positive integer"
+    fi
+    if [[ ! "${name}" =~ ^[A-Za-z0-9_./]+$ ]]; then
+        setup_error "FLAKE must be a Go test name, such as TestFoo or Suite/Method"
+    fi
+    tags=$(with_test_tag "${GOTAGS-}")
+    if [[ -n "${extra_tags}" ]]; then
+        tags="${tags},${extra_tags}"
+    fi
+    args=(-count=1 -timeout 25m -v -run "^${name}$" "${pkg}")
+    step="flake"
+    if race_enabled; then
+        args=(-count=1 -timeout 25m -race -v -run "^${name}$" "${pkg}")
+        step="flake -race"
+    fi
+    if [[ -n "${PARALLEL:-}" ]]; then
+        args+=(-parallel "${PARALLEL}")
+    fi
+    safe=${name//\//_}
+    mkdir -p "${root}/test-output/flake"
+    local stress_pid=""
+    if [[ "${STRESS:-0}" == "1" ]]; then
+        yes >/dev/null &
+        stress_pid=$!
+    fi
+    local start
+    start=$(epoch_ns)
+    for ((i = 1; i <= count; i++)); do
+        log="${root}/test-output/flake/${safe}.${i}.log"
+        set +e
+        env CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS="${MUTEX_WATCHDOG_TIMEOUT_SECS:-30}" GOTAGS="${tags}" \
+            "${SCRIPT_DIR}/go-test.sh" "${args[@]}" > "${log}" 2>&1
+        status=$?
+        set -e
+        if [[ "${status}" -eq 0 ]]; then
+            pass=$((pass + 1))
+            printf 'flake %s/%s pass\n' "${i}" "${count}"
+        else
+            fail=$((fail + 1))
+            printf 'flake %s/%s fail\n' "${i}" "${count}"
+            if [[ -z "${first}" ]]; then
+                first="${root}/test-output/flake/${safe}.first-failure.log"
+                cp "${log}" "${first}"
+            fi
+        fi
+    done
+    if [[ -n "${stress_pid}" ]]; then
+        kill "${stress_pid}" >/dev/null 2>&1 || true
+        wait "${stress_pid}" 2>/dev/null || true
+    fi
+    local elapsed result rerun
+    elapsed=$(format_elapsed "${start}")
+    printf 'flake result: pass %s / fail %s\n' "${pass}" "${fail}"
+    rerun="CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${tags} scripts/go-test.sh ${args[*]}"
+    if [[ "${fail}" -eq 0 ]]; then
+        result=pass
+    else
+        result=fail
+        final_exit=1
+        printf 'first failure: %s\n' "${first#"${root}/"}"
+    fi
+    summary_add "${step}" "${name} x ${count}" "${result}" "${elapsed}" "${rerun}"
+    print_summary
+    write_output_json
+    exit "${final_exit}"
+}
+
 main() {
     case "${DEPS:-direct}" in
         direct | rdeps | rdeps-all) deps_mode_value=${DEPS:-direct} ;;
@@ -849,6 +928,9 @@ main() {
     esac
     root=$(repo_root)
     cd "${root}" || setup_error "cannot enter ${root}"
+    if [[ -n "${FLAKE:-}" ]]; then
+        run_flake
+    fi
     resolve_base
 
     local -a changed_files=()

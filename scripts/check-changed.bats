@@ -343,6 +343,35 @@ PY
     assert_output --partial "exit: 0"
 }
 
+@test "flake mode counts passes and failures" {
+    new_git_repo
+    printf 'module example.com/demo\n\ngo 1.22\n' > "${demo}/go.mod"
+    mkdir -p "${demo}/pkg/a"
+    printf 'package a\nimport "testing"\nfunc TestOk(t *testing.T) {}\nfunc TestBad(t *testing.T) { t.Fatal("boom") }\n' > "${demo}/pkg/a/a_test.go"
+    git -C "${demo}" add go.mod pkg
+    git -C "${demo}" commit -q -m init
+
+    run env CHECK_CHANGED_ROOT="${demo}" FLAKE=TestOk PKG=./pkg/a COUNT=2 RACE=0 \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "flake result: pass 2 / fail 0"
+    assert_output --partial "exit: 0"
+
+    run env CHECK_CHANGED_ROOT="${demo}" FLAKE=TestBad PKG=./pkg/a COUNT=2 RACE=0 \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_failure
+    assert_equal "${status}" 1
+    assert_output --partial "flake result: pass 0 / fail 2"
+    assert_output --partial "test-output/flake/TestBad.first-failure.log"
+    [[ -f "${demo}/test-output/flake/TestBad.first-failure.log" ]]
+
+    run env CHECK_CHANGED_ROOT="${demo}" FLAKE=TestOk COUNT=2 \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_failure
+    assert_equal "${status}" 3
+    assert_output --partial "PKG is required"
+}
+
 @test "check-changed target passes Makefile variables" {
     run grep -A 12 "^check-changed:" "${BATS_TEST_DIRNAME}/../Makefile"
     assert_success

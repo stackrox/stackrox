@@ -649,7 +649,8 @@ test: go-unit-tests ui-test shell-unit-tests
 # check-changed tests and lints only the Go packages in the working diff.
 # UNIT_TEST_IGNORE, GOTAGS, and RELEASE_GOTAGS are passed through so the
 # script does not keep a second copy of those lists.
-.PHONY: check-changed
+.PHONY: check-changed check-changed-flake
+check-changed-flake: check-changed
 check-changed:
 	@echo "+ $@"
 	@UNIT_TEST_IGNORE=$(UNIT_TEST_IGNORE) \

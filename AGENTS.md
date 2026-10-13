@@ -113,6 +113,13 @@ so `make check-changed` is `0` on success and `2` when the script fails. The
 summary line `exit:` is the script status. `DRY_RUN=1` prints the planned
 commands and does not run them.
 
+`make check-changed FLAKE=TestName PKG=./pkg/x COUNT=20` reruns that test with
+`-race` and `-count=1`. `COUNT` defaults to 20. Names may be `Suite/Method`.
+`TAGS=sql_integration` adds that build tag. The summary is `pass X / fail Y`.
+The first failure is copied to `test-output/flake/`. Any failure exits 1.
+`make check-changed-flake` is the same target. `PARALLEL=n` passes `-parallel`.
+`STRESS=1` runs a background CPU load for the loop. `RACE=0` drops `-race`.
+
 Exit `2` names the make target and does not run it. `proto/` needs
 `make proto-generated-srcs`, and `proto/storage/` also needs
 `make storage-protos-compatible`. A `//go:generate` line, or a Go interface
