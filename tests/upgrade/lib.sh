@@ -17,24 +17,7 @@ upgrade_resource_args() {
         central|secured-cluster) ;;
         *) echo "Unknown upgrade chart: $1" >&2; return 1 ;;
     esac
-    if [[ -z "${UPGRADE_RESOURCE_RENDERER:-}" ]]; then
-        UPGRADE_RESOURCE_RENDERER="$(mktemp -d)/resource-profile"
-        (cd "$TEST_ROOT" && go build -o "$UPGRADE_RESOURCE_RENDERER" ./tests/upgrade/resource-profile) || return 1
-    fi
-    if helm template --help | grep 'postrenderer type plugin' >/dev/null; then
-        if [[ -z "${UPGRADE_RESOURCE_PLUGIN:-}" ]]; then
-            # Keep CI plugins isolated from the caller's Helm installation.
-            HELM_PLUGINS="$(mktemp -d)"
-            export HELM_PLUGINS
-            mkdir -p "${HELM_PLUGINS}/ci-upgrade-resources"
-            cp "$UPGRADE_RESOURCE_RENDERER" "${HELM_PLUGINS}/ci-upgrade-resources/resource-profile"
-            cp "${TEST_ROOT}/tests/upgrade/resource-profile/plugin.yaml" "${HELM_PLUGINS}/ci-upgrade-resources/plugin.yaml"
-            UPGRADE_RESOURCE_PLUGIN=ci-upgrade-resources
-        fi
-        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_PLUGIN")
-    else
-        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_RENDERER")
-    fi
+    UPGRADE_RESOURCE_ARGS=(-f "${TEST_ROOT}/tests/upgrade/ci-${1}-values.yaml")
 }
 
 # On one node the scale launcher leaves resources unchanged, so the CI profile

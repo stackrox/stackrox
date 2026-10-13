@@ -4,12 +4,12 @@ The Central and PostgreSQL GKE upgrade jobs opt in with
 `UPGRADE_TEST_RESOURCE_PROFILE=ci` and use one `e2-standard-16` node.
 Other callers retain their existing resources.
 
-The shared library builds a small Go Helm post-renderer from the current checkout,
-not the historical checkout used to generate old charts. It caps CPU requests at
-500m without raising smaller requests and removes CPU limits. Memory requests and
-limits remain unchanged. It covers Deployment, DaemonSet and
-StatefulSet application and init containers; hook Jobs are unchanged. It supports
-executable post-renderers in Helm 3 and an isolated local plugin in Helm 4.
+The shared library passes `ci-central-values.yaml` or
+`ci-secured-cluster-values.yaml` from the current checkout, including when using
+historical charts. These files lower the larger CPU requests to 500m. Smaller
+requests, CPU limits and all memory settings retain chart defaults. This replaces the renderer's CPU
+limit removal with request-only overrides. Sidecar resources remain unchanged.
+No post-renderer, Go build or Helm plugin is needed.
 
 The profile is passed to the initial Central/secured-cluster installations and the
 HEAD Central Helm upgrade. The CI profile requires exactly one node: the scale
@@ -26,7 +26,6 @@ restoration tests intentionally retain their production CPU requests.
 Local checks:
 
 ```sh
-go test ./tests/upgrade/resource-profile
 bats scripts/ci/bats/upgrade_resource_profile.bats
 ```
 

@@ -6,9 +6,6 @@ setup() {
     TEST_ROOT="$(cd "${BATS_TEST_DIRNAME}/../../.." && pwd)"
     source "${TEST_ROOT}/tests/upgrade/lib.sh"
     unset UPGRADE_TEST_RESOURCE_PROFILE
-    UPGRADE_RESOURCE_RENDERER="${BATS_TEST_TMPDIR}/renderer"
-    touch "$UPGRADE_RESOURCE_RENDERER"
-    helm() { echo "--post-renderer executable"; }
 }
 
 @test "resource profile is opt-in" {
@@ -16,14 +13,16 @@ setup() {
     [ "${#UPGRADE_RESOURCE_ARGS[@]}" -eq 0 ]
 }
 
-@test "CI renderer is passed in historical checkout" {
+@test "CI values are passed from HEAD in historical checkout" {
     export UPGRADE_TEST_RESOURCE_PROFILE=ci
     cd "$BATS_TEST_TMPDIR"
-    upgrade_resource_args central
-    [ "${UPGRADE_RESOURCE_ARGS[0]}" = --post-renderer ]
-    [ "${UPGRADE_RESOURCE_ARGS[1]}" = "$UPGRADE_RESOURCE_RENDERER" ]
-    upgrade_resource_args secured-cluster
-    [ "${UPGRADE_RESOURCE_ARGS[1]}" = "$UPGRADE_RESOURCE_RENDERER" ]
+    for chart in central secured-cluster; do
+        upgrade_resource_args "$chart"
+        [ "${#UPGRADE_RESOURCE_ARGS[@]}" -eq 2 ]
+        [ "${UPGRADE_RESOURCE_ARGS[0]}" = -f ]
+        [ "${UPGRADE_RESOURCE_ARGS[1]}" = "${TEST_ROOT}/tests/upgrade/ci-${chart}-values.yaml" ]
+        [ -f "${UPGRADE_RESOURCE_ARGS[1]}" ]
+    done
 }
 
 @test "unknown profile fails instead of silently using defaults" {
@@ -32,12 +31,10 @@ setup() {
     [ "$status" -eq 1 ]
 }
 
-@test "Helm 4 receives isolated plugin name" {
+@test "unknown chart fails instead of silently using defaults" {
     export UPGRADE_TEST_RESOURCE_PROFILE=ci
-    helm() { echo 'postrenderer type plugin'; }
-    upgrade_resource_args central
-    [ "${UPGRADE_RESOURCE_ARGS[1]}" = ci-upgrade-resources ]
-    [ -f "${HELM_PLUGINS}/ci-upgrade-resources/plugin.yaml" ]
+    run upgrade_resource_args typo
+    [ "$status" -eq 1 ]
 }
 
 @test "disabled profile retains exactly the two original patches" {
@@ -88,12 +85,10 @@ setup() {
     [ ! -e "$BATS_TEST_TMPDIR/unexpected-call" ]
 }
 
-@test "renderer builds from TEST_ROOT rather than historical checkout" {
+@test "disabling profile clears previous values arguments" {
     export UPGRADE_TEST_RESOURCE_PROFILE=ci
-    unset UPGRADE_RESOURCE_RENDERER
-    go() { printf '%s\n%s\n' "$PWD" "$*" > "$BATS_TEST_TMPDIR/build"; }
-    cd "$BATS_TEST_TMPDIR"
     upgrade_resource_args central
-    [ "$(head -n 1 "$BATS_TEST_TMPDIR/build")" = "$TEST_ROOT" ]
-    [[ "$(tail -n 1 "$BATS_TEST_TMPDIR/build")" == *'./tests/upgrade/resource-profile' ]]
+    unset UPGRADE_TEST_RESOURCE_PROFILE
+    upgrade_resource_args central
+    [ "${#UPGRADE_RESOURCE_ARGS[@]}" -eq 0 ]
 }

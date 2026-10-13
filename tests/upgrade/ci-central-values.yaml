@@ -1,0 +1,25 @@
+# CPU requests for single-node GKE upgrade tests. Keep memory and limit defaults.
+central:
+  resources:
+    requests:
+      cpu: 500m
+  db:
+    resources:
+      requests:
+        cpu: 500m
+
+# Used by historical charts; ignored by charts without the legacy Scanner.
+scanner:
+  resources:
+    requests:
+      cpu: 500m
+
+scannerV4:
+  indexer:
+    resources:
+      requests:
+        cpu: 500m
+  db:
+    resources:
+      requests:
+        cpu: 500m
