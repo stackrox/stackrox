@@ -9,6 +9,11 @@ on:
   - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
+      test-mode:
+        description: "Use scanner-v4-test instead of the production GCS bucket"
+        required: false
+        type: boolean
+        default: false
       force-stage:
         description: "Replace the staged candidate regardless of validation or freshness"
         required: false
@@ -66,6 +71,15 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
+
+    - name: Configure test bucket
+      if: inputs['test-mode'] == true
+      run: |
+        set -euo pipefail
+        test_config="${GITHUB_WORKSPACE}/scanner-updater-source-config-test.yaml"
+        sed -E 's/^([[:space:]]*bucket:)[[:space:]]*.*/\1 scanner-v4-test/' "$SOURCE_CONFIG" > "$test_config"
+        [[ "$(grep -Ec '^[[:space:]]*bucket:[[:space:]]*scanner-v4-test$' "$test_config")" -eq 1 ]]
+        echo "SOURCE_CONFIG=$test_config" >> "$GITHUB_ENV"
 
     - name: Authenticate with GCS
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
