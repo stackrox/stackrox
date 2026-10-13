@@ -108,15 +108,21 @@ jobs:
         bundle_obj=$("$sc" bundle-object "$STREAM")
         generation="${{ steps.staging.outputs.generation }}"
 
+        # Capture the evaluated staging generation's creation time before deletion.
+        # This is the baseline for sources updated while staging was pending.
+        staging_ts=$(gcloud storage objects describe "${staging_obj}#${generation}" \
+            --format="value(creation_time)")
+        [[ -n "$staging_ts" ]] || { echo "::error::Missing staging creation time" >&2; exit 1; }
+
         # Pin the source version; a replacement cannot be promoted by accident.
         gcloud storage cp "${staging_obj}#${generation}" "$bundle_obj"
+        echo "staging_created_at=$staging_ts" >> "$GITHUB_OUTPUT"
         echo "Published bundle for stream '${STREAM}' -> ${bundle_obj}"
         # Remove only the generation just published, not a newer candidate.
         gcloud storage rm "$staging_obj" --if-generation-match="$generation"
 
-    # Keep the existing freshness logic unchanged; only its gate changes.
-    # If publication was required, it must have succeeded before checking
-    # freshness against the updated production bundle.
+    # After promotion, compare sources with the staging creation time rather
+    # than the newer production object's creation time.
     - name: Check for changes
       if: >-
         steps.staging.outputs.should_stage == 'true' &&
@@ -140,15 +146,19 @@ jobs:
             exit 0
         fi
 
-        bundle_obj=$("$sc" bundle-object "$STREAM")
-
-        # Get the bundle's creation timestamp. If the bundle does not
-        # exist or the query fails, assume changes and proceed.
-        if ! bundle_ts=$(gcloud storage objects describe "$bundle_obj" \
-            --format="value(creation_time)" 2>/dev/null) || [ -z "$bundle_ts" ]; then
-            echo "Bundle not found or query failed; assuming changes"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
+        if [[ "${{ steps.staging.outputs.action }}" == "publish" ]]; then
+            bundle_ts="${{ steps.publish.outputs.staging_created_at }}"
+            [[ -n "$bundle_ts" ]] || { echo "::error::Missing published staging timestamp" >&2; exit 1; }
+        else
+            bundle_obj=$("$sc" bundle-object "$STREAM")
+            # Without a promotion, retain the existing production baseline.
+            # If the object is missing or unreadable, rebuild.
+            if ! bundle_ts=$(gcloud storage objects describe "$bundle_obj" \
+                --format="value(creation_time)" 2>/dev/null) || [ -z "$bundle_ts" ]; then
+                echo "Bundle not found or query failed; assuming changes"
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+                exit 0
+            fi
         fi
         bundle_epoch=$(date -d "$bundle_ts" +%s)
         echo "Bundle created: $bundle_ts (epoch: $bundle_epoch)"
