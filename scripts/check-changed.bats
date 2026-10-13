@@ -258,6 +258,7 @@ new_git_repo() {
     mkdir -p "${demo}/pkg/a" "${demo}/pkg/b" "${demo}/pkg/c"
     printf 'package a\nfunc A() int { return 1 }\n' > "${demo}/pkg/a/a.go"
     printf 'package b\nimport "example.com/demo/pkg/a"\nfunc B() int { return a.A() }\n' > "${demo}/pkg/b/b.go"
+    printf 'package b\nimport "testing"\nfunc TestB(t *testing.T) {}\n' > "${demo}/pkg/b/b_test.go"
     printf 'package c\nimport "example.com/demo/pkg/b"\nfunc C() int { return b.B() }\n' > "${demo}/pkg/c/c.go"
     git -C "${demo}" add go.mod pkg
     git -C "${demo}" commit -q -m init
@@ -287,6 +288,7 @@ PY
     assert_success
     assert_output --partial "DEPS=rdeps added:"
     assert_output --partial "example.com/demo/pkg/b"
+    refute_output --partial ".test]"
     local line
     while IFS= read -r line; do
         if [[ "${line}" == "DRY_RUN go test -race: "* ]]; then

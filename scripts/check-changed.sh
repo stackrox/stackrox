@@ -473,7 +473,9 @@ list_importers() {
         BEGIN { n = split(targets, t, ",") }
         {
             path = $1
-            if (path ~ /\.test$/) next
+            # go list -test emits "pkg.test" and "pkg [pkg.test]".
+            # Those are the test binary, not a package go test can run.
+            if (path ~ /\.test$/ || path ~ /[[:space:]]/ || index(path, "[")) next
             if (!in_mod(path, mod)) next
             for (i = 1; i <= n; i++) {
                 if (path == t[i]) continue
