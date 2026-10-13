@@ -180,7 +180,7 @@ require (
 	kubevirt.io/api v1.9.0
 	kubevirt.io/client-go v1.10.0-alpha.0
 	sigs.k8s.io/controller-runtime v0.25.2
-	sigs.k8s.io/controller-tools v0.21.0
+	sigs.k8s.io/controller-tools v0.22.0
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/yaml v1.6.0
 )
