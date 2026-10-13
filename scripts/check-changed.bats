@@ -307,6 +307,42 @@ PY
     assert_output --partial "example.com/demo/pkg/c"
 }
 
+@test "codegen inputs exit 2 and CODEGEN=skip does not" {
+    new_git_repo
+    printf 'module example.com/demo\n\ngo 1.22\n' > "${demo}/go.mod"
+    git -C "${demo}" add go.mod
+    git -C "${demo}" commit -q -m init
+    mkdir -p "${demo}/proto/storage"
+    printf 'syntax = "proto3";\n' > "${demo}/proto/storage/foo.proto"
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_failure
+    assert_equal "${status}" 2
+    assert_output --partial "make proto-generated-srcs"
+    assert_output --partial "make storage-protos-compatible"
+    assert_output --partial "exit: 2"
+
+    rm -rf "${demo}/proto"
+    mkdir -p "${demo}/central/graphql/resolvers/gen" "${demo}/config-controller/api" "${demo}/pkg/a/mocks"
+    printf 'package main\nfunc main() {}\n' > "${demo}/central/graphql/resolvers/gen/main.go"
+    printf 'package api\n' > "${demo}/config-controller/api/types.go"
+    printf 'package a\ntype Store interface {\n\tGet() int\n}\n' > "${demo}/pkg/a/a.go"
+    printf '//go:generate echo hi\npackage a\n' > "${demo}/pkg/a/gen.go"
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 CODEGEN=skip \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "make go-generated-srcs"
+    assert_output --partial "make config-controller-gen"
+    assert_output --partial "CODEGEN=skip"
+    assert_output --partial "exit: 0"
+}
+
 @test "check-changed target passes Makefile variables" {
     run grep -A 12 "^check-changed:" "${BATS_TEST_DIRNAME}/../Makefile"
     assert_success

@@ -107,11 +107,20 @@ This command does not run `integration`, `test_e2e`, `test_e2e_vm`,
 logging-level matrix.
 
 Exit codes from `scripts/check-changed.sh`: `0` pass, `1` test or lint failure,
-`2` codegen needed (reserved; codegen detection is not implemented yet),
-`3` setup error. GNU make exits `2` for any recipe failure, so
-`make check-changed` is `0` on success and `2` when the script fails. The
+`2` codegen needed, `3` setup error. A test or lint failure stays exit `1`
+even when codegen is also needed. GNU make exits `2` for any recipe failure,
+so `make check-changed` is `0` on success and `2` when the script fails. The
 summary line `exit:` is the script status. `DRY_RUN=1` prints the planned
 commands and does not run them.
+
+Exit `2` names the make target and does not run it. `proto/` needs
+`make proto-generated-srcs`, and `proto/storage/` also needs
+`make storage-protos-compatible`. A `//go:generate` line, or a Go interface
+in a directory that already has `mocks/`, needs `make go-generated-srcs`.
+The same target covers `central/graphql/schema`, `central/graphql/generator`,
+and `central/graphql/resolvers/gen` (that last path is the generator main).
+`config-controller/api` needs `make config-controller-gen`. `CODEGEN=skip`
+prints the targets and does not fail.
 
 ### Development Commands
 - `make fast-central` - Quickly recompile and restart Central component

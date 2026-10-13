@@ -32,6 +32,7 @@ untested_dependents=0
 warn_count=0
 pg_failed=0
 skip_deps_note=0
+declare -A codegen_make=()
 nested_dirs=()
 lint_flags=()
 summary_steps=()
@@ -701,7 +702,6 @@ finish_ok_notes() {
     else
         printf 'NOTE: not run: integration, test_e2e, test_e2e_vm, scanner_db_integration, destructive, and release-tagged tests.\n'
     fi
-    printf 'NOTE: exit 2 is reserved for codegen detection and is not produced yet.\n'
     if ! race_enabled; then
         printf 'NOTE: RACE=0, so this run does not match CI (CI passes -race).\n'
     fi
@@ -754,6 +754,81 @@ PY
     printf 'wrote %s\n' "${dest#"${root}/"}"
 }
 
+note_codegen() {
+    local target=$1
+    local why=$2
+    if [[ -z "${codegen_make[${target}]+x}" ]]; then
+        codegen_make[${target}]=""
+    fi
+    codegen_make[${target}]+="${why}"$'\n'
+}
+
+# scan_codegen records make targets for changed generator inputs.
+# It does not run the generators.
+scan_codegen() {
+    local f dir
+    codegen_make=()
+    for f in "$@"; do
+        [[ -z "${f}" ]] && continue
+        case "${f}" in
+            proto/storage/*)
+                note_codegen proto-generated-srcs "${f}"
+                note_codegen storage-protos-compatible "${f}"
+                ;;
+            proto/*)
+                note_codegen proto-generated-srcs "${f}"
+                ;;
+            config-controller/api/*)
+                note_codegen config-controller-gen "${f}"
+                ;;
+            central/graphql/schema/* | central/graphql/generator/* | central/graphql/resolvers/gen/*)
+                note_codegen go-generated-srcs "${f}"
+                ;;
+        esac
+        if [[ -f "${root}/${f}" ]] && grep -q '//go:generate' "${root}/${f}"; then
+            note_codegen go-generated-srcs "${f}"
+        fi
+        if [[ "${f}" == *.go && -f "${root}/${f}" ]]; then
+            dir=$(dirname "${root}/${f}")
+            if [[ -d "${dir}/mocks" ]] && grep -Eq '^type[[:space:]]+[[:alnum:]_]+[[:space:]]+interface([[:space:]]|\{|$)' "${root}/${f}"; then
+                note_codegen go-generated-srcs "${f}"
+            fi
+        fi
+    done
+}
+
+report_codegen() {
+    local target reasons
+    if [[ ${#codegen_make[@]} -eq 0 ]]; then
+        summary_add "codegen" "none" "pass" "-" ""
+        return 0
+    fi
+    printf 'codegen:\n'
+    for target in "${!codegen_make[@]}"; do
+        printf '  make %s\n' "${target}"
+        reasons=${codegen_make[${target}]}
+        while IFS= read -r reasons; do
+            [[ -z "${reasons}" ]] && continue
+            printf '    %s\n' "${reasons}"
+        done <<< "${codegen_make[${target}]}"
+    done
+    local scope
+    if [[ ${#codegen_make[@]} -eq 1 ]]; then
+        scope="1 target"
+    else
+        scope="${#codegen_make[@]} targets"
+    fi
+    if [[ "${CODEGEN:-}" == "skip" ]]; then
+        printf 'CODEGEN=skip, so this did not fail the run.\n'
+        summary_add "codegen" "${scope}" "skip" "-" "CODEGEN=skip"
+        return 0
+    fi
+    summary_add "codegen" "${scope}" "fail" "-" "run the make targets above"
+    if [[ "${final_exit}" -eq 0 ]]; then
+        final_exit=${EXIT_CODEGEN}
+    fi
+}
+
 finish_run() {
     if [[ "${STRICT:-0}" == "1" && "${warn_count}" -gt 0 && "${final_exit}" -eq 0 ]]; then
         printf 'STRICT=1 and a warning was printed.\n'
@@ -780,6 +855,7 @@ main() {
     local -a go_files=()
     local f
     mapfile -t changed_files < <(collect_changed_files "${merge_base_sha}")
+    scan_codegen ${changed_files[@]+"${changed_files[@]}"}
     for f in ${changed_files[@]+"${changed_files[@]}"}; do
         [[ -z "${f}" ]] && continue
         if [[ "${f}" == *.go ]]; then
@@ -795,8 +871,8 @@ main() {
         skip_deps_note=1
         summary_add "go test" "no Go packages" "pass" "-" ""
         summary_add "golangci-lint" "no Go packages" "pass" "-" ""
-        summary_add "codegen" "not checked" "skip" "-" ""
         printf 'no Go packages in this diff. Nothing to test or lint.\n'
+        report_codegen
         finish_ok_notes
         finish_run
     fi
@@ -968,7 +1044,7 @@ main() {
         lint_packages "release" "${lint_rels[@]}"
     fi
 
-    summary_add "codegen" "not checked" "skip" "-" ""
+    report_codegen
     finish_ok_notes
     finish_run
 }
