@@ -4,7 +4,7 @@
 # Exit codes:
 #   0  every step that ran passed
 #   1  a test or a lint failed
-#   2  codegen is needed (reserved; this MVP does not detect codegen)
+#   2  codegen is needed
 #   3  setup error (missing ref, go list failure, linter missing)
 #
 # A test or lint failure stays exit 1 even if a later phase also wants exit 2.
@@ -107,6 +107,15 @@ package_scope() {
         printf '1 package'
     else
         printf '%s packages' "${n}"
+    fi
+}
+
+file_scope() {
+    local n=$1
+    if [[ "${n}" -eq 1 ]]; then
+        printf '1 file'
+    else
+        printf '%s files' "${n}"
     fi
 }
 
@@ -797,6 +806,127 @@ scan_codegen() {
     done
 }
 
+ui_modules_dir() {
+    if [[ -d "${root}/ui/apps/platform/node_modules" ]]; then
+        printf '%s\n' "${root}/ui/apps/platform/node_modules"
+        return 0
+    fi
+    if [[ -d "${root}/ui/node_modules" ]]; then
+        printf '%s\n' "${root}/ui/node_modules"
+        return 0
+    fi
+    return 1
+}
+
+ui_tool_cmd() {
+    local name=$1
+    local modules bin
+    if modules=$(ui_modules_dir); then
+        bin="${modules}/.bin/${name}"
+        if [[ -x "${bin}" ]]; then
+            printf '%s\n' "${bin}"
+            return 0
+        fi
+    fi
+    printf 'npx\n--no-install\n%s\n' "${name}"
+}
+
+run_ui_checks() {
+    local -a files=() code=()
+    local f rel modules
+    for f in "$@"; do
+        case "${f}" in
+            ui/apps/platform/src/*) files+=("${f}") ;;
+        esac
+    done
+    if [[ ${#files[@]} -eq 0 ]]; then
+        return 0
+    fi
+    for f in "${files[@]}"; do
+        case "${f}" in
+            *.js | *.jsx | *.ts | *.tsx | *.mjs | *.cjs)
+                code+=("${f#ui/apps/platform/}")
+                ;;
+        esac
+    done
+    if ! modules=$(ui_modules_dir); then
+        warn "ui node_modules is missing. Run npm ci in ui/."
+        summary_add "ui" "$(file_scope "${#files[@]}")" "skip" "-" "npm ci --prefix ui"
+        return 0
+    fi
+    local tool_file start elapsed rerun status=0
+    local -a eslint_cmd=() vitest_cmd=() tsc_cmd=()
+    tool_file=$(mktemp)
+    if [[ ${#code[@]} -gt 0 ]]; then
+        ui_tool_cmd eslint > "${tool_file}"
+        mapfile -t eslint_cmd < "${tool_file}"
+        rerun="(cd ui/apps/platform && ${eslint_cmd[*]} --cache --cache-strategy content ${code[*]})"
+        if [[ "${DRY_RUN:-0}" == "1" ]]; then
+            printf 'DRY_RUN eslint: %s\n' "${rerun}"
+            summary_add "eslint" "$(file_scope "${#code[@]}")" "dry-run" "-" "${rerun}"
+        else
+            start=$(epoch_ns)
+            set +e
+            (cd "${root}/ui/apps/platform" && "${eslint_cmd[@]}" --cache --cache-strategy content "${code[@]}")
+            status=$?
+            set -e
+            elapsed=$(format_elapsed "${start}")
+            if [[ "${status}" -eq 0 ]]; then
+                summary_add "eslint" "$(file_scope "${#code[@]}")" "pass" "${elapsed}" "${rerun}"
+            else
+                summary_add "eslint" "$(file_scope "${#code[@]}")" "fail" "${elapsed}" "${rerun}"
+                final_exit=1
+            fi
+        fi
+        ui_tool_cmd vitest > "${tool_file}"
+        mapfile -t vitest_cmd < "${tool_file}"
+        rerun="(cd ui/apps/platform && TZ=UTC ${vitest_cmd[*]} related --run ${code[*]})"
+        if [[ "${DRY_RUN:-0}" == "1" ]]; then
+            printf 'DRY_RUN vitest: %s\n' "${rerun}"
+            summary_add "vitest related" "$(file_scope "${#code[@]}")" "dry-run" "-" "${rerun}"
+        else
+            start=$(epoch_ns)
+            set +e
+            (cd "${root}/ui/apps/platform" && TZ=UTC "${vitest_cmd[@]}" related --run "${code[@]}")
+            status=$?
+            set -e
+            elapsed=$(format_elapsed "${start}")
+            if [[ "${status}" -eq 0 ]]; then
+                summary_add "vitest related" "$(file_scope "${#code[@]}")" "pass" "${elapsed}" "${rerun}"
+            else
+                summary_add "vitest related" "$(file_scope "${#code[@]}")" "fail" "${elapsed}" "${rerun}"
+                final_exit=1
+            fi
+        fi
+    fi
+    if [[ "${UI_TSC:-1}" == "0" ]]; then
+        printf 'UI_TSC=0, skipping tsc.\n'
+        summary_add "tsc" "skipped" "skip" "-" ""
+    else
+        ui_tool_cmd tsc > "${tool_file}"
+        mapfile -t tsc_cmd < "${tool_file}"
+        rerun="(cd ui/apps/platform && ${tsc_cmd[*]} --noEmit)"
+        if [[ "${DRY_RUN:-0}" == "1" ]]; then
+            printf 'DRY_RUN tsc: %s\n' "${rerun}"
+            summary_add "tsc" "ui/apps/platform" "dry-run" "-" "${rerun}"
+        else
+            start=$(epoch_ns)
+            set +e
+            (cd "${root}/ui/apps/platform" && "${tsc_cmd[@]}" --noEmit)
+            status=$?
+            set -e
+            elapsed=$(format_elapsed "${start}")
+            if [[ "${status}" -eq 0 ]]; then
+                summary_add "tsc" "ui/apps/platform" "pass" "${elapsed}" "${rerun}"
+            else
+                summary_add "tsc" "ui/apps/platform" "fail" "${elapsed}" "${rerun}"
+                final_exit=1
+            fi
+        fi
+    fi
+    rm -f "${tool_file}"
+}
+
 report_codegen() {
     local target reasons
     if [[ ${#codegen_make[@]} -eq 0 ]]; then
@@ -954,6 +1084,7 @@ main() {
         summary_add "go test" "no Go packages" "pass" "-" ""
         summary_add "golangci-lint" "no Go packages" "pass" "-" ""
         printf 'no Go packages in this diff. Nothing to test or lint.\n'
+        run_ui_checks ${changed_files[@]+"${changed_files[@]}"}
         report_codegen
         finish_ok_notes
         finish_run
@@ -1126,6 +1257,7 @@ main() {
         lint_packages "release" "${lint_rels[@]}"
     fi
 
+    run_ui_checks ${changed_files[@]+"${changed_files[@]}"}
     report_codegen
     finish_ok_notes
     finish_run

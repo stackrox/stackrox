@@ -372,6 +372,57 @@ PY
     assert_output --partial "PKG is required"
 }
 
+@test "ui checks eslint tsc and vitest, and skip when node_modules is missing" {
+    new_git_repo
+    printf 'module example.com/demo\n\ngo 1.22\n' > "${demo}/go.mod"
+    printf 'readme\n' > "${demo}/README.md"
+    git -C "${demo}" add go.mod README.md
+    git -C "${demo}" commit -q -m init
+    mkdir -p "${demo}/ui/apps/platform/src"
+    printf 'export const n = 1\n' > "${demo}/ui/apps/platform/src/App.tsx"
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "ui node_modules is missing"
+    assert_output --partial "exit: 0"
+
+    mkdir -p "${demo}/ui/apps/platform/node_modules/.bin"
+    local tool
+    for tool in eslint tsc vitest; do
+        cat > "${demo}/ui/apps/platform/node_modules/.bin/${tool}" << EOF
+#!/bin/sh
+printf '%s %s\\n' "${tool}" "\$*" >> "${demo}/ui-calls.txt"
+exit 0
+EOF
+        chmod +x "${demo}/ui/apps/platform/node_modules/.bin/${tool}"
+    done
+    : > "${demo}/ui-calls.txt"
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "exit: 0"
+    grep -q 'eslint --cache --cache-strategy content src/App.tsx' "${demo}/ui-calls.txt"
+    grep -q 'tsc --noEmit' "${demo}/ui-calls.txt"
+    grep -q 'vitest related --run src/App.tsx' "${demo}/ui-calls.txt"
+
+    : > "${demo}/ui-calls.txt"
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD UI_TSC=0 \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "UI_TSC=0"
+    ! grep -q '^tsc ' "${demo}/ui-calls.txt"
+}
+
 @test "check-changed target passes Makefile variables" {
     run grep -A 12 "^check-changed:" "${BATS_TEST_DIRNAME}/../Makefile"
     assert_success

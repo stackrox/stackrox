@@ -120,6 +120,12 @@ The first failure is copied to `test-output/flake/`. Any failure exits 1.
 `make check-changed-flake` is the same target. `PARALLEL=n` passes `-parallel`.
 `STRESS=1` runs a background CPU load for the loop. `RACE=0` drops `-race`.
 
+Files under `ui/apps/platform/src` run eslint and `vitest related` on the
+changed sources, and `tsc --noEmit` for the whole UI project. `UI_TSC=0`
+skips tsc. If `ui/node_modules` and `ui/apps/platform/node_modules` are both
+missing, the UI steps are skipped with a warning that says to run `npm ci`
+in `ui/`.
+
 Exit `2` names the make target and does not run it. `proto/` needs
 `make proto-generated-srcs`, and `proto/storage/` also needs
 `make storage-protos-compatible`. A `//go:generate` line, or a Go interface
