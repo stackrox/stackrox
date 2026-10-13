@@ -297,7 +297,9 @@ deploy_scaled_workload() {
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
         central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
+    upgrade_resource_args secured-cluster
     helm install -n stackrox --create-namespace \
+        "${UPGRADE_RESOURCE_ARGS[@]}" \
         stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
         -f /tmp/cluster-init-bundle.yaml \
         --set system.enablePodSecurityPolicies=false \
@@ -310,13 +312,7 @@ deploy_scaled_workload() {
 
     ./scale/launch_workload.sh scale-test
 
-    # The historical scale script requests 5 CPUs per component. Leave room for
-    # both scanners by reducing Central and Central DB's CPU reservations.
-    kubectl -n stackrox patch deploy/central --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
-    # Init-container requests also count toward the pod's CPU reservation.
-    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    reconcile_upgrade_central_resources
     wait_for_api
 
     info "Sleep for a bit to let the scale build"

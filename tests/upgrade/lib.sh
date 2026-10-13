@@ -5,6 +5,64 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+# Keep paths rooted in HEAD even while commands run in the historical checkout.
+upgrade_resource_args() {
+    UPGRADE_RESOURCE_ARGS=()
+    case "${UPGRADE_TEST_RESOURCE_PROFILE:-}" in
+        "") return 0 ;;
+        ci) ;;
+        *) echo "Unknown upgrade resource profile: ${UPGRADE_TEST_RESOURCE_PROFILE}" >&2; return 1 ;;
+    esac
+    case "$1" in
+        central|secured-cluster) ;;
+        *) echo "Unknown upgrade chart: $1" >&2; return 1 ;;
+    esac
+    if [[ -z "${UPGRADE_RESOURCE_RENDERER:-}" ]]; then
+        UPGRADE_RESOURCE_RENDERER="$(mktemp -d)/resource-profile"
+        (cd "$TEST_ROOT" && go build -o "$UPGRADE_RESOURCE_RENDERER" ./tests/upgrade/resource-profile) || return 1
+    fi
+    if helm template --help | grep 'postrenderer type plugin' >/dev/null; then
+        if [[ -z "${UPGRADE_RESOURCE_PLUGIN:-}" ]]; then
+            # Keep CI plugins isolated from the caller's Helm installation.
+            HELM_PLUGINS="$(mktemp -d)"
+            export HELM_PLUGINS
+            mkdir -p "${HELM_PLUGINS}/ci-upgrade-resources"
+            cp "$UPGRADE_RESOURCE_RENDERER" "${HELM_PLUGINS}/ci-upgrade-resources/resource-profile"
+            cp "${TEST_ROOT}/tests/upgrade/resource-profile/plugin.yaml" "${HELM_PLUGINS}/ci-upgrade-resources/plugin.yaml"
+            UPGRADE_RESOURCE_PLUGIN=ci-upgrade-resources
+        fi
+        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_PLUGIN")
+    else
+        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_RENDERER")
+    fi
+}
+
+# On one node the scale launcher leaves resources unchanged, so the CI profile
+# needs no follow-up patches. Other callers retain the historical CPU workaround.
+reconcile_upgrade_central_resources() {
+    local deployment patch node_count
+    case "${UPGRADE_TEST_RESOURCE_PROFILE:-}" in
+        ci)
+            node_count="$(kubectl get nodes -o json | jq -er '.items | length')" || return 1
+            if [[ "$node_count" != 1 ]]; then
+                echo "CI upgrade resource profile requires exactly one node; found ${node_count}" >&2
+                return 1
+            fi
+            return 0
+            ;;
+        "") ;;
+        *) echo "Unknown upgrade resource profile: ${UPGRADE_TEST_RESOURCE_PROFILE}" >&2; return 1 ;;
+    esac
+    for deployment in central central-db; do
+        if [[ "$deployment" == central ]]; then
+            patch='{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+        else
+            patch='{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+        fi
+        kubectl -n stackrox patch "deploy/${deployment}" --type=strategic -p "$patch"
+    done
+}
+
 central_deployment_count() {
     curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
         -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
@@ -134,10 +192,13 @@ deploy_earlier_postgres_central() {
         helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
     fi
 
+    upgrade_resource_args central
+
     # The generated chart can inherit the PR tag, which has no Scanner V2 images.
     # Use the released Scanner V2 images for the initial deployment.
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          "${helm_extra_args[@]}" \
+         "${UPGRADE_RESOURCE_ARGS[@]}" \
          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
          --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
@@ -230,6 +291,8 @@ upgrade_central_helm_to_head() {
         helm_extra_args+=(--force-conflicts)
     fi
 
+    upgrade_resource_args central
+
     # The chart emits the Scanner V4 DB PVC only when createClaim is true;
     # this is an upgrade so .Release.IsInstall is false.
     # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
@@ -238,6 +301,7 @@ upgrade_central_helm_to_head() {
         -f "$helm_generated_values_file" \
         -f - \
         "${helm_extra_args[@]}" \
+        "${UPGRADE_RESOURCE_ARGS[@]}" \
         stackrox-central-services "${chart_dir}" <<EOT
 image:
   registry: "${registry}"
