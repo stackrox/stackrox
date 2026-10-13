@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Alert, Content, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Alert, Content, Flex, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -49,32 +49,6 @@ function ClusterLabelsConfigurationStatusSummary({
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-            {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            {!selectedCluster.id && (
-                <Alert variant="warning" isInline title="Legacy installation method" component="p">
-                    <Flex direction={{ default: 'column' }}>
-                        <FlexItem>
-                            <p>
-                                To avoid extra operational complexity, use a{' '}
-                                <strong>cluster init bundle</strong> with either of the following
-                                installation methods:
-                            </p>
-                            <p>
-                                <strong>Operator</strong> for Red Hat OpenShift
-                            </p>
-                            <p>
-                                <strong>Helm chart</strong> for other platforms
-                            </p>
-                        </FlexItem>
-                        <FlexItem>
-                            <p>
-                                Only use the legacy installation method if you have a specific
-                                installation need that requires using this method.
-                            </p>
-                        </FlexItem>
-                    </Flex>
-                </Alert>
-            )}
             {selectedCluster.id && (
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                     <Title headingLevel="h2">Cluster labels</Title>
