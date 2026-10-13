@@ -5,7 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1218,7 +1218,7 @@ func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []
 			continue
 		}
 		// Mirror Sensor's getFirstNodeRole: take the first (sorted) node-role label per pool.
-		sort.Strings(keys)
+		slices.Sort(keys)
 		roles.Add(strings.TrimPrefix(keys[0], nodeRoleLabelPrefix))
 	}
 	if roles.Cardinality() == 0 {
@@ -1280,7 +1280,7 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 		actualRoles = append([]string(nil), scanSetting.Roles...)
 	}, defaultTimeout, defaultInterval)
 
-	sort.Strings(actualRoles)
+	slices.Sort(actualRoles)
 	t.Logf("ScanSetting %s roles: %v", testID, actualRoles)
 
 	if set.NewStringSet(expectedRoles...).Equal(set.NewStringSet("master", "worker")) {

@@ -2,7 +2,7 @@ package complianceoperator
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -40,7 +40,7 @@ func getFirstNodeRole(matchLabels map[string]string) string {
 	if len(keys) == 0 {
 		return ""
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return strings.TrimPrefix(keys[0], nodeRolePrefix)
 }
 
@@ -131,7 +131,7 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		log.Warn("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles")
 		return
 	}
-	sort.Strings(desiredRoles)
+	slices.Sort(desiredRoles)
 	desiredSet := set.NewStringSet(desiredRoles...)
 
 	scanSettings, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
