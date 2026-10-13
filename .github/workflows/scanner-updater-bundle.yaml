@@ -187,7 +187,7 @@ jobs:
       run: |
         set -euxo pipefail
         # Persist a conservative baseline across workflow runs via GCS metadata.
-        echo "SOURCE_BASELINE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+        echo "SOURCE_BASELINE=$(date -u -d '1 second ago' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
         sc=./.github/workflows/scripts/scanner-updater-config.sh
         mkdir -p bundles
