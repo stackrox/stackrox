@@ -27,10 +27,11 @@ func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.
 	clusterFilters := make([]string, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := root.GetClusterByID(clusterID)
-		// skip if cluster is excluded or partially included with no namespaces
+		// Partial clusters have at least one included namespace, possibly via
+		// the default of an exclusion map.
 		if clusterAccessScope == nil ||
 			clusterAccessScope.State == effectiveaccessscope.Excluded ||
-			(clusterAccessScope.State == effectiveaccessscope.Partial && len(clusterAccessScope.Namespaces) == 0) {
+			(clusterAccessScope.State == effectiveaccessscope.Partial && !clusterAccessScope.HasNamespaceAccess()) {
 			continue
 		}
 		clusterFilters = append(clusterFilters, clusterID)
@@ -69,16 +70,15 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 		case effectiveaccessscope.Included:
 			clusterFilters = append(clusterFilters, clusterQuery)
 		case effectiveaccessscope.Partial:
-			namespaces := clusterAccessScope.Namespaces
-			namespaceFilters := make([]string, 0, len(namespaces))
-			for namespaceName, namespaceAccessScope := range namespaces {
-				if namespaceAccessScope.State == effectiveaccessscope.Included {
-					namespaceFilters = append(namespaceFilters, namespaceName)
-				}
-			}
+			namespaceFilters, exclusions := clusterAccessScope.NamespaceFilterNames()
 			if len(namespaceFilters) > 0 {
 				namespaceSubQuery := getNamespaceMatchQuery(namespaceFilters...)
 				clusterFilter := search.ConjunctionQuery(clusterQuery, namespaceSubQuery)
+				if len(exclusions) > 0 {
+					clusterFilter = search.NewBooleanQuery(
+						&v1.ConjunctionQuery{Queries: []*v1.Query{clusterQuery, namespaceSubQuery}},
+						&v1.DisjunctionQuery{Queries: []*v1.Query{getNamespaceMatchQuery(exclusions...)}})
+				}
 				clusterFilters = append(clusterFilters, clusterFilter)
 			}
 		case effectiveaccessscope.Excluded:
