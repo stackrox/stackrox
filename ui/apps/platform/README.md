@@ -17,9 +17,10 @@ To start the local development server in watch mode, run `npm run start`.
 The behavior of `npm run start` can be changed with the following environment variables:
 
 
-#### UI_START_TARGET
+#### UI_START_TARGET and ROX_BASE_URL
 `UI_START_TARGET` will set the default endpoint that API requests are forwarded to from
-the UI. By default the UI will forward API requests to `https://localhost:8000`.
+the UI. If unset, `ROX_BASE_URL` will be used.
+By default the UI will forward API requests to `https://localhost:8000`.
 
 ```sh
 UI_START_TARGET=https://8.8.8.8:443 npm run start
@@ -27,6 +28,8 @@ UI_START_TARGET=https://8.8.8.8:443 npm run start
 will start the development server
 and forward all API requests to `https://8.8.8.8:443`. _Note that the protocol (https) is required to
 be set for this option._
+
+Note that `roxie` sets `$ROX_BASE_URL` in the environment automatically.
 
 
 #### UI_CUSTOM_PROXIES
