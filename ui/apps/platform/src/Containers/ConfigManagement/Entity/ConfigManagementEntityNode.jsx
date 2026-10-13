@@ -1,4 +1,3 @@
-import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -8,10 +7,8 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
-import searchContext from 'Containers/searchContext';
 import { getDateTime } from 'utils/dateUtils';
 import isGQLLoading from 'utils/gqlLoading';
-import queryService from 'utils/queryService';
 
 import EntityList from '../List/EntityList';
 
@@ -23,18 +20,13 @@ const ConfigManagementEntityNode = ({
     entityContext,
     pagination,
 }) => {
-    const searchParam = useContext(searchContext);
-
-    const queryObject = { ...query[searchParam] };
-
     const variables = {
         id,
-        query: queryService.getEntityWhereClause(queryObject),
         pagination,
     };
 
     const QUERY = gql`
-        query getNode($id: ID!, $query: String) {
+        query getNode($id: ID!) {
             node(id: $id) {
                 id
                 name
