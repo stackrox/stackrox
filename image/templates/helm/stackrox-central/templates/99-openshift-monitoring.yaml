@@ -146,12 +146,10 @@ spec:
             )
           record: rhacs:telemetry:rox_central_secured_vcpus
 {{- /*
-Central DB PVC space alerting. Evaluated by the platform Prometheus (this rule
-lives in openshift-monitoring), which scrapes kubelet_volume_stats_* for every
-namespace, so it can see the central-db PVC in .Release.Namespace. The claim
-name is resolved from the volume config so it honours a custom claimName, and
-the group is only emitted when central-db is actually PVC-backed (skipped for
-external, hostPath or emptyDir persistence, which have no PVC volume stats).
+Central DB PVC space alerting is evaluated by the platform Prometheus in
+openshift-monitoring, which scrapes the relevant metrics in every namespace.
+The rule is emitted only when central-db is PVC-backed (not for external,
+hostPath, or emptyDir persistence).
 */}}
 {{- $centralDBClaimName := "" -}}
 {{- with ._rox.central.db.persistence._volumeCfg -}}
