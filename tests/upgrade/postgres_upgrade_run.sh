@@ -253,14 +253,16 @@ test_not_enough_disk_space() {
     restore_backup
     wait_for_api
 
-    # Do not apply scaled workload to control disk space, do fallocate instead
-    kubectl -n stackrox exec -it deploy/central-db -- \
+    # Fill both PVCs: the operator creates a separate backup PVC twice the data PVC size.
+    # Neither backup location should have room for a backup and its verification copy.
+    kubectl -n stackrox exec deploy/central-db -c central-db -- \
         fallocate -l 700mb "/var/lib/postgresql/data/pgdata/fake_data"
-    kubectl -n stackrox exec -it deploy/central-db -- \
-        bash -c 'df "${PGDATA}" -H'
-    kubectl -n stackrox exec -it deploy/central-db -- \
-        bash -c 'du -sch "${PGDATA}"/*'
-
+    kubectl -n stackrox exec deploy/central-db -c central-db -- \
+        fallocate -l 1GiB "/var/lib/postgresql/backup/fake_data"
+    kubectl -n stackrox exec deploy/central-db -c central-db -- \
+        df -H /var/lib/postgresql/data/pgdata /var/lib/postgresql/backup
+    kubectl -n stackrox exec deploy/central-db -c central-db -- \
+        bash -c 'du -sch /var/lib/postgresql/data/pgdata/* /var/lib/postgresql/backup/fake_data'
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
