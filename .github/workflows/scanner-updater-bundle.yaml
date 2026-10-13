@@ -108,20 +108,19 @@ jobs:
         bundle_obj=$("$sc" bundle-object "$STREAM")
         generation="${{ steps.staging.outputs.generation }}"
 
-        # Capture the evaluated staging generation's creation time before deletion.
-        # This is the baseline for sources updated while staging was pending.
+        # Read the pre-download baseline from the evaluated staging generation.
         staging_ts=$(gcloud storage objects describe "${staging_obj}#${generation}" \
-            --format="value(creation_time)")
-        [[ -n "$staging_ts" ]] || { echo "::error::Missing staging creation time" >&2; exit 1; }
+            --format="value(custom_fields.source-baseline)")
+        [[ "$staging_ts" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || { echo "::error::Missing or invalid staging source baseline" >&2; exit 1; }
 
         # Pin the source version; a replacement cannot be promoted by accident.
         gcloud storage cp "${staging_obj}#${generation}" "$bundle_obj"
-        echo "staging_created_at=$staging_ts" >> "$GITHUB_OUTPUT"
+        echo "source_baseline=$staging_ts" >> "$GITHUB_OUTPUT"
         echo "Published bundle for stream '${STREAM}' -> ${bundle_obj}"
         # Remove only the generation just published, not a newer candidate.
         gcloud storage rm "$staging_obj" --if-generation-match="$generation"
 
-    # After promotion, compare sources with the staging creation time rather
+    # After promotion, compare sources with the pre-download baseline rather
     # than the newer production object's creation time.
     - name: Check for changes
       if: >-
@@ -147,8 +146,8 @@ jobs:
         fi
 
         if [[ "${{ steps.staging.outputs.action }}" == "publish" ]]; then
-            bundle_ts="${{ steps.publish.outputs.staging_created_at }}"
-            [[ -n "$bundle_ts" ]] || { echo "::error::Missing published staging timestamp" >&2; exit 1; }
+            bundle_ts="${{ steps.publish.outputs.source_baseline }}"
+            [[ -n "$bundle_ts" ]] || { echo "::error::Missing published source baseline" >&2; exit 1; }
         else
             bundle_obj=$("$sc" bundle-object "$STREAM")
             # Without a promotion, retain the existing production baseline.
@@ -161,7 +160,7 @@ jobs:
             fi
         fi
         bundle_epoch=$(date -d "$bundle_ts" +%s)
-        echo "Bundle created: $bundle_ts (epoch: $bundle_epoch)"
+        echo "Freshness baseline: $bundle_ts (epoch: $bundle_epoch)"
 
         # Check if any source has been updated after the bundle.
         changed=false
@@ -187,6 +186,8 @@ jobs:
       if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euxo pipefail
+        # Persist a conservative baseline across workflow runs via GCS metadata.
+        echo "SOURCE_BASELINE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
         sc=./.github/workflows/scripts/scanner-updater-config.sh
         mkdir -p bundles

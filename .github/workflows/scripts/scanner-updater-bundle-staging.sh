@@ -17,7 +17,7 @@ read_staged_metadata() {
     error_file=$(mktemp)
     if metadata=$(gcloud storage objects describe "$object" --format=json 2>"$error_file"); then
         rm -f "$error_file"
-        jq -e '.generation and .creation_time and .custom_fields["content-digest"]' <<< "$metadata" >/dev/null || {
+        jq -e '.generation and .creation_time and .custom_fields["content-digest"] and .custom_fields["source-baseline"]' <<< "$metadata" >/dev/null || {
             echo "::error::Staged candidate has missing metadata: $object" >&2
             return 2
         }
@@ -68,6 +68,7 @@ evaluate_staging() {
     [[ "$generation" =~ ^[0-9]+$ && "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
         echo '::error::Invalid staging generation or content-digest' >&2; return 1;
     }
+    [[ "$(jq -r '.custom_fields["source-baseline"]' <<< "$metadata")" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || { echo "::error::Invalid staged source baseline" >&2; return 1; }
     created=$(jq -r '.creation_time' <<< "$metadata")
     epoch=$(date -d "$created" +%s)
     now=$(date +%s)
@@ -103,12 +104,13 @@ stage_bundle() {
     local stream="$1" zip_path="$2" object digest metadata
     [[ -s "$zip_path" ]] || { echo "::error::Missing or empty ZIP: $zip_path" >&2; return 1; }
     object=$(staging_object "$stream")
+    [[ "${SOURCE_BASELINE:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || { echo "::error::Missing or invalid SOURCE_BASELINE" >&2; return 1; }
     digest=$(sha256sum "$zip_path" | awk '{print $1}')
     if [[ "${FORCE_STAGE:-false}" == true ]]; then
         # Explicit manual replacement; ordinary runs must never overwrite.
-        gcloud storage cp "$zip_path" "$object" --custom-metadata="content-digest=sha256:$digest"
+        gcloud storage cp "$zip_path" "$object" --custom-metadata="content-digest=sha256:$digest,source-baseline=$SOURCE_BASELINE"
     else
-        gcloud storage cp "$zip_path" "$object" --if-generation-match=0 --custom-metadata="content-digest=sha256:$digest"
+        gcloud storage cp "$zip_path" "$object" --if-generation-match=0 --custom-metadata="content-digest=sha256:$digest,source-baseline=$SOURCE_BASELINE"
     fi
     echo "Staged $stream SHA-256 $digest"
 }
