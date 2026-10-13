@@ -1668,7 +1668,7 @@ spec:
   - risk
   links:
   - name: Red Hat Advanced Cluster Security Documentation
-    url: https://docs.openshift.com/acs/welcome/
+    url: https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes
   - name: DataSheet
     url: https://www.redhat.com/en/resources/advanced-cluster-security-for-kubernetes-datasheet
   - name: Support Policy
