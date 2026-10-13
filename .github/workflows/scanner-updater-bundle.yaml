@@ -270,7 +270,8 @@ jobs:
 
     - name: Notify on partial failure
       if: >-
-        always() && steps.download-validate.outcome == 'success' &&
+        always() && inputs['test-mode'] != true &&
+        steps.download-validate.outcome == 'success' &&
         steps.download-validate.outputs.failed != ''
       uses: ./.github/actions/notify-slack-on-failure
       with:
@@ -282,7 +283,7 @@ jobs:
 
   notify:
     needs: [bundle]
-    if: always() && needs.bundle.result == 'failure'
+    if: always() && inputs['test-mode'] != true && needs.bundle.result == 'failure'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
