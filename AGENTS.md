@@ -69,6 +69,35 @@ When creating pull requests, you must follow these requirements:
 - `make ui-component-tests` - Run UI component tests
 - `make shell-unit-tests` - Run shell script tests
 
+### Fast checks on your change
+
+`make check-changed` tests and lints only the Go packages in your diff. It is a
+local first gate. `make go-unit-tests` and CI still cover the whole tree.
+
+The diff is the merge-base of `HEAD` and `origin/master`, plus staged, unstaged,
+and untracked files. `BASE=<ref>` picks another ref. The command does not fetch.
+If the local `origin/master` is more than 72 hours old, it prints a warning.
+
+`go test -race` uses the same environment and tags as `make go-unit-tests`:
+`CGO_ENABLED=1`, `GOEXPERIMENT=cgocheck2`, `MUTEX_WATCHDOG_TIMEOUT_SECS=30`, and
+`GOTAGS` plus `test`, via `scripts/go-test.sh`. `RACE=0` drops `-race` and does
+not match CI. Do not set `RACE=true`: that variable is a different switch inside
+`scripts/go-test.sh` and turns on musl static linking.
+
+golangci-lint runs on those packages in both Makefile variants (`--enable=unused`,
+then `--build-tags release --tests=false`). It does not pass `--fix` unless
+`FIX=1`. golangci-lint v2 appends `--build-tags` to the tags in `.golangci.yml`.
+
+`UNIT_TEST_IGNORE` is read from the Makefile and those packages are dropped.
+Packages whose tests all require `//go:build sql_integration` are skipped with
+a warning; run `make go-postgres-unit-tests` for them. This command does not run
+`integration`, `test_e2e`, `test_e2e_vm`, `scanner_db_integration`, or
+`destructive` tests, and it does not repeat the logging-level matrix.
+
+Exit codes: `0` pass, `1` test or lint failure, `2` codegen needed (reserved;
+codegen detection is not implemented yet), `3` setup error. `DRY_RUN=1` prints
+the planned commands and does not run them.
+
 ### Development Commands
 - `make fast-central` - Quickly recompile and restart Central component
 - `make fast-sensor` - Quickly recompile Sensor component
