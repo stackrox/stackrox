@@ -229,23 +229,66 @@
 {{ end }}
 {{ end }}
 
-{{/* Add namespace specific prefixes for global resources to avoid resource name clashes for multi-namespace deployments. */}}
+{{/*
+  Add namespace specific prefixes for global resources to avoid resource name clashes for
+  multi-namespace deployments.
+
+  The separator between the "stackrox" base and the resource-specific suffix is
+  inferred from $name ("-" for "stackrox-foo", ":" for "stackrox:foo"). A name that is
+  exactly "stackrox" (i.e. just the base name, no suffix) is completely replaced with globalPrefix.
+   */}}
 {{- define "srox.globalResourceName" -}}
 {{- $ := index . 0 -}}
 {{- $name := index . 1 -}}
+{{- $separator := "" -}}
 
 {{- if eq $.Release.Namespace "stackrox" -}}
   {{- /* Standard namespace, use resource name as is. */ -}}
   {{- $name -}}
 {{- else -}}
-  {{- /* Add global prefix to resource name. */ -}}
+  {{- /* Infer the separator from $name. */ -}}
   {{- if hasPrefix "stackrox-" $name -}}
-    {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
+    {{- $separator = "-" -}}
   {{- else if hasPrefix "stackrox:" $name -}}
-    {{- printf "%s:%s" $._rox.globalPrefix (trimPrefix "stackrox:" $name) -}}
+    {{- $separator = ":" -}}
+  {{- else if eq "stackrox" $name -}}
+    {{/* Keep $separator empty. */}}
   {{- else -}}
     {{- include "srox.fail" (printf "Unknown naming convention for global resource %q." $name) -}}
   {{- end -}}
+  {{- /* Add global prefix to resource name. */ -}}
+  {{- $suffix := trimPrefix (printf "stackrox%s" $separator) $name -}}
+  {{- if not $suffix -}}
+    {{- /* Bare "stackrox" base name: the global prefix already carries the namespace. */ -}}
+    {{- printf "%s" $._rox.globalPrefix -}}
+  {{- else -}}
+    {{- printf "%s%s%s" $._rox.globalPrefix $separator $suffix -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  srox.optionalGlobalResourceName $ $name
+
+  Opt-in wrapper around srox.globalResourceName: it applies namespace-prefixing to a
+  global (cluster-scoped) resource name only when ._rox.namespacePrefixGlobalResources
+  is set; otherwise the static base $name is returned verbatim. The arguments are
+  forwarded unchanged to srox.globalResourceName.
+
+  This keeps namespace-prefixing of global resources opt-in: names default to stable,
+  static values (production safety) and prefixing can be enabled -- e.g. for tests that
+  deploy multiple secured clusters into different namespaces of the same cluster -- to
+  avoid cluster-scoped resource name clashes. Individual global resources opt in by
+  calling this helper instead of hard-coding a static name. This is deliberately generic
+  so further global resources can adopt it as the need arises.
+   */}}
+{{- define "srox.optionalGlobalResourceName" -}}
+{{- $ := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if $._rox.namespacePrefixGlobalResources -}}
+  {{- include "srox.globalResourceName" . -}}
+{{- else -}}
+  {{- $name -}}
 {{- end -}}
 {{- end -}}
 

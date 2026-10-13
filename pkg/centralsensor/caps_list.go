@@ -110,8 +110,8 @@ const (
 	// a new Sensor" from "old Sensor that predates VM telemetry fields."
 	VirtualMachineTelemetryCap SensorCapability = "VirtualMachineTelemetry"
 
-	// WorkloadTypeExclusionCap identifies the capability of Sensor to honor
-	// Exclusion.exclude_by_type rules. Central strips those rules when syncing
+	// WorkloadKindExclusionCap identifies the capability of Sensor to honor
+	// Exclusion.exclude_by_kind rules. Central strips those rules when syncing
 	// policies to Sensors that lack this capability.
-	WorkloadTypeExclusionCap SensorCapability = "WorkloadTypeExclusion"
+	WorkloadKindExclusionCap SensorCapability = "WorkloadKindExclusion"
 )

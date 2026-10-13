@@ -473,23 +473,34 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 }
 
 func (pc *PolicyAsCodeSuite) TestCRWithEvaluationFilter() {
-	k8sPolicy := createBasePolicyStruct("test-eval-filter-cr")
-	k8sPolicy.Spec.EvaluationFilter = &v1alpha1.EvaluationFilter{
-		SkipContainerTypes: []v1alpha1.SkipContainerType{"SKIP_INIT"},
+	tests := map[string]struct {
+		containerType v1alpha1.ContainerType
+		protoType     storage.ContainerType
+	}{
+		"init":    {containerType: "INIT", protoType: storage.ContainerType_INIT},
+		"regular": {containerType: "REGULAR", protoType: storage.ContainerType_REGULAR},
 	}
+	for name, tc := range tests {
+		pc.Run(name, func() {
+			k8sPolicy := createBasePolicyStruct("test-eval-filter-cr-" + name)
+			k8sPolicy.Spec.EvaluationFilter = &v1alpha1.EvaluationFilter{
+				SkipContainerTypes: []v1alpha1.ContainerType{tc.containerType},
+			}
 
-	id := pc.createCRAndObserveInCentral(k8sPolicy)
-	pc.Require().NotEmpty(id)
+			id := pc.createCRAndObserveInCentral(k8sPolicy)
+			pc.Require().NotEmpty(id)
 
-	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
-	pc.Require().NoError(err)
-	pc.policies = append(pc.policies, policy)
+			policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
+			pc.Require().NoError(err)
+			pc.policies = append(pc.policies, policy)
 
-	pc.Require().NotNil(policy.GetEvaluationFilter())
-	pc.Require().Equal(
-		[]storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
-		policy.GetEvaluationFilter().GetSkipContainerTypes(),
-	)
+			pc.Require().NotNil(policy.GetEvaluationFilter())
+			pc.Require().Equal(
+				[]storage.ContainerType{tc.protoType},
+				policy.GetEvaluationFilter().GetSkipContainerTypes(),
+			)
+		})
+	}
 }
 
 func (pc *PolicyAsCodeSuite) TearDownSuite() {

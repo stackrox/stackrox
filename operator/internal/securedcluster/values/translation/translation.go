@@ -40,6 +40,14 @@ const (
 
 	legacyCollectionKernelModule = "KernelModule"
 	legacyCollectionEBPF         = "EBPF"
+
+	// namespacePrefixGlobalResourcesAnnotation is an undocumented, test-only annotation.
+	// When set to "true" it enables namespace-prefixing of global (cluster-scoped)
+	// resource names in the secured-cluster chart (see srox.optionalGlobalResourceName),
+	// so that multiple secured clusters can be deployed into different namespaces of the
+	// same cluster without cluster-scoped resource name clashes. It defaults to off, so
+	// production keeps stable, static names. Deliberately kept out of the CRD schema.
+	namespacePrefixGlobalResourcesAnnotation = "platform.stackrox.io/namespace-prefix-global-resources"
 )
 
 var (
@@ -106,6 +114,17 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
 	}
 	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
+
+	if annotationValue, ok := sc.GetAnnotations()[namespacePrefixGlobalResourcesAnnotation]; ok {
+		namespacePrefix, err := strconv.ParseBool(annotationValue)
+		if err != nil {
+			return nil, fmt.Errorf("invalid annotation value %q for annotation %s",
+				annotationValue, namespacePrefixGlobalResourcesAnnotation)
+		}
+		if namespacePrefix {
+			v.SetBoolValue("namespacePrefixGlobalResources", true)
+		}
+	}
 
 	if sc.Spec.CentralEndpoint != nil && *sc.Spec.CentralEndpoint != "" {
 		v.SetStringValue("centralEndpoint", *sc.Spec.CentralEndpoint)

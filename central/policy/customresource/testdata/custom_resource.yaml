@@ -149,4 +149,5 @@ spec:
   isDefault: false
   evaluationFilter:
     skipContainerTypes:
-    - SKIP_INIT
+    - INIT
+    - REGULAR

@@ -75,7 +75,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
+        NUM_NODES: "2"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -103,9 +103,10 @@ jobs:
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
-      uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ github.token }}
 
     - name: Run pre-test
       shell: python
