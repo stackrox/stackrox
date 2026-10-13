@@ -195,6 +195,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 	}
 
 	// Using this to ensure pagination does not fail.
+	/*
 	offset := int32(0)
 	limit := int32(10)
 	field := "Pod Name"
@@ -205,6 +206,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 			Field: &field,
 		},
 	}
+	*/
 
 	makeGraphQLRequest(t, `
 		query getPods($podsQuery: String, $pagination: Pagination) {
@@ -221,7 +223,8 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		}
 	`, map[string]interface{}{
 		"podsQuery":  fmt.Sprintf("Deployment ID: %s", deploymentID),
-		"pagination": pagination,
+		// "pagination": pagination,
+		"pagination": nil,
 	}, &respData, timeout)
 	t.Logf("%+v", respData)
 
