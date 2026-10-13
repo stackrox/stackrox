@@ -63,14 +63,10 @@ subjects:
     namespace: "{{ ._rox._namespace }}"
   {{- end }}
 {{- /*
-Scanner V4 DB PVC space alerting. Evaluated by the platform Prometheus (this rule
-lives in openshift-monitoring), which scrapes kubelet_volume_stats_* for every
-namespace, so it can see the scanner-v4-db PVC in .Release.Namespace. This chart
-is shared by central- and secured-cluster-services, so the alert follows the
-Scanner V4 DB wherever it runs (including a secured cluster with a local Scanner
-V4). The claim name is resolved from the volume config so it honours a custom
-claimName, and the group is only emitted when the DB is actually PVC-backed
-(skipped for hostPath or emptyDir persistence, which have no PVC volume stats).
+Scanner V4 DB PVC space alerting is evaluated by the platform Prometheus, which
+scrapes the relevant metrics in every namespace.
+The rule is emitted only when the DB is PVC-backed (not for hostPath or
+emptyDir persistence).
 */}}
 {{- if ._rox.scannerV4._dbEnabled }}
 {{- $scannerV4DBClaimName := "" -}}
