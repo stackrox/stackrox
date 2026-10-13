@@ -4,15 +4,13 @@ The Central and PostgreSQL GKE upgrade jobs opt in with
 `UPGRADE_TEST_RESOURCE_PROFILE=ci` and use one `e2-standard-16` node.
 Other callers retain their existing resources.
 
-The shared library builds a small Go Helm post-renderer from the current checkout,
-not the historical checkout used to generate old charts. It caps CPU requests at
-500m without raising smaller requests and removes CPU limits. Memory requests and
-limits remain unchanged. It covers Deployment, DaemonSet and
-StatefulSet application and init containers; hook Jobs are unchanged. It supports
-executable post-renderers in Helm 3 and an isolated local plugin in Helm 4.
+The shared library passes explicit Roxie `--set` overrides for CPU requests of
+500m on Central, Central DB, Scanner, Scanner V4 indexer/DB and Sensor.
+CPU limits and memory retain the Roxie CI profile defaults.
 
-The profile is passed to the initial Central/secured-cluster installations and the
-HEAD Central Helm upgrade. The CI profile requires exactly one node: the scale
+The profile is passed to the initial Central and secured-cluster installations.
+The operator retains the Central resource settings during the upgrade to HEAD.
+The CI profile requires exactly one node: the scale
 launcher leaves resource requests unchanged on one node, so post-scale resource
 patches are skipped. Multi-node profile use fails explicitly. Callers without the
 profile retain the historical Central/DB CPU patches. Sensor bundle/upgrader tests deliberately retain their production
@@ -26,7 +24,6 @@ restoration tests intentionally retain their production CPU requests.
 Local checks:
 
 ```sh
-go test ./tests/upgrade/resource-profile
 bats scripts/ci/bats/upgrade_resource_profile.bats
 ```
 

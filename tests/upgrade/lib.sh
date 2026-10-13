@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
-# Keep paths rooted in HEAD even while commands run in the historical checkout.
+# Build Roxie resource overrides even while running in the historical checkout.
 upgrade_resource_args() {
     UPGRADE_RESOURCE_ARGS=()
     case "${UPGRADE_TEST_RESOURCE_PROFILE:-}" in
@@ -13,28 +13,22 @@ upgrade_resource_args() {
         ci) ;;
         *) echo "Unknown upgrade resource profile: ${UPGRADE_TEST_RESOURCE_PROFILE}" >&2; return 1 ;;
     esac
+    local prefix component
+    local components=()
     case "$1" in
-        central|secured-cluster) ;;
+        central)
+            prefix=central
+            components=(central central.db scanner.analyzer scannerV4.indexer scannerV4.db)
+            ;;
+        secured-cluster)
+            prefix=securedCluster
+            components=(sensor scanner.analyzer scannerV4.indexer)
+            ;;
         *) echo "Unknown upgrade chart: $1" >&2; return 1 ;;
     esac
-    if [[ -z "${UPGRADE_RESOURCE_RENDERER:-}" ]]; then
-        UPGRADE_RESOURCE_RENDERER="$(mktemp -d)/resource-profile"
-        (cd "$TEST_ROOT" && go build -o "$UPGRADE_RESOURCE_RENDERER" ./tests/upgrade/resource-profile) || return 1
-    fi
-    if helm template --help | grep 'postrenderer type plugin' >/dev/null; then
-        if [[ -z "${UPGRADE_RESOURCE_PLUGIN:-}" ]]; then
-            # Keep CI plugins isolated from the caller's Helm installation.
-            HELM_PLUGINS="$(mktemp -d)"
-            export HELM_PLUGINS
-            mkdir -p "${HELM_PLUGINS}/ci-upgrade-resources"
-            cp "$UPGRADE_RESOURCE_RENDERER" "${HELM_PLUGINS}/ci-upgrade-resources/resource-profile"
-            cp "${TEST_ROOT}/tests/upgrade/resource-profile/plugin.yaml" "${HELM_PLUGINS}/ci-upgrade-resources/plugin.yaml"
-            UPGRADE_RESOURCE_PLUGIN=ci-upgrade-resources
-        fi
-        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_PLUGIN")
-    else
-        UPGRADE_RESOURCE_ARGS=(--post-renderer "$UPGRADE_RESOURCE_RENDERER")
-    fi
+    for component in "${components[@]}"; do
+        UPGRADE_RESOURCE_ARGS+=(--set "${prefix}.spec.${component}.resources.requests.cpu=500m")
+    done
 }
 
 # On one node the scale launcher leaves resources unchanged, so the CI profile
@@ -166,11 +160,14 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
+    upgrade_resource_args central
+
     local roxie_envrc
     roxie_envrc="$(mktemp)"
     roxie deploy central --verbose \
         --single-namespace \
         --envrc "${roxie_envrc}" \
+        "${UPGRADE_RESOURCE_ARGS[@]}" \
         --tag "${EARLIER_TAG}" \
         --resources ci \
         --pause-reconciliation `# subsequent tests mangle resources and image` \
@@ -550,7 +547,9 @@ preamble() {
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
+    upgrade_resource_args secured-cluster
     roxie deploy secured-cluster --verbose \
+        "${UPGRADE_RESOURCE_ARGS[@]}" \
         --single-namespace \
         --tag "${EARLIER_TAG}" \
         --resources ci \
@@ -560,13 +559,7 @@ deploy_scaled_workload() {
 
     ./scale/launch_workload.sh scale-test
 
-    # The historical scale script requests 5 CPUs per component. Leave room for
-    # both scanners by reducing Central and Central DB's CPU reservations.
-    kubectl -n stackrox patch deploy/central --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
-    # Init-container requests also count toward the pod's CPU reservation.
-    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    reconcile_upgrade_central_resources
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
