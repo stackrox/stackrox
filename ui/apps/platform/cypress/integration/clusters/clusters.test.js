@@ -15,7 +15,7 @@ describe('Clusters', () => {
 
         cy.title().should('match', getRegExpForTitleWithBranding('Clusters'));
 
-        cy.get('th:contains("Name")');
+        cy.get('th:contains("Cluster")');
         cy.get('th:contains("Provider (Region)")');
         cy.get('th:contains("Cluster status")');
         cy.get('th:contains("Sensor compatibility status")');
