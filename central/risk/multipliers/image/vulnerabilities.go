@@ -21,7 +21,7 @@ const (
 // vulnerabilitiesMultiplier is a scorer for the vulnerabilities in an image
 type vulnerabilitiesMultiplier struct{}
 
-// NewVulnerabilities provides a multiplier that scores the data based on the CVSS scores and number of CVEs
+// NewVulnerabilities provides a multiplier that scores known-severity vulnerability findings across image components.
 func NewVulnerabilities() Multiplier {
 	return &vulnerabilitiesMultiplier{}
 }
@@ -43,8 +43,8 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Imag
 		Name: VulnerabilitiesHeading,
 		Factors: []*storage.Risk_Result_Factor{
 			{
-				Message: fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
-					image.GetName().GetFullName(), num, min.Severity, max.Severity),
+				Message: fmt.Sprintf("Image %q contains %d distinct CVEs with severities ranging between %s and %s",
+					image.GetName().GetFullName(), countDistinctCVEs(imgComponents), min.Severity, max.Severity),
 			},
 		},
 		Score: score,
@@ -68,10 +68,23 @@ func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.Im
 		Name: VulnerabilitiesHeading,
 		Factors: []*storage.Risk_Result_Factor{
 			{
-				Message: fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
-					image.GetName().GetFullName(), num, min.Severity, max.Severity),
+				Message: fmt.Sprintf("Image %q contains %d distinct CVEs with severities ranging between %s and %s",
+					image.GetName().GetFullName(), countDistinctCVEs(imgComponents), min.Severity, max.Severity),
 			},
 		},
 		Score: score,
 	}
+}
+
+// countDistinctCVEs includes unknown-severity findings, which do not affect the risk score.
+func countDistinctCVEs(components []*storage.EmbeddedImageScanComponent) int {
+	cves := make(map[string]struct{})
+	for _, component := range components {
+		for _, vuln := range component.GetVulns() {
+			if cve := vuln.GetCve(); cve != "" {
+				cves[cve] = struct{}{}
+			}
+		}
+	}
+	return len(cves)
 }
