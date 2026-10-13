@@ -218,6 +218,93 @@ new_git_repo() {
     done <<< "${output}"
 }
 
+@test "Postgres runs sql_integration packages and PG=require fails when it is down" {
+    new_git_repo
+    printf 'module example.com/demo\n\ngo 1.22\n' > "${demo}/go.mod"
+    git -C "${demo}" add go.mod
+    git -C "${demo}" commit -q -m init
+    mkdir -p "${demo}/pkg/sqlonly" "${demo}/migrator/m"
+    printf 'package sqlonly\nfunc S() {}\n' > "${demo}/pkg/sqlonly/s.go"
+    printf '//go:build sql_integration\n\npackage sqlonly\nimport "testing"\nfunc TestS(t *testing.T) {}\n' > "${demo}/pkg/sqlonly/s_test.go"
+    printf 'package m\nfunc M() {}\n' > "${demo}/migrator/m/m.go"
+    printf '//go:build sql_integration\n\npackage m\nimport "testing"\nfunc TestM(t *testing.T) {}\n' > "${demo}/migrator/m/m_test.go"
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 PG_READY=1 \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "Postgres is reachable"
+    assert_output --partial "GOTAGS=,test,sql_integration"
+    assert_output --partial "example.com/demo/pkg/sqlonly"
+    assert_output --partial "example.com/demo/migrator/m"
+    assert_output --partial -- "-p 1"
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 PG_READY=0 PG=require \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_failure
+    assert_equal "${status}" 1
+    assert_output --partial "skipping sql_integration packages"
+    assert_output --partial "exit: 1"
+}
+
+@test "DEPS modes add importers and OUTPUT=json records the run" {
+    new_git_repo
+    printf 'module example.com/demo\n\ngo 1.22\n' > "${demo}/go.mod"
+    mkdir -p "${demo}/pkg/a" "${demo}/pkg/b" "${demo}/pkg/c"
+    printf 'package a\nfunc A() int { return 1 }\n' > "${demo}/pkg/a/a.go"
+    printf 'package b\nimport "example.com/demo/pkg/a"\nfunc B() int { return a.A() }\n' > "${demo}/pkg/b/b.go"
+    printf 'package c\nimport "example.com/demo/pkg/b"\nfunc C() int { return b.B() }\n' > "${demo}/pkg/c/c.go"
+    git -C "${demo}" add go.mod pkg
+    git -C "${demo}" commit -q -m init
+    printf 'package a\nfunc A() int { return 2 }\n' > "${demo}/pkg/a/a.go"
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 DEPS=direct OUTPUT=json \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "untested importers: 1"
+    assert_output --partial "wrote test-output/check-changed.json"
+    python3 - "${demo}/test-output/check-changed.json" << 'PY'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+assert doc["exit"] == 0
+assert doc["deps"] == "direct"
+assert doc["untested_dependents"] == 1
+PY
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 DEPS=rdeps \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "DEPS=rdeps added:"
+    assert_output --partial "example.com/demo/pkg/b"
+    local line
+    while IFS= read -r line; do
+        if [[ "${line}" == "DRY_RUN go test -race: "* ]]; then
+            [[ "${line}" == *example.com/demo/pkg/a* ]]
+            [[ "${line}" == *example.com/demo/pkg/b* ]]
+            [[ "${line}" != *example.com/demo/pkg/c* ]]
+        fi
+    done <<< "${output}"
+
+    run env CHECK_CHANGED_ROOT="${demo}" BASE=HEAD DRY_RUN=1 DEPS=rdeps-all \
+        UNIT_TEST_IGNORE='a^' RELEASE_GOTAGS=release \
+        GOLANGCILINT_BIN=/bin/true GOLANGCILINT_FLAGS='--verbose' \
+        NESTED_GO_MODULE_DIRS= \
+        "${BATS_TEST_DIRNAME}/check-changed.sh"
+    assert_success
+    assert_output --partial "example.com/demo/pkg/c"
+}
+
 @test "check-changed target passes Makefile variables" {
     run grep -A 12 "^check-changed:" "${BATS_TEST_DIRNAME}/../Makefile"
     assert_success

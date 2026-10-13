@@ -12,6 +12,8 @@ monitoring/grafana/rawcaptures
 
 # Test output
 /junit-reports/
+/.check-changed-cache/
+/test-output/
 *.test
 
 # Makefile cruft

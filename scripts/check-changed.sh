@@ -27,6 +27,11 @@ EXIT_SETUP=3
 final_exit=0
 merge_base_sha=
 root=
+deps_mode_value=direct
+untested_dependents=0
+warn_count=0
+pg_failed=0
+skip_deps_note=0
 nested_dirs=()
 lint_flags=()
 summary_steps=()
@@ -383,6 +388,211 @@ race_enabled() {
     [[ "${RACE:-1}" != "0" ]]
 }
 
+warn() {
+    printf 'WARN: %s\n' "$*"
+    warn_count=$((warn_count + 1))
+}
+
+# postgres_ready is true when something accepts TCP connections on Postgres's
+# port. PG_READY=1 or PG_READY=0 overrides the probe for tests.
+postgres_ready() {
+    if [[ -n "${PG_READY+x}" ]]; then
+        [[ "${PG_READY}" == "1" ]]
+        return
+    fi
+    local host=${PGHOST:-127.0.0.1}
+    local port=${PGPORT:-5432}
+    if command -v pg_isready >/dev/null 2>&1; then
+        pg_isready -h "${host}" -p "${port}" -t 1 >/dev/null 2>&1
+        return
+    fi
+    timeout 1 bash -c "echo >/dev/tcp/${host}/${port}" >/dev/null 2>&1
+}
+
+# build_import_index writes one go list record per package:
+# import|imports|testimports|xtestimports|deps
+# A clean HEAD reuses .check-changed-cache/<sha>/.
+build_import_index() {
+    local module_dir=$1
+    local out_file=$2
+    local head dirty key cache_dir cache_file work
+    head=$(git -C "${root}" rev-parse HEAD)
+    if [[ -n "$(git -C "${root}" status --porcelain)" ]]; then
+        dirty=1
+    else
+        dirty=0
+    fi
+    key=${module_dir//\//_}
+    if [[ "${key}" == "." ]]; then
+        key=root
+    fi
+    cache_dir="${root}/.check-changed-cache/${head}"
+    cache_file="${cache_dir}/${key}.list"
+    if [[ "${dirty}" -eq 0 && -s "${cache_file}" ]]; then
+        cp "${cache_file}" "${out_file}"
+        printf 'import index: cache %s\n' "${cache_file#"${root}/"}"
+        return 0
+    fi
+    if [[ "${module_dir}" == "." ]]; then
+        work=${root}
+    else
+        work="${root}/${module_dir}"
+    fi
+    if ! (cd "${work}" && go list -test -f '{{.ImportPath}}|{{join .Imports ","}}|{{join .TestImports ","}}|{{join .XTestImports ","}}|{{join .Deps ","}}' ./...) > "${out_file}"; then
+        return 1
+    fi
+    if [[ "${dirty}" -eq 0 ]]; then
+        mkdir -p "${cache_dir}"
+        cp "${out_file}" "${cache_file}"
+    fi
+}
+
+# list_importers prints module packages that import any of the named packages.
+# kind=direct uses Imports, TestImports, and XTestImports.
+# kind=all also uses Deps, which is the transitive closure.
+list_importers() {
+    local index=$1
+    local kind=$2
+    local mod=$3
+    shift 3
+    local targets
+    targets=$(printf '%s,' "$@")
+    targets=${targets%,}
+    awk -F'|' -v kind="${kind}" -v targets="${targets}" -v mod="${mod}" '
+        function has(list, target,    n, i, a) {
+            if (list == "") return 0
+            n = split(list, a, ",")
+            for (i = 1; i <= n; i++) if (a[i] == target) return 1
+            return 0
+        }
+        function in_mod(path, mod) {
+            if (mod == "") return 1
+            if (path == mod) return 1
+            return index(path, mod "/") == 1
+        }
+        BEGIN { n = split(targets, t, ",") }
+        {
+            path = $1
+            if (path ~ /\.test$/) next
+            if (!in_mod(path, mod)) next
+            for (i = 1; i <= n; i++) {
+                if (path == t[i]) continue
+                hit = 0
+                if (has($2, t[i]) || has($3, t[i]) || has($4, t[i])) hit = 1
+                if (kind == "all" && has($5, t[i])) hit = 1
+                if (hit) print path
+            }
+        }
+    ' "${index}" | sort -u
+}
+
+# expand_deps adds importers to the kept and sql arrays when DEPS asks for them.
+# In direct mode it only counts importers that will not be tested.
+# The namerefs are the kept, sql-only, and sql-mixed arrays.
+expand_deps() {
+    local module_dir=$1
+    local mod=$2
+    # shellcheck disable=SC2178 # namerefs of the caller's arrays
+    local -n _kept=$3
+    # shellcheck disable=SC2178
+    local -n _sql_only=$4
+    # shellcheck disable=SC2178
+    local -n _sql_mixed=$5
+    shift 5
+    local -a seeds=("$@")
+    if [[ ${#seeds[@]} -eq 0 ]]; then
+        return 0
+    fi
+    local index kind pkg
+    local -a found=() extras=()
+    index=$(mktemp)
+    if ! build_import_index "${module_dir}" "${index}"; then
+        rm -f "${index}"
+        return 1
+    fi
+    if [[ "${deps_mode_value}" == "rdeps-all" ]]; then
+        kind=all
+    else
+        kind=direct
+    fi
+    mapfile -t found < <(list_importers "${index}" "${kind}" "${mod}" "${seeds[@]}")
+    rm -f "${index}"
+    for pkg in ${found[@]+"${found[@]}"}; do
+        [[ -z "${pkg}" ]] && continue
+        if package_is_ignored "${pkg}"; then
+            continue
+        fi
+        local already=0 one
+        for one in ${seeds[@]+"${seeds[@]}"} ${_kept[@]+"${_kept[@]}"} ${_sql_only[@]+"${_sql_only[@]}"} ${_sql_mixed[@]+"${_sql_mixed[@]}"}; do
+            if [[ "${one}" == "${pkg}" ]]; then
+                already=1
+                break
+            fi
+        done
+        if [[ "${already}" -eq 1 ]]; then
+            continue
+        fi
+        if [[ "${deps_mode_value}" == "direct" ]]; then
+            untested_dependents=$((untested_dependents + 1))
+            continue
+        fi
+        extras+=("${pkg}")
+    done
+    if [[ ${#extras[@]} -eq 0 ]]; then
+        return 0
+    fi
+    printf 'DEPS=%s added:\n' "${deps_mode_value}"
+    printf '  %s\n' "${extras[@]}"
+    local -a extra_kept=() extra_sql=() extra_mixed=()
+    partition_tests "${module_dir}" "${mod}" extra_kept extra_sql extra_mixed "${extras[@]}"
+    _kept+=(${extra_kept[@]+"${extra_kept[@]}"})
+    _sql_only+=(${extra_sql[@]+"${extra_sql[@]}"})
+    _sql_mixed+=(${extra_mixed[@]+"${extra_mixed[@]}"})
+}
+
+run_root_go_test() {
+    local tags=$1
+    local suffix=$2
+    local serial=$3
+    shift 3
+    local -a pkgs=("$@")
+    local step="go test${suffix}"
+    local -a args=(-timeout 25m -v)
+    if race_enabled; then
+        step="go test -race${suffix}"
+        args=(-timeout 25m -race -v)
+    fi
+    if [[ "${serial}" == "1" ]]; then
+        args+=(-p 1)
+        step="${step} -p 1"
+    fi
+    local rerun
+    rerun="CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${tags} scripts/go-test.sh ${args[*]} ${pkgs[*]}"
+    run_recorded "${step}" "$(package_scope "${#pkgs[@]}")" "${rerun}" \
+        env CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS="${MUTEX_WATCHDOG_TIMEOUT_SECS:-30}" GOTAGS="${tags}" \
+        "${SCRIPT_DIR}/go-test.sh" "${args[@]}" "${pkgs[@]}"
+}
+
+run_sql_packages() {
+    local -a pkgs=("$@")
+    [[ ${#pkgs[@]} -eq 0 ]] && return 0
+    local tags pkg
+    local -a rest=() mig=()
+    tags="$(with_test_tag "${GOTAGS-}"),sql_integration"
+    for pkg in "${pkgs[@]}"; do
+        case "${pkg}" in
+            */migrator | */migrator/*) mig+=("${pkg}") ;;
+            *) rest+=("${pkg}") ;;
+        esac
+    done
+    if [[ ${#rest[@]} -gt 0 ]]; then
+        run_root_go_test "${tags}" " (sql_integration)" 0 "${rest[@]}"
+    fi
+    if [[ ${#mig[@]} -gt 0 ]]; then
+        run_root_go_test "${tags}" " (sql_integration)" 1 "${mig[@]}"
+    fi
+}
+
 run_recorded() {
     local name=$1
     local scope=$2
@@ -409,19 +619,9 @@ run_recorded() {
 }
 
 go_test_root() {
-    local -a pkgs=("$@")
-    local tags rerun step
-    local -a args=(-timeout 25m -v)
+    local tags
     tags=$(with_test_tag "${GOTAGS-}")
-    step="go test"
-    if race_enabled; then
-        args=(-timeout 25m -race -v)
-        step="go test -race"
-    fi
-    rerun="CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${tags} scripts/go-test.sh ${args[*]} ${pkgs[*]}"
-    run_recorded "${step}" "$(package_scope "${#pkgs[@]}")" "${rerun}" \
-        env CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS="${MUTEX_WATCHDOG_TIMEOUT_SECS:-30}" GOTAGS="${tags}" \
-        "${SCRIPT_DIR}/go-test.sh" "${args[@]}" "${pkgs[@]}"
+    run_root_go_test "${tags}" "" 0 "$@"
 }
 
 run_go_test_in() {
@@ -435,7 +635,8 @@ run_go_test_in() {
 
 go_test_nested() {
     local module_dir=$1
-    shift
+    local tags=${2-}
+    shift 2
     local -a pkgs=("$@")
     local rels=() pkg mod rel rerun step
     local -a args=(-buildvcs=false -timeout 25m -v)
@@ -448,6 +649,10 @@ go_test_nested() {
     if race_enabled; then
         args=(-buildvcs=false -timeout 25m -race -v)
         step="go test -race (nested)"
+    fi
+    if [[ -n "${tags}" ]]; then
+        args+=(-tags "${tags}")
+        step="${step} ${tags}"
     fi
     rerun="(cd ${module_dir} && CGO_ENABLED=1 go test ${args[*]} ${rels[*]})"
     run_recorded "${step}" "${module_dir} (${#pkgs[@]})" "${rerun}" \
@@ -480,15 +685,91 @@ lint_packages() {
 }
 
 finish_ok_notes() {
-    printf 'NOTE: only packages that contain changed files were tested. Importers were not.\n'
-    printf 'NOTE: not run: integration, test_e2e, test_e2e_vm, scanner_db_integration, destructive, and release-tagged tests.\n'
+    if [[ "${skip_deps_note}" -eq 1 ]]; then
+        printf 'NOTE: only packages that contain changed files were tested. Importers were not.\n'
+    elif [[ "${deps_mode_value}" == "rdeps" ]]; then
+        printf 'NOTE: DEPS=rdeps added one level of importers.\n'
+    elif [[ "${deps_mode_value}" == "rdeps-all" ]]; then
+        printf 'NOTE: DEPS=rdeps-all added the transitive importers.\n'
+    else
+        printf 'NOTE: untested importers: %s. Run with DEPS=rdeps.\n' "${untested_dependents}"
+    fi
+    if [[ "${RELEASE:-0}" == "1" ]]; then
+        printf 'NOTE: not run: integration, test_e2e, test_e2e_vm, scanner_db_integration, destructive.\n'
+    else
+        printf 'NOTE: not run: integration, test_e2e, test_e2e_vm, scanner_db_integration, destructive, and release-tagged tests.\n'
+    fi
     printf 'NOTE: exit 2 is reserved for codegen detection and is not produced yet.\n'
     if ! race_enabled; then
         printf 'NOTE: RACE=0, so this run does not match CI (CI passes -race).\n'
     fi
 }
 
+write_output_json() {
+    [[ "${OUTPUT:-}" == "json" ]] || return 0
+    mkdir -p "${root}/test-output"
+    local dest="${root}/test-output/check-changed.json"
+    local tmp i
+    tmp=$(mktemp)
+    for i in "${!summary_steps[@]}"; do
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "${summary_steps[$i]}" "${summary_scopes[$i]}" "${summary_results[$i]}" \
+            "${summary_times[$i]}" "${summary_reruns[$i]}"
+    done > "${tmp}"
+    python3 - "${tmp}" "${dest}" "${final_exit}" "${deps_mode_value}" "${untested_dependents}" "${merge_base_sha}" << 'PY'
+import json
+import sys
+
+src, dest, exit_code, deps, untested, base = sys.argv[1:7]
+steps = []
+with open(src, encoding="utf-8") as handle:
+    for line in handle:
+        line = line.rstrip("\n")
+        if not line:
+            continue
+        parts = line.split("\t")
+        while len(parts) < 5:
+            parts.append("")
+        steps.append({
+            "step": parts[0],
+            "scope": parts[1],
+            "result": parts[2],
+            "time": parts[3],
+            "rerun": parts[4],
+        })
+doc = {
+    "exit": int(exit_code),
+    "base": base,
+    "deps": deps,
+    "untested_dependents": int(untested),
+    "steps": steps,
+}
+with open(dest, "w", encoding="utf-8") as handle:
+    json.dump(doc, handle, indent=2)
+    handle.write("\n")
+PY
+    rm -f "${tmp}"
+    printf 'wrote %s\n' "${dest#"${root}/"}"
+}
+
+finish_run() {
+    if [[ "${STRICT:-0}" == "1" && "${warn_count}" -gt 0 && "${final_exit}" -eq 0 ]]; then
+        printf 'STRICT=1 and a warning was printed.\n'
+        final_exit=1
+    fi
+    if [[ "${pg_failed}" -eq 1 && "${final_exit}" -eq 0 ]]; then
+        final_exit=1
+    fi
+    print_summary
+    write_output_json
+    exit "${final_exit}"
+}
+
 main() {
+    case "${DEPS:-direct}" in
+        direct | rdeps | rdeps-all) deps_mode_value=${DEPS:-direct} ;;
+        *) setup_error "DEPS=${DEPS} is not direct, rdeps, or rdeps-all" ;;
+    esac
     root=$(repo_root)
     cd "${root}" || setup_error "cannot enter ${root}"
     resolve_base
@@ -509,13 +790,13 @@ main() {
     fi
 
     if [[ ${#go_files[@]} -eq 0 ]]; then
+        skip_deps_note=1
         summary_add "go test" "no Go packages" "pass" "-" ""
         summary_add "golangci-lint" "no Go packages" "pass" "-" ""
         summary_add "codegen" "not checked" "skip" "-" ""
         printf 'no Go packages in this diff. Nothing to test or lint.\n'
         finish_ok_notes
-        print_summary
-        exit 0
+        finish_run
     fi
 
     load_make_config
@@ -549,6 +830,10 @@ main() {
         fi
         mod_path=$(go list -m)
         partition_tests "." "${mod_path}" root_kept sql_only_packages sql_mixed_packages ${root_mapped[@]+"${root_mapped[@]}"}
+        if ! expand_deps "." "${mod_path}" root_kept sql_only_packages sql_mixed_packages \
+            ${root_kept[@]+"${root_kept[@]}"} ${sql_only_packages[@]+"${sql_only_packages[@]}"} ${sql_mixed_packages[@]+"${sql_mixed_packages[@]}"}; then
+            setup_error "go list failed while building the importer index"
+        fi
     fi
 
     local -a lint_rels=()
@@ -573,19 +858,36 @@ main() {
         printf '  %s\n' "${ignored_packages[@]}"
         summary_add "unit-test-ignore" "$(package_scope "${#ignored_packages[@]}")" "skip" "-" ""
     fi
-    if [[ ${#sql_only_packages[@]} -gt 0 ]]; then
-        printf 'WARN: skipping sql_integration packages. Postgres is not started. Run make go-postgres-unit-tests.\n'
-        printf '  %s\n' "${sql_only_packages[@]}"
-        summary_add "sql_integration" "$(package_scope "${#sql_only_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
+    local pg_up=0
+    if postgres_ready; then
+        pg_up=1
     fi
-    if [[ ${#sql_mixed_packages[@]} -gt 0 ]]; then
-        printf 'WARN: these packages also contain sql_integration tests, which were not run:\n'
-        printf '  %s\n' "${sql_mixed_packages[@]}"
-        summary_add "sql_integration (mixed)" "$(package_scope "${#sql_mixed_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
+    if [[ ${#sql_only_packages[@]} -gt 0 || ${#sql_mixed_packages[@]} -gt 0 ]]; then
+        if [[ "${pg_up}" -eq 1 ]]; then
+            printf 'Postgres is reachable. Running sql_integration tests.\n'
+            run_sql_packages ${sql_only_packages[@]+"${sql_only_packages[@]}"} ${sql_mixed_packages[@]+"${sql_mixed_packages[@]}"}
+        else
+            if [[ ${#sql_only_packages[@]} -gt 0 ]]; then
+                warn "skipping sql_integration packages. Postgres is not reachable on ${PGHOST:-127.0.0.1}:${PGPORT:-5432}. Run make go-postgres-unit-tests."
+                printf '  %s\n' "${sql_only_packages[@]}"
+                summary_add "sql_integration" "$(package_scope "${#sql_only_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
+            fi
+            if [[ ${#sql_mixed_packages[@]} -gt 0 ]]; then
+                warn "these packages also contain sql_integration tests, which were not run:"
+                printf '  %s\n' "${sql_mixed_packages[@]}"
+                summary_add "sql_integration (mixed)" "$(package_scope "${#sql_mixed_packages[@]}")" "skip" "-" "make go-postgres-unit-tests"
+            fi
+            if [[ "${PG:-}" == "require" ]]; then
+                pg_failed=1
+            fi
+        fi
     fi
 
     if [[ ${#root_kept[@]} -gt 0 ]]; then
         go_test_root "${root_kept[@]}"
+        if [[ "${RELEASE:-0}" == "1" ]]; then
+            run_root_go_test "$(with_test_tag "${RELEASE_GOTAGS}")" " (release)" 0 "${root_kept[@]}"
+        fi
     elif [[ ${#root_files[@]} -gt 0 ]]; then
         summary_add "go test" "0 packages" "skip" "-" ""
     fi
@@ -614,20 +916,34 @@ main() {
         fi
         mod_path=$(cd "${root}/${d}" && go list -m)
         partition_tests "${d}" "${mod_path}" nested_kept nested_sql nested_mixed ${nested_mapped[@]+"${nested_mapped[@]}"}
-        if [[ ${#nested_sql[@]} -gt 0 ]]; then
-            printf 'WARN: skipping sql_integration packages in %s.\n' "${d}"
-            printf '  %s\n' "${nested_sql[@]}"
-            summary_add "sql_integration" "${d}" "skip" "-" "make go-postgres-unit-tests"
+        if ! expand_deps "${d}" "${mod_path}" nested_kept nested_sql nested_mixed \
+            ${nested_kept[@]+"${nested_kept[@]}"} ${nested_sql[@]+"${nested_sql[@]}"} ${nested_mixed[@]+"${nested_mixed[@]}"}; then
+            setup_error "go list failed while building the importer index in ${d}"
         fi
-        if [[ ${#nested_mixed[@]} -gt 0 ]]; then
-            printf 'WARN: nested module %s also has sql_integration tests, which were not run:\n' "${d}"
-            printf '  %s\n' "${nested_mixed[@]}"
-            summary_add "sql_integration (mixed)" "${d}" "skip" "-" "make go-postgres-unit-tests"
+        if [[ ${#nested_sql[@]} -gt 0 || ${#nested_mixed[@]} -gt 0 ]]; then
+            if [[ "${pg_up}" -eq 1 ]]; then
+                printf 'Postgres is reachable. Running sql_integration tests in %s.\n' "${d}"
+                go_test_nested "${d}" "sql_integration" ${nested_sql[@]+"${nested_sql[@]}"} ${nested_mixed[@]+"${nested_mixed[@]}"}
+            else
+                if [[ ${#nested_sql[@]} -gt 0 ]]; then
+                    warn "skipping sql_integration packages in ${d}."
+                    printf '  %s\n' "${nested_sql[@]}"
+                    summary_add "sql_integration" "${d}" "skip" "-" "make go-postgres-unit-tests"
+                fi
+                if [[ ${#nested_mixed[@]} -gt 0 ]]; then
+                    warn "nested module ${d} also has sql_integration tests, which were not run:"
+                    printf '  %s\n' "${nested_mixed[@]}"
+                    summary_add "sql_integration (mixed)" "${d}" "skip" "-" "make go-postgres-unit-tests"
+                fi
+                if [[ "${PG:-}" == "require" ]]; then
+                    pg_failed=1
+                fi
+            fi
         fi
         if [[ ${#nested_kept[@]} -gt 0 ]]; then
             printf 'Go packages:\n'
             printf '  %s\n' "${nested_kept[@]}"
-            go_test_nested "${d}" "${nested_kept[@]}"
+            go_test_nested "${d}" "" "${nested_kept[@]}"
         fi
         if [[ ${#nested_mapped[@]} -gt 0 ]]; then
             printf 'WARN: golangci-lint was not run in nested module %s. The root .golangci.yml targets the root module.\n' "${d}"
@@ -652,8 +968,7 @@ main() {
 
     summary_add "codegen" "not checked" "skip" "-" ""
     finish_ok_notes
-    print_summary
-    exit "${final_exit}"
+    finish_run
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

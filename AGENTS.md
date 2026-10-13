@@ -89,10 +89,22 @@ then `--build-tags release --tests=false`). It does not pass `--fix` unless
 `FIX=1`. golangci-lint v2 appends `--build-tags` to the tags in `.golangci.yml`.
 
 `UNIT_TEST_IGNORE` is read from the Makefile and those packages are dropped.
-Packages whose tests all require `//go:build sql_integration` are skipped with
-a warning; run `make go-postgres-unit-tests` for them. This command does not run
-`integration`, `test_e2e`, `test_e2e_vm`, `scanner_db_integration`, or
-`destructive` tests, and it does not repeat the logging-level matrix.
+Packages whose tests require `//go:build sql_integration` run when Postgres
+accepts connections on `127.0.0.1:5432` (`PGHOST` and `PGPORT` override that).
+Migrator packages use `-p 1`. If Postgres is down, those tests are skipped with
+a warning. `PG=require` turns that skip into a failure. `STRICT=1` fails the
+run when any warning was printed.
+
+`DEPS=direct` (the default) tests only the changed packages and prints how many
+importers were not tested. `DEPS=rdeps` adds one level of importers.
+`DEPS=rdeps-all` adds the transitive closure. The `go list` index is cached in
+`.check-changed-cache/<HEAD>/` when the worktree is clean. `OUTPUT=json` writes
+`test-output/check-changed.json`. `RELEASE=1` also runs the tests with the
+release tag.
+
+This command does not run `integration`, `test_e2e`, `test_e2e_vm`,
+`scanner_db_integration`, or `destructive` tests, and it does not repeat the
+logging-level matrix.
 
 Exit codes from `scripts/check-changed.sh`: `0` pass, `1` test or lint failure,
 `2` codegen needed (reserved; codegen detection is not implemented yet),
