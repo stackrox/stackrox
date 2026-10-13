@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -194,18 +192,6 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		Pods []Pod `json:"pods"`
 	}
 
-	// Using this to ensure pagination does not fail.
-	offset := int32(0)
-	limit := int32(10)
-	field := "Pod Name"
-	pagination := inputtypes.Pagination{
-		Offset: &offset,
-		Limit:  &limit,
-		SortOption: &inputtypes.SortOption{
-			Field: &field,
-		},
-	}
-
 	makeGraphQLRequest(t, `
 		query getPods($podsQuery: String, $pagination: Pagination) {
 			pods(query: $podsQuery, pagination: $pagination) {
@@ -221,7 +207,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		}
 	`, map[string]interface{}{
 		"podsQuery":  fmt.Sprintf("Deployment ID: %s", deploymentID),
-		"pagination": pagination,
+		"pagination": nil,
 	}, &respData, timeout)
 	t.Logf("%+v", respData)
 
