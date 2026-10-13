@@ -178,6 +178,7 @@ deploy_stackrox_with_roxie() {
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
     # For Scanner V4 this means that it will also wait until vulnerabilities are loaded into the DB.
     roxie deploy \
+        --resources=ci \
         --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
         --envrc "$roxie_envrc" \
         --config "$config_file"
