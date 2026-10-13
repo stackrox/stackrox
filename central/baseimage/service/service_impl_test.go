@@ -267,7 +267,7 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 			description:    "rejects pattern longer than max tag length",
 			input:          strings.Repeat("a", maxTagPatternLength+1),
 			expectedValid:  false,
-			expectedErrMsg: "too long",
+			expectedErrMsg: "129 bytes (max 128)",
 		},
 	}
 

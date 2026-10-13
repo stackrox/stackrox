@@ -325,9 +325,10 @@ function BaseImagesModal({
                                                 </HelperTextItem>
                                             )}
                                         <HelperTextItem>
-                                            For registries with a port, use registry:port/repo:tag
-                                            (e.g., registry:5000/repo:1.*). The tag pattern can be a
-                                            specific version or a pattern such as 1.*
+                                            Include repository path and tag (e.g.,
+                                            example-registry.io/path/to/image:tag). The tag can be a
+                                            pattern such as 1.*. For registries with a port, use
+                                            registry:port/repo:tag (e.g., registry:5000/repo:1.*).
                                         </HelperTextItem>
                                     </HelperText>
                                 </FormHelperText>

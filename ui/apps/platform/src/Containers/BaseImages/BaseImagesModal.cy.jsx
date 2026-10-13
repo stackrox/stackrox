@@ -52,6 +52,7 @@ describe('BaseImagesModal', () => {
             cy.contains('Base image path must include a tag pattern after ":"').should(
                 'be.visible'
             );
+            cy.contains('example-registry.io/path/to/image:tag').should('be.visible');
             cy.contains('For registries with a port, use registry:port/repo:tag').should(
                 'be.visible'
             );
