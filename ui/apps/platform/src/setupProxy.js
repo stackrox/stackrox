@@ -44,7 +44,7 @@ export function viteProxy() {
         parseCustomProxies().map(([path, target]) => [path, proxyWithTarget(target)])
     );
 
-    const proxy = proxyWithTarget(process.env.UI_START_TARGET || 'https://localhost:8000');
+    const proxy = proxyWithTarget(process.env.UI_START_TARGET || process.env.ROX_BASE_URL || 'https://localhost:8000');
 
     // Custom proxies come first so their (often more specific, possibly regex)
     // paths take precedence over the generic catch-alls below. Vite matches proxy
