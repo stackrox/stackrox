@@ -324,16 +324,12 @@ func validateExcludeByKind(excludeByKind *storage.Exclusion_ExcludeByKind) error
 	if len(kinds) == 0 {
 		return errors.New("exclude_by_kind must specify at least one workload kind")
 	}
-	seen := set.NewSet[storage.Exclusion_WorkloadKind]()
 	for _, kind := range kinds {
 		if kind == storage.Exclusion_WORKLOAD_KIND_UNSPECIFIED {
 			return errors.New("exclude_by_kind cannot include WORKLOAD_KIND_UNSPECIFIED")
 		}
 		if kind != storage.Exclusion_CRON_JOB && kind != storage.Exclusion_JOB {
 			return errors.Errorf("exclude_by_kind contains unknown workload kind %s", kind)
-		}
-		if !seen.Add(kind) {
-			return errors.New("exclude_by_kind contains duplicate workload kinds")
 		}
 	}
 	return nil

@@ -754,10 +754,6 @@ func (s *PolicyValidatorTestSuite) TestValidateExcludeByKind() {
 			policy:      deployPolicy(kindExclusion(storage.Exclusion_WORKLOAD_KIND_UNSPECIFIED)),
 			errContains: "WORKLOAD_KIND_UNSPECIFIED",
 		},
-		"duplicate kinds are rejected": {
-			policy:      deployPolicy(kindExclusion(storage.Exclusion_JOB, storage.Exclusion_JOB)),
-			errContains: "duplicate",
-		},
 		"unknown kind is rejected": {
 			policy:      deployPolicy(kindExclusion(storage.Exclusion_WorkloadKind(99))),
 			errContains: "unknown workload kind",
