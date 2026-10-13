@@ -47,12 +47,12 @@ const rules = {
         },
     },
     'PageSection-type-breadcrumb': {
-        // Require that PageSection elememt has type="breadcrumb" prop if Breadcrumb is a child.
+        // Require that PageSection element has type="breadcrumb" prop if Breadcrumb is a child.
         meta: {
             type: 'problem',
             docs: {
                 description:
-                    'Require that PageSection elememt has type="breadcrumb" prop if Breadcrumb is a child.',
+                    'Require that PageSection element has type="breadcrumb" prop if Breadcrumb is a child.',
             },
             schema: [],
         },
@@ -78,7 +78,7 @@ const rules = {
                             context.report({
                                 node,
                                 message:
-                                    'PageSection element needs type="breadcrumb" prop if BreadCrumb is a child',
+                                    'PageSection element needs type="breadcrumb" prop if Breadcrumb is a child',
                             });
                         }
                     }
@@ -87,12 +87,12 @@ const rules = {
         },
     },
     'PageSection-type-tabs': {
-        // Require that PageSection elememt has type="tabs" prop if Tabs is a child.
+        // Require that PageSection element has type="tabs" prop if Tabs is a child.
         meta: {
             type: 'problem',
             docs: {
                 description:
-                    'Require that PageSection elememt has type="tabs" prop if Tabs is a child.',
+                    'Require that PageSection element has type="tabs" prop if Tabs is a child.',
             },
             schema: [],
         },
@@ -126,12 +126,12 @@ const rules = {
         },
     },
     'PageSection-type-wizard': {
-        // Require that PageSection elememt has type="wizard" prop if Wizard is a child.
+        // Require that PageSection element has type="wizard" prop if Wizard is a child.
         meta: {
             type: 'problem',
             docs: {
                 description:
-                    'Require that PageSection elememt has type="wizard" prop if Wizard is a child.',
+                    'Require that PageSection element has type="wizard" prop if Wizard is a child.',
             },
             schema: [],
         },
