@@ -94,32 +94,38 @@ function use_matching_binaries() {
 
 @test "rox_use_matching_binaries - data match the previous binaries" {
     local data_major=15
+    local matching_bin_dir="${prev_dir}/postgresql-${data_major}/bin"
     given_binary_version 17
     given_data_version "$data_major"
     given_prev_binaries "$data_major"
     local before="$PATH"
     run use_matching_binaries
     assert_success
-    assert_output --partial "Data are still in PostgreSQL ${data_major}, starting the binaries in ${prev_dir}/postgresql-${data_major}/bin"
-    assert_line "path=${prev_dir}/postgresql-${data_major}/bin:${before}"
+    assert_output --partial \
+        "Data are still in PostgreSQL ${data_major}, starting the binaries in ${matching_bin_dir}"
+    assert_line "path=${matching_bin_dir}:${before}"
 }
 
 @test "rox_use_matching_binaries - data do not match the previous binaries" {
     local data_major=14
+    local matching_bin_dir="${prev_dir}/postgresql-${data_major}/bin"
     given_binary_version 16
     given_prev_binaries 15
     given_data_version "$data_major"
     run use_matching_binaries
     assert_success
-    assert_output --partial "Data are in PostgreSQL ${data_major}, but there is no executable ${prev_dir}/postgresql-${data_major}/bin/postgres"
+    assert_output --partial \
+        "Data are in PostgreSQL ${data_major}, but there is no executable ${matching_bin_dir}/postgres"
     assert_line "first-path=${image_bin}"
 }
 
 @test "rox_use_matching_binaries - matching postgres is not executable" {
+    local data_major=15
+    local matching_bin_dir="${prev_dir}/postgresql-${data_major}/bin"
     given_binary_version 16
-    given_data_version 15
-    given_prev_binaries 15
-    chmod -x "${prev_dir}/postgresql-15/bin/postgres"
+    given_data_version "$data_major"
+    given_prev_binaries "$data_major"
+    chmod -x "${matching_bin_dir}/postgres"
     run use_matching_binaries
     assert_success
     assert_output --partial "no executable"
@@ -137,7 +143,6 @@ function use_matching_binaries() {
 @test "rox_use_matching_binaries - unparsable binary version" {
     mock_executable "${image_bin}/postgres" "echo 'something else entirely'"
     given_data_version 15
-    given_prev_binaries 15
     run use_matching_binaries
     assert_success
     assert_output --partial "Cannot read a valid major version from postgres -V"
@@ -147,7 +152,6 @@ function use_matching_binaries() {
 @test "rox_use_matching_binaries - postgres -V failure does not crash the container" {
     mock_executable "${image_bin}/postgres" "exit 127"
     given_data_version 15
-    given_prev_binaries 15
     # Called without `run`, which would swallow an abort.
     rox_use_matching_binaries "$prev_dir"
     assert_equal "${PATH%%:*}" "$image_bin"
