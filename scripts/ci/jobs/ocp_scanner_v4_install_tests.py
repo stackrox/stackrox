@@ -21,7 +21,7 @@ os.environ["ENABLE_OPERATOR_TESTS"] = "true"
 enable_sfa_for_ocp()
 
 ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
+    cluster=AutomationFlavorsCluster(sample_resources=True),
     pre_test=PreSystemTests(),
     test=ScannerV4InstallTest(),
     post_test=PostClusterTest(

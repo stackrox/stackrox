@@ -49,7 +49,7 @@ class VMScanningPostTest(PostClusterTest):
 
 
 ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
+    cluster=AutomationFlavorsCluster(sample_resources=True),
     pre_test=PreSystemTests(),
     test=VMScanningE2e(),
     post_test=VMScanningPostTest(

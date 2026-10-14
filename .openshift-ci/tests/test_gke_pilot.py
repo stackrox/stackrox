@@ -28,9 +28,7 @@ class TestGKEPilot(unittest.TestCase):
                          and isinstance(node.func, ast.Name) and node.func.id == "GKECluster"]
                 self.assertEqual(1, len(calls))
                 options = {keyword.arg: ast.literal_eval(keyword.value) for keyword in calls[0].keywords}
-                self.assertEqual(1, options["num_nodes"])
-                self.assertEqual("e2-standard-8", options["machine_type"])
-                self.assertTrue(options["sample_resources"])
+                self.assertEqual({"sample_resources": True}, options)
 
     @patch("clusters.set_ci_shared_export")
     @patch.object(GKECluster, "_provision")

@@ -23,7 +23,7 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
 ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
+    cluster=AutomationFlavorsCluster(sample_resources=True),
     pre_test=PreSystemTests(),
     test=NonGroovyE2e(),
     post_test=PostClusterTest(

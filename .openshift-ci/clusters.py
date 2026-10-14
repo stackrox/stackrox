@@ -155,6 +155,11 @@ class GKECluster:
 class AutomationFlavorsCluster:
     KUBECTL_TIMEOUT = 5 * 60
 
+    def __init__(self, sample_resources=False):
+        self.sample_resources = sample_resources
+        self.resource_sampler = None
+        self.previous_sigint_handler = None
+
     def provision(self):
         kubeconfig = os.environ["KUBECONFIG"]
 
@@ -167,7 +172,33 @@ class AutomationFlavorsCluster:
             timeout=self.KUBECTL_TIMEOUT,
         )
 
+        if self.sample_resources:
+            try:
+                self.resource_sampler = ResourceSampler(Path(os.environ["ARTIFACT_DIR"]) / "resource-usage")
+                self.resource_sampler.start()
+                self.previous_sigint_handler = signal.getsignal(signal.SIGINT)
+                signal.signal(signal.SIGINT, self.sigint_handler)
+            except Exception as err:
+                print(f"WARNING: Could not start resource sampling: {err}")
+
         return self
 
     def teardown(self):
-        pass
+        # The external automation-flavors step owns cluster destruction.
+        if self.resource_sampler is not None:
+            try:
+                self.resource_sampler.stop()
+            except Exception as err:
+                print(f"WARNING: Could not stop resource sampling: {err}")
+        if self.previous_sigint_handler is not None:
+            signal.signal(signal.SIGINT, self.previous_sigint_handler)
+            self.previous_sigint_handler = None
+        return self
+
+    def sigint_handler(self, signum, frame):
+        handler = self.previous_sigint_handler
+        self.teardown()
+        if callable(handler):
+            handler(signum, frame)
+        elif handler != signal.SIG_IGN:
+            raise KeyboardInterrupt

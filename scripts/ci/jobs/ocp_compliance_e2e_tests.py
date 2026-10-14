@@ -18,7 +18,7 @@ os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["ROX_COMPLIANCE_ENHANCEMENTS"] = "true"
 
 ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
+    cluster=AutomationFlavorsCluster(sample_resources=True),
     pre_test=PreSystemTests(),
     test=ComplianceE2eTest(),
     post_test=PostClusterTest(
