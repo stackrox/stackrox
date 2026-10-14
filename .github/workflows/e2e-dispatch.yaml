@@ -111,7 +111,7 @@ jobs:
             Job(name='e2e-nongroovy-tests'),
             Job(name='e2e-qa-tests-gke', require_pr_label=True),
             Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
+            Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
         ]
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
@@ -284,15 +284,15 @@ jobs:
       group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-qa-tests-ocp-4-22:
-    needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-qa-tests-ocp-4-22.yaml
+  e2e-qa-tests-ocp-fips-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-qa-tests-ocp-fips-konflux.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-4-22 }}
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-fips-konflux }}
     secrets: inherit
     concurrency:
-      group: e2e-qa-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-qa-tests-ocp-fips-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-qa-tests-gke-konflux:

@@ -36,7 +36,7 @@ func TestCompileEvaluationFilter_NoSkipTypes_ReturnsNil(t *testing.T) {
 
 func TestCompileEvaluationFilter_ContainerTypeFilter(t *testing.T) {
 	tests := map[string]struct {
-		skipTypes          []storage.SkipContainerType
+		skipTypes          []storage.ContainerType
 		containers         []*storage.Container
 		images             []*storage.Image
 		expectedContainers []string
@@ -44,7 +44,7 @@ func TestCompileEvaluationFilter_ContainerTypeFilter(t *testing.T) {
 		expectSamePointer  bool
 	}{
 		"skip init containers": {
-			skipTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			containers: []*storage.Container{
 				{Name: "init-setup", Type: storage.ContainerType_INIT},
 				{Name: "app", Type: storage.ContainerType_REGULAR},
@@ -61,12 +61,25 @@ func TestCompileEvaluationFilter_ContainerTypeFilter(t *testing.T) {
 			expectedImages:     []string{"app-img", "sidecar-img"},
 		},
 		"skip init but none present returns original": {
-			skipTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			containers: []*storage.Container{
 				{Name: "app", Type: storage.ContainerType_REGULAR},
 			},
 			images:            []*storage.Image{{Id: "app-img"}},
 			expectSamePointer: true,
+		},
+		"skip regular containers": {
+			skipTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
+			containers: []*storage.Container{
+				{Name: "init-setup", Type: storage.ContainerType_INIT},
+				{Name: "app", Type: storage.ContainerType_REGULAR},
+			},
+			images: []*storage.Image{
+				{Id: "init-img"},
+				{Id: "app-img"},
+			},
+			expectedContainers: []string{"init-setup"},
+			expectedImages:     []string{"init-img"},
 		},
 	}
 

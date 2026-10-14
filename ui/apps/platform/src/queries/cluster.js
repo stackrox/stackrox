@@ -42,20 +42,3 @@ export const CLUSTER_NAME = gql`
         }
     }
 `;
-
-export const CLUSTER_VERSION_QUERY = gql`
-    query getClusterVersion($id: ID!) {
-        cluster(id: $id) {
-            id
-            name
-            type
-            status {
-                orchestratorMetadata {
-                    version
-                    openshiftVersion
-                    buildDate
-                }
-            }
-        }
-    }
-`;

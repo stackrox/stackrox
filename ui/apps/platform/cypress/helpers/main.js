@@ -1,6 +1,5 @@
 import pf6 from '../selectors/pf6';
 
-import { hasFeatureFlag } from './features';
 import { getRouteMatcherMapForGraphQL } from './request';
 import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
@@ -42,9 +41,6 @@ const routeMatcherMapForViolationsByPolicyCategory = {
         url: '/v1/alerts/summary/counts?request.query=&group_by=CATEGORY',
     },
 };
-const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQL([
-    getAggregatedResultsOpname,
-]);
 
 function getRouteMatcherMap() {
     return {
@@ -55,9 +51,6 @@ function getRouteMatcherMap() {
         ...routeMatcherMapForDeploymentsAtMostRisk,
         ...routeMatcherMapForAgingImages,
         ...routeMatcherMapForViolationsByPolicyCategory,
-        ...(hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')
-            ? routeMatcherMapForComplianceLevelsByStandard
-            : {}),
     };
 }
 

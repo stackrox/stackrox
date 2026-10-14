@@ -83,17 +83,23 @@ func generateTemplateData(t reflect.Type, visited set.StringSet) []ConvertType {
 			continue
 		}
 
+		if _, ok := field.Tag.Lookup("protobuf_oneof"); ok {
+			continue
+		}
+
 		fieldType := field.Type.String()
 		isSlice := strings.HasPrefix(fieldType, "[]")
 		isStringer := strings.Contains(yamlTag, ",stringer")
 		if isStringer {
 			yamlTag = strings.Replace(yamlTag, ",stringer", "", 1)
 			fieldType = utils.IfThenElse(isSlice, "[]string", "string")
+			needUpdate = true
 		}
 		isTimeStamp := strings.Contains(yamlTag, ",timestamp")
 		if isTimeStamp {
 			yamlTag = strings.Replace(yamlTag, ",timestamp", "", 1)
 			fieldType = utils.IfThenElse(isSlice, "[]string", "string")
+			needUpdate = true
 		}
 
 		// A stringer or timestamp field is rewritten as a string. A message that
@@ -126,6 +132,41 @@ func generateTemplateData(t reflect.Type, visited set.StringSet) []ConvertType {
 			NeedConversion: needConversion,
 		})
 	}
+
+	if typeName == "Exclusion" {
+		// Oneof arms are not exported fields on Exclusion (Matcher is an
+		// interface). Flatten them using the same crYaml tags as the proto.
+		for _, extra := range []struct {
+			name    string
+			yamlTag string
+			typ     reflect.Type
+		}{
+			{"Deployment", ",omitempty", reflect.TypeFor[*storage.Exclusion_Deployment]()},
+			{"ExcludeByKind", "excludeByKind,omitempty", reflect.TypeFor[*storage.Exclusion_ExcludeByKind]()},
+		} {
+			fieldType := extra.typ.String()
+			needConversion := protoreflect.IsProtoMessage(getBaseType(extra.typ))
+			if needConversion {
+				if !visited.Contains(extra.name) {
+					newList := generateTemplateData(getBaseType(extra.typ), visited)
+					conversionList = append(conversionList, newList...)
+					if len(newList) == 0 {
+						needConversion = false
+					}
+				}
+				needUpdate = true
+			}
+			fields = append(fields, Field{
+				Name:           extra.name,
+				Type:           fieldType,
+				TrimmedType:    strings.Replace(fieldType, "storage.", "", 1),
+				BaseType:       getBaseType(extra.typ).Name(),
+				YamlTag:        extra.yamlTag,
+				NeedConversion: needConversion,
+			})
+		}
+	}
+
 	if needUpdate {
 		conversionList = append(conversionList, ConvertType{
 			Fields:   fields,

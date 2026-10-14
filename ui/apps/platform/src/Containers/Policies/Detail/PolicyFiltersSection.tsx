@@ -21,7 +21,7 @@ function getContainerTypeLabel(
     }
 
     const skipped = evaluationFilter?.skipContainerTypes ?? [];
-    if (skipped.includes('SKIP_INIT')) {
+    if (skipped.includes('INIT')) {
         return 'Skip init containers';
     }
     return null;
