@@ -43,27 +43,36 @@ func getFirstNodeRole(matchLabels map[string]string) string {
 	return strings.TrimPrefix(keys[0], nodeRolePrefix)
 }
 
+// fallbackDefaultNodeRoles are the static node roles used when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is off, or as
+// a safe default when discovery is enabled but fails or finds nothing.
+func fallbackDefaultNodeRoles() []string {
+	return []string{masterRole, workerRole}
+}
+
 // defaultNodeRoles computes the node roles for a ScanSetting, bounding the discovery List so it can never block the
-// single-writer handler loop.
+// single-writer handler loop. It never fails: if adaptiveDefaultNodeRoles returns an error, it falls back to
+// fallbackDefaultNodeRoles and logs why.
 func (m *handlerImpl) defaultNodeRoles() []string {
-	roles, _ := m.defaultNodeRolesWithStatus()
+	roles, err := m.adaptiveDefaultNodeRoles()
+	if err != nil {
+		fallback := fallbackDefaultNodeRoles()
+		log.Warnf("Could not auto-discover node roles, falling back to %v: %v", fallback, err)
+		return fallback
+	}
 	return roles
 }
 
-// defaultNodeRolesWithStatus decides the node roles to target when creating, updating, or reconciling a ScanSetting,
-// plus whether that reflects a successful discovery as opposed to a fallback forced by a MachineConfigPool list
-// failure. The reconciler uses that distinction to avoid treating a transient failure as "the cluster now has no
-// custom roles".
-//
-// When ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is off, it returns the hardcoded master+worker roles directly, without
-// calling discoverNodeRoles or touching the cluster at all. When on, it calls discoverNodeRoles and owns the fallback
-// policy: a list failure (MCP API absent or any other error) falls back to master+worker and reports failure so
-// callers that must not clobber existing state (the reconciler) can skip; finding zero roles among otherwise-
-// listable MCPs also falls back to master+worker but is reported as success. It never returns an empty role list.
-func (m *handlerImpl) defaultNodeRolesWithStatus() ([]string, bool) {
-	fallback := []string{masterRole, workerRole}
+// adaptiveDefaultNodeRoles decides the node roles to target when creating, updating, or reconciling a ScanSetting.
+// It returns an error only when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled and discoverNodeRoles itself
+// failed to list MachineConfigPools, so the reconciler can skip instead of clobbering existing ScanSetting roles
+// with a fallback forced by a transient failure. Every other outcome is a success and returns a non-empty role list:
+//   - ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES off: fallbackDefaultNodeRoles(), without calling discoverNodeRoles or
+//     touching the cluster at all.
+//   - discovery succeeds but finds no roles (e.g. no MachineConfigPools exist): fallbackDefaultNodeRoles().
+//   - discovery succeeds and finds roles: those roles.
+func (m *handlerImpl) adaptiveDefaultNodeRoles() ([]string, error) {
 	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
-		return fallback, true
+		return fallbackDefaultNodeRoles(), nil
 	}
 
 	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
@@ -71,21 +80,20 @@ func (m *handlerImpl) defaultNodeRolesWithStatus() ([]string, bool) {
 
 	roles, err := m.discoverNodeRoles(ctx)
 	if err != nil {
-		log.Warnf("Could not list MachineConfigPools to auto-discover node roles, falling back to %v: %v", fallback, err)
-		return fallback, false
+		return nil, err
 	}
 	if len(roles) == 0 {
-		log.Warnf("No node roles discovered from MachineConfigPools, falling back to %v", fallback)
-		return fallback, true
+		log.Warnf("No node roles discovered from MachineConfigPools, falling back to %v", fallbackDefaultNodeRoles())
+		return fallbackDefaultNodeRoles(), nil
 	}
-	return roles, true
+	return roles, nil
 }
 
 // discoverNodeRoles lists the cluster's MachineConfigPools and derives one role per pool from its nodeSelector
 // (including zero-node pools, skipping pools with no node-role label), sorted. It applies no fallback and does no
 // logging itself: the returned role list may legitimately be empty if the list succeeded but no MCP had a node-role
 // label (or none exist at all, e.g. on a non-OpenShift cluster), and the only error it returns is a failure of the
-// List call itself. Callers decide what either case means for them (see defaultNodeRolesWithStatus).
+// List call itself. Callers decide what either case means for them (see adaptiveDefaultNodeRoles).
 func (m *handlerImpl) discoverNodeRoles(ctx context.Context) ([]string, error) {
 	mcpList, err := m.client.Resource(machineConfigPoolGVR).List(ctx, v1.ListOptions{})
 	if err != nil {
@@ -119,13 +127,12 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		return
 	}
 
-	desiredRoles, ok := m.defaultNodeRolesWithStatus()
-	if !ok {
-		// Discovery fell back to master+worker because MachineConfigPools could not be listed. Treating that as the
-		// desired state would strip every custom role (e.g. "infra") from managed ScanSettings on a transient API
-		// failure, churning Compliance Operator's per-role scans until the next successful tick. Skip this round;
-		// the existing ScanSettings are left as-is and get re-evaluated on the next tick.
-		log.Warn("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles")
+	desiredRoles, err := m.adaptiveDefaultNodeRoles()
+	if err != nil {
+		// Falling back to master+worker here would strip every custom role (e.g. "infra") from managed ScanSettings
+		// on a transient API failure, churning Compliance Operator's per-role scans until the next successful tick.
+		// Skip this round instead; the existing ScanSettings are left as-is and get re-evaluated on the next tick.
+		log.Warnf("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles: %v", err)
 		return
 	}
 	slices.Sort(desiredRoles)

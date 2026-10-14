@@ -48,7 +48,7 @@ func newHandlerWithMCPs(objs ...runtime.Object) *handlerImpl {
 }
 
 // TestDiscoverNodeRoles exercises the raw lister: it applies no fallback and no env-var gating (that policy lives in
-// defaultNodeRolesWithStatus, see TestDefaultNodeRolesWithStatus below), so a failed or empty list is reported as-is.
+// adaptiveDefaultNodeRoles, see TestAdaptiveDefaultNodeRoles below), so a failed or empty list is reported as-is.
 func TestDiscoverNodeRoles(t *testing.T) {
 	roleLabel := func(role string) map[string]string {
 		return map[string]string{nodeRolePrefix + role: ""}
@@ -104,9 +104,11 @@ func TestDiscoverNodeRoles(t *testing.T) {
 	})
 }
 
-// TestDefaultNodeRolesWithStatus covers the policy built on top of the raw lister (TestDiscoverNodeRoles): the
-// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES gate, and the master+worker fallback on a list failure or an empty result.
-func TestDefaultNodeRolesWithStatus(t *testing.T) {
+// TestAdaptiveDefaultNodeRoles covers the policy built on top of the raw lister (TestDiscoverNodeRoles): the
+// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES gate, and the master+worker fallback on an empty result. A list failure is
+// reported as an error rather than silently folded into a fallback — see TestDefaultNodeRoles for the caller that
+// turns that error into a fallback, and TestReconcileNodeRoles for the caller that skips on it instead.
+func TestAdaptiveDefaultNodeRoles(t *testing.T) {
 	t.Run("env off returns master+worker without calling discovery", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
 		// Seed an infra MCP that would change the result (and show up in Actions) if discovery ran.
@@ -115,10 +117,10 @@ func TestDefaultNodeRolesWithStatus(t *testing.T) {
 		}, newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
 		m := &handlerImpl{client: client}
 
-		roles, ok := m.defaultNodeRolesWithStatus()
+		roles, err := m.adaptiveDefaultNodeRoles()
 
+		require.NoError(t, err)
 		assert.Equal(t, []string{masterRole, workerRole}, roles)
-		assert.True(t, ok)
 		assert.Empty(t, client.Actions(), "discovery must not run at all while the env var is off")
 	})
 
@@ -126,13 +128,13 @@ func TestDefaultNodeRolesWithStatus(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs(newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
 
-		roles, ok := m.defaultNodeRolesWithStatus()
+		roles, err := m.adaptiveDefaultNodeRoles()
 
+		require.NoError(t, err)
 		assert.Equal(t, []string{"infra"}, roles)
-		assert.True(t, ok)
 	})
 
-	t.Run("falls back to master+worker and reports failure when the MCP list fails", func(t *testing.T) {
+	t.Run("returns an error when the MCP list fails, without applying a fallback itself", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
 			machineConfigPoolGVR: "MachineConfigPoolList",
@@ -142,21 +144,36 @@ func TestDefaultNodeRolesWithStatus(t *testing.T) {
 		})
 		m := &handlerImpl{client: client}
 
-		roles, ok := m.defaultNodeRolesWithStatus()
+		roles, err := m.adaptiveDefaultNodeRoles()
 
-		assert.Equal(t, []string{masterRole, workerRole}, roles)
-		assert.False(t, ok, "a list failure must be reported so the reconciler can skip instead of clobbering existing roles")
+		assert.Error(t, err, "the caller (defaultNodeRoles or the reconciler) decides what to do about a list failure")
+		assert.Empty(t, roles)
 	})
 
-	t.Run("falls back to master+worker but reports success when no roles are discovered", func(t *testing.T) {
+	t.Run("falls back to master+worker when no roles are discovered", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs()
 
-		roles, ok := m.defaultNodeRolesWithStatus()
+		roles, err := m.adaptiveDefaultNodeRoles()
 
+		require.NoError(t, err, "an empty but successful list is not a failure")
 		assert.Equal(t, []string{masterRole, workerRole}, roles)
-		assert.True(t, ok, "an empty but successful list is not a failure")
 	})
+}
+
+// TestDefaultNodeRoles covers the create/update path's policy on top of adaptiveDefaultNodeRoles: it never fails,
+// falling back to master+worker when discovery errors.
+func TestDefaultNodeRoles(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+		machineConfigPoolGVR: "MachineConfigPoolList",
+	})
+	client.PrependReactor("list", "machineconfigpools", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("the server could not find the requested resource")
+	})
+	m := &handlerImpl{client: client}
+
+	assert.Equal(t, []string{masterRole, workerRole}, m.defaultNodeRoles())
 }
 
 func TestGetFirstNodeRole(t *testing.T) {
