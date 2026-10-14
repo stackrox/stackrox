@@ -167,7 +167,7 @@ func openDecision(rulesPath, defaultsPath string, files, labels []string, unknow
 	}
 	m, err := loadMapping(rulesPath)
 	if err == nil && unknown {
-		err = fmt.Errorf("changed files are unknown")
+		err = errors.New("changed files are unknown")
 	}
 	if err == nil {
 		var resolved result

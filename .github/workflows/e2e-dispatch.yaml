@@ -44,6 +44,9 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+    # TODO(ROX-37371): Decide binary distribution and recovery when the selector
+    # cannot compile or run. A prebuilt binary removes compilation failures,
+    # but dispatch still needs a fallback independent of the binary.
     - uses: ./.github/actions/ci-select
 
     - name: Print the CI decision
@@ -70,6 +73,7 @@ jobs:
         CI_IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         CI_IS_DRAFT: ${{ github.event.pull_request.draft }}
         CI_UI_ONLY: ${{ needs.detect-changes.outputs.ui_only }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
       run: ci/select/bin/ci-select gha-dispatch-ci
 
   wait-for-images:

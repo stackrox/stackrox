@@ -15,7 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var testLine = regexp.MustCompile(`^/test\b(.*)$`)
+var (
+	testLine              = regexp.MustCompile(`^/test\b(.*)$`)
+	rehearsalEnforceLabel = regexp.MustCompile(`/label:\s*ci-dispatcher-enforce`)
+)
 
 type comment struct {
 	CreatedAt string `json:"created_at"`
@@ -63,7 +66,7 @@ func readComments(path string) ([]comment, error) {
 		return nil, errors.Wrap(err, "decode comments file")
 	}
 	if comments == nil {
-		return nil, fmt.Errorf("comments file must be a list")
+		return nil, errors.New("comments file must be a list")
 	}
 	return comments, nil
 }
@@ -97,7 +100,7 @@ func prowCI(ctx context.Context, job string, input io.Reader, diagnostic io.Writ
 	enforced := slices.Contains(labels, enforceLabel)
 	if meta.repo == "openshift/release" {
 		// Rehearsal PRs carry the requested label in their description.
-		enforced = regexp.MustCompile(`/label:\s*ci-dispatcher-enforce`).MatchString(pr.Body)
+		enforced = rehearsalEnforceLabel.MatchString(pr.Body)
 	}
 	files, unknown := changedFiles(ctx, os.Getenv("PULL_BASE_SHA"), "HEAD")
 	head := envOr("PULL_PULL_SHA", "HEAD")

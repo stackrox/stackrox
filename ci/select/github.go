@@ -70,7 +70,7 @@ func (g githubClient) get(ctx context.Context, path string, destination any) err
 		case <-time.After(time.Duration(attempt+1) * time.Second):
 		}
 	}
-	return fmt.Errorf("GitHub request failed")
+	return errors.New("GitHub request failed")
 }
 
 func repositoryPath(repo, pr string) (string, error) {
@@ -99,7 +99,7 @@ func (g githubClient) labels(ctx context.Context, repo, pr string) ([]string, er
 			return nil, err
 		}
 		if items == nil {
-			return nil, fmt.Errorf("GitHub labels response must be an array")
+			return nil, errors.New("GitHub labels response must be an array")
 		}
 		for _, item := range items {
 			labels = append(labels, item.Name)
@@ -122,7 +122,7 @@ func (g githubClient) comments(ctx context.Context, repo, pr string) ([]comment,
 			return nil, err
 		}
 		if items == nil {
-			return nil, fmt.Errorf("GitHub comments response must be an array")
+			return nil, errors.New("GitHub comments response must be an array")
 		}
 		comments = append(comments, items...)
 		if len(items) < 100 {

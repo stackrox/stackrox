@@ -101,6 +101,7 @@ jobs:
         .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$central_file --new-crd-filename=$new_path/$central_file
 
     - name: Run crd-schema-checker for config operator
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         set -e
         old_path=.old-stackrox/config-controller/config/crd/bases
@@ -111,6 +112,7 @@ jobs:
         .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$policy_file --new-crd-filename=$new_path/$policy_file
 
     - name: Run crdify for platform operator
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         set -euo pipefail
         old_path="$PWD/.old-stackrox/operator/config/crd/bases"
@@ -120,6 +122,7 @@ jobs:
         $crdify "${old_path}/platform.stackrox.io_centrals.yaml" "${new_path}/platform.stackrox.io_centrals.yaml"
 
     - name: Run crdify for config operator
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         set -euo pipefail
         old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"

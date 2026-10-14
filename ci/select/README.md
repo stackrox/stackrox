@@ -131,8 +131,11 @@ job map plus `wait-for-gha-images` and `wait-for-konflux-images` outputs.
 It reads `GITHUB_EVENT_NAME`, the metadata variables listed earlier, and
 `CI_IS_FORK`, `CI_IS_DRAFT`, and `CI_UI_ONLY`. Fork rejection is preserved.
 With enforcement disabled, non-PR events, or unusable defaults, it follows
-the existing dispatcher rules. Failure to retrieve live labels fails this
-dispatch step, as the original dispatcher did.
+the existing dispatcher rules. If live label lookup fails, it logs a warning,
+uses `PR_LABELS` from the GitHub event, and disables enforcement for that run.
+Event labels may be stale; explicit job labels and the existing fork, draft,
+UI-only, and Konflux rules still apply. With no event labels, it applies those
+rules with an empty label list.
 
 `prow-gate.sh` defines `ci_decision_allows`. It pipes the existing CI
 library's `get_pr_details` JSON into `ci-select prow-ci JOB`. Go reads the
@@ -154,6 +157,20 @@ and build the binary before the gate. Individual gated jobs tolerate build
 failure and proceed with their normal work. The decision and e2e dispatch
 workflows require a successful build. Prow builds once at dispatch entry;
 build failure bypasses selection and runs the job.
+
+### Open gap: build and runtime failure recovery
+
+GHA's `should-dispatch` has no fallback if the selector cannot compile, is
+missing, or fails to run. These failures block E2E dispatch. Defaults and the
+label-lookup fallback work only while the binary is running.
+
+The distribution model remains an open decision: build the selector in each
+job, or provide a prebuilt binary. A prebuilt binary avoids compilation
+failures in the dispatch job but can still fail to start or execute. Either
+model needs a backup dispatch path independent of the selector binary,
+including when both compilation and execution are unavailable. The fallback
+policy must account for fork rejection, draft and label restrictions, and
+image-wait outputs. This prototype leaves that recovery path unimplemented.
 
 These integration costs still need validation in real CI:
 

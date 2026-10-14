@@ -439,11 +439,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Build CI selector
+        uses: ./.github/actions/ci-select
+
       - name: Validate test-domains.toml
-        run: python3 ci/select/validate_rules.py --rules ci/test-domains.toml --defaults ci/decision-defaults
+        run: ci/select/bin/ci-select validate
 
       - name: Run resolver unit tests
-        run: python3 -m unittest discover -s ci/select -p 'test_*.py'
+        run: go test -race ./ci/select
 
   slack-on-style-failure:
     env:

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type defaults struct {
@@ -47,7 +49,7 @@ func parseDefaults(text string) (defaults, error) {
 		result.actions[job] = action
 	}
 	if len(result.jobs) == 0 {
-		return result, fmt.Errorf("decision-defaults lists no targets")
+		return result, errors.New("decision-defaults lists no targets")
 	}
 	return result, nil
 }
@@ -55,7 +57,7 @@ func parseDefaults(text string) (defaults, error) {
 func parseDecision(text string) (map[string]bool, error) {
 	jobs := map[string]bool{}
 	if strings.TrimSpace(text) == "" {
-		return jobs, fmt.Errorf("empty decision")
+		return jobs, errors.New("empty decision")
 	}
 	for index, line := range strings.Split(text, "\n") {
 		line = strings.TrimSpace(line)
