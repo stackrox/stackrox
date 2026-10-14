@@ -231,6 +231,19 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
 	err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...)
 
+	// Snapshot the committed state while applyMu is still held. A concurrent
+	// UpdateProvider may acquire applyMu next and swap the backend; using the
+	// snapshot ensures we fire hooks for what THIS call committed, not whatever
+	// backend happens to be current when we eventually acquire r.mutex.
+	var hookBackend Backend
+	var hookEnabled bool
+	if err == nil {
+		impl.mutex.RLock()
+		hookBackend = impl.backend
+		hookEnabled = impl.storedInfo.GetEnabled()
+		impl.mutex.RUnlock()
+	}
+
 	impl.applyMu.Unlock()
 
 	if err != nil {
@@ -240,8 +253,12 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	// Fire lifecycle hooks under r.mutex. Recheck that the provider was not
 	// deleted between applyMu.Unlock() and r.mutex.Lock().
 	r.mutex.Lock()
-	if r.providers[id] == provider {
-		r.updatedNoLock(provider)
+	if hookBackend != nil && r.providers[id] == provider {
+		if hookEnabled {
+			hookBackend.OnEnable(provider)
+		} else {
+			hookBackend.OnDisable(provider)
+		}
 	}
 	r.mutex.Unlock()
 
