@@ -36,4 +36,3 @@ collectorCount=$(oc get daemonset collector -n "${namespace}" -o jsonpath='{.sta
 
 echo "PASS: ACS SecuredCluster is deployed (collector ready on ${collectorCount} nodes)"
 exit 0
-true

@@ -31,4 +31,3 @@ fi
 
 echo "PASS: ACS Central is deployed in ${namespace}"
 exit 0
-true
