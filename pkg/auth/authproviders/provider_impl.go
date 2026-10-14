@@ -324,20 +324,19 @@ func (p *providerImpl) applyOptionsLocked(persistFn ProviderOption, options ...P
 		modifiedProvider.storedInfo.Config = newBackend.Config()
 	}
 
-	// Phase 2.5: persist the modified clone before committing to the live provider.
-	// A failure here leaves the live provider unchanged — no rollback needed.
-	if persistFn != nil {
-		if err := persistFn(modifiedProvider); err != nil {
-			return err
-		}
-	}
-
-	// Phase 3: commit under the lock, guarding against a concurrent createBackendAsync.
+	// Phase 3: under the lock, check for a concurrent createBackendAsync, persist,
+	// then commit. Persist runs inside the critical section so that a conflict
+	// detected after persist cannot leave the DB ahead of the live provider.
 	if err := func() error {
 		p.mutex.Lock()
 		defer p.mutex.Unlock()
 		if p.backend != priorBackend {
 			return errors.New("backend was concurrently updated; retry the operation")
+		}
+		if persistFn != nil {
+			if err := persistFn(modifiedProvider); err != nil {
+				return err
+			}
 		}
 		copyWithoutMutex(p, modifiedProvider)
 		return nil
