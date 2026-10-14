@@ -1,0 +1,299 @@
+[
+  {
+    "name": "A rules file whose version is not 1 should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/bad-version.toml"
+    },
+    "expect": {
+      "error": "unsupported rules version: 2"
+    }
+  },
+  {
+    "name": "A rules file that names a job twice should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/duplicate-job.toml"
+    },
+    "expect": {
+      "error": "duplicate job name"
+    }
+  },
+  {
+    "name": "A rules file with no jobs should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/no-jobs.toml"
+    },
+    "expect": {
+      "error": "jobs must list at least one target"
+    }
+  },
+  {
+    "name": "A rules file whose jobs value is not a list should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/jobs-not-a-list.toml"
+    },
+    "expect": {
+      "error": "jobs must be a list of strings"
+    }
+  },
+  {
+    "name": "A rules file with no rules should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/no-rules.toml"
+    },
+    "expect": {
+      "error": "rules must be a non-empty list"
+    }
+  },
+  {
+    "name": "A rule that is not a table should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/rule-not-a-table.toml"
+    },
+    "expect": {
+      "error": "rule 1 must be a table"
+    }
+  },
+  {
+    "name": "Two rules with the same name should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/duplicate-rule-name.toml"
+    },
+    "expect": {
+      "error": "duplicate rule name same"
+    }
+  },
+  {
+    "name": "A rules file whose last rule is not remaining should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/last-rule-not-remaining.toml"
+    },
+    "expect": {
+      "error": "the last rule must decide every target no earlier rule decided"
+    }
+  },
+  {
+    "name": "A remaining rule that is not last should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/remaining-not-last.toml"
+    },
+    "expect": {
+      "error": "rule 1 early uses remaining, which only the last rule may use"
+    }
+  },
+  {
+    "name": "A remaining rule that does not use a star should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/last-rule-not-star.toml"
+    },
+    "expect": {
+      "error": "the last rule must run, skip, or take the default for every remaining target"
+    }
+  },
+  {
+    "name": "A rule with an empty name should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/missing-name.toml"
+    },
+    "expect": {
+      "error": "rule 1 needs a name"
+    }
+  },
+  {
+    "name": "A rule with an unknown when should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/unknown-when.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd has unknown when: 'sometimes'"
+    }
+  },
+  {
+    "name": "A label that is not text should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/label-not-a-string.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd label must be a string"
+    }
+  },
+  {
+    "name": "A rule that does not run, skip, or take the default should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/no-opinion.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd must run, skip, or take the default"
+    }
+  },
+  {
+    "name": "A rule that uses a star twice should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/star-twice.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd uses * more than once"
+    }
+  },
+  {
+    "name": "A rule that mixes a star with job names should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/star-and-names.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd mixes * with job names"
+    }
+  },
+  {
+    "name": "A rule that runs and skips the same job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/two-opinions.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd gives one job two opinions"
+    }
+  },
+  {
+    "name": "A path rule without paths should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/paths-required.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd needs paths"
+    }
+  },
+  {
+    "name": "A label rule without a label should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/label-required.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd needs a label"
+    }
+  },
+  {
+    "name": "An always rule that lists paths should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/paths-not-allowed.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd does not take paths"
+    }
+  },
+  {
+    "name": "An always rule that lists a label should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/label-not-allowed.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd does not take a label"
+    }
+  },
+  {
+    "name": "A run list that is not job names should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/run-not-a-list.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd run must be a list of jobs"
+    }
+  },
+  {
+    "name": "A run list that mixes a star with a job name should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/star-mixed-in-list.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd run mixes * with job names"
+    }
+  },
+  {
+    "name": "A rule that names an unknown job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/unknown-job.toml"
+    },
+    "expect": {
+      "error": "unknown job missing in rule 1 odd"
+    }
+  },
+  {
+    "name": "A rule that repeats a job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/repeated-job.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd repeats a job in run"
+    }
+  },
+  {
+    "name": "A requires value that is not a table should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-not-a-table.toml"
+    },
+    "expect": {
+      "error": "requires must be a table"
+    }
+  },
+  {
+    "name": "A requires entry for an unknown job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-unknown-job.toml"
+    },
+    "expect": {
+      "error": "unknown job missing in requires"
+    }
+  },
+  {
+    "name": "A requires list that is empty should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-empty.toml"
+    },
+    "expect": {
+      "error": "unit requires a non-empty list"
+    }
+  },
+  {
+    "name": "A requires list that repeats a job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-duplicate.toml"
+    },
+    "expect": {
+      "error": "duplicate requirement for unit"
+    }
+  },
+  {
+    "name": "A requires list that names an unknown job should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-missing-target.toml"
+    },
+    "expect": {
+      "error": "unknown job missing required by unit"
+    }
+  },
+  {
+    "name": "A job that requires itself should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/requires-self.toml"
+    },
+    "expect": {
+      "error": "unit requires itself"
+    }
+  },
+  {
+    "name": "A paths value that is not a list of text should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/paths-not-strings.toml"
+    },
+    "expect": {
+      "error": "rule 1 odd paths must be a list of strings"
+    }
+  },
+  {
+    "name": "A path pattern that is not a regular expression should be rejected",
+    "input": {
+      "rules": "ci/select/testdata/invalid/bad-pattern.toml"
+    },
+    "expect": {
+      "error": "invalid pattern '[' in rule 1 odd"
+    }
+  }
+]
