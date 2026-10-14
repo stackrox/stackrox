@@ -1,6 +1,6 @@
-// Package adapter provides the generic ACS exec adapter for the ACS OTE extension.
+// Package adapter provides a generic exec adapter for OTE extensions.
 //
-// The adapter is scenario-agnostic: every ACS scenario is a JSON ScenarioSpec.
+// The adapter is scenario-agnostic: every scenario is a JSON ScenarioSpec.
 package adapter
 
 // ScenarioSpec is the only per-scenario input the adapter understands.

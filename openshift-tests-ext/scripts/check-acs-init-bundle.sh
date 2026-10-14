@@ -39,4 +39,3 @@ fi
 
 echo "PASS: ACS init-bundle configured — ${tlsSecretCount}/3 TLS secrets present in ${namespace}"
 exit 0
-true

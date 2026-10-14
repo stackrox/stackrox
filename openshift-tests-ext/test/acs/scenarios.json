@@ -17,14 +17,14 @@
     "name": "[sig-acs] ACS init-bundle and TLS secrets are configured",
     "entrypoint": "/bin/bash",
     "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-init-bundle.sh"],
-    "tags": ["acs", "INSTALL"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
     "timeout": "5m"
   },
   {
     "name": "[sig-acs] ACS SecuredCluster and collector are deployed",
     "entrypoint": "/bin/bash",
     "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-secured-clusters.sh"],
-    "tags": ["acs", "INSTALL"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
     "timeout": "5m"
   }
 ]

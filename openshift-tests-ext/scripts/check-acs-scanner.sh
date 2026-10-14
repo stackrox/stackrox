@@ -33,4 +33,3 @@ fi
 
 echo "PASS: ACS Scanner is deployed and available in ${namespace}"
 exit 0
-true
