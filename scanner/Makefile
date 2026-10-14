@@ -253,11 +253,15 @@ endif
 db-integration-timeout := 20m
 db-integration-d       := datastore/postgres
 db-integration-go-tag  := scanner_db_integration
+# RHCOS node inventory matching is validated against the ClairCore matcher DB and
+# lives with the node indexer, outside scanner/. It shares this DB gate because
+# the main sql_integration target does not scan the compliance tree.
+db-integration-extra-d := ../compliance/node/index
 
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/... $(db-integration-extra-d)
 
 ##################
 ## Certificates ##

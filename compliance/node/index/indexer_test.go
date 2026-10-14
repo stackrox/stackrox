@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/scannerv4/rhcos"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -412,8 +413,8 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 
 	s.NotNil(report)
 	s.True(report.GetSuccess())
-	// 106 RPM packages + 2 rhcos packages (binary + source)
-	s.Len(report.GetContents().GetPackages(), 108, "Expected 106 RPM + 2 rhcos packages")
+	// 106 RPM packages + canonical and legacy image binary/source pairs.
+	s.Len(report.GetContents().GetPackages(), 110)
 	// 2 RPM repositories + 1 rhcos repository
 	s.Len(report.GetContents().GetRepositories(), 3, "Expected 2 RPM + 1 rhcos repositories")
 
@@ -426,6 +427,7 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 		}
 	}
 	s.True(hasRHCOS, "Expected rhcos package in report")
+	s.Equal("openshift/ose-rhel-coreos-9", report.GetContents().GetPackages()[rhcos.PackageID].GetName())
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
@@ -487,9 +489,18 @@ func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 
 	addRHCOS(rel, "x86_64", report)
 
-	s.Len(report.Packages, 2)
+	s.Len(report.Packages, 4)
 	s.Len(report.Repositories, 1)
-	s.Len(report.Environments, 1)
+	s.Len(report.Environments, 2)
+	canonical := report.Packages[rhcos.PackageID]
+	s.Require().NotNil(canonical)
+	s.Equal("openshift/ose-rhel-coreos-9", canonical.Name)
+	s.Same(report.Packages[rhcos.SourceID], canonical.Source)
+	s.Equal(canonical.Name, canonical.Source.Name)
+	s.Equal(rel.version, canonical.Version)
+	s.Equal(rel.normVersion, canonical.NormalizedVersion)
+	s.Equal(rel.normVersion, canonical.Source.NormalizedVersion)
+	s.Equal(report.Environments[rhcos.LegacyPackageID], report.Environments[rhcos.PackageID])
 
 	var binPkg *claircore.Package
 	for _, p := range report.Packages {

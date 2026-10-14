@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"github.com/stackrox/rox/pkg/scannerv4/rhcos"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
 )
@@ -201,6 +202,14 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	if err != nil {
 		log.Debugf("Not adding RHCOS package to index report: %v", err)
 	} else {
+		// Prefer the image name from labels.json. On a read or parse error, log
+		// and keep the name derived from os-release rather than failing the whole
+		// index and losing RPM coverage for one bad metadata file.
+		if name, err := rhcosImageName(ctx, l.cfg.OSReleasePath); err != nil {
+			log.Warnf("Reading RHCOS image metadata, using name %q derived from os-release: %v", rhcosRel.imageName, err)
+		} else if name != "" {
+			rhcosRel.imageName = name
+		}
 		arch := extractArch(ccReport, pkgs)
 		addRHCOS(rhcosRel, arch, ccReport)
 	}
@@ -376,13 +385,14 @@ func parseOSRelease(ctx context.Context, hostPath string) (map[string]string, er
 }
 
 type rhcosRelease struct {
+	imageName   string
 	version     string
 	normVersion claircore.Version
 	repoCPE     cpe.WFN
 }
 
-// osRelease opens, parse and validate the os release file, returning RHCOS
-// version and repository CPE.
+// osRelease opens, parses and validates os-release, returning the RHCOS
+// version, repository CPE and fallback image name derived from the RHEL major.
 func osRelease(ctx context.Context, osRelPath string) (rhcosRelease, error) {
 	osRel, err := parseOSRelease(ctx, osRelPath)
 	if err != nil {
@@ -397,7 +407,21 @@ func osRelease(ctx context.Context, osRelPath string) (rhcosRelease, error) {
 	}
 
 	// Set up the repository CPE.
-	rhelMajor, _, _ := strings.Cut(osRel["VERSION_ID"], ".")
+	// Older RHCOS uses the OCP release in VERSION_ID, not the RHEL release.
+	rhelVersion := osRel["RHEL_VERSION"]
+	if rhelVersion == "" {
+		rhelVersion = strings.TrimPrefix(osRel["PLATFORM_ID"], "platform:el")
+	}
+	if rhelVersion == "" {
+		rhelVersion = osRel["VERSION_ID"]
+	}
+	rhelMajor, _, _ := strings.Cut(rhelVersion, ".")
+	switch rhelMajor {
+	case "8", "9", "10":
+	default:
+		return rhcosRelease{}, fmt.Errorf("unsupported RHCOS RHEL major version %q", rhelMajor)
+	}
+	rel.imageName = "openshift/ose-rhel-coreos-" + rhelMajor
 	cpeStr := fmt.Sprintf("cpe:/a:redhat:openshift:%s::el%s", osRel["OPENSHIFT_VERSION"], rhelMajor)
 	rel.repoCPE, err = cpe.Unbind(cpeStr)
 	if err != nil {
@@ -416,24 +440,60 @@ func osRelease(ctx context.Context, osRelPath string) (rhcosRelease, error) {
 	return rel, nil
 }
 
-func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
-	const (
-		rhcosPkgID  = "rhcos-pkg"
-		rhcosSrcID  = "rhcos-src"
-		rhcosRepoID = "rhcos-repo"
-	)
+// rhcosImageName reads the image name from labels.json using ClairCore's
+// embedded-label detector. hostPath must be the full host root (os-release
+// mount), where /usr/share/buildinfo/labels.json is reachable. Missing or
+// incomplete metadata returns an empty name so the caller can fall back to the
+// os-release-derived name; read and parse errors are returned. The detector's
+// build-timestamp version is deliberately ignored: node versions come from
+// os-release.
+func rhcosImageName(ctx context.Context, hostPath string) (string, error) {
+	l, err := layer(ctx, layerDigest, hostPath)
+	if err != nil {
+		return "", err
+	}
+	defer pkgutils.IgnoreError(l.Close)
+	scanners, err := rhcc.NewEcosystem(ctx).PackageScanners(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, scanner := range scanners {
+		if scanner.Name() != "rhel_package_container_detector" {
+			continue
+		}
+		pkgs, err := scanner.Scan(ctx, l)
+		if err != nil {
+			return "", err
+		}
+		for _, pkg := range pkgs {
+			if pkg.Kind == types.BinaryPackage {
+				return pkg.Name, nil
+			}
+		}
+		return "", nil
+	}
+	return "", errors.New("ClairCore RHEL container label detector not found")
+}
 
+func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
+	// Keep the legacy name until Red Hat finishes migrating VEX records.
+	addRHCOSPackage(rel, arch, "rhcos", rhcos.LegacyPackageID, rhcos.LegacySourceID, report)
+	addRHCOSPackage(rel, arch, rel.imageName, rhcos.PackageID, rhcos.SourceID, report)
+}
+
+func addRHCOSPackage(rel rhcosRelease, arch, name, pkgID, srcID string, report *claircore.IndexReport) {
+	const rhcosRepoID = "rhcos-repo"
 	srcPkg := &claircore.Package{
-		ID:                rhcosSrcID,
-		Name:              "rhcos",
+		ID:                srcID,
+		Name:              name,
 		Version:           rel.version,
 		Kind:              types.SourcePackage,
 		NormalizedVersion: rel.normVersion,
 		Arch:              arch,
 	}
 	binPkg := &claircore.Package{
-		ID:                rhcosPkgID,
-		Name:              "rhcos",
+		ID:                pkgID,
+		Name:              name,
 		Version:           rel.version,
 		Kind:              types.BinaryPackage,
 		NormalizedVersion: rel.normVersion,
@@ -470,7 +530,7 @@ func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
 		},
 	}
 
-	log.Debugf("Added RHCOS package: version=%s, cpe=%s", rel.version, rel.repoCPE.String())
+	log.Debugf("Added RHCOS package: name=%s, version=%s, cpe=%s", name, rel.version, rel.repoCPE.String())
 }
 
 // extractArch attempts to determine the RHCOS architecture from the current list
