@@ -92,26 +92,26 @@ spec:
       rules:
         - alert: ScannerV4DBPersistentVolumeFillingUp
           expr: |
-            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
-              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+            kubelet_volume_stats_used_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
               > 0.8
           for: 1h
           labels:
             severity: warning
           annotations:
             summary: "Scanner V4 DB persistent volume is filling up"
-            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (warning threshold 80%)."
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ ._rox._namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (warning threshold 80%)."
         - alert: ScannerV4DBPersistentVolumeFillingUp
           expr: |
-            kubelet_volume_stats_used_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
-              / kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+            kubelet_volume_stats_used_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
               > 0.9
           for: 5m
           labels:
             severity: critical
           annotations:
             summary: "Scanner V4 DB persistent volume is almost full"
-            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ ._rox._namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
 {{- end }}
 {{- end }}
 {{- end }}
