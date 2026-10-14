@@ -135,7 +135,9 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		log.Warnf("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles: %v", err)
 		return
 	}
-	slices.Sort(desiredRoles)
+	// desiredRoles is already sorted: adaptiveDefaultNodeRoles returns either discoverNodeRoles's sorted output or
+	// fallbackDefaultNodeRoles's {master, worker} literal, which is sorted too. Kept sorted here because it's what
+	// gets persisted into ScanSetting.roles below, for deterministic output.
 	desiredSet := set.NewStringSet(desiredRoles...)
 
 	scanSettings, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
