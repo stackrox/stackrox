@@ -403,6 +403,7 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_COMPLIANCE_SURFACE_STALE_DATA "${ROX_COMPLIANCE_SURFACE_STALE_DATA:-true}"
     ci_export ROX_COMPLIANCE_CUSTOM_NODE_ROLES "${ROX_COMPLIANCE_CUSTOM_NODE_ROLES:-true}"
+    ci_export ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES "${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
@@ -766,6 +767,10 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_POLICY_WORKLOAD_KIND_EXCLUSION:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_POLICY_WORKLOAD_KIND_EXCLUSION'
         customize_envVars+=$'\n      value: "'"${ROX_POLICY_WORKLOAD_KIND_EXCLUSION}"'"'
+    fi
+    if [[ -n "${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES'
+        customize_envVars+=$'\n      value: "'"${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES}"'"'
     fi
 
     local scannerV4DbPersistenceYaml

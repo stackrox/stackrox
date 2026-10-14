@@ -968,6 +968,12 @@ function launch_sensor {
         )
       fi
 
+      if [[ -n "${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES="${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES}"
+        )
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -1096,6 +1102,10 @@ function launch_sensor {
 
       if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
         sensor_env+=("ROX_VIRTUAL_MACHINES=${ROX_VIRTUAL_MACHINES}")
+      fi
+
+      if [[ -n "${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES:-}" ]]; then
+        sensor_env+=("ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES=${ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES}")
       fi
 
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
