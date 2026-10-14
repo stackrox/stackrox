@@ -35,7 +35,7 @@ func loadMapping(path string) (mapping, error) {
 		return result, errors.Wrap(err, "read TOML rules")
 	}
 	if meta.IsDefined("requires") && meta.Type("requires") != "Hash" {
-		return result, fmt.Errorf("requires must be a table")
+		return result, errors.New("requires must be a table")
 	}
 	return result, result.validate()
 }
@@ -45,7 +45,7 @@ func (m *mapping) validate() error {
 		return fmt.Errorf("unsupported rules version: %d", m.Version)
 	}
 	if len(m.Jobs) == 0 {
-		return fmt.Errorf("jobs must list at least one target")
+		return errors.New("jobs must list at least one target")
 	}
 	jobs := map[string]bool{}
 	for _, job := range m.Jobs {
@@ -58,7 +58,7 @@ func (m *mapping) validate() error {
 		jobs[job] = true
 	}
 	if len(m.Rules) == 0 {
-		return fmt.Errorf("rules must be a non-empty list")
+		return errors.New("rules must be a non-empty list")
 	}
 	names := map[string]bool{}
 	for index := range m.Rules {
@@ -76,10 +76,10 @@ func (m *mapping) validate() error {
 	}
 	last := m.Rules[len(m.Rules)-1]
 	if last.When != "remaining" {
-		return fmt.Errorf("the last rule must decide every target no earlier rule decided")
+		return errors.New("the last rule must decide every target no earlier rule decided")
 	}
 	if !slices.Contains(last.Run, "*") && !slices.Contains(last.Skip, "*") && !slices.Contains(last.Default, "*") {
-		return fmt.Errorf("the last rule must run, skip, or take the default for every remaining target")
+		return errors.New("the last rule must run, skip, or take the default for every remaining target")
 	}
 	for job, required := range m.Requires {
 		if !jobs[job] {

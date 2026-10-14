@@ -60,7 +60,7 @@ func envOr(name, fallback string) string {
 
 func ghaCI(ctx context.Context, args []string, output, diagnostic io.Writer) error {
 	if len(args) > 1 {
-		return fmt.Errorf("gha-ci takes at most one job name")
+		return errors.New("gha-ci takes at most one job name")
 	}
 	resolved, d, err := ghaInputs(ctx)
 	if err != nil {
@@ -198,10 +198,12 @@ func ghaDispatchCI(ctx context.Context, output, diagnostic io.Writer) error {
 		meta := envMetadata()
 		labels, err := newGitHubClient().labels(ctx, meta.repo, meta.pr)
 		if err != nil {
-			return fmt.Errorf("read dispatch labels: %w", err)
+			input.labels = readList(strings.ReplaceAll(os.Getenv("PR_LABELS"), ",", "\n"))
+			fmt.Fprintf(diagnostic, "Cannot read live dispatch labels (%v); using event labels and existing dispatch rules with enforcement disabled\n", err)
+		} else {
+			input.labels = labels
+			input.enforce = slices.Contains(labels, enforceLabel)
 		}
-		input.labels = labels
-		input.enforce = slices.Contains(labels, enforceLabel)
 	}
 	var resolved *result
 	var d defaults

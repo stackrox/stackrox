@@ -21,10 +21,10 @@ func runLocal(command, mode string, o options, output, diagnostic io.Writer) err
 		return fmt.Errorf("unknown %s mode %q", command, mode)
 	}
 	if mode == "gate" && o.job == "" {
-		return fmt.Errorf("gate needs --job")
+		return errors.New("gate needs --job")
 	}
 	if o.unknown == (o.files != "") {
-		return fmt.Errorf("pass either --files-file or --files-unknown")
+		return errors.New("pass either --files-file or --files-unknown")
 	}
 	files := []string{}
 	if !o.unknown {
@@ -48,7 +48,7 @@ func runLocal(command, mode string, o options, output, diagnostic io.Writer) err
 	var err error
 	if command == "resolve" {
 		if o.unknown {
-			return fmt.Errorf("changed files are unknown")
+			return errors.New("changed files are unknown")
 		}
 		m, loadErr := loadMapping(o.rules)
 		if loadErr != nil {

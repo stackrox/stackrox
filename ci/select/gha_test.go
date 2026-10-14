@@ -105,3 +105,58 @@ func TestGHADispatchCI(t *testing.T) {
 	assert.Contains(t, output.String(), `"e2e-nongroovy-tests":false`)
 	assert.Contains(t, output.String(), "wait-for-gha-images=false")
 }
+
+func TestGHADispatchCILabelFailure(t *testing.T) {
+	for name, test := range map[string]struct {
+		labels, fork, draft, uiOnly        string
+		nongroovy, byodb, konflux, waitGHA bool
+	}{
+		"ready PR without labels": {nongroovy: true, waitGHA: true},
+		"draft without labels":    {draft: "true"},
+		"UI only":                 {uiOnly: "true", waitGHA: true},
+		"explicit job on draft": {
+			labels: "ci-dispatcher-enforce,e2e-byodb-tests", draft: "true",
+			byodb: true, waitGHA: true,
+		},
+		"Konflux label": {
+			labels: "konflux-build", nongroovy: true, konflux: true, waitGHA: true,
+		},
+		"stale enforcement label": {
+			labels: "ci-dispatcher-enforce", nongroovy: true, waitGHA: true,
+		},
+		"fork with explicit job": {
+			labels: "ci-dispatcher-enforce,e2e-byodb-tests,konflux-build", fork: "true",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("CI_SELECT_ROOT", t.TempDir())
+			t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+			t.Setenv("CI_PR", "23403")
+			t.Setenv("CI_REPO", "stackrox/stackrox")
+			t.Setenv("CI_IS_FORK", test.fork)
+			t.Setenv("CI_IS_DRAFT", test.draft)
+			t.Setenv("CI_UI_ONLY", test.uiOnly)
+			t.Setenv("PR_LABELS", test.labels)
+			outputPath := filepath.Join(t.TempDir(), "output")
+			t.Setenv("GITHUB_OUTPUT", outputPath)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "/repos/stackrox/stackrox/issues/23403/labels", r.URL.Path)
+				w.WriteHeader(http.StatusForbidden)
+			}))
+			defer server.Close()
+			t.Setenv("GITHUB_API_URL", server.URL)
+			var output, diagnostic bytes.Buffer
+			require.NoError(t, ghaDispatchCI(t.Context(), &output, &diagnostic))
+			assert.Contains(t, diagnostic.String(), "using event labels and existing dispatch rules with enforcement disabled")
+			assert.NotContains(t, diagnostic.String(), "CI decision unreadable")
+			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-nongroovy-tests":%t`, test.nongroovy))
+			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-byodb-tests":%t`, test.byodb))
+			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-qa-tests-gke-konflux":%t`, test.konflux))
+			assert.Contains(t, output.String(), fmt.Sprintf("wait-for-gha-images=%t", test.waitGHA))
+			assert.Contains(t, output.String(), fmt.Sprintf("wait-for-konflux-images=%t", test.konflux))
+			written, err := os.ReadFile(outputPath)
+			require.NoError(t, err)
+			assert.Equal(t, output.String(), string(written))
+		})
+	}
+}
