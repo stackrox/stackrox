@@ -206,7 +206,7 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 }
 
 func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
-	// Release the registry lock before ApplyOptions: CreateBackend can be slow
+	// Release the registry lock before the update: CreateBackend can be slow
 	// (up to asyncBackendCreationTimeout) and must not stall other registry ops.
 	provider := func() Provider {
 		r.mutex.RLock()
@@ -219,25 +219,23 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 
 	impl := provider.(*providerImpl)
 
-	// Snapshot storedInfo for name pre-validation and rollback on persistence failure.
+	// Hold applyMu for the entire update so the snapshot, apply, persist, and
+	// commit are atomic with respect to concurrent ApplyOptions calls.
+	impl.applyMu.Lock()
+	defer impl.applyMu.Unlock()
+
+	// Snapshot the name under applyMu: safe because no concurrent ApplyOptions
+	// can change storedInfo while we hold the lock.
 	impl.mutex.RLock()
-	priorStoredInfo := impl.storedInfo.CloneVT()
+	originalName := impl.storedInfo.GetName()
 	impl.mutex.RUnlock()
 
-	// Apply the caller-supplied options outside the registry lock so that
-	// CreateBackend does not block the registry. WithContext threads the
-	// caller's context so that request cancellations (e.g. HTTP handler
-	// timeouts) can abort a slow backend rebuild. ValidateNameIfChanged catches
-	// duplicate-name errors before the live provider is mutated.
-	if err := provider.ApplyOptions(append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, priorStoredInfo.GetName()))...); err != nil {
-		return nil, err
-	}
-
-	// Persist after ApplyOptions so the stored config is always consistent with
-	// the live backend. On failure, restore the prior storedInfo so live and
-	// stored state stay consistent.
-	if err := provider.ApplyOptions(UpdateStore(ctx, r.store)); err != nil {
-		impl.restoreStoredInfo(priorStoredInfo)
+	// Apply options, rebuild backend if needed, persist, then commit — all inside
+	// the same applyMu acquisition. Persist-before-commit means a persistence
+	// failure leaves the live provider unchanged; no rollback is needed.
+	// ValidateNameIfChanged catches duplicate-name errors before live state is mutated.
+	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
+	if err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...); err != nil {
 		return nil, err
 	}
 
