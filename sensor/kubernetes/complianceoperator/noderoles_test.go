@@ -9,8 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,7 +165,9 @@ func TestAdaptiveDefaultNodeRoles(t *testing.T) {
 }
 
 // TestDefaultNodeRoles covers the create/update path's policy on top of adaptiveDefaultNodeRoles: it never fails,
-// falling back to master+worker when discovery errors.
+// falling back to master+worker when discovery errors. It also pins the exact text of the warning it logs: the e2e
+// test TestComplianceV2AutodiscoverNodeRoles (tests/compliance_operator_v2_test.go) matches this same text against
+// live Sensor logs to detect a silent fallback, so a wording change here must be deliberate, not an accidental drift.
 func TestDefaultNodeRoles(t *testing.T) {
 	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
@@ -173,7 +178,14 @@ func TestDefaultNodeRoles(t *testing.T) {
 	})
 	m := &handlerImpl{client: client}
 
+	core, logs := observer.New(zap.WarnLevel)
+	origLog := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = origLog })
+
 	assert.Equal(t, []string{masterRole, workerRole}, m.defaultNodeRoles())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("Could not auto-discover node roles, falling back to").Len(),
+		"tests/compliance_operator_v2_test.go's mcpListFailureLog regex must keep matching this exact text")
 }
 
 func TestGetFirstNodeRole(t *testing.T) {
