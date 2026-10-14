@@ -22,7 +22,7 @@ function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo
 
 const entityType = 'AUTH_PROVIDER';
 
-export type AuthProvidersListProps = {
+type AuthProvidersListProps = {
     authProviders: AuthProvider[];
 };
 
