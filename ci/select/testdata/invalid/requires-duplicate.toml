@@ -1,0 +1,8 @@
+version = 1
+jobs = ["unit", "lint"]
+[[rules]]
+name = "rest"
+when = "remaining"
+skip = ["*"]
+[requires]
+unit = ["lint", "lint"]
