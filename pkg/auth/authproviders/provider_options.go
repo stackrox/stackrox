@@ -24,9 +24,6 @@ type ProviderOption func(*providerImpl) error
 /////////////////////////////////////
 
 // WithBackendFromFactory adds a backend from the factory to the provider.
-// It only sets pr.backend; lifecycle hooks (OnEnable/OnDisable) are fired by
-// ApplyOptions after copyWithoutMutex succeeds, so they always run on the real
-// provider rather than the ephemeral clone.
 func WithBackendFromFactory(ctx context.Context, factory BackendFactory) ProviderOption {
 	return func(pr *providerImpl) error {
 		pr.backendFactory = factory

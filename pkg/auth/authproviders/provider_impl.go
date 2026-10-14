@@ -173,8 +173,6 @@ func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, all
 		err = errors.New("factory returned nil backend")
 	}
 
-	// Assign p.backend before signalling backendCreationDone so that any waiter
-	// unblocked by the signal observes a non-nil backend immediately.
 	p.mutex.Lock()
 	oldBackend := p.backend
 	p.backend = backend
@@ -182,8 +180,8 @@ func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, all
 	p.backendCreationDone.SignalWithError(err)
 	p.mutex.Unlock()
 
-	// Fire lifecycle hooks outside the mutex so that Provider accessor methods called
-	// from within hooks can safely acquire the read lock.
+	// Fire lifecycle hooks outside the mutex so provider accessors can safely
+	// acquire the read lock from within hook implementations.
 	if enabled {
 		if oldBackend != nil {
 			oldBackend.OnDisable(p)
@@ -244,10 +242,6 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 
 // We must lock the provider when applying options to it.
 func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
-	// priorBackend is the backend that existed before any options ran. It is
-	// used later to decide whether ApplyOptions itself should fire OnEnable for
-	// a newly introduced backend (e.g. the WithBackendFromFactory path, where
-	// updatedNoLock is never called after ApplyOptions returns).
 	var (
 		priorBackend        Backend
 		staleBackend        Backend
@@ -256,38 +250,30 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 		modifiedProvider    *providerImpl
 	)
 
-	// Step 1: under the lock, apply options to a clone and detect config drift.
-	// CreateBackend is intentionally NOT called here so we do not hold the mutex
-	// for up to 30 s while a remote endpoint is contacted.
+	// Apply options to a clone under the lock; CreateBackend is intentionally
+	// deferred so we do not hold the mutex during a potentially slow network call.
 	err := func() error {
 		p.mutex.Lock()
 		defer p.mutex.Unlock()
 
-		// Capture the pre-update state needed for correct lifecycle-hook decisions.
 		wasEnabled = p.storedInfo.GetEnabled()
 		priorBackend = p.backend
 
-		// Try updates on a copy of the provider.
 		modifiedProvider = cloneWithoutMutex(p)
 		if err := applyOptions(modifiedProvider, options...); err != nil {
 			return err
 		}
 
-		// Detect backend config drift: if the stored config was changed by an option
-		// (e.g. WithConfig) and the existing backend was built from the old config,
-		// we must rebuild the backend so it reflects the new configuration.
+		// If an option (e.g. WithConfig) changed the stored config, the existing
+		// backend is stale and must be replaced.
 		if modifiedProvider.backend != nil && modifiedProvider.backendFactory != nil &&
 			!maps.Equal(modifiedProvider.storedInfo.GetConfig(), modifiedProvider.backend.Config()) {
-			// Remember the stale backend so we can call OnDisable after releasing
-			// the mutex (using the captured pre-update wasEnabled flag from Comment 3).
 			staleBackend = modifiedProvider.backend
 			modifiedProvider.backend = nil
 			needsBackendRebuild = true
-			// Do not copyWithoutMutex yet; we will do it after the rebuild below.
 			return nil
 		}
 
-		// No drift: commit the updated clone to the real provider now.
 		copyWithoutMutex(p, modifiedProvider)
 		return nil
 	}()
@@ -295,8 +281,7 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 		return err
 	}
 
-	// Step 2: if config drift was detected, rebuild the backend outside the lock
-	// so that no mutex is held during the potentially slow CreateBackend call.
+	// Rebuild the backend outside the lock when config drift was detected.
 	if needsBackendRebuild {
 		ctx, cancel := context.WithTimeout(context.Background(), asyncBackendCreationTimeout)
 		defer cancel()
@@ -313,25 +298,22 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 		modifiedProvider.backend = newBackend
 		modifiedProvider.storedInfo.Config = newBackend.Config()
 
-		// Step 3: commit the rebuilt clone under the lock.
 		p.mutex.Lock()
 		copyWithoutMutex(p, modifiedProvider)
 		p.mutex.Unlock()
 	}
 
-	// Step 4: fire lifecycle hooks outside the mutex so that any provider accessor
-	// methods called from within the hooks can safely acquire the read lock.
+	// Fire lifecycle hooks outside the mutex so provider accessors can safely
+	// acquire the read lock from within hook implementations.
 	//
-	// OnDisable for the stale backend: use wasEnabled (pre-update state, Comment 3)
-	// so we correctly clean up regardless of whether the provider is now enabled.
+	// Use wasEnabled (pre-update) for OnDisable so we clean up stale backends
+	// regardless of whether the provider is currently enabled.
 	if staleBackend != nil && wasEnabled {
 		staleBackend.OnDisable(p)
 	}
-	// OnEnable for a brand-new backend: only when ApplyOptions itself introduced
-	// the backend (priorBackend was nil) and no subsequent updatedNoLock call will
-	// fire OnEnable — e.g. the WithBackendFromFactory late-registration path.
-	// Read the new backend and enabled state from modifiedProvider (the committed
-	// clone) to avoid an unlocked read of p's fields.
+	// Fire OnEnable only when ApplyOptions itself introduced the backend
+	// (priorBackend == nil) — e.g. the WithBackendFromFactory late-registration
+	// path — because updatedNoLock will not be called afterwards.
 	if priorBackend == nil && modifiedProvider.backend != nil && modifiedProvider.storedInfo.GetEnabled() {
 		modifiedProvider.backend.OnEnable(p)
 	}

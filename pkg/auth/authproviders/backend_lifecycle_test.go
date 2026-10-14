@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,7 +29,6 @@ func TestBackendLifecycle(t *testing.T) {
 
 // BackendLifecycleTestSuite tests that backend lifecycle hooks (OnEnable/OnDisable)
 // fire correctly when backends are created, swapped, or destroyed.
-// These tests verify the fixes for ROX-37437.
 type BackendLifecycleTestSuite struct {
 	suite.Suite
 
@@ -65,20 +63,13 @@ func (s *BackendLifecycleTestSuite) TearDownTest() {
 	s.callbacks.reset()
 }
 
-// TestDefect1_UpdateProviderWithConfigChange_StaleBackendKept tests ROX-37437 Defect #1.
-//
-// When UpdateProvider is called with a config-changing option (WithConfig), the new config
-// is saved to the database but the old backend stays in memory. When OnEnable fires on the
-// stale backend, it re-registers the old certificates with the ClientCAManager.
-//
-// Expected: UpdateProvider should detect config drift, destroy old backend (OnDisable),
-// create new backend, and call OnEnable with the new backend.
-//
-// Current (BUGGY) behavior: Old backend is kept, old CAs stay registered.
-func (s *BackendLifecycleTestSuite) TestDefect1_UpdateProviderWithConfigChange_StaleBackendKept() {
+// TestUpdateProviderConfigChange verifies that UpdateProvider with a config change
+// fires OnDisable for the old backend, builds a fresh backend, then fires OnEnable
+// with the updated config rather than re-registering the stale backend.
+func (s *BackendLifecycleTestSuite) TestUpdateProviderConfigChange() {
 	// Generate two different CA certificates
-	ca1, ca1Pem := generateTestCA(s.T(), "TestCA1")
-	ca2, ca2Pem := generateTestCA(s.T(), "TestCA2")
+	ca1, ca1Pem := generateTestCA(s.T())
+	ca2, ca2Pem := generateTestCA(s.T())
 	ca1Fingerprint := cryptoutils.CertFingerprint(ca1)
 	ca2Fingerprint := cryptoutils.CertFingerprint(ca2)
 
@@ -118,46 +109,25 @@ func (s *BackendLifecycleTestSuite) TestDefect1_UpdateProviderWithConfigChange_S
 	s.Require().NoError(err, "UpdateProvider should succeed")
 	s.Require().NotNil(updated, "updated provider should not be nil")
 
-	// DEFECT #1: The following assertions will FAIL until the bug is fixed
-	//
-	// Expected behavior:
-	// 1. OnDisable should fire for old backend → UnregisterAuthProvider called
-	// 2. New backend created from CA2 config
-	// 3. OnEnable should fire for new backend → RegisterAuthProvider called with CA2
-	//
-	// Current buggy behavior:
-	// 1. Old backend is kept (DefaultBackend returns early)
-	// 2. OnEnable fires on stale backend → RegisterAuthProvider called with CA1 (again)
-
 	s.callbacks.mu.Lock()
 	defer s.callbacks.mu.Unlock()
 
-	// Check that unregister was called (should clean up CA1)
 	s.Assert().Contains(s.callbacks.unregistered, provider.ID(),
-		"UpdateProvider should unregister old backend (DEFECT #1: this will FAIL - old backend is not cleaned up)")
+		"UpdateProvider should unregister old backend")
 
-	// Check that register was called with CA2
 	newRegisteredCerts, registered := s.callbacks.registered[provider.ID()]
 	s.Assert().True(registered, "provider should be re-registered")
 	if s.Assert().Len(newRegisteredCerts, 1, "should have one CA registered") {
-		actualFingerprint := cryptoutils.CertFingerprint(newRegisteredCerts[0])
-		s.Assert().Equal(ca2Fingerprint, actualFingerprint,
-			"registered CA should be CA2 (DEFECT #1: this will FAIL - CA1 is re-registered instead)")
+		s.Assert().Equal(ca2Fingerprint, cryptoutils.CertFingerprint(newRegisteredCerts[0]),
+			"registered CA should be CA2")
 	}
 }
 
-// TestDefect2_LateFactoryRegistration_OnEnableNeverFires tests ROX-37437 Defect #2.
-//
-// When a backend factory is registered AFTER registry.Init(), and the backend is created
-// via the late-registration goroutine or GetOrCreateBackend(), the OnEnable hook never fires.
-// For userpki providers, this means client CAs are never registered with ClientCAManager.
-//
-// Expected: Backend creation should always fire OnEnable when the provider is enabled.
-//
-// Current (BUGGY) behavior: OnEnable is never called, CA registration is silently skipped.
-func (s *BackendLifecycleTestSuite) TestDefect2_LateFactoryRegistration_OnEnableNeverFires() {
+// TestLateFactoryRegistration verifies that registering a backend factory after Init()
+// fires OnEnable for existing enabled providers once the backend is created.
+func (s *BackendLifecycleTestSuite) TestLateFactoryRegistration() {
 	// Generate a test CA for the pre-populated provider
-	ca, caPem := generateTestCA(s.T(), "LateFactoryCA")
+	ca, caPem := generateTestCA(s.T())
 	caFingerprint := cryptoutils.CertFingerprint(ca)
 
 	// Create a provider that will be pre-populated in the store
@@ -196,7 +166,7 @@ func (s *BackendLifecycleTestSuite) TestDefect2_LateFactoryRegistration_OnEnable
 	s.Require().NoError(err, "Init should succeed even without factory")
 
 	// Get the provider that was loaded from the store
-	provider := freshRegistry.GetProvider(prePopulatedProvider.Id)
+	provider := freshRegistry.GetProvider(prePopulatedProvider.GetId())
 	s.Require().NotNil(provider, "provider should exist after Init")
 
 	// Verify no CA is registered yet (no backend created during Init)
@@ -222,27 +192,15 @@ func (s *BackendLifecycleTestSuite) TestDefect2_LateFactoryRegistration_OnEnable
 		return backend != nil
 	}, 5*time.Second, 10*time.Millisecond, "backend should be created by late-registration goroutine")
 
-	// DEFECT #2: The following assertions will FAIL until the bug is fixed
-	//
-	// Expected behavior:
-	// 1. Backend is created from factory
-	// 2. OnEnable fires → RegisterAuthProvider called with CA
-	//
-	// Current buggy behavior:
-	// 1. Backend is assigned directly via createBackendAsync or WithBackendFromFactory
-	// 2. OnEnable is NEVER called
-	// 3. CA is never registered → client cert auth silently broken
-
 	freshCallbacks.mu.Lock()
 	defer freshCallbacks.mu.Unlock()
 
 	s.Assert().Contains(freshCallbacks.registered, provider.ID(),
-		"CA should be registered after backend creation (DEFECT #2: this will FAIL - OnEnable never fires)")
+		"CA should be registered after backend creation via late factory registration")
 
 	if registeredCerts, found := freshCallbacks.registered[provider.ID()]; found {
 		if s.Assert().Len(registeredCerts, 1, "should have one CA registered") {
-			actualFingerprint := cryptoutils.CertFingerprint(registeredCerts[0])
-			s.Assert().Equal(caFingerprint, actualFingerprint,
+			s.Assert().Equal(caFingerprint, cryptoutils.CertFingerprint(registeredCerts[0]),
 				"registered CA should match the configured CA")
 		}
 	}
@@ -251,7 +209,7 @@ func (s *BackendLifecycleTestSuite) TestDefect2_LateFactoryRegistration_OnEnable
 // TestHealthyPath_CreateAndDisableProvider verifies that the healthy path works correctly:
 // creating a provider fires OnEnable, disabling fires OnDisable.
 func (s *BackendLifecycleTestSuite) TestHealthyPath_CreateAndDisableProvider() {
-	ca, caPem := generateTestCA(s.T(), "HealthyPathCA")
+	ca, caPem := generateTestCA(s.T())
 	caFingerprint := cryptoutils.CertFingerprint(ca)
 
 	// Create enabled provider
@@ -290,10 +248,6 @@ func (s *BackendLifecycleTestSuite) TestHealthyPath_CreateAndDisableProvider() {
 	s.Assert().Contains(s.callbacks.unregistered, provider.ID(),
 		"disabling provider should call OnDisable")
 }
-
-/******************************************************************************
- * Test Helper: Recording Callbacks (Spy for ClientCAManager)
- ******************************************************************************/
 
 // recordingCallbacks is a spy implementation of ProviderCallbacks that records
 // all RegisterAuthProvider and UnregisterAuthProvider calls for test assertions.
@@ -338,10 +292,6 @@ func (r *recordingCallbacks) reset() {
 	r.registered = make(map[string][]*x509.Certificate)
 	r.unregistered = make([]string, 0)
 }
-
-/******************************************************************************
- * Test Helper: Test UserPKI Backend Factory
- ******************************************************************************/
 
 // testUserPKIBackend mimics the userpki backend for testing lifecycle hooks
 type testUserPKIBackend struct {
@@ -432,20 +382,15 @@ func (f *testUserPKIBackendFactory) GetSuggestedAttributes() []string {
 	return []string{}
 }
 
-// newTestUserPKIFactoryFunc returns a factory function for the test userpki backend
 func newTestUserPKIFactoryFunc(callbacks ProviderCallbacks) func(string) BackendFactory {
 	return func(_ string) BackendFactory {
 		return &testUserPKIBackendFactory{callbacks: callbacks}
 	}
 }
 
-/******************************************************************************
- * Test Helper: Certificate Generation
- ******************************************************************************/
-
-// generateTestCA creates a test CA certificate and returns both the parsed cert
-// and the PEM-encoded string suitable for userpki config.
-func generateTestCA(t *testing.T, commonName string) (*x509.Certificate, string) {
+// generateTestCA creates a test CA certificate and returns the parsed cert
+// and a PEM-encoded string suitable for userpki config.
+func generateTestCA(t *testing.T) (*x509.Certificate, string) {
 	t.Helper()
 
 	// Generate a CA using certgen
@@ -465,85 +410,6 @@ func generateTestCA(t *testing.T, commonName string) (*x509.Certificate, string)
 	return cert, string(caPEM)
 }
 
-/******************************************************************************
- * Test Helper: Assertion Helpers
- ******************************************************************************/
-
-// assertCARegistered is a helper that checks if a specific CA is registered for a provider.
-func assertCARegistered(t *testing.T, callbacks *recordingCallbacks, providerID string, expectedFingerprint string) {
-	t.Helper()
-
-	callbacks.mu.Lock()
-	defer callbacks.mu.Unlock()
-
-	certs, found := callbacks.registered[providerID]
-	if !assert.True(t, found, "provider %s should be registered", providerID) {
-		return
-	}
-
-	if !assert.NotEmpty(t, certs, "provider %s should have CAs registered", providerID) {
-		return
-	}
-
-	// Check if any of the registered certs match the expected fingerprint
-	for _, cert := range certs {
-		if cryptoutils.CertFingerprint(cert) == expectedFingerprint {
-			return // Found it
-		}
-	}
-
-	// If we get here, the expected cert was not found
-	var actualFingerprints []string
-	for _, cert := range certs {
-		actualFingerprints = append(actualFingerprints, cryptoutils.CertFingerprint(cert))
-	}
-	t.Errorf("Expected CA with fingerprint %s not found. Registered CAs: %v",
-		expectedFingerprint, actualFingerprints)
-}
-
-// assertProviderUnregistered checks if OnDisable was called for a provider.
-func assertProviderUnregistered(t *testing.T, callbacks *recordingCallbacks, providerID string) {
-	t.Helper()
-
-	callbacks.mu.Lock()
-	defer callbacks.mu.Unlock()
-
-	for _, unregID := range callbacks.unregistered {
-		if unregID == providerID {
-			return // Found it
-		}
-	}
-
-	t.Errorf("Provider %s was not unregistered. Unregistered providers: %v",
-		providerID, callbacks.unregistered)
-}
-
-// assertRegisteredCACount checks that exactly n CAs are registered for a provider.
-func assertRegisteredCACount(t *testing.T, callbacks *recordingCallbacks, providerID string, expectedCount int) {
-	t.Helper()
-
-	callbacks.mu.Lock()
-	defer callbacks.mu.Unlock()
-
-	certs, found := callbacks.registered[providerID]
-	if !found && expectedCount == 0 {
-		return // OK - not registered and we expected 0
-	}
-
-	if !assert.True(t, found, "provider %s should be registered", providerID) {
-		return
-	}
-
-	assert.Len(t, certs, expectedCount,
-		fmt.Sprintf("provider %s should have exactly %d CA(s) registered", providerID, expectedCount))
-}
-
-/******************************************************************************
- * Test Helper: Store with Pre-populated Providers
- ******************************************************************************/
-
-// testStoreWithProviders is a test store that contains pre-populated providers.
-// This simulates providers loaded from the database at startup.
 type testStoreWithProviders struct {
 	providers []*storage.AuthProvider
 }
