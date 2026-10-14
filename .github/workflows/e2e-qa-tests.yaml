@@ -161,7 +161,7 @@ jobs:
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
-          MACHINE_TYPE: "e2-standard-16"
+          MACHINE_TYPE: "e2-standard-4"
           NUM_NODES: "1"
           GKE_SPOT: "false"
         run: |
