@@ -12,8 +12,13 @@ describe('Cypress.expose public config', () => {
     it('does not expose secrets to the browser', () => {
         const exposed = Cypress.expose();
         const leakedKeys = SECRET_KEYS.filter((key) => key in exposed);
+        // Feature flags are always booleans, so any other ROX_* value is an unexpected leak.
+        const nonBooleanRoxKeys = Object.keys(exposed).filter(
+            (key) => key.startsWith('ROX_') && typeof exposed[key] !== 'boolean'
+        );
 
         expect(leakedKeys, 'secrets in Cypress.expose()').to.be.empty;
+        expect(nonBooleanRoxKeys, 'non-boolean ROX_* values in Cypress.expose()').to.be.empty;
     });
 
     it('copies feature flags exported by scripts/cypress.sh as booleans', function () {
@@ -24,12 +29,9 @@ describe('Cypress.expose public config', () => {
                 this.skip();
             }
 
-            const exposed = Cypress.expose();
-            const flagKeys = Object.keys(exposed).filter((key) => key.startsWith('ROX_'));
-            const nonBooleanKeys = flagKeys.filter((key) => typeof exposed[key] !== 'boolean');
+            const flagKeys = Object.keys(Cypress.expose()).filter((key) => key.startsWith('ROX_'));
 
             expect(flagKeys, 'ROX_* feature flags in Cypress.expose()').to.not.be.empty;
-            expect(nonBooleanKeys, 'non-boolean ROX_* values').to.be.empty;
         });
     });
 

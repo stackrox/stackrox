@@ -6,7 +6,24 @@ const cypressVite = require('cypress-vite');
 // which is not supported in Vite. Instead, we resolve the path to the file using CommonJS require in the cypress config
 // and make the path available at test runtime when injecting the axe core.
 const axeCorePath = require.resolve('axe-core/axe.min.js');
-const { getPublicEnv } = require('./cypress/helpers/getPublicEnv');
+
+const PUBLIC_ENV_KEYS = ['ORCHESTRATOR_FLAVOR'];
+
+/*
+ * Cypress only fills expose from the config file or the --expose CLI flag, so copy the public
+ * CYPRESS_* values exported by scripts/cypress.sh. Feature flag names come from /v1/featureflags
+ * at runtime, so match them by prefix and boolean value. Secrets such as ROX_AUTH_TOKEN,
+ * DEMO_PASSWORD, and the OCP console credentials stay readable only through cy.env().
+ */
+function getPublicEnv(env = {}) {
+    return Object.fromEntries(
+        Object.entries(env).filter(
+            ([key, value]) =>
+                PUBLIC_ENV_KEYS.includes(key) ||
+                (key.startsWith('ROX_') && typeof value === 'boolean')
+        )
+    );
+}
 
 /*
  * The helper function intended to provide automatic code completion for configuration in many popular code editors
