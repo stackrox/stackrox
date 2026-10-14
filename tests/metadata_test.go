@@ -74,8 +74,7 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	if usingKonfluxImages() {
 		assert.Equal(t, "release", metadataWithAuth.GetBuildFlavor())
 		assert.True(t, metadataWithAuth.GetReleaseBuild())
-		assert.True(t, strings.HasPrefix(metadataWithAuth.GetVersion(), version.GetMainVersion()),
-			"expected version to start with %s, got %s", version.GetMainVersion(), metadataWithAuth.GetVersion())
+		assert.Equal(t, version.GetMainVersion(), strings.TrimSuffix(metadataWithAuth.GetVersion(), "-fast"))
 	} else {
 		assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
 		assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())

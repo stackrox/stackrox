@@ -4,6 +4,7 @@ load "../helpers.bash"
 
 out_dir=""
 cluster_name=""
+central_flavor=""
 
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
@@ -17,13 +18,12 @@ setup_file() {
     fail "Could not detect Central image flavor from deployment/central"
   fi
   echo "Detected central flavor: '$central_flavor'" >&3
-  export central_flavor
 }
 
 setup() {
   out_dir="$(mktemp -d -u)"
-  # Unique cluster name per test: deletion is async, so reusing one name lets
-  # '--continue-if-exists' pick up a stale cluster and ignore the image overrides.
+  # Unique cluster name per test so that tests with different overrides don't affect
+  # each other due to '--continue-if-exists'.
   cluster_name="override-test-cluster-${BATS_TEST_NUMBER}"
 }
 
@@ -60,7 +60,7 @@ image_name_from_flavor() {
   esac
 }
 
-any_version_regex="${any_version}[0-9x]+(-.*)?$"
+any_version_regex="${any_version}(x|[0-9]+)(-.*)?$"
 
 @test "roxctl sensor generate: no overrides" {
   generate_bundle k8s --name "$cluster_name"
