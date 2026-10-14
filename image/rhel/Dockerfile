@@ -4,10 +4,12 @@ ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
+ARG PG_VERSION=15
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
 
 ARG DEBUG_BUILD=no
+ARG PG_VERSION
 
 WORKDIR /
 COPY download.sh /download.sh
@@ -30,6 +32,7 @@ ARG QUAY_TAG_EXPIRATION
 ARG ROX_IMAGE_FLAVOR
 ARG ROX_PRODUCT_BRANDING
 ARG TARGET_ARCH=amd64
+ARG PG_VERSION
 
 LABEL name="main" \
       vendor="StackRox" \
@@ -70,6 +73,17 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
+
+# Execute the clients in the final runtime to check their version and libraries.
+RUN set -eu; \
+    for client in pg_dump pg_restore; do \
+        version="$("$client" --version)"; \
+        echo "$version"; \
+        case "$version" in \
+            "$client (PostgreSQL) ${PG_VERSION}."*) ;; \
+            *) echo "Expected PostgreSQL ${PG_VERSION} client: $client" >&2; exit 1 ;; \
+        esac; \
+    done
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
