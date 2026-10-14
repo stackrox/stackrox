@@ -2,6 +2,7 @@ package authproviders
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -173,10 +174,33 @@ func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, all
 	}
 
 	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	p.backend = backend
 	p.backendCreationDone.SignalWithError(err)
+	p.mutex.Unlock()
+
+	// swapBackend acquires its own lock, so call it after releasing the mutex above.
+	p.swapBackend(backend)
+}
+
+// swapBackend atomically replaces the current backend and fires the appropriate lifecycle
+// hooks (OnDisable for the outgoing backend, OnEnable for the incoming one) outside the
+// mutex so that Provider accessor methods can be called from within those hooks.
+// Must be called WITHOUT holding p.mutex.
+func (p *providerImpl) swapBackend(newBackend Backend) {
+	p.mutex.Lock()
+	oldBackend := p.backend
+	p.backend = newBackend
+	enabled := p.storedInfo.GetEnabled()
+	p.mutex.Unlock()
+
+	if !enabled {
+		return
+	}
+	if oldBackend != nil {
+		oldBackend.OnDisable(p)
+	}
+	if newBackend != nil {
+		newBackend.OnEnable(p)
+	}
 }
 
 func (p *providerImpl) Backend() Backend {
@@ -229,17 +253,58 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 
 // We must lock the provider when applying options to it.
 func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
+	var staleBackend Backend
 
-	// Try updates on a copy of the provider
-	modifiedProvider := cloneWithoutMutex(p)
-	if err := applyOptions(modifiedProvider, options...); err != nil {
+	err := func() error {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
+
+		// Try updates on a copy of the provider.
+		modifiedProvider := cloneWithoutMutex(p)
+		if err := applyOptions(modifiedProvider, options...); err != nil {
+			return err
+		}
+
+		// Detect backend config drift: if the stored config was changed by an option
+		// (e.g. WithConfig) and the existing backend was built from the old config,
+		// we must rebuild the backend so it reflects the new configuration.
+		if modifiedProvider.backend != nil && modifiedProvider.backendFactory != nil &&
+			!maps.Equal(modifiedProvider.storedInfo.GetConfig(), modifiedProvider.backend.Config()) {
+			// Remember the stale backend so we can call OnDisable after releasing the mutex.
+			staleBackend = modifiedProvider.backend
+			modifiedProvider.backend = nil
+
+			// Rebuild synchronously with the updated config.
+			ctx, cancel := context.WithTimeout(context.Background(), asyncBackendCreationTimeout)
+			defer cancel()
+			newBackend, err := modifiedProvider.backendFactory.CreateBackend(
+				ctx,
+				modifiedProvider.storedInfo.GetId(),
+				AllUIEndpoints(modifiedProvider.storedInfo),
+				modifiedProvider.storedInfo.GetConfig(),
+				modifiedProvider.storedInfo.GetClaimMappings(),
+			)
+			if err != nil {
+				return errors.Wrap(err, "failed to rebuild backend after config change")
+			}
+			modifiedProvider.backend = newBackend
+			modifiedProvider.storedInfo.Config = newBackend.Config()
+		}
+
+		// If updates succeed, apply them.
+		copyWithoutMutex(p, modifiedProvider)
+		return nil
+	}()
+	if err != nil {
 		return err
 	}
 
-	// If updates succeed, apply them.
-	copyWithoutMutex(p, modifiedProvider)
+	// Fire OnDisable for the stale backend outside the mutex, so that any provider
+	// accessor methods called from within OnDisable can safely acquire the read lock.
+	if staleBackend != nil && p.Enabled() {
+		staleBackend.OnDisable(p)
+	}
+
 	return nil
 }
 

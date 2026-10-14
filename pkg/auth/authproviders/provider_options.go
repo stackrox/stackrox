@@ -33,8 +33,11 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.GetType())
 		}
 
-		pr.backend = backend
 		pr.storedInfo.Config = backend.Config()
+		// swapBackend fires OnDisable/OnEnable hooks outside its own mutex acquisition.
+		// When called from ApplyOptions, pr is the clone whose mutex is not held, so this
+		// is safe. The clone carries the correct storedInfo (ID, enabled flag) for hooks.
+		pr.swapBackend(backend)
 		return nil
 	}
 }
