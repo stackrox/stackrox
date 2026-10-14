@@ -303,7 +303,7 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 # Create stackrox namespace if not exists.
 	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "$(NAMESPACE)" } }' | $(PROJECT_DIR)/hack/retry-kubectl.sh apply -f -
 # Create stackrox image pull secret in stackrox namespace.
-	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | $(PROJECT_DIR)/hack/retry-kubectl.sh -n "$(NAMESPACE)" apply -f -
+	$(PROJECT_DIR)/../scripts/pull-secret.sh stackrox quay.io | $(PROJECT_DIR)/hack/retry-kubectl.sh -n "$(NAMESPACE)" apply -f -
 
 .PHONY: check-ci-setup
 check-ci-setup: ## Make sure this target is not started in CI environment.

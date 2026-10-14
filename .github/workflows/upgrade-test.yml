@@ -72,7 +72,7 @@ jobs:
         name: [test1, test2]
     steps:
       - name: Create the ${{ matrix.name }} cluster
-        uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@d624eeae7073b3acb838aab7705730b2de58a4a0 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default

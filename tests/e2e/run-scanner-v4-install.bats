@@ -1671,15 +1671,15 @@ create_central_pull_secrets() {
     local namespace="$1"
     info "Creating image pull secrets for central in namespace $namespace..."
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
-    "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$central_namespace" apply -f -
+    "${ROOT}/scripts/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$central_namespace" apply -f -
 }
 
 create_sensor_pull_secrets() {
     local namespace="$1"
     info "Creating image pull secrets for secured cluster in namespace $namespace..."
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
-    "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
-    "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+    "${ROOT}/scripts/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+    "${ROOT}/scripts/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
 }
 
 resolve_previous_version() {
