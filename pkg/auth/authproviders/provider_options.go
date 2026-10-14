@@ -15,6 +15,21 @@ var (
 	internalUpdateProviderCtx = sac.WithAllAccess(context.Background())
 )
 
+// WithContext threads ctx into the backend rebuild that ApplyOptions may
+// perform. When a config change is detected, ApplyOptions calls CreateBackend,
+// which can take up to asyncBackendCreationTimeout. Passing a context here
+// allows the caller (e.g. an HTTP handler) to abort a slow rebuild on
+// cancellation or timeout without changing the Provider interface signature.
+//
+// The context is only consumed by ApplyOptions; it is never stored on the live
+// provider.
+func WithContext(ctx context.Context) ProviderOption {
+	return func(pr *providerImpl) error {
+		pr.applyCtx = ctx
+		return nil
+	}
+}
+
 // ProviderOption is a function that modifies a providerImpl.
 // Do not use Provider functions in Options, as this will try to RLock inside of a Lock and deadlock.
 // You can assume that the provider is locked for the duration of the option's execution.
@@ -111,7 +126,7 @@ func WithEnabled(enabled bool) ProviderOption {
 func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		pr.validateCallback = func() error {
-			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
+			return pr.ApplyOptions(WithContext(internalUpdateProviderCtx), WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
 		}
 		return nil
 	}

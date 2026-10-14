@@ -29,6 +29,7 @@ var _ Provider = (*providerImpl)(nil)
 
 // If you add new data fields to this class, make sure you make commensurate modifications
 // to the cloneWithoutMutex and copyWithoutMutex functions below.
+// Exception: applyCtx — transient clone-only field; never propagate to the live provider.
 type providerImpl struct {
 	mutex sync.RWMutex
 
@@ -46,6 +47,10 @@ type providerImpl struct {
 	doNotStore bool
 
 	validateCallback func() error
+
+	// applyCtx threads the caller's context to CreateBackend inside ApplyOptions.
+	// Set only on clones; never stored on the live provider.
+	applyCtx context.Context
 }
 
 // Accessor functions.
@@ -283,10 +288,14 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 
 	// Rebuild the backend outside the lock when config drift was detected.
 	if needsBackendRebuild {
-		ctx, cancel := context.WithTimeout(context.Background(), asyncBackendCreationTimeout)
+		baseCtx := modifiedProvider.applyCtx
+		if baseCtx == nil {
+			baseCtx = context.Background()
+		}
+		rebuildCtx, cancel := context.WithTimeout(baseCtx, asyncBackendCreationTimeout)
 		defer cancel()
 		newBackend, err := modifiedProvider.backendFactory.CreateBackend(
-			ctx,
+			rebuildCtx,
 			modifiedProvider.storedInfo.GetId(),
 			AllUIEndpoints(modifiedProvider.storedInfo),
 			modifiedProvider.storedInfo.GetConfig(),
@@ -298,9 +307,19 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 		modifiedProvider.backend = newBackend
 		modifiedProvider.storedInfo.Config = newBackend.Config()
 
-		p.mutex.Lock()
-		copyWithoutMutex(p, modifiedProvider)
-		p.mutex.Unlock()
+		// Guard against a concurrent backend update (e.g. createBackendAsync)
+		// that may have already replaced p.backend while we rebuilt outside the lock.
+		if err := func() error {
+			p.mutex.Lock()
+			defer p.mutex.Unlock()
+			if p.backend != priorBackend {
+				return errors.New("backend was concurrently updated; retry the operation")
+			}
+			copyWithoutMutex(p, modifiedProvider)
+			return nil
+		}(); err != nil {
+			return err
+		}
 	}
 
 	// Fire lifecycle hooks outside the mutex so provider accessors can safely

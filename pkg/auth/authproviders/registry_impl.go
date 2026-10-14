@@ -169,7 +169,7 @@ func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, f
 			continue
 		}
 		go func(p Provider) {
-			if err := p.ApplyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
+			if err := p.ApplyOptions(WithContext(ctx), WithBackendFromFactory(ctx, factory)); err != nil {
 				log.Errorf("Failed to apply options: %v", err)
 			}
 		}(provider)
@@ -206,20 +206,34 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 }
 
 func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	provider := r.providers[id]
+	// Release the registry lock before ApplyOptions: CreateBackend can be slow
+	// (up to asyncBackendCreationTimeout) and must not stall other registry ops.
+	provider := func() Provider {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		return r.providers[id]
+	}()
 	if provider == nil {
 		return nil, fmt.Errorf("provider with ID %s not found", id)
 	}
 
-	// Run the updates with an update to the store added.
-	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
+	// Apply the caller-supplied options outside the registry lock so that
+	// CreateBackend does not block the registry. WithContext threads the
+	// caller's context so that request cancellations (e.g. HTTP handler
+	// timeouts) can abort a slow backend rebuild.
+	if err := provider.ApplyOptions(append(options, WithContext(ctx))...); err != nil {
 		return nil, err
 	}
+
+	// Persist after ApplyOptions so the stored config is always consistent with
+	// the live backend. UpdateStore also performs name validation (secondary key).
+	if err := provider.ApplyOptions(UpdateStore(ctx, r.store)); err != nil {
+		return nil, err
+	}
+
+	r.mutex.Lock()
 	r.updatedNoLock(provider)
+	r.mutex.Unlock()
 
 	return provider, nil
 }
