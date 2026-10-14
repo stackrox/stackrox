@@ -1236,21 +1236,22 @@ func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []
 	return roles.AsSortedSlice(func(i, j string) bool { return i < j })
 }
 
-// TestComplianceV2AutodiscoverNodeRoles verifies that, with ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES
-// enabled on Sensor, a scan config created without explicit node roles yields a Compliance Operator
-// ScanSetting whose .roles equal the roles DISCOVERED from the cluster's MachineConfigPools, rather
-// than the legacy hardcoded master+worker literal. Deriving the expectation live means the test
-// genuinely exercises discovery and tracks whatever pools the cluster has (e.g. a custom "infra").
+// TestComplianceV2AutodiscoverNodeRoles verifies that a scan config created without explicit node roles
+// yields a Compliance Operator ScanSetting whose .roles equal the roles DISCOVERED from the cluster's
+// MachineConfigPools, rather than the legacy hardcoded master+worker literal. Deriving the expectation
+// live means the test genuinely exercises discovery and tracks whatever pools the cluster has (e.g. a
+// custom "infra").
 //
 // The Sensor env var is wired on by the e2e deploy path (see export_test_environment in
 // tests/e2e/lib.sh and the sensor env wiring in deploy/common/k8sbased.sh). On a standard cluster
 // with only master+worker pools the discovered set coincides with the legacy default, so the run is
 // a regression guard; on a cluster with a custom pool it is a conclusive discovery check.
 //
-// Not parallel: it creates a scan config using a node profile. Running in the serial phase avoids
-// colliding with the parallel tests that also use node profiles (Central rejects two scan configs
-// that share a profile on the same cluster).
+// It uses the ocp4-pci-dss-node profile, which no other test in this file claims, so it can run
+// alongside the other parallel tests without colliding over a shared profile (Central rejects two
+// scan configs that share a profile on the same cluster).
 func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	dynClient := createDynamicClient(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -1280,7 +1281,7 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
 			// Node profile, deliberately with no node roles specified so Sensor fills them in.
-			Profiles:     []string{"ocp4-cis-node"},
+			Profiles:     []string{"ocp4-pci-dss-node"},
 			Description:  "e2e auto-discover node roles",
 			ScanSchedule: initialSchedule,
 		},
