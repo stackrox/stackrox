@@ -253,16 +253,41 @@ test_not_enough_disk_space() {
     restore_backup
     wait_for_api
 
+    # The 4.10 deployment mounts the backup PVC only in init-db. Expose the same
+    # volume to central-db so the running container can fill it before upgrading.
+    kubectl -n stackrox patch deployment/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","volumeMounts":[{"name":"backup","mountPath":"/var/lib/postgresql/backup"}]}]}}}}'
+    kubectl -n stackrox rollout status deployment/central-db --timeout="${MAX_WAIT_SECONDS}s"
+    wait_for_api
+
     # Fill both PVCs: the operator creates a separate backup PVC twice the data PVC size.
     # Neither backup location should have room for a backup and its verification copy.
-    kubectl -n stackrox exec deploy/central-db -c central-db -- \
-        fallocate -l 700mb "/var/lib/postgresql/data/pgdata/fake_data"
-    kubectl -n stackrox exec deploy/central-db -c central-db -- \
-        fallocate -l 1GiB "/var/lib/postgresql/backup/fake_data"
-    kubectl -n stackrox exec deploy/central-db -c central-db -- \
-        df -H /var/lib/postgresql/data/pgdata /var/lib/postgresql/backup
-    kubectl -n stackrox exec deploy/central-db -c central-db -- \
-        bash -c 'du -sch /var/lib/postgresql/data/pgdata/* /var/lib/postgresql/backup/fake_data'
+    # Expand PGDATA inside the container, and use the same KiB units as the entrypoint.
+    # shellcheck disable=SC2016
+    kubectl -n stackrox exec deploy/central-db -c central-db -- bash -euo pipefail -c '
+        for location in /var/lib/postgresql/data /var/lib/postgresql/backup; do
+            mounted_at=$(df -Pk "$location" | awk "END {print \$6}")
+            if [[ "$mounted_at" != "$location" ]]; then
+                echo "Expected a volume mounted at $location, found $mounted_at" >&2
+                exit 1
+            fi
+        done
+
+        fallocate -l 700mb "${PGDATA}/fake_data"
+        fallocate -l 1GiB /var/lib/postgresql/backup/fake_data
+        df -H "$PGDATA" /var/lib/postgresql/backup
+        du -sch "$PGDATA"/* /var/lib/postgresql/backup/fake_data
+
+        required=$(du -sk "$PGDATA" | awk "{print \$1 * 2}")
+        for location in /var/lib/postgresql/data /var/lib/postgresql/backup; do
+            available=$(df -Pk "$location" | awk "END {print \$4}")
+            echo "$location: $available KiB available; $required KiB required for backup and verification"
+            if (( available >= required )); then
+                echo "Low-space fixture still has enough space at $location" >&2
+                exit 1
+            fi
+        done
+    '
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
