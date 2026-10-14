@@ -217,17 +217,27 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 		return nil, fmt.Errorf("provider with ID %s not found", id)
 	}
 
+	impl := provider.(*providerImpl)
+
+	// Snapshot storedInfo for name pre-validation and rollback on persistence failure.
+	impl.mutex.RLock()
+	priorStoredInfo := impl.storedInfo.CloneVT()
+	impl.mutex.RUnlock()
+
 	// Apply the caller-supplied options outside the registry lock so that
 	// CreateBackend does not block the registry. WithContext threads the
 	// caller's context so that request cancellations (e.g. HTTP handler
-	// timeouts) can abort a slow backend rebuild.
-	if err := provider.ApplyOptions(append(options, WithContext(ctx))...); err != nil {
+	// timeouts) can abort a slow backend rebuild. ValidateNameIfChanged catches
+	// duplicate-name errors before the live provider is mutated.
+	if err := provider.ApplyOptions(append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, priorStoredInfo.GetName()))...); err != nil {
 		return nil, err
 	}
 
 	// Persist after ApplyOptions so the stored config is always consistent with
-	// the live backend. UpdateStore also performs name validation (secondary key).
+	// the live backend. On failure, restore the prior storedInfo so live and
+	// stored state stay consistent.
 	if err := provider.ApplyOptions(UpdateStore(ctx, r.store)); err != nil {
+		impl.restoreStoredInfo(priorStoredInfo)
 		return nil, err
 	}
 

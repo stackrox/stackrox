@@ -29,9 +29,10 @@ var _ Provider = (*providerImpl)(nil)
 
 // If you add new data fields to this class, make sure you make commensurate modifications
 // to the cloneWithoutMutex and copyWithoutMutex functions below.
-// Exception: applyCtx — transient clone-only field; never propagate to the live provider.
+// Exceptions: applyCtx and applyMu are live-provider-only; never propagate to clones.
 type providerImpl struct {
-	mutex sync.RWMutex
+	mutex   sync.RWMutex
+	applyMu sync.Mutex // serializes the full ApplyOptions operation; held during CreateBackend
 
 	storedInfo     *storage.AuthProvider
 	backendFactory BackendFactory
@@ -247,6 +248,9 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 
 // We must lock the provider when applying options to it.
 func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
+	p.applyMu.Lock()
+	defer p.applyMu.Unlock()
+
 	var (
 		priorBackend        Backend
 		staleBackend        Backend
@@ -356,6 +360,16 @@ func (p *providerImpl) MergeConfigInto(newCfg map[string]string) map[string]stri
 	}
 
 	return p.backendFactory.MergeConfig(newCfg, p.storedInfo.GetConfig())
+}
+
+// restoreStoredInfo reverts storedInfo to a prior snapshot under applyMu + mutex,
+// keeping live and stored state consistent after a persistence failure.
+func (p *providerImpl) restoreStoredInfo(prior *storage.AuthProvider) {
+	p.applyMu.Lock()
+	defer p.applyMu.Unlock()
+	p.mutex.Lock()
+	p.storedInfo = prior.CloneVT()
+	p.mutex.Unlock()
 }
 
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.

@@ -23,6 +23,18 @@ func ValidateName(ctx context.Context, store Store) ProviderOption {
 	}
 }
 
+// ValidateNameIfChanged validates the provider name only when it differs from
+// originalName. Used by UpdateProvider to catch duplicate-name errors before
+// the live provider is mutated.
+func ValidateNameIfChanged(ctx context.Context, store Store, originalName string) ProviderOption {
+	return func(pr *providerImpl) error {
+		if pr.storedInfo.GetName() == originalName {
+			return nil
+		}
+		return validateName(ctx, pr, store)
+	}
+}
+
 var (
 	errNoProviderName        = errox.InvalidArgs.CausedBy("no name specified for the provider")
 	errDuplicateProviderName = errox.InvalidArgs.CausedBy("a provider already exists with the given name")
