@@ -6,26 +6,36 @@ describe('Cypress.expose public config', () => {
     });
 
     it('does not expose secrets to the browser', () => {
-        expect(Cypress.expose('ROX_AUTH_TOKEN')).to.equal(undefined);
-        expect(Cypress.expose('OPENSHIFT_CONSOLE_USERNAME')).to.equal(undefined);
-        expect(Cypress.expose('OPENSHIFT_CONSOLE_PASSWORD')).to.equal(undefined);
-        expect(Cypress.expose('DEMO_PASSWORD')).to.equal(undefined);
-        expect(Object.keys(Cypress.expose())).to.not.include.members([
+        // Assert on key names only, so a failure never prints a secret value into the CI log.
+        const exposedKeys = Object.keys(Cypress.expose());
+        [
             'ROX_AUTH_TOKEN',
             'OPENSHIFT_CONSOLE_USERNAME',
             'OPENSHIFT_CONSOLE_PASSWORD',
             'DEMO_PASSWORD',
-        ]);
+        ].forEach((secretKey) => {
+            expect(exposedKeys).to.not.include(secretKey);
+        });
     });
 
-    it('copies CYPRESS_* public values when the runner exports them', function () {
-        if (Cypress.expose('ROX_FAKE_FLAG') === undefined) {
-            this.skip();
-        }
+    it('copies feature flags exported by scripts/cypress.sh', function () {
+        // scripts/cypress.sh always exports ROX_AUTH_TOKEN alongside the feature flags, so use it to
+        // detect a runner launch. If the copy to expose breaks, hasFeatureFlag returns false and
+        // flag-gated tests skip silently, so fail loudly here instead.
+        cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+            if (!ROX_AUTH_TOKEN) {
+                this.skip();
+            }
 
-        expect(Cypress.expose('ROX_FAKE_FLAG')).to.equal(true);
-        expect(Cypress.expose('ROX_OTHER_FLAG')).to.equal(false);
-        expect(Cypress.expose('ORCHESTRATOR_FLAVOR')).to.equal('openshift');
+            const exposedFlags = Object.entries(Cypress.expose()).filter(([key]) =>
+                key.startsWith('ROX_')
+            );
+            expect(exposedFlags, 'ROX_* feature flags in Cypress.expose()').to.not.be.empty;
+            exposedFlags.forEach(([key, value]) => {
+                // Compare the type, not the value, so an unexpected secret never reaches the CI log.
+                expect(typeof value, key).to.equal('boolean');
+            });
+        });
     });
 
     it('keeps secrets available to cy.env()', function () {
@@ -34,7 +44,6 @@ describe('Cypress.expose public config', () => {
                 this.skip();
             }
             expect(ROX_AUTH_TOKEN).to.be.a('string');
-            expect(Cypress.expose('ROX_AUTH_TOKEN')).to.equal(undefined);
         });
     });
 
