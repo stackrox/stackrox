@@ -44,7 +44,7 @@ _Note: Similar instructions apply when using
    Note that Docker for Mac is no longer the most recommended k8s environment for development.
    Some recommended alternatives are `podman-desktop` or `colima`.
 
-1. **Deploy** - Run `npm run deploy-local` (wraps `../deploy/k8s/deploy-local.sh`)
+1. **Deploy** - Run `npm run deploy-local` (wraps `../deploy/deploy-local.sh`)
    to deploy the StackRox k8s app. Make sure that your git working directory is
    clean and that the branch that you're on has a corresponding tag from CI (see
    Roxbot comment for a PR branch). Alternatively, you can specify the image tag
