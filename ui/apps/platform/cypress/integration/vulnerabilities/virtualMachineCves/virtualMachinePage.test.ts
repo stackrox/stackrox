@@ -50,7 +50,10 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
     withAuth();
 
     before(function () {
-        if (!hasFeatureFlag('ROX_VIRTUAL_MACHINES')) {
+        if (
+            !hasFeatureFlag('ROX_VIRTUAL_MACHINES') ||
+            !hasFeatureFlag('ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL')
+        ) {
             this.skip();
         }
     });
