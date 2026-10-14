@@ -988,7 +988,7 @@ func (s *clusterDataStoreTestSuite) TestUpdateCluster() {
 	assert.Equal(s.T(), filter.(*regexp.Regexp).String(), "test-.*")
 }
 
-func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilterInvalidatesCache() {
+func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilterPreservesCache() {
 	clusterID := fixtureconsts.Cluster1
 	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("previously-valid-.*"))
 
@@ -1009,22 +1009,16 @@ func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilterInvalidatesC
 
 	ctx := sac.WithAllAccess(s.T().Context())
 
-	s.clusterStore.EXPECT().
-		Upsert(gomock.Any(), gomock.Any()).
-		Return(nil)
-
 	err := s.datastore.updateClusterNoLock(ctx, testCluster)
-	s.NoError(err)
+	s.ErrorContains(err, "invalid excluded namespaces filter")
 
-	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
-	assert.False(s.T(), ok)
+	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.True(ok)
+	s.Equal("previously-valid-.*", filter.(*regexp.Regexp).String())
 }
 
-func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilterInvalidatesCache() {
+func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilter() {
 	clusterID := fixtureconsts.Cluster1
-	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("previously-valid-.*"))
-	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
-	s.Require().True(ok)
 
 	testCluster := &storage.Cluster{
 		Id:        clusterID,
@@ -1047,7 +1041,7 @@ func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilterInvalidatesCach
 
 	err := s.datastore.buildCache(sac.WithAllAccess(s.T().Context()))
 	s.Require().NoError(err)
-	_, ok = s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
 	s.False(ok)
 }
 
@@ -1070,12 +1064,8 @@ func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilter() {
 
 	ctx := sac.WithAllAccess(s.T().Context())
 
-	s.clusterStore.EXPECT().
-		Upsert(gomock.Any(), gomock.Any()).
-		Return(nil)
-
 	err := s.datastore.updateClusterNoLock(ctx, testCluster)
-	s.NoError(err)
+	s.ErrorContains(err, "invalid excluded namespaces filter")
 
 	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
 	assert.False(s.T(), ok)
