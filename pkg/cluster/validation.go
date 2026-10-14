@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -29,6 +30,17 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 // Some fields are allowed to be left empty for the server to complete with default values.
 func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	errorList := errorhelpers.NewErrorList("Cluster Validation")
+	config := getProcessIndicatorsConfig(cluster)
+	if config != nil {
+		filter := config.GetExcludeNamespaceFilter()
+		if _, err := regexp.Compile(filter); err != nil {
+			errorList.AddError(fmt.Errorf("invalid excluded namespaces filter %q: %w", filter, err))
+		} else if effectiveFilter := GetNamespaceFilter(cluster); effectiveFilter != nil && *effectiveFilter != filter {
+			if _, err := regexp.Compile(*effectiveFilter); err != nil {
+				errorList.AddError(fmt.Errorf("invalid combined excluded namespaces filter %q: %w", *effectiveFilter, err))
+			}
+		}
+	}
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
 	}
