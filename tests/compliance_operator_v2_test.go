@@ -1247,11 +1247,19 @@ func deriveNodeRolesFromMachineConfigPools(ctx context.Context, t *testing.T) []
 // with only master+worker pools the discovered set coincides with the legacy default, so the run is
 // a regression guard; on a cluster with a custom pool it is a conclusive discovery check.
 //
-// It uses the ocp4-pci-dss-node profile, which no other test in this file claims, so it can run
-// alongside the other parallel tests without colliding over a shared profile (Central rejects two
-// scan configs that share a profile on the same cluster).
+// It uses the ocp4-pci-dss-node profile, which no other test in this file claims, so it would not
+// collide with the other parallel tests over a shared profile (Central rejects two scan configs
+// that share a profile on the same cluster) if it ran in parallel with them.
+//
+// Not parallel: it also watches Sensor's own logs, which assumes exactly one Sensor pod is running
+// (getSensorPod). Other tests in this file (e.g. TestComplianceV2CentralSendsScanConfiguration,
+// TestComplianceV2DeleteComplianceScanConfigurations) deliberately scale Sensor to 0 and back to 1,
+// and getSensorPod can observe a transient 2-pod window while that settles. Running in the serial
+// phase keeps this test from overlapping with the parallel ones; the short retry below in turn
+// tolerates the trailing edge of whichever serial test happened to run immediately before this one
+// (confirmed live: without it, this test intermittently failed with "more than one sensor pod
+// running" right after TestComplianceV2CentralSendsScanConfiguration's own scale-back-to-1 cleanup).
 func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 	dynClient := createDynamicClient(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -1269,8 +1277,12 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 	ks := &KubernetesSuite{}
 	ks.SetT(t)
 	ks.k8s = createK8sClient(t)
-	sensorPod, err := ks.getSensorPod(ctx, namespaces.StackRox)
-	require.NoError(t, err, "failed to find the Sensor pod to watch its logs for MCP discovery failures")
+	var sensorPod *corev1.Pod
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		pod, err := ks.getSensorPod(ctx, namespaces.StackRox)
+		require.NoError(c, err)
+		sensorPod = pod
+	}, 30*time.Second, time.Second, "failed to find a single settled Sensor pod to watch its logs for MCP discovery failures")
 	sensorLogFromByte, err := ks.getLastLogBytePos(ctx, namespaces.StackRox, sensorPod.GetName(), sensorContainer)
 	require.NoError(t, err, "failed to get Sensor's current log position")
 
