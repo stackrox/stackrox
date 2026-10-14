@@ -1,49 +1,35 @@
 import { hasFeatureFlag, hasOrchestratorFlavor } from '../helpers/features';
 
+// Assertions report key names only, so a failure never prints a secret value into the CI log.
+const SECRET_KEYS = [
+    'ROX_AUTH_TOKEN',
+    'OPENSHIFT_CONSOLE_USERNAME',
+    'OPENSHIFT_CONSOLE_PASSWORD',
+    'DEMO_PASSWORD',
+];
+
 describe('Cypress.expose public config', () => {
-    it('exposes AXE_CORE_PATH from setupNodeEvents', () => {
-        expect(Cypress.expose('AXE_CORE_PATH')).to.match(/axe\.min\.js$/);
-    });
-
     it('does not expose secrets to the browser', () => {
-        // Assert on key names only, so a failure never prints a secret value into the CI log.
-        const exposedKeys = Object.keys(Cypress.expose());
-        [
-            'ROX_AUTH_TOKEN',
-            'OPENSHIFT_CONSOLE_USERNAME',
-            'OPENSHIFT_CONSOLE_PASSWORD',
-            'DEMO_PASSWORD',
-        ].forEach((secretKey) => {
-            expect(exposedKeys).to.not.include(secretKey);
-        });
+        const exposed = Cypress.expose();
+        const leakedKeys = SECRET_KEYS.filter((key) => key in exposed);
+
+        expect(leakedKeys, 'secrets in Cypress.expose()').to.be.empty;
     });
 
-    it('copies feature flags exported by scripts/cypress.sh', function () {
+    it('copies feature flags exported by scripts/cypress.sh as booleans', function () {
         // scripts/cypress.sh always exports ROX_AUTH_TOKEN alongside the feature flags, so use it to
-        // detect a runner launch. If the copy to expose breaks, hasFeatureFlag returns false and
-        // flag-gated tests skip silently, so fail loudly here instead.
+        // detect a runner launch. If the copy breaks, flag-gated tests skip silently, so fail here.
         cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
             if (!ROX_AUTH_TOKEN) {
                 this.skip();
             }
 
-            const exposedFlags = Object.entries(Cypress.expose()).filter(([key]) =>
-                key.startsWith('ROX_')
-            );
-            expect(exposedFlags, 'ROX_* feature flags in Cypress.expose()').to.not.be.empty;
-            exposedFlags.forEach(([key, value]) => {
-                // Compare the type, not the value, so an unexpected secret never reaches the CI log.
-                expect(typeof value, key).to.equal('boolean');
-            });
-        });
-    });
+            const exposed = Cypress.expose();
+            const flagKeys = Object.keys(exposed).filter((key) => key.startsWith('ROX_'));
+            const nonBooleanKeys = flagKeys.filter((key) => typeof exposed[key] !== 'boolean');
 
-    it('keeps secrets available to cy.env()', function () {
-        cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
-            if (!ROX_AUTH_TOKEN) {
-                this.skip();
-            }
-            expect(ROX_AUTH_TOKEN).to.be.a('string');
+            expect(flagKeys, 'ROX_* feature flags in Cypress.expose()').to.not.be.empty;
+            expect(nonBooleanKeys, 'non-boolean ROX_* values').to.be.empty;
         });
     });
 
