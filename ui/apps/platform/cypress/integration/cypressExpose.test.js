@@ -9,10 +9,12 @@ describe('Cypress.expose public config', () => {
         expect(Cypress.expose('ROX_AUTH_TOKEN')).to.equal(undefined);
         expect(Cypress.expose('OPENSHIFT_CONSOLE_USERNAME')).to.equal(undefined);
         expect(Cypress.expose('OPENSHIFT_CONSOLE_PASSWORD')).to.equal(undefined);
+        expect(Cypress.expose('DEMO_PASSWORD')).to.equal(undefined);
         expect(Object.keys(Cypress.expose())).to.not.include.members([
             'ROX_AUTH_TOKEN',
             'OPENSHIFT_CONSOLE_USERNAME',
             'OPENSHIFT_CONSOLE_PASSWORD',
+            'DEMO_PASSWORD',
         ]);
     });
 
