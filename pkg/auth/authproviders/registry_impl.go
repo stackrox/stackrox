@@ -219,28 +219,30 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 
 	impl := provider.(*providerImpl)
 
-	// Hold applyMu for the entire update so the snapshot, apply, persist, and
-	// commit are atomic with respect to concurrent ApplyOptions calls.
+	// Hold applyMu for the snapshot + apply + persist + commit cycle, then
+	// release it BEFORE acquiring r.mutex for the lifecycle hooks. This avoids
+	// a lock cycle with DeleteProvider (which holds r.mutex → applyMu).
 	impl.applyMu.Lock()
-	defer impl.applyMu.Unlock()
 
-	// Snapshot the name under applyMu: safe because no concurrent ApplyOptions
-	// can change storedInfo while we hold the lock.
 	impl.mutex.RLock()
 	originalName := impl.storedInfo.GetName()
 	impl.mutex.RUnlock()
 
-	// Apply options, rebuild backend if needed, persist, then commit — all inside
-	// the same applyMu acquisition. Persist-before-commit means a persistence
-	// failure leaves the live provider unchanged; no rollback is needed.
-	// ValidateNameIfChanged catches duplicate-name errors before live state is mutated.
 	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
-	if err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...); err != nil {
+	err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...)
+
+	impl.applyMu.Unlock()
+
+	if err != nil {
 		return nil, err
 	}
 
+	// Fire lifecycle hooks under r.mutex. Recheck that the provider was not
+	// deleted between applyMu.Unlock() and r.mutex.Lock().
 	r.mutex.Lock()
-	r.updatedNoLock(provider)
+	if r.providers[id] == provider {
+		r.updatedNoLock(provider)
+	}
 	r.mutex.Unlock()
 
 	return provider, nil
