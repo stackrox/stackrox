@@ -2,7 +2,7 @@ import qs from 'qs';
 
 import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
-import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
+import type { SourceType } from 'types/scanComponent.proto';
 import type { Advisory } from 'types/vulnerability.proto';
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
 import {
@@ -11,55 +11,10 @@ import {
     getRequestQueryStringForSearchFilter,
 } from 'utils/searchUtils';
 
-// Legacy API (v2/virtualmachines)
-
-type VirtualMachineState = 'UNKNOWN' | 'STOPPED' | 'RUNNING';
-
-type VirtualMachineScan = {
-    scanTime: string; // ISO 8601 date string
-    operatingSystem: string;
-    components: ScanComponent[];
-    notes: VirtualMachineScanNote[];
-};
-
-type VirtualMachineScanNote = 'UNSET' | 'OS_UNKNOWN' | 'OS_UNSUPPORTED';
-
-export type VirtualMachine = {
-    id: string;
-    namespace: string;
-    name: string;
-    clusterId: string;
-    clusterName: string;
-    facts?: Record<string, string>;
-    scan?: VirtualMachineScan;
-    lastUpdated: string; // ISO 8601 date string
-    vsockCid: number;
-    state: VirtualMachineState;
-};
-
-export type ListVirtualMachinesResponse = {
-    virtualMachines: VirtualMachine[];
-    totalCount: number;
-};
-
-export function listVirtualMachines({
-    sortOption,
-    page,
-    perPage,
-    searchFilter,
-}: SearchQueryOptions): Promise<ListVirtualMachinesResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
-    return axios
-        .get<ListVirtualMachinesResponse>(`/v2/virtualmachines?${params}`)
-        .then((response) => response.data);
-}
-
-export function getVirtualMachine(id: string): Promise<VirtualMachine> {
-    return axios.get<VirtualMachine>(`/v2/virtualmachines/${id}`).then((response) => response.data);
-}
-
 // Enhanced API (v2/virtualmachines/vms)
 // behind ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL feature flag
+
+type VirtualMachineState = 'UNKNOWN' | 'STOPPED' | 'RUNNING';
 
 type VulnFixableCount = {
     total: number;

@@ -385,7 +385,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/virtual-machine-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
+        featureFlagRequirements: allEnabled([
+            'ROX_VIRTUAL_MACHINES',
+            'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL',
+        ]),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'base-images': {
