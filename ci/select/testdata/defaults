@@ -21,3 +21,13 @@ gke-nongroovy-e2e-tests run
 gke-qa-e2e-tests skip
 gke-ui-e2e-tests run
 ocp-vm-scanning-e2e-tests skip
+check-generated-files run
+check-crd-compatibility run
+golangci-lint run
+github-actions-lint run
+openshift-ci-lint run
+shell-unit-tests run
+ui run
+ui-component run
+local-roxctl-tests run
+db-integration-tests run

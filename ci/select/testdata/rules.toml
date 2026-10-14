@@ -23,6 +23,16 @@ jobs = [
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
   "ocp-vm-scanning-e2e-tests",
+  "check-generated-files",
+  "check-crd-compatibility",
+  "golangci-lint",
+  "github-actions-lint",
+  "openshift-ci-lint",
+  "shell-unit-tests",
+  "ui",
+  "ui-component",
+  "local-roxctl-tests",
+  "db-integration-tests",
 ]
 
 # The label votes run for every target. A skip from another rule clashes,
@@ -45,7 +55,7 @@ run = ["*"]
 [[rules]]
 name = "docs-only"
 when = "every-file-matches"
-paths = ['\.md$', '^docs/', '^CHANGELOG']
+paths = ['\.md$', '^docs/', '^CHANGELOG', '^README']
 skip = ["*"]
 
 # Workflow hooks and the selector do not change the product under test.
@@ -72,6 +82,9 @@ skip = [
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
   "ocp-vm-scanning-e2e-tests",
+  "db-integration-tests",
+  "go-postgres",
+  "sensor-integration-tests",
 ]
 
 [[rules]]

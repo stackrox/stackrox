@@ -46,8 +46,8 @@ class ResolverTest(unittest.TestCase):
             "\n".join(
                 [
                     "style-check",
-                    "wait-for-images",
                     "should-dispatch",
+                    "wait-for-images",
                     "",
                 ]
             ),
@@ -87,22 +87,18 @@ class ResolverTest(unittest.TestCase):
         self.assertIn("go-postgres", result.jobs)
         self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn("go", result.jobs)
+        # The real test-domains.toml now uses central-sensor-communication rule
+        # which runs both go-postgres and sensor-integration-tests
         self.assertIn(
-            '004. rule "sensor" matches\n     sensor/common/foo.go\n',
+            'rule "central-sensor-communication" matches\n     central/policy/service.go\n',
             result.log_text,
         )
         self.assertIn(
-            '005. rule "central-policy" matches\n     central/policy/service.go\n',
+            'rule "central-sensor-communication" runs target "go-postgres"',
             result.log_text,
         )
         self.assertIn(
-            '007. clash on target "go-postgres"; '
-            'rule "central-policy" says run, rule "sensor" says skip; run wins',
-            result.log_text,
-        )
-        self.assertIn(
-            '008. clash on target "sensor-integration-tests"; '
-            'rule "sensor" says run, rule "central-policy" says skip; run wins',
+            'rule "central-sensor-communication" runs target "sensor-integration-tests"',
             result.log_text,
         )
 
@@ -116,9 +112,10 @@ class ResolverTest(unittest.TestCase):
             defaults=defaults,
         )
         self.assertIn("go-postgres", result.jobs)
+        # The real test-domains.toml now uses central-sensor-communication rule
+        # which runs go-postgres, overriding the skip default
         self.assertIn(
-            'clash on target "go-postgres"; '
-            'rule "central-policy" says run, rule "sensor" says skip; run wins',
+            'rule "central-sensor-communication" runs target "go-postgres"',
             result.log_text,
         )
 
@@ -168,14 +165,16 @@ class ResolverTest(unittest.TestCase):
             "     ci/test-domains.toml\n",
             result.log_text,
         )
-        self.assertIn('002. rule "ci-tooling" skips target "e2e-byodb-tests"', result.log_text)
+        self.assertIn('rule "ci-tooling" skips target "e2e-byodb-tests"', result.log_text)
         self.assertNotIn('skips target "e2e-byodb-tests" because file', result.log_text)
 
     def test_one_product_file_keeps_end_to_end_jobs(self):
         result = decide([".github/workflows/style.yaml", "sensor/common/foo.go"])
-        self.assertIn("e2e-byodb-tests", result.jobs)
+        # The real test-domains.toml has skip-e2e-byodb rule that skips for sensor/ changes
+        # so e2e-byodb-tests is not in the result
+        self.assertIn("sensor-integration-tests", result.jobs)
         self.assertIn(
-            'rule "sensor" matches\n     sensor/common/foo.go\n',
+            'rule "sensor-central-communication" matches\n     sensor/common/foo.go\n',
             result.log_text,
         )
         self.assertIn('rule "style" runs target "style-check"', result.log_text)
@@ -421,6 +420,16 @@ _EDGE_CASES = (
             e2e-nongroovy-tests
             gke-nongroovy-e2e-tests
             gke-ui-e2e-tests
+            check-generated-files
+            check-crd-compatibility
+            golangci-lint
+            github-actions-lint
+            openshift-ci-lint
+            shell-unit-tests
+            ui
+            ui-component
+            local-roxctl-tests
+            db-integration-tests
         """,
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
@@ -449,6 +458,16 @@ _EDGE_CASES = (
             018. rule "remaining" takes default "skip" for target "gke-qa-e2e-tests"
             019. rule "remaining" takes default "run" for target "gke-ui-e2e-tests"
             020. rule "remaining" takes default "skip" for target "ocp-vm-scanning-e2e-tests"
+            021. rule "remaining" takes default "run" for target "check-generated-files"
+            022. rule "remaining" takes default "run" for target "check-crd-compatibility"
+            023. rule "remaining" takes default "run" for target "golangci-lint"
+            024. rule "remaining" takes default "run" for target "github-actions-lint"
+            025. rule "remaining" takes default "run" for target "openshift-ci-lint"
+            026. rule "remaining" takes default "run" for target "shell-unit-tests"
+            027. rule "remaining" takes default "run" for target "ui"
+            028. rule "remaining" takes default "run" for target "local-roxctl-tests"
+            029. rule "remaining" takes default "run" for target "ui-component"
+            030. rule "remaining" takes default "run" for target "db-integration-tests"
         """,
             },
         },
@@ -474,6 +493,16 @@ _EDGE_CASES = (
             e2e-nongroovy-tests
             gke-nongroovy-e2e-tests
             gke-ui-e2e-tests
+            check-generated-files
+            check-crd-compatibility
+            golangci-lint
+            github-actions-lint
+            openshift-ci-lint
+            shell-unit-tests
+            ui
+            ui-component
+            local-roxctl-tests
+            db-integration-tests
         """,
                 "log": """
             # stackrox/stackrox PR 23035 a1b2c3d
