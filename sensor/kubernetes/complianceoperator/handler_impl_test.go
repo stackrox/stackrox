@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -641,6 +642,35 @@ func getTestRerunScanMsg(name string) *central.MsgToSensor {
 				},
 			},
 		},
+	}
+}
+
+func TestClampNodeRoleReconcileInterval(t *testing.T) {
+	cases := map[string]struct {
+		in   time.Duration
+		want time.Duration
+	}{
+		"zero is clamped to the minimum": {
+			in:   0,
+			want: minNodeRoleReconcileInterval,
+		},
+		"below the minimum is clamped": {
+			in:   time.Second,
+			want: minNodeRoleReconcileInterval,
+		},
+		"exactly the minimum is unchanged": {
+			in:   minNodeRoleReconcileInterval,
+			want: minNodeRoleReconcileInterval,
+		},
+		"above the minimum is unchanged": {
+			in:   5 * time.Minute,
+			want: 5 * time.Minute,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, clampNodeRoleReconcileInterval(tc.in))
+		})
 	}
 }
 

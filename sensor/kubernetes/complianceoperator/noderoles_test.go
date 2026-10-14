@@ -339,3 +339,32 @@ func TestReconcileNodeRoles(t *testing.T) {
 		assert.Zero(t, countActions(client.Actions(), "update", "scansettings"))
 	})
 }
+
+// TestNodeRoleReconcilerTicker drives reconciliation through the real Start()/ticker/run() wiring (every other
+// reconciler test above calls reconcileNodeRoles directly), to prove that path is actually assembled correctly end
+// to end. It sets reconcileInterval directly on the handler, bypassing the env-var clamp enforced by
+// NewRequestHandler/clampNodeRoleReconcileInterval, which is the documented way for a test to use a short interval
+// without waiting out the production minimum.
+func TestNodeRoleReconcilerTicker(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+
+	objs := append(mcps("master", "worker", "infra"), newScanSetting("ss", []string{masterRole, workerRole}, true))
+	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+		machineConfigPoolGVR: "MachineConfigPoolList",
+		complianceoperator.ScanSetting.GroupVersionResource(): "ScanSettingList",
+	}, objs...)
+
+	ready := concurrency.NewSignal()
+	ready.Signal()
+	sensorComponent := NewRequestHandler(client, fakeStatusInfo{namespace: reconcileNamespace}, &ready)
+	m, ok := sensorComponent.(*handlerImpl)
+	require.True(t, ok)
+	m.reconcileInterval = 20 * time.Millisecond
+
+	require.NoError(t, sensorComponent.Start())
+	defer sensorComponent.Stop()
+
+	require.Eventually(t, func() bool {
+		return assert.ObjectsAreEqual([]string{"infra", "master", "worker"}, scanSettingRoles(t, client, "ss"))
+	}, time.Second, 10*time.Millisecond, "reconciler did not converge the ScanSetting's roles via the real ticker")
+}
