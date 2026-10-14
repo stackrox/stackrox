@@ -78,7 +78,7 @@ data:
           # Keep only the StackRox DB PVC volume stats needed for space alerting.
           - source_labels: [__name__, persistentvolumeclaim]
             action: keep
-            regex: kubelet_volume_stats_(used|capacity)_bytes;(central-db|scanner-v4-db)
+            regex: kubelet_volume_stats_(used|capacity)_bytes;(central-db|{{ .Values.scannerV4DbPvcClaimName | regexQuoteMeta }})
 
       - job_name: stackrox
         tls_config:
@@ -164,7 +164,7 @@ data:
         # kubelet volume stats. Exposed as a stable metric for dashboards and
         # reused by the alerts below.
         - record: stackrox:scanner_v4_db_pvc_usage_ratio
-          expr: kubelet_volume_stats_used_bytes{persistentvolumeclaim="scanner-v4-db"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="scanner-v4-db"}
+          expr: kubelet_volume_stats_used_bytes{persistentvolumeclaim={{ .Values.scannerV4DbPvcClaimName | quote }}} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim={{ .Values.scannerV4DbPvcClaimName | quote }}}
 
         - alert: StackRoxScannerV4DbPvcSpaceWarning
           expr: stackrox:scanner_v4_db_pvc_usage_ratio > {{ .Values.scannerV4DbPvcUsageWarningRatio }}
