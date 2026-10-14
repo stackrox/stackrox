@@ -76,15 +76,15 @@ func DefaultRoleMapperOption(fn func(id string) permissions.RoleMapper) Provider
 // DefaultBackend sets a backend from the pool of backend factories if one is not set.
 // If a backend already exists but its config no longer matches the stored config, the
 // stale backend is discarded so a fresh one can be created with the updated config.
+// Lifecycle hooks (OnDisable for the stale backend, OnEnable for the new backend) are
+// NOT called here; they are fired by ApplyOptions on the real provider after
+// copyWithoutMutex succeeds, using the correct pre-update enabled state.
 func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFactory) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.backend != nil {
 			// Detect config drift: if the stored config differs from what the backend
 			// was built from, nil out the backend so it gets rebuilt below.
 			if !maps.Equal(pr.storedInfo.GetConfig(), pr.backend.Config()) {
-				if pr.storedInfo.GetEnabled() {
-					pr.backend.OnDisable(pr)
-				}
 				pr.backend = nil
 			} else {
 				return nil
