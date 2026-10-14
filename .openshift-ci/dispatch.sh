@@ -19,15 +19,21 @@ fi
 ci_job="$1"
 shift
 
-# Skip non-UI jobs early when the PR only touches files under ui/.
-case "$ci_job" in
-    *nongroovy*|*upgrade*)
-        if changes_limited_to "ui/"; then
-            info "Skipping $ci_job: all changes are under ui/"
+# On a pull request, skip before credentials and cluster setup when the
+# decision leaves this job off the list. The label ci-dispatcher-enforce
+# is what makes that skip real. Without it the job runs as it does today.
+if is_in_PR_context; then
+    if "$ROOT/ci/select/build.sh"; then
+        # shellcheck source=../ci/select/prow-gate.sh
+        source "$ROOT/ci/select/prow-gate.sh"
+        if ! ci_decision_allows "$ci_job"; then
+            info "CI decision skips ${ci_job}"
             exit 0
         fi
-        ;;
-esac
+    else
+        info "CI selector build failed; ${ci_job} runs"
+    fi
+fi
 
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
