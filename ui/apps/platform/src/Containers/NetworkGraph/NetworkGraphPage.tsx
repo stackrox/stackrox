@@ -25,6 +25,7 @@ import queryService from 'utils/queryService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import useURLParameter from 'hooks/useURLParameter';
 import type { SearchFilter } from 'types/search';
 
@@ -33,6 +34,7 @@ import type { Models } from './NetworkGraphContainer';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NodeUpdateSection from './components/NodeUpdateSection';
 import NetworkSearch from './components/NetworkSearch';
+import { searchFilterConfig } from './components/searchFilterConfig';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect from './components/EdgeStateSelect';
 import DisplayOptionsSelect from './components/DisplayOptionsSelect';
@@ -366,15 +368,8 @@ function NetworkGraphPageContent() {
                                     </ToolbarItem>
                                 </ToolbarGroup>
                                 <Divider orientation={{ default: 'vertical' }} />
-                                <ToolbarGroup className="pf-v6-u-flex-grow-1">
-                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
-                                        <NetworkSearch
-                                            selectedCluster={clusterFromUrl.name}
-                                            selectedNamespaces={namespacesFromUrl}
-                                            selectedDeployments={deploymentsFromUrl}
-                                            isDisabled={!hasClusterNamespaceSelected}
-                                        />
-                                    </ToolbarItem>
+                                <NetworkSearch isDisabled={!hasClusterNamespaceSelected} />
+                                <ToolbarGroup className="pf-v6-u-align-self-center">
                                     <ToolbarItem className="pf-v6-u-align-self-center">
                                         <DisplayOptionsSelect
                                             selectedOptions={displayOptions}
@@ -405,6 +400,15 @@ function NetworkGraphPageContent() {
                                         </ToolbarItem>
                                     </ToolbarGroup>
                                 )}
+                                <ToolbarGroup className="pf-v6-u-w-100">
+                                    <CompoundSearchFilterLabels
+                                        attributesSeparateFromConfig={[]}
+                                        config={searchFilterConfig}
+                                        searchFilter={searchFilter}
+                                        onFilterChange={setSearchFilter}
+                                        hasClearFilters={false}
+                                    />
+                                </ToolbarGroup>
                             </ToolbarContent>
                         </Toolbar>
                     </PageSection>
