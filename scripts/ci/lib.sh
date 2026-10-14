@@ -1112,26 +1112,11 @@ END
     esac
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-            # Mirrors the index tag OLM deployment and index waiting use (see
-            # deploy_stackrox_operator() in tests/e2e/lib.sh and the "Wait for
-            # Konflux operator index" step in e2e-dispatch.yaml).
-            local index_image_tag="v${tag}"
-            if [[ "${index_image_tag}" != *-fast ]]; then
-                index_image_tag="${index_image_tag}-fast"
-            fi
-            cat >> "${image_list}" << END
-release-operator ${operator_controller_tag}
-release-operator-bundle ${operator_metadata_tag}
-stackrox-operator-index ${index_image_tag}
-END
-        else
-            cat >> "${image_list}" << END
+        cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}
 END
-        fi
     fi
 
     # Remove duplicates.

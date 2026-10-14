@@ -30,15 +30,13 @@ function setup() {
   tag="$(make --quiet --no-print-directory tag)-fast"
   local image_list
   image_list="$(mktemp)"
-  USE_KONFLUX_IMAGES=true DEPLOY_STACKROX_VIA_OPERATOR=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="gke-db-backup-restore-tests-konflux" populate_stackrox_image_list "$image_list"
+  USE_KONFLUX_IMAGES=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="gke-db-backup-restore-tests-konflux" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "release-main ${tag}"
   assert_output --partial "release-central-db ${tag}"
   assert_output --partial "release-roxctl ${tag}"
-  assert_output --partial "release-operator ${tag}"
-  assert_output --partial "release-operator-bundle v${tag}"
-  assert_output --partial "stackrox-operator-index v${tag}"
+  refute_output --partial "operator"
 }
 
 @test "get images for rcd test" {
