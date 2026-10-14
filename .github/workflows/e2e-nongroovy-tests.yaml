@@ -42,6 +42,8 @@ jobs:
       SENSOR_SCANNER_V4_SUPPORT: "true"
       ROX_DEPLOY_SENSOR_WITH_CRS: "true"
       SENSOR_HELM_MANAGED: "true"
+      STORAGE: pvc
+      STORAGE_CLASS: faster
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       PYTHONUNBUFFERED: "1"
