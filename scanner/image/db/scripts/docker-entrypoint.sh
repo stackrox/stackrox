@@ -311,39 +311,49 @@ _pg_want_help() {
 	return 1
 }
 
-# TODO(cdu): review note, remove before the PR. This is a deliberate
-# divergence from central-db, not a port of it. image/postgres's
-# docker-entrypoint.sh only switches binaries when FORCE_OLD_BINARIES=true;
-# here it is unconditional, because the Scanner upgrade path is allowed to
-# decline and must then still come up. Everything in ROX-37425 depends on
-# this, so it is worth confirming you are happy with the divergence.
-#
 ### STACKROX MODIFIED - Always run the server binaries matching the on-disk
-### data directory. If init-entrypoint.sh could not upgrade the cluster (for
-### example there was not enough room to copy it), the directory is still on
-### the previous major version, and starting the newer server against it would
-### crashloop the pod. The image ships the previous major version under
-### /usr/lib64/pgsql (see POSTGRESQL_PREV_VERSION in the base image).
+### data directory. If init-entrypoint.sh declined or failed to upgrade, starting
+### the newer server against it would make the pod crashloop.
+###
+### The base image ships the previous major under
+### /usr/lib64/pgsql/postgresql-<major> (see POSTGRESQL_PREV_VERSION).
+###
+### This function returns 0. Parameter $1 is the root of the previous binaries.
 rox_use_matching_binaries() {
-	local data_version binary_version bindir
+	local prev_dir="$1"
+	local major_regex='^[0-9]+$'
+	local data_version binary_version matching_bin_dir
 
-	# Absent on a fresh install, before init-entrypoint.sh has run initdb.
+	# A fresh install has no usable PG_VERSION file yet.
 	[ -s "$PGDATA/PG_VERSION" ] || return 0
 
-	data_version="$(< "$PGDATA/PG_VERSION")"
-	binary_version="$(postgres -V | sed 's/postgres (PostgreSQL) \([0-9]*\).*/\1/')"
-	[ "$data_version" -lt "$binary_version" ] || return 0
-
-	bindir="/usr/lib64/pgsql/postgresql-${data_version}/bin"
-	if [ ! -x "$bindir/postgres" ]; then
-		printf >&2 'Data directory is PostgreSQL %s but %s is missing; startup will fail\n' \
-			"$data_version" "$bindir"
+	data_version="$(< "$PGDATA/PG_VERSION")" || true
+	if ! [[ "$data_version" =~ $major_regex ]]; then
+		printf >&2 'Cannot read a valid major version from %s/PG_VERSION: "%s"\n' \
+			"$PGDATA" "$data_version"
 		return 0
 	fi
 
-	printf >&2 'Data directory is PostgreSQL %s, starting the binaries in %s\n' \
-		"$data_version" "$bindir"
-	export PATH="$bindir:$PATH"
+	binary_version="$(postgres -V 2>/dev/null | sed 's/postgres (PostgreSQL) \([0-9]*\).*/\1/')" || true
+	if ! [[ "$binary_version" =~ $major_regex ]]; then
+		printf >&2 'Cannot read a valid major version from postgres -V: "%s"\n' \
+			"$binary_version"
+		return 0
+	fi
+
+	[ "$data_version" -lt "$binary_version" ] || return 0
+
+	# Binaries for the data version, which is the previous major.
+	matching_bin_dir="${prev_dir}/postgresql-${data_version}/bin"
+	if [ ! -x "$matching_bin_dir/postgres" ]; then
+		printf >&2 'Data are in PostgreSQL %s, but there is no executable %s/postgres; startup will fail\n' \
+			"$data_version" "$matching_bin_dir"
+		return 0
+	fi
+
+	printf >&2 'Data are still in PostgreSQL %s, starting the binaries in %s\n' \
+		"$data_version" "$matching_bin_dir"
+	export PATH="$matching_bin_dir:$PATH"
 }
 
 _main() {
@@ -357,7 +367,7 @@ _main() {
 		### PostgreSQL binary through PATH. The server itself is launched as
 		### `flock ... "$@" &` below, which resolves `postgres` at exec time,
 		### so exporting PATH here is enough.
-		rox_use_matching_binaries
+		rox_use_matching_binaries /usr/lib64/pgsql
 
 		docker_setup_env
 		# setup data directories and permissions (when run as root)
