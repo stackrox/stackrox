@@ -1195,7 +1195,7 @@ const nodeRoleLabelPrefix = "node-role.kubernetes.io/"
 // because it could not list MachineConfigPools (e.g. missing RBAC on the ClusterRole). On a cluster with
 // only master+worker pools, a successful discovery and this fallback produce the same ScanSetting.roles,
 // so TestComplianceV2AutodiscoverNodeRoles also checks Sensor's logs for this warning to tell them apart.
-var mcpListFailureLog = regexp.MustCompile(`Could not list MachineConfigPools to auto-discover node roles`)
+var mcpListFailureLog = regexp.MustCompile(`Could not auto-discover node roles, falling back to`)
 
 // deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
 // node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
