@@ -52,11 +52,11 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 		if w.GetExcludeByKind() != nil && !features.PolicyWorkloadKindExclusion.Enabled() {
 			continue
 		}
-		compiledExclusion, err := newCompiledExclusion(w)
+		cx, err := newCompiledExclusion(w)
 		if err != nil {
 			return nil, errors.Wrapf(err, "compiling exclusion list %+v for policy %s", w, policy.GetName())
 		}
-		exclusions = append(exclusions, compiledExclusion)
+		exclusions = append(exclusions, cx)
 	}
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
