@@ -47,30 +47,25 @@ func newHandlerWithMCPs(objs ...runtime.Object) *handlerImpl {
 	return &handlerImpl{client: client}
 }
 
+// TestDiscoverNodeRoles exercises the raw lister: it applies no fallback and no env-var gating (that policy lives in
+// defaultNodeRolesWithStatus, see TestDefaultNodeRolesWithStatus below), so a failed or empty list is reported as-is.
 func TestDiscoverNodeRoles(t *testing.T) {
 	roleLabel := func(role string) map[string]string {
 		return map[string]string{nodeRolePrefix + role: ""}
 	}
 
-	t.Run("env off returns master+worker without listing", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
-		// Seed an infra MCP that would change the result if it were listed.
-		m := newHandlerWithMCPs(newMCP("infra", roleLabel("infra")))
-		assert.Equal(t, []string{masterRole, workerRole}, m.discoverNodeRoles(context.Background()))
-	})
-
 	t.Run("discovers and sorts roles from MCPs", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs(
 			newMCP("master", roleLabel("master")),
 			newMCP("worker", roleLabel("worker")),
 			newMCP("infra", roleLabel("infra")),
 		)
-		assert.Equal(t, []string{"infra", "master", "worker"}, m.discoverNodeRoles(context.Background()))
+		roles, err := m.discoverNodeRoles(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"infra", "master", "worker"}, roles)
 	})
 
-	t.Run("falls back when MCP API is absent", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+	t.Run("returns an error when MCP API is absent", func(t *testing.T) {
 		// Simulate a non-OpenShift cluster where listing MCPs fails (API not served).
 		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
 			machineConfigPoolGVR: "MachineConfigPoolList",
@@ -79,28 +74,88 @@ func TestDiscoverNodeRoles(t *testing.T) {
 			return true, nil, errors.New("the server could not find the requested resource")
 		})
 		m := &handlerImpl{client: client}
-		assert.Equal(t, []string{masterRole, workerRole}, m.discoverNodeRoles(context.Background()))
+		roles, err := m.discoverNodeRoles(context.Background())
+		assert.Error(t, err)
+		assert.Empty(t, roles)
 	})
 
-	t.Run("falls back when no MCPs exist", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+	t.Run("returns no roles when no MCPs exist", func(t *testing.T) {
 		m := newHandlerWithMCPs()
-		assert.Equal(t, []string{masterRole, workerRole}, m.discoverNodeRoles(context.Background()))
+		roles, err := m.discoverNodeRoles(context.Background())
+		require.NoError(t, err)
+		assert.Empty(t, roles)
 	})
 
 	t.Run("skips pools without a node-role label", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs(
 			newMCP("master", roleLabel("master")),
 			newMCP("custom", map[string]string{"custom-label": "value"}),
 		)
-		assert.Equal(t, []string{"master"}, m.discoverNodeRoles(context.Background()))
+		roles, err := m.discoverNodeRoles(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"master"}, roles)
 	})
 
 	t.Run("zero-node pool still contributes its role", func(t *testing.T) {
-		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs(newMCP("infra", roleLabel("infra")))
-		assert.Equal(t, []string{"infra"}, m.discoverNodeRoles(context.Background()))
+		roles, err := m.discoverNodeRoles(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"infra"}, roles)
+	})
+}
+
+// TestDefaultNodeRolesWithStatus covers the policy built on top of the raw lister (TestDiscoverNodeRoles): the
+// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES gate, and the master+worker fallback on a list failure or an empty result.
+func TestDefaultNodeRolesWithStatus(t *testing.T) {
+	t.Run("env off returns master+worker without calling discovery", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
+		// Seed an infra MCP that would change the result (and show up in Actions) if discovery ran.
+		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+			machineConfigPoolGVR: "MachineConfigPoolList",
+		}, newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
+		m := &handlerImpl{client: client}
+
+		roles, ok := m.defaultNodeRolesWithStatus()
+
+		assert.Equal(t, []string{masterRole, workerRole}, roles)
+		assert.True(t, ok)
+		assert.Empty(t, client.Actions(), "discovery must not run at all while the env var is off")
+	})
+
+	t.Run("env on discovers from MCPs", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		m := newHandlerWithMCPs(newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
+
+		roles, ok := m.defaultNodeRolesWithStatus()
+
+		assert.Equal(t, []string{"infra"}, roles)
+		assert.True(t, ok)
+	})
+
+	t.Run("falls back to master+worker and reports failure when the MCP list fails", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+			machineConfigPoolGVR: "MachineConfigPoolList",
+		})
+		client.PrependReactor("list", "machineconfigpools", func(k8stesting.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("the server could not find the requested resource")
+		})
+		m := &handlerImpl{client: client}
+
+		roles, ok := m.defaultNodeRolesWithStatus()
+
+		assert.Equal(t, []string{masterRole, workerRole}, roles)
+		assert.False(t, ok, "a list failure must be reported so the reconciler can skip instead of clobbering existing roles")
+	})
+
+	t.Run("falls back to master+worker but reports success when no roles are discovered", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		m := newHandlerWithMCPs()
+
+		roles, ok := m.defaultNodeRolesWithStatus()
+
+		assert.Equal(t, []string{masterRole, workerRole}, roles)
+		assert.True(t, ok, "an empty but successful list is not a failure")
 	})
 }
 
