@@ -1,0 +1,12 @@
+name: Build CI selector
+description: Build the Go CI selection prototype before gated setup steps
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+    - name: Build CI selector
+      shell: bash
+      run: ci/select/build.sh
