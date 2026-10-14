@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import html
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+
+BOOTSTRAP_CSS_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
 
 
 def main():
@@ -22,7 +26,7 @@ def main():
 
     for f in xml_files:
         print(f'Parsing {f} ... ', end='')
-        ok, suites = parse_file_pass1(f)
+        ok, suites = pass1_parse_file(f)
         if not ok:
             print('not a JUnit XML file')
             continue
@@ -36,7 +40,19 @@ def main():
     if not valid_files:
         raise RuntimeError('No valid JUnit reports found')
 
-    print(grand_totals)
+    output_file = Path(args.output_file)
+
+    with tempfile.NamedTemporaryFile(mode='wt', encoding='utf-8', dir=output_file.parent, delete=False,
+                                     prefix=output_file.name + '-tmp-') as tmp_out:
+        tmp_name = tmp_out.name
+        pass2_render(tmp_out, args.title, grand_totals, valid_files)
+
+    Path(tmp_name).rename(output_file)
+
+    size_mib = output_file.stat().st_size / 1024.0 / 1024
+    print(f'Wrote {output_file} ({size_mib:.2f} MiB, {len(valid_files)} input files, ' +
+          f'{grand_totals[Ctr.TESTS]} tests, {grand_totals[Ctr.FAILURES]} failed tests, ' +
+          f'{grand_totals[Ctr.SKIPPED]} skipped tests, {grand_totals[Ctr.ERRORS]} test errors)')
 
     return 0
 
@@ -83,7 +99,7 @@ class TestSuite:
     syserr: str
 
 
-def parse_file_pass1(file):
+def pass1_parse_file(file):
     suites = []
     root_tag = None
     test_suite = None
@@ -176,6 +192,157 @@ def classify(testcase_el):
         return Ctr.SKIPPED
     ensure(not testcase_el.get('status'), 'status override attribute is not supported')
     return Ctr.PASSED
+
+
+def pass2_render(out, title, grand_totals, valid_files):
+    write_doc_start(out, title)
+    write_summary(out, grand_totals)
+    write_controls(out)
+    write_doc_end(out)
+
+
+def write_doc_start(out, title):
+    extra_css = """
+        body { padding: 1rem }
+        h1 { margin-bottom: 1rem }
+        .anchor {
+            visibility: hidden;
+            margin-left: .4rem;
+            text-decoration: none;
+            color: #6c757d;
+            font-weight: normal
+        }
+        .sh:hover .anchor, .row-grid:hover .anchor { visibility: visible }
+        .row-grid {
+            display: grid;
+            grid-template-columns:9rem minmax(10rem, 1fr) 5rem;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, .15)
+        }
+        .row-grid > * {
+            padding: .25rem .5rem;
+            overflow-wrap: anywhere;
+            min-width: 0
+        }
+        .row-grid.hdr {
+            font-weight: 600;
+            background: #f8f9fa
+        }
+        .p { background: #d1e7dd }
+        .f { background: #f8d7da }
+        .s { background: #e2e3e5 }
+        details.case > summary {
+            list-style: none;
+            cursor: pointer
+        }
+        details.case > summary::-webkit-details-marker { display: none }
+        details.case > summary > :nth-child(2)::before {
+            content: "\\25B8  ";
+            color: #6c757d
+        }
+        details.case[open] > summary > :nth-child(2)::before {
+            content: "\\25BE  ";
+            color: #6c757d
+        }
+        details.case:target, .row-grid:target { outline: 2px solid #0d6efd }
+        .cbody {
+            padding: .5rem 1rem;
+            background: #fff
+        }
+        .kv {
+            font-size: .85rem;
+            margin-bottom: .5rem
+        }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f8f9fa;
+            padding: .5rem;
+            border-radius: .25rem;
+            margin-bottom: .5rem
+        }
+        section { margin-bottom: 1.5rem }
+        section:target { background: #fff3cd }
+        section.suite {
+            border-left: 3px solid #dee2e6;
+            padding-left: 1rem;
+        }
+        summary { cursor: pointer }
+    """
+
+    out.write(f"""
+        <!doctype html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>{esc(title)}</title>
+                <link rel="stylesheet" href="{BOOTSTRAP_CSS_URL}">
+                <style>{extra_css}
+                </style>
+            </head>
+            <body>
+                <div class="container-fluid">
+                    <h1>{esc(title)}</h1>
+    """)
+
+
+def write_doc_end(out):
+    out.write("""
+                </div>
+                <script>
+                    document.addEventListener('click', function(ev) {
+                        var a = ev.target.closest('a.anchor');
+                        if (a) {
+                            ev.preventDefault();
+                            location.hash=a.getAttribute('href');
+                        }
+                    });
+                </script>
+            </body>
+        </html>
+    """)
+
+
+def write_summary(out, counts):
+    out.write(f"""
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Summary</h5>
+    """)
+    out.write(badge(counts[Ctr.TESTS], 'text-bg-dark', 'tests'))
+    out.write(badge(counts[Ctr.PASSED], 'text-bg-success', 'passed'))
+    out.write(badge(counts[Ctr.FAILURES], 'text-bg-danger', 'failed'))
+    out.write(badge(counts[Ctr.ERRORS], 'text-bg-warning', 'errored'))
+    out.write(badge(counts[Ctr.SKIPPED], 'text-bg-secondary', 'skipped'))
+    out.write("""
+            </div>
+        </div>
+    """)
+
+
+def write_controls(out):
+    out.write("""
+        <div class="mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-2"
+                onclick="document.querySelectorAll('details.io').forEach(function(d){d.open=true;})">
+                Expand all
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-2"
+                onclick="document.querySelectorAll('details.io').forEach(function(d){d.open=false;})">
+                Collapse all
+            </button>
+        </div>
+    """)
+
+
+def badge(count, cls, label):
+    cls = cls if count > 0 else "text-bg-light"
+    return f'<span class="badge me-1 {cls}">{count} {esc(label)}</span>'
+
+
+def esc(t):
+    return html.escape(str(t), quote=False)
 
 
 if __name__ == '__main__':
