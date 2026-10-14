@@ -5,11 +5,13 @@ Clusters used in test
 """
 
 import os
+from pathlib import Path
 import signal
 import subprocess
 import time
 
 from common import popen_graceful_kill, set_ci_shared_export
+from resource_usage import ResourceSampler
 
 OUTCOME_PASSED = "passed"
 OUTCOME_FAILED = "failed"
@@ -38,12 +40,14 @@ class GKECluster:
     REFRESH_PATH = "scripts/ci/gke.sh"
     TEARDOWN_PATH = "scripts/ci/gke.sh"
 
-    def __init__(self, cluster_id, num_nodes=None, machine_type=None, disk_gb=None):
+    def __init__(self, cluster_id, num_nodes=None, machine_type=None, disk_gb=None, sample_resources=False):
         self.cluster_id = cluster_id
         self.num_nodes = num_nodes
         self.machine_type = machine_type
         self.disk_gb = disk_gb
         self.refresh_token_cmd = None
+        self.sample_resources = sample_resources
+        self.resource_sampler = None
 
     def provision(self):
         set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
@@ -53,6 +57,13 @@ class GKECluster:
         except Exception as err:
             set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
             raise err
+
+        if self.sample_resources:
+            try:
+                self.resource_sampler = ResourceSampler(Path(os.environ["ARTIFACT_DIR"]) / "resource-usage")
+                self.resource_sampler.start()
+            except Exception as err:
+                print(f"WARNING: Could not start resource sampling: {err}")
 
         return self
 
@@ -98,6 +109,11 @@ class GKECluster:
         return self
 
     def teardown(self, canceled=False):
+        if self.resource_sampler is not None:
+            try:
+                self.resource_sampler.stop()
+            except Exception as err:
+                print(f"WARNING: Could not stop resource sampling: {err}")
         set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
         try:
             self._teardown(canceled)
