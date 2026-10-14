@@ -232,16 +232,19 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
 	err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...)
 
-	// Snapshot the committed state while applyMu is still held. A concurrent
-	// UpdateProvider may acquire applyMu next and swap the backend; using the
-	// snapshot ensures we fire hooks for what THIS call committed, not whatever
-	// backend happens to be current when we eventually acquire r.mutex.
+	// Snapshot the committed state while applyMu is still held. This snapshot
+	// includes a generation counter so that if a concurrent UpdateProvider
+	// commits a newer backend and fires its hooks before this call acquires
+	// r.mutex, the stale-hook check below will detect the mismatch and skip.
 	var hookBackend Backend
 	var hookEnabled bool
+	var hookGeneration uint64
 	if err == nil {
-		hookBackend, hookEnabled = concurrency.WithRLock2(&impl.mutex, func() (Backend, bool) {
-			return impl.backend, impl.storedInfo.GetEnabled()
-		})
+		impl.mutex.RLock()
+		hookBackend = impl.backend
+		hookEnabled = impl.storedInfo.GetEnabled()
+		hookGeneration = impl.backendGeneration
+		concurrency.UnsafeRUnlock(&impl.mutex)
 	}
 
 	concurrency.UnsafeUnlock(&impl.applyMu)
@@ -251,14 +254,20 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	}
 
 	// Fire lifecycle hooks under r.mutex. Recheck that the provider was not
-	// deleted between applyMu.Unlock() and r.mutex.Lock().
+	// deleted between applyMu.Unlock() and r.mutex.Lock(), and that no
+	// concurrent UpdateProvider committed a newer backend in the meantime.
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if hookBackend != nil && r.providers[id] == provider {
-		if hookEnabled {
-			hookBackend.OnEnable(provider)
-		} else {
-			hookBackend.OnDisable(provider)
+		currentGen := concurrency.WithRLock1(&impl.mutex, func() uint64 {
+			return impl.backendGeneration
+		})
+		if currentGen == hookGeneration {
+			if hookEnabled {
+				hookBackend.OnEnable(provider)
+			} else {
+				hookBackend.OnDisable(provider)
+			}
 		}
 	}
 

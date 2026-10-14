@@ -29,7 +29,7 @@ var _ Provider = (*providerImpl)(nil)
 
 // If you add new data fields to this class, make sure you make commensurate modifications
 // to the cloneWithoutMutex and copyWithoutMutex functions below.
-// Exceptions: applyCtx and applyMu are live-provider-only; never propagate to clones.
+// Exceptions: applyCtx, applyMu, and backendGeneration are live-provider-only; never propagate to clones.
 type providerImpl struct {
 	mutex   sync.RWMutex
 	applyMu sync.Mutex // serializes the full ApplyOptions operation; held during CreateBackend
@@ -38,6 +38,7 @@ type providerImpl struct {
 	backendFactory BackendFactory
 
 	backend                    Backend
+	backendGeneration          uint64 // incremented on each successful Phase 3 commit; protected by mutex
 	backendCreationDone        concurrency.ErrorSignal
 	lastBackendCreationAttempt time.Time
 
@@ -339,6 +340,7 @@ func (p *providerImpl) applyOptionsLocked(persistFn ProviderOption, options ...P
 			}
 		}
 		copyWithoutMutex(p, modifiedProvider)
+		p.backendGeneration++
 		return nil
 	}(); err != nil {
 		return err
