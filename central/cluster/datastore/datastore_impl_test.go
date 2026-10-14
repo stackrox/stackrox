@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"math"
 	"regexp"
@@ -1017,6 +1018,37 @@ func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilterInvalidatesC
 
 	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
 	assert.False(s.T(), ok)
+}
+
+func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilterInvalidatesCache() {
+	clusterID := fixtureconsts.Cluster1
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("previously-valid-.*"))
+	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.Require().True(ok)
+
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "[",
+				},
+			},
+		},
+	}
+
+	s.clusterStore.EXPECT().Walk(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, fn func(*storage.Cluster) error) error {
+			return fn(testCluster)
+		})
+	s.clusterHealthStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := s.datastore.buildCache(sac.WithAllAccess(s.T().Context()))
+	s.Require().NoError(err)
+	_, ok = s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.False(ok)
 }
 
 func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilter() {
