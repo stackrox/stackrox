@@ -17,7 +17,7 @@ import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
 import { ResourceDescription } from './ResourceDescription';
 
-export type PermissionsTableProps = {
+type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;
     setResourceValue: (resource: string, value: string) => void;
     isDisabled: boolean;

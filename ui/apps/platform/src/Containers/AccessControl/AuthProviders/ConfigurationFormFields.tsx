@@ -18,7 +18,7 @@ import { oidcCallbackModes } from 'constants/accessControl';
 import type { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 
-export type ConfigurationFormFieldsProps = {
+type ConfigurationFormFieldsProps = {
     config: AuthProviderConfig;
     isViewing: boolean;
     onChange: (event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) => void;

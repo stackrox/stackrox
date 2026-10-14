@@ -24,7 +24,7 @@ const styleExpandCollapseButton = {
     paddingLeft: 0,
 } as CSSProperties;
 
-export type EffectiveAccessScopeTableProps = {
+type EffectiveAccessScopeTableProps = {
     clusters: EffectiveAccessScopeCluster[];
     includedClusters: string[];
     includedNamespaces: SimpleAccessScopeNamespace[];

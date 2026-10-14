@@ -77,5 +77,3 @@ export function ResourceDescription({ resource }: ResourceDescriptionProps): Rea
 
     return <p>{description}</p>;
 }
-
-export default ResourceDescription;

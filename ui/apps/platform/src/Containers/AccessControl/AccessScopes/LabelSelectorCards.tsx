@@ -22,7 +22,7 @@ import { getIsEditingLabelSelectorOnTab, getLabelSelectorActivity } from './acce
 import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCard from './LabelSelectorCard';
 
-export type LabelSelectorCardsProps = {
+type LabelSelectorCardsProps = {
     labelSelectors: LabelSelector[];
     labelSelectorsKey: LabelSelectorsKey;
     hasAction: boolean;

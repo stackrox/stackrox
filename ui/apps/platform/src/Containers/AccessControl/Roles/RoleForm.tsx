@@ -31,7 +31,7 @@ import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
 
-export type RoleFormProps = {
+type RoleFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     role: Role;

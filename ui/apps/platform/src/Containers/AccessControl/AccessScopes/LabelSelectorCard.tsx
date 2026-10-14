@@ -50,7 +50,7 @@ const labelIconNamespaceLabelSelector = (
     </Tooltip>
 );
 
-export type LabelSelectorCardProps = {
+type LabelSelectorCardProps = {
     requirements: LabelSelectorRequirement[];
     labelSelectorsKey: LabelSelectorsKey;
     hasAction: boolean;
