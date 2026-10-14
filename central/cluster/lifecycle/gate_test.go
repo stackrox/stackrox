@@ -52,3 +52,21 @@ func TestGateBlocksDeletionUntilActiveWriteCompletes(t *testing.T) {
 	require.True(t, active)
 	release()
 }
+
+// TestBeginDeletionDropsWriteLockBeforeCleanup checks that BeginDeletion only
+// holds the write lock long enough to drain in-flight leases. The dev mutex
+// watchdog aborts the process if that lock stays held through cleanup.
+func TestBeginDeletionDropsWriteLockBeforeCleanup(t *testing.T) {
+	gate := New()
+	releaseDeletion := gate.BeginDeletion("cluster-id")
+	t.Cleanup(releaseDeletion)
+
+	e := gate.entries["cluster-id"]
+	require.NotNil(t, e)
+	require.True(t, e.mu.TryLock(), "write lock still held after BeginDeletion returned")
+	e.mu.Unlock()
+
+	active, release := gate.Enter("cluster-id")
+	require.False(t, active)
+	require.Nil(t, release)
+}
