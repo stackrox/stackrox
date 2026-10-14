@@ -117,7 +117,8 @@ deploy_earlier_tag_central() {
         --resources ci \
         --pause-reconciliation `# subsequent tests mangle resources and image` \
         --exposure loadbalancer \
-        --set central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName=premium-rwo `# i.e. type: pd-ssd` \
+        --set central.spec.central.db.persistence.persistentVolumeClaim.storageClassName=premium-rwo `# i.e. type: pd-ssd` \
+        --set central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName=premium-rwo \
         "$@"
     # shellcheck disable=SC1090
     source "${roxie_envrc}"
