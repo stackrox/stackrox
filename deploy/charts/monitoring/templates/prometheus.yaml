@@ -168,7 +168,7 @@ data:
 
         - alert: StackRoxScannerV4DbPvcSpaceWarning
           expr: stackrox:scanner_v4_db_pvc_usage_ratio > {{ .Values.scannerV4DbPvcUsageWarningRatio }}
-          for: 5m
+          for: 1h
           labels:
             severity: warning
           annotations:
