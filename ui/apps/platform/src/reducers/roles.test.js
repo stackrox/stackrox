@@ -4,7 +4,6 @@ describe('roles reducer', () => {
     it('should return the initial state', () => {
         const expected = {
             roles: [],
-            selectedRole: null,
             userRolePermissions: null,
             error: null,
             isLoading: true,

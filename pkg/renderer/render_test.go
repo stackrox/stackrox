@@ -1,10 +1,12 @@
 package renderer
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -15,6 +17,56 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+func TestRenderCentralWorkerEnv(t *testing.T) {
+	t.Setenv("TEST_VERSIONS", "true")
+	flavor := testutils.MakeImageFlavorForTest(t)
+	config := getBaseConfig()
+	config.Environment = map[string]string{
+		"ROX_CENTRAL_WORKER_ENABLED": "true",
+		"CUSTOM_ENV":                 "preserved",
+	}
+	require.NoError(t, postProcessConfig(&config, renderAll, flavor))
+	valuesFiles, err := renderNewHelmValues(config)
+	require.NoError(t, err)
+	chartTemplate, err := config.HelmImage.GetCentralServicesChartTemplate()
+	require.NoError(t, err)
+	metaValues := charts.GetMetaValuesForFlavor(flavor)
+	metaValues.KubectlOutput = true
+	chartFiles, err := chartTemplate.InstantiateRaw(metaValues)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		enabled     bool
+		expectedEnv []corev1.EnvVar
+	}{
+		"enabled": {
+			enabled:     true,
+			expectedEnv: []corev1.EnvVar{{Name: "ROX_CENTRAL_WORKER_ENABLED", Value: "true"}},
+		},
+		"disabled": {},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			workerValues := zip.NewFile("worker-values.yaml", []byte(fmt.Sprintf("centralWorker:\n  enabled: %t\n", tc.enabled)), 0)
+			files, err := renderHelmChart(chartFiles, renderAll, append(valuesFiles, workerValues))
+			require.NoError(t, err)
+			centralFile := filterCentralFile(files)
+			require.NotNil(t, centralFile)
+			deployment := getCentralDeployment(t, centralFile)
+			require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
+			envVars := deployment.Spec.Template.Spec.Containers[0].Env
+			var workerEnv []corev1.EnvVar
+			for _, envVar := range envVars {
+				if envVar.Name == "ROX_CENTRAL_WORKER_ENABLED" {
+					workerEnv = append(workerEnv, envVar)
+				}
+			}
+			assert.Equal(t, tc.expectedEnv, workerEnv)
+			assert.Contains(t, envVars, corev1.EnvVar{Name: "CUSTOM_ENV", Value: "preserved"})
+		})
+	}
+}
 
 func TestRenderTLSSecretsOnly(t *testing.T) {
 	config := Config{
@@ -77,8 +129,6 @@ func TestRenderScannerOnly(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
@@ -119,8 +169,6 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
@@ -197,8 +245,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -228,8 +274,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -259,8 +303,6 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
 					MainImage:        flavor.MainImage(),
-					ScannerImage:     flavor.ScannerImage(),
-					ScannerDBImage:   flavor.ScannerDBImage(),
 					ScannerV4Image:   flavor.ScannerV4Image(),
 					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
@@ -328,8 +370,6 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:        flavor.MainImage(),
-				ScannerImage:     flavor.ScannerImage(),
-				ScannerDBImage:   flavor.ScannerDBImage(),
 				ScannerV4Image:   flavor.ScannerV4Image(),
 				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},

@@ -159,7 +159,7 @@ export type PolicyMitreAttackVector = {
     techniques: string[]; // technique ids
 };
 
-export type ContainerType = 'INIT';
+export type ContainerType = 'REGULAR' | 'INIT';
 
 export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
 

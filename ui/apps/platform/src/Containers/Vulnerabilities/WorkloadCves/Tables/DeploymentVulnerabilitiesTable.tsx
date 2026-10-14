@@ -202,7 +202,6 @@ function DeploymentVulnerabilitiesTable({
                         const labels: ReactNode[] = [];
                         if (
                             isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                            isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
                             labels.push(<KnownExploitLabel key="exploit" isCompact />);

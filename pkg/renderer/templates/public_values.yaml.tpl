@@ -17,9 +17,6 @@ env:
 imagePullSecrets:
   useExisting:
   - stackrox
-  {{- if and .K8sConfig.ScannerSecretName (ne .K8sConfig.ScannerSecretName "stackrox") }}
-  - {{ .K8sConfig.ScannerSecretName | quote }}
-  {{- end }}
 
 {{- if .K8sConfig.ImageOverrides.MainRegistry }}
 image:
@@ -153,6 +150,7 @@ scannerV4:
 {{- $_ := unset $envVars "ROX_TELEMETRY_ENDPOINT" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_STORAGE_KEY_V1" -}}
 {{- $_ := unset $envVars "ROX_SCANNER_V4" -}}
+{{- $_ := unset $envVars "ROX_CENTRAL_WORKER_ENABLED" -}}
 {{- if $envVars }}
 
 customize:

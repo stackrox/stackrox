@@ -2450,7 +2450,9 @@ class Kubernetes {
         // Allow override of imagePullPolicy for quay.io images. Typically used
         // to set to Never to help keep the list of quay.io prebuilt images up
         // to date for image-prefetcher. Why not all images? See ROX-25258.
-        if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
+        if (deployment.imagePullPolicyOverride) {
+            container.setImagePullPolicy(deployment.imagePullPolicyOverride)
+        } else if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
             container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
         }
         if (deployment.livenessProbeDefined) {
@@ -2678,8 +2680,91 @@ class Kubernetes {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
         }
-        if (waitForDeletion) {
-            waitForNamespaceDeletion(ns)
+        if (waitForDeletion && !waitForNamespaceDeletion(ns)) {
+            // A namespace that is still listed is a failed cleanup, not a soft warning.
+            throw new OrchestratorManagerException(
+                    "Timed out waiting for namespace ${ns} to be deleted${namespaceDeletionDiagnostics(ns)}")
+        }
+    }
+
+    // deleteManagedWorkloads removes deployments, replica sets, and pods so
+    // namespace deletion is not held by a pod's termination. A second delete
+    // with grace period 0 shortens a termination already in progress.
+    @CompileDynamic
+    void deleteManagedWorkloads(String ns) {
+        Timer t = new Timer(20, 1)
+        boolean sawNoPods = false
+        while (t.IsValid()) {
+            if (namespaceGone(ns)) {
+                return
+            }
+            deleteCollectionQuietly { client.apps().deployments().inNamespace(ns).delete() }
+            deleteCollectionQuietly { client.apps().replicaSets().inNamespace(ns).delete() }
+            deleteCollectionQuietly { client.pods().inNamespace(ns).withGracePeriod(0L).delete() }
+            if (listPodsQuietly(ns).isEmpty()) {
+                // A second empty read covers a replica set that creates one
+                // more pod after it is told to delete.
+                if (sawNoPods) {
+                    return
+                }
+                sawNoPods = true
+                continue
+            }
+            sawNoPods = false
+        }
+        def stuck = listPodsQuietly(ns).collect {
+            "${it.metadata?.name} phase=${it.status?.phase} finalizers=${it.metadata?.finalizers}"
+        }
+        log.info "Workloads still present in ${ns} before namespace deletion: ${stuck}"
+    }
+
+    @CompileDynamic
+    private boolean namespaceGone(String ns) {
+        try {
+            return client.namespaces().withName(ns).get() == null
+        } catch (KubernetesClientException e) {
+            return e.code == 404
+        }
+    }
+
+    @CompileDynamic
+    private void deleteCollectionQuietly(Closure deletion) {
+        try {
+            deletion.call()
+        } catch (KubernetesClientException e) {
+            if (e.code != 404) {
+                log.warn "Resource delete during namespace cleanup failed: ${e.message}"
+            }
+        }
+    }
+
+    @CompileDynamic
+    private List listPodsQuietly(String ns) {
+        try {
+            return client.pods().inNamespace(ns).list()?.items ?: []
+        } catch (KubernetesClientException e) {
+            if (e.code == 404) {
+                return []
+            }
+            throw e
+        }
+    }
+
+    @CompileDynamic
+    private String namespaceDeletionDiagnostics(String ns) {
+        try {
+            def remaining = client.namespaces().withName(ns).get()
+            if (remaining == null) {
+                return ""
+            }
+            def pods = listPodsQuietly(ns).collect {
+                "${it.metadata?.name}(phase=${it.status?.phase}, finalizers=${it.metadata?.finalizers})"
+            }
+            return " (phase=${remaining.status?.phase}," +
+                    " deletionTimestamp=${remaining.metadata?.deletionTimestamp}," +
+                    " finalizers=${remaining.metadata?.finalizers}, pods=${pods})"
+        } catch (Exception e) {
+            return " (failed to collect namespace diagnostics: ${e.message})"
         }
     }
 

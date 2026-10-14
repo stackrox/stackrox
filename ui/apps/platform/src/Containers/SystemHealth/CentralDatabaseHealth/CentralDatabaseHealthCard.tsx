@@ -20,7 +20,7 @@ function isDatabaseVersionSupported(databaseVersion: string | undefined): boolea
     if (!databaseVersion) {
         return true;
     }
-    return databaseVersion.startsWith('15');
+    return databaseVersion.startsWith('16');
 }
 
 function getDatabaseHealthInfo(data: DatabaseStatus | undefined): {
@@ -42,7 +42,7 @@ function getDatabaseHealthInfo(data: DatabaseStatus | undefined): {
             messages: [
                 'Running an unsupported configuration of PostgreSQL',
                 `Current version:  ${data.databaseVersion}`,
-                `Required version: 15`,
+                `Required version: 16`,
             ],
         };
     }

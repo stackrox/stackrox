@@ -43,9 +43,6 @@ func request_NetworkGraphService_GetNetworkGraph_0(ctx context.Context, marshale
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -59,6 +56,9 @@ func request_NetworkGraphService_GetNetworkGraph_0(ctx context.Context, marshale
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkGraphService_GetNetworkGraph_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetNetworkGraph(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -96,9 +96,6 @@ func request_NetworkGraphService_GetExternalNetworkEntities_0(ctx context.Contex
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -112,6 +109,9 @@ func request_NetworkGraphService_GetExternalNetworkEntities_0(ctx context.Contex
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkGraphService_GetExternalNetworkEntities_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetExternalNetworkEntities(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -149,9 +149,6 @@ func request_NetworkGraphService_GetExternalNetworkFlows_0(ctx context.Context, 
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -173,6 +170,9 @@ func request_NetworkGraphService_GetExternalNetworkFlows_0(ctx context.Context, 
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkGraphService_GetExternalNetworkFlows_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetExternalNetworkFlows(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -218,9 +218,6 @@ func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.C
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -234,6 +231,9 @@ func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.C
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkGraphService_GetExternalNetworkFlowsMetadata_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetExternalNetworkFlowsMetadata(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -272,9 +272,6 @@ func request_NetworkGraphService_CreateExternalNetworkEntity_0(ctx context.Conte
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -282,6 +279,9 @@ func request_NetworkGraphService_CreateExternalNetworkEntity_0(ctx context.Conte
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.CreateExternalNetworkEntity(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -317,9 +317,6 @@ func request_NetworkGraphService_PatchExternalNetworkEntity_0(ctx context.Contex
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -327,6 +324,9 @@ func request_NetworkGraphService_PatchExternalNetworkEntity_0(ctx context.Contex
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.PatchExternalNetworkEntity(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -359,9 +359,6 @@ func request_NetworkGraphService_DeleteExternalNetworkEntity_0(ctx context.Conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -369,6 +366,9 @@ func request_NetworkGraphService_DeleteExternalNetworkEntity_0(ctx context.Conte
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.DeleteExternalNetworkEntity(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err

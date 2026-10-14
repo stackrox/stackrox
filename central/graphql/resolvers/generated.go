@@ -669,17 +669,27 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EventSource(0)))
 	utils.Must(builder.AddType("Exclusion", []string{
 		"deployment: Exclusion_Deployment",
+		"excludeByKind: Exclusion_ExcludeByKind",
 		"expiration: Time",
 		"image: Exclusion_Image",
 		"name: String!",
+		"matcher: ExclusionMatcher",
+	}))
+	utils.Must(builder.AddUnionType("ExclusionMatcher", []string{
+		"Exclusion_Deployment",
+		"Exclusion_ExcludeByKind",
 	}))
 	utils.Must(builder.AddType("Exclusion_Deployment", []string{
 		"name: String!",
 		"scope: Scope",
 	}))
+	utils.Must(builder.AddType("Exclusion_ExcludeByKind", []string{
+		"kinds: [Exclusion_WorkloadKind!]!",
+	}))
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Exclusion_WorkloadKind(0)))
 	utils.Must(builder.AddType("Exploit", []string{
 		"dateAdded: String!",
 		"dueDate: String!",
@@ -8033,6 +8043,11 @@ func (resolver *exclusionResolver) Deployment(ctx context.Context) (*exclusion_D
 	return resolver.root.wrapExclusion_Deployment(value, true, nil)
 }
 
+func (resolver *exclusionResolver) ExcludeByKind(ctx context.Context) (*exclusion_ExcludeByKindResolver, error) {
+	value := resolver.data.GetExcludeByKind()
+	return resolver.root.wrapExclusion_ExcludeByKind(value, true, nil)
+}
+
 func (resolver *exclusionResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
@@ -8046,6 +8061,34 @@ func (resolver *exclusionResolver) Image(ctx context.Context) (*exclusion_ImageR
 func (resolver *exclusionResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+type exclusionMatcherResolver struct {
+	resolver interface{}
+}
+
+func (resolver *exclusionResolver) Matcher() *exclusionMatcherResolver {
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &exclusionMatcherResolver{
+			resolver: &exclusion_DeploymentResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetExcludeByKind(); val != nil {
+		return &exclusionMatcherResolver{
+			resolver: &exclusion_ExcludeByKindResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *exclusionMatcherResolver) ToExclusion_Deployment() (*exclusion_DeploymentResolver, bool) {
+	res, ok := resolver.resolver.(*exclusion_DeploymentResolver)
+	return res, ok
+}
+
+func (resolver *exclusionMatcherResolver) ToExclusion_ExcludeByKind() (*exclusion_ExcludeByKindResolver, bool) {
+	res, ok := resolver.resolver.(*exclusion_ExcludeByKindResolver)
+	return res, ok
 }
 
 type exclusion_DeploymentResolver struct {
@@ -8100,6 +8143,53 @@ func (resolver *exclusion_DeploymentResolver) Scope(ctx context.Context) (*scope
 	return resolver.root.wrapScope(value, true, nil)
 }
 
+type exclusion_ExcludeByKindResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Exclusion_ExcludeByKind
+}
+
+func (resolver *Resolver) wrapExclusion_ExcludeByKind(value *storage.Exclusion_ExcludeByKind, ok bool, err error) (*exclusion_ExcludeByKindResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exclusion_ExcludeByKindResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExclusion_ExcludeByKinds(values []*storage.Exclusion_ExcludeByKind, err error) ([]*exclusion_ExcludeByKindResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exclusion_ExcludeByKindResolver, len(values))
+	for i, v := range values {
+		output[i] = &exclusion_ExcludeByKindResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapExclusion_ExcludeByKindWithContext(ctx context.Context, value *storage.Exclusion_ExcludeByKind, ok bool, err error) (*exclusion_ExcludeByKindResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exclusion_ExcludeByKindResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExclusion_ExcludeByKindsWithContext(ctx context.Context, values []*storage.Exclusion_ExcludeByKind, err error) ([]*exclusion_ExcludeByKindResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exclusion_ExcludeByKindResolver, len(values))
+	for i, v := range values {
+		output[i] = &exclusion_ExcludeByKindResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *exclusion_ExcludeByKindResolver) Kinds(ctx context.Context) []string {
+	value := resolver.data.GetKinds()
+	return stringSlice(value)
+}
+
 type exclusion_ImageResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8145,6 +8235,24 @@ func (resolver *Resolver) wrapExclusion_ImagesWithContext(ctx context.Context, v
 func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func toExclusion_WorkloadKind(value *string) storage.Exclusion_WorkloadKind {
+	if value != nil {
+		return storage.Exclusion_WorkloadKind(storage.Exclusion_WorkloadKind_value[*value])
+	}
+	return storage.Exclusion_WorkloadKind(0)
+}
+
+func toExclusion_WorkloadKinds(values *[]string) []storage.Exclusion_WorkloadKind {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Exclusion_WorkloadKind, len(*values))
+	for i, v := range *values {
+		output[i] = toExclusion_WorkloadKind(&v)
+	}
+	return output
 }
 
 type exploitResolver struct {

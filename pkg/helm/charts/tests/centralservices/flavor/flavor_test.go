@@ -17,19 +17,14 @@ const testDir = "testdata/helmtest"
 
 func customFlavor(t *testing.T) defaults.ImageFlavor {
 	return defaults.ImageFlavor{
-		MainRegistry:           "example.io",
-		MainImageName:          "custom-main",
-		MainImageTag:           "1.2.3",
-		CentralDBImageName:     "custom-central-db",
-		CentralDBImageTag:      "1.2.4",
-		ScannerImageName:       "custom-scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        "3.2.1",
-		ScannerDBSlimImageName: "scanner-slim",
-		ScannerDBImageName:     "custom-scanner-db",
-		ScannerV4ImageName:     "custom-scanner-v4",
-		ScannerV4DBImageName:   "custom-scanner-v4-db",
-		ScannerV4ImageTag:      "4.2.1",
+		MainRegistry:         "example.io",
+		MainImageName:        "custom-main",
+		MainImageTag:         "1.2.3",
+		CentralDBImageName:   "custom-central-db",
+		CentralDBImageTag:    "1.2.4",
+		ScannerV4ImageName:   "custom-scanner-v4",
+		ScannerV4DBImageName: "custom-scanner-v4-db",
+		ScannerV4ImageTag:    "4.2.1",
 
 		ChartRepo: defaults.ChartRepo{
 			URL:     "url",

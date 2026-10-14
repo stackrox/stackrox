@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "VulnerabilityExceptionService"
+      "name": "VulnerabilityExceptionService",
+      "description": "VulnerabilityExceptionService APIs can be used to manage create and manage vulnerability exceptions."
     }
   ],
   "consumes": [

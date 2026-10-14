@@ -32,12 +32,10 @@ describe('Basic tests of the OCP plugin', () => {
         it('should display plugin information in cluster settings', () => {
             visitConsoleDynamicPluginsStatusPage();
 
-            cy.get('td[data-label="name"]:contains("advanced-cluster-security")')
+            cy.get('td:has(a:contains("advanced-cluster-security"))')
                 .parent()
                 .within(() => {
-                    cy.get('td[data-label="version"]')
-                        .invoke('text')
-                        .should('match', /^[1-9]\d*\.\d+\.\d+/);
+                    cy.contains('td', /^[1-9]\d*\.\d+\.\d+/);
                 });
         });
     });

@@ -1,22 +1,22 @@
 import { Card, CardBody, DescriptionList, Stack, Title } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import type { EvaluationFilter, LifecycleStage } from 'types/policy.proto';
+import type { EvaluationFilter, LifecycleStage, PolicyEventSource } from 'types/policy.proto';
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { containerTypeFilterApplies } from '../policies.utils';
 
 type PolicyFiltersSectionProps = {
     evaluationFilter: EvaluationFilter | null;
     lifecycleStages: LifecycleStage[];
+    eventSource: PolicyEventSource;
 };
 
 function getContainerTypeLabel(
     evaluationFilter: EvaluationFilter | null,
-    lifecycleStages: LifecycleStage[]
+    lifecycleStages: LifecycleStage[],
+    eventSource: PolicyEventSource
 ): string | null {
-    const hasDeployOrRuntime =
-        lifecycleStages.includes('DEPLOY') || lifecycleStages.includes('RUNTIME');
-
-    if (!hasDeployOrRuntime) {
+    if (!containerTypeFilterApplies(lifecycleStages, eventSource)) {
         return null;
     }
 
@@ -27,13 +27,17 @@ function getContainerTypeLabel(
     return null;
 }
 
-function PolicyFiltersSection({ evaluationFilter, lifecycleStages }: PolicyFiltersSectionProps) {
+function PolicyFiltersSection({
+    evaluationFilter,
+    lifecycleStages,
+    eventSource,
+}: PolicyFiltersSectionProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const containerTypeLabel =
         isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
         isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
-            ? getContainerTypeLabel(evaluationFilter, lifecycleStages)
+            ? getContainerTypeLabel(evaluationFilter, lifecycleStages, eventSource)
             : null;
 
     if (!containerTypeLabel) {
