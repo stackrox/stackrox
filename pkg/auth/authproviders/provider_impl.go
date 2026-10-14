@@ -184,7 +184,7 @@ func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, all
 	p.backend = backend
 	enabled := p.storedInfo.GetEnabled()
 	p.backendCreationDone.SignalWithError(err)
-	p.mutex.Unlock()
+	concurrency.UnsafeUnlock(&p.mutex)
 
 	// Fire lifecycle hooks outside the mutex so provider accessors can safely
 	// acquire the read lock from within hook implementations.

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -224,9 +225,9 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	// a lock cycle with DeleteProvider (which holds r.mutex → applyMu).
 	impl.applyMu.Lock()
 
-	impl.mutex.RLock()
-	originalName := impl.storedInfo.GetName()
-	impl.mutex.RUnlock()
+	originalName := concurrency.WithRLock1(&impl.mutex, func() string {
+		return impl.storedInfo.GetName()
+	})
 
 	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
 	err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...)
@@ -238,13 +239,12 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	var hookBackend Backend
 	var hookEnabled bool
 	if err == nil {
-		impl.mutex.RLock()
-		hookBackend = impl.backend
-		hookEnabled = impl.storedInfo.GetEnabled()
-		impl.mutex.RUnlock()
+		hookBackend, hookEnabled = concurrency.WithRLock2(&impl.mutex, func() (Backend, bool) {
+			return impl.backend, impl.storedInfo.GetEnabled()
+		})
 	}
 
-	impl.applyMu.Unlock()
+	concurrency.UnsafeUnlock(&impl.applyMu)
 
 	if err != nil {
 		return nil, err
@@ -253,6 +253,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	// Fire lifecycle hooks under r.mutex. Recheck that the provider was not
 	// deleted between applyMu.Unlock() and r.mutex.Lock().
 	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	if hookBackend != nil && r.providers[id] == provider {
 		if hookEnabled {
 			hookBackend.OnEnable(provider)
@@ -260,7 +261,6 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 			hookBackend.OnDisable(provider)
 		}
 	}
-	r.mutex.Unlock()
 
 	return provider, nil
 }

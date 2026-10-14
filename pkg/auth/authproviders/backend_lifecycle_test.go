@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -347,7 +348,7 @@ type testUserPKIBackendFactory struct {
 func (f *testUserPKIBackendFactory) CreateBackend(_ context.Context, _ string, _ []string, config map[string]string, _ map[string]string) (Backend, error) {
 	pemData := config["keys"]
 	if pemData == "" {
-		return nil, fmt.Errorf("keys parameter is required")
+		return nil, errors.New("keys parameter is required")
 	}
 
 	certs, err := helpers.ParseCertificatesPEM([]byte(pemData))
