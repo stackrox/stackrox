@@ -60,8 +60,7 @@ func (g *Gate) BeginDeletion(clusterID string) func() {
 	concurrency.WithLock(&e.stateMu, func() {
 		e.deleting = true
 	})
-	// Drain in-flight read locks, then release. Cleanup can exceed the dev
-	// mutex watchdog (10s), which aborts the process on a long exclusive hold.
+	// Drain in-flight read locks, then release.
 	concurrency.WithLock(&e.mu, func() {})
 
 	return func() {
