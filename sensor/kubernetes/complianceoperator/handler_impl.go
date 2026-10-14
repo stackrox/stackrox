@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -35,6 +36,12 @@ const (
 	defaultMaxRetries     = 5
 	defaultAPICallTimeout = 5 * time.Second
 	defaultRetryTimeout   = 30 * time.Second
+
+	// minNodeRoleReconcileInterval clamps ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL to avoid excessive
+	// MachineConfigPool/ScanSetting polling if misconfigured. It only guards the env-var-derived production value
+	// (applied once, in NewRequestHandler); tests that construct a handlerImpl directly can still set
+	// reconcileInterval below it to keep ticker-driven tests fast.
+	minNodeRoleReconcileInterval = 10 * time.Second
 )
 
 type handlerImpl struct {
@@ -44,6 +51,14 @@ type handlerImpl struct {
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
+	// roleReconcileTrigger is signaled by the node-role reconcile ticker so that reconciliation runs on the
+	// single-writer run() loop, serialized with create/update/delete request processing.
+	roleReconcileTrigger chan struct{}
+	reconcileTicker      *time.Ticker
+	// reconcileInterval is how often the node-role reconciler ticks. Only used when
+	// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled.
+	reconcileInterval time.Duration
+
 	disabled              concurrency.Signal
 	stopSignal            concurrency.Signal
 	started               *atomic.Bool
@@ -51,6 +66,18 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+}
+
+// clampNodeRoleReconcileInterval enforces minNodeRoleReconcileInterval on the
+// ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL value so a misconfigured env var can't make the reconciler poll the
+// MachineConfigPool/ScanSetting APIs excessively.
+func clampNodeRoleReconcileInterval(interval time.Duration) time.Duration {
+	if interval < minNodeRoleReconcileInterval {
+		log.Warnf("%s=%v is below the minimum of %v; using %v", env.ComplianceNodeRoleReconcileInterval.EnvVar(),
+			interval, minNodeRoleReconcileInterval, minNodeRoleReconcileInterval)
+		return minNodeRoleReconcileInterval
+	}
+	return interval
 }
 
 func (m *handlerImpl) Name() string {
@@ -74,6 +101,9 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
+		roleReconcileTrigger: make(chan struct{}),
+		reconcileInterval:    clampNodeRoleReconcileInterval(env.ComplianceNodeRoleReconcileInterval.DurationSetting()),
+
 		started:               &atomic.Bool{},
 		disabled:              concurrency.NewSignal(),
 		stopSignal:            concurrency.NewSignal(),
@@ -85,13 +115,27 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 }
 
 func (m *handlerImpl) Start() error {
-	defer m.started.Store(true)
+	// Guards against a double-Start leaking a second run() goroutine and orphaning the first reconcileTicker (Stop()
+	// can only stop whichever ticker is currently stored in the field). The sensor framework calls Start() once per
+	// component, so this isn't hit in practice, but it's cheap to make safe.
+	if !m.started.CompareAndSwap(false, true) {
+		return nil
+	}
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
+	// Only drive node-role reconciliation when auto-discovery is enabled; when disabled, no ticker is started and
+	// no writes occur. The env var is read once at startup, consistent with the rest of the env usage.
+	if env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
+		m.reconcileTicker = time.NewTicker(m.reconcileInterval)
+		go m.runNodeRoleReconciler(m.reconcileTicker.C)
+	}
 	return nil
 }
 
 func (m *handlerImpl) Stop() {
+	if m.reconcileTicker != nil {
+		m.reconcileTicker.Stop()
+	}
 	m.stopSignal.Signal()
 }
 
@@ -161,6 +205,25 @@ func (m *handlerImpl) run() {
 
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
+			}
+		case <-m.roleReconcileTrigger:
+			m.reconcileNodeRoles()
+		case <-m.stopSignal.Done():
+			return
+		}
+	}
+}
+
+// runNodeRoleReconciler signals the run() loop to reconcile node roles on every tick. Sending on roleReconcileTrigger
+// keeps reconciliation on the single writer so it never races with request processing.
+func (m *handlerImpl) runNodeRoleReconciler(tickerC <-chan time.Time) {
+	for {
+		select {
+		case <-tickerC:
+			select {
+			case m.roleReconcileTrigger <- struct{}{}:
+			case <-m.stopSignal.Done():
+				return
 			}
 		case <-m.stopSignal.Done():
 			return
