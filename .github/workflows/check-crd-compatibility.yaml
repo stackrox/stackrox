@@ -98,9 +98,18 @@ jobs:
 
     - name: Run crdify for config operator
       run: |
-        set -e
+        set -euo pipefail
         old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"
         new_path="$PWD/config-controller/config/crd/bases"
+        policy_file=config.stackrox.io_securitypolicies.yaml
+        # The installed CRD keeps the exclusion CEL rule. crdify 0.6.0 treats
+        # x-kubernetes-validations as an unhandled error, so compare a copy
+        # with that one validation removed.
+        filtered="$(mktemp -d)"
+        .github/workflows/scripts/strip-securitypolicy-atmostoneof.sh \
+          "${old_path}/${policy_file}" "${filtered}/old-${policy_file}"
+        .github/workflows/scripts/strip-securitypolicy-atmostoneof.sh \
+          "${new_path}/${policy_file}" "${filtered}/new-${policy_file}"
         crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
         set -x
-        $crdify "file://${old_path}/config.stackrox.io_securitypolicies.yaml" "file://${new_path}/config.stackrox.io_securitypolicies.yaml"
+        $crdify "file://${filtered}/old-${policy_file}" "file://${filtered}/new-${policy_file}"
