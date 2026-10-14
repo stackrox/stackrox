@@ -16,18 +16,6 @@ class Constants {
     static final int FAILURE_DEBUG_LIMIT = 10
     static final String AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
     static final String ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
-    static final Map<String, String> CSV_COLUMN_MAPPING = [
-            "Standard"           : "standard",
-            "Cluster"            : "cluster",
-            "Namespace"          : "namespace",
-            "Object Type"        : "objectType",
-            "Object Name"        : "objectName",
-            "Control"            : "control",
-            "Control Description": "controlDescription",
-            "State"              : "state",
-            "Evidence"           : "evidence",
-            "Assessment Time"    : "timestamp",
-    ]
     static final Map<String, List<String>> VIOLATIONS_ALLOWLIST = [
             // TODO(ROX-2659) Remove the fixable CVSS one from here, that's not okay.
             "monitoring"          : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image",

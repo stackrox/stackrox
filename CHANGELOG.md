@@ -17,6 +17,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Removed Features
 
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
+- ROX-36856: The Compliance 1.0 API has been removed. The `ComplianceService` and `ComplianceManagementService` gRPC services, their `/v1/compliance/*` REST equivalents, and the `/api/compliance/export/csv` export endpoint are no longer served. The Splunk TA Compliance feed at `/api/splunk/ta/compliance` now responds with HTTP 410 Gone instead of returning data: remove the Compliance modular input from your Splunk TA configuration. Use Compliance (v2), backed by the Compliance Operator, instead.
 
 ### Deprecated Features
 
