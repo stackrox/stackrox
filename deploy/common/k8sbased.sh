@@ -1001,7 +1001,7 @@ function launch_sensor {
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
         kubectl create namespace "${sensor_namespace}" &>/dev/null || true
-        kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
+        kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/../../scripts/pull-secret.sh" stackrox docker.io)
       fi
 
       if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
