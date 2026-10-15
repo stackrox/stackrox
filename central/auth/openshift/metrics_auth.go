@@ -171,7 +171,7 @@ func seedAccessScope(ctx context.Context) {
 	scope := &storage.SimpleAccessScope{
 		Id:          accessScopeID,
 		Name:        accessScopeName,
-		Description: "Scoped to clusters labeled stackrox.io/central-colocated (set automatically by the operator)",
+		Description: "Scoped to the cluster that runs Central",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DEFAULT,
 		},
