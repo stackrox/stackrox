@@ -9,9 +9,12 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 func New(s service.Service) *tracker.TrackerBase[*finding] {
+	// Cached platform-wide certificate data requires an explicit permission even
+	// though the underlying expiry service accepts any authenticated user.
 	return tracker.MakeGlobalTrackerBase(
 		metrics.Expiry,
 		"hours before certificate expires",
@@ -19,7 +22,7 @@ func New(s service.Service) *tracker.TrackerBase[*finding] {
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, s)
 		},
-	)
+	).RequireView(resources.Administration)
 }
 
 func track(ctx context.Context, s service.Service) tracker.FindingErrorSequence[*finding] {
