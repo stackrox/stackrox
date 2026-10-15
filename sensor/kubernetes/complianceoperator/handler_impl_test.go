@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -18,6 +17,7 @@ import (
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
 )
 
@@ -48,10 +48,17 @@ func (s *HandlerTestSuite) SetupSuite() {
 }
 
 func (s *HandlerTestSuite) SetupTest() {
-	// This suite exercises scan-config message handling, not node-role discovery, and its fake client isn't
-	// MachineConfigPool-aware. Opt out of discovery explicitly instead of relying on the env var's default.
-	s.T().Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
-	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	// Register MachineConfigPoolList too: node-role discovery (on by default) lists MachineConfigPools on every
+	// create/update, and the fake client panics on List for an unregistered GVR instead of returning an error.
+	// No pools are seeded, so discovery falls back to master+worker, matching this suite's existing expectations.
+	// The seed object is converted to unstructured up front (same conversion NewSimpleDynamicClient does
+	// internally) because, unlike that constructor, NewSimpleDynamicClientWithCustomListKinds can't take a typed
+	// object without its GVK already registered in the scheme.
+	scanSettingBinding, err := runtimeObjToUnstructured(&v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	s.Require().NoError(err)
+	s.client = fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+		machineConfigPoolGVR: "MachineConfigPoolList",
+	}, scanSettingBinding)
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
