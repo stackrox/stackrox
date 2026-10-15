@@ -135,7 +135,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 ) : (
                                     <FlexItem>
                                         <Content component="p">
-                                            Use the Red Hat Advanced Clsuter Security Operator to
+                                            Use the Red Hat Advanced Cluster Security Operator to
                                             install secured cluster services.
                                         </Content>
                                         <Content component="p">
