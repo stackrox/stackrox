@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -47,6 +48,9 @@ func (s *HandlerTestSuite) SetupSuite() {
 }
 
 func (s *HandlerTestSuite) SetupTest() {
+	// This suite exercises scan-config message handling, not node-role discovery, and its fake client isn't
+	// MachineConfigPool-aware. Opt out of discovery explicitly instead of relying on the env var's default.
+	s.T().Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
