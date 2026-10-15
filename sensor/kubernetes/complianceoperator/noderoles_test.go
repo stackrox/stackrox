@@ -529,7 +529,7 @@ func TestReconcileNodeRolesBoundsTotalPassTime(t *testing.T) {
 	)
 
 	objs := mcps("master", "worker", "infra")
-	for i := 0; i < numScanSettings; i++ {
+	for i := range numScanSettings {
 		objs = append(objs, newScanSetting(fmt.Sprintf("ss%d", i), []string{masterRole}, true))
 	}
 	m, client := newReconcileHandler(reconcileNamespace, objs...)
