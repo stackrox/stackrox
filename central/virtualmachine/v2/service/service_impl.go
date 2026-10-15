@@ -526,6 +526,14 @@ func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMCo
 	}
 
 	isPending := s.pendingScans.IsPending(request.GetVmId())
+	if isPending && totalCount == 0 {
+		// With no component rows, check VM access before exposing pending state.
+		_, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetVmId())
+		if err != nil {
+			return nil, err
+		}
+		isPending = exists
+	}
 	items := make([]*v2.VMComponentRow, 0, len(components))
 	for _, comp := range components {
 		item := storagetov2.VirtualMachineComponentV2ToRow(comp)
@@ -536,8 +544,9 @@ func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMCo
 	}
 
 	return &v2.ListVMComponentsResponse{
-		Components: items,
-		TotalCount: int32(totalCount),
+		Components:  items,
+		TotalCount:  int32(totalCount),
+		ScanPending: isPending,
 	}, nil
 }
 

@@ -242,6 +242,8 @@ message ListVMComponentsRequest {
 message ListVMComponentsResponse {
   repeated VMComponentRow components = 1;
   int32 total_count = 2;
+  // True while Central processes a scan, including before any components exist.
+  bool scan_pending = 3;
 }
 
 // ─── Endpoint 9: GetVMCVEDetail ───
