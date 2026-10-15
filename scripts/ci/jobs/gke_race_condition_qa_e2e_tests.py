@@ -27,9 +27,9 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as roxie_config_file:
     main_tag = os.environ["MAIN_IMAGE_TAG"]
     build_tag = os.environ["STACKROX_BUILD_TAG"]
     roxie_config_file.write(f"""\
-roxie:
-  version: "{build_tag}"
 operator:
+  version: "{build_tag}" # Necessary since roxie compat layer hardcodes roxie.version: "$MAIN_IMAGE_TAG"
+  operandTag: "{build_tag}"
   operandTagOverrides:
     "main": "{main_tag}"
 """)
