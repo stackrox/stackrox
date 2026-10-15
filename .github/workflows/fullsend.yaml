@@ -1,6 +1,6 @@
 # StackRox policy override to the Fullsend v0.47.1 scaffold.
-# Preserve the explicit review command, eng gate, and disabled bootstrap when
-# regenerating. See .fullsend/README.md for activation and upgrade requirements.
+# Keep review/fix explicitly requested when regenerating. Fullsend performs
+# repository-permission checks inside the pinned reusable dispatcher.
 name: fullsend
 
 on:
@@ -10,70 +10,16 @@ on:
 permissions: {}
 
 jobs:
-  authorize:
+  dispatch:
     if: >-
       github.event_name == 'issue_comment'
       && github.event.issue.pull_request
-      && github.event.comment.body == '/fs-review'
       && github.event.comment.user.type == 'User'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions: {}
-    outputs:
-      authorized: ${{ steps.membership.outputs.authorized }}
-    steps:
-      - name: Check authorization App configuration
-        env:
-          AUTH_APP_ID: ${{ vars.FULLSEND_AUTH_APP_ID }}
-          AUTH_APP_PRIVATE_KEY: ${{ secrets.FULLSEND_AUTH_APP_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$AUTH_APP_ID" || -z "$AUTH_APP_PRIVATE_KEY" ]]; then
-            echo "::error::Fullsend eng authorization App is not configured; dispatch denied"
-            exit 1
-          fi
-
-      - name: Mint organization membership token
-        id: auth-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ vars.FULLSEND_AUTH_APP_ID }}
-          private-key: ${{ secrets.FULLSEND_AUTH_APP_PRIVATE_KEY }}
-          owner: stackrox
-          permission-members: read
-
-      - name: Require active stackrox/eng membership
-        id: membership
-        env:
-          GH_TOKEN: ${{ steps.auth-token.outputs.token }}
-          COMMENT_USER_LOGIN: ${{ github.event.comment.user.login }}
-        run: |
-          set -euo pipefail
-          echo "authorized=false" >> "$GITHUB_OUTPUT"
-          if [[ ! "$COMMENT_USER_LOGIN" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]*$ ]]; then
-            echo "::error::Invalid commenter login; dispatch denied"
-            exit 1
-          fi
-          if ! membership=$(gh api --method GET \
-            "orgs/stackrox/teams/eng/memberships/$COMMENT_USER_LOGIN"); then
-            echo "::error::GitHub could not confirm eng membership; dispatch denied"
-            exit 1
-          fi
-          if ! jq -e -s 'length == 1 and (.[0] | type == "object"
-            and .state == "active" and (.role == "member" or .role == "maintainer"))' \
-            <<< "$membership" >/dev/null; then
-            echo "::notice::Commenter is not an active eng member; dispatch denied"
-            exit 0
-          fi
-          echo "authorized=true" >> "$GITHUB_OUTPUT"
-
-  dispatch:
-    needs: authorize
-    if: needs.authorize.outputs.authorized == 'true'
+      && (github.event.comment.body == '/fs-review'
+          || github.event.comment.body == '/fs-fix')
     cache-mode: read
     # Retain the upstream reusable workflow's permission contract. Role selection
-    # narrows dispatch, not every credential's authority. The repository kill
-    # switch keeps this bootstrap disabled until setup and validation are complete.
+    # narrows dispatch, not every credential's authority.
     permissions:
       actions: write
       id-token: write

@@ -1,12 +1,10 @@
-# StackRox Fullsend bootstrap. Activation requires the checks in README.md.
+# Initial StackRox Fullsend configuration. See README.md for usage.
 version: "1"
-kill_switch: true
 roles:
   - review
+  - coder
 agents:
   - name: code
-    enabled: false
-  - name: fix
     enabled: false
   - name: triage
     enabled: false
