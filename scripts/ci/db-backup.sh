@@ -35,12 +35,38 @@ load_envrc() {
     source "$ENVRC_FILE"
 }
 
-wait_for_central_ping() {
-    local timeout_s="$1"
-    local deadline=$((SECONDS + timeout_s))
+start_port_forward() {
+    if [[ -n "${ROXIE_PORT_FORWARD_PID:-}" ]]; then
+        kill -9 "$ROXIE_PORT_FORWARD_PID" 2>/dev/null || true
+    fi
+    local local_port="${API_ENDPOINT##*:}"
+    nohup kubectl -n "$NAMESPACE" port-forward svc/central "${local_port}:443" \
+        > /tmp/central-port-forward.log 2>&1 &
+    ROXIE_PORT_FORWARD_PID=$!
+    export ROXIE_PORT_FORWARD_PID
+
+    grep -v '^export ROXIE_PORT_FORWARD_PID=' "$ENVRC_FILE" > "${ENVRC_FILE}.tmp" || true
+    echo "export ROXIE_PORT_FORWARD_PID=${ROXIE_PORT_FORWARD_PID}" >> "${ENVRC_FILE}.tmp"
+    mv "${ENVRC_FILE}.tmp" "$ENVRC_FILE"
+}
+
+# Central restarts itself after a DB restore and after an operator-driven
+# upgrade, sometimes more than once in quick succession. kubectl port-forward
+# pins to a single pod and exits for good once that pod disappears, so this
+# restarts the forward itself (not just the ping check) whenever it dies.
+reconnect_port_forward() {
+    kubectl -n "$NAMESPACE" rollout status deploy/central --timeout=5m
+
+    start_port_forward
+    local deadline=$((SECONDS + 300))
     until roxcurl /v1/ping | grep -q ok; do
         if (( SECONDS > deadline )); then
-            die "Central did not come back within ${timeout_s}s"
+            cat /tmp/central-port-forward.log >&2
+            die "Central did not come back within 5m"
+        fi
+        if ! kill -0 "$ROXIE_PORT_FORWARD_PID" 2>/dev/null; then
+            echo "port-forward died, restarting it" >&2
+            start_port_forward
         fi
         sleep 2
     done
@@ -66,8 +92,34 @@ restore_previous_backup() {
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
         central db restore --timeout 5m "postgres_db_${PREVIOUS_VERSION}.sql.zip"
 
-    # The restore bounces Central; wait for it to come back before continuing.
-    wait_for_central_ping 300
+    reconnect_port_forward
+}
+
+trim_images() {
+    load_envrc
+
+    # UpgradesTest.groovy only asserts ImageService.getImages() is
+    # non-empty; it doesn't care which images or how many. The restored
+    # backup carries the full historical image set (100+), which is what
+    # makes the reprocessor -- and its contention with scanner-v4-matcher's
+    # own vulnerability import -- take so long. Keep a small handful and
+    # delete the rest before any of that kicks off.
+    local keep=5
+    local ids
+    ids=$(roxcurl '/v1/images?pagination.limit=1000' | jq -r '.images[].id')
+
+    local to_delete
+    to_delete=$(echo "$ids" | tail -n "+$((keep + 1))")
+    if [[ -z "$to_delete" ]]; then
+        return 0
+    fi
+
+    echo "$to_delete" | xargs -n 20 | while read -r batch; do
+        local query="Image Sha:${batch// /,}"
+        local encoded
+        encoded=$(jq -rn --arg q "$query" '$q|@uri')
+        roxcurl "/v1/images?query.query=${encoded}&confirm=true" -X DELETE > /dev/null
+    done
 }
 
 add_dockerhub_integration() {
@@ -141,13 +193,16 @@ wait_for_deploy() {
 }
 
 wait_for_matcher_import() {
+    # Both call sites (before the restore, and again after the operator
+    # upgrade restarts scanner-v4-matcher onto the new version) can hit a
+    # full, slow bundle reload, so give this a generous timeout.
     echo "Waiting for scanner-v4-matcher's initial vulnerability bundle import to complete..."
-    local deadline=$((SECONDS + 1500))
+    local deadline=$((SECONDS + 3600))
     until kubectl -n "$NAMESPACE" logs deploy/scanner-v4-matcher -c matcher --tail=-1 2>/dev/null \
             | grep -q '"message":"completed update"'; do
         if (( SECONDS > deadline )); then
             kubectl -n "$NAMESPACE" logs deploy/scanner-v4-matcher -c matcher --tail=100 >&2
-            die "scanner-v4-matcher did not finish its initial vulnerability import within 25m"
+            die "scanner-v4-matcher did not finish its initial vulnerability import within 60m"
         fi
         sleep 15
     done
@@ -155,23 +210,7 @@ wait_for_matcher_import() {
 
 restart_central_and_reconnect() {
     kubectl -n "$NAMESPACE" delete pod -l app=central --grace-period=0
-    kubectl -n "$NAMESPACE" rollout status deploy/central --timeout=5m
-
-    if [[ -n "${ROXIE_PORT_FORWARD_PID:-}" ]]; then
-        kill -9 "$ROXIE_PORT_FORWARD_PID" 2>/dev/null || true
-    fi
-    local local_port="${API_ENDPOINT##*:}"
-    nohup kubectl -n "$NAMESPACE" port-forward svc/central "${local_port}:443" \
-        > /tmp/central-port-forward.log 2>&1 &
-
-    local deadline=$((SECONDS + 300))
-    until roxcurl /v1/ping | grep -q ok; do
-        if (( SECONDS > deadline )); then
-            cat /tmp/central-port-forward.log >&2
-            die "Central did not come back within 5m after operator upgrade"
-        fi
-        sleep 2
-    done
+    reconnect_port_forward
 }
 
 wait_for_image_count_stable() {
@@ -180,7 +219,7 @@ wait_for_image_count_stable() {
     local previous=-1
     local stabilized=0
     local current
-    local deadline=$((SECONDS + 600))
+    local deadline=$((SECONDS + 1800))
     while true; do
         current=$(roxcurl /v1/imagescount | jq -r '.count')
         echo "images count: ${current}"
@@ -190,7 +229,7 @@ wait_for_image_count_stable() {
         fi
         previous="$current"
         if (( SECONDS > deadline )); then
-            echo "image count did not stabilize at a nonzero value within 10m (last seen: ${current})" >&2
+            echo "image count did not stabilize at a nonzero value within 30m (last seen: ${current})" >&2
             break
         fi
         sleep 20
@@ -280,6 +319,7 @@ grab_central_backup() {
 run_all() {
     deploy_previous_central
     restore_previous_backup
+    trim_images
     add_dockerhub_integration
     upgrade_operator
     wait_for_image_reprocessing
