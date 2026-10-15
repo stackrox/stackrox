@@ -40,6 +40,14 @@ const (
 	// minNodeRoleReconcileInterval clamps ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL to avoid excessive
 	// MachineConfigPool/ScanSetting polling if misconfigured.
 	minNodeRoleReconcileInterval = 30 * time.Second
+
+	// defaultNodeRoleReconcilePassBudget bounds how long a single reconcileNodeRoles pass may run across all
+	// ScanSettings. Reconciliation runs on the same single-writer loop that processes Central requests, so an
+	// unbounded pass (one retry-timeout-bounded update per ScanSetting) would delay request processing by
+	// multiples of handlerRetryTimeout as the number of managed ScanSettings grows. Kept below
+	// componentProcessTimeout (sensor/common/sensor/component_queue.go, 30s, not exported) so a request already
+	// queued when a reconcile pass starts still gets handled before its own ProcessMessage deadline expires.
+	defaultNodeRoleReconcilePassBudget = 20 * time.Second
 )
 
 type handlerImpl struct {
@@ -57,9 +65,10 @@ type handlerImpl struct {
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
 
-	roleReconcileTrigger chan struct{}
-	reconcileTicker      *time.Ticker
-	reconcileInterval    time.Duration
+	roleReconcileTrigger        chan struct{}
+	reconcileTicker             *time.Ticker
+	reconcileInterval           time.Duration
+	nodeRoleReconcilePassBudget time.Duration
 }
 
 // clampNodeRoleReconcileInterval enforces minNodeRoleReconcileInterval on the
@@ -98,13 +107,14 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		roleReconcileTrigger: make(chan struct{}),
 		reconcileInterval:    clampNodeRoleReconcileInterval(env.ComplianceNodeRoleReconcileInterval.DurationSetting()),
 
-		started:               &atomic.Bool{},
-		disabled:              concurrency.NewSignal(),
-		stopSignal:            concurrency.NewSignal(),
-		complianceIsReady:     coIsReady,
-		handlerMaxRetries:     defaultMaxRetries,
-		handlerAPICallTimeout: defaultAPICallTimeout,
-		handlerRetryTimeout:   defaultRetryTimeout,
+		started:                     &atomic.Bool{},
+		disabled:                    concurrency.NewSignal(),
+		stopSignal:                  concurrency.NewSignal(),
+		complianceIsReady:           coIsReady,
+		handlerMaxRetries:           defaultMaxRetries,
+		handlerAPICallTimeout:       defaultAPICallTimeout,
+		handlerRetryTimeout:         defaultRetryTimeout,
+		nodeRoleReconcilePassBudget: defaultNodeRoleReconcilePassBudget,
 	}
 }
 
@@ -989,7 +999,14 @@ func (m *handlerImpl) callWithRetry(fn retriableCall) error {
 }
 
 func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryWithOnConflictCallbackCtx(m.ctx(), fn, onConflict)
+}
+
+// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context,
+// so a caller can bound the retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own
+// overall deadline), instead of always retrying against the handler's full lifetime context.
+func (m *handlerImpl) callWithRetryWithOnConflictCallbackCtx(ctx context.Context, fn retriableCall, onConflict onConflictCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
 }

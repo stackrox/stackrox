@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -47,11 +48,12 @@ func newMCP(name string, matchLabels map[string]string) *unstructured.Unstructur
 // newTestHandler builds a handlerImpl with a reset stopSignal and short retry settings.
 func newTestHandler(client dynamic.Interface) *handlerImpl {
 	return &handlerImpl{
-		client:                client,
-		stopSignal:            concurrency.NewSignal(),
-		handlerMaxRetries:     2,
-		handlerAPICallTimeout: 500 * time.Millisecond,
-		handlerRetryTimeout:   2 * time.Second,
+		client:                      client,
+		stopSignal:                  concurrency.NewSignal(),
+		handlerMaxRetries:           2,
+		handlerAPICallTimeout:       500 * time.Millisecond,
+		handlerRetryTimeout:         2 * time.Second,
+		nodeRoleReconcilePassBudget: 2 * time.Second,
 	}
 }
 
@@ -320,14 +322,15 @@ func newReconcileHandler(namespace string, objs ...runtime.Object) (*handlerImpl
 	ready := concurrency.NewSignal()
 	ready.Signal()
 	m := &handlerImpl{
-		client:                 client,
-		complianceOperatorInfo: fakeStatusInfo{namespace: namespace},
-		disabled:               concurrency.NewSignal(),
-		stopSignal:             concurrency.NewSignal(),
-		complianceIsReady:      &ready,
-		handlerMaxRetries:      2,
-		handlerAPICallTimeout:  500 * time.Millisecond,
-		handlerRetryTimeout:    2 * time.Second,
+		client:                      client,
+		complianceOperatorInfo:      fakeStatusInfo{namespace: namespace},
+		disabled:                    concurrency.NewSignal(),
+		stopSignal:                  concurrency.NewSignal(),
+		complianceIsReady:           &ready,
+		handlerMaxRetries:           2,
+		handlerAPICallTimeout:       500 * time.Millisecond,
+		handlerRetryTimeout:         2 * time.Second,
+		nodeRoleReconcilePassBudget: 2 * time.Second,
 	}
 	return m, client
 }
@@ -510,6 +513,45 @@ func TestReconcileNodeRoles(t *testing.T) {
 			"the desired roles must survive the conflict-retry round trip, not just the first, discarded attempt")
 		assert.Equal(t, 2, updateAttempts, "expected exactly one retry after the conflict")
 	})
+}
+
+// TestReconcileNodeRolesBoundsTotalPassTime proves nodeRoleReconcilePassBudget bounds the whole pass, not just one
+// ScanSetting's update: each of the 5 ScanSettings here needs a real (slow) update, so without the shared budget the
+// pass would take close to 5*updateDelay. The budget is set to fit only two of them, so reconcileNodeRoles must
+// return well before that, leaving the rest to the next tick instead of serially waiting out every update in turn.
+func TestReconcileNodeRolesBoundsTotalPassTime(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+
+	const (
+		numScanSettings = 5
+		updateDelay     = 150 * time.Millisecond
+		passBudget      = 350 * time.Millisecond // fits roughly 2 updates; well under numScanSettings*updateDelay
+	)
+
+	objs := mcps("master", "worker", "infra")
+	for i := 0; i < numScanSettings; i++ {
+		objs = append(objs, newScanSetting(fmt.Sprintf("ss%d", i), []string{masterRole}, true))
+	}
+	m, client := newReconcileHandler(reconcileNamespace, objs...)
+	m.handlerAPICallTimeout = time.Second
+	m.handlerRetryTimeout = time.Second
+	m.nodeRoleReconcilePassBudget = passBudget
+	// Every update genuinely takes updateDelay; returning handled=false lets the real ObjectTracker-backed
+	// reactor still perform it afterwards, so this only adds latency, it doesn't change the outcome.
+	client.PrependReactor("update", "scansettings", func(k8stesting.Action) (bool, runtime.Object, error) {
+		time.Sleep(updateDelay)
+		return false, nil, nil
+	})
+	client.ClearActions()
+
+	start := time.Now()
+	m.reconcileNodeRoles()
+	elapsed := time.Since(start)
+
+	assert.Less(t, elapsed, numScanSettings*updateDelay, "the pass must not serially wait out every ScanSetting's update")
+	updated := countActions(client.Actions(), "update", "scansettings")
+	assert.Greater(t, updated, 0, "the budget should still allow at least one update to complete")
+	assert.Less(t, updated, numScanSettings, "the budget must cut the pass short before every ScanSetting is reached")
 }
 
 // TestNodeRoleReconcilerTicker drives reconciliation through the real Start()/ticker/run() wiring (every other

@@ -164,9 +164,14 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		return
 	}
 
+	// Bound the whole pass, not just each individual update: without this, a reconcile pass over N ScanSettings
+	// could occupy the single-writer loop for up to N*handlerRetryTimeout, see nodeRoleReconcilePassBudget.
+	passCtx, cancel := context.WithTimeout(m.ctx(), m.nodeRoleReconcilePassBudget)
+	defer cancel()
+
 	var errList errorhelpers.ErrorList
 	for _, scanSetting := range scanSettings {
-		if err := m.reconcileScanSettingRoles(scanSetting, desiredRoles); err != nil {
+		if err := m.reconcileScanSettingRoles(passCtx, scanSetting, desiredRoles); err != nil {
 			errList.AddError(err)
 		}
 	}
@@ -177,7 +182,8 @@ func (m *handlerImpl) reconcileNodeRoles() {
 
 // reconcileScanSettingRoles updates a single ScanSetting's top-level roles to the desired set when they differ. The
 // comparison is order-insensitive so an equivalent role set never triggers an update (idempotent, avoids CO churn).
-func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstructured, desiredRoles []string) error {
+// ctx bounds the update: see nodeRoleReconcilePassBudget on its caller.
+func (m *handlerImpl) reconcileScanSettingRoles(ctx context.Context, scanSetting unstructured.Unstructured, desiredRoles []string) error {
 	name := scanSetting.GetName()
 	namespace := scanSetting.GetNamespace()
 
@@ -195,7 +201,7 @@ func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstruc
 	}
 
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(namespace)
-	return m.callWithRetryWithOnConflictCallback(
+	return m.callWithRetryWithOnConflictCallbackCtx(ctx,
 		func(ctx context.Context) error {
 			_, err := resI.Update(ctx, updated, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update roles on namespaces/%s/scansettings/%s", namespace, name)
