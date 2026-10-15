@@ -21,6 +21,8 @@ from urllib.parse import urlencode
 
 API_TIMEOUT = 10
 TERM_GRACE = 5
+WATCH_TIMEOUT = 300
+WATCH_RENEW_DELAY = 0.1
 
 
 def enabled():
@@ -261,27 +263,52 @@ class NodeWatch:
             response = response_or_error(self.connection, '/api/v1/nodes')
             version = baseline_resource_version(json.loads(response.read()))
             self.connection.close()
-            if self.stopped.is_set():
-                return
-            phase = 'node watch establishment'
-            self.connection = UnixConnection(path)
-            query = urlencode({'watch': 'true', 'resourceVersion': version,
-                               'allowWatchBookmarks': 'true'})
-            response = response_or_error(self.connection, '/api/v1/nodes?' + query)
-            self.connection.transport_socket.settimeout(None)
-            self.emit('ready')
             phase = 'node watch'
-            while not self.stopped.is_set():
-                line = response.readline()
-                if not line:
-                    raise RuntimeError('watch stream ended unexpectedly')
-                event = disruption(json.loads(line))
-                if event:
-                    self.emit('event', event)
-                    return
+            self.read_watches(path, version)
         except (OSError, ValueError, TypeError, AttributeError, RuntimeError,
                 http.client.HTTPException) as exc:
             self.emit('error', f'{phase}: {exc}')
+
+    def read_watches(self, path, version):
+        """Resume cleanly expired watches without replacing the original baseline."""
+        first = True
+        while not self.stopped.is_set():
+            self.connection = UnixConnection(path)
+            query = urlencode({'watch': 'true', 'resourceVersion': version,
+                               'allowWatchBookmarks': 'true', 'timeoutSeconds': WATCH_TIMEOUT})
+            try:
+                response = response_or_error(self.connection, '/api/v1/nodes?' + query)
+                self.connection.transport_socket.settimeout(WATCH_TIMEOUT + API_TIMEOUT)
+                if first:
+                    self.emit('ready')
+                    first = False
+                version = self.read_events(response, version)
+            finally:
+                self.connection.close()
+            if version is None:
+                return
+            # Clean HTTP EOF is normal watch expiration. A bounded pause avoids
+            # spinning on servers that repeatedly return empty streams.
+            self.stopped.wait(WATCH_RENEW_DELAY)
+
+    def read_events(self, response, version):
+        while not self.stopped.is_set():
+            line = response.readline()
+            if not line:
+                return version
+            event = json.loads(line)
+            disrupted = disruption(event)
+            if disrupted:
+                self.emit('event', disrupted)
+                return None
+            current = event.get('object', {}).get('metadata', {}).get('resourceVersion')
+            if not isinstance(current, str) or not current:
+                raise RuntimeError('watch event metadata.resourceVersion is missing')
+            # Resource versions are opaque tokens, including on ignored ADDED
+            # events and BOOKMARKs. Never order them or relist after HTTP 410:
+            # relisting would hide disruptions in a lost-history interval.
+            version = current
+        return None
 
     def diagnostic(self):
         if self.stderr is None:

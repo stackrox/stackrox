@@ -33,46 +33,69 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         if 'watch' not in parse_qs(parsed.query):
-            metadata = {} if self.server.mode == 'missing-version' else {'resourceVersion': 'list-123'}
-            data = {'apiVersion': 'v1', 'kind': 'NodeList', 'metadata': metadata,
-                    'items': [{'metadata': {'name': 'worker-1', 'resourceVersion': 'node-99'},
-                               'status': {'conditions': [{'type': 'Ready', 'status': 'True'}]}}]}
-            body = json.dumps(data).encode()
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self.baseline()
             return
-        if self.server.mode == 'forbidden':
+        self.server.watch_count += 1
+        mode = self.server.mode
+        if mode == 'forbidden' or (mode == 'eof' and self.server.watch_count > 1):
             self.send_error(403, 'Forbidden')
+            return
+        if mode == 'renew-gone' and self.server.watch_count > 1:
+            self.send_error(410, 'Gone')
             return
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Transfer-Encoding', 'chunked')
         self.end_headers()
         self.wfile.flush()
-        if self.server.mode in ('deletion', 'readiness', 'eof'):
-            while not self.server.product_marker.exists():
-                if self.server.done.wait(0.01):
-                    return
-            try:
-                if self.server.mode == 'eof':
-                    self.wfile.write(b'0\r\n\r\n')
-                    self.wfile.flush()
-                    return
-                event = {'type': 'DELETED' if self.server.mode == 'deletion' else 'MODIFIED',
-                         'object': {'metadata': {'name': 'worker-1'}, 'status': {
-                             'conditions': [{'type': 'Ready', 'status': 'False'}]}}}
-                added = {'type': 'ADDED', 'object': {'metadata': {'name': 'new-worker'}}}
-                body = (json.dumps(added) + '\n' + json.dumps(event) + '\n').encode()
-                # Split a JSON event across HTTP chunks; combine multiple
-                # watch events in the same underlying stream.
-                for chunk in (body[:7], body[7:]):
-                    self.wfile.write(f'{len(chunk):x}\r\n'.encode() + chunk + b'\r\n')
-                    self.wfile.flush()
-            except (BrokenPipeError, ConnectionResetError):
+        try:
+            self.watch_events(mode)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def baseline(self):
+        metadata = {} if self.server.mode == 'missing-version' else {'resourceVersion': 'list-123'}
+        data = {'apiVersion': 'v1', 'kind': 'NodeList', 'metadata': metadata,
+                'items': [{'metadata': {'name': 'worker-1', 'resourceVersion': 'node-99'},
+                           'status': {'conditions': [{'type': 'Ready', 'status': 'True'}]}}]}
+        body = json.dumps(data).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def send_events(self, *events):
+        body = ''.join(json.dumps(event) + '\n' for event in events).encode()
+        # Split JSON across HTTP chunks while combining multiple watch events.
+        for chunk in (body[:7], body[7:]):
+            self.wfile.write(f'{len(chunk):x}\r\n'.encode() + chunk + b'\r\n')
+            self.wfile.flush()
+
+    def watch_events(self, mode):
+        while not self.server.product_marker.exists():
+            if self.server.done.wait(0.01):
                 return
+        if mode.startswith('renew-') and self.server.watch_count == 1:
+            if mode != 'renew-idle':
+                self.send_events(
+                    {'type': 'MODIFIED', 'object': {'metadata': {'name': 'worker-1', 'resourceVersion': '124'},
+                                                    'status': {'conditions': [{'type': 'Ready', 'status': 'True'}]}}},
+                    {'type': 'ADDED', 'object': {'metadata': {'name': 'new-worker', 'resourceVersion': '125'}}},
+                    {'type': 'BOOKMARK', 'object': {'metadata': {'resourceVersion': '126'}}})
+            self.wfile.write(b'0\r\n\r\n')
+            self.wfile.flush()
+            return
+        if mode == 'eof':
+            self.wfile.write(b'0\r\n\r\n')
+            self.wfile.flush()
+            return
+        if mode in ('deletion', 'readiness', 'renew-disruption'):
+            self.send_events(
+                {'type': 'ADDED', 'object': {'metadata': {'name': 'new-worker', 'resourceVersion': '127'}}},
+                {'type': 'MODIFIED' if mode == 'readiness' else 'DELETED',
+                 'object': {'metadata': {'name': 'worker-1', 'resourceVersion': '128'},
+                            'status': {'conditions': [{'type': 'Ready', 'status': 'False'}]}}})
         self.server.done.wait(10)
 
 
@@ -87,6 +110,7 @@ class TransportTest(unittest.TestCase):
         server.mode = mode
         server.done = done
         server.requests = []
+        server.watch_count = 0
         worker = threading.Thread(target=server.serve_forever, daemon=True)
         worker.start()
         try:
@@ -101,7 +125,7 @@ class TransportTest(unittest.TestCase):
                     'contexts': [{'name': 'test', 'context': {'cluster': 'test', 'user': 'test'}}],
                     'users': [{'name': 'test', 'user': {}}],
                 }))
-                sleep = 0.4 if mode == 'healthy' else 30
+                sleep = 0.4 if mode in ('healthy', 'renew-healthy', 'renew-idle') else 30
                 script = (f'from pathlib import Path; import time; Path({str(marker)!r}).touch(); '
                           f'time.sleep({sleep}); raise SystemExit({product_code})')
                 with patch.dict(os.environ, KUBECONFIG=str(config), ARTIFACT_DIR=directory):
@@ -111,6 +135,11 @@ class TransportTest(unittest.TestCase):
             if mode != 'missing-version':
                 watch = [parse_qs(urlsplit(path).query) for path in server.requests if '?' in path]
                 self.assertEqual(watch[0]['resourceVersion'], ['list-123'])
+                self.assertEqual(watch[0]['timeoutSeconds'], ['300'])
+                if mode.startswith('renew-'):
+                    self.assertEqual(watch[1]['resourceVersion'],
+                                     ['list-123' if mode == 'renew-idle' else '126'])
+                    self.assertEqual(sum('?' not in path for path in server.requests), 1)
             self.assertEqual(len(report.findall('testcase')), 1)
             self.assertEqual(report.find('testcase').get('classname'), 'ci.gke.node')
             self.assertEqual(report.find('testcase').get('name'), 'NoNodeDisruption')
@@ -143,3 +172,21 @@ class TransportTest(unittest.TestCase):
                 self.assertFalse(started)
                 self.assertTrue(result.monitor_failed)
                 self.assertEqual(report.get('failures'), '1')
+
+    def test_clean_expiration_renews_without_failing_product(self):
+        for mode in ('renew-healthy', 'renew-idle'):
+            with self.subTest(mode=mode):
+                result, report, started = self.exercise(mode, product_code=42)
+                self.assertTrue(started)
+                self.assertEqual(result.exit_code, 42)
+                self.assertFalse(result.monitor_failed)
+                self.assertEqual(report.get('failures'), '0')
+
+    def test_renewal_replays_disruption_and_fails_on_lost_history(self):
+        for mode in ('renew-disruption', 'renew-gone'):
+            with self.subTest(mode=mode):
+                result, report, started = self.exercise(mode)
+                self.assertTrue(started)
+                self.assertTrue(result.monitor_failed)
+                detail = report.findtext('.//failure')
+                self.assertIn('worker-1' if mode == 'renew-disruption' else '410', detail)
