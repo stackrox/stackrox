@@ -178,7 +178,7 @@ require (
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	kubevirt.io/api v1.9.0
-	kubevirt.io/client-go v1.10.0-alpha.0
+	kubevirt.io/client-go v1.10.0-beta.0
 	sigs.k8s.io/controller-runtime v0.25.2
 	sigs.k8s.io/controller-tools v0.22.0
 	sigs.k8s.io/e2e-framework v0.7.0
