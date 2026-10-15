@@ -12,7 +12,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	scrape "github.com/stackrox/rox/central/scrape"
 	networkentities "github.com/stackrox/rox/central/sensor/networkentities"
 	networkpolicies "github.com/stackrox/rox/central/sensor/networkpolicies"
 	telemetry "github.com/stackrox/rox/central/sensor/telemetry"
@@ -155,20 +154,6 @@ func (m *MockSensorConnection) ObjectsDeletedByReconciliation() (map[string]int,
 func (mr *MockSensorConnectionMockRecorder) ObjectsDeletedByReconciliation() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectsDeletedByReconciliation", reflect.TypeOf((*MockSensorConnection)(nil).ObjectsDeletedByReconciliation))
-}
-
-// Scrapes mocks base method.
-func (m *MockSensorConnection) Scrapes() scrape.Controller {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Scrapes")
-	ret0, _ := ret[0].(scrape.Controller)
-	return ret0
-}
-
-// Scrapes indicates an expected call of Scrapes.
-func (mr *MockSensorConnectionMockRecorder) Scrapes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scrapes", reflect.TypeOf((*MockSensorConnection)(nil).Scrapes))
 }
 
 // Stopped mocks base method.
