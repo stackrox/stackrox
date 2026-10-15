@@ -1,0 +1,10 @@
+Test file to validate ui-only rule in isolation.
+
+Expected CI behavior:
+- ui: RUN
+- ui-component: RUN
+- gke-ui-e2e-tests: RUN
+- go: SKIP
+- go-postgres: SKIP
+- sensor-integration-tests: SKIP
+- All backend E2E tests: SKIP
