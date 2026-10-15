@@ -248,7 +248,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:5ed244b62bbf4095080144d9d35eb8fcd3d39a9801f94aadd63b9d10978a01ae
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:c4c285d42941ebb2bd4da878479008e1e4536bb599aad1dbe568f89de9053661
           imagePullPolicy: IfNotPresent
           script: |
             #!/bin/bash
@@ -333,7 +333,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1791275853@sha256:890b54e8d329f33f094ab17881bd37e20b80a54cc39141637310911d8dd9c575
+          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1792010711@sha256:60fd6fb2998c40ad0d6561c34e83588b986a0cf7771f64e5e5c295ba87101f9b
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
