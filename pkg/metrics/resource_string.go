@@ -19,34 +19,29 @@ func _() {
 	_ = x[Node-8]
 	_ = x[NodeInventory-9]
 	_ = x[ProviderMetadata-10]
-	_ = x[ComplianceReturn-11]
-	_ = x[ImageIntegration-12]
-	_ = x[ServiceAccount-13]
-	_ = x[PermissionSet-14]
-	_ = x[Role-15]
-	_ = x[RoleBinding-16]
-	_ = x[DeploymentReprocess-17]
-	_ = x[Pod-18]
-	_ = x[ComplianceOperatorCheckResult-19]
-	_ = x[ComplianceOperatorProfile-20]
-	_ = x[ComplianceOperatorScanSettingBinding-21]
-	_ = x[ComplianceOperatorRule-22]
-	_ = x[ComplianceOperatorScan-23]
-	_ = x[ComplianceOperatorInfo-24]
-	_ = x[ComplianceOperatorCheckResultV2-25]
-	_ = x[ComplianceOperatorRuleV2-26]
-	_ = x[ComplianceOperatorProfileV2-27]
-	_ = x[ComplianceOperatorScanV2-28]
-	_ = x[ComplianceOperatorSuiteV2-29]
-	_ = x[ComplianceOperatorRemediationV2-30]
-	_ = x[NodeIndex-31]
-	_ = x[VirtualMachineIndex-32]
-	_ = x[VirtualMachine-33]
+	_ = x[ImageIntegration-11]
+	_ = x[ServiceAccount-12]
+	_ = x[PermissionSet-13]
+	_ = x[Role-14]
+	_ = x[RoleBinding-15]
+	_ = x[DeploymentReprocess-16]
+	_ = x[Pod-17]
+	_ = x[ComplianceOperatorScanSettingBinding-18]
+	_ = x[ComplianceOperatorInfo-19]
+	_ = x[ComplianceOperatorCheckResultV2-20]
+	_ = x[ComplianceOperatorRuleV2-21]
+	_ = x[ComplianceOperatorProfileV2-22]
+	_ = x[ComplianceOperatorScanV2-23]
+	_ = x[ComplianceOperatorSuiteV2-24]
+	_ = x[ComplianceOperatorRemediationV2-25]
+	_ = x[NodeIndex-26]
+	_ = x[VirtualMachineIndex-27]
+	_ = x[VirtualMachine-28]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndexVirtualMachine"
+const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorScanSettingBindingComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndexVirtualMachine"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477, 502, 533, 542, 561, 575}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 149, 162, 166, 177, 196, 199, 235, 257, 288, 312, 339, 363, 388, 419, 428, 447, 461}
 
 func (i Resource) String() string {
 	idx := int(i) - 0

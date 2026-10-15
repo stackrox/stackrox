@@ -55,7 +55,6 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gobwas/glob v1.0.0
-	github.com/godbus/dbus/v5 v5.2.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/certificate-transparency-go v1.3.3
 	github.com/google/gnostic-models v0.7.1
@@ -84,7 +83,6 @@ require (
 	github.com/klauspost/compress v1.20.1
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
-	github.com/mailru/easyjson v0.9.2
 	github.com/mdlayher/vsock v1.3.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
@@ -175,7 +173,6 @@ require (
 	k8s.io/cli-runtime v0.37.1
 	k8s.io/client-go v0.37.1
 	k8s.io/kubectl v0.37.1
-	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	kubevirt.io/api v1.9.0
 	kubevirt.io/client-go v1.10.0-beta.0
@@ -306,6 +303,7 @@ require (
 	github.com/go-openapi/validate v1.0.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
+	github.com/godbus/dbus/v5 v5.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/glog v1.2.5 // indirect
@@ -351,6 +349,7 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
+	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/matryer/is v1.4.1 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
