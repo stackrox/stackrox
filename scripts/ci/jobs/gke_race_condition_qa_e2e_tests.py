@@ -28,10 +28,10 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as roxie_config_file:
     build_tag = os.environ["STACKROX_BUILD_TAG"]
     roxie_config_file.write(f"""\
 roxie:
-  version: "{main_tag}"
+  version: "{build_tag}"
 operator:
-  imageTags:
-    "central-db": "{build_tag}"
+  operandTagOverrides:
+    "main": "{main_tag}"
 """)
     roxie_config_file.flush()
     make_qa_e2e_test_runner(
