@@ -130,7 +130,6 @@ include make/gotools.mk
 
 $(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/v2/cmd/golangci-lint, tools/linters)
-$(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
 $(call go-tool, OSSLS_BIN, github.com/stackrox/ossls, tools/build)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
@@ -338,19 +337,8 @@ PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_COM
 
 include make/protogen.mk
 
-.PHONY: go-easyjson-srcs
-go-easyjson-srcs: $(EASYJSON_BIN)
-	@echo "+ $@"
-	@# Files are ordered such that repeated runs of `make go-easyjson-srcs` don't create diffs.
-	$(SILENT)$(EASYJSON_BIN) pkg/compliance/compress/compress.go
-
-.PHONY: clean-easyjson-srcs
-clean-easyjson-srcs:
-	@echo "+ $@"
-	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
-
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
+go-generated-srcs: deps $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x $(GENERATE_PATH)
 
