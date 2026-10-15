@@ -1,77 +1,75 @@
-import { memo, useState } from 'react';
-import PropTypes from 'prop-types';
-import { useQuery } from '@apollo/client';
-import Raven from 'raven-js';
-import pluralize from 'pluralize';
+import {
+    Alert,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Spinner,
+} from '@patternfly/react-core';
+import { gql, useQuery } from '@apollo/client';
 
-import Modal from 'Components/Modal';
-import TimelineOverview from 'Components/TimelineOverview';
-import Loader from 'Components/Loader';
-import EventTimeline from '../EventTimeline';
-import { GET_EVENT_TIMELINE_OVERVIEW } from '../timelineQueries';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-const EventTimelineOverview = ({ deploymentId }) => {
-    const [isModalOpen, setModalOpen] = useState(false);
+const GET_EVENT_TIMELINE_OVERVIEW = gql`
+    query getEventTimelineOverview($deploymentId: ID!) {
+        deployment(id: $deploymentId) {
+            numPolicyViolations: failingRuntimePolicyCount
+            numProcessActivities: processActivityCount
+            numRestarts: containerRestartCount
+            numTerminations: containerTerminationCount
+        }
+    }
+`;
+
+export type EventTimelineOverviewProps = {
+    deploymentId: string;
+};
+
+function EventTimelineOverview({ deploymentId }: EventTimelineOverviewProps) {
     const { loading, error, data } = useQuery(GET_EVENT_TIMELINE_OVERVIEW, {
         variables: { deploymentId },
     });
 
-    if (error) {
-        Raven.captureException(error);
+    if (loading) {
+        return <Spinner />;
     }
 
-    if (loading) {
+    if (error) {
         return (
-            <div className="bg-base-100 border border-primary-300 py-3">
-                <Loader message="Loading Event Timeline..." />
-            </div>
+            <Alert variant="warning" title="Unable to fetch event timeline" component="p" isInline>
+                {getAxiosErrorMessage(error)}
+            </Alert>
         );
     }
 
     // data fetching with "deploymentId" will happen here...
     const { numPolicyViolations, numProcessActivities, numRestarts, numTerminations } =
         data.deployment;
-    const numRestartsAndTerminations = numRestarts + numTerminations;
-
-    function showEventTimelineGraph() {
-        setModalOpen(true);
-    }
-
-    function hideEventTimelineGraph() {
-        setModalOpen(false);
-    }
-
-    const counts = [
-        { text: pluralize('Policy Violation', numPolicyViolations), count: numPolicyViolations },
-        {
-            text: pluralize('Process Activities', numProcessActivities),
-            count: numProcessActivities,
-        },
-        {
-            text: pluralize('Restarts / Terminations', numRestartsAndTerminations),
-            count: numRestartsAndTerminations,
-        },
-    ];
 
     return (
-        <>
-            <TimelineOverview
-                dataTestId="event-timeline-overview"
-                counts={counts}
-                onClick={showEventTimelineGraph}
-                loading={loading}
-            />
-            {isModalOpen && (
-                <Modal isOpen={isModalOpen} onRequestClose={hideEventTimelineGraph}>
-                    <EventTimeline deploymentId={deploymentId} />
-                </Modal>
-            )}
-        </>
+        <DescriptionList
+            isCompact
+            isHorizontal
+            horizontalTermWidthModifier={{
+                default: '20ch',
+            }}
+        >
+            <DescriptionListGroup>
+                <DescriptionListTerm>Policy violations</DescriptionListTerm>
+                <DescriptionListDescription>{numPolicyViolations}</DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
+                <DescriptionListTerm>Process activities</DescriptionListTerm>
+                <DescriptionListDescription>{numProcessActivities}</DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
+                <DescriptionListTerm>Restarts + Terminations</DescriptionListTerm>
+                <DescriptionListDescription>
+                    {numRestarts + numTerminations}
+                </DescriptionListDescription>
+            </DescriptionListGroup>
+        </DescriptionList>
     );
-};
+}
 
-EventTimelineOverview.propTypes = {
-    deploymentId: PropTypes.string.isRequired,
-};
-
-export default memo(EventTimelineOverview);
+export default EventTimelineOverview;
