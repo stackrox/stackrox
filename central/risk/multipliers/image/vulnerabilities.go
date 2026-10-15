@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/risk/scorer/vulns"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -78,13 +79,13 @@ func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.Im
 
 // countDistinctCVEs includes unknown-severity findings, which do not affect the risk score.
 func countDistinctCVEs(components []*storage.EmbeddedImageScanComponent) int {
-	cves := make(map[string]struct{})
+	cves := set.NewStringSet()
 	for _, component := range components {
 		for _, vuln := range component.GetVulns() {
 			if cve := vuln.GetCve(); cve != "" {
-				cves[cve] = struct{}{}
+				cves.Add(cve)
 			}
 		}
 	}
-	return len(cves)
+	return cves.Cardinality()
 }
