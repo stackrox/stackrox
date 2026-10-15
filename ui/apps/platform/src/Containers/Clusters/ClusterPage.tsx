@@ -10,9 +10,6 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import cloneDeep from 'lodash/cloneDeep';
-import get from 'lodash/get';
-import set from 'lodash/set';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
@@ -92,46 +89,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         }
     }, [clusterId]);
 
-    // Delete onChange for 5.2 release.
-    // Retain function for 5.1 release in edge case to change existing legacy installed cluster.
-    function onChange(path: string, value: boolean | number | string) {
-        // path can be a dot path to property like: tolerationsConfig.disabled
-        setSelectedCluster((oldClusterSettingsArg) => {
-            // TypeScript does not know here about {selectedCluster && (…}} below
-            const oldClusterSettings = oldClusterSettingsArg as Cluster;
-            if (
-                get(oldClusterSettings, path) === undefined &&
-                path !== 'dynamicConfig.autoLockProcessBaselinesConfig.enabled'
-            ) {
-                // TODO delete if statement?
-                // Added exception above to set property if autoLockProcessBaselinesConfig is null.
-                return oldClusterSettings;
-            }
-
-            const newClusterSettings = cloneDeep(oldClusterSettings);
-            set(newClusterSettings, path, value);
-            return newClusterSettings;
-        });
-    }
-
-    // Delete onChangeAdmissionControllerEnforcementBehavior for 5.2 release.
-    // Retain function for 5.1 release in edge case to change existing legacy installed cluster.
-    function onChangeAdmissionControllerEnforcementBehavior(value: boolean) {
-        setSelectedCluster((oldClusterSettingsArg) => {
-            // TypeScript does not know here about {selectedCluster && (…}} below
-            const oldClusterSettings = oldClusterSettingsArg as Cluster;
-            const newClusterSettings = cloneDeep(oldClusterSettings);
-            // Special case because one selection for both values, starting in 4.9 release.
-            set(newClusterSettings, 'dynamicConfig.admissionControllerConfig.enabled', value);
-            set(
-                newClusterSettings,
-                'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
-                value
-            );
-            return newClusterSettings;
-        });
-    }
-
     const selectedClusterName = selectedCluster?.name ?? '';
 
     return (
@@ -167,10 +124,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                             clusterRetentionInfo={clusterRetentionInfo}
                             selectedCluster={selectedCluster}
                             managerType={managerType(selectedCluster)}
-                            handleChange={onChange}
-                            handleChangeAdmissionControllerEnforcementBehavior={
-                                onChangeAdmissionControllerEnforcementBehavior
-                            }
                         />
                     )}
                 </Flex>

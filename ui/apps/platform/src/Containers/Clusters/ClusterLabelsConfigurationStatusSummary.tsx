@@ -28,8 +28,6 @@ type ClusterLabelsConfigurationStatusSummaryProps = {
     clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     selectedCluster: Cluster;
     managerType: ClusterManagerType;
-    handleChange: (path: string, value: boolean | number | string) => void;
-    handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
 };
 
 function ClusterLabelsConfigurationStatusSummary({
@@ -37,8 +35,6 @@ function ClusterLabelsConfigurationStatusSummary({
     clusterRetentionInfo,
     selectedCluster,
     managerType,
-    handleChange,
-    handleChangeAdmissionControllerEnforcementBehavior,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
     const metadata = useMetadata();
     const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
@@ -108,10 +104,6 @@ function ClusterLabelsConfigurationStatusSummary({
                 <Title headingLevel="h2">Static configuration (requires deployment)</Title>
                 <StaticConfigurationForm
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
-                    handleChange={handleChange}
-                    handleChangeAdmissionControllerEnforcementBehavior={
-                        handleChangeAdmissionControllerEnforcementBehavior
-                    }
                     selectedCluster={selectedCluster}
                     dynamicConfig={selectedCluster.dynamicConfig}
                     helmConfig={selectedCluster.helmConfig}
@@ -120,11 +112,8 @@ function ClusterLabelsConfigurationStatusSummary({
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <Title headingLevel="h2">Dynamic configuration (syncs with Sensor)</Title>
                 <DynamicConfigurationForm
-                    clusterType={selectedCluster.type}
                     dynamicConfig={selectedCluster.dynamicConfig}
-                    handleChange={handleChange}
                     helmConfig={selectedCluster.helmConfig}
-                    isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
             </Flex>
             {selectedCluster.id && selectedCluster.healthStatus && (
