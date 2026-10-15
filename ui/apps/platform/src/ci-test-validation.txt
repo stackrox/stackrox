@@ -1,3 +1,0 @@
-This file validates CI test selection for ui-only changes.
-Expected: ui, ui-component, gke-ui-e2e-tests should RUN.
-Most backend tests should SKIP.
