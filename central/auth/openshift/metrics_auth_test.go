@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -38,6 +39,8 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).Return(nil)
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
+	roleDS.EXPECT().GetRole(gomock.Any(), securedClusterRoleName).Return(nil, false, nil)
+	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 
 	providerCreated := false
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
@@ -57,6 +60,7 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
+	ensureSecuredClusterRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
 	ensureGroup(ctx, groupDS)
 }
@@ -81,6 +85,8 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	roleDS.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).Return(&storage.PermissionSet{}, true, nil)
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
+	roleDS.EXPECT().GetRole(gomock.Any(), securedClusterRoleName).Return(nil, false, nil)
+	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
 	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).Return(nil, nil)
 	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
@@ -88,8 +94,31 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
+	ensureSecuredClusterRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
 	ensureGroup(ctx, groupDS)
+}
+
+func TestSeed_SecuredClusterRole_SharesPermissionsButNotScope(t *testing.T) {
+	_, roleDS, _ := setupMocks(t)
+	roleDS.EXPECT().GetRole(gomock.Any(), securedClusterRoleName).Return(nil, false, nil)
+	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, role *storage.Role) error {
+			assert.Equal(t, securedClusterRoleName, role.GetName())
+			assert.Equal(t, permissionSetID, role.GetPermissionSetId())
+			assert.Equal(t, accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope], role.GetAccessScopeId())
+			return nil
+		})
+
+	ensureSecuredClusterRole(context.Background(), roleDS)
+}
+
+func TestSeed_SecuredClusterRole_UserChangesSurviveRestart(t *testing.T) {
+	_, roleDS, _ := setupMocks(t)
+	roleDS.EXPECT().GetRole(gomock.Any(), securedClusterRoleName).
+		Return(&storage.Role{PermissionSetId: "user-customized"}, true, nil)
+
+	ensureSecuredClusterRole(context.Background(), roleDS)
 }
 
 func TestSeed_Group_IsDefaultOriginAndImmutable(t *testing.T) {
