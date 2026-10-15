@@ -27,6 +27,12 @@ nodeSelector: {}
 # Metric relabel configs for kubernetes-cadvisor job to filter out metrics
 cadvisorMetricRelabelConfigs: []
 
+# Central DB PVC space-usage alerting. Utilization is used/capacity from the
+# kubelet volume stats (scraped by the kubernetes-kubelet job). The warning and
+# critical alerts fire when the central-db PVC exceeds these fill ratios.
+centralDbPvcUsageWarningRatio: 0.8
+centralDbPvcUsageCriticalRatio: 0.9
+
 kube-state-metrics:
   releaseNamespace: true
   # Align with the parent monitoring Deployment UIDs. Upstream defaults use

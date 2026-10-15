@@ -60,7 +60,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "2"
+        NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -117,7 +117,15 @@ jobs:
         export_test_environment
         setup_deployment_env false false
 
-        deploy_stackrox_with_roxie_compat
+        roxie_config="$(mktemp)"
+        merge_yaml "$roxie_config" <<'EOF'
+        central:
+          resourceProfile: ci
+        securedCluster:
+          resourceProfile: ci
+        EOF
+        deploy_stackrox_with_roxie_compat "$roxie_config"
+        rm -f "$roxie_config"
 
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
