@@ -6,6 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
+// unsetCPE is the wildcard value Scanner emits when no CPE is available.
+const unsetCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+
 // ToVirtualMachineScan converts a scan report to the format needed to enrich a virtual machine with scan data.
 func ToVirtualMachineScan(r *v4.VulnerabilityReport) *storage.VirtualMachineScan {
 	return &storage.VirtualMachineScan{
@@ -44,7 +47,7 @@ func componentScanNote(repositories map[string]*v4.Repository, environments map[
 				continue
 			}
 			knownRepository = true
-			if repo.GetCpe() != "" {
+			if cpe := repo.GetCpe(); cpe != "" && cpe != unsetCPE {
 				return storage.EmbeddedVirtualMachineScanComponent_UNSPECIFIED
 			}
 		}

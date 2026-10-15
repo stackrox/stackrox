@@ -472,9 +472,19 @@ func TestVMComponentScanReasons(t *testing.T) {
 				storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING,
 			},
 		},
+		"repository with wildcard CPE": {
+			repositories: map[string]*v4.Repository{
+				"repo": {Name: "repo", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"},
+			},
+			environments: []*v4.Environment{{RepositoryIds: []string{"repo"}}},
+			wantNotes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
+				storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING,
+			},
+		},
 		"valid CPE in a later environment": {
 			repositories: map[string]*v4.Repository{
-				"no-cpe": {Name: "no-cpe"},
+				"no-cpe": {Name: "no-cpe", Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"},
 				"rhel":   {Cpe: "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"},
 			},
 			environments: []*v4.Environment{
