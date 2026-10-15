@@ -47,6 +47,7 @@ jobs:
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       GKE_SPOT: ${{ github.event_name == 'pull_request' && inputs.should-run }}
+      GKE_NODE_DISRUPTION_WATCH: "true"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 361
     steps:
