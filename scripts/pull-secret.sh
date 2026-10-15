@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 die() {
   echo >&2 "$@"
@@ -16,7 +16,7 @@ name="$1"
 registry="$2"
 [[ -n "$registry" ]] || die "No registry specified"
 
-registry_auth="$("${DIR}/docker-auth.sh" -m k8s "$registry")"
+registry_auth="$("${ROOT_DIR}/image/assets/docker-auth.sh" -m k8s "$registry")"
 [[ -n "$registry_auth" ]] || die "Unable to get registry auth info."
 
 cat <<EOF
