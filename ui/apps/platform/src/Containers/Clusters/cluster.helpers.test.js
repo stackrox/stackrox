@@ -2,6 +2,7 @@ import {
     formatBuildDate,
     formatCloudProvider,
     formatKubernetesVersion,
+    formatOpenShiftVersion,
     getCredentialExpirationStatus,
 } from './cluster.helpers';
 
@@ -68,6 +69,27 @@ describe('cluster helpers', () => {
             const orchestratorMetadata = null;
 
             const displayValue = formatKubernetesVersion(orchestratorMetadata);
+
+            expect(displayValue).toEqual('Not available');
+        });
+    });
+
+    describe('formatOpenShiftVersion', () => {
+        it('should return version of OpenShift from the orchestrator metadata response', () => {
+            const orchestratorMetadata = {
+                version: 'v1.24.7-gke.900',
+                openshiftVersion: '4.14.12',
+            };
+
+            const displayValue = formatOpenShiftVersion(orchestratorMetadata);
+
+            expect(displayValue).toEqual('4.14.12');
+        });
+
+        it('should return appropriate message if OpenShift version not available', () => {
+            const orchestratorMetadata = null;
+
+            const displayValue = formatOpenShiftVersion(orchestratorMetadata);
 
             expect(displayValue).toEqual('Not available');
         });
