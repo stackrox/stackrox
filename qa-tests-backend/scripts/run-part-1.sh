@@ -40,7 +40,7 @@ run_part_1() {
 }
 
 config_part_1() {
-    local roxie_config="$1"
+    local roxie_config="${1:-}"
 
     info "Configuring the cluster to run part 1 of e2e tests"
 
@@ -76,6 +76,11 @@ config_part_1() {
         ensure_roxie_on_path
 
         local config_file="$roxie_config"
+        if [[ -z ${config_file} ]]; then
+            config_file="$(mktemp)"
+            # No cleanup trap, we're deep in the call stack and it's not clear if it would be safe to
+            # override the global exit trap.
+        fi
 
         merge_yaml "$config_file" <<EOF
 central:
