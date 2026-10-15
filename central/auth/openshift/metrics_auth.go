@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -31,10 +32,11 @@ const (
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
 	// which signs Prometheus client certs. This adds the CA to userTrustRoots on the
 	// public :8443 endpoint (optional client cert verification).
-	authProviderName  = "OpenShift Platform Client Certificates"
-	roleName          = "OpenShift Prometheus Metrics Reader"
-	permissionSetName = "OpenShift Prometheus Metrics Reader"
-	accessScopeName   = "OpenShift Central Cluster"
+	authProviderName       = "OpenShift Platform Client Certificates"
+	roleName               = "OpenShift Prometheus Metrics Reader"
+	securedClusterRoleName = "OpenShift Secured Cluster Metrics Reader"
+	permissionSetName      = "OpenShift Prometheus Metrics Reader"
+	accessScopeName        = "OpenShift Central Cluster"
 
 	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
@@ -44,7 +46,7 @@ var log = logging.LoggerForModule()
 // SeedMetricsAuthProvider ensures that the userpki auth provider, permission set, role,
 // and group mapping required for OpenShift Prometheus to scrape /metrics exist.
 //
-// The access scope, permission set, and role have static content with no dependency on
+// The access scope, permission set, and roles have static content with no dependency on
 // the client CA, so they are seeded unconditionally at startup. The auth provider's
 // config and the group's auth-provider reference, however, need the Kubernetes client CA
 // from the extension-apiserver-authentication ConfigMap (same CA that signs Prometheus
@@ -56,9 +58,11 @@ var log = logging.LoggerForModule()
 // upsert straight to the underlying store, self-healing across restarts and upgrades.
 // The auth provider and group also use DEFAULT origin: the group can't be repointed to a
 // different role or deleted, which in turn keeps the role permanently referenced so it
-// can't be deleted either. Role and permission set use IMPERATIVE origin so operators can
-// still adjust their permissions or which access scope the role grants; they are only
-// created if missing, never overwritten.
+// can't be deleted either. Roles and the shared permission set use IMPERATIVE origin so
+// operators can adjust the permissions for both metrics readers or change the Central
+// reader's access scope; they are only created if missing, never overwritten. The
+// secured-cluster role has a Deny All scope when assigned directly to a user. Internal
+// scrape tokens will instead receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
@@ -67,6 +71,7 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 	seedAccessScope(ctx)
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
+	ensureSecuredClusterRole(ctx, roleDS)
 
 	clientset, err := newK8sClient()
 	if err != nil {
@@ -230,6 +235,27 @@ func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
 	}
 	if err := roleDS.AddRole(ctx, role); err != nil {
 		log.Warnf("Failed to create OpenShift metrics role: %v", err)
+	}
+}
+
+func ensureSecuredClusterRole(ctx context.Context, roleDS roleDataStore.DataStore) {
+	if _, exists, err := roleDS.GetRole(ctx, securedClusterRoleName); err != nil {
+		log.Warnf("Failed to check OpenShift secured-cluster metrics role: %v", err)
+		return
+	} else if exists {
+		return
+	}
+
+	role := &storage.Role{
+		Name:            securedClusterRoleName,
+		Description:     "Permissions for OpenShift Prometheus scraping through Sensor; Sensor's cluster determines token scope",
+		PermissionSetId: permissionSetID,
+		// Do not grant static cluster access through this role. Central will bind
+		// the internal scrape token to the authenticated Sensor's cluster.
+		AccessScopeId: accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope],
+	}
+	if err := roleDS.AddRole(ctx, role); err != nil {
+		log.Warnf("Failed to create OpenShift secured-cluster metrics role: %v", err)
 	}
 }
 
