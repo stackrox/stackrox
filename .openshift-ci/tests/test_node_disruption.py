@@ -18,7 +18,7 @@ from ci_tests import NonGroovyE2e
 
 
 def node(ready='True'):
-    return {'metadata': {'name': 'worker-1'},
+    return {'metadata': {'name': 'worker-1', 'resourceVersion': 'event-43'},
             'status': {'conditions': [{'type': 'Ready', 'status': ready}]}}
 
 
@@ -186,8 +186,8 @@ class NodeMonitorTest(unittest.TestCase):
         self.assertIn('resourceVersion=list-42', query)
         self.assertIn('watch=true', query)
 
-    def test_reader_eof_malformed_json_and_api_error(self):
-        for line in (b'', b'broken\n', b'{"type":"ERROR","object":{"message":"expired"}}\n'):
+    def test_reader_malformed_json_and_api_error(self):
+        for line in (b'broken\n', b'{"type":"ERROR","object":{"message":"expired"}}\n'):
             with self.subTest(line=line):
                 baseline = Mock(status=200)
                 baseline.read.return_value = json.dumps(snapshot()).encode()
@@ -201,6 +201,77 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(watch.messages.get_nowait()[0], 'ready')
                 self.assertEqual(watch.messages.get_nowait()[0], 'error')
 
+    def test_clean_expiration_resumes_from_last_event_or_baseline(self):
+        cases = {
+            'idle': ([], 'list-42'),
+            'modified': ([{'type': 'MODIFIED', 'object': node()}], 'event-43'),
+            'added': ([{'type': 'ADDED', 'object': node('False')}], 'event-43'),
+            'bookmark': ([{'type': 'BOOKMARK', 'object': {
+                'metadata': {'resourceVersion': 'bookmark-opaque'}}}], 'bookmark-opaque'),
+        }
+        for name, (events, expected) in cases.items():
+            with self.subTest(name=name):
+                baseline = Mock(status=200)
+                baseline.read.return_value = json.dumps(snapshot()).encode()
+                expired = Mock(status=200)
+                expired.readline.side_effect = [json.dumps(event).encode() + b'\n' for event in events] + [b'']
+                resumed = Mock(status=200)
+                resumed.readline.return_value = json.dumps({'type': 'DELETED', 'object': node()}).encode()
+                connections = [Mock(), Mock(), Mock()]
+                for connection, response in zip(connections, (baseline, expired, resumed)):
+                    connection.getresponse.return_value = response
+                watch = monitor.NodeWatch()
+                with patch.object(monitor, 'UnixConnection', side_effect=connections), \
+                        patch.object(watch.stopped, 'wait'):
+                    watch.read('/unused')
+                self.assertIn('resourceVersion=' + expected, connections[2].request.call_args.args[1])
+                self.assertIn('timeoutSeconds=300', connections[1].request.call_args.args[1])
+                messages = list(watch.messages.queue)
+                self.assertEqual([kind for kind, _ in messages], ['ready', 'event'])
+                self.assertEqual(messages[1][1]['type'], 'DELETED')
+                for connection in connections:
+                    connection.close.assert_called_once()
+
+    def test_renewal_failure_does_not_relist(self):
+        for status in (403, 410, 500):
+            with self.subTest(status=status):
+                baseline = Mock(status=200)
+                baseline.read.return_value = json.dumps(snapshot()).encode()
+                expired = Mock(status=200)
+                expired.readline.return_value = b''
+                failed = Mock(status=status, reason='renewal rejected')
+                connection = Mock()
+                connection.getresponse.side_effect = [baseline, expired, failed]
+                watch = monitor.NodeWatch()
+                with patch.object(monitor, 'UnixConnection', return_value=connection), \
+                        patch.object(watch.stopped, 'wait'):
+                    watch.read('/unused')
+                self.assertEqual([kind for kind, _ in watch.messages.queue], ['ready', 'error'])
+                self.assertIn(f'HTTP {status}', list(watch.messages.queue)[1][1])
+                self.assertEqual(connection.request.call_count, 3)
+
+    def test_invalid_resume_version_fails_closed(self):
+        for event in ({'type': 'BOOKMARK'}, {'type': 'ADDED', 'object': {'metadata': {}}}):
+            with self.subTest(event=event):
+                response = Mock()
+                response.readline.return_value = json.dumps(event).encode()
+                with self.assertRaisesRegex(RuntimeError, 'resourceVersion'):
+                    monitor.NodeWatch().read_events(response, 'list-42')
+
+    def test_cancellation_during_renewal_stops_reconnecting(self):
+        response = Mock(status=200)
+        response.readline.return_value = b''
+        connection = Mock()
+        connection.getresponse.return_value = response
+        watch = monitor.NodeWatch()
+        with patch.object(monitor, 'UnixConnection', return_value=connection), \
+                patch.object(watch.stopped, 'wait', side_effect=lambda _: watch.stopped.set()):
+            watch.read_watches('/unused', 'list-42')
+        connection.request.assert_called_once()
+        self.assertEqual([kind for kind, _ in watch.messages.queue], ['ready'])
+
+
+class LifecycleTest(unittest.TestCase):
     def test_running_monitor_failure_terminates_product_and_restores_handlers(self):
         watch = FakeWatch([('ready', None)])
         test = Mock(pid=123, returncode=-15)
