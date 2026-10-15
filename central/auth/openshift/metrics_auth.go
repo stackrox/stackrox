@@ -248,7 +248,7 @@ func ensureSecuredClusterRole(ctx context.Context, roleDS roleDataStore.DataStor
 
 	role := &storage.Role{
 		Name:            securedClusterRoleName,
-		Description:     "Permissions for OpenShift Prometheus scraping through Sensor; Sensor's cluster determines token scope",
+		Description:     "Metrics access for OpenShift Prometheus on the Sensor's cluster",
 		PermissionSetId: permissionSetID,
 		// Do not grant static cluster access through this role. Central will bind
 		// the internal scrape token to the authenticated Sensor's cluster.
