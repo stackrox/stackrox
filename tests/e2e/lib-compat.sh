@@ -250,7 +250,6 @@ collect_feature_flags() {
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
-    env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
     env_with_default ROX_COMPLIANCE_SURFACE_STALE_DATA "true"
     env_with_default ROX_COMPLIANCE_CUSTOM_NODE_ROLES "true"
     env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"

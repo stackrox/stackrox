@@ -6,13 +6,7 @@
 import type { RelationshipType } from 'constants/relationshipTypes';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
-/*
-// For historical interest: never used.
-const complianceEntityTypes = ['CONTROL', 'NODE', 'CLUSTER', 'NAMESPACE', 'DEPLOYMENT'];
-*/
-
 const configurationManagementEntityTypes = [
-    'CONTROL',
     'NODE',
     'IMAGE',
     'ROLE',
@@ -108,7 +102,6 @@ export const entityGroupMap: Record<EntityType, EntityGroup> = {
     IMAGE_COMPONENT: 'APPLICATION_RESOURCES',
 
     POLICY: 'SECURITY',
-    CONTROL: 'SECURITY',
     NODE_CVE: 'SECURITY',
     IMAGE_CVE: 'SECURITY',
     CLUSTER_CVE: 'SECURITY',
@@ -126,13 +119,13 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
     CLUSTER: {
         children: ['NODE', 'NAMESPACE', 'ROLE'],
         parents: [],
-        matches: ['CONTROL', 'CLUSTER_CVE'],
+        matches: ['CLUSTER_CVE'],
         // extendedMatches: [entityTypes.POLICY]
     },
     NODE: {
         children: ['NODE_COMPONENT'],
         parents: ['CLUSTER'],
-        matches: ['CONTROL'],
+        matches: [],
     },
     NAMESPACE: {
         children: ['DEPLOYMENT', 'SERVICE_ACCOUNT', 'SECRET'],
@@ -143,7 +136,7 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
     DEPLOYMENT: {
         children: ['IMAGE'],
         parents: ['NAMESPACE', 'CLUSTER'],
-        matches: ['SERVICE_ACCOUNT', 'POLICY', 'CONTROL', 'SECRET'],
+        matches: ['SERVICE_ACCOUNT', 'POLICY', 'SECRET'],
     },
     IMAGE: {
         children: ['IMAGE_COMPONENT'],
@@ -179,11 +172,6 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
         parents: [],
         matches: [],
         extendedMatches: ['CLUSTER'],
-    },
-    CONTROL: {
-        children: [],
-        parents: [],
-        matches: ['NODE', 'DEPLOYMENT', 'CLUSTER'],
     },
     POLICY: {
         children: [],
