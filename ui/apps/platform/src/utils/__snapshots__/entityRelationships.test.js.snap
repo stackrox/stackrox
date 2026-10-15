@@ -5,20 +5,11 @@ exports[`entityRelationshipMap > has properties and derived properties 1`] = `
   "CLUSTER": {
     "1-children": "NAMESPACE NODE ROLE",
     "2-parents": "",
-    "3-matches        ": "CLUSTER_CVE CONTROL",
+    "3-matches        ": "CONTROL",
     "4-extendedMatches": "",
-    "5-getMatches     ": "CLUSTER_CVE CONTROL",
+    "5-getMatches     ": "CONTROL",
     "6-getContains        ": "CONTROL DEPLOYMENT IMAGE IMAGE_COMPONENT IMAGE_CVE NAMESPACE NODE NODE_COMPONENT NODE_CVE POLICY ROLE SECRET SERVICE_ACCOUNT SUBJECT",
     "7-isContainedInferred": "CONTROL DEPLOYMENT IMAGE IMAGE_COMPONENT IMAGE_CVE NODE_COMPONENT NODE_CVE POLICY SECRET SERVICE_ACCOUNT SUBJECT",
-  },
-  "CLUSTER_CVE": {
-    "1-children": "",
-    "2-parents": "",
-    "3-matches        ": "",
-    "4-extendedMatches": "CLUSTER",
-    "5-getMatches     ": "CLUSTER",
-    "6-getContains        ": "",
-    "7-isContainedInferred": "",
   },
   "CONTROL": {
     "1-children": "",
