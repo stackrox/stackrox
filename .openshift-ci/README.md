@@ -64,7 +64,11 @@ socket `kubectl proxy` handles kubeconfig authentication; no extra Python
 packages or network listener are needed. Deletion or a MODIFIED node without
 Ready=True fails fast; ADDED events are ignored. These events establish node
 disruption, not its cause or proof of Spot preemption. Baseline/watch errors
-also fail closed. Product processes receive TERM, then KILL after five seconds.
+also fail closed. Clean watch expiration resumes from the last event/bookmark
+resourceVersion (or the original collection version on an idle watch), without
+relisting. Renewal failures, including HTTP 410 history loss, fail closed rather
+than silently losing disruption coverage. Product processes receive TERM, then
+KILL after five seconds.
 
 `ARTIFACT_DIR/node-monitor.xml` contains the stable testcase
 `ci.gke.node / NoNodeDisruption`: pass for healthy monitoring regardless of the
