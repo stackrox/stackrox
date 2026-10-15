@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -128,6 +129,16 @@ func (p *tokenPolicy) enforce(
 	sensorClusterID, err := p.validateSensorIdentity(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if req.GetRoleName() != "" {
+		if req.GetRoleName() != centralproxy.SecuredClusterMetricsRole ||
+			len(req.GetPermissions()) != 0 || len(req.GetClusterScopes()) != 0 {
+			return nil, errox.InvalidArgs.New("metrics role requests must not specify permissions or scopes")
+		}
+		if sensorClusterID == "" {
+			return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+		}
+		return p.enforceLifetimeLimit(req)
 	}
 	if err := p.validatePermissions(req.GetPermissions()); err != nil {
 		return nil, err

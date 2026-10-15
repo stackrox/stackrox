@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -161,6 +162,39 @@ func TestEnforce(t *testing.T) {
 		expectError  bool
 		expectCapped bool
 	}{
+		"fixed metrics role": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName: centralproxy.SecuredClusterMetricsRole,
+				Lifetime: durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"unknown metrics role": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName: "Admin",
+				Lifetime: durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics role cannot carry client permissions": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:    centralproxy.SecuredClusterMetricsRole,
+				Permissions: map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				Lifetime:    durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics role cannot carry client scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:      centralproxy.SecuredClusterMetricsRole,
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2}},
+				Lifetime:      durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"permission validation failure": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"NetworkGraph": v1.Access_READ_ACCESS},

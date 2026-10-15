@@ -39,6 +39,10 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
+  // role_name requests the fixed, Central-managed secured-cluster metrics role.
+  // When set, permissions and cluster_scopes must be empty. Central derives
+  // the token's cluster scope from the authenticated Sensor identity.
+  string role_name = 5;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

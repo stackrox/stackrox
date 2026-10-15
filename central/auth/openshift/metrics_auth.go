@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,14 +33,15 @@ const (
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
 	// which signs Prometheus client certs. This adds the CA to userTrustRoots on the
 	// public :8443 endpoint (optional client cert verification).
-	authProviderName       = "OpenShift Platform Client Certificates"
-	roleName               = "OpenShift Prometheus Metrics Reader"
-	securedClusterRoleName = "OpenShift Secured Cluster Metrics Reader"
-	permissionSetName      = "OpenShift Prometheus Metrics Reader"
-	accessScopeName        = "OpenShift Central Cluster"
+	authProviderName  = "OpenShift Platform Client Certificates"
+	roleName          = "OpenShift Prometheus Metrics Reader"
+	permissionSetName = "OpenShift Prometheus Metrics Reader"
+	accessScopeName   = "OpenShift Central Cluster"
 
 	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
+
+const securedClusterRoleName = centralproxy.SecuredClusterMetricsRole
 
 var log = logging.LoggerForModule()
 
@@ -64,14 +66,16 @@ var log = logging.LoggerForModule()
 // secured-cluster role has a Deny All scope when assigned directly to a user. Internal
 // scrape tokens will instead receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
+	// OpenShift secured clusters can report to a Central that is not on OpenShift.
+	ensurePermissionSet(ctx, roleDS)
+	ensureSecuredClusterRole(ctx, roleDS)
+
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
 
 	seedAccessScope(ctx)
-	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
-	ensureSecuredClusterRole(ctx, roleDS)
 
 	clientset, err := newK8sClient()
 	if err != nil {
