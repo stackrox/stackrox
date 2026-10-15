@@ -7,28 +7,23 @@ import (
 	"fmt"
 	"testing"
 
-	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
-	scanStore "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// BenchmarkGetVM compares the former GetVM database reads with the joined read.
-// Only VM metadata and scans are seeded: neither path reads components or CVEs.
+// BenchmarkGetVM measures the joined VM and latest-scan lookup.
+// Only VM metadata and scans are seeded; the lookup does not read components or CVEs.
 func BenchmarkGetVM(b *testing.B) {
 	b.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(b)
 	vmStore := New(testDB.DB, concurrency.NewKeyFence()).(*storeImpl)
-	scanDataStore := scanDS.New(scanStore.New(testDB.DB))
 	for _, vmCount := range []int{1000, 3000} {
 		b.Run(fmt.Sprintf("VMs%d", vmCount), func(b *testing.B) {
 			_, err := testDB.Exec(ctx, "TRUNCATE virtual_machine_v2 CASCADE")
@@ -53,24 +48,6 @@ func BenchmarkGetVM(b *testing.B) {
 			require.NoError(b, tx.Commit(ctx))
 			_, err = testDB.Exec(ctx, "ANALYZE virtual_machine_v2, virtual_machine_scan_v2")
 			require.NoError(b, err)
-			b.Run("TwoQueries", func(b *testing.B) {
-				b.ReportAllocs()
-				i := 0
-				for b.Loop() {
-					id := ids[i%len(ids)]
-					i++
-					_, found, err := vmStore.Get(ctx, id)
-					require.NoError(b, err)
-					require.True(b, found)
-					q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, id).ProtoQuery()
-					q.Pagination = &v1.QueryPagination{
-						Limit: 1, SortOptions: []*v1.QuerySortOption{{Field: search.VirtualMachineScanID.String(), Reversed: true}},
-					}
-					scans, err := scanDataStore.SearchRawVMScans(ctx, q)
-					require.NoError(b, err)
-					require.Len(b, scans, 1)
-				}
-			})
 			b.Run("JoinedQuery", func(b *testing.B) {
 				b.ReportAllocs()
 				i := 0

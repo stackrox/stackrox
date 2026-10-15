@@ -37,6 +37,8 @@ const (
 	getVMStmt   = "SELECT serialized FROM " + vmTable + " WHERE Id = $1"
 	getScanStmt = "SELECT serialized FROM " + scanTable + " WHERE VmV2Id = $1"
 
+	// VM facts, notes, and VSOCK CID, plus scan notes, require the serialized blobs.
+	// LATERAL selects the newest UUIDv7 scan ID; LEFT JOIN retains VMs without scans.
 	getVMWithLatestScanStmt = "SELECT vm.serialized, scan.serialized FROM " + vmTable + " AS vm" +
 		" LEFT JOIN LATERAL (SELECT serialized FROM " + scanTable +
 		" WHERE VmV2Id = vm.Id ORDER BY Id DESC LIMIT 1) AS scan ON true WHERE vm.Id = $1"
@@ -708,8 +710,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.VirtualMachine
 	})
 }
 
-// GetWithLatestScan reads both serialized objects in one snapshot. A lateral
-// left join retains VMs with no scan and selects the latest UUIDv7 scan ID.
+// GetWithLatestScan reads the VM and its latest scan in one snapshot.
 func (s *storeImpl) GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "VirtualMachineV2WithLatestScan")
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresVMStatementTimeout.DurationSetting())
