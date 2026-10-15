@@ -1,24 +1,32 @@
-# fullsend per-repo configuration
-# https://github.com/fullsend-ai/fullsend
-#
-# This file configures fullsend for per-repo installation mode.
-# See https://fullsend.sh/docs/guides/infrastructure/layered-config-reference
+# StackRox Fullsend bootstrap. Activation requires the checks in README.md.
 version: "1"
+kill_switch: true
 roles:
-    - triage
-    - coder
-    - review
-    - fix
-    - retro
-    - prioritize
+  - review
+agents:
+  - name: code
+    enabled: false
+  - name: fix
+    enabled: false
+  - name: triage
+    enabled: false
+  - name: prioritize
+    enabled: false
+  - name: retro
+    enabled: false
 allowed_remote_resources:
-    - https://raw.githubusercontent.com/fullsend-ai/fullsend/
-    - https://raw.githubusercontent.com/fullsend-ai/agents/
+  - https://raw.githubusercontent.com/fullsend-ai/fullsend/
+  - https://raw.githubusercontent.com/fullsend-ai/agents/
+# This denies additional cross-repo issue targets. The source repository is
+# implicitly allowed by Fullsend, so this does not prohibit every issue write.
 create_issues:
-    allow_targets:
-        repos:
-            - stackrox/stackrox
-            - fullsend-ai/fullsend
-inference:
-    project: acs-ai-677887
-    wif_provider: projects/741754573120/locations/global/workloadIdentityPools/fullsend-inference/providers/gh-stackrox-stackrox
+  allow_targets:
+    orgs: []
+    repos: []
+status_notifications:
+  comment:
+    start: disabled
+    completion: disabled
+  reaction:
+    start: disabled
+    completion: disabled
