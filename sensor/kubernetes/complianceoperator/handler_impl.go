@@ -38,10 +38,8 @@ const (
 	defaultRetryTimeout   = 30 * time.Second
 
 	// minNodeRoleReconcileInterval clamps ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL to avoid excessive
-	// MachineConfigPool/ScanSetting polling if misconfigured. It only guards the env-var-derived production value
-	// (applied once, in NewRequestHandler); tests that construct a handlerImpl directly can still set
-	// reconcileInterval below it to keep ticker-driven tests fast.
-	minNodeRoleReconcileInterval = 10 * time.Second
+	// MachineConfigPool/ScanSetting polling if misconfigured.
+	minNodeRoleReconcileInterval = 30 * time.Second
 )
 
 type handlerImpl struct {
@@ -51,14 +49,6 @@ type handlerImpl struct {
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
-	// roleReconcileTrigger is signaled by the node-role reconcile ticker so that reconciliation runs on the
-	// single-writer run() loop, serialized with create/update/delete request processing.
-	roleReconcileTrigger chan struct{}
-	reconcileTicker      *time.Ticker
-	// reconcileInterval is how often the node-role reconciler ticks. Only used when
-	// ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled.
-	reconcileInterval time.Duration
-
 	disabled              concurrency.Signal
 	stopSignal            concurrency.Signal
 	started               *atomic.Bool
@@ -66,6 +56,10 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+
+	roleReconcileTrigger chan struct{}
+	reconcileTicker      *time.Ticker
+	reconcileInterval    time.Duration
 }
 
 // clampNodeRoleReconcileInterval enforces minNodeRoleReconcileInterval on the
@@ -115,16 +109,14 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 }
 
 func (m *handlerImpl) Start() error {
-	// Guards against a double-Start leaking a second run() goroutine and orphaning the first reconcileTicker (Stop()
-	// can only stop whichever ticker is currently stored in the field). The sensor framework calls Start() once per
-	// component, so this isn't hit in practice, but it's cheap to make safe.
+	// Guards against a double-Start leaking a second run() goroutine and orphaning a previous reconcileTicker.
 	if !m.started.CompareAndSwap(false, true) {
 		return nil
 	}
+
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
-	// Only drive node-role reconciliation when auto-discovery is enabled; when disabled, no ticker is started and
-	// no writes occur. The env var is read once at startup, consistent with the rest of the env usage.
+
 	if env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
 		m.reconcileTicker = time.NewTicker(m.reconcileInterval)
 		go m.runNodeRoleReconciler(m.reconcileTicker.C)
@@ -214,8 +206,7 @@ func (m *handlerImpl) run() {
 	}
 }
 
-// runNodeRoleReconciler signals the run() loop to reconcile node roles on every tick. Sending on roleReconcileTrigger
-// keeps reconciliation on the single writer so it never races with request processing.
+// runNodeRoleReconciler signals the run() loop to reconcile node roles on every tick.
 func (m *handlerImpl) runNodeRoleReconciler(tickerC <-chan time.Time) {
 	for {
 		select {

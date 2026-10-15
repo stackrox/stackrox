@@ -89,11 +89,9 @@ func resolveNodeRolesForUpdate(discoveredRoles []string, discoverErr error, exis
 }
 
 // adaptiveDefaultNodeRoles decides the node roles to target when creating, updating, or reconciling a ScanSetting.
-// It returns an error only when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is enabled and discoverNodeRoles itself
-// failed to list MachineConfigPools, so the reconciler can skip instead of clobbering existing ScanSetting roles
-// with a fallback forced by a transient failure. Every other outcome is a success and returns a non-empty role list:
-//   - ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES off: fallbackDefaultNodeRoles(), without calling discoverNodeRoles or
-//     touching the cluster at all.
+// It returns an error only when discoverNodeRoles itself failed to list MachineConfigPools, so the reconciler can skip
+// instead of clobbering existing ScanSetting roles with a fallback forced by a transient failure.
+// Every other outcome is a success and returns a non-empty role list:
 //   - discovery succeeds but finds no roles (e.g. no MachineConfigPools exist): fallbackDefaultNodeRoles().
 //   - discovery succeeds and finds roles: those roles.
 func (m *handlerImpl) adaptiveDefaultNodeRoles() ([]string, error) {
@@ -143,8 +141,6 @@ func (m *handlerImpl) reconcileNodeRoles() {
 	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
 		return
 	}
-	// Mirror the gating used by the create/update/sync paths: do nothing while compliance is disabled, before the
-	// compliance operator is ready, or while its namespace is unknown.
 	if m.disabled.IsDone() || !m.complianceIsReady.IsDone() {
 		return
 	}
@@ -157,13 +153,9 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		// Falling back to master+worker here would strip every custom role (e.g. "infra") from managed ScanSettings
 		// on a transient API failure, churning Compliance Operator's per-role scans until the next successful tick.
 		// Skip this round instead; the existing ScanSettings are left as-is and get re-evaluated on the next tick.
-		log.Warnf("Skipping node-role reconciliation: could not list MachineConfigPools to discover node roles: %v", err)
+		log.Warnf("Skipping node-role reconciliation: %v", err)
 		return
 	}
-	// desiredRoles is already sorted: adaptiveDefaultNodeRoles returns either discoverNodeRoles's sorted output or
-	// fallbackDefaultNodeRoles's {master, worker} literal, which is sorted too. Kept sorted here because it's what
-	// gets persisted into ScanSetting.roles below, for deterministic output.
-	desiredSet := set.NewStringSet(desiredRoles...)
 
 	scanSettings, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
 	if err != nil {
@@ -174,7 +166,7 @@ func (m *handlerImpl) reconcileNodeRoles() {
 
 	var errList errorhelpers.ErrorList
 	for _, scanSetting := range scanSettings {
-		if err := m.reconcileScanSettingRoles(scanSetting, desiredRoles, desiredSet); err != nil {
+		if err := m.reconcileScanSettingRoles(scanSetting, desiredRoles); err != nil {
 			errList.AddError(err)
 		}
 	}
@@ -185,7 +177,7 @@ func (m *handlerImpl) reconcileNodeRoles() {
 
 // reconcileScanSettingRoles updates a single ScanSetting's top-level roles to the desired set when they differ. The
 // comparison is order-insensitive so an equivalent role set never triggers an update (idempotent, avoids CO churn).
-func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstructured, desiredRoles []string, desiredSet set.Set[string]) error {
+func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstructured, desiredRoles []string) error {
 	name := scanSetting.GetName()
 	namespace := scanSetting.GetNamespace()
 
@@ -193,7 +185,7 @@ func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstruc
 	if err != nil {
 		return errors.Wrapf(err, "reading roles from namespaces/%s/scansettings/%s", namespace, name)
 	}
-	if desiredSet.Equal(set.NewStringSet(currentRoles...)) {
+	if set.NewStringSet(desiredRoles...).Equal(set.NewStringSet(currentRoles...)) {
 		return nil
 	}
 
@@ -218,8 +210,7 @@ func (m *handlerImpl) reconcileScanSettingRoles(scanSetting unstructured.Unstruc
 		})
 }
 
-// setScanSettingRoles writes the desired roles to the ScanSetting's top-level `roles` field (json tag `roles,omitempty`
-// on v1alpha1.ScanSetting), not under `spec`.
+// setScanSettingRoles writes the desired roles to the ScanSetting's top-level `roles` field
 func setScanSettingRoles(scanSetting *unstructured.Unstructured, roles []string) error {
 	if err := unstructured.SetNestedStringSlice(scanSetting.Object, roles, "roles"); err != nil {
 		return errors.Wrapf(err, "setting roles on namespaces/%s/scansettings/%s", scanSetting.GetNamespace(), scanSetting.GetName())
