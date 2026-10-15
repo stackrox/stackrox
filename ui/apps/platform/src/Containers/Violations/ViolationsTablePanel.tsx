@@ -21,6 +21,9 @@ import type { MenuToggleElement } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import get from 'lodash/get';
 
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
@@ -32,12 +35,12 @@ import useToasts from 'hooks/patternfly/useToasts';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import type { ListAlert } from 'types/alert.proto';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { SearchFilter } from 'types/search';
-import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
-import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
-import ResolveConfirmation from './Modals/ResolveConfirmation';
+import { getTableUIState } from 'utils/getTableUIState';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
+import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
 
 type TableColumn = {
@@ -84,6 +87,8 @@ type ViolationsTablePanelProps = {
     filteredWorkflowView: FilteredWorkflowView;
     hasActiveViolations: boolean;
     isTableDataUpdating: boolean;
+    isLoading: boolean;
+    errorMessage: string;
 };
 
 function ViolationsTablePanel({
@@ -104,6 +109,8 @@ function ViolationsTablePanel({
     filteredWorkflowView,
     hasActiveViolations,
     isTableDataUpdating,
+    isLoading,
+    errorMessage,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -131,6 +138,9 @@ function ViolationsTablePanel({
     } = useTableSelection(violations);
 
     const { toasts, addToast, removeToast } = useToasts();
+
+    const colSpan = columns.length + (hasActions ? 2 : 0);
+    const isTableEmpty = violations.length === 0;
 
     const excludeDeploymentMutation = useRestMutation(
         ({ policyId, deploymentNames }: { policyId: string; deploymentNames: string[] }) =>
@@ -314,9 +324,10 @@ function ViolationsTablePanel({
                                     />
                                 )}
                                 {columns.map(({ Header, sortField }) => {
-                                    const sortParams = sortField
-                                        ? { sort: getSortParams(sortField) }
-                                        : {};
+                                    const sortParams =
+                                        sortField && !isTableEmpty
+                                            ? { sort: getSortParams(sortField) }
+                                            : {};
                                     return (
                                         <Th key={Header} modifier="wrap" {...sortParams}>
                                             {Header}
@@ -326,86 +337,114 @@ function ViolationsTablePanel({
                                 {hasActions && <Th screenReaderText="Row actions" />}
                             </Tr>
                         </Thead>
-                        <Tbody
-                            aria-live="polite"
-                            aria-busy={isTableDataUpdating ? 'true' : 'false'}
-                        >
-                            {violations.map((violation, rowIndex) => {
-                                const { state, lifecycleStage, enforcementAction, policy, id } =
-                                    violation;
-                                const isAttemptedViolation = state === 'ATTEMPTED';
-                                const isResolved = state === 'RESOLVED';
-                                const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
-                                const isDeployCreateAttemptedAlert =
-                                    enforcementAction ===
-                                    ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
-
-                                // Instead of items prop of Td element, render ActionsColumn element
-                                // so every cell has vertical ellipsis (also known as kabob)
-                                // even if its items array is empty. For example:
-                                // hasWriteAccessForAlert but alert is not Runtime lifecycle.
-                                // !hasWriteAccessForWorkflowAdministration
-                                const actionItems: ActionItem[] = [];
-                                if (hasWriteAccessForAlert && !isResolved) {
-                                    if (isRuntimeAlert) {
-                                        actionItems.push({
-                                            title: 'Resolve and add to process baseline',
-                                            onClick: () => resolveAlertAction(true, violation.id),
-                                        });
-                                    }
-                                    if (isRuntimeAlert || isAttemptedViolation) {
-                                        actionItems.push({
-                                            title: 'Mark as resolved',
-                                            onClick: () => resolveAlertAction(false, violation.id),
-                                        });
-                                    }
-                                }
-                                if (
-                                    hasWriteAccessForExcludeDeploymentsFromPolicy &&
-                                    !isDeployCreateAttemptedAlert &&
-                                    'deployment' in violation
-                                ) {
-                                    actionItems.push({
-                                        title: 'Exclude deployment from policy',
-                                        onClick: () =>
-                                            excludeDeploymentMutation.mutate({
-                                                policyId: policy.id,
-                                                deploymentNames: [violation.deployment.name],
-                                            }),
-                                    });
-                                }
-                                return (
-                                    <Tr key={id}>
-                                        {hasActions && (
-                                            <Td
-                                                select={{
-                                                    rowIndex,
-                                                    onSelect,
-                                                    isSelected: selected[rowIndex],
-                                                }}
-                                            />
-                                        )}
-                                        {columns.map((column) => {
-                                            return (
-                                                <TableCell
-                                                    key={column.Header}
-                                                    row={violation}
-                                                    column={column}
-                                                />
-                                            );
-                                        })}
-                                        {hasActions && (
-                                            <Td isActionCell>
-                                                <ActionsColumn
-                                                    isDisabled={actionItems.length === 0}
-                                                    items={actionItems}
-                                                />
-                                            </Td>
-                                        )}
-                                    </Tr>
-                                );
+                        <TbodyUnified
+                            tableState={getTableUIState({
+                                isLoading: isTableEmpty && isLoading,
+                                data: violations,
+                                error: errorMessage ? new Error(errorMessage) : undefined,
+                                searchFilter,
                             })}
-                        </Tbody>
+                            colSpan={colSpan}
+                            emptyProps={{
+                                title: 'No violations found',
+                                message: 'There are currently no violations found in the system.',
+                            }}
+                            filteredEmptyProps={{
+                                onClearFilters: () => onFilterChange({}),
+                            }}
+                            renderer={({ data }) => (
+                                <Tbody
+                                    aria-live="polite"
+                                    aria-busy={isTableDataUpdating ? 'true' : 'false'}
+                                >
+                                    {data.map((violation, rowIndex) => {
+                                        const {
+                                            state,
+                                            lifecycleStage,
+                                            enforcementAction,
+                                            policy,
+                                            id,
+                                        } = violation;
+                                        const isAttemptedViolation = state === 'ATTEMPTED';
+                                        const isResolved = state === 'RESOLVED';
+                                        const isRuntimeAlert =
+                                            lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
+                                        const isDeployCreateAttemptedAlert =
+                                            enforcementAction ===
+                                            ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
+
+                                        // Instead of items prop of Td element, render ActionsColumn element
+                                        // so every cell has vertical ellipsis (also known as kabob)
+                                        // even if its items array is empty. For example:
+                                        // hasWriteAccessForAlert but alert is not Runtime lifecycle.
+                                        // !hasWriteAccessForWorkflowAdministration
+                                        const actionItems: ActionItem[] = [];
+                                        if (hasWriteAccessForAlert && !isResolved) {
+                                            if (isRuntimeAlert) {
+                                                actionItems.push({
+                                                    title: 'Resolve and add to process baseline',
+                                                    onClick: () =>
+                                                        resolveAlertAction(true, violation.id),
+                                                });
+                                            }
+                                            if (isRuntimeAlert || isAttemptedViolation) {
+                                                actionItems.push({
+                                                    title: 'Mark as resolved',
+                                                    onClick: () =>
+                                                        resolveAlertAction(false, violation.id),
+                                                });
+                                            }
+                                        }
+                                        if (
+                                            hasWriteAccessForExcludeDeploymentsFromPolicy &&
+                                            !isDeployCreateAttemptedAlert &&
+                                            'deployment' in violation
+                                        ) {
+                                            actionItems.push({
+                                                title: 'Exclude deployment from policy',
+                                                onClick: () =>
+                                                    excludeDeploymentMutation.mutate({
+                                                        policyId: policy.id,
+                                                        deploymentNames: [
+                                                            violation.deployment.name,
+                                                        ],
+                                                    }),
+                                            });
+                                        }
+                                        return (
+                                            <Tr key={id}>
+                                                {hasActions && (
+                                                    <Td
+                                                        select={{
+                                                            rowIndex,
+                                                            onSelect,
+                                                            isSelected: selected[rowIndex],
+                                                        }}
+                                                    />
+                                                )}
+                                                {columns.map((column) => {
+                                                    return (
+                                                        <TableCell
+                                                            key={column.Header}
+                                                            row={violation}
+                                                            column={column}
+                                                        />
+                                                    );
+                                                })}
+                                                {hasActions && (
+                                                    <Td isActionCell>
+                                                        <ActionsColumn
+                                                            isDisabled={actionItems.length === 0}
+                                                            items={actionItems}
+                                                        />
+                                                    </Td>
+                                                )}
+                                            </Tr>
+                                        );
+                                    })}
+                                </Tbody>
+                            )}
+                        />
                     </Table>
                 </div>
             </PageSection>
