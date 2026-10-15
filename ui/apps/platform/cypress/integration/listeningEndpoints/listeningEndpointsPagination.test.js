@@ -88,7 +88,7 @@ describe('Listening endpoints pagination within a deployment', () => {
         interceptListeningEndpointsAPI();
     });
 
-    it('should paginate listening endpoints independently for each deployment', () => {
+    it('should only allow one deployment to be expanded at a time', () => {
         visit(listeningEndpointsPath, deploymentsRouteMatcherMap, {
             deployments: { body: deploymentResponse },
             deploymentsCount: { body: { count: 2 } },
@@ -106,50 +106,28 @@ describe('Listening endpoints pagination within a deployment', () => {
         cy.get(`${rowSelectorA} ${selectors.tableRowWithValueForColumn('Count', '50')}`);
         cy.get(`${rowSelectorB} ${selectors.tableRowWithValueForColumn('Count', '50')}`);
 
+        const processTableA = `${rowSelectorA} ${selectors.processTable}`;
+        const processTableB = `${rowSelectorB} ${selectors.processTable}`;
+
         // Expand deployment A
         cy.get(`${rowSelectorA} ${selectors.expandableRowToggle}`).click();
 
-        const processTableA = `${rowSelectorA} ${selectors.processTable}`;
-        const expandedContentA = `${rowSelectorA} .pf-v6-c-card`;
-
-        // Assert that the first page shows 20 rows
+        // Assert that the first page shows 20 rows starting with port 8000
         cy.get(`${processTableA} > tbody > tr`).should('have.length', 20);
-
-        // Verify deployment A page 1 starts with port 8000
         cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
             'exist'
         );
 
-        // Navigate deployment A to page 2
-        cy.get(expandedContentA).find('[data-action="next"]').click();
-        cy.wait('@listeningEndpoints');
-        cy.get(`${processTableA} > tbody > tr`).should('have.length', 20);
-
-        // Deployment A page 2 should start with port 8020, not 8000
-        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`).should(
-            'exist'
-        );
-        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
-            'not.exist'
-        );
-
-        // Now expand deployment B — it should start on page 1 independently
+        // Expand deployment B — this should collapse deployment A
         cy.get(`${rowSelectorB} ${selectors.expandableRowToggle}`).click();
 
-        const processTableB = `${rowSelectorB} ${selectors.processTable}`;
+        // Deployment A's endpoints table should no longer be rendered
+        cy.get(processTableA).should('not.exist');
 
-        // Deployment B should show page 1 starting with port 9000
+        // Deployment B should show its own page 1 starting with port 9000
         cy.get(`${processTableB} > tbody > tr`).should('have.length', 20);
         cy.get(`${processTableB} ${selectors.tableRowWithValueForColumn('Port', '9000')}`).should(
             'exist'
-        );
-
-        // Deployment A should still be on page 2 (port 8020 present, port 8000 absent)
-        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`).should(
-            'exist'
-        );
-        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
-            'not.exist'
         );
     });
 

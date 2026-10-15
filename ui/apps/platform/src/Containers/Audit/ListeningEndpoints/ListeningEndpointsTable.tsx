@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Bullseye, Card, Content, Pagination, Spinner } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -9,7 +8,7 @@ import { getListeningEndpointsForDeployment } from 'services/ProcessListeningOnP
 import type { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import type { ListDeployment } from 'types/deployment.proto';
-import useSet from 'hooks/useSet';
+import ExpandRowTh from 'Components/ExpandRowTh';
 import useRestQuery from 'hooks/useRestQuery';
 import type { GetSortParams } from 'hooks/useURLSort';
 import { DEFAULT_ENDPOINTS_PER_PAGE } from './hooks/useDeploymentListeningEndpoints';
@@ -110,37 +109,18 @@ type DeploymentWithEndpoints = ListDeployment & {
 export type ListeningEndpointsTableProps = {
     deployments: DeploymentWithEndpoints[];
     getSortParams: GetSortParams;
-    areAllRowsExpanded: boolean;
-    setAllRowsExpanded: Dispatch<SetStateAction<boolean>>;
 };
 
-function ListeningEndpointsTable({
-    deployments,
-    getSortParams,
-    areAllRowsExpanded,
-    setAllRowsExpanded,
-}: ListeningEndpointsTableProps) {
-    // This is used to track which table rows are in the -opposite- state
-    // of the passed expanded state for the entire table.
-    const invertedExpansionRowSet = useSet<string>();
+function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpointsTableProps) {
+    // Only one deployment can be expanded at a time. This tracks the id of the
+    // currently expanded deployment, or null when none is expanded.
+    const [expandedDeploymentId, setExpandedDeploymentId] = useState<string | null>(null);
 
     return (
         <Table variant="compact" aria-label="Deployment results">
             <Thead noWrap>
                 <Tr>
-                    <Th
-                        expand={{
-                            // Possible PF bug? This boolean seems to need to be inverted based on the render output
-                            areAllExpanded: !areAllRowsExpanded,
-                            // TODO Awkward type assertion here is fixed in PF 5 https://github.com/patternfly/patternfly-react/issues/8330
-                            collapseAllAriaLabel: 'Expand or collapse all rows' as '',
-                            onToggle: () => {
-                                setAllRowsExpanded((prev) => !prev);
-                                invertedExpansionRowSet.clear();
-                            },
-                        }}
-                        width={10}
-                    />
+                    <ExpandRowTh />
                     <Th width={30} sort={getSortParams('Deployment')}>
                         Deployment
                     </Th>
@@ -158,12 +138,7 @@ function ListeningEndpointsTable({
                     { id, name, namespace, cluster, listeningEndpoints, totalListeningEndpoints },
                     rowIndex
                 ) => {
-                    // A row is expanded if
-                    //   - the "are all rows expanded" toggle is on and the row is not in the toggled set
-                    //   - the "are all rows expanded" toggle is off and the row is in the toggled set
-                    const isExpanded = areAllRowsExpanded
-                        ? !invertedExpansionRowSet.has(id)
-                        : invertedExpansionRowSet.has(id);
+                    const isExpanded = expandedDeploymentId === id;
                     return (
                         <Tbody key={id} isExpanded={isExpanded}>
                             <Tr>
@@ -171,7 +146,8 @@ function ListeningEndpointsTable({
                                     expand={{
                                         rowIndex,
                                         isExpanded,
-                                        onToggle: () => invertedExpansionRowSet.toggle(id),
+                                        onToggle: () =>
+                                            setExpandedDeploymentId(isExpanded ? null : id),
                                     }}
                                 />
                                 <Td dataLabel="Deployment">
