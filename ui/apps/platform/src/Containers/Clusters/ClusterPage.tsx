@@ -26,7 +26,7 @@ import { clustersBasePath } from 'routePaths';
 import ClusterLabelsConfigurationStatusSummary from './ClusterLabelsConfigurationStatusSummary';
 
 type MessageState = {
-    variant: 'warning' | 'danger';
+    variant: 'info' | 'danger';
     title: string;
     text: string;
 };
@@ -63,14 +63,14 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     switch (managerType(cluster)) {
                         case 'MANAGER_TYPE_HELM_CHART':
                             setMessageState({
-                                variant: 'warning',
+                                variant: 'info',
                                 title: 'Helm-managed cluster',
                                 text: 'This is a Helm-managed cluster. The settings of Helm-managed clusters cannot be changed here, please ask your DevOps team to change the settings by updating the Helm values.',
                             });
                             break;
                         case 'MANAGER_TYPE_KUBERNETES_OPERATOR':
                             setMessageState({
-                                variant: 'warning',
+                                variant: 'info',
                                 title: 'Operator-managed cluster',
                                 text: 'This is an operator-managed cluster. The settings of operator-managed clusters cannot be changed here and must instead be changed by updating its SecuredCluster custom resource (CR).',
                             });
