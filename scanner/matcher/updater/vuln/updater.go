@@ -599,9 +599,18 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	}
 
 	modTime := resp.Header.Get(lastModifiedHeader)
-	timestamp, err := http.ParseTime(modTime)
-	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("parsing %s header: %w", lastModifiedHeader, err)
+	var timestamp time.Time
+	if modTime != "" {
+		var err error
+		timestamp, err = http.ParseTime(modTime)
+		if err != nil {
+			return nil, time.Time{}, fmt.Errorf("parsing %s header: %w", lastModifiedHeader, err)
+		}
+	} else {
+		// When Last-Modified header is missing (e.g., GitHub raw URLs),
+		// use current time to ensure the update is processed.
+		timestamp = time.Now().UTC()
+		slog.WarnContext(ctx, "Last-Modified header missing, using current time", "url", resp.Request.URL.String())
 	}
 	succeeded = true
 	return f, timestamp, nil

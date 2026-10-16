@@ -85,6 +85,22 @@ stackrox_services: true
 			}(),
 		},
 		{
+			name: "when matcher vulnerabilities URL env var is set",
+			yaml: `---
+matcher:
+  vulnerabilities_url: https://example.com/default.zip
+`,
+			env: map[string]string{
+				"SCANNER_V4_MATCHER_VULNERABILITIES_URL": "https://example.com/ci-minimal.zip",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Matcher.VulnerabilitiesURL = "https://example.com/ci-minimal.zip"
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
+		{
 			name: "when rc bundle env var is set then rc url is prepended",
 			yaml: `---
 matcher:

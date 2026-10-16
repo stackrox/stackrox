@@ -1,0 +1,7 @@
+# Nightly Scanner functional tests: omit the URL env override and use the
+# versioned production bundle configured in templates/scanner-config.yaml.
+# From scanner/e2etests: helm install scanner ./helmchart -f helmchart/values-full.yaml
+
+app:
+  scanner:
+    vulnerabilitiesUrl: null
