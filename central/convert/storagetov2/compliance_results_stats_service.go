@@ -8,8 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-// ComplianceV2ClusterStats converts the counts to the v2 stats
-func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan, scanToScanID map[string]string) []*v2.ComplianceClusterScanStats {
+// ComplianceV2ClusterStats converts the counts to the v2 stats.
+// configDataStates maps scan_config_name → freshness (nil/absent ⇒ UNKNOWN).
+func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan, scanToScanID map[string]string, configDataStates map[string]v2.ComplianceDataState) []*v2.ComplianceClusterScanStats {
 	convertedResults := make([]*v2.ComplianceClusterScanStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
@@ -21,6 +22,7 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 			ScanStats: &v2.ComplianceScanStatsShim{
 				ScanName:     resultCount.ScanConfigName,
 				ScanConfigId: scanToScanID[resultCount.ScanConfigName],
+				DataState:    configDataStates[resultCount.ScanConfigName],
 				CheckStats: []*v2.ComplianceCheckStatusCount{
 					{
 						Count:  int32(resultCount.FailCount),
@@ -57,8 +59,9 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 	return convertedResults
 }
 
-// ComplianceV2ClusterOverallStats converts the counts to the v2 stats
-func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string) []*v2.ComplianceClusterOverallStats {
+// ComplianceV2ClusterOverallStats converts the counts to the v2 stats.
+// clusterDataStates maps cluster_id → freshness (nil/absent ⇒ UNKNOWN).
+func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string, clusterDataStates map[string]v2.ComplianceDataState) []*v2.ComplianceClusterOverallStats {
 	convertedResults := make([]*v2.ComplianceClusterOverallStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
@@ -72,6 +75,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 				ClusterName: resultCount.ClusterName,
 			},
 			ClusterErrors: clusterErrors[resultCount.ClusterID],
+			DataState:     clusterDataStates[resultCount.ClusterID],
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
