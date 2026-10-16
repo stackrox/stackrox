@@ -125,7 +125,7 @@
     },
     "/v2/compliance/scan/configurations/clusters/{clusterId}/profiles/collection": {
       "get": {
-        "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
+        "summary": "ListComplianceScanConfigClusterProfiles lists the distinct profiles referenced by existing compliance scan configurations for the specified cluster",
         "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles",
         "responses": {
           "200": {
@@ -207,7 +207,7 @@
     },
     "/v2/compliance/scan/configurations/profiles/collection": {
       "get": {
-        "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
+        "summary": "ListComplianceScanConfigProfiles lists the distinct profiles referenced by existing compliance scan configurations",
         "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigProfiles",
         "responses": {
           "200": {
