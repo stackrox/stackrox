@@ -17,7 +17,6 @@ import (
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
-	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -364,8 +363,20 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
-func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
-	return storagetoeffectiveaccessscope.Clusters(ds.clusterStorage.GetAllFromCacheForSAC()), nil
+func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
+	var clusters []effectiveaccessscope.Cluster
+	err := ds.clusterStorage.Walk(sac.WithAllAccess(ctx), func(cluster *storage.Cluster) error {
+		clusters = append(clusters, &storage.Cluster{
+			Id:     cluster.GetId(),
+			Name:   cluster.GetName(),
+			Labels: cluster.GetLabels(),
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
