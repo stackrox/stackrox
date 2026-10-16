@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -142,6 +143,27 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
+	// Preserve last_scan_requested_time atomically under the lock. It is a blob-only field
+	// the v2 API cannot carry, written independently by UpdateScanConfigLastScanRequestedTime
+	// ("Scan now"). Reading the current value here (instead of trusting the caller's copy,
+	// which was read earlier without the lock) prevents a concurrent rescan stamp from being
+	// clobbered by an unrelated config edit. Elevated read: internal field carry-over, not
+	// user-facing data. Missing row (create) leaves the caller's value (nil) untouched.
+	// A read ERROR must NOT be ignored: the Postgres upsert replaces the whole serialized
+	// blob, so silently proceeding on error would erase a stored request time. Fail before
+	// the upsert instead. Feature-flag gated: with the flag off this extra read does not run,
+	// keeping the write path byte-for-byte identical to master.
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		elevatedReadCtx := sac.WithAllAccess(context.Background())
+		existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to preserve last scan requested time for configuration id %q", scanConfig.GetId())
+		}
+		if found {
+			scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
+		}
+	}
+
 	// Update the last updated time
 	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
 }
@@ -149,6 +171,41 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 // upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
 func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = protocompat.TimestampNow()
+	return ds.storage.Upsert(ctx, scanConfig)
+}
+
+// UpdateScanConfigLastScanRequestedTime records an on-demand "Scan now" time on the scan
+// configuration. It re-reads the config under the keyed mutex (minimizing clobber vs a
+// concurrent edit) and writes via the store directly, deliberately NOT going through
+// upsertNoLockScanConfiguration so last_updated_time is preserved: triggering a rescan is
+// not a configuration edit. The write is monotonic: it only ever advances
+// last_scan_requested_time, never regresses it, so out-of-order concurrent rescans converge
+// on the latest requested time.
+func (ds *datastoreImpl) UpdateScanConfigLastScanRequestedTime(ctx context.Context, id string, requestedTime *protocompat.Timestamp) error {
+	ds.keyedMutex.Lock(id)
+	defer ds.keyedMutex.Unlock(id)
+
+	scanConfig, found, err := ds.GetScanConfiguration(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to retrieve scan configuration id %q", id)
+	}
+	if !found {
+		return errors.Errorf("Unable to find scan configuration id %q", id)
+	}
+
+	// Advance last_scan_requested_time monotonically only. Two concurrent rescans may acquire
+	// the keyed lock in any order relative to the moment each captured its timestamp, so an
+	// older stamp could otherwise overwrite a newer one — the unsafe direction, letting stale
+	// checks resolve CURRENT slightly longer. Comparing the incoming time against the stored
+	// value (read under the lock) and keeping the later one makes concurrent rescans converge
+	// on the LATEST requested time regardless of lock-acquisition order. Addresses a CodeRabbit
+	// review finding.
+	if protocompat.CompareTimestamps(scanConfig.GetLastScanRequestedTime(), requestedTime) >= 0 {
+		// Stored value is already at or after the requested time; keep it, nothing to write.
+		return nil
+	}
+
+	scanConfig.LastScanRequestedTime = requestedTime
 	return ds.storage.Upsert(ctx, scanConfig)
 }
 
@@ -257,6 +314,23 @@ func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_
 func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context, clusterID string, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
+
+	// scanConfig was read by RemoveClusterFromScanConfig OUTSIDE this lock, so a concurrent
+	// "Scan now" may have stamped last_scan_requested_time in between. Re-read the stored value
+	// under the lock and carry it forward (same pattern as UpsertScanConfiguration) so the
+	// upsert below — which replaces the whole serialized blob — does not clobber it. A read
+	// error must fail before the upsert rather than erase the stored time. Feature-flag gated:
+	// with the flag off this extra read does not run, keeping the write path identical to master.
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		elevatedReadCtx := sac.WithAllAccess(context.Background())
+		existing, found, err := ds.storage.Get(elevatedReadCtx, scanConfig.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to preserve last scan requested time for configuration id %q", scanConfig.GetId())
+		}
+		if found {
+			scanConfig.LastScanRequestedTime = existing.GetLastScanRequestedTime()
+		}
+	}
 
 	clusters := scanConfig.GetClusters()
 	filterFunction := func(cluster *storage.ComplianceOperatorScanConfigurationV2_Cluster) bool {
