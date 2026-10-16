@@ -15,6 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	protocompat "github.com/stackrox/rox/pkg/protocompat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -217,6 +218,20 @@ func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, scanConfigID, c
 func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus, clusterName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, scanConfigID, clusterID, clusterStatus, clusterName)
+}
+
+// UpdateScanConfigLastScanRequestedTime mocks base method.
+func (m *MockDataStore) UpdateScanConfigLastScanRequestedTime(ctx context.Context, id string, requestedTime *protocompat.Timestamp) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateScanConfigLastScanRequestedTime", ctx, id, requestedTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateScanConfigLastScanRequestedTime indicates an expected call of UpdateScanConfigLastScanRequestedTime.
+func (mr *MockDataStoreMockRecorder) UpdateScanConfigLastScanRequestedTime(ctx, id, requestedTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateScanConfigLastScanRequestedTime", reflect.TypeOf((*MockDataStore)(nil).UpdateScanConfigLastScanRequestedTime), ctx, id, requestedTime)
 }
 
 // UpsertScanConfiguration mocks base method.

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -519,6 +520,60 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 			s.Require().NoError(err)
 		}
 	}
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestUpdateScanConfigLastScanRequestedTime() {
+	configID := uuid.NewV4().String()
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+
+	ctx := s.testContexts[unrestrictedReadWriteCtx]
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, scanConfig))
+	defer func() {
+		_, err := s.dataStore.DeleteScanConfiguration(ctx, configID)
+		s.Require().NoError(err)
+	}()
+
+	// The initial upsert stamps last_updated_time and leaves last_scan_requested_time unset.
+	original, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Nil(original.GetLastScanRequestedTime())
+	originalUpdated := original.GetLastUpdatedTime()
+	s.Require().NotNil(originalUpdated)
+
+	// Record an on-demand "Scan now" time.
+	requested := protocompat.TimestampNow()
+	s.Require().NoError(s.dataStore.UpdateScanConfigLastScanRequestedTime(ctx, configID, requested))
+
+	updated, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+
+	// last_scan_requested_time is now set...
+	s.Require().NotNil(updated.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(updated.GetLastScanRequestedTime().AsTime()))
+	// ...and last_updated_time is preserved: a rescan is not a configuration edit.
+	s.Require().True(originalUpdated.AsTime().Equal(updated.GetLastUpdatedTime().AsTime()))
+
+	// Simulate an unrelated config edit: a fresh object that cannot carry the blob-only
+	// last_scan_requested_time. UpsertScanConfiguration must preserve it atomically under
+	// the lock (so a concurrent "Scan now" is not clobbered) while bumping last_updated_time.
+	edit := s.getTestRec(mockScanName)
+	edit.Id = configID
+	edit.Description = "edited description"
+	s.Require().Nil(edit.GetLastScanRequestedTime())
+	s.Require().NoError(s.dataStore.UpsertScanConfiguration(ctx, edit))
+
+	afterEdit, found, err := s.dataStore.GetScanConfiguration(ctx, configID)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal("edited description", afterEdit.GetDescription())
+	// The on-demand time survived the edit...
+	s.Require().NotNil(afterEdit.GetLastScanRequestedTime())
+	s.Require().True(requested.AsTime().Equal(afterEdit.GetLastScanRequestedTime().AsTime()))
+	// ...and last_updated_time advanced (an edit bumps it, unlike a rescan).
+	s.Require().False(afterEdit.GetLastUpdatedTime().AsTime().Before(updated.GetLastUpdatedTime().AsTime()))
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
