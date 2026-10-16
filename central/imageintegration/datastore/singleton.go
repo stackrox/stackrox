@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
+	adminEventsDS "github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
@@ -246,7 +247,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
 	initializeIntegrations(storage)
-	dataStore = New(storage)
+	dataStore = New(storage, adminEventsDS.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
