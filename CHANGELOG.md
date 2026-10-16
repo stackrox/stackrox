@@ -30,6 +30,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
 
+- Central rate-limits Scanner V4 node index reports (default 0.2 requests per second, burst 50) to bound matcher load. Tune with `ROX_NODE_INDEX_REPORT_RATE_LIMIT` and `ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY`; set the rate to 0 to disable.
+
 ## [5.0.0]
 
 
