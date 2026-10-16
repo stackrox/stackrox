@@ -94,14 +94,21 @@ func (x *ComplianceScanStatsShim) GetScanConfigId() string {
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 type ComplianceProfileScanStats struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,1,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	ProfileName   string                        `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	Title         string                        `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Version       string                        `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	Benchmarks    []*ComplianceBenchmark        `protobuf:"bytes,5,rep,name=benchmarks,proto3" json:"benchmarks,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState        `protogen:"open.v1"`
+	CheckStats  []*ComplianceCheckStatusCount `protobuf:"bytes,1,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	ProfileName string                        `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	Title       string                        `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Version     string                        `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	Benchmarks  []*ComplianceBenchmark        `protobuf:"bytes,5,rep,name=benchmarks,proto3" json:"benchmarks,omitempty"`
+	// Number of clusters with STALE data for this profile, across all clusters
+	// (not limited to a page). Non-zero signals the UI to show a stale-data
+	// banner.
+	StaleClusterCount int32 `protobuf:"varint,6,opt,name=stale_cluster_count,json=staleClusterCount,proto3" json:"stale_cluster_count,omitempty"`
+	// Number of stale check results (check x cluster units) for this profile,
+	// across all clusters (not limited to a page).
+	StaleCheckResultCount int32 `protobuf:"varint,7,opt,name=stale_check_result_count,json=staleCheckResultCount,proto3" json:"stale_check_result_count,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ComplianceProfileScanStats) Reset() {
@@ -167,6 +174,20 @@ func (x *ComplianceProfileScanStats) GetBenchmarks() []*ComplianceBenchmark {
 		return x.Benchmarks
 	}
 	return nil
+}
+
+func (x *ComplianceProfileScanStats) GetStaleClusterCount() int32 {
+	if x != nil {
+		return x.StaleClusterCount
+	}
+	return 0
+}
+
+func (x *ComplianceProfileScanStats) GetStaleCheckResultCount() int32 {
+	if x != nil {
+		return x.StaleCheckResultCount
+	}
+	return 0
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
@@ -459,7 +480,7 @@ const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x127\n" +
 	"\tlast_scan\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\blastScan\x12$\n" +
-	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\"\xe9\x01\n" +
+	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\"\xd2\x02\n" +
 	"\x1aComplianceProfileScanStats\x12?\n" +
 	"\vcheck_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x12!\n" +
@@ -468,7 +489,9 @@ const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x127\n" +
 	"\n" +
 	"benchmarks\x18\x05 \x03(\v2\x17.v2.ComplianceBenchmarkR\n" +
-	"benchmarks\"\x8d\x01\n" +
+	"benchmarks\x12.\n" +
+	"\x13stale_cluster_count\x18\x06 \x01(\x05R\x11staleClusterCount\x127\n" +
+	"\x18stale_check_result_count\x18\a \x01(\x05R\x15staleCheckResultCount\"\x8d\x01\n" +
 	"\x1aComplianceClusterScanStats\x12:\n" +
 	"\n" +
 	"scan_stats\x18\x01 \x01(\v2\x1b.v2.ComplianceScanStatsShimR\tscanStats\x123\n" +

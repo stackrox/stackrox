@@ -71,6 +71,9 @@ message ComplianceCheckResultStatusCount {
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
   repeated ComplianceControl controls = 5;
+  // Rolled-up freshness across all clusters reporting this check: STALE if
+  // any contributing cluster has stale data (STALE > CURRENT > UNKNOWN).
+  ComplianceDataFreshness data_freshness = 6;
 }
 
 message ComplianceControl {
@@ -95,12 +98,24 @@ message ListComplianceProfileResults {
   int32 total_count = 3;
 }
 
+// ComplianceDataFreshness indicates whether compliance data is current relative
+// to the scan configuration's schedule.
+enum ComplianceDataFreshness {
+  // Cannot evaluate: no schedule, unresolvable config, or no data.
+  COMPLIANCE_DATA_FRESHNESS_UNKNOWN = 0;
+  // Data reflects the most recent expected scan cycle.
+  COMPLIANCE_DATA_FRESHNESS_CURRENT = 1;
+  // Data predates the most recent expected scan cycle.
+  COMPLIANCE_DATA_FRESHNESS_STALE = 2;
+}
+
 // ComplianceClusterOverallStats provides overall stats for cluster
 message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
   repeated string cluster_errors = 3;
   google.protobuf.Timestamp last_scan_time = 4;
+  ComplianceDataFreshness data_freshness = 5;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
