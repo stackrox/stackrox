@@ -60,12 +60,9 @@ test_ui_e2e() {
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
-    export ROX_POLICY_CRITERIA_MODAL=false
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
-
-    image_prefetcher_system_await
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
@@ -81,11 +78,6 @@ securedCluster:
   namespace: stackrox
   resourceProfile: ci
 EOF
-
-    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-        info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
-        patch_yaml "$roxie_config" ".roxie.konfluxImages = true"
-    fi
 
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
