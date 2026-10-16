@@ -155,10 +155,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.InitContainerSupport.Enabled() {
 			capabilities = append(capabilities, centralsensor.InitContainerSupport)
 		}
-		if features.OCPConsoleIntegration.Enabled() {
-			capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
-			capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
-		}
+		capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
+		capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
 
 		preferences := s.manager.GetConnectionPreference(clusterID)
 

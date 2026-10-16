@@ -1424,6 +1424,13 @@ spec:
         displayName: Virtual Machines Settings
         path: virtualMachines
       - description: |-
+          Allows OpenShift Prometheus to scrape Central custom metrics through this Sensor's proxy.
+          Independent of monitoring.openshift.enabled. The default is: false.
+        displayName: Central Custom Metrics Scraping
+        path: centralCustomMetrics
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
           Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
         displayName: Host path
