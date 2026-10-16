@@ -1821,6 +1821,11 @@ func (in *SecuredClusterSpec) DeepCopyInto(out *SecuredClusterSpec) {
 		*out = new(GlobalMonitoring)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.CentralCustomMetrics != nil {
+		in, out := &in.CentralCustomMetrics, &out.CentralCustomMetrics
+		*out = new(bool)
+		**out = **in
+	}
 	if in.RegistryOverride != nil {
 		in, out := &in.RegistryOverride, &out.RegistryOverride
 		*out = new(string)
