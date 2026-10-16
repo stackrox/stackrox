@@ -62,6 +62,41 @@ func TestProwCI(t *testing.T) {
 	assert.NotEqual(t, 3, code)
 }
 
+func TestProwCIRehearsalEnforcement(t *testing.T) {
+	t.Setenv("CI_SELECT_ROOT", "../..")
+	t.Setenv("PULL_BASE_SHA", "missing-ref")
+	t.Setenv("PULL_PULL_SHA", "HEAD")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "[]")
+	}))
+	defer server.Close()
+	t.Setenv("GITHUB_API_URL", server.URL)
+	for body, want := range map[string]string{
+		"/label: ci-dispatcher-enforce":                "skip",
+		"description\n/label: ci-dispatcher-enforce\n": "skip",
+		"  /label:\tci-dispatcher-enforce\r\n":         "skip",
+		"/label: ci-dispatcher-enforce another-label":  "skip",
+		"/label: ci-dispatcher-enforced":               "run",
+		"/label: ci-dispatcher-enforce-extra":          "run",
+		"/label: ci-dispatcher-enforce_extra":          "run",
+		"/label: ci-dispatcher-enforce.extra":          "run",
+		"/label: ci-dispatcher-enforce/extra":          "run",
+		"quoted /label: ci-dispatcher-enforce":         "run",
+		"/label:\nci-dispatcher-enforce":               "run",
+		"":                                             "run",
+	} {
+		t.Run(body, func(t *testing.T) {
+			pr := pullRequest{Number: 23403, Body: body}
+			pr.Base.Repo.FullName = "openshift/release"
+			input, err := json.Marshal(pr)
+			require.NoError(t, err)
+			action, err := prowCI(t.Context(), "gke-qa-e2e-tests", bytes.NewReader(input), &bytes.Buffer{})
+			require.NoError(t, err)
+			assert.Equal(t, want, action)
+		})
+	}
+}
+
 func TestProwCIComments(t *testing.T) {
 	t.Setenv("CI_SELECT_ROOT", "../..")
 	t.Setenv("PULL_BASE_SHA", "missing-ref")

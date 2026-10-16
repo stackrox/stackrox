@@ -13,7 +13,7 @@ wait-for-images run
 e2e-byodb-tests run
 e2e-db-backup-restore-tests run
 e2e-gke-upgrade-tests run
-e2e-nongroovy-tests run
+e2e-nongroovy-tests-gke run
 e2e-qa-tests-gke skip
 e2e-qa-tests-gke-konflux skip
 e2e-qa-tests-ocp-4-22 skip

@@ -17,7 +17,7 @@ import (
 
 var (
 	testLine              = regexp.MustCompile(`^/test\b(.*)$`)
-	rehearsalEnforceLabel = regexp.MustCompile(`/label:\s*ci-dispatcher-enforce`)
+	rehearsalEnforceLabel = regexp.MustCompile(`(?m)^[ \t]*/label:[ \t]*ci-dispatcher-enforce(?:[ \t\r]|$)`)
 )
 
 type comment struct {
