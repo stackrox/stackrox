@@ -64,15 +64,23 @@ CI_MINIMAL_BUNDLE_PATH="$PWD/scanner/image/scanner/bundles/ci-minimal/vulnerabil
 go test ./scanner/matcher/updater/vuln -run '^TestCIMinimalBundleValid$' -count=1
 ```
 
-The optional `scanner_db_integration` tests in `generate/matching_test.go` exercise
+The `scanner_db_integration` tests in `generate/matching_test.go` exercise
 the production importer and matchers against disposable PostgreSQL databases.
 They include a persistent update from fixture A to changed fixture B,
 then repeat B in the same database and check vulnerability content, enrichment
 content, and the stored ZIP member timestamp. The HTTP fixture uses an explicit
 `Last-Modified` timestamp and always returns 200. Set `SCANNER_CI_TEST_DB` only
 to an explicitly selected disposable admin connection; the tests create and
-drop databases. See the test's comments for the
-optional baseline comparison.
+drop databases. The Scanner DB integration workflow supplies this connection and
+runs these tests through `make -C scanner db-integration-test`. Local runs without
+the variable skip the fixture database tests. To run them locally:
+
+```sh
+SCANNER_CI_TEST_DB='postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable' \
+  make -C scanner db-integration-test
+```
+
+See the test's comments for the optional baseline comparison.
 
 ## Update consumers
 
