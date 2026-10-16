@@ -38,6 +38,10 @@ var MatcherMigrations = []migrate.Migration{
 		Up:   runFile("matcher/02-update-timestamp-column-last-vuln-update-up.sql"),
 		Down: runFile("matcher/02-update-timestamp-column-last-vuln-update-down.sql"),
 	},
+	{
+		ID: 3,
+		Up: runFile("matcher/03-vulnerability-bundle-sha256.sql"),
+	},
 }
 
 //go:embed */*.sql

@@ -25,6 +25,7 @@ message VulnDefinitionsInfoRequest {
 
 message VulnDefinitionsInfo {
   google.protobuf.Timestamp last_updated_timestamp = 1;
+  string bundle_sha256 = 2;
 }
 
 service IntegrationHealthService {
