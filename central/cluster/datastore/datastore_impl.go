@@ -51,7 +51,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -361,22 +360,6 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	}
 
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
-}
-
-func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
-	var clusters []effectiveaccessscope.Cluster
-	err := ds.clusterStorage.Walk(sac.WithAllAccess(ctx), func(cluster *storage.Cluster) error {
-		clusters = append(clusters, &storage.Cluster{
-			Id:     cluster.GetId(),
-			Name:   cluster.GetName(),
-			Labels: cluster.GetLabels(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {

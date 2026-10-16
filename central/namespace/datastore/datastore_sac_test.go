@@ -300,44 +300,6 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 	}
 }
 
-func (s *namespaceDatastoreSACSuite) TestGetNamespacesForSAC() {
-	// Remove data injected in SetupTest.
-	for _, id := range s.testNamespaceIDs {
-		s.deleteNamespace(id)
-	}
-	s.testNamespaceIDs = s.testNamespaceIDs[:0]
-
-	// Inject data for current test.
-	cluster1NamespaceA := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA)
-	cluster1NamespaceC := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC)
-	cluster2NamespaceB := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-	cluster2NamespaceC := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC)
-	cluster3NamespaceA := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA)
-	testNamespaces := []*storage.NamespaceMetadata{
-		cluster1NamespaceA,
-		cluster1NamespaceC,
-		cluster2NamespaceB,
-		cluster2NamespaceC,
-		cluster3NamespaceA}
-	for _, namespace := range testNamespaces {
-		err := s.datastore.AddNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], namespace)
-		s.Require().NoError(err)
-		s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
-	}
-
-	res, err := s.datastore.GetNamespacesForSAC(context.Background())
-	s.Require().NoError(err)
-	expectedNamespaceIDs := make([]string, 0, 3)
-	for _, ix := range testNamespaces {
-		expectedNamespaceIDs = append(expectedNamespaceIDs, ix.GetId())
-	}
-	retrievedNamespaceIDs := make([]string, 0, len(res))
-	for ix := range res {
-		retrievedNamespaceIDs = append(retrievedNamespaceIDs, res[ix].GetId())
-	}
-	s.ElementsMatch(retrievedNamespaceIDs, expectedNamespaceIDs)
-}
-
 func (s *namespaceDatastoreSACSuite) TestRemoveNamespace() {
 	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 
