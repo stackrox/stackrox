@@ -139,24 +139,34 @@ tests:
   tests:
     - name: "openshift metrics disabled"
       expect: |
-        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
 
     - name: "custom metrics disabled"
       set:
         monitoring.openshift.enabled: true
       expect: |
-        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
 
     - name: "custom metrics enabled"
       set:
         monitoring.openshift.enabled: true
         monitoring.openshift.custom.enabled: true
       expect: |
-        .servicemonitors["central-ocp-monitor-stackrox"] | [
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "https"),
-            assertThat(.spec.endpoints[].path == "/metrics")
+            assertThat(.spec.endpoints[].path == "/metrics"),
+            assertThat(.spec.endpoints[].scheme == "https"),
+            assertThat(.spec.endpoints[].tlsConfig.caFile == "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt")
           ]
+
+    - name: "custom metrics disabled on managed services"
+      set:
+        monitoring.openshift.enabled: true
+        monitoring.openshift.custom.enabled: true
+        env.managedServices: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
 
 - name: "When enabled with Scanner V4"
   set:
@@ -250,7 +260,7 @@ tests:
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
-        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
         .services["central-ocp"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"

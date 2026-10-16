@@ -77,7 +77,7 @@ spec:
     matchNames:
       - "{{ .Release.Namespace }}"
 
-{{- if and ._rox.monitoring.openshift.custom ._rox.monitoring.openshift.custom.enabled }}
+{{- if and ._rox.monitoring.openshift.custom ._rox.monitoring.openshift.custom.enabled (not ._rox.env.managedServices) }}
 ---
 
 {{- /*
@@ -88,12 +88,12 @@ that leaking resources into system namespaces should be avoided.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: "central-ocp-monitor-{{ .Release.Namespace }}"
+  name: "central-ocp-api-monitor-{{ .Release.Namespace }}"
   namespace: openshift-monitoring
   labels:
-    {{- include "srox.labels" (list . "servicemonitor" (print "central-ocp-monitor-" .Release.Namespace)) | nindent 4 }}
+    {{- include "srox.labels" (list . "servicemonitor" (print "central-ocp-api-monitor-" .Release.Namespace)) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "servicemonitor" (print "central-ocp-monitor-" .Release.Namespace)) | nindent 4 }}
+    {{- include "srox.annotations" (list . "servicemonitor" (print "central-ocp-api-monitor-" .Release.Namespace)) | nindent 4 }}
 spec:
   endpoints:
   - interval: 30s
