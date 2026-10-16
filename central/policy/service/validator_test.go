@@ -614,9 +614,7 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	deployment := &storage.Exclusion_Deployment{
 		Name: "that phat cluster",
 	}
-	deploymentExclusion := &storage.Exclusion{
-		Deployment: deployment,
-	}
+	deploymentExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: deployment}}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_DEPLOY,
@@ -661,14 +659,13 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	err = s.validator.validateExclusions(policy)
 	s.Error(err, "excluded scope requires either container or deployment configuration")
 
-	emptyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key: "",
-				},
+	emptyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key: "",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		Exclusions: []*storage.Exclusion{
@@ -678,15 +675,14 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	err = s.validator.validateExclusions(policy)
 	s.Error(err, "label regex in excluded scope, if not nil, must be non-empty")
 
-	anyKeyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key:   ".*",
-					Value: "",
-				},
+	anyKeyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key:   ".*",
+				Value: "",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
@@ -698,15 +694,14 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	}
 	s.NoError(s.validator.validateExclusions(policy))
 
-	anyLabelExclusion := &storage.Exclusion{
-		Deployment: &storage.Exclusion_Deployment{
-			Scope: &storage.Scope{
-				Label: &storage.Scope_Label{
-					Key:   ".*",
-					Value: ".*",
-				},
+	anyLabelExclusion := &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+		Scope: &storage.Scope{
+			Label: &storage.Scope_Label{
+				Key:   ".*",
+				Value: ".*",
 			},
 		},
+	}},
 	}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
@@ -719,6 +714,79 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	s.NoError(s.validator.validateExclusions(policy))
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateExcludeByKind() {
+	kindExclusion := func(kinds ...storage.Exclusion_WorkloadKind) *storage.Exclusion {
+		return &storage.Exclusion{
+			Matcher: &storage.Exclusion_ExcludeByKind_{
+				ExcludeByKind: &storage.Exclusion_ExcludeByKind{Kinds: kinds},
+			},
+		}
+	}
+	deployPolicy := func(exclusion *storage.Exclusion) *storage.Policy {
+		return &storage.Policy{
+			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			Exclusions:      []*storage.Exclusion{exclusion},
+		}
+	}
+
+	s.ErrorContains(s.validator.validateExclusions(deployPolicy(kindExclusion(storage.Exclusion_JOB))), "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
+
+	testutils.MustUpdateFeature(s.T(), features.PolicyWorkloadKindExclusion, true)
+
+	for name, tc := range map[string]struct {
+		policy      *storage.Policy
+		errContains string
+	}{
+		"JOB is valid": {
+			policy: deployPolicy(kindExclusion(storage.Exclusion_JOB)),
+		},
+		"CRON_JOB is valid": {
+			policy: deployPolicy(kindExclusion(storage.Exclusion_CRON_JOB)),
+		},
+		"JOB and CRON_JOB are valid": {
+			policy: deployPolicy(kindExclusion(storage.Exclusion_CRON_JOB, storage.Exclusion_JOB)),
+		},
+		"empty kind list is rejected": {
+			policy:      deployPolicy(kindExclusion()),
+			errContains: "at least one workload kind",
+		},
+		"UNSPECIFIED is rejected": {
+			policy:      deployPolicy(kindExclusion(storage.Exclusion_WORKLOAD_KIND_UNSPECIFIED)),
+			errContains: "WORKLOAD_KIND_UNSPECIFIED",
+		},
+		"unknown kind is rejected": {
+			policy:      deployPolicy(kindExclusion(storage.Exclusion_WorkloadKind(99))),
+			errContains: "unknown workload kind",
+		},
+		"mixed valid and unknown kinds are rejected": {
+			policy:      deployPolicy(kindExclusion(storage.Exclusion_JOB, storage.Exclusion_WorkloadKind(99))),
+			errContains: "unknown workload kind",
+		},
+		"RUNTIME lifecycle is valid": {
+			policy: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				Exclusions:      []*storage.Exclusion{kindExclusion(storage.Exclusion_JOB)},
+			},
+		},
+		"BUILD lifecycle is rejected": {
+			policy: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+				Exclusions:      []*storage.Exclusion{kindExclusion(storage.Exclusion_JOB)},
+			},
+			errContains: "DEPLOY and RUNTIME",
+		},
+	} {
+		s.T().Run(name, func(t *testing.T) {
+			err := s.validator.validateExclusions(tc.policy)
+			if tc.errContains == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.errContains)
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestValidateExclusionRejectsLabels() {
 	for name, tc := range map[string]struct {
 		exclusion   *storage.Exclusion
@@ -726,44 +794,40 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusionRejectsLabels() {
 		errContains string
 	}{
 		"cluster_label on exclusion scope is rejected": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						ClusterLabel: &storage.Scope_Label{Key: "env", Value: "prod"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					ClusterLabel: &storage.Scope_Label{Key: "env", Value: "prod"},
 				},
+			}},
 			},
 			errExpected: true,
 			errContains: "cluster labels",
 		},
 		"namespace_label on exclusion scope is rejected": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "backend"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "backend"},
 				},
+			}},
 			},
 			errExpected: true,
 			errContains: "namespace labels",
 		},
 		"deployment label on exclusion scope is allowed": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Label: &storage.Scope_Label{Key: "app", Value: "nginx"},
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Label: &storage.Scope_Label{Key: "app", Value: "nginx"},
 				},
+			}},
 			},
 			errExpected: false,
 		},
 		"cluster ID on exclusion scope is allowed": {
-			exclusion: &storage.Exclusion{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Cluster: "cluster-1",
-					},
+			exclusion: &storage.Exclusion{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Cluster: "cluster-1",
 				},
+			}},
 			},
 			errExpected: false,
 		},
@@ -1379,45 +1443,59 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 	tests := map[string]struct {
 		lifecycleStages    []storage.LifecycleStage
 		eventSource        storage.EventSource
-		skipContainerTypes []storage.SkipContainerType
+		skipContainerTypes []storage.ContainerType
 		expectError        bool
 	}{
 		"build-only with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"deploy with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"deploy with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
 		},
 		"build + deploy with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
 		"build-only with no filter is allowed": {
 			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		},
+		"runtime without event source with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
 		"no lifecycle stages with skip init is rejected": {
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"audit log event with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_AUDIT_LOG_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"node event with skip init is rejected": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_NODE_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 			expectError:        true,
 		},
 		"deployment event with skip init is allowed": {
 			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
-			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"deployment event with skip regular is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR},
 		},
 	}
 

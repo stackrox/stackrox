@@ -402,6 +402,7 @@ export_test_environment() {
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_COMPLIANCE_SURFACE_STALE_DATA "${ROX_COMPLIANCE_SURFACE_STALE_DATA:-true}"
+    ci_export ROX_COMPLIANCE_CUSTOM_NODE_ROLES "${ROX_COMPLIANCE_CUSTOM_NODE_ROLES:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
@@ -414,7 +415,6 @@ export_test_environment() {
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
-    ci_export ROX_DEPRECATED_COMPLIANCE_DASHBOARD "${ROX_DEPRECATED_COMPLIANCE_DASHBOARD:-true}"
     ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
@@ -565,6 +565,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SURFACE_STALE_DATA'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_CUSTOM_NODE_ROLES'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
@@ -590,8 +592,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CISA_KEV'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
     customize_envVars+=$'\n        value: "'"${ROX_SENSITIVE_FILE_ACTIVITY}"'"'

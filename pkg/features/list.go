@@ -39,6 +39,9 @@ var (
 	// ComplianceSurfaceStaleData gates surfacing stale compliance data in Coverage views (ROX-35712). Default off.
 	ComplianceSurfaceStaleData = registerFeature("Surface stale compliance data in Coverage views", "ROX_COMPLIANCE_SURFACE_STALE_DATA")
 
+	// ComplianceCustomNodeRoles gates configurable node roles in compliance scan configurations (ROX-34167). Default off.
+	ComplianceCustomNodeRoles = registerFeature("Enable configurable node roles in compliance scan configurations", "ROX_COMPLIANCE_CUSTOM_NODE_ROLES")
+
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
 
@@ -103,9 +106,6 @@ var (
 	//
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
 	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
-
-	// Display Compliance Dashboard (Deprecated) in user interface (not displayed by default starting in 4.11 release).
-	DeprecatedComplianceDashboard = registerFeature("Display Compliance Dashboard (Deprecated) in user interface", "ROX_DEPRECATED_COMPLIANCE_DASHBOARD")
 
 	// SensitiveFileActivity enables monitoring of sensitive files.
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)

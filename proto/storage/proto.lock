@@ -14056,10 +14056,18 @@
             ]
           },
           {
-            "name": "SkipContainerType",
+            "name": "Exclusion.WorkloadKind",
             "enum_fields": [
               {
-                "name": "SKIP_INIT"
+                "name": "WORKLOAD_KIND_UNSPECIFIED"
+              },
+              {
+                "name": "CRON_JOB",
+                "integer": 1
+              },
+              {
+                "name": "JOB",
+                "integer": 2
               }
             ]
           }
@@ -14366,7 +14374,7 @@
               {
                 "id": 1,
                 "name": "skip_container_types",
-                "type": "SkipContainerType",
+                "type": "ContainerType",
                 "is_repeated": true
               }
             ]
@@ -14380,11 +14388,6 @@
                 "type": "string"
               },
               {
-                "id": 5,
-                "name": "deployment",
-                "type": "Deployment"
-              },
-              {
                 "id": 7,
                 "name": "image",
                 "type": "Image"
@@ -14393,6 +14396,18 @@
                 "id": 6,
                 "name": "expiration",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "deployment",
+                "type": "Deployment",
+                "oneof_parent": "matcher"
+              },
+              {
+                "id": 8,
+                "name": "exclude_by_kind",
+                "type": "ExcludeByKind",
+                "oneof_parent": "matcher"
               }
             ],
             "reserved_ids": [
@@ -14433,6 +14448,17 @@
                     "type": "string"
                   }
                 ]
+              },
+              {
+                "name": "ExcludeByKind",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "kinds",
+                    "type": "WorkloadKind",
+                    "is_repeated": true
+                  }
+                ]
               }
             ]
           },
@@ -14451,6 +14477,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"

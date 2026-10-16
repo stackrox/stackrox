@@ -74,7 +74,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
-	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
+	// Settings for the Scanner V4 components
 	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`

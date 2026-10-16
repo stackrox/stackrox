@@ -1,13 +1,16 @@
 package common
 
 import (
+	"crypto/tls"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizeHeaderValue(t *testing.T) {
@@ -19,6 +22,25 @@ func TestSanitizeHeaderValue(t *testing.T) {
 		vchars:                      vchars,
 	} {
 		assert.Equal(t, expected, sanitizeHeaderValue(value), value)
+	}
+}
+
+func Test_newHTTPTransport_honorsProxyEnv(t *testing.T) {
+	// Regression test for ROX-37149: roxctl ignored HTTP(S)_PROXY because the
+	// hand-built transport left Proxy unset. Verify the transport delegates to
+	// http.ProxyFromEnvironment for both HTTP/2 and forced HTTP/1 modes.
+	for name, forceHTTP1 := range map[string]bool{
+		"http2":      false,
+		"forceHTTP1": true,
+	} {
+		t.Run(name, func(t *testing.T) {
+			transport := newHTTPTransport(&tls.Config{}, forceHTTP1)
+			require.NotNil(t, transport.Proxy, "transport must resolve the proxy from the environment")
+			assert.Equal(t,
+				reflect.ValueOf(http.ProxyFromEnvironment).Pointer(),
+				reflect.ValueOf(transport.Proxy).Pointer(),
+				"transport.Proxy must be http.ProxyFromEnvironment")
+		})
 	}
 }
 

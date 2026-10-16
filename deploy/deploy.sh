@@ -3,13 +3,13 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-if [[ "${USE_ROXIE_DEPLOY:-false}" == "true" ]]; then
+if [[ "${USE_ROXIE_DEPLOY:-true}" == "true" ]]; then
     ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
     if [[ "${SKIP_ROXIE_DEPLOY_BANNER:-false}" != "true" ]]; then
         cat <<EOF
 ----------------------------------------------------------------------------------------
 Using roxie to deploy StackRox. 🎉
-If this is not intended, please unset USE_ROXIE_DEPLOY and re-run the deployment script.
+If this is not intended, please set USE_ROXIE_DEPLOY=false and re-run the deployment script.
 
 This is a limited shell wrapper leveraging roxie under the hood.
 In particular, you won't be able to configure feature flags by setting environment
@@ -49,12 +49,9 @@ fi
 
 cat <<EOF
 -------------------------------------------------------------------------------------
-USE_ROXIE_DEPLOY not enabled, using legacy flow to deploy StackRox
-Please consider setting
-
-    USE_ROXIE_DEPLOY=true
-
-to opt into roxie-based deployments.
+Using legacy flow to deploy StackRox (USE_ROXIE_DEPLOY=false).
+The legacy flow is deprecated and WILL BE REMOVED SOON. Please use the roxie-based deployment
+by unsetting USE_ROXIE_DEPLOY or setting it to true.
 
 You can find quick start instructions for roxie in:
 

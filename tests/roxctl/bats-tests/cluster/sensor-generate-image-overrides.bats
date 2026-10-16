@@ -3,7 +3,7 @@
 load "../helpers.bash"
 
 out_dir=""
-cluster_name="override-test-cluster"
+cluster_name=""
 central_flavor=""
 
 setup_file() {
@@ -11,11 +11,23 @@ setup_file() {
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
   [[ -n "$ROX_ADMIN_PASSWORD" ]] || fail "ROX_ADMIN_PASSWORD environment variable required"
-  central_flavor="$(kubectl -n stackrox exec -it deployment/central -- env | grep -i ROX_IMAGE_FLAVOR | sed 's/ROX_IMAGE_FLAVOR=//')"
 }
 
 setup() {
   out_dir="$(mktemp -d -u)"
+  # Unique cluster name per test so that tests with different overrides don't affect
+  # each other due to '--continue-if-exists'.
+  cluster_name="override-test-cluster-${BATS_TEST_NUMBER}"
+  # Detect the flavor here rather than in setup_file() so the value is available to
+  # the tests without exporting it (setup_file() runs in a separate shell, so a
+  # non-exported assignment there would not propagate; exporting would leak it to roxctl).
+  central_flavor="$(kubectl -n stackrox exec deployment/central -- env 2>&1 | grep -i '^ROX_IMAGE_FLAVOR=' | sed 's/ROX_IMAGE_FLAVOR=//' | tr -d '\r\n')"
+  if [[ -z "$central_flavor" ]]; then
+    echo "Failed to detect Central image flavor. Checking Central pod status:" >&3
+    kubectl -n stackrox get pod -l app=central >&3 || true
+    fail "Could not detect Central image flavor from deployment/central"
+  fi
+  echo "Detected central flavor: '$central_flavor'" >&3
 }
 
 teardown() {
@@ -30,41 +42,58 @@ registry_from_flavor() {
   "opensource")
     echo "quay.io/stackrox-io"
     ;;
+  "rhacs")
+    echo "registry.redhat.io/advanced-cluster-security"
+    ;;
+  *)
+    fail "Unknown central flavor: '$central_flavor'"
+    ;;
   esac
 }
 
-any_version_latest="${any_version}[0-9]+\-latest"
-any_version_slim="${any_version}[0-9]+\-slim"
+image_name_from_flavor() {
+  local component="$1"
+  case "$central_flavor" in
+  "rhacs")
+    echo "rhacs-${component}-rhel9"
+    ;;
+  *)
+    echo "$component"
+    ;;
+  esac
+}
+
+any_version_regex="${any_version}(x|[0-9]+)(-.*)?$"
 
 @test "roxctl sensor generate: no overrides" {
   generate_bundle k8s --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version"
+  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/$(image_name_from_flavor main):$any_version_regex"
+  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/$(image_name_from_flavor collector):$any_version_regex"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with main image override. Collector should be derived from main override" {
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example\.com/stackrox/collector:$any_version"
+  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version_regex"
+  assert_bundle_registry "$out_dir" "collector" "example\.com/stackrox/$(image_name_from_flavor collector):$any_version_regex"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with collector override" {
   generate_bundle k8s "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version"
+  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/$(image_name_from_flavor main):$any_version_regex"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_regex"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with different overrides" {
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version"
+  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version_regex"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_regex"
   delete_cluster "$cluster_name"
 }
 
