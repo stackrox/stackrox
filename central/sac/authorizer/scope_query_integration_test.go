@@ -5,6 +5,7 @@ package authorizer
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -125,6 +126,28 @@ func TestSQLScopeMatchesInventoryEvaluator(t *testing.T) {
 		{Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_IN, "melange"), scopeRequirement("region", storage.SetBasedLabelSelector_IN, "NA")}},
 		{Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("region", storage.SetBasedLabelSelector_IN, "EU")}},
 	}}
+	tests["IN and NOT_IN conjunction"] = &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_IN, "melange"), scopeRequirement("region", storage.SetBasedLabelSelector_NOT_IN, "EU")},
+	}}}
+	tests["positive and negative alternatives"] = &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
+		{Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_IN, "melange")}},
+		{Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("region", storage.SetBasedLabelSelector_NOT_IN, "NA")}},
+	}}
+	tests["negative grant and explicit cluster"] = &storage.SimpleAccessScope_Rules{
+		IncludedClusterIds: []string{clusterID},
+		NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+			scopeRequirement("focus", storage.SetBasedLabelSelector_NOT_IN, "melange"),
+		}}},
+	}
+	tests["negative requirements conjunction"] = &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_NOT_IN, "melange"), scopeRequirement("region", storage.SetBasedLabelSelector_NOT_EXISTS)},
+	}}}
+	tests["negative grant and explicit namespace"] = &storage.SimpleAccessScope_Rules{
+		IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{ClusterId: clusterID, NamespaceName: "glorp"}},
+		NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+			scopeRequirement("focus", storage.SetBasedLabelSelector_NOT_IN, "melange", "research"),
+		}}},
+	}
 	tests["full clusters union namespaces"] = &storage.SimpleAccessScope_Rules{
 		IncludedClusterIds:      []string{clusterID},
 		NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_EXISTS)}}},
@@ -154,6 +177,8 @@ func TestSQLScopeMatchesInventoryEvaluator(t *testing.T) {
 			require.Equal(t, expected.State, actual.State)
 			require.Equal(t, expected.Compactify(), actual.Compactify())
 			for _, cluster := range clusters {
+				assert.Equal(t, effectiveAccessScopeAllows(expected, resources.Deployment, cluster.GetId(), "unknown"),
+					effectiveAccessScopeAllows(actual, resources.Deployment, cluster.GetId(), "unknown"))
 				for _, namespace := range namespaces {
 					for _, resource := range []permissions.ResourceMetadata{resources.Cluster, resources.Deployment} {
 						assert.Equal(t, effectiveAccessScopeAllows(expected, resource, cluster.GetId(), namespace.GetName()),
@@ -163,6 +188,38 @@ func TestSQLScopeMatchesInventoryEvaluator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSQLScopeExclusionSnapshot(t *testing.T) {
+	db := pgtest.ForT(t)
+	clusters, namespaces := scopeQueryFixtures(t, db)
+	rules := &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("absent", storage.SetBasedLabelSelector_NOT_EXISTS)},
+	}}}
+	ctx := context.Background()
+	before, err := computeSQLScope(ctx, db, rules)
+	require.NoError(t, err)
+	earth := before.GetClusterByID(clusters[0].GetId())
+	require.NotNil(t, earth)
+	require.Empty(t, earth.Namespaces) // All known names are implicitly included.
+	require.True(t, earth.NamespaceAllowed("gleep"))
+	require.False(t, earth.NamespaceAllowed("future"))
+	_, err = db.Exec(ctx, "UPDATE namespaces SET name = $1 WHERE id = $2", "future", namespaces[1].GetId())
+	require.NoError(t, err)
+	after, err := computeSQLScope(ctx, db, rules)
+	require.NoError(t, err)
+	assert.True(t, earth.NamespaceAllowed("gleep"))
+	assert.False(t, earth.NamespaceAllowed("future"))
+	assert.False(t, after.GetClusterByID(clusters[0].GetId()).NamespaceAllowed("gleep"))
+	assert.True(t, after.GetClusterByID(clusters[0].GetId()).NamespaceAllowed("future"))
+
+	duplicateRules := &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{scopeRequirement("focus", storage.SetBasedLabelSelector_NOT_IN, "research")},
+	}}}
+	duplicate, err := computeSQLScope(ctx, db, duplicateRules)
+	require.NoError(t, err)
+	assert.True(t, duplicate.GetClusterByID(clusters[0].GetId()).NamespaceAllowed("glorp"))
+	assert.Equal(t, namespaces[0].GetId(), duplicate.GetClusterByID(clusters[0].GetId()).GetNamespaceByName("glorp").Attributes.ID)
 }
 
 // Packing matched IDs/names must preserve arbitrary names and the deterministic
@@ -240,30 +297,59 @@ func TestSQLScopeFiltersDeploymentReads(t *testing.T) {
 	allowed := &storage.Deployment{Id: uuid.NewV4().String(), Name: "allowed", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Namespace: "glorp"}
 	denied := &storage.Deployment{Id: uuid.NewV4().String(), Name: "denied", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Namespace: "gleep"}
 	otherCluster := &storage.Deployment{Id: uuid.NewV4().String(), Name: "other", ClusterId: clusters[1].GetId(), ClusterName: "Arrakis", Namespace: "glorp"}
-	for _, deployment := range []*storage.Deployment{allowed, denied, otherCluster} {
+	labelMatch := &storage.Deployment{Id: uuid.NewV4().String(), Name: "label", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Namespace: "café::'namespace"}
+	unknown := &storage.Deployment{Id: uuid.NewV4().String(), Name: "unknown", ClusterId: clusters[0].GetId(), ClusterName: "Earth", Namespace: "unknown"}
+	allDeployments := []*storage.Deployment{allowed, denied, otherCluster, labelMatch, unknown}
+	for _, deployment := range allDeployments {
 		require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
 	}
-	for name, rules := range map[string]*storage.SimpleAccessScope_Rules{
-		"namespace name": {IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{ClusterName: "Earth", NamespaceName: "glorp"}}},
-		"namespace label": {NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{Requirements: []*storage.SetBasedLabelSelector_Requirement{
-			scopeRequirement("focus", storage.SetBasedLabelSelector_IN, "melange"),
-		}}}},
+	labelRules := func(op storage.SetBasedLabelSelector_Operator, value string) *storage.SimpleAccessScope_Rules {
+		return &storage.SimpleAccessScope_Rules{NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+			scopeRequirement("focus", op, value),
+		}}}}
+	}
+	for name, test := range map[string]struct {
+		rules      []*storage.SimpleAccessScope_Rules
+		allowedIDs []string
+	}{
+		"namespace name": {
+			rules:      []*storage.SimpleAccessScope_Rules{{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{ClusterName: "Earth", NamespaceName: "glorp"}}}},
+			allowedIDs: []string{allowed.GetId()},
+		},
+		"namespace label":                             {rules: []*storage.SimpleAccessScope_Rules{labelRules(storage.SetBasedLabelSelector_IN, "melange")}, allowedIDs: []string{allowed.GetId(), labelMatch.GetId()}},
+		"namespace exclusions":                        {rules: []*storage.SimpleAccessScope_Rules{labelRules(storage.SetBasedLabelSelector_NOT_IN, "research")}, allowedIDs: []string{allowed.GetId(), denied.GetId(), labelMatch.GetId()}},
+		"namespace exclusions with denied deployment": {rules: []*storage.SimpleAccessScope_Rules{labelRules(storage.SetBasedLabelSelector_NOT_IN, "melange")}, allowedIDs: []string{allowed.GetId(), denied.GetId(), otherCluster.GetId()}},
+		"opposing exclusions in different roles": {
+			rules:      []*storage.SimpleAccessScope_Rules{labelRules(storage.SetBasedLabelSelector_NOT_IN, "research"), labelRules(storage.SetBasedLabelSelector_NOT_IN, "melange")},
+			allowedIDs: []string{allowed.GetId(), denied.GetId(), otherCluster.GetId(), labelMatch.GetId()},
+		},
+		"inclusion overrides excluded name": {
+			rules:      []*storage.SimpleAccessScope_Rules{labelRules(storage.SetBasedLabelSelector_NOT_IN, "research"), {IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{ClusterName: "Arrakis", NamespaceName: "glorp"}}}},
+			allowedIDs: []string{allowed.GetId(), denied.GetId(), otherCluster.GetId(), labelMatch.GetId()},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			checker := newScopeChecker([]permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "scope", Rules: rules})}, nil,
+			roles := make([]permissions.ResolvedRole, 0, len(test.rules))
+			for i, rules := range test.rules {
+				roles = append(roles, role(allResourcesView, &storage.SimpleAccessScope{Id: fmt.Sprintf("scope-%d", i), Rules: rules}))
+			}
+			checker := newScopeChecker(roles, nil,
 				func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 					return computeSQLScope(ctx, db, rules)
 				})
 			requestCtx := sac.WithGlobalAccessScopeChecker(ctx, checker)
-			for _, deployment := range []*storage.Deployment{allowed, denied, otherCluster} {
+			for _, deployment := range allDeployments {
 				_, found, err := deployments.GetDeployment(requestCtx, deployment.GetId())
 				require.NoError(t, err)
-				assert.Equal(t, deployment == allowed, found)
+				assert.Equal(t, slices.Contains(test.allowedIDs, deployment.GetId()), found, deployment.GetName())
 			}
 			results, err := deployments.SearchRawDeployments(requestCtx, &v1.Query{})
 			require.NoError(t, err)
-			require.Len(t, results, 1)
-			require.Equal(t, allowed.GetId(), results[0].GetId())
+			ids := make([]string, 0, len(results))
+			for _, result := range results {
+				ids = append(ids, result.GetId())
+			}
+			assert.ElementsMatch(t, test.allowedIDs, ids)
 		})
 	}
 }
