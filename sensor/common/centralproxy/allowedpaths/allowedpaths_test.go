@@ -69,3 +69,14 @@ func TestReset(t *testing.T) {
 	Reset()
 	assert.False(t, IsAllowed("/admin/secret"), "after reset no paths are advertised")
 }
+
+func TestIsExplicitlyAllowedDoesNotFailOpen(t *testing.T) {
+	Reset()
+	t.Cleanup(Reset)
+	assert.False(t, IsExplicitlyAllowed("/metrics"))
+
+	Set([]string{"/v1/", "/metrics"})
+	assert.True(t, IsExplicitlyAllowed("/metrics"))
+	assert.False(t, IsExplicitlyAllowed("/v1/deployments"))
+	assert.False(t, IsExplicitlyAllowed("/metrics/"))
+}
