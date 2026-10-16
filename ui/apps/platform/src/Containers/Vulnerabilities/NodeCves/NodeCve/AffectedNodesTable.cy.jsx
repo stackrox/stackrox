@@ -173,7 +173,7 @@ describe(Cypress.spec.relative, () => {
                 cy.findAllByRole('row')
                     .eq(rowIndex)
                     .within(() => {
-                        cy.get(`td[data-label="CVE severity"]:contains("${expectedSeverity}")`);
+                        cy.get(`td[data-label="Top CVE severity"]:contains("${expectedSeverity}")`);
                     });
             });
         });
@@ -277,7 +277,7 @@ describe(Cypress.spec.relative, () => {
                     .eq(rowIndex)
                     .within(() => {
                         cy.get(
-                            `td[data-label="CVSS"]:contains("${expectedCVSS} (${expectedVersion})")`
+                            `td[data-label="Top CVSS"]:contains("${expectedCVSS} (${expectedVersion})")`
                         );
                     });
             });
