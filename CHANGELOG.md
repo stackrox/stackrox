@@ -14,6 +14,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-37597: The compliance CSV report now includes a "Node Role" column showing which node role (for example `master`, `worker`, or a custom MachineConfigPool-derived role) a check result applies to. The column reads "N/A" for results that don't target a specific node role (platform scans, or node scans using the Compliance Operator's `@all` role selector).
+
 ### Removed Features
 
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
