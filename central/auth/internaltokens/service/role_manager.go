@@ -17,13 +17,32 @@ const (
 
 type roleManager struct{}
 
+// createSensorMetricsRole uses the permission set shared with Central metrics,
+// but limits the token to the authenticated Sensor's cluster.
+func (rm *roleManager) createSensorMetricsRole(
+	ctx context.Context, roles roleDS.DataStore, sensorClusterID string,
+) (*tokens.InternalRole, error) {
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	return rm.createSensorRole(ctx, roles, centralproxy.MetricsPermissionSetID,
+		centralproxy.SecuredClusterMetricsRole, tokens.ClusterScopes{sensorClusterID: {"*"}})
+}
+
 func (rm *roleManager) createSensorConsoleRole(
 	ctx context.Context, roles roleDS.DataStore, scopes []*v1.ClusterScope,
+) (*tokens.InternalRole, error) {
+	return rm.createSensorRole(ctx, roles, centralproxy.ConsoleProxyPermissionSetID,
+		centralproxy.ConsoleProxyRole, clusterScopesFromRequest(scopes))
+}
+
+func (rm *roleManager) createSensorRole(
+	ctx context.Context, roles roleDS.DataStore, permissionSetID, name string, scopes tokens.ClusterScopes,
 ) (*tokens.InternalRole, error) {
 	if roles == nil {
 		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
 	}
-	permissionSet, found, err := roles.GetPermissionSet(ctx, centralproxy.ConsoleProxyPermissionSetID)
+	permissionSet, found, err := roles.GetPermissionSet(ctx, permissionSetID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +51,8 @@ func (rm *roleManager) createSensorConsoleRole(
 	}
 
 	role := &tokens.InternalRole{
-		RoleName:    centralproxy.ConsoleProxyRole,
-		Clusters:    clusterScopesFromRequest(scopes),
+		RoleName:    name,
+		Clusters:    scopes,
 		Permissions: make(map[storage.Access][]string),
 	}
 	for resource, access := range permissionSet.GetResourceToAccess() {

@@ -62,12 +62,14 @@ var log = logging.LoggerForModule()
 // the Central reader's access scope; they are only created if missing, never overwritten.
 // Internal scrape tokens will receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
+	// OpenShift secured clusters can report to a Central that is not on OpenShift.
+	ensurePermissionSet(ctx, roleDS)
+
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
 
 	seedAccessScope(ctx)
-	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
 
 	clientset, err := newK8sClient()

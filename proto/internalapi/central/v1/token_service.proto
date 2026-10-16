@@ -42,8 +42,8 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // permission_set_id requests permissions from a Central-managed permission set.
   // When set, Central uses the permission set instead of permissions.
   // permissions may carry fallback values for older Centrals that do not
-  // recognize this field. Console requests may specify cluster_scopes
-  // within the authenticated Sensor's cluster.
+  // recognize this field. Metrics requests omit cluster_scopes; console
+  // requests may specify scopes within the authenticated Sensor's cluster.
   string permission_set_id = 5;
 }
 
