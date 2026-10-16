@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
@@ -24,7 +25,7 @@ import (
 
 const (
 	authProviderID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
-	permissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
+	permissionSetID = centralproxy.MetricsPermissionSetID
 	accessScopeID   = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
@@ -56,9 +57,10 @@ var log = logging.LoggerForModule()
 // upsert straight to the underlying store, self-healing across restarts and upgrades.
 // The auth provider and group also use DEFAULT origin: the group can't be repointed to a
 // different role or deleted, which in turn keeps the role permanently referenced so it
-// can't be deleted either. Role and permission set use IMPERATIVE origin so operators can
-// still adjust their permissions or which access scope the role grants; they are only
-// created if missing, never overwritten.
+// can't be deleted either. The role and shared permission set use IMPERATIVE origin so
+// operators can adjust the permissions for Central and secured-cluster metrics or change
+// the Central reader's access scope; they are only created if missing, never overwritten.
+// Internal scrape tokens will receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
