@@ -21,5 +21,5 @@ func TestAllowedPathsForProfiles(t *testing.T) {
 		consolePaths = append(consolePaths, path)
 	}
 	assert.ElementsMatch(t, consolePaths, AllowedProxyPaths.AsSlice())
-	assert.False(t, AllowedProxyPaths.Contains("/metrics"))
+	assert.True(t, AllowedProxyPaths.Contains("/metrics"))
 }

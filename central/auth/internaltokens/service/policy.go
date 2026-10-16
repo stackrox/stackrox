@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"maps"
 	"slices"
 	"time"
 
@@ -138,20 +137,29 @@ func (p *tokenPolicy) enforce(
 	}
 	if len(req.GetPermissionSetIds()) > 0 {
 		for _, permissionSetID := range req.GetPermissionSetIds() {
-			if permissionSetID != centralproxy.ConsoleProxyPermissionSetID {
+			switch permissionSetID {
+			case centralproxy.MetricsPermissionSetID:
+				if len(req.GetClusterScopes()) != 0 {
+					return nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
+				}
+			case centralproxy.ConsoleProxyPermissionSetID:
+				if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+					return nil, err
+				}
+			default:
 				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 			}
 		}
 		if _, err := approvedHTTPScopes(req); err != nil {
 			return nil, err
 		}
-	} else {
-		if err := p.validatePermissions(req.GetPermissions()); err != nil {
-			return nil, err
-		}
-		if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
-			return nil, errox.InvalidArgs.CausedBy(err)
-		}
+		return p.enforceLifetimeLimit(req)
+	}
+	if err := p.validatePermissions(req.GetPermissions()); err != nil {
+		return nil, err
+	}
+	if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err
@@ -160,15 +168,26 @@ func (p *tokenPolicy) enforce(
 }
 
 func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
-	var allowed tokens.HTTPRequestScopes = make(tokens.HTTPRequestScopes)
-	for _, ps := range req.GetPermissionSetIds() {
-		switch ps {
+	allowed := make(tokens.HTTPRequestScopes)
+	for _, permissionSetID := range req.GetPermissionSetIds() {
+		var scopes tokens.HTTPRequestScopes
+		switch permissionSetID {
 		case centralproxy.ConsoleProxyPermissionSetID:
-			maps.Copy(allowed, centralproxy.ConsoleHTTPScopes)
+			scopes = centralproxy.ConsoleHTTPScopes
 		case centralproxy.MetricsPermissionSetID:
-			maps.Copy(allowed, centralproxy.MetricsHTTPScopes)
+			scopes = centralproxy.MetricsHTTPScopes
 		default:
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+		}
+		for path, methods := range scopes {
+			for _, method := range methods {
+				if !slices.Contains(allowed[path], method) {
+					allowed[path] = append(allowed[path], method)
+				}
+			}
+			if _, exists := allowed[path]; !exists {
+				allowed[path] = []string{}
+			}
 		}
 	}
 

@@ -103,8 +103,8 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// permission_set_ids request permissions from Central-managed permission sets.
 	// When set, Central uses the permission sets instead of permissions.
 	// permissions may carry fallback values for older Centrals that do not
-	// recognize this field. Console requests may specify cluster_scopes
-	// within the authenticated Sensor's cluster.
+	// recognize this field. Metrics requests omit cluster_scopes; console
+	// requests may specify scopes within the authenticated Sensor's cluster.
 	PermissionSetIds []string `protobuf:"bytes,5,rep,name=permission_set_ids,json=permissionSetIds,proto3" json:"permission_set_ids,omitempty"`
 	// Optional HTTP method/path restrictions for this token.
 	HttpRequestScopes []*v1.HTTPRequestScope `protobuf:"bytes,6,rep,name=http_request_scopes,json=httpRequestScopes,proto3" json:"http_request_scopes,omitempty"`
