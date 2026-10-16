@@ -19,4 +19,10 @@ var (
 	// NodeIndexCachePath defines the path to the file where the node index wrap cache will be written to.
 	// This path is expected to be writable inside the Compliance container.
 	NodeIndexCachePath = RegisterSetting("ROX_NODE_INDEX_CACHE_PATH", WithDefault("/tmp/node-index"))
+	// NodeIndexMappingFileDownload makes Compliance download the repo-to-CPE mapping
+	// and pass the file to Claircore. A failed download aborts indexing before the host filesystem is opened.
+	NodeIndexMappingFileDownload = RegisterBooleanSetting("ROX_NODE_INDEX_MAPPING_FILE_DOWNLOAD", true)
+	// NodeIndexMappingFile is where that download is written.
+	// Same writable location as NodeIndexCachePath inside the Compliance container.
+	NodeIndexMappingFile = RegisterSetting("ROX_NODE_INDEX_MAPPING_FILE", WithDefault("/tmp/repo-to-cpe.json"))
 )
