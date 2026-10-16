@@ -3,6 +3,7 @@ package openshift
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"testing"
 
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
@@ -101,6 +102,7 @@ func TestSeed_Group_IsDefaultOriginAndImmutable(t *testing.T) {
 			if group.GetProps().GetTraits().GetOrigin() != storage.Traits_DEFAULT {
 				t.Errorf("expected group to use DEFAULT origin, got %v", group.GetProps().GetTraits().GetOrigin())
 			}
+			assert.False(t, declarativeconfig.CanModifyResource(ctx, group.GetProps()))
 			if !declarativeconfig.CanModifyResource(addCtx, group.GetProps()) {
 				t.Error("expected ensureGroup to pass a context that can modify DEFAULT-origin resources")
 			}
@@ -149,6 +151,7 @@ func TestSeed_CARotation_RegistersNewCA(t *testing.T) {
 
 	provider := registry.GetProvider(authProviderID)
 	require.NotNil(t, provider)
+	assert.Equal(t, storage.Traits_DEFAULT, provider.StorageView().GetTraits().GetOrigin())
 	assert.Equal(t, newCAPEM, provider.StorageView().GetConfig()[userpki.ConfigKeys],
 		"rotated CA should be persisted in the auth provider config")
 	assert.Equal(t, []string{newCA.Subject.String()}, registeredSubjects(caManager.certs),
@@ -226,12 +229,19 @@ func (s *inMemoryAuthProviderStore) AuthProviderExistsWithName(_ context.Context
 	return false, nil
 }
 
-func (s *inMemoryAuthProviderStore) AddAuthProvider(_ context.Context, provider *storage.AuthProvider) error {
+func (s *inMemoryAuthProviderStore) AddAuthProvider(ctx context.Context, provider *storage.AuthProvider) error {
+	if !declarativeconfig.CanModifyResource(ctx, provider) {
+		return errors.New("cannot create provider with this origin context")
+	}
 	s.providers[provider.GetId()] = provider.CloneVT()
 	return nil
 }
 
-func (s *inMemoryAuthProviderStore) UpdateAuthProvider(_ context.Context, provider *storage.AuthProvider) error {
+func (s *inMemoryAuthProviderStore) UpdateAuthProvider(ctx context.Context, provider *storage.AuthProvider) error {
+	if !declarativeconfig.CanModifyResource(ctx, s.providers[provider.GetId()]) ||
+		!declarativeconfig.CanModifyResource(ctx, provider) {
+		return errors.New("cannot update provider with this origin context")
+	}
 	s.providers[provider.GetId()] = provider.CloneVT()
 	return nil
 }

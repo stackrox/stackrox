@@ -43,9 +43,8 @@ var log = logging.LoggerForModule()
 // extension-apiserver-authentication ConfigMap (same CA that signs Prometheus client
 // certs). A ConfigMap watcher keeps the CA current across rotations.
 //
-// All seeded objects use IMPERATIVE origin. Ideally they would be DEFAULT
-// (non-user-modifiable), but the auth provider datastore rejects non-IMPERATIVE
-// origins through the normal creation path (see CanModifyResource).
+// The permission set and role use IMPERATIVE origin. The auth provider and group
+// use DEFAULT origin so they cannot be modified through the user-facing APIs.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
@@ -136,7 +135,7 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	// registry then re-registers those same stale certificates with the client CA
 	// manager. Central would keep advertising the superseded CA until restart, so the
 	// backend has to be rebuilt from the new config as part of the same update.
-	if _, err := registry.UpdateProvider(ctx, authProviderID,
+	if _, err := registry.UpdateProvider(declarativeconfig.WithModifyDefaultResource(ctx), authProviderID,
 		authproviders.WithConfig(config),
 		authproviders.WithBackendFromFactory(ctx, factory),
 	); err != nil {
@@ -189,7 +188,7 @@ func ensureAuthProvider(ctx context.Context, registry authproviders.Registry, ca
 		return
 	}
 
-	_, err := registry.CreateProvider(ctx,
+	_, err := registry.CreateProvider(declarativeconfig.WithModifyDefaultResource(ctx),
 		authproviders.WithType(userpki.TypeName),
 		authproviders.WithID(authProviderID),
 		authproviders.WithName(authProviderName),
