@@ -174,12 +174,12 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var userID string
 	reqCtx := req.Context()
 	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
-		userID = id.UID()
+		userID = registryKeyForIdentity(id)
 		// The request context is cancelled when the client's connection closes.
 		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
 		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
 		for _, tracker := range tr {
-			go tracker.Gather(newCtx)
+			go tracker.GatherWithKey(newCtx, userID)
 		}
 	}
 
