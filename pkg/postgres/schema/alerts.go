@@ -22,7 +22,6 @@ var (
 		GormModel: (*Alerts)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "alerts_policy_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS alerts_policy_id ON alerts USING btree (policy_id)"},
 			{Name: "alerts_lifecyclestage", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS alerts_lifecyclestage ON alerts USING btree (lifecyclestage)"},
 			{Name: "alerts_deployment_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS alerts_deployment_id ON alerts USING btree (deployment_id)"},
 			{Name: "alerts_time", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS alerts_time ON alerts USING btree (time)"},
