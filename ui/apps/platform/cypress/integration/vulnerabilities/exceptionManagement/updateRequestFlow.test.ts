@@ -12,6 +12,26 @@ const deferralProps = {
     scope: 'All images',
 };
 
+// Mocked affected images response to match mocked CVEs in exception request
+const mockAffectedImagesCountBody = {
+    data: {
+        imageCVEs: [
+            {
+                cve: 'MOCK-2023-123456',
+                affectedImageCount: 4,
+                distroTuples: [
+                    {
+                        summary: 'This is a MOCKED CYPRESS RESPONSE for a CVE',
+                        operatingSystem: 'debian:11',
+                        cvss: 9.8,
+                        scoreVersion: 'V3',
+                    },
+                ],
+            },
+        ],
+    },
+};
+
 describe('Exception Management Request Details Page', () => {
     withAuth();
 
@@ -24,15 +44,15 @@ describe('Exception Management Request Details Page', () => {
     });
 
     it('should be able to update a pending request', () => {
-        deferAndVisitRequestDetails(deferralProps);
-
         const newExpiry = 'When all CVEs are fixable';
         const newComment = 'Updated';
 
-        cy.intercept({ method: 'POST', url: graphql('getAffectedImagesCount') }).as(
-            'getAffectedImagesCount'
-        );
-        cy.intercept({ method: 'POST', url: graphql('getImageCVEList') }).as('getImageCVEList');
+        cy.intercept(
+            { method: 'POST', url: graphql('getAffectedImagesCount') },
+            { body: mockAffectedImagesCountBody }
+        ).as('getAffectedImagesCount');
+
+        deferAndVisitRequestDetails(deferralProps);
 
         // check values pre-update
         cy.get('dl.vulnerability-exception-request-overview')
@@ -45,7 +65,6 @@ describe('Exception Management Request Details Page', () => {
             .should('contain.text', deferralProps.comment);
 
         cy.wait('@getAffectedImagesCount');
-        cy.wait('@getImageCVEList');
 
         // update deferral
         cy.get('button:contains("Update request")').click();

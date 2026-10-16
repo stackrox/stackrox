@@ -1,0 +1,18 @@
+{
+    "data": {
+        "namespaces": [
+            {
+                "metadata": {
+                    "id": "mock-namespace-001",
+                    "name": "stackrox",
+                    "clusterId": "mock-cluster-001",
+                    "clusterName": "remote",
+                    "labels": [],
+                    "annotations": [],
+                    "priority": 1
+                },
+                "deploymentCount": 5
+            }
+        ]
+    }
+}

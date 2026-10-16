@@ -42,6 +42,9 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
+            // Sort by Requested to ensure the most recent request is the first one
+            cy.get(selectors.tableSortColumn('Requested')).click();
+
             // the deferred request should be pending
             cy.get(
                 'table td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
@@ -91,9 +94,10 @@ describe('Exception Management Pending Requests Page', () => {
                 const requestNameLink = 'table td[data-label="Request name"]';
 
                 cy.get(requestNameLink)
+                    .first()
                     .invoke('text')
                     .then((requestName) => {
-                        cy.get(requestNameLink).click();
+                        cy.get(requestNameLink).first().click();
                         cy.get(`h1:contains("${requestName}")`).should('exist');
                     });
             });
@@ -236,11 +240,13 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            cy.get('table td[data-label="Request name"] a').then((element) => {
-                const requestName = element.text().trim();
-                typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
-                cy.get('table td[data-label="Request name"] a').should('exist');
-            });
+            cy.get('table td[data-label="Request name"] a')
+                .first()
+                .then((element) => {
+                    const requestName = element.text().trim();
+                    typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
+                    cy.get('table td[data-label="Request name"] a').should('exist');
+                });
         });
     });
 
