@@ -63,6 +63,14 @@ func IsAllowed(path string) bool {
 	return false
 }
 
+// IsExplicitlyAllowed requires an exact path advertised by Central. It does not
+// apply the fail-open behavior used for legacy console proxy requests.
+func IsExplicitlyAllowed(path string) bool {
+	pathsMutex.RLock()
+	defer pathsMutex.RUnlock()
+	return exactPaths.Contains(path)
+}
+
 // Reset clears the stored paths. Intended for testing.
 func Reset() {
 	pathsMutex.Lock()
