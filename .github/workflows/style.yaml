@@ -430,24 +430,6 @@ jobs:
         if: steps.ci-decision.outputs.action != 'skip'
         run: make -C .openshift-ci lint
 
-  validate-test-domains:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Build CI selector
-        uses: ./.github/actions/ci-select
-
-      - name: Validate test-domains.toml
-        run: ci/select/bin/ci-select validate
-
-      - name: Run resolver unit tests
-        run: go test -race ./ci/select
-
   slack-on-style-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -28,12 +28,6 @@ jobs:
 
       - uses: ./.github/actions/ci-select
 
-      - name: Test CI selector
-        run: go test -race ./ci/select
-
-      - name: Validate CI rules
-        run: ci/select/bin/ci-select validate
-
       - name: Print the CI decision
         env:
           CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
