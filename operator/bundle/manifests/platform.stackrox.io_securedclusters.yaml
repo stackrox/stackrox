@@ -269,6 +269,11 @@ spec:
                     - Enabled
                     type: string
                 type: object
+              centralCustomMetrics:
+                description: |-
+                  Allows OpenShift Prometheus to scrape Central custom metrics through this Sensor's proxy.
+                  Independent of monitoring.openshift.enabled. The default is: false.
+                type: boolean
               centralEndpoint:
                 description: |-
                   The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
