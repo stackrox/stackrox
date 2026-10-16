@@ -13,8 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// nodeRolePrefix is the node-role label prefix used by Compliance Operator to map a ScanSetting role to the nodes it
-// targets. It must stay in sync with Compliance Operator's pkg/utils.nodeRolePrefix.
+// nodeRolePrefix is the node-role label prefix Compliance Operator uses (pkg/utils.nodeRolePrefix) to map a
+// ScanSetting role to the nodes it targets. We can't check that constant directly (unexported, and importing the
+// package that holds it pulls in a large unrelated dependency tree), so TestComplianceV2AutodiscoverNodeRoles
+// verifies this two ways instead: against real Node labels, and against Compliance Operator's own node-targeting
+// behavior (does a scan for a discovered role actually match real Nodes).
 const nodeRolePrefix = "node-role.kubernetes.io/"
 
 // machineConfigPoolGVR is the GVR for MachineConfigPools. These only exist on OpenShift.
