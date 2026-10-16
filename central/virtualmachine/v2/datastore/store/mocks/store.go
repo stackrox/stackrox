@@ -133,6 +133,22 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
+// GetWithLatestScan mocks base method.
+func (m *MockStore) GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithLatestScan", ctx, id)
+	ret0, _ := ret[0].(*common.VMWithLatestScan)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetWithLatestScan indicates an expected call of GetWithLatestScan.
+func (mr *MockStoreMockRecorder) GetWithLatestScan(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithLatestScan", reflect.TypeOf((*MockStore)(nil).GetWithLatestScan), ctx, id)
+}
+
 // Search mocks base method.
 func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
