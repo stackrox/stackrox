@@ -8,6 +8,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -71,6 +72,11 @@ type fixtureRecord struct {
 	enrichment *driver.EnrichmentRecord
 }
 
+type operationKey struct {
+	Member, Updater string
+	Kind            driver.UpdateKind
+}
+
 func (r fixtureRecord) canonical() ([]byte, error) {
 	if r.vuln != nil {
 		return json.Marshal(r.vuln)
@@ -93,7 +99,7 @@ func main() {
 }
 
 func entries(fixtures []operation) ([]fixtureOperation, error) {
-	groups := make(map[string][]fixtureRecord)
+	groups := make(map[operationKey][]fixtureRecord)
 	for _, op := range fixtures {
 		if len(op.Vulnerabilities) == 0 && len(op.Enrichments) == 0 {
 			return nil, fmt.Errorf("empty fixture operation %q/%q", op.Member, op.Updater)
@@ -102,7 +108,7 @@ func entries(fixtures []operation) ([]fixtureOperation, error) {
 			return nil, fmt.Errorf("invalid member/updater %q/%q", op.Member, op.Updater)
 		}
 		add := func(kind driver.UpdateKind, e fixtureRecord) {
-			key := op.Member + "\x00" + op.Updater + "\x00" + string(kind)
+			key := operationKey{Member: op.Member, Updater: op.Updater, Kind: kind}
 			groups[key] = append(groups[key], e)
 		}
 		for _, v := range op.Vulnerabilities {
@@ -127,11 +133,13 @@ func entries(fixtures []operation) ([]fixtureOperation, error) {
 	if len(groups) == 0 {
 		return nil, errors.New("no fixture records")
 	}
-	keys := make([]string, 0, len(groups))
+	keys := make([]operationKey, 0, len(groups))
 	for key := range groups {
 		keys = append(keys, key)
 	}
-	slices.Sort(keys)
+	slices.SortFunc(keys, func(a, b operationKey) int {
+		return cmp.Or(cmp.Compare(a.Member, b.Member), cmp.Compare(a.Updater, b.Updater), cmp.Compare(a.Kind, b.Kind))
+	})
 	var out []fixtureOperation
 	for _, key := range keys {
 		group := groups[key]
@@ -152,15 +160,14 @@ func entries(fixtures []operation) ([]fixtureOperation, error) {
 		slices.Sort(records)
 		hash := sha256.New()
 		// Version the encoding, and scope to member, updater and operation kind.
-		fmt.Fprintf(hash, "scanner-ci-fixture-v2\x00%s\x00", key)
+		fmt.Fprintf(hash, "scanner-ci-fixture-v2\x00%s\x00%s\x00%s\x00", key.Member, key.Updater, key.Kind)
 		for _, record := range records {
 			fmt.Fprintln(hash, record)
 		}
 		digest := hash.Sum(nil)
 		fingerprint := driver.Fingerprint(fmt.Sprintf("sha256:%x", digest))
 		ref := uuid.NewV5(namespaceOID, string(digest))
-		parts := strings.Split(key, "\x00")
-		op := fixtureOperation{Member: parts[0], Updater: parts[1], Kind: driver.UpdateKind(parts[2]), Fingerprint: fingerprint, Ref: ref}
+		op := fixtureOperation{Member: key.Member, Updater: key.Updater, Kind: key.Kind, Fingerprint: fingerprint, Ref: ref}
 		for _, record := range records {
 			e := encoded[record]
 			if e.vuln != nil {

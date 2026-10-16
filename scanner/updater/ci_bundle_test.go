@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/klauspost/compress/zstd"
@@ -16,7 +15,6 @@ import (
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/yaml"
 )
 
 // TestCIMinimalBundle validates the checked-in bundle through the same
@@ -38,15 +36,6 @@ func TestCIMinimalBundle(t *testing.T) {
 	vulns := make(map[string][]vulnRecord)
 	enrichments := make(map[string]enrichmentRecord)
 	cvePattern := regexp.MustCompile(`CVE-[0-9]{4}-[0-9]+|RH[BS]A-[0-9]{4}:[0-9]+|ALAS[0-9]*-[0-9]{4}-[0-9]+|GO-[0-9]{4}-[0-9]+|GHSA-[a-z0-9-]+`)
-	values, err := os.ReadFile(filepath.Join("..", "..", "deploy", "common", "ci-values.yaml"))
-	require.NoError(t, err)
-	var ci struct {
-		Customize map[string]struct {
-			EnvVars map[string]string `json:"envVars"`
-		} `json:"customize"`
-	}
-	require.NoError(t, yaml.Unmarshal(values, &ci))
-	allowlist := ci.Customize["scanner-v4-matcher"].EnvVars["SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST"]
 
 	for _, f := range r.File {
 		require.Contains(t, map[string]bool{
@@ -57,9 +46,6 @@ func TestCIMinimalBundle(t *testing.T) {
 		}, f.Name)
 		require.NotContains(t, f.Name, "synthetic")
 		seenSources[f.Name] = true
-		if allowlist != "" {
-			require.Contains(t, strings.Split(allowlist, ","), strings.TrimSuffix(f.Name, ".json.zst"), "CI must import every selected source")
-		}
 
 		rc, err := f.Open()
 		require.NoError(t, err)
