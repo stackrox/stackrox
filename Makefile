@@ -626,6 +626,7 @@ shell-unit-tests:
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
 		scanner/image/db/bats \
 		scripts \
+		scanner/image/db/scripts \
 		tests/e2e/bats
 
 .PHONY: ui-build
