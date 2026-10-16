@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -254,6 +255,37 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		setup       func(*testing.T, *mockContainer)
 		expectedRsp *v1.GenerateTokenForPermissionsAndScopeResponse
 	}{
+		"success - console permission set with namespace scope": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: centralproxy.ConsoleProxyPermissionSetID,
+				Permissions:     map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes:   []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:        testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
+					DoAndReturn(func(ctx context.Context, _ string) (*storage.PermissionSet, bool, error) {
+						_, hasDeadline := ctx.Deadline()
+						assert.True(t, hasDeadline)
+						return &storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+							"Image": storage.Access_READ_ACCESS,
+						}}, true, nil
+					})
+				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: centralproxy.ConsoleProxyRole,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Image"},
+						},
+						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, centralproxy.ConsoleProxyRole,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
+		},
 		"success - standard request": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   deploymentPermission,
@@ -485,10 +517,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				issuer:       tokensMocks.NewMockIssuer(mockCtrl),
 			}
 			svc := createService(it, mocks.issuer, tc.policy)
+			svc.roles = mocks.roleStore
 			if tc.setup != nil {
 				tc.setup(it, mocks)
 			}
-			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
+			ctx, cancel := context.WithTimeout(sensorContext(it, mockCtrl, fixtureconsts.Cluster1), time.Minute)
+			defer cancel()
 
 			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
 			assert.NotNil(it, rsp)

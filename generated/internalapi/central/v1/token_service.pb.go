@@ -98,9 +98,15 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// The requester field allows to set a custom string in the generated token,
 	// identifying who requested it. This can allow finer-grain tracking
 	// of who requested an internal token in the audit log trail.
-	Requester     string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Requester string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
+	// permission_set_id requests permissions from a Central-managed permission set.
+	// When set, Central uses the permission set instead of permissions.
+	// permissions may carry fallback values for older Centrals that do not
+	// recognize this field. Console requests may specify cluster_scopes
+	// within the authenticated Sensor's cluster.
+	PermissionSetId string `protobuf:"bytes,5,opt,name=permission_set_id,json=permissionSetId,proto3" json:"permission_set_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GenerateTokenForPermissionsAndScopeRequest) Reset() {
@@ -157,6 +163,13 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetLifetime() *durationpb.D
 func (x *GenerateTokenForPermissionsAndScopeRequest) GetRequester() string {
 	if x != nil {
 		return x.Requester
+	}
+	return ""
+}
+
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetId() string {
+	if x != nil {
+		return x.PermissionSetId
 	}
 	return ""
 }
@@ -278,12 +291,13 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\x81\x03\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xad\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
-	"\trequester\x18\x04 \x01(\tR\trequester\x1aR\n" +
+	"\trequester\x18\x04 \x01(\tR\trequester\x12*\n" +
+	"\x11permission_set_id\x18\x05 \x01(\tR\x0fpermissionSetId\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +
