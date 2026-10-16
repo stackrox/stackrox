@@ -95,7 +95,7 @@ SH
 }
 
 @test "changing cadence changes eligible hours using UTC epoch alignment" {
-    yq -i '.updaters.oracle.attempt_cadence = "5h"' "$SOURCE_CONFIG"
+    yq eval -i '.updaters.oracle.attempt_cadence = "5h"' "$SOURCE_CONFIG"
     run env SCHEDULE_TIME="1970-01-02T00:27:00Z" \
         "${scripts}/scanner-updater-matrix.sh"
     assert_success
