@@ -108,15 +108,37 @@
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
   {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
-  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
+  {{ if kindIs "invalid" $._rox.monitoring }}
+    {{ $_ := set $._rox "monitoring" (dict) }}
+  {{ end }}
+  {{ if kindIs "invalid" $._rox.monitoring.openshift }}
+    {{ $_ := set $._rox.monitoring "openshift" (dict) }}
+  {{ end }}
+  {{ $_ := set $._rox.monitoring.openshift "enabled" true }}
 {{ end }}
 {{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring }}
+  {{ $_ := set $._rox "monitoring" (dict) }}
+{{ end }}
+{{ if kindIs "invalid" $._rox.monitoring.openshift }}
+  {{ $_ := set $._rox.monitoring "openshift" (dict) }}
+{{ end }}
 {{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
-{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+  {{ $_ := set $._rox.monitoring.openshift "enabled" (eq $._rox.env.openshift 4) }}
 {{ end }}
 {{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
   {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
-  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+  {{ $_ := set $._rox.monitoring.openshift "enabled" false }}
+{{ end }}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.centralCustomMetrics }}
+  {{ $_ := set $._rox.monitoring.openshift "centralCustomMetrics" (dict) }}
+{{ end }}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.centralCustomMetrics.enabled }}
+  {{ $_ := set $._rox.monitoring.openshift.centralCustomMetrics "enabled" false }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.centralCustomMetrics.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "Central custom metrics scraping is supported only on OpenShift 4; disabling monitoring.openshift.centralCustomMetrics.enabled.") }}
+  {{ $_ := set $._rox.monitoring.openshift.centralCustomMetrics "enabled" false }}
 {{ end }}
 
 [<- if .AutoSensePodSecurityPolicies >]

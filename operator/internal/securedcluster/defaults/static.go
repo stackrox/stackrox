@@ -53,6 +53,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 			Enabled: new(true),
 		},
 	},
+	CentralCustomMetrics: new(false),
 	Network: &platform.GlobalNetworkSpec{
 		Policies: new(platform.NetworkPoliciesEnabled),
 	},
