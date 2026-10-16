@@ -34,7 +34,7 @@ def main():
         for s in suites:
             sum_up(grand_totals, s.counts)
             sum_up(file_totals, s.counts)
-        print(f'found {file_totals[Ctr.TESTS]} tests')
+        print(f'found {file_totals[Count.TESTS]} tests')
         valid_files.append((f, suites))
 
     if not valid_files:
@@ -51,8 +51,8 @@ def main():
 
     size_mib = output_file.stat().st_size / 1024.0 / 1024
     print(f'Wrote {output_file} ({size_mib:.2f} MiB, {len(valid_files)} input files, ' +
-          f'{grand_totals[Ctr.TESTS]} tests, {grand_totals[Ctr.FAILURES]} failed tests, ' +
-          f'{grand_totals[Ctr.SKIPPED]} skipped tests, {grand_totals[Ctr.ERRORS]} test errors)')
+          f'{grand_totals[Count.TESTS]} tests, {grand_totals[Count.FAILURES]} failed tests, ' +
+          f'{grand_totals[Count.ERRORS]} test errors, {grand_totals[Count.SKIPPED]} skipped tests)')
 
     return 0
 
@@ -65,8 +65,7 @@ def parse_args():
     return parser.parse_args(sys.argv[1:])
 
 
-class Ctr(Enum):
-    """Counter"""
+class Count(Enum):
     TESTS = 1
     PASSED = 2
     FAILURES = 3
@@ -76,11 +75,11 @@ class Ctr(Enum):
 
 def make_counts():
     return {
-        Ctr.TESTS: 0,
-        Ctr.PASSED: 0,
-        Ctr.FAILURES: 0,
-        Ctr.ERRORS: 0,
-        Ctr.SKIPPED: 0,
+        Count.TESTS: 0,
+        Count.PASSED: 0,
+        Count.FAILURES: 0,
+        Count.ERRORS: 0,
+        Count.SKIPPED: 0,
     }
 
 
@@ -92,7 +91,7 @@ def sum_up(acc, item):
 @dataclass
 class TestSuite:
     name: str
-    counts: dict[Ctr, int]
+    counts: dict[Count, int]
     time: str
     props: list[tuple[str, str]]
     sysout: str
@@ -122,12 +121,12 @@ def pass1_parse_file(file):
                     test_case = elem
             else:  # event == 'end'
                 if tag == 'testsuite':
-                    ensure(test_suite.counts[Ctr.TESTS] * 2 == sum(test_suite.counts.values()),
+                    ensure(test_suite.counts[Count.TESTS] * 2 == sum(test_suite.counts.values()),
                            'something is wrong with our tests counting')
                     test_suite = None
                 elif tag == 'testcase':
                     test_case = None
-                    test_suite.counts[Ctr.TESTS] += 1
+                    test_suite.counts[Count.TESTS] += 1
                     outcome = classify(elem)
                     test_suite.counts[outcome] += 1
                 elif tag == 'system-out':
@@ -185,13 +184,13 @@ def extract_props(el):
 
 def classify(testcase_el):
     if testcase_el.find('failure') is not None:
-        return Ctr.FAILURES
+        return Count.FAILURES
     elif testcase_el.find('error') is not None:
-        return Ctr.ERRORS
+        return Count.ERRORS
     elif testcase_el.find('skipped') is not None:
-        return Ctr.SKIPPED
+        return Count.SKIPPED
     ensure(not testcase_el.get('status'), 'status override attribute is not supported')
-    return Ctr.PASSED
+    return Count.PASSED
 
 
 def pass2_render(out, title, grand_totals, valid_files):
@@ -200,10 +199,19 @@ def pass2_render(out, title, grand_totals, valid_files):
     write_controls(out)
 
     href_suite_counter = Counter()
+    href_case_counter = Counter()
     for file, suites in valid_files:
-        pass2_render_file(out, file, suites, href_suite_counter)
+        pass2_render_file(out, file, suites, href_suite_counter, href_case_counter)
 
     write_doc_end(out)
+
+
+class Counter:
+    def __init__(self, value=0):
+        self.value = value
+
+    def inc(self):
+        self.value += 1
 
 
 def write_doc_start(out, title):
@@ -323,11 +331,25 @@ def write_summary(out, counts):
 
 
 def write_counts(out, counts):
-    out.write(badge(counts[Ctr.TESTS], 'text-bg-dark', 'tests'))
-    out.write(badge(counts[Ctr.PASSED], 'text-bg-success', 'passed'))
-    out.write(badge(counts[Ctr.FAILURES], 'text-bg-danger', 'failed'))
-    out.write(badge(counts[Ctr.ERRORS], 'text-bg-warning', 'errored'))
-    out.write(badge(counts[Ctr.SKIPPED], 'text-bg-secondary', 'skipped'))
+    order = [
+        (Count.TESTS, 'tests'),
+        (Count.PASSED, 'passed'),
+        (Count.FAILURES, 'failed'),
+        (Count.ERRORS, 'errored'),
+        (Count.SKIPPED, 'skipped'),
+    ]
+    for idx, label in order:
+        out.write(badge(counts[idx], status_to_color(idx), label))
+
+
+def status_to_color(status):
+    return {
+        Count.TESTS: 'text-bg-dark',
+        Count.PASSED: 'text-bg-success',
+        Count.FAILURES: 'text-bg-danger',
+        Count.ERRORS: 'text-bg-warning',
+        Count.SKIPPED: 'text-bg-secondary',
+    }[status]
 
 
 def write_controls(out):
@@ -354,8 +376,10 @@ def esc(t):
     return html.escape(str(t), quote=False)
 
 
-def pass2_render_file(out, file, suites, suite_counter):
+def pass2_render_file(out, file, suites, suite_counter, case_counter):
     suite_idx = 0
+    suite = None
+    header_written = False
 
     for event, elem in ET.iterparse(file, events=('start', 'end')):
         tag = elem.tag
@@ -366,19 +390,24 @@ def pass2_render_file(out, file, suites, suite_counter):
                 ensure(suite.name == elem.get('name', ''), 'error: could not match the suite')
                 write_suite_start(out, suite, file, suite_counter.value)
                 suite_counter.inc()
-            pass
+                header_written = False
         else:  # event == 'end'
             if tag == 'testsuite':
                 write_suite_end(out)
-            pass
+            elif tag == 'testcase':
+                if not header_written:
+                    header_written = True
+                    write_cases_header(out)
+                write_case(out, elem, suite.name, case_counter.value)
+                case_counter.inc()
 
     ensure(suite_idx == len(suites), 'error: not all suites were iterated')
 
 
-def write_suite_start(out, suite, file, suite_counter):
+def write_suite_start(out, suite, file, suite_index):
     out.write(f"""
-        <section id="s{suite_counter}" class="suite">
-            <h2 class="sh">{esc(suite.name)}<a class="anchor" href="#s{suite_counter}">#</a></h2>
+        <section id="s{suite_index}" class="suite">
+            <h2 class="sh">{esc(suite.name)}<a class="anchor" href="#s{suite_index}">#</a></h2>
             <div class="mb-2">
     """)
     write_counts(out, suite.counts)
@@ -418,12 +447,48 @@ def write_suite_end(out):
     out.write('</section>')
 
 
-class Counter:
-    def __init__(self, value=0):
-        self.value = value
+def write_cases_header(out):
+    out.write("""
+            <div class="row-grid hdr"><div>Status</div><div>Test</div><div>Time (s)</div></div>
+    """)
 
-    def inc(self):
-        self.value += 1
+
+def write_case(out, case, suite_name, case_index):
+    time = case.get('time', '')
+
+    name = case.get('name', '')
+    classname = case.get('classname', '')
+    if not classname:
+        display_name = name
+    elif classname == suite_name:  # Converter for Go unit tests does this, we don't want duplication.
+        display_name = name
+    elif name in classname:  # UI tests tend to do this.
+        display_name = classname
+    else:
+        display_name = f'{classname} / {name}'
+
+    status = classify(case)
+    label, row_background_class = {
+        Count.PASSED: ('PASSED', 'p'),
+        Count.FAILURES: ('TEST FAILED', 'f'),
+        Count.ERRORS: ('TEST ERROR', 'f'),
+        Count.SKIPPED: ('TEST SKIPPED', 's'),
+    }[status]
+    color = status_to_color(status)
+
+    out.write(f"""
+            <details class="io case" id="t{case_index}">
+                <summary class="row-grid {row_background_class}">
+                    <div>
+                        <span class="badge {color}">{label}</span>
+                        <a class="anchor" href="#t{case_index}">#</a>
+                    </div>
+                    <div>{esc(display_name)}</div>
+                    <div>{esc(time)}</div>
+                </summary>
+                <div class="cbody"></div>
+            </details>
+    """)
 
 
 if __name__ == '__main__':
