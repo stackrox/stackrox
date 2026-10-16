@@ -162,6 +162,30 @@ func TestEnforce(t *testing.T) {
 		expectError  bool
 		expectCapped bool
 	}{
+		"metrics permission set": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: centralproxy.MetricsPermissionSetID,
+				Lifetime:        durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"metrics permission set ignores client permissions": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: centralproxy.MetricsPermissionSetID,
+				Permissions:     map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:        durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"metrics permission set cannot carry client scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: centralproxy.MetricsPermissionSetID,
+				ClusterScopes:   []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2}},
+				Lifetime:        durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"console permission set without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetId: centralproxy.ConsoleProxyPermissionSetID,

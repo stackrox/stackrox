@@ -134,11 +134,17 @@ func (p *tokenPolicy) enforce(
 		if sensorClusterID == "" {
 			return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 		}
-		if req.GetPermissionSetId() != centralproxy.ConsoleProxyPermissionSetID {
+		switch req.GetPermissionSetId() {
+		case centralproxy.MetricsPermissionSetID:
+			if len(req.GetClusterScopes()) != 0 {
+				return nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
+			}
+		case centralproxy.ConsoleProxyPermissionSetID:
+			if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+				return nil, err
+			}
+		default:
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
-		}
-		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-			return nil, err
 		}
 		return p.enforceLifetimeLimit(req)
 	}

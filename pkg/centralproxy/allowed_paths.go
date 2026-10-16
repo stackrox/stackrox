@@ -2,6 +2,9 @@ package centralproxy
 
 import "github.com/stackrox/rox/pkg/set"
 
+// SecuredClusterMetricsRole names the internal role in Sensor-proxied OpenShift Prometheus tokens.
+const SecuredClusterMetricsRole = "OpenShift Secured Cluster Metrics Reader"
+
 // AllowedProxyPaths defines the paths that Sensor's Central proxy is
 // permitted to forward. These are communicated to Sensor via the
 // CentralHello handshake.
