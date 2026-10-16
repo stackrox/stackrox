@@ -2,6 +2,7 @@
 
 import argparse
 import html
+import os
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
@@ -223,48 +224,48 @@ def write_doc_start(out, title):
             margin-left: .4rem;
             text-decoration: none;
             color: #6c757d;
-            font-weight: normal
+            font-weight: normal;
         }
         .sh:hover .anchor, .row-grid:hover .anchor { visibility: visible }
         .row-grid {
             display: grid;
             grid-template-columns:9rem minmax(10rem, 1fr) 5rem;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, .15)
+            border-bottom: 1px solid rgba(0, 0, 0, .15);
         }
         .row-grid > * {
             padding: .25rem .5rem;
             overflow-wrap: anywhere;
-            min-width: 0
+            min-width: 0;
         }
         .row-grid.hdr {
             font-weight: 600;
-            background: #f8f9fa
+            background: #f8f9fa;
         }
         .p { background: #d1e7dd }
         .f { background: #f8d7da }
         .s { background: #e2e3e5 }
         details.case > summary {
             list-style: none;
-            cursor: pointer
+            cursor: pointer;
         }
         details.case > summary::-webkit-details-marker { display: none }
-        details.case > summary > :nth-child(2)::before {
+        details.case > summary.d > :nth-child(2)::before {
             content: "\\25B8  ";
-            color: #6c757d
+            color: #6c757d;
         }
-        details.case[open] > summary > :nth-child(2)::before {
+        details.case[open] > summary.d > :nth-child(2)::before {
             content: "\\25BE  ";
-            color: #6c757d
+            color: #6c757d;
         }
         details.case:target, .row-grid:target { outline: 2px solid #0d6efd }
-        .cbody {
+        .dtl {
             padding: .5rem 1rem;
-            background: #fff
+            background: #fff;
         }
         .kv {
             font-size: .85rem;
-            margin-bottom: .5rem
+            margin-bottom: .5rem;
         }
         pre {
             white-space: pre-wrap;
@@ -476,9 +477,17 @@ def write_case(out, case, suite_name, case_index):
     }[status]
     color = status_to_color(status)
 
+    details = []
+    sysout = ''.join(text_of(el) for el in case.findall('system-out'))
+    if sysout:
+        details.append(f'<div class="fw-semibold small">system-out</div><pre>{esc(sysout)}</pre>')
+    syserr = ''.join(text_of(el) for el in case.findall('system-err'))
+    if syserr:
+        details.append(f'<div class="fw-semibold small">system-err</div><pre>{esc(syserr)}</pre>')
+
     out.write(f"""
             <details class="io case" id="t{case_index}">
-                <summary class="row-grid {row_background_class}">
+                <summary class="{'d' if details else ''} row-grid {row_background_class}">
                     <div>
                         <span class="badge {color}">{label}</span>
                         <a class="anchor" href="#t{case_index}">#</a>
@@ -486,7 +495,10 @@ def write_case(out, case, suite_name, case_index):
                     <div>{esc(display_name)}</div>
                     <div>{esc(time)}</div>
                 </summary>
-                <div class="cbody"></div>
+    """)
+    if details:
+        out.write(f'<div class="dtl">{os.linesep.join(details)}</div>')
+    out.write(f"""
             </details>
     """)
 
