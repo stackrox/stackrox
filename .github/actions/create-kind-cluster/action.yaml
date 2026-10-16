@@ -1,0 +1,105 @@
+name: Create KinD cluster with images
+description: >
+  Creates a KinD cluster and pre-pulls container images via ctr.
+  Runs in the background — returns immediately. The cluster and images
+  become available asynchronously. Callers can start dependent actions
+  immediately; they should retry kubectl commands until the cluster is ready.
+
+  File-based outputs:
+    /tmp/kind-ready     — touched when KinD cluster + central-db image ready
+
+inputs:
+  cluster-name:
+    description: Unique cluster name
+    required: true
+  tag:
+    description: Image tag
+    required: true
+  registry:
+    description: Image registry
+    default: quay.io/rhacs-eng
+  memory-limit:
+    description: Docker container memory cap
+    default: 6g
+  quay-user:
+    description: Quay.io username
+    required: true
+  quay-pass:
+    description: Quay.io password
+    required: true
+  ip-family:
+    description: "Cluster IP family: ipv4 (default) or ipv6"
+    default: ipv4
+
+runs:
+  using: composite
+  steps:
+    - name: Create KinD cluster (background)
+      shell: bash
+      run: |
+        echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io
+
+        SCANNER_TAG=$(cat SCANNER_VERSION)
+
+        (
+          NODE="${{ inputs.cluster-name }}-control-plane"
+          CTR_AUTH="${{ inputs.quay-user }}:${{ inputs.quay-pass }}"
+
+          KIND_ARGS=()
+          if [[ "${{ inputs.ip-family }}" == "ipv6" ]]; then
+            printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\nnetworking:\n  ipFamily: ipv6\n' > /tmp/kind-config.yaml
+            KIND_ARGS+=(--config /tmp/kind-config.yaml)
+          fi
+          echo "Creating KinD cluster ${{ inputs.cluster-name }} (ip-family: ${{ inputs.ip-family }})"
+          kind create cluster --name "${{ inputs.cluster-name }}" "${KIND_ARGS[@]}"
+
+          if [[ "${{ inputs.ip-family }}" == "ipv6" ]]; then
+            echo "Installing NAT64 DaemonSet (eBPF-based IPv6→IPv4 translation)"
+            kubectl apply -f "$GITHUB_ACTION_PATH/nat64.yaml"
+            kubectl -n kube-system rollout status daemonset/nat64 --timeout=60s
+
+            echo "Configuring CoreDNS to use Google Public DNS64 for IPv6-only resolution"
+            kubectl get configmap coredns -n kube-system -o yaml \
+              | sed 's|forward \. /etc/resolv.conf|forward . 2001:4860:4860::6464 2001:4860:4860::64|' \
+              | kubectl apply -f -
+            kubectl -n kube-system rollout restart deploy/coredns
+            kubectl -n kube-system rollout status deploy/coredns --timeout=60s
+
+            echo "Verifying DNS64+NAT64 from pod network..."
+            NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+            for i in $(seq 1 30); do
+              if [[ -n "$NAT64_POD" ]] && kubectl -n kube-system exec "$NAT64_POD" -- \
+                wget -qO /dev/null --timeout=10 http://quay.io/health/instance 2>/dev/null; then
+                echo "DNS64+NAT64 verified (attempt $i)"
+                break
+              fi
+              NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+              echo "DNS64+NAT64 not ready yet (attempt $i/30)"
+              sleep 5
+            done
+          fi
+
+          docker update --memory "${{ inputs.memory-limit }}" \
+            --memory-swap "${{ inputs.memory-limit }}" "$NODE"
+
+          echo "Pulling images (tag: ${{ inputs.tag }}, scanner: ${SCANNER_TAG})"
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
+          PID_CDB=$!
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/main:${{ inputs.tag }}" &
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
+
+          wait $PID_CDB
+          echo "central-db image ready"
+          touch /tmp/kind-ready
+        ) > /tmp/kind-create.log 2>&1 &
+
+        echo "KinD cluster creation started in background"
