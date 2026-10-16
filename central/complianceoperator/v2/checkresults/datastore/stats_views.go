@@ -59,3 +59,25 @@ type ResourceResultsByProfile struct {
 	RuleName           string `db:"compliance_rule_name"`
 	CheckRationale     string `db:"compliance_check_rationale"`
 }
+
+// MinLastStartedTimeByConfigCluster holds the MIN(last_started_time) grouped
+// by scan config name and cluster ID. Used for outdated-data detection.
+// Cluster name is deliberately NOT a grouping key (see MinLastStartedTimeByConfigCluster
+// in datastore_impl.go): a rename must not split a (config, cluster_id) group.
+type MinLastStartedTimeByConfigCluster struct {
+	ScanConfigName string     `db:"compliance_scan_config_name"`
+	ClusterID      string     `db:"cluster_id"`
+	MinLastStarted *time.Time `db:"compliance_check_last_started_time_min"`
+}
+
+// MinLastStartedTimeByCheckCluster holds the MIN(last_started_time) grouped by
+// scan config name, cluster ID and check name. Used for the per-check (Checks
+// tab) outdated-data rollup: grouping by check_name is required so a current
+// check is not marked OUTDATED just because a sibling check in the same cluster
+// is stale.
+type MinLastStartedTimeByCheckCluster struct {
+	ScanConfigName string     `db:"compliance_scan_config_name"`
+	ClusterID      string     `db:"cluster_id"`
+	CheckName      string     `db:"compliance_check_name"`
+	MinLastStarted *time.Time `db:"compliance_check_last_started_time_min"`
+}
