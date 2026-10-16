@@ -45,6 +45,11 @@ config_part_1() {
     setup_gcp
     setup_deployment_env false false
     if [[ "$use_roxie_deploy" == "true" ]]; then
+        # On GHA we already installed roxie in a previous workflow step. On Prow we have roxie available as part of the apollo-ci image,
+        # but it might not be up to date, hence this invocation to make sure that we have a recent roxie version also on Prow.
+        if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+            ensure_roxie_on_path
+        fi
         info "Using roxie-based pre-test teardown"
         roxie teardown all --single-namespace
     else
@@ -73,13 +78,6 @@ securedCluster:
   resourceProfile: ci
 EOF
 
-        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-            info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
-            patch_yaml "$config_file" ".roxie.konfluxImages = true"
-        elif pr_has_label test-konflux-images; then
-            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
-            patch_yaml "$config_file" ".roxie.konfluxImages = true"
-        fi
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
         # Note: The traditional deployment path still references PodSecurityPolicies,

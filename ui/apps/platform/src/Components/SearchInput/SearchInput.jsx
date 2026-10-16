@@ -32,7 +32,6 @@ export const searchInputPropTypes = {
     sendAutoCompleteRequest: PropTypes.func,
     clearAutoComplete: PropTypes.func,
     autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
-    setAllSearchOptions: PropTypes.func,
     isDisabled: PropTypes.bool,
     prependAutocompleteQuery: PropTypes.arrayOf(
         PropTypes.shape({
@@ -53,7 +52,6 @@ export const searchInputDefaultProps = {
     sendAutoCompleteRequest: null,
     clearAutoComplete: null,
     autoCompleteCategories: [],
-    setAllSearchOptions: () => {},
     isDisabled: false,
     prependAutocompleteQuery: [],
 };
@@ -108,8 +106,6 @@ class SearchInput extends Component {
     }
 
     sendAutoCompleteRequest = (searchOptions, input) => {
-        this.props.setAllSearchOptions(searchOptions);
-
         // Don't populate autocomplete if the text box is totally empty,
         // since we want people to see just the chips in that case.
         if (!searchOptions.length && !input.length) {

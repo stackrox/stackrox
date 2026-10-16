@@ -48,10 +48,9 @@ func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {
 	require.NoError(t, err)
 
 	latestPolicy.Exclusions = []*storage.Exclusion{
-		{
-			Deployment: &storage.Exclusion_Deployment{
-				Name: deploymentName,
-			},
+		{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+			Name: deploymentName,
+		}},
 		},
 	}
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)

@@ -93,7 +93,7 @@ function VirtualMachineCvePage() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - ${cveId}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewCvePath}>
                         CVEs
@@ -101,7 +101,6 @@ function VirtualMachineCvePage() {
                     <BreadcrumbItem isActive>{cveId}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             <PageSection>
                 <VirtualMachineCvePageHeader cveDetail={cveDetail} />
             </PageSection>

@@ -21,7 +21,7 @@ const commonStatusCodeNameMap = {
 
 /*
  * Given argument of promise-catch method or try-catch block for an axios call,
- * return error message.
+ * return error message without changing backend wording or casing.
  */
 export function getAxiosErrorMessage(error: unknown): string {
     // See https://axios-http.com/docs/handling_errors

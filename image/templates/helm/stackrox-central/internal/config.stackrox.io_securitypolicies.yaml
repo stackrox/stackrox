@@ -82,7 +82,11 @@ spec:
                   evaluates.
                 properties:
                   skipContainerTypes:
+                    description: SkipContainerTypes lists container kinds to skip
+                      during evaluation.
                     items:
+                      description: ContainerType lists container kinds a policy may
+                        skip during evaluation.
                       enum:
                       - REGULAR
                       - INIT
@@ -138,6 +142,23 @@ spec:
                               type: object
                           type: object
                       type: object
+                    excludeByKind:
+                      description: ExcludeByKind excludes all workloads of the selected
+                        Kubernetes kinds.
+                      properties:
+                        kinds:
+                          description: Kinds is the list of Kubernetes workload kinds
+                            to exclude.
+                          items:
+                            enum:
+                            - CRON_JOB
+                            - JOB
+                            type: string
+                          minItems: 1
+                          type: array
+                      required:
+                      - kinds
+                      type: object
                     expiration:
                       format: date-time
                       type: string
@@ -149,6 +170,11 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-validations:
+                  - message: at most one of the fields in [deployment excludeByKind]
+                      may be set
+                    rule: (has(self.deployment)?1:0)+(has(self.excludeByKind)?1:0)
+                      <= 1
                 type: array
               isDefault:
                 description: IsDefault is unused

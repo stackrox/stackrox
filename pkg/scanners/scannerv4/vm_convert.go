@@ -53,13 +53,7 @@ func hasValidCPE(repositories map[string]*v4.Repository, environments map[string
 func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVirtualMachineScanComponent {
 	repositories := r.GetContents().GetRepositories()
 	environments := r.GetContents().GetEnvironments()
-	packages := r.GetContents().GetPackages()
-	if len(packages) == 0 {
-		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
-		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
-			packages[pkg.GetId()] = pkg
-		}
-	}
+	packages := packagesByID(r.GetContents())
 	result := make([]*storage.EmbeddedVirtualMachineScanComponent, 0, len(packages))
 	for id, pkg := range packages {
 		vulnerabilityIDs := r.GetPackageVulnerabilities()[id].GetValues()

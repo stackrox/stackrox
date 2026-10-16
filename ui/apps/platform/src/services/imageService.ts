@@ -1,3 +1,5 @@
+import upperFirst from 'lodash/upperFirst';
+
 import type { ListImage, WatchedImage } from 'types/image.proto';
 
 import axios from './instance';
@@ -55,7 +57,10 @@ export function watchImage(name: string): Promise<string> {
         .then((response) => {
             const { normalizedName, errorType, errorMessage } = response.data;
             if (errorType !== 'NO_ERROR') {
-                throw new Error(errorMessage);
+                // Backend errors follow Go conventions (lower-case first letter); capitalize
+                // for display. upperFirst (not capitalize) preserves the rest of the message,
+                // e.g. the cluster name in "no connection to cluster ...".
+                throw new Error(upperFirst(errorMessage));
             }
 
             return normalizedName;
