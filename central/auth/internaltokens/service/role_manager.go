@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -18,6 +19,25 @@ const (
 
 type roleManager struct {
 	roleStore roleDS.DataStore
+}
+
+// createSensorMetricsRole uses the permission set shared with Central metrics,
+// but limits the token to the authenticated Sensor's cluster.
+func (rm *roleManager) createSensorMetricsRole(
+	ctx context.Context, roles roleDS.DataStore, sensorClusterID string,
+) (*tokens.InternalRole, error) {
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	role, err := (&roleManager{roleStore: roles}).createSensorRole(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
+		PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
+		ClusterScopes:      []*v1.ClusterScope{{ClusterId: sensorClusterID, FullClusterAccess: true}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	role.RoleName = centralproxy.SecuredClusterMetricsRole
+	return role, nil
 }
 
 func (rm *roleManager) createRoleForRoxClaims(
