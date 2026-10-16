@@ -18,9 +18,6 @@ setup() {
   # Unique cluster name per test so that tests with different overrides don't affect
   # each other due to '--continue-if-exists'.
   cluster_name="override-test-cluster-${BATS_TEST_NUMBER}"
-  # Detect the flavor here rather than in setup_file() so the value is available to
-  # the tests without exporting it (setup_file() runs in a separate shell, so a
-  # non-exported assignment there would not propagate; exporting would leak it to roxctl).
   central_flavor="$(kubectl -n stackrox exec deployment/central -- env 2>&1 | grep -i '^ROX_IMAGE_FLAVOR=' | sed 's/ROX_IMAGE_FLAVOR=//' | tr -d '\r\n')"
   if [[ -z "$central_flavor" ]]; then
     echo "Failed to detect Central image flavor. Checking Central pod status:" >&3
