@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stackrox/rox/tools/roxvet/analyzers/authfuncoverride"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/donotcompareproto"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
@@ -27,6 +28,7 @@ import (
 
 func main() {
 	unitchecker.Main(
+		authfuncoverride.Analyzer,
 		donotcompareproto.Analyzer,
 		dontprintferr.Analyzer,
 		filepathwalk.Analyzer,
