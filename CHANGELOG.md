@@ -12,6 +12,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.11.6]
 
+### Technical Changes
+
+- ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
+
 **Full Changelog**: [4.11.5...4.11.6](https://github.com/stackrox/stackrox/compare/4.11.5...4.11.6)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.

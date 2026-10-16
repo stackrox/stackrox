@@ -68,6 +68,17 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},
 		},
 		{
+			desc:          "image-only exclusion does not exclude any deployment",
+			exclusions:    []*storage.Exclusion{{Image: &storage.Exclusion_Image{Name: "docker.io/library/unrelated"}}},
+			shouldApplyTo: []*storage.Deployment{stackRoxNSDep, defaultNSDep, appStackRoxDep},
+		},
+		{
+			desc:          "only stackrox ns, with an image-only exclusion",
+			scopes:        []*storage.Scope{stackRoxNSScope},
+			exclusions:    []*storage.Exclusion{{Image: &storage.Exclusion_Image{Name: "docker.io/library/unrelated"}}},
+			shouldApplyTo: []*storage.Deployment{stackRoxNSDep, appStackRoxDep},
+		},
+		{
 			desc:          "only default ns",
 			scopes:        []*storage.Scope{defaultNSScope},
 			shouldApplyTo: []*storage.Deployment{defaultNSDep},
