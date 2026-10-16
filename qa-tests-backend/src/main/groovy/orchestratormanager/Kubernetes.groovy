@@ -131,6 +131,9 @@ class Kubernetes {
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
+    // Budget for waiting until a hostname-typed LB ingress resolves in DNS. Exits early once
+    // resolved; NLB DNS publication has been observed to lag several minutes on IPv6-only clusters.
+    final int lbHostnameDnsWaitTimeSeconds = 600
     final int intervalTime = 1
     final List<String> trackedDeploymentLikeResources = [
             "Deployment",
@@ -932,6 +935,25 @@ class Kubernetes {
         Service Methods
     */
 
+    // Annotations to attach to LoadBalancer Services, parsed from the
+    // LOAD_BALANCER_SERVICE_ANNOTATIONS env var (comma-separated key=value pairs).
+    // Empty on clusters that don't set it, so behavior is unchanged there. Used to
+    // make LoadBalancer Services provision on EKS IPv6-only (dualstack NLB).
+    private static Map<String, String> loadBalancerServiceAnnotations() {
+        Map<String, String> annotations = [:]
+        String raw = Env.get("LOAD_BALANCER_SERVICE_ANNOTATIONS", "")
+        if (raw == null || raw.trim().isEmpty()) {
+            return annotations
+        }
+        for (String pair : raw.split(",")) {
+            int idx = pair.indexOf("=")
+            if (idx > 0) {
+                annotations.put(pair.substring(0, idx).trim(), pair.substring(idx + 1).trim())
+            }
+        }
+        return annotations
+    }
+
     @CompileDynamic
     @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(Deployment deployment) {
@@ -940,7 +962,14 @@ class Kubernetes {
                     metadata: new ObjectMeta(
                             name: deployment.serviceName ? deployment.serviceName : deployment.name,
                             namespace: deployment.namespace,
-                            labels: deployment.labels
+                            labels: deployment.labels,
+                            // EKS IPv6-only: a plain LoadBalancer Service never provisions
+                            // (Classic LB has no IPv6 support). Apply the dualstack NLB
+                            // annotations at creation so the AWS Load Balancer Controller
+                            // owns it and provisions a dualstack NLB. Driven by env so it is
+                            // a no-op on other clusters. See LOAD_BALANCER_SERVICE_ANNOTATIONS.
+                            annotations: deployment.createLoadBalancer ?
+                                    loadBalancerServiceAnnotations() : [:]
                     ),
                     spec: new ServiceSpec(
                             ports: deployment.getPorts().collect {
@@ -1075,16 +1104,45 @@ class Kubernetes {
         while (t.IsValid()) {
             service = client.services().inNamespace(namespace).withName(serviceName).get()
             if (service?.status?.loadBalancer?.ingress?.size()) {
-                loadBalancerIP = service.status.loadBalancer.ingress.get(0).
-                        ip ?: service.status.loadBalancer.ingress.get(0).hostname
-                log.debug "LB IP: " + loadBalancerIP
-                break
+                def ingress = service.status.loadBalancer.ingress.get(0)
+                log.debug "LB Ingress object: ${ingress}"
+                loadBalancerIP = ingress.ip ?: ingress.hostname
+                log.debug "LB IP/Hostname extracted: ${loadBalancerIP}"
+                if (loadBalancerIP) {
+                    if (!ingress.ip) {
+                        // On IPv6-only clusters the ingress is an ELB hostname whose AWS DNS
+                        // record is published asynchronously after LB provisioning. Tests run
+                        // outside the cluster and would hit UnknownHostException until then.
+                        waitUntilResolvable(loadBalancerIP)
+                    }
+                    break
+                }
             }
         }
         if (loadBalancerIP == null) {
             log.debug "Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations"
         }
         return loadBalancerIP
+    }
+
+    // Waits until the given hostname resolves, bounded by lbHostnameDnsWaitTimeSeconds.
+    // AWS publishes NLB DNS records asynchronously; on IPv6-only clusters the LB ingress
+    // is a hostname and tests run outside the cluster, so resolving here removes the
+    // UnknownHostException window the suite would otherwise hit per test.
+    private void waitUntilResolvable(String hostname) {
+        int iterations = (lbHostnameDnsWaitTimeSeconds / intervalTime).intValue()
+        Timer t = new Timer(iterations, intervalTime)
+        while (t.IsValid()) {
+            try {
+                InetAddress.getByName(hostname)
+                log.debug "LB hostname ${hostname} resolved after ${t.SecondsSince()}s"
+                return
+            } catch (UnknownHostException e) {
+                log.info "LB hostname ${hostname} does not resolve yet (waited ${t.SecondsSince()}s)"
+            }
+        }
+        log.error "LB hostname ${hostname} did not resolve within " +
+                "${lbHostnameDnsWaitTimeSeconds}s; continuing, downstream calls may fail"
     }
 
     /*

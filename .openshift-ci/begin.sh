@@ -63,10 +63,27 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     set_ci_shared_export WORKER_NODE_COUNT 2
     if [[ "${JOB_NAME:-}" =~ vm-scanning ]]; then
-        # Selecting nodes with KVM support
-        set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
+        # Selecting nodes with KVM support; on AWS nested virtualization needs
+        # 7th-gen Intel or newer:
+        # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-ec2-nested-virtualization.html
+        case "${CLOUD_PROVIDER:-gcp}" in
+            aws)
+                set_ci_shared_export WORKER_NODE_TYPE m7i.2xlarge
+                ;;
+            gcp|*)
+                set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
+                ;;
+        esac
     else
-        set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+        case "${CLOUD_PROVIDER:-gcp}" in
+            aws)
+                # GCE instance types are invalid on AWS
+                set_ci_shared_export WORKER_NODE_TYPE m5.2xlarge
+                ;;
+            gcp|*)
+                set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+                ;;
+        esac
     fi
 fi
 
