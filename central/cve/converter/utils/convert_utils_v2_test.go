@@ -93,6 +93,7 @@ var (
 				EpssPercentile:  98,
 			},
 			Datasource: "test-ds",
+			Origin:     storage.VulnOrigin_VULN_ORIGIN_RED_HAT,
 		},
 		{
 			Cve:     "cve2",
@@ -226,6 +227,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 		HasFixedBy:           nil,
 		ComponentId:          getTestComponentID(0),
 		Datasource:           "test-ds",
+		Origin:               storage.VulnOrigin_VULN_ORIGIN_RED_HAT,
 	}
 
 	cve2 := &storage.ImageCVEV2{

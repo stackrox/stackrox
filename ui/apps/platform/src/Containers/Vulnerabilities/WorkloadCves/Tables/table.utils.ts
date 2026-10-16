@@ -9,6 +9,7 @@ import type { SourceType } from 'types/image.proto';
 import type { ApiSortOptionSingle } from 'types/search';
 
 import {
+    getAggregateOrigin,
     getHighestVulnerabilitySeverity,
     getIsSomeVulnerabilityFixable,
 } from '../../utils/vulnerabilityUtils';
@@ -82,7 +83,10 @@ export type ComponentVulnerabilityBase = {
     inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
+        cvss: number;
+        scoreVersion: string;
         fixedByVersion: string;
+        origin?: string;
         advisory?: Advisory | null;
         pendingExceptionCount: number;
     }[];
@@ -99,6 +103,7 @@ export type DeploymentComponentVulnerability = Omit<
         cvss: number;
         scoreVersion: string;
         fixedByVersion: string;
+        origin?: string;
         advisory?: Advisory | null;
         discoveredAtImage: string | null;
         publishedOn: string | null;
@@ -120,6 +125,8 @@ export type TableDataRow = {
     fixedByVersion: string;
     advisory?: Advisory | null;
     severity: VulnerabilitySeverity;
+    cvss: number;
+    scoreVersion: string;
     version: string;
     location: string;
     source: SourceType;
@@ -128,6 +135,7 @@ export type TableDataRow = {
         instruction: string;
         value: string;
     } | null;
+    origin?: string;
     pendingExceptionCount: number;
     inBaseImageLayer?: boolean;
 };
@@ -158,23 +166,13 @@ export function flattenImageComponentVulns(
 export function flattenDeploymentComponentVulns(
     imageMetadataContext: ImageMetadataContext,
     componentVulnerabilities: DeploymentComponentVulnerability[]
-): (TableDataRow & {
-    cvss: number;
-    scoreVersion: string;
-})[] {
+): TableDataRow[] {
     const image = imageMetadataContext;
     const layers = imageMetadataContext.metadata?.v1?.layers ?? [];
 
     return componentVulnerabilities.map((component) => {
         const vulnerability = component.imageVulnerabilities[0];
-        const cvss = vulnerability?.cvss ?? 0;
-        const scoreVersion = vulnerability?.scoreVersion ?? 'N/A';
-
-        return {
-            ...extractCommonComponentFields(image, layers, component, vulnerability),
-            scoreVersion,
-            cvss,
-        };
+        return extractCommonComponentFields(image, layers, component, vulnerability);
     });
 }
 
@@ -203,7 +201,10 @@ function extractCommonComponentFields(
         vulnerability?.severity && isVulnerabilitySeverity(vulnerability.severity)
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
+    const cvss = vulnerability?.cvss ?? 0;
+    const scoreVersion = vulnerability?.scoreVersion ?? 'N/A';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
+    const origin = vulnerability?.origin;
     const advisory = vulnerability?.advisory;
     const pendingExceptionCount = vulnerability?.pendingExceptionCount ?? 0;
 
@@ -219,7 +220,10 @@ function extractCommonComponentFields(
         },
         layer,
         severity,
+        cvss,
+        scoreVersion,
         fixedByVersion,
+        origin,
         advisory,
         pendingExceptionCount,
         inBaseImageLayer,
@@ -277,6 +281,7 @@ export type FormattedDeploymentVulnerability = {
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
+    origin: string;
     discoveredAtImage: Date | null;
     publishedOn: Date | null;
     summary: string;
@@ -310,6 +315,7 @@ export function formatVulnerabilityData(
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
         const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
+        const origin = getAggregateOrigin(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
@@ -343,6 +349,7 @@ export function formatVulnerabilityData(
             operatingSystem,
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
+            origin,
             discoveredAtImage: oldestDiscoveredVulnDate,
             publishedOn: publishedOnDate,
             summary,
