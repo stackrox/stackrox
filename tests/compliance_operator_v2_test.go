@@ -1210,6 +1210,50 @@ func assertNodeRoleLabelPrefixMatchesRealNodes(ctx context.Context, t *testing.T
 	}
 }
 
+// waitForFirstScanToRevealNodeTargeting catches Compliance Operator's own node-targeting (not just the
+// label convention above) drifting from nodeRoleLabelPrefix, by watching its real effect: a Compliance
+// Operator ComplianceScan whose NodeSelector matches zero real Nodes reaches DONE/NOT-APPLICABLE on its very
+// first reconcile, skipping LAUNCHING/RUNNING entirely (see Compliance Operator's
+// pkg/controller/compliancescan/scantype.go, nodeScanTypeHandler.validate()). Any scan that instead reaches
+// any phase past PENDING proves Compliance Operator found real Nodes for it, so this returns on the first
+// such signal from any of the suite's per-role scans, without waiting for one to actually finish.
+func waitForFirstScanToRevealNodeTargeting(ctx context.Context, t *testing.T, client ctrlClient.Client, suiteName string) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+	ticker := time.NewTicker(defaultInterval)
+	defer ticker.Stop()
+
+	for {
+		var scans complianceoperatorv1.ComplianceScanList
+		err := client.List(ctx, &scans, ctrlClient.InNamespace(coNamespaceV2),
+			ctrlClient.MatchingLabels{complianceoperatorv1.SuiteLabel: suiteName})
+		require.NoErrorf(t, err, "failed to list ComplianceScans for suite %s", suiteName)
+
+		for i := range scans.Items {
+			scan := &scans.Items[i]
+			if scan.Status.Phase == complianceoperatorv1.PhaseDone && scan.Status.Result == complianceoperatorv1.ResultNotApplicable {
+				t.Fatalf("ComplianceScan %s reached DONE/NOT-APPLICABLE with NodeSelector %v matching zero "+
+					"real Nodes: Compliance Operator's own node-targeting found no Nodes for this role, "+
+					"independent of nodeRoleLabelPrefix - its internal label convention has likely diverged "+
+					"from ours", scan.Name, scan.Spec.NodeSelector)
+			}
+			if scan.Status.Phase != "" && scan.Status.Phase != complianceoperatorv1.PhasePending {
+				t.Logf("ComplianceScan %s reached phase %s: Compliance Operator found real Nodes for it",
+					scan.Name, scan.Status.Phase)
+				return
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			t.Fatalf("timed out waiting for any ComplianceScan of suite %s to progress past PENDING (found %d)",
+				suiteName, len(scans.Items))
+		case <-ticker.C:
+		}
+	}
+}
+
 // deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
 // node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
 // label in spec.nodeSelector.matchLabels (sorted when a pool matches more than one, to mirror Sensor's
@@ -1332,6 +1376,8 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 
 	slices.Sort(actualRoles)
 	t.Logf("ScanSetting %s roles: %v", testID, actualRoles)
+
+	waitForFirstScanToRevealNodeTargeting(ctx, t, dynClient, testID)
 
 	if set.NewStringSet(expectedRoles...).Equal(set.NewStringSet("master", "worker")) {
 		// Standard cluster: the discovered set coincides with the legacy hardcoded default, so this run
