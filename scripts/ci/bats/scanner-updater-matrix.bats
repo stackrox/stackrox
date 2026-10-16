@@ -29,7 +29,7 @@ updaters:
   default:
     interval: 4h
   oracle:
-    interval: 24h
+    interval: 8h
     attempt_cadence: 4h
 YAML
 
@@ -56,7 +56,7 @@ SH
     run jq -e '.has_due == "true" and .has_errors == "false" and
         ([.matrix.include[] | select(.source == "oracle")] | length == 2)' <<< "$output"
     assert_success
-    run grep -c 'oracle.json.zst --max-age 86400' "$FRESHNESS_CALLS"
+    run grep -c 'oracle.json.zst --max-age 28800' "$FRESHNESS_CALLS"
     assert_success
     assert_output "2"
     run grep -c 'debian.json.zst --max-age 14400' "$FRESHNESS_CALLS"

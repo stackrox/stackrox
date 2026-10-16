@@ -9,11 +9,11 @@ function setup() {
     export SOURCE_CONFIG="${BATS_TEST_TMPDIR}/source-config.yaml"
 }
 
-@test "Oracle uses 24-hour freshness and four-hour attempt cadence" {
+@test "Oracle uses eight-hour freshness and four-hour attempt cadence" {
     run env SOURCE_CONFIG="${repo_root}/scanner/updater/ci/source-config.yaml" \
         "$config_script" interval-secs oracle
     assert_success
-    assert_output "86400"
+    assert_output "28800"
 
     run env SOURCE_CONFIG="${repo_root}/scanner/updater/ci/source-config.yaml" \
         "$config_script" attempt-cadence-secs oracle

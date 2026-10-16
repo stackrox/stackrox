@@ -85,5 +85,5 @@ updaters:
   default:
     interval: 4h
   oracle:
-    interval: 24h
+    interval: 8h
     attempt_cadence: 4h
