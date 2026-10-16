@@ -256,6 +256,36 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		setup       func(*testing.T, *mockContainer)
 		expectedRsp *v1.GenerateTokenForPermissionsAndScopeResponse
 	}{
+		"success - secured-cluster metrics permission set": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: centralproxy.MetricsPermissionSetID,
+				Permissions:     map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:        testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
+					DoAndReturn(func(ctx context.Context, _ string) (*storage.PermissionSet, bool, error) {
+						_, hasDeadline := ctx.Deadline()
+						assert.True(t, hasDeadline)
+						return &storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+							"Deployment": storage.Access_READ_ACCESS,
+						}}, true, nil
+					})
+				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: centralproxy.SecuredClusterMetricsRole,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Deployment"},
+						},
+						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"*"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, centralproxy.SecuredClusterMetricsRole,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "cluster-metrics-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "cluster-metrics-token"},
+		},
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetId: centralproxy.ConsoleProxyPermissionSetID,

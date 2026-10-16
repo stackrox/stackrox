@@ -136,19 +136,28 @@ func (p *tokenPolicy) enforce(
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
 	if req.GetPermissionSetId() != "" {
-		if req.GetPermissionSetId() != centralproxy.ConsoleProxyPermissionSetID {
+		switch req.GetPermissionSetId() {
+		case centralproxy.MetricsPermissionSetID:
+			if len(req.GetClusterScopes()) != 0 {
+				return nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
+			}
+		case centralproxy.ConsoleProxyPermissionSetID:
+			if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+				return nil, err
+			}
+		default:
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 		}
 		if _, err := approvedHTTPScopes(req); err != nil {
 			return nil, err
 		}
-	} else {
-		if err := p.validatePermissions(req.GetPermissions()); err != nil {
-			return nil, err
-		}
-		if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
-			return nil, errox.InvalidArgs.CausedBy(err)
-		}
+		return p.enforceLifetimeLimit(req)
+	}
+	if err := p.validatePermissions(req.GetPermissions()); err != nil {
+		return nil, err
+	}
+	if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err

@@ -104,3 +104,35 @@ func TestCreateSensorConsoleRoleUsesStoredPermissions(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateSensorMetricsRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	roles := roleMocks.NewMockDataStore(ctrl)
+	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
+		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+			"Deployment":     storage.Access_READ_ACCESS,
+			"Administration": storage.Access_READ_WRITE_ACCESS,
+		}}, true, nil)
+
+	role, err := (&roleManager{}).createSensorMetricsRole(t.Context(), roles, "sensor-cluster")
+	require.NoError(t, err)
+	assert.Equal(t, &tokens.InternalRole{
+		RoleName: centralproxy.SecuredClusterMetricsRole,
+		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
+		Permissions: map[storage.Access][]string{
+			storage.Access_READ_ACCESS:       {"Deployment"},
+			storage.Access_READ_WRITE_ACCESS: {"Administration"},
+		},
+	}, role)
+}
+
+func TestCreateSensorMetricsRoleFailsClosed(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	roles := roleMocks.NewMockDataStore(ctrl)
+	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).Return(nil, false, nil)
+	manager := &roleManager{}
+	_, err := manager.createSensorMetricsRole(t.Context(), roles, "sensor-cluster")
+	require.ErrorIs(t, err, errox.NotFound)
+	_, err = manager.createSensorMetricsRole(t.Context(), roles, "")
+	require.ErrorIs(t, err, errox.NotAuthorized)
+}
