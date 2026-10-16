@@ -32,7 +32,7 @@ import (
 )
 
 const defaultOutput = "scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip"
-const defaultBundleRevision = "2026-10-07T00:00:00Z"
+const defaultBundleRevision = "2026-10-16T00:00:00Z"
 
 var namespaceOID = uuid.FromStringOrPanic("6ba7b812-9dad-11d1-80b4-00c04fd430c8")
 
