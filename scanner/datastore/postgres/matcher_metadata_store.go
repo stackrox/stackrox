@@ -17,6 +17,10 @@ import (
 //
 //go:generate mockgen-wrapper
 type MatcherMetadataStore interface {
+	// GetVulnerabilityBundleSHA256 returns the last committed complete-ZIP digest, or empty when absent.
+	GetVulnerabilityBundleSHA256(ctx context.Context) (string, error)
+	// SetVulnerabilityBundleSHA256 persists the identity of a successfully imported ZIP.
+	SetVulnerabilityBundleSHA256(ctx context.Context, sha256 string) error
 	// GetLastVulnerabilityUpdate returns a timestamp representing the last update timestamp of all vulnerability bundles.
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	// SetLastVulnerabilityUpdate sets the last update timestamp of one vulnerability bundle.
