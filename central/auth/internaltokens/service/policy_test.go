@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -161,6 +162,55 @@ func TestEnforce(t *testing.T) {
 		expectError  bool
 		expectCapped bool
 	}{
+		"console role without scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName: centralproxy.ConsoleProxyRole,
+				Lifetime: durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console role with namespace scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:      centralproxy.ConsoleProxyRole,
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
+				Lifetime:      durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console role with full cluster scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:      centralproxy.ConsoleProxyRole,
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				Lifetime:      durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console role cannot access other cluster": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:      centralproxy.ConsoleProxyRole,
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				Lifetime:      durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"console role cannot carry client permissions": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName:    centralproxy.ConsoleProxyRole,
+				Permissions: map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				Lifetime:    durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"unsupported role": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				RoleName: "Admin",
+				Lifetime: durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"permission validation failure": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"NetworkGraph": v1.Access_READ_ACCESS},

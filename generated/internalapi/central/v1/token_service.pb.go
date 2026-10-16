@@ -98,7 +98,11 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// The requester field allows to set a custom string in the generated token,
 	// identifying who requested it. This can allow finer-grain tracking
 	// of who requested an internal token in the audit log trail.
-	Requester     string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
+	Requester string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
+	// role_name requests a Central-managed Sensor proxy role.
+	// When set, permissions must be empty. The console role may specify
+	// cluster_scopes within the authenticated Sensor's cluster.
+	RoleName      string `protobuf:"bytes,5,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -157,6 +161,13 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetLifetime() *durationpb.D
 func (x *GenerateTokenForPermissionsAndScopeRequest) GetRequester() string {
 	if x != nil {
 		return x.Requester
+	}
+	return ""
+}
+
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetRoleName() string {
+	if x != nil {
+		return x.RoleName
 	}
 	return ""
 }
@@ -278,12 +289,13 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\x81\x03\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\x9e\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
-	"\trequester\x18\x04 \x01(\tR\trequester\x1aR\n" +
+	"\trequester\x18\x04 \x01(\tR\trequester\x12\x1b\n" +
+	"\trole_name\x18\x05 \x01(\tR\broleName\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +

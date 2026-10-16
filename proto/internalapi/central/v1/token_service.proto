@@ -39,6 +39,10 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
+  // role_name requests a Central-managed Sensor proxy role.
+  // When set, permissions must be empty. The console role may specify
+  // cluster_scopes within the authenticated Sensor's cluster.
+  string role_name = 5;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

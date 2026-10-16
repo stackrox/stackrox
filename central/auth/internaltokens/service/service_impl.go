@@ -8,9 +8,11 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/pruning"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -41,10 +43,17 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+	roleReadContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Access),
+		),
+	)
 )
 
 type serviceImpl struct {
 	issuer tokens.Issuer
+	roles  roleDS.DataStore
 
 	roleManager *roleManager
 
@@ -91,7 +100,13 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	tokenRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
+	var tokenRole *tokens.InternalRole
+	switch req.GetRoleName() {
+	case centralproxy.ConsoleProxyRole:
+		tokenRole, err = s.roleManager.createSensorConsoleRole(roleReadContext, s.roles, req.GetRoleName(), req.GetClusterScopes())
+	default:
+		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "building ephemeral role")

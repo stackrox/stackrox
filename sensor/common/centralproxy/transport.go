@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -26,14 +27,13 @@ import (
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	// These tokens carry narrowly scoped permissions and are not directly exposed
-	// to users. The longer cache window trades minimal revocation latency for
-	// significantly lower load on Central in clusters with many proxied requests.
-	tokenCacheTTL = 55 * time.Minute
+	// Console tokens contain administrator-managed permissions, so refresh
+	// them soon after changes to the Central-managed role.
+	tokenCacheTTL = 4 * time.Minute
 
 	// tokenTTL is the requested token lifetime.
 	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
-	tokenTTL = tokenCacheTTL + 5*time.Minute
+	tokenTTL = tokenCacheTTL + time.Minute
 
 	// tokenRequestTimeout is the maximum time allowed for a token request RPC.
 	// This ensures that token requests don't hang indefinitely when all callers have cancelled.
@@ -47,12 +47,6 @@ const (
 	// FullClusterAccessScope is the namespace scope value that indicates full cluster access.
 	FullClusterAccessScope = "*"
 )
-
-// tokenPermissions defines the required read permissions for proxy requests.
-var tokenPermissions = map[string]centralv1.Access{
-	"Deployment": centralv1.Access_READ_ACCESS,
-	"Image":      centralv1.Access_READ_ACCESS,
-}
 
 // errServiceUnavailable indicates the proxy is temporarily unavailable,
 // typically during sensor startup before Central connection is established.
@@ -294,8 +288,8 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		Permissions: tokenPermissions,
-		Lifetime:    durationpb.New(tokenTTL),
+		RoleName: centralproxy.ConsoleProxyRole,
+		Lifetime: durationpb.New(tokenTTL),
 	}
 
 	switch namespaceScope {
