@@ -174,12 +174,10 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
-          [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
-          {{- if ._rox.env.openshift }}
+          {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
           - containerPort: 9444
             name: proxy-https
           {{- end }}
-          [<- end >]
         command:
           - kubernetes-sensor
         resources:
@@ -249,6 +247,10 @@ spec:
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
         {{- end }}
+        {{- if ._rox.monitoring.openshift.centralCustomMetrics.enabled }}
+        - name: ROX_SECURED_CLUSTER_METRICS_ENABLED
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -291,13 +293,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
-        [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
-        {{- if ._rox.env.openshift }}
+        {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
         - name: proxy-tls-volume
           mountPath: /run/secrets/stackrox.io/proxy-tls/
           readOnly: true
         {{- end }}
-        [<- end >]
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
@@ -376,13 +376,11 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
-      [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
-      {{- if ._rox.env.openshift }}
+      {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
       - name: proxy-tls-volume
         secret:
           secretName: sensor-proxy-tls
       {{- end }}
-      [<- end >]
 ---
 apiVersion: v1
 kind: Service
@@ -419,8 +417,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-[<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
-{{- if ._rox.env.openshift }}
+{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -443,7 +440,6 @@ spec:
   type: ClusterIP
 ---
 {{- end }}
-[<- end >]
 
 apiVersion: v1
 kind: Service
