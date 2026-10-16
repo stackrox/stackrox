@@ -624,6 +624,7 @@ shell-unit-tests:
 	@echo "+ $@"
 	$(SILENT)mkdir -p shell-test-output
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
+		scanner/image/db/bats \
 		scripts \
 		tests/e2e/bats
 
