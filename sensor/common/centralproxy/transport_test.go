@@ -57,9 +57,10 @@ func (f *fakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
 // newTestTokenProvider creates a tokenProvider for testing with the given client.
 func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string) *tokenProvider {
 	tp := &tokenProvider{
-		clusterIDGetter: &fakeClusterIDGetter{clusterID: clusterID},
-		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		tokenGroup:      coalescer.New[string](),
+		clusterIDGetter:   &fakeClusterIDGetter{clusterID: clusterID},
+		tokenCache:        expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		metricsTokenCache: expiringcache.NewExpiringCache[string, string](metricsTokenCacheTTL),
+		tokenGroup:        coalescer.New[string](),
 	}
 	if client != nil {
 		tp.client.Store(&client)
@@ -128,6 +129,38 @@ func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 			assert.Equal(t, "Bearer "+tt.expectedToken, capturedAuthHeader)
 		})
 	}
+}
+
+func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
+	var calls atomic.Int32
+	client := &fakeTokenServiceClient{
+		response:  &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "metrics-token"},
+		callCount: &calls,
+	}
+	provider := newTestTokenProvider(client, "sensor-cluster")
+	_, err := provider.getTokenForScope(context.Background(), "")
+	require.NoError(t, err)
+	_, err = provider.getTokenForPermissionSet(context.Background(), centralproxy.MetricsPermissionSetID)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, calls.Load())
+	assert.Equal(t, centralproxy.MetricsPermissionSetID, client.lastRequest.GetPermissionSetId())
+	assert.Empty(t, client.lastRequest.GetPermissions())
+	assert.Empty(t, client.lastRequest.GetClusterScopes())
+
+	transport := &scopedTokenTransport{
+		base: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			assert.Empty(t, req.Header.Get(stackroxNamespaceHeader))
+			assert.Equal(t, "Bearer metrics-token", req.Header.Get("Authorization"))
+			return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+		}),
+		tokenProvider: provider,
+	}
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.Header.Set(stackroxNamespaceHeader, "other-cluster")
+	req = req.WithContext(withMetricsScrape(req.Context()))
+	_, err = transport.RoundTrip(req)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, calls.Load())
 }
 
 func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
