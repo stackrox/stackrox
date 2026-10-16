@@ -97,6 +97,7 @@ jobs:
     - name: Teardown GKE cluster
       if: always()
       continue-on-error: true
+      timeout-minutes: 15
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"

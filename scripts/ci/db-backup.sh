@@ -95,33 +95,6 @@ restore_previous_backup() {
     reconnect_port_forward
 }
 
-trim_images() {
-    load_envrc
-
-    # UpgradesTest.groovy only asserts ImageService.getImages() is
-    # non-empty; it doesn't care which images or how many. The restored
-    # backup carries the full historical image set (100+), which is what
-    # makes the reprocessor -- and its contention with scanner-v4-matcher's
-    # own vulnerability import -- take so long. Keep a small handful and
-    # delete the rest before any of that kicks off.
-    local keep=5
-    local ids
-    ids=$(roxcurl '/v1/images?pagination.limit=1000' | jq -r '.images[].id')
-
-    local to_delete
-    to_delete=$(echo "$ids" | tail -n "+$((keep + 1))")
-    if [[ -z "$to_delete" ]]; then
-        return 0
-    fi
-
-    echo "$to_delete" | xargs -n 20 | while read -r batch; do
-        local query="Image Sha:${batch// /,}"
-        local encoded
-        encoded=$(jq -rn --arg q "$query" '$q|@uri')
-        roxcurl "/v1/images?query.query=${encoded}&confirm=true" -X DELETE > /dev/null
-    done
-}
-
 add_dockerhub_integration() {
     require_environment "DOCKERHUB_USERNAME"
     require_environment "DOCKERHUB_PASSWORD"
@@ -198,8 +171,9 @@ wait_for_matcher_import() {
     # full, slow bundle reload, so give this a generous timeout.
     echo "Waiting for scanner-v4-matcher's initial vulnerability bundle import to complete..."
     local deadline=$((SECONDS + 3600))
-    until kubectl -n "$NAMESPACE" logs deploy/scanner-v4-matcher -c matcher --tail=-1 2>/dev/null \
-            | grep -q '"message":"completed update"'; do
+    until kubectl -n "$NAMESPACE" logs deploy/scanner-v4-matcher -c matcher 2> /dev/null \
+            | jq -R '(try fromjson catch null) | select(.msg == "completed update")' \
+            | grep -q .; do
         if (( SECONDS > deadline )); then
             kubectl -n "$NAMESPACE" logs deploy/scanner-v4-matcher -c matcher --tail=100 >&2
             die "scanner-v4-matcher did not finish its initial vulnerability import within 60m"
@@ -319,7 +293,6 @@ grab_central_backup() {
 run_all() {
     deploy_previous_central
     restore_previous_backup
-    trim_images
     add_dockerhub_integration
     upgrade_operator
     wait_for_image_reprocessing
