@@ -16,7 +16,6 @@ import (
 // Think before adding new values to this list.
 var knownMutations = set.NewFrozenStringSet(
 	"approveVulnerabilityRequest",
-	"complianceTriggerRuns",
 	"deferVulnerability",
 	"deleteVulnerabilityRequest",
 	"denyVulnerabilityRequest",
