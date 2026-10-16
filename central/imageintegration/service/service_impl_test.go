@@ -513,6 +513,44 @@ func TestScannerV4Restrictions(t *testing.T) {
 		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: iiNew})
 		assert.ErrorContains(t, err, "scanner V4")
 	})
+
+	t.Run("prevent category change on scannerv4", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		iiDS := integrationMocks.NewMockDataStore(ctrl)
+		s := &serviceImpl{datastore: iiDS}
+
+		iiNew := ii.CloneVT()
+		iiNew.Categories = append(iiNew.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
+
+		iiDS.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return([]*storage.ImageIntegration{ii}, nil)
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
+
+		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: iiNew})
+		assert.ErrorIs(t, err, errox.InvalidArgs)
+		assert.ErrorContains(t, err, "categories of scanner V4")
+	})
+}
+
+func TestSameCategories(t *testing.T) {
+	scanner := storage.ImageIntegrationCategory_SCANNER
+	nodeScanner := storage.ImageIntegrationCategory_NODE_SCANNER
+
+	cases := map[string]struct {
+		a, b     []storage.ImageIntegrationCategory
+		expected bool
+	}{
+		"both empty":       {expected: true},
+		"same order":       {a: []storage.ImageIntegrationCategory{scanner, nodeScanner}, b: []storage.ImageIntegrationCategory{scanner, nodeScanner}, expected: true},
+		"different order":  {a: []storage.ImageIntegrationCategory{nodeScanner, scanner}, b: []storage.ImageIntegrationCategory{scanner, nodeScanner}, expected: true},
+		"category added":   {a: []storage.ImageIntegrationCategory{scanner}, b: []storage.ImageIntegrationCategory{scanner, nodeScanner}, expected: false},
+		"category removed": {a: []storage.ImageIntegrationCategory{scanner, nodeScanner}, b: []storage.ImageIntegrationCategory{scanner}, expected: false},
+		"category swapped": {a: []storage.ImageIntegrationCategory{scanner}, b: []storage.ImageIntegrationCategory{nodeScanner}, expected: false},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expected, sameCategories(c.a, c.b))
+		})
+	}
 }
 
 func TestIAMRoleCapabilityValidation(t *testing.T) {
