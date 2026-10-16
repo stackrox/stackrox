@@ -2,26 +2,31 @@ package clairv4
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 const (
@@ -31,6 +36,7 @@ const (
 	indexReportPath         = "/indexer/api/v1/index_report"
 	indexPath               = "/indexer/api/v1/index_report"
 	vulnerabilityReportPath = "/matcher/api/v1/vulnerability_report"
+	updateOperationPath     = "/matcher/api/v1/internal/update_operation"
 
 	httpRequestRetryCount = 3
 )
@@ -49,7 +55,11 @@ func Creator(set registries.Set) (string, func(integration *storage.ImageIntegra
 	}
 }
 
-var _ types.Scanner = (*clairv4)(nil)
+var (
+	_ types.Scanner                  = (*clairv4)(nil)
+	_ types.ImageVulnerabilityGetter = (*clairv4)(nil)
+	_ types.SBOMer                   = (*clairv4)(nil)
+)
 
 type clairv4 struct {
 	types.ScanSemaphore
@@ -62,6 +72,7 @@ type clairv4 struct {
 	indexReportEndpoint         string
 	indexEndpoint               string
 	vulnerabilityReportEndpoint string
+	updateOperationEndpoint     string
 }
 
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*clairv4, error) {
@@ -97,6 +108,7 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		indexReportEndpoint:         endpoint + indexReportPath,
 		indexEndpoint:               endpoint + indexPath,
 		vulnerabilityReportEndpoint: endpoint + vulnerabilityReportPath,
+		updateOperationEndpoint:     endpoint + updateOperationPath,
 
 		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
@@ -164,7 +176,12 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.Wrapf(err, "Clair v4: getting vulnerability report for %s", imgName)
 	}
 
-	return imageScan(report), nil
+	ctx := context.Background()
+	scan, err := imageScan(ctx, image.GetMetadata(), report)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Clair v4: converting vulnerability report for %s", imgName)
+	}
+	return scan, nil
 }
 
 func (c *clairv4) indexReportExists(digest string) (bool, error) {
@@ -312,5 +329,153 @@ func (c *clairv4) Name() string {
 }
 
 func (c *clairv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return nil, nil
+	ops, err := c.getLatestUpdateOperations()
+	if err != nil {
+		return nil, errors.Wrap(err, "Clair v4: getting latest update operations")
+	}
+
+	var latest time.Time
+	for _, updaterOps := range ops {
+		for i := range updaterOps {
+			if updaterOps[i].Date.After(latest) {
+				latest = updaterOps[i].Date
+			}
+		}
+	}
+
+	if latest.IsZero() {
+		return nil, nil
+	}
+
+	ts, err := protocompat.ConvertTimeToTimestampOrError(latest)
+	if err != nil {
+		return nil, errors.Wrap(err, "Clair v4: converting update timestamp")
+	}
+
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: ts,
+	}, nil
+}
+
+func (c *clairv4) getLatestUpdateOperations() (map[string][]driver.UpdateOperation, error) {
+	req, err := http.NewRequest(http.MethodGet, c.updateOperationEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var ops map[string][]driver.UpdateOperation
+	err = retry.WithRetry(func() error {
+		resp, err := c.client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer utils.IgnoreError(resp.Body.Close)
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+		case http.StatusInternalServerError:
+			return retry.MakeRetryable(errInternal)
+		default:
+			return newUnexpectedStatusCodeError(resp.StatusCode)
+		}
+
+		ops = make(map[string][]driver.UpdateOperation)
+		if err := json.NewDecoder(resp.Body).Decode(&ops); err != nil {
+			return err
+		}
+
+		return nil
+	}, retry.Tries(httpRequestRetryCount), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+
+	return ops, err
+}
+
+func (c *clairv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerV1.Note) (*storage.ImageScan, error) {
+	if components != nil && (components.ScannerV4() != nil || components.Clairify() != nil) {
+		return nil, errors.New("Clair v4: inline contents matching is not supported")
+	}
+
+	imgName := image.GetName().GetFullName()
+
+	ccDigest, err := claircore.ParseDigest(imageutils.GetSHA(image))
+	if err != nil {
+		return nil, errors.Wrapf(err, "Clair v4: parsing image digest for %s", imgName)
+	}
+
+	report, err := c.getVulnerabilityReport(ccDigest.String())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Clair v4: getting vulnerability report for %s", imgName)
+	}
+
+	ctx := context.Background()
+	scan, err := imageScan(ctx, image.GetMetadata(), report)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Clair v4: converting vulnerability report for %s", imgName)
+	}
+	return scan, nil
+}
+
+func (c *clairv4) getIndexReport(digest string) (*claircore.IndexReport, error) {
+	path, err := url.JoinPath(c.indexReportEndpoint, digest)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var ir *claircore.IndexReport
+	err = retry.WithRetry(func() error {
+		resp, err := c.client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer utils.IgnoreError(resp.Body.Close)
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+		case http.StatusInternalServerError:
+			return retry.MakeRetryable(errInternal)
+		default:
+			return newUnexpectedStatusCodeError(resp.StatusCode)
+		}
+
+		ir = &claircore.IndexReport{}
+		if err := json.NewDecoder(resp.Body).Decode(ir); err != nil {
+			return err
+		}
+
+		return nil
+	}, retry.Tries(httpRequestRetryCount), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
+
+	return ir, err
+}
+
+func (c *clairv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
+	ccDigest, err := claircore.ParseDigest(imageutils.GetSHA(image))
+	if err != nil {
+		return nil, false, errors.Wrap(err, "Clair v4: parsing image digest")
+	}
+
+	ir, err := c.getIndexReport(ccDigest.String())
+	if err != nil {
+		if isUnexpectedStatusCodeError(err) {
+			return nil, false, nil
+		}
+		return nil, false, errors.Wrap(err, "Clair v4: getting index report")
+	}
+	if ir == nil || !ir.Success {
+		return nil, false, nil
+	}
+
+	sbomBytes, err := encodeSPDX(ir, image)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "Clair v4: encoding SPDX")
+	}
+	return sbomBytes, true, nil
+}
+
+func (c *clairv4) ScanSBOM(_ context.Context, _ io.Reader, _ string) (*v1.SBOMScanResponse, error) {
+	return nil, errors.New("Clair V4 does not support SBOM scanning")
 }
