@@ -1,0 +1,46 @@
+name: CI selector tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  push:
+    branches: [master, 'release-*']
+
+permissions:
+  contents: read
+
+jobs:
+  selector-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Build CI selector
+        continue-on-error: true
+        uses: ./.github/actions/ci-select
+
+      - name: Read the CI decision
+        id: ci-decision
+        if: github.event_name == 'pull_request'
+        env:
+          CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+          CI_REPO: ${{ github.repository }}
+          CI_PR: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ci/select/gha-gate.sh selector-tests
+
+      - name: Test CI selector
+        if: steps.ci-decision.outputs.action != 'skip'
+        run: go test -race ./ci/select
+
+      - name: Validate CI rules
+        if: steps.ci-decision.outputs.action != 'skip'
+        run: ci/select/bin/ci-select validate

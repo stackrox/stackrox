@@ -7,6 +7,7 @@ version = 1
 
 jobs = [
   "style-check",
+  "selector-tests",
   "go",
   "go-postgres",
   "sensor-integration-tests",
@@ -149,6 +150,21 @@ skip = [
   "go-postgres",
   "sensor-integration-tests",
 ]
+
+[[rules]]
+name = "selector-tests"
+when = "any-file-matches"
+paths = [
+  '^ci/select/',
+  '^ci/test-domains\.toml$',
+  '^ci/decision-defaults$',
+]
+run = ["selector-tests"]
+
+[[rules]]
+name = "skip-selector-tests"
+when = "always"
+skip = ["selector-tests"]
 
 # Tier 5: Always-Run Tests
 [[rules]]

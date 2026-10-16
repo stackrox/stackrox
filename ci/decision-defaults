@@ -5,6 +5,7 @@
 # opt-in label. A change that is only under ui/ is a separate filter.
 
 style-check run
+selector-tests run
 go run
 go-postgres run
 sensor-integration-tests run

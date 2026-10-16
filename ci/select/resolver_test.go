@@ -151,6 +151,49 @@ func TestCurrentRules(t *testing.T) {
 	}
 }
 
+func TestSelectorTestsGate(t *testing.T) {
+	for name, test := range map[string]struct {
+		files   []string
+		labels  []string
+		unknown bool
+		enforce bool
+		want    string
+	}{
+		"selector":             {files: []string{"ci/select/resolver.go"}, enforce: true, want: "run"},
+		"selector tests":       {files: []string{"ci/select/resolver_test.go"}, enforce: true, want: "run"},
+		"test fixtures":        {files: []string{"ci/select/testdata/edge_cases.json"}, enforce: true, want: "run"},
+		"rules":                {files: []string{"ci/test-domains.toml"}, enforce: true, want: "run"},
+		"defaults":             {files: []string{"ci/decision-defaults"}, enforce: true, want: "run"},
+		"Prow dispatcher":      {files: []string{".openshift-ci/dispatch.sh"}, enforce: true, want: "skip"},
+		"build action":         {files: []string{".github/actions/ci-select/action.yaml"}, enforce: true, want: "skip"},
+		"test workflow":        {files: []string{".github/workflows/ci-select-tests.yaml"}, enforce: true, want: "skip"},
+		"GHA dispatcher":       {files: []string{".github/workflows/e2e-dispatch.yaml"}, enforce: true, want: "skip"},
+		"decision workflow":    {files: []string{".github/workflows/ci-decision.yaml"}, enforce: true, want: "skip"},
+		"CRD workflow":         {files: []string{".github/workflows/check-crd-compatibility.yaml"}, enforce: true, want: "skip"},
+		"scanner workflow":     {files: []string{".github/workflows/scanner-db-integration-tests.yaml"}, enforce: true, want: "skip"},
+		"style workflow":       {files: []string{".github/workflows/style.yaml"}, enforce: true, want: "skip"},
+		"unit workflow":        {files: []string{".github/workflows/unit-tests.yaml"}, enforce: true, want: "skip"},
+		"dependencies":         {files: []string{"go.mod"}, enforce: true, want: "run"},
+		"dependency checksums": {files: []string{"go.sum"}, enforce: true, want: "run"},
+		"mixed changes":        {files: []string{"ci/select/gha.go", "sensor/common/example.go"}, enforce: true, want: "run"},
+		"product":              {files: []string{"sensor/common/example.go"}, enforce: true, want: "skip"},
+		"unmatched":            {files: []string{"notes/todo.txt"}, enforce: true, want: "skip"},
+		"UI":                   {files: []string{"ui/example.tsx"}, enforce: true, want: "skip"},
+		"docs":                 {files: []string{"README.md"}, enforce: true, want: "skip"},
+		"no changes":           {enforce: true, want: "skip"},
+		"run all":              {files: []string{"README.md"}, labels: []string{"ci-run-all-tests"}, enforce: true, want: "run"},
+		"shadow":               {files: []string{"README.md"}, want: "run"},
+		"unknown diff":         {unknown: true, enforce: true, want: "run"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+				test.files, test.labels, test.unknown, metadata{})
+			require.NoError(t, err)
+			assert.Equal(t, test.want, gateAction("selector-tests", resolved.jobs, d, test.enforce, false))
+		})
+	}
+}
+
 func TestMissingRulesUseDefaults(t *testing.T) {
 	resolved, _, err := openDecision("testdata/missing.toml", "testdata/defaults", nil, nil, false, metadata{})
 	require.NoError(t, err)
@@ -206,9 +249,11 @@ func TestResolverUnmatchedFileUsesDefaults(t *testing.T) {
 	require.NoError(t, err)
 	expected, err := parseDecision(d.decision())
 	require.NoError(t, err)
+	delete(expected, "selector-tests")
 	resolved, err := resolve([]string{"notes/todo.txt"}, nil, m, d, metadata{})
 	require.NoError(t, err)
 	assert.Equal(t, expected, resolved.jobs)
+	assert.Contains(t, resolved.log, `rule "skip-selector-tests" skips target "selector-tests"`)
 }
 
 func TestResolverCheckRequiresJob(t *testing.T) {
