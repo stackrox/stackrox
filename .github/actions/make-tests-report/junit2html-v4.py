@@ -364,7 +364,7 @@ def pass2_render_file(out, file, suites, suite_counter):
                 suite = suites[suite_idx]
                 suite_idx += 1
                 ensure(suite.name == elem.get('name', ''), 'error: could not match the suite')
-                write_suite_start(out, suite, suite_counter.value)
+                write_suite_start(out, suite, file, suite_counter.value)
                 suite_counter.inc()
             pass
         else:  # event == 'end'
@@ -375,7 +375,7 @@ def pass2_render_file(out, file, suites, suite_counter):
     ensure(suite_idx == len(suites), 'error: not all suites were iterated')
 
 
-def write_suite_start(out, suite, suite_counter):
+def write_suite_start(out, suite, file, suite_counter):
     out.write(f"""
         <section id="s{suite_counter}" class="suite">
             <h2 class="sh">{esc(suite.name)}<a class="anchor" href="#s{suite_counter}">#</a></h2>
@@ -386,6 +386,32 @@ def write_suite_start(out, suite, suite_counter):
                 <small class="text-muted">{esc(suite.time) + 's' if suite.time else ''}</small>
             </div>
     """)
+
+    meta = sorted(suite.props + [('xml', file)])
+    out.write("""
+            <details class="io mb-2"><summary>Meta</summary>
+                <table class="table table-sm table-borderless w-auto kv"><tbody>
+    """)
+    for k, v in meta:
+        out.write(f'<tr><td>{esc(k)}</td><td>{esc(v)}</td></tr>')
+    out.write("""
+                </tbody></table>
+            </details>
+    """)
+
+    if suite.sysout:
+        out.write(f"""
+            <details class="io mb-2"><summary>system-out</summary>
+                <pre>{esc(suite.sysout)}</pre>
+            </details>
+        """)
+
+    if suite.syserr:
+        out.write(f"""
+            <details class="io mb-2"><summary>system-err</summary>
+                <pre>{esc(suite.syserr)}</pre>
+            </details>
+        """)
 
 
 def write_suite_end(out):
