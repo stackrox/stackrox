@@ -11,4 +11,8 @@ var (
 
 	// CentralProxyPort is the port on which the proxy server listens.
 	CentralProxyPort = RegisterSetting("ROX_CENTRAL_PROXY_PORT", WithDefault(":9444"))
+
+	// SecuredClusterMetricsEnabled opts this Sensor into proxying Central custom
+	// metrics for the OpenShift Prometheus service account.
+	SecuredClusterMetricsEnabled = RegisterBooleanSetting("ROX_SECURED_CLUSTER_METRICS_ENABLED", false)
 )
