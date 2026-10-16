@@ -81,7 +81,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
-	github.com/klauspost/compress v1.20.1
+	github.com/klauspost/compress v1.20.3
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.2
@@ -110,7 +110,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
-	github.com/prometheus/common v0.72.0
+	github.com/prometheus/common v0.72.1
 	github.com/quay/claircore v1.6.1-0.20260916195820-3902930ff815
 	github.com/quay/claircore/toolkit v1.7.0
 	github.com/quay/zlog/v2 v2.1.1
@@ -177,7 +177,7 @@ require (
 	k8s.io/kubectl v0.37.1
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
-	kubevirt.io/api v1.9.0
+	kubevirt.io/api v1.9.1
 	kubevirt.io/client-go v1.10.0-beta.0
 	sigs.k8s.io/controller-runtime v0.25.2
 	sigs.k8s.io/controller-tools v0.22.0
