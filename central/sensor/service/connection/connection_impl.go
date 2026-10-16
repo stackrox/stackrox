@@ -652,6 +652,18 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		if err != nil {
 			return nil, err
 		}
+		// When the feature is disabled, omit node roles so Sensor falls back to the
+		// hardcoded master+worker default, matching pre-feature behavior.
+		var nodeRoles []string
+		if features.ComplianceCustomNodeRoles.Enabled() {
+			// Look up this cluster's node roles from the storage clusters
+			for _, cluster := range scanConfig.GetClusters() {
+				if cluster.GetClusterId() == c.clusterID {
+					nodeRoles = cluster.GetNodeRoles()
+					break
+				}
+			}
+		}
 		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
 			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
 				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
@@ -662,6 +674,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
 						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
 						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
+						NodeRoles:              nodeRoles,
 					},
 					Cron: cron,
 				},
