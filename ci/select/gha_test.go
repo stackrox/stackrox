@@ -31,27 +31,30 @@ func TestGHAOutputs(t *testing.T) {
 }
 
 func TestDispatchPlan(t *testing.T) {
-	d := defaults{actions: map[string]string{"e2e-nongroovy-tests": "run", "wait-for-images": "run"}}
+	d := defaults{actions: map[string]string{"e2e-nongroovy-tests-gke": "run", "wait-for-images": "run"}}
 	for name, test := range map[string]struct {
-		input                                  dispatchInput
-		resolved                               *result
-		nongroovy, byodb, waitGHA, waitKonflux bool
+		input                                                    dispatchInput
+		resolved                                                 *result
+		nongroovy, nongroovyKonflux, byodb, waitGHA, waitKonflux bool
 	}{
-		"push":           {input: dispatchInput{}, nongroovy: true, byodb: true, waitGHA: true, waitKonflux: true},
-		"ready PR":       {input: dispatchInput{pullRequest: true}, nongroovy: true, waitGHA: true},
-		"draft":          {input: dispatchInput{pullRequest: true, draft: true}},
-		"UI":             {input: dispatchInput{pullRequest: true, uiOnly: true}, waitGHA: true},
-		"explicit label": {input: dispatchInput{pullRequest: true, draft: true, labels: []string{"e2e-byodb-tests"}}, byodb: true, waitGHA: true},
-		"Konflux":        {input: dispatchInput{pullRequest: true, labels: []string{"konflux-build"}}, nongroovy: true, waitGHA: true, waitKonflux: true},
-		"enforce skip":   {input: dispatchInput{pullRequest: true, enforce: true}, resolved: &result{jobs: map[string]bool{}}},
-		"shadow":         {input: dispatchInput{pullRequest: true}, resolved: &result{jobs: map[string]bool{}}, nongroovy: true, waitGHA: true},
-		"fork":           {input: dispatchInput{pullRequest: true, fork: true, enforce: true}, resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests": true, "wait-for-images": true}}},
+		"push":                       {input: dispatchInput{}, nongroovy: true, nongroovyKonflux: true, byodb: true, waitGHA: true, waitKonflux: true},
+		"ready PR":                   {input: dispatchInput{pullRequest: true}, nongroovy: true, waitGHA: true},
+		"draft":                      {input: dispatchInput{pullRequest: true, draft: true}},
+		"UI":                         {input: dispatchInput{pullRequest: true, uiOnly: true}, waitGHA: true},
+		"explicit label":             {input: dispatchInput{pullRequest: true, draft: true, labels: []string{"e2e-byodb-tests"}}, byodb: true, waitGHA: true},
+		"Konflux":                    {input: dispatchInput{pullRequest: true, labels: []string{"konflux-build"}}, nongroovy: true, nongroovyKonflux: true, waitGHA: true, waitKonflux: true},
+		"explicit nongroovy Konflux": {input: dispatchInput{pullRequest: true, draft: true, labels: []string{"e2e-nongroovy-tests-gke-konflux"}}, nongroovyKonflux: true, waitGHA: true},
+		"enforce skip":               {input: dispatchInput{pullRequest: true, enforce: true}, resolved: &result{jobs: map[string]bool{}}},
+		"shadow":                     {input: dispatchInput{pullRequest: true}, resolved: &result{jobs: map[string]bool{}}, nongroovy: true, waitGHA: true},
+		"fork":                       {input: dispatchInput{pullRequest: true, fork: true, enforce: true}, resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests-gke": true, "wait-for-images": true}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			plan := dispatchPlan(test.input, test.resolved, d)
 			jobs := map[string]bool{}
 			require.NoError(t, json.Unmarshal([]byte(plan["jobs"]), &jobs))
-			assert.Equal(t, test.nongroovy, jobs["e2e-nongroovy-tests"])
+			assert.Equal(t, test.nongroovy, jobs["e2e-nongroovy-tests-gke"])
+			assert.Equal(t, test.nongroovyKonflux, jobs["e2e-nongroovy-tests-gke-konflux"])
+			assert.NotContains(t, jobs, "e2e-nongroovy-tests")
 			assert.Equal(t, test.byodb, jobs["e2e-byodb-tests"])
 			assert.Equal(t, fmt.Sprint(test.waitGHA), plan["wait-for-gha-images"])
 			assert.Equal(t, fmt.Sprint(test.waitKonflux), plan["wait-for-konflux-images"])
@@ -102,7 +105,7 @@ func TestGHADispatchCI(t *testing.T) {
 	t.Setenv("GITHUB_API_URL", server.URL)
 	var output bytes.Buffer
 	require.NoError(t, ghaDispatchCI(t.Context(), &output, &bytes.Buffer{}))
-	assert.Contains(t, output.String(), `"e2e-nongroovy-tests":false`)
+	assert.Contains(t, output.String(), `"e2e-nongroovy-tests-gke":false`)
 	assert.Contains(t, output.String(), "wait-for-gha-images=false")
 }
 
@@ -149,7 +152,7 @@ func TestGHADispatchCILabelFailure(t *testing.T) {
 			require.NoError(t, ghaDispatchCI(t.Context(), &output, &diagnostic))
 			assert.Contains(t, diagnostic.String(), "using event labels and existing dispatch rules with enforcement disabled")
 			assert.NotContains(t, diagnostic.String(), "CI decision unreadable")
-			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-nongroovy-tests":%t`, test.nongroovy))
+			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-nongroovy-tests-gke":%t`, test.nongroovy))
 			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-byodb-tests":%t`, test.byodb))
 			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-qa-tests-gke-konflux":%t`, test.konflux))
 			assert.Contains(t, output.String(), fmt.Sprintf("wait-for-gha-images=%t", test.waitGHA))

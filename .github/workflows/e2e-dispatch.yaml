@@ -43,6 +43,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
 
     # TODO(ROX-37371): Decide binary distribution and recovery when the selector
     # cannot compile or run. A prebuilt binary removes compilation failures,

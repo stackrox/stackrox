@@ -187,6 +187,8 @@ These integration costs still need validation in real CI:
 - The rules and job inventory are samples, not a reviewed production map.
   In particular, the sample OCP target name and the dispatched Konflux target
   name differ; an unenrolled target follows existing dispatch rules.
+  The nongroovy GHA target is `e2e-nongroovy-tests-gke`; its separate
+  `e2e-nongroovy-tests-gke-konflux` job is not enrolled in the sample rules.
 - `image-wait` still requests image waiting on every PR. A language port
   does not make those waits cheaper or change required-check behavior.
 

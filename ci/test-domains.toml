@@ -15,7 +15,7 @@ jobs = [
   "e2e-byodb-tests",
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
-  "e2e-nongroovy-tests",
+  "e2e-nongroovy-tests-gke",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
   "e2e-qa-tests-ocp-4-22",
@@ -111,7 +111,7 @@ skip = [
   "e2e-byodb-tests",
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
-  "e2e-nongroovy-tests",
+  "e2e-nongroovy-tests-gke",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
   "e2e-qa-tests-ocp-4-22",
@@ -137,7 +137,7 @@ skip = [
   "e2e-byodb-tests",
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
-  "e2e-nongroovy-tests",
+  "e2e-nongroovy-tests-gke",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
   "e2e-qa-tests-ocp-4-22",
@@ -223,7 +223,7 @@ skip = [
   "e2e-byodb-tests",
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
-  "e2e-nongroovy-tests",
+  "e2e-nongroovy-tests-gke",
   "gke-nongroovy-e2e-tests",
   "gke-qa-e2e-tests",
   "e2e-qa-tests-gke",
@@ -246,14 +246,14 @@ name = "operator-only"
 when = "every-file-matches"
 paths = ['^operator/', '\.crd\.yaml$', '^config-controller/']
 run = ["check-crd-compatibility", "go"]
-skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "e2e-nongroovy-tests", "gke-nongroovy-e2e-tests"]
+skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "e2e-nongroovy-tests-gke", "gke-nongroovy-e2e-tests"]
 
 # roxctl-Only
 [[rules]]
 name = "roxctl-only"
 when = "every-file-matches"
 paths = ['^roxctl/']
-run = ["local-roxctl-tests", "go", "e2e-nongroovy-tests"]
+run = ["local-roxctl-tests", "go", "e2e-nongroovy-tests-gke"]
 skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "gke-ui-e2e-tests", "e2e-byodb-tests", "e2e-db-backup-restore-tests", "e2e-gke-upgrade-tests"]
 
 # Tier 9: Central/Sensor Separation (Aggressive)
@@ -340,7 +340,7 @@ skip = ["e2e-db-backup-restore-tests"]
 name = "skip-e2e-nongroovy"
 when = "every-file-matches"
 paths = ['^ui/', '^docs/', '\.md$', '^operator/']
-skip = ["e2e-nongroovy-tests", "gke-nongroovy-e2e-tests"]
+skip = ["e2e-nongroovy-tests-gke", "gke-nongroovy-e2e-tests"]
 
 [[rules]]
 name = "skip-e2e-upgrade-all"
@@ -365,7 +365,7 @@ wait-for-images = ["should-dispatch"]
 e2e-byodb-tests = ["wait-for-images"]
 e2e-db-backup-restore-tests = ["wait-for-images"]
 e2e-gke-upgrade-tests = ["wait-for-images"]
-e2e-nongroovy-tests = ["wait-for-images"]
+e2e-nongroovy-tests-gke = ["wait-for-images"]
 e2e-qa-tests-gke = ["wait-for-images"]
 e2e-qa-tests-ocp-4-22 = ["wait-for-images"]
 e2e-qa-tests-gke-konflux = ["wait-for-images"]
