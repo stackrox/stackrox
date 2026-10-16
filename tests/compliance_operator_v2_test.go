@@ -1197,6 +1197,28 @@ const nodeRoleLabelPrefix = "node-role.kubernetes.io/"
 // so TestComplianceV2AutodiscoverNodeRoles also checks Sensor's logs for this warning to tell them apart.
 var mcpListFailureLog = regexp.MustCompile(`Could not auto-discover node roles, falling back to`)
 
+// assertNodeRoleLabelPrefixMatchesRealNodes cross-checks nodeRoleLabelPrefix against real Node labels.
+//
+// Compliance Operator doesn't invent this prefix, and doesn't apply it to Nodes either: it's a
+// pre-existing Kubernetes/OpenShift node-role convention, applied to Nodes by the installer (master,
+// worker) or by a cluster admin adding a custom pool (e.g. "infra"), that both a MachineConfigPool's
+// spec.nodeSelector.matchLabels and Compliance Operator's own node-targeting key off (see
+// compliancescan_controller.go's getNodesForScan, which lists Nodes by exactly this label to run a scan).
+// Sensor's auto-discovery (and this test's independent re-derivation above) both read the label key off
+// the MachineConfigPool, never off a Node directly, so a mismatched prefix in either copy would never
+// show up there: both would simply agree with each other, on the wrong string. Listing real Nodes by the
+// label is the only way to prove nodeRoleLabelPrefix is still the convention this cluster actually uses.
+func assertNodeRoleLabelPrefixMatchesRealNodes(ctx context.Context, t *testing.T, k8s kubernetes.Interface, roles []string) {
+	for _, role := range roles {
+		label := nodeRoleLabelPrefix + role
+		nodes, err := k8s.CoreV1().Nodes().List(ctx, metav1.ListOptions{LabelSelector: label})
+		require.NoErrorf(t, err, "failed to list Nodes labelled %q", label)
+		assert.NotEmptyf(t, nodes.Items, "expected at least one Node labelled %q for role %q; if this "+
+			"fails, nodeRoleLabelPrefix (here and in sensor/kubernetes/complianceoperator) is no longer "+
+			"the node-role label convention this cluster actually uses", label, role)
+	}
+}
+
 // deriveNodeRolesFromMachineConfigPools lists the cluster's MachineConfigPools and derives the set of
 // node roles the same way Sensor's auto-discovery does: one role per pool, taken from the node-role
 // label in spec.nodeSelector.matchLabels (sorted when a pool matches more than one, to mirror Sensor's
@@ -1269,6 +1291,7 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 
 	expectedRoles := deriveNodeRolesFromMachineConfigPools(ctx, t)
 	t.Logf("node roles derived from MachineConfigPools: %v", expectedRoles)
+	assertNodeRoleLabelPrefixMatchesRealNodes(ctx, t, createK8sClient(t), expectedRoles)
 
 	// On a standard cluster (master+worker only) the discovered roles coincide with Sensor's legacy
 	// master+worker fallback, so the roles assertion below can't by itself tell "discovery ran" apart
