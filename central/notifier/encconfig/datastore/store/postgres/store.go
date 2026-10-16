@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NotifierEncConfigsSchema
+	schema         = pkgSchema.NotifierEncConfigsSchema()
 	targetResource = resources.InstallationInfo
 )
 

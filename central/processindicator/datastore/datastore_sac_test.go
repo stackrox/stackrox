@@ -43,7 +43,7 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
 	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
-	s.optionsMap = schema.ProcessIndicatorsSchema.OptionsMap
+	s.optionsMap = schema.ProcessIndicatorsSchema().OptionsMap
 
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.DeploymentExtension)

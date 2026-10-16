@@ -41,7 +41,7 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	suite.pool = pgtestbase.DB
 	suite.datastore = GetTestPostgresDataStore(suite.T(), suite.pool)
 
-	suite.optionsMap = schema.RisksSchema.OptionsMap
+	suite.optionsMap = schema.RisksSchema().OptionsMap
 
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

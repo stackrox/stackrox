@@ -11,8 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { CloudSourcesSchema() })
+}
 
 var (
 	// CreateTableCloudSourcesStmt holds the create statement for table `cloud_sources`.
@@ -22,7 +27,7 @@ var (
 	}
 
 	// CloudSourcesSchema is the go schema for table `cloud_sources`.
-	CloudSourcesSchema = func() *walker.Schema {
+	CloudSourcesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cloud_sources")
 		if schema != nil {
 			return schema
@@ -33,7 +38,7 @@ var (
 		RegisterTable(schema, CreateTableCloudSourcesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLOUD_SOURCES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

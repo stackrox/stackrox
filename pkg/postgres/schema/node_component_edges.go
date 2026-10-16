@@ -12,8 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NodeComponentEdgesSchema() })
+}
 
 var (
 	// CreateTableNodeComponentEdgesStmt holds the create statement for table `node_component_edges`.
@@ -27,15 +32,15 @@ var (
 	}
 
 	// NodeComponentEdgesSchema is the go schema for table `node_component_edges`.
-	NodeComponentEdgesSchema = func() *walker.Schema {
+	NodeComponentEdgesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_component_edges")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentEdge)(nil)), "node_component_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Node":          NodesSchema,
-			"storage.NodeComponent": NodeComponentsSchema,
+			"storage.Node":          NodesSchema(),
+			"storage.NodeComponent": NodeComponentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -54,7 +59,7 @@ var (
 		RegisterTable(schema, CreateTableNodeComponentEdgesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENT_EDGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

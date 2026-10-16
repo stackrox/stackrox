@@ -611,17 +611,17 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 		storage.ComplianceAggregation_CLUSTER: {
 			searchFunc: a.clusters.Search,
 			countFunc:  a.clusters.Count,
-			optionsMap: schema.ClustersSchema.OptionsMap,
+			optionsMap: schema.ClustersSchema().OptionsMap,
 		},
 		storage.ComplianceAggregation_NODE: {
 			searchFunc: a.nodes.Search,
 			countFunc:  a.nodes.Count,
-			optionsMap: schema.NodesSchema.OptionsMap,
+			optionsMap: schema.NodesSchema().OptionsMap,
 		},
 		storage.ComplianceAggregation_NAMESPACE: {
 			searchFunc: a.namespaces.Search,
 			countFunc:  a.namespaces.Count,
-			optionsMap: schema.NamespacesSchema.OptionsMap,
+			optionsMap: schema.NamespacesSchema().OptionsMap,
 		},
 		storage.ComplianceAggregation_CONTROL: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchControls),

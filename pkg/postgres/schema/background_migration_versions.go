@@ -3,7 +3,12 @@ package schema
 import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 )
+
+func init() {
+	registerLazySchema(func() { BackgroundMigrationVersionsSchema() })
+}
 
 var (
 	// CreateTableBackgroundMigrationVersionsStmt holds the create statement for table `background_migration_versions`.
@@ -16,7 +21,7 @@ var (
 	}
 
 	// BackgroundMigrationVersionsSchema is the go schema for table `background_migration_versions`.
-	BackgroundMigrationVersionsSchema = func() *walker.Schema {
+	BackgroundMigrationVersionsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("background_migration_versions")
 		if schema != nil {
 			return schema
@@ -27,7 +32,7 @@ var (
 		}
 		RegisterTable(schema, CreateTableBackgroundMigrationVersionsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

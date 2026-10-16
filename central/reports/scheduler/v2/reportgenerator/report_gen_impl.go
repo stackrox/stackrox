@@ -739,7 +739,7 @@ func (rg *reportGeneratorImpl) logAndUpsertError(ctx context.Context, reportErr 
 }
 
 func selectSchema() *walker.Schema {
-	return pkgSchema.ImageCvesV2Schema
+	return pkgSchema.ImageCvesV2Schema()
 }
 
 func getSelectsWatchedImages() []*v1.QuerySelect {
