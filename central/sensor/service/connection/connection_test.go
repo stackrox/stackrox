@@ -83,6 +83,18 @@ var (
 				},
 			},
 		},
+		{
+			// One-time/on-demand scan config: no Schedule set. Must not error and
+			// must produce an empty Cron (regression test, see connection_impl.go
+			// getScanConfigurationMsg nil-schedule guard).
+			ScanConfigName: "TestConfigNoSchedule",
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{
+					ProfileName: "TestProfileName",
+				},
+			},
+			Schedule: nil,
+		},
 	}
 )
 
@@ -169,8 +181,12 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 			stored := scanConfigs[idx]
 			settings := sc.GetUpdateScan().GetScanSettings()
 			s.Assert().Equal(stored.GetScanConfigName(), settings.GetScanName())
-			cron, err := schedule.ConvertToCronTab(stored.GetSchedule())
-			s.Require().NoError(err)
+			var cron string
+			if stored.GetSchedule() != nil {
+				var err error
+				cron, err = schedule.ConvertToCronTab(stored.GetSchedule())
+				s.Require().NoError(err)
+			}
 			s.Assert().Equal(cron, sc.GetUpdateScan().GetCron())
 			// profile_refs must be forwarded with correct kinds
 			s.Require().Len(settings.GetProfileRefs(), len(stored.GetProfileRefs()))
