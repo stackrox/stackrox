@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
@@ -226,9 +227,11 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			req := fakeClient.lastRequest
 			require.NotNil(t, req)
 
-			// Verify permissions
-			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Image"])
-			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Deployment"])
+			assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, req.GetPermissionSetId())
+			assert.Equal(t, map[string]centralv1.Access{
+				"Deployment": centralv1.Access_READ_ACCESS,
+				"Image":      centralv1.Access_READ_ACCESS,
+			}, req.GetPermissions())
 
 			// Verify scopes
 			if tt.wantScopes {
@@ -370,8 +373,11 @@ func TestBuildTokenRequest(t *testing.T) {
 	t.Run("empty scope", func(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
-		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Image"])
-		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Deployment"])
+		assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, req.GetPermissionSetId())
+		assert.Equal(t, map[string]centralv1.Access{
+			"Deployment": centralv1.Access_READ_ACCESS,
+			"Image":      centralv1.Access_READ_ACCESS,
+		}, req.GetPermissions())
 		assert.Empty(t, req.GetClusterScopes())
 		assert.NotNil(t, req.GetLifetime())
 	})
