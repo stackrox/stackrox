@@ -170,14 +170,12 @@ jobs:
       env:
         ROX_USERNAME: admin
       run: |
-        import os, sys
+        import sys
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
         post = PostClusterTest(
             collect_central_artifacts=False,
         )
-        if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
-            post.openshift_namespaces = []
         post.run(['/tmp/byodb-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
