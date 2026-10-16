@@ -198,6 +198,11 @@ def pass2_render(out, title, grand_totals, valid_files):
     write_doc_start(out, title)
     write_summary(out, grand_totals)
     write_controls(out)
+
+    href_suite_counter = Counter()
+    for file, suites in valid_files:
+        pass2_render_file(out, file, suites, href_suite_counter)
+
     write_doc_end(out)
 
 
@@ -310,15 +315,19 @@ def write_summary(out, counts):
             <div class="card-body">
                 <h5 class="card-title">Summary</h5>
     """)
+    write_counts(out, counts)
+    out.write("""
+            </div>
+        </div>
+    """)
+
+
+def write_counts(out, counts):
     out.write(badge(counts[Ctr.TESTS], 'text-bg-dark', 'tests'))
     out.write(badge(counts[Ctr.PASSED], 'text-bg-success', 'passed'))
     out.write(badge(counts[Ctr.FAILURES], 'text-bg-danger', 'failed'))
     out.write(badge(counts[Ctr.ERRORS], 'text-bg-warning', 'errored'))
     out.write(badge(counts[Ctr.SKIPPED], 'text-bg-secondary', 'skipped'))
-    out.write("""
-            </div>
-        </div>
-    """)
 
 
 def write_controls(out):
@@ -343,6 +352,52 @@ def badge(count, cls, label):
 
 def esc(t):
     return html.escape(str(t), quote=False)
+
+
+def pass2_render_file(out, file, suites, suite_counter):
+    suite_idx = 0
+
+    for event, elem in ET.iterparse(file, events=('start', 'end')):
+        tag = elem.tag
+        if event == 'start':
+            if tag == 'testsuite':
+                suite = suites[suite_idx]
+                suite_idx += 1
+                ensure(suite.name == elem.get('name', ''), 'error: could not match the suite')
+                write_suite_start(out, suite, suite_counter.value)
+                suite_counter.inc()
+            pass
+        else:  # event == 'end'
+            if tag == 'testsuite':
+                write_suite_end(out)
+            pass
+
+    ensure(suite_idx == len(suites), 'error: not all suites were iterated')
+
+
+def write_suite_start(out, suite, suite_counter):
+    out.write(f"""
+        <section id="s{suite_counter}" class="suite">
+            <h2 class="sh">{esc(suite.name)}<a class="anchor" href="#s{suite_counter}">#</a></h2>
+            <div class="mb-2">
+    """)
+    write_counts(out, suite.counts)
+    out.write(f"""
+                <small class="text-muted">{esc(suite.time) + 's' if suite.time else ''}</small>
+            </div>
+    """)
+
+
+def write_suite_end(out):
+    out.write('</section>')
+
+
+class Counter:
+    def __init__(self, value=0):
+        self.value = value
+
+    def inc(self):
+        self.value += 1
 
 
 if __name__ == '__main__':
