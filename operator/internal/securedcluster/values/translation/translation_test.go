@@ -478,6 +478,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 								Enabled: new(true),
 							},
 						},
+						CentralCustomMetrics: new(true),
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Analyzer: &platform.ScannerAnalyzerComponent{
@@ -840,6 +841,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
+						"centralCustomMetrics": map[string]interface{}{
+							"enabled": true,
+						},
 					},
 				},
 				"registryOverride": "my.registry.override.com",

@@ -517,9 +517,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
 	}
 
-	if features.OCPConsoleIntegration.Enabled() {
-		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
