@@ -90,9 +90,11 @@ type SecurityPolicySpec struct {
 	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
 }
 
+// +kubebuilder:validation:AtMostOneOf=deployment;excludeByKind
 type Exclusion struct {
-	Name       string     `json:"name,omitempty"`
-	Deployment Deployment `json:"deployment,omitempty"`
+	Name string `json:"name,omitempty"`
+	// +optional
+	Deployment Deployment `json:"deployment,omitzero"`
 	Image      Image      `json:"image,omitempty"`
 	// +optional
 	// ExcludeByKind excludes all workloads of the selected Kubernetes kinds.
