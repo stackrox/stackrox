@@ -2,6 +2,9 @@ package centralproxy
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -99,6 +103,75 @@ func TestValidateRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMetricsScrapeRoute(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		path     string
+		method   string
+		cn       string
+		optIn    bool
+		paths    []string
+		wantCode int
+	}{
+		{"disabled by default", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), false,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"missing client certificate", "/metrics", http.MethodGet, "", true,
+			[]string{"/metrics"}, http.StatusUnauthorized},
+		{"wrong client identity", "/metrics", http.MethodGet, "other", true,
+			[]string{"/metrics"}, http.StatusUnauthorized},
+		{"legacy Central without allowlist", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			nil, http.StatusForbidden},
+		{"POST rejected", "/metrics", http.MethodPost, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"trailing slash rejected", "/metrics/", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"encoded path rejected", "/m%65trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"doubly encoded path rejected", "/m%2565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"triply encoded path rejected", "/m%252565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"verified metrics scrape", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusOK},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+			f.handler.metricsEnabled = tc.optIn
+			allowedpaths.Set(tc.paths)
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			if tc.cn != "" {
+				req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
+					Subject: pkix.Name{CommonName: tc.cn},
+				}}}}
+			}
+			w := httptest.NewRecorder()
+			f.handler.ServeHTTP(w, req)
+			assert.Equal(t, tc.wantCode, w.Code)
+			assert.Equal(t, tc.wantCode == http.StatusOK, f.proxyCalled)
+		})
+	}
+}
+
+func TestMetricsOptInDoesNotEnableConsoleProxy(t *testing.T) {
+	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
+	f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+	f.handler.metricsEnabled = true
+	allowedpaths.Set([]string{"/metrics", "/api/graphql"})
+
+	w := f.serveHTTP(t, http.MethodGet, "/api/graphql", map[string]string{"Authorization": "Bearer console-token"})
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, f.proxyCalled)
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
+		Subject: pkix.Name{CommonName: env.SecureMetricsClientCertCN.Setting()},
+	}}}}
+	w = httptest.NewRecorder()
+	f.handler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, f.proxyCalled)
 }
 
 func TestServeHTTP(t *testing.T) {

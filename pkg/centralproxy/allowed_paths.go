@@ -19,6 +19,7 @@ const SecuredClusterMetricsRole = "OpenShift Secured Cluster Metrics Reader"
 // exceeding the buffer limit.
 var AllowedProxyPaths = set.NewFrozenStringSet(
 	"/api/graphql",
+	"/metrics",
 	"/static/ocp-plugin/",
 	"/v1/config/public",
 	"/v1/deployments",

@@ -6,11 +6,15 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -50,6 +54,7 @@ type Handler struct {
 	authorizer       *k8sAuthorizer
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
+	metricsEnabled   bool
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
@@ -95,6 +100,7 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		authorizer:      newK8sAuthorizer(k8sClient),
 		transport:       transport,
 		proxy:           proxy,
+		metricsEnabled:  env.SecuredClusterMetricsEnabled.BooleanSetting(),
 	}, nil
 }
 
@@ -117,6 +123,18 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 
 // validateRequest validates the incoming request and returns an error if validation fails.
 func (h *Handler) validateRequest(request *http.Request) error {
+	if !isMetricsPath(request) && !features.OCPConsoleIntegration.Enabled() {
+		return pkghttputil.NewError(http.StatusForbidden, "console proxy is disabled")
+	}
+	if isMetricsPath(request) {
+		if request.URL.EscapedPath() != "/metrics" || request.Method != http.MethodGet {
+			return pkghttputil.NewError(http.StatusForbidden, "invalid metrics scrape path or method")
+		}
+		if !h.metricsEnabled || !centralcaps.Has(centralsensor.CentralProxyPathFiltering) ||
+			!allowedpaths.IsExplicitlyAllowed("/metrics") {
+			return pkghttputil.NewError(http.StatusForbidden, "secured-cluster metrics proxy unavailable")
+		}
+	}
 	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD.
 	switch request.Method {
 	case http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodHead:
@@ -142,6 +160,30 @@ func (h *Handler) validateRequest(request *http.Request) error {
 		}
 	}
 
+	return nil
+}
+
+func isMetricsPath(request *http.Request) bool {
+	decoded := request.URL.Path
+	for range 16 {
+		if path.Clean(decoded) == "/metrics" {
+			return true
+		}
+		next, err := url.PathUnescape(decoded)
+		if err != nil || next == decoded {
+			return false
+		}
+		decoded = next
+	}
+	return strings.Contains(decoded, "%")
+}
+
+func authenticateMetricsScrape(request *http.Request) error {
+	if request.TLS == nil || len(request.TLS.VerifiedChains) == 0 ||
+		len(request.TLS.VerifiedChains[0]) == 0 ||
+		request.TLS.VerifiedChains[0][0].Subject.CommonName != env.SecureMetricsClientCertCN.Setting() {
+		return pkghttputil.NewError(http.StatusUnauthorized, "verified Prometheus client certificate required")
+	}
 	return nil
 }
 
@@ -172,6 +214,20 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := h.validateRequest(request); err != nil {
 		result = requestResultValidationError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		return
+	}
+	if isMetricsPath(request) {
+		if err := authenticateMetricsScrape(request); err != nil {
+			result = requestResultAuthnError
+			http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+			return
+		}
+		request = request.WithContext(withMetricsScrape(request.Context()))
+		tracker := pkghttputil.NewStatusTrackingWriter(writer)
+		h.proxy.ServeHTTP(tracker, request)
+		if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
+			result = requestResultProxyError
+		}
 		return
 	}
 
