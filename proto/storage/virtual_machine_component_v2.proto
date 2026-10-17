@@ -35,6 +35,8 @@ message VirtualMachineComponentV2 {
   enum Note {
     UNSPECIFIED = 0;
     UNSCANNED = 1;
+    CPE_MISSING = 2;
+    REPO_UNKNOWN = 3;
   }
   repeated Note notes = 10;
 }
