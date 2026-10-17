@@ -5,6 +5,7 @@ import (
 	"time"
 
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -75,6 +76,7 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 			node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
 
 			ctrl := gomock.NewController(t)
+			clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
 			nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 			riskManager := riskManagerMocks.NewMockManager(ctrl)
 			enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
@@ -94,8 +96,10 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 						return nil
 					}),
 			)
+			clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(node.GetClusterId())).Return("", true, nil)
 
 			p := &pipelineImpl{
+				clusterStore:  clusterStore,
 				nodeDatastore: nodeDatastore,
 				riskManager:   riskManager,
 				enricher:      enricher,
@@ -157,6 +161,7 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	}
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq("1")).Times(2).Return(&node, true, nil)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
@@ -183,12 +188,34 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	}
 }
 
+func TestPipelineSkipsUpsertAfterClusterDeletionBegins(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+	node := &storage.Node{Id: "1", Name: "node-name", ClusterId: "cluster-id"}
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Return(node, true, nil)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+	enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Return(nil)
+
+	releaseDeletion := lifecycle.Singleton().BeginDeletion(node.GetClusterId())
+	defer releaseDeletion()
+
+	p := &pipelineImpl{
+		nodeDatastore: nodeDatastore,
+		enricher:      enricher,
+	}
+	require.NoError(t, p.Run(t.Context(), node.GetClusterId(), createMsg(mockIndexReport), nil))
+}
+
 func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
 
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
@@ -245,6 +272,7 @@ func TestPipelineSkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
