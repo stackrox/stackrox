@@ -213,6 +213,33 @@ func local_request_ProcessBaselineService_DeleteProcessBaselines_0(ctx context.C
 	return msg, metadata, err
 }
 
+func request_ProcessBaselineService_GetProcessBaselineBulk_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessBaselineServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetProcessBaselinesBulkRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetProcessBaselineBulk(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_ProcessBaselineService_GetProcessBaselineBulk_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessBaselineServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetProcessBaselinesBulkRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetProcessBaselineBulk(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterProcessBaselineServiceHandlerServer registers the http handlers for service ProcessBaselineService to "mux".
 // UnaryRPC     :call ProcessBaselineServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -338,6 +365,26 @@ func RegisterProcessBaselineServiceHandlerServer(ctx context.Context, mux *runti
 			return
 		}
 		forward_ProcessBaselineService_DeleteProcessBaselines_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_ProcessBaselineService_GetProcessBaselineBulk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ProcessBaselineService/GetProcessBaselineBulk", runtime.WithHTTPPathPattern("/v1/processbaselines/bulk/get"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ProcessBaselineService_GetProcessBaselineBulk_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ProcessBaselineService_GetProcessBaselineBulk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -481,6 +528,23 @@ func RegisterProcessBaselineServiceHandlerClient(ctx context.Context, mux *runti
 		}
 		forward_ProcessBaselineService_DeleteProcessBaselines_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodPost, pattern_ProcessBaselineService_GetProcessBaselineBulk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ProcessBaselineService/GetProcessBaselineBulk", runtime.WithHTTPPathPattern("/v1/processbaselines/bulk/get"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ProcessBaselineService_GetProcessBaselineBulk_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ProcessBaselineService_GetProcessBaselineBulk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -491,6 +555,7 @@ var (
 	pattern_ProcessBaselineService_BulkLockProcessBaselines_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "processbaselines", "bulk", "lock"}, ""))
 	pattern_ProcessBaselineService_BulkUnlockProcessBaselines_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "processbaselines", "bulk", "unlock"}, ""))
 	pattern_ProcessBaselineService_DeleteProcessBaselines_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "processbaselines"}, ""))
+	pattern_ProcessBaselineService_GetProcessBaselineBulk_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "processbaselines", "bulk", "get"}, ""))
 )
 
 var (
@@ -500,4 +565,5 @@ var (
 	forward_ProcessBaselineService_BulkLockProcessBaselines_0   = runtime.ForwardResponseMessage
 	forward_ProcessBaselineService_BulkUnlockProcessBaselines_0 = runtime.ForwardResponseMessage
 	forward_ProcessBaselineService_DeleteProcessBaselines_0     = runtime.ForwardResponseMessage
+	forward_ProcessBaselineService_GetProcessBaselineBulk_0     = runtime.ForwardResponseMessage
 )
