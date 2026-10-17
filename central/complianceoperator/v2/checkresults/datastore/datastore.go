@@ -60,6 +60,9 @@ type DataStore interface {
 
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
+
+	// ComplianceTrendResults retrieves pass/fail/error counts grouped by scan run time
+	ComplianceTrendResults(ctx context.Context, query *v1.Query) ([]*ComplianceTrendDataPoint, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
