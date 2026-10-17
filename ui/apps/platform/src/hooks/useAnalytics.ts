@@ -62,6 +62,9 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 // dashboard widgets
 export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
 
+// risk
+export const RISK_SUMMARY_GENERATED = 'Risk Summary Generated';
+
 // vulnerability reports
 
 export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
@@ -223,6 +226,7 @@ export type AnalyticsEvent =
               page: 'Overview' | 'CVE Detail';
           };
       }
+    | typeof RISK_SUMMARY_GENERATED
     | {
           event: typeof AGING_IMAGES_WIDGET_CLICKED;
           properties: { clickType: 'bucket'; bucket: string } | { clickType: 'view-all' };
