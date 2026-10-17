@@ -8,7 +8,7 @@ import { accessControlLabels } from 'messages/common';
 
 import { getEntityPath } from './accessControlPaths';
 
-export type AccessControlBreadcrumbsProps = {
+type AccessControlBreadcrumbsProps = {
     entityType: AccessControlEntityType;
     entityName?: string;
 };

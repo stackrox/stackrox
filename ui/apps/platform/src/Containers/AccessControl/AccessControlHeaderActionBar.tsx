@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Divider, Flex, FlexItem, PageSection } from '@patternfly/react-core';
 
-export type AccessControlHeaderActionBarProps = {
+type AccessControlHeaderActionBarProps = {
     /**
      * The display level or description component to render.
      * This component will fill the available space on the left side of the bar.

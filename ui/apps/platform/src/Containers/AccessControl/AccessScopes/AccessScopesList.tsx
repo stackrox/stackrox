@@ -13,7 +13,7 @@ import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 
 const entityType = 'ACCESS_SCOPE';
 
-export type AccessScopesListProps = {
+type AccessScopesListProps = {
     accessScopes: AccessScope[];
     roles: Role[];
     handleDelete: (id: string) => Promise<void>;

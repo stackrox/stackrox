@@ -9,7 +9,7 @@ import useCaseLabels from 'messages/useCase';
 
 const accessControlLabel = useCaseLabels[useCaseTypes.ACCESS_CONTROL];
 
-export type AccessControlPageTitleProps = {
+type AccessControlPageTitleProps = {
     entityType: AccessControlEntityType;
     isList: boolean;
 };
