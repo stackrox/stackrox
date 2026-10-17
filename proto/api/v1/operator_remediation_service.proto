@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// GetImageRemediationRequest asks, for the operator bundle that ships the given image, what
+// updating to the latest patch would change CVE-wise, per operator image.
+message GetImageRemediationRequest {
+  // image_id is the image sha (or Central image ID) the user is viewing; it is resolved to the
+  // operator bundle that ships it.
+  string image_id = 1;
+  // running_only restricts the result to images referenced by a currently-running deployment.
+  bool running_only = 2;
+}
+
+// SeverityCounts holds CVE counts bucketed by severity.
+message SeverityCounts {
+  int32 critical = 1;
+  int32 important = 2;
+  int32 moderate = 3;
+  int32 low = 4;
+  int32 unknown = 5;
+}
+
+// ImageRemediation describes one operator image and how updating changes its CVEs.
+message ImageRemediation {
+  string repository = 1;
+  // name is the bundle's logical name for the image (related_images[].name).
+  string name = 2;
+  string installed_image = 3;
+  string candidate_image = 4;
+  // status is PAIRED, ADDED, or REMOVED.
+  string status = 5;
+  // current is the installed image's current CVE counts by severity.
+  SeverityCounts current = 6;
+  // fixed are CVEs resolved by updating (shown as -N), by severity.
+  SeverityCounts fixed = 7;
+  // new_cves are CVEs introduced by updating (shown as +M), by severity.
+  SeverityCounts new_cves = 8;
+}
+
+// ImageRemediationResponse is the per-operator remediation summary.
+message ImageRemediationResponse {
+  string operator_package = 1;
+  string installed_version = 2;
+  // update_version is the recommended update target; empty when there is none.
+  string update_version = 3;
+  // no_update_reason is set when update_version is empty.
+  string no_update_reason = 4;
+  repeated ImageRemediation images = 5;
+}
+
+// OperatorRemediationService reports, for an operator image, which images to update and the CVE
+// impact, computed live from in-cluster OLM data and Central scan results.
+service OperatorRemediationService {
+  // GetImageRemediation resolves the operator bundle shipping image_id and returns the per-image
+  // CVE diff against the recommended update.
+  rpc GetImageRemediation(GetImageRemediationRequest) returns (ImageRemediationResponse) {
+    option (google.api.http) = {get: "/v1/operator-remediation/image/{image_id}"};
+  }
+}
