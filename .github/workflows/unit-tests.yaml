@@ -98,9 +98,9 @@ jobs:
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -190,9 +190,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -303,9 +303,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -368,9 +368,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -414,9 +414,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -452,9 +452,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -545,9 +545,9 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@v1.0.48
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
