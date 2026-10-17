@@ -224,14 +224,6 @@ describe('Image Integrations', () => {
         // Test does not delete, because it did not create.
     });
 
-    it('should not allow creation of a new Google Container Registry integration', () => {
-        const integrationType = 'google';
-
-        visitIntegrationsTable(integrationSource, integrationType);
-
-        cy.get('[data-testid="add-integration"]').should('not.exist');
-    });
-
     it('should create a new Microsoft Azure integration', () => {
         const integrationName = generateNameWithDate('Microsoft Azure Test');
         const integrationType = 'azure';
@@ -356,41 +348,6 @@ describe('Image Integrations', () => {
         getInputByLabel('Password').clear().type('rutrohshaggy');
 
         testIntegrationInFormWithStoredCredentials(
-            integrationSource,
-            integrationType,
-            staticResponseForTest
-        );
-
-        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
-
-        // Test does not delete, because it did not create.
-    });
-
-    it('should create a new Clair integration', () => {
-        const integrationName = generateNameWithDate('Clair Test');
-        const integrationType = 'clair';
-
-        visitIntegrationsTable(integrationSource, integrationType);
-        clickCreateNewIntegrationInTable(integrationSource, integrationType);
-
-        // Step 0, should start out with disabled Save and Test buttons
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 1, check empty fields
-        getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ').blur();
-
-        getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(integrationName);
-        getInputByLabel('Endpoint').clear().type('test.endpoint');
-
-        testIntegrationInFormWithoutStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest

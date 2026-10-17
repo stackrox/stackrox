@@ -8,7 +8,6 @@ import type {
     BaseImageIntegration,
     ClairifyImageIntegration,
     DockerImageIntegration,
-    GoogleImageIntegration,
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
 import type {
@@ -70,7 +69,6 @@ type IntegrationTableColumnDescriptorMap = {
     > & {
         azure: IntegrationTableColumnDescriptor<AzureImageIntegration | DockerImageIntegration>[];
         clairify: IntegrationTableColumnDescriptor<ClairifyImageIntegration>[];
-        google: IntegrationTableColumnDescriptor<GoogleImageIntegration>[];
         quay: IntegrationTableColumnDescriptor<QuayImageIntegration>[];
     };
     notifiers: Record<
@@ -256,10 +254,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     getCategoriesTextForRegistryScanner(integration.categories),
             },
         ],
-        clair: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'clair.endpoint', Header: 'Endpoint' },
-        ],
         clairV4: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairV4.endpoint', Header: 'Endpoint' },
@@ -282,16 +276,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'name', Header: 'Name' },
             { accessor: 'docker.endpoint', Header: 'Endpoint' },
             { accessor: 'docker.username', Header: 'Username' },
-        ],
-        google: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'google.endpoint', Header: 'Endpoint' },
-            { accessor: 'google.project', Header: 'Project' },
-            {
-                Header: 'Type',
-                accessor: (integration) =>
-                    getCategoriesTextForRegistryScanner(integration.categories),
-            },
         ],
         ecr: [
             { accessor: 'name', Header: 'Name' },
