@@ -69,7 +69,7 @@ func (s *serviceImpl) GetDiscoveredCluster(ctx context.Context, request *v1.GetD
 ) (*v1.GetDiscoveredClusterResponse, error) {
 	resourceID := request.GetId()
 	if resourceID == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id must be provided")
+		return nil, errox.InvalidArgs.New("id must be provided")
 	}
 	discoveredCluster, err := s.ds.GetDiscoveredCluster(ctx, resourceID)
 	if err != nil {

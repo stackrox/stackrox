@@ -71,7 +71,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "service account with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("service account with id '%s' does not exist", request.GetId())
 	}
 
 	clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
@@ -94,7 +94,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListServiceAccountResponse, error) {
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Fill in pagination.

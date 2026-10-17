@@ -146,14 +146,14 @@ func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (
 
 func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy, error) {
 	if id == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be provided")
+		return nil, errox.InvalidArgs.New("Policy ID must be provided")
 	}
 	policy, exists, err := s.policies.GetPolicy(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
+		return nil, errox.NotFound.Newf("policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
@@ -197,7 +197,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	resp := new(v1.ListPoliciesResponse)
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	// Fill in pagination.
 	pagination := request.GetPagination()
@@ -219,11 +219,11 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 
 func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if err := policyversion.EnsureConvertedToLatest(p); err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "Could not ensure policy format: %v", err.Error())
+		return errox.InvalidArgs.Newf("Could not ensure policy format: %v", err.Error())
 	}
 
 	if err := s.validator.validate(ctx, p, options...); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	return nil
 }
@@ -259,7 +259,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 
 func ensureIDEmpty(p *storage.Policy) error {
 	if p.GetId() != "" {
-		return errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new policy")
+		return errox.InvalidArgs.New("Id field should be empty when posting a new policy")
 	}
 	return nil
 }
@@ -322,7 +322,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "Policy with id '%s' not found", request.GetId())
+		return nil, errox.NotFound.Newf("Policy with id '%s' not found", request.GetId())
 	}
 	if request.SetDisabled != nil {
 		policy.Disabled = request.GetDisabled()
@@ -334,7 +334,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 // DeletePolicy deletes a policy from the system.
 func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
+		return nil, errox.InvalidArgs.New("A policy id must be specified to delete a Policy")
 	}
 
 	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
@@ -348,7 +348,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 
 	// Note: default policies cannot be deleted, only disabled
 	if policy.GetIsDefault() {
-		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+		return nil, errox.InvalidArgs.New("A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
 	// Declarative policies can only be deleted by the config-controller via its finalizer.
@@ -365,8 +365,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 			}
 		}
 		if !isConfigController {
-			return nil, errors.Wrap(errox.NotAuthorized,
-				"An externally managed policy can only be deleted by deleting the corresponding SecurityPolicy custom resource.")
+			return nil, errox.NotAuthorized.New("An externally managed policy can only be deleted by deleting the corresponding SecurityPolicy custom resource.")
 		}
 	}
 
@@ -445,7 +444,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
 	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.GetJobId())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	if err := checkIdentityFromMetadata(ctx, metadata); err != nil {
@@ -453,7 +452,7 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 	}
 
 	if err := s.dryRunPolicyJobManager.CancelTask(jobid.GetJobId()); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	return &v1.Empty{}, nil
@@ -483,7 +482,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	compiledPolicy, err := pkgDetection.CompilePolicy(request, clusterProvider, namespaceProvider)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "invalid policy: %v", err)
+		return nil, errox.InvalidArgs.CausedByf("invalid policy: %v", err)
 	}
 
 	deploymentIds, err := s.deployments.GetDeploymentIDs(ctx)
@@ -631,7 +630,7 @@ func (s *serviceImpl) removeActivePolicy(id string) error {
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
 	if request.GetPolicyId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be specified")
+		return nil, errox.InvalidArgs.New("Policy ID must be specified")
 	}
 	var err error
 	if request.GetDisable() {
@@ -648,7 +647,7 @@ func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, reque
 
 func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID string, notifierIDs []string) error {
 	if len(notifierIDs) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
+		return errox.InvalidArgs.New("Notifier IDs must be specified")
 	}
 
 	policy, exists, err := s.policies.GetPolicy(ctx, policyID)
@@ -656,7 +655,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
+		return errox.NotFound.Newf("Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -704,7 +703,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
+		return errox.NotFound.Newf("Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	if notifierSet.Cardinality() == 0 {
