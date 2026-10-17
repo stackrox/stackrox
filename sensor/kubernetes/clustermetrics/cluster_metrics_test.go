@@ -37,6 +37,7 @@ type ClusterMetricsTestSuite struct {
 func (s *ClusterMetricsTestSuite) SetupTest() {
 	s.client = fake.NewClientset()
 	defaultInterval = 10 * time.Millisecond
+	defaultFirstSendDelay = 1 * time.Millisecond
 }
 
 func (s *ClusterMetricsTestSuite) TestZeroNodes() {
@@ -78,16 +79,19 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	metrics := s.createNewClusterMetrics(50 * time.Millisecond)
 	s.Require().NoError(metrics.Start())
 	defer metrics.Stop()
-	// Read the first message. This is needed because we call runPipeline before entering the ticker loop.
-	// This first call will block the goroutine until the message is read.
-	select {
-	case <-metrics.ResponsesC():
-		break
-	case <-time.After(metricsTimeout):
-		s.Fail("timeout waiting for the first message")
-	}
+	// Drain the first-send message triggered by the initial CentralReachable
+	// notification, so the goroutine is not blocked on the output channel.
+	drainedFirst := false
 	for _, state := range states {
 		metrics.Notify(state)
+		if !drainedFirst && state == common.SensorComponentEventCentralReachable {
+			select {
+			case <-metrics.ResponsesC():
+			case <-time.After(metricsTimeout):
+				s.Fail("timeout waiting for the first-send message")
+			}
+			drainedFirst = true
+		}
 		s.assertOfflineMode(state, metrics)
 	}
 }
