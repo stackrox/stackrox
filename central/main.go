@@ -46,6 +46,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
+	clusterRemediationService "github.com/stackrox/rox/central/clusterremediation/service"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -129,6 +130,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
+	operatorRemediationService "github.com/stackrox/rox/central/operatorremediation/service"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	platformReprocessor "github.com/stackrox/rox/central/platform/reprocessor"
 	podService "github.com/stackrox/rox/central/pod/service"
@@ -430,6 +432,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		cloudSourcesService.Singleton(),
 		clusterCVEService.Singleton(),
 		clusterInitService.Singleton(),
+		clusterRemediationService.Singleton(),
 		clusterService.Singleton(),
 		collectionService.Singleton(),
 		complianceManagerService.Singleton(),
@@ -458,6 +461,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		nodeCVEService.Singleton(),
 		nodeService.Singleton(),
 		notifierService.Singleton(),
+		operatorRemediationService.Singleton(),
 		pingService.Singleton(),
 		podService.Singleton(),
 		policyCategoryService.Singleton(),
