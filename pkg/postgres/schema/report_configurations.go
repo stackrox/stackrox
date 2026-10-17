@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -33,7 +33,36 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
+		schema = &walker.Schema{
+			Table:    "report_configurations",
+			Type:     "*storage.ReportConfiguration",
+			TypeName: "ReportConfiguration",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "report_configurations_notifiers",
+			Type:         "*storage.NotifierConfiguration",
+			TypeName:     "NotifierConfiguration",
+			ObjectGetter: "GetNotifiers()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "reportConfigurationID", ProtoBufName: "", ColumnName: "report_configurations_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("reportConfigurationID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false)},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("Notifier", "id", false, true, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Report Name", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.ReportConfiguration_ReportType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ReportConfiguration_ReportType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Report Type", Enabled: true}},
+			{Schema: schema, Name: "ScopeId", ProtoBufName: "scope_id", ColumnName: "ScopeId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScopeId()", false), Search: walker.SearchField{FieldName: "Embedded Collection ID", Enabled: true}},
+			{Schema: schema, Name: "CollectionId", ProtoBufName: "collection_id", ColumnName: "ResourceScope_CollectionId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetResourceScope().GetCollectionId()", false), Search: walker.SearchField{FieldName: "Collection ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Creator_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCreator().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Notifier": NotifiersSchema,
 		}
@@ -41,7 +70,26 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_CONFIGURATIONS, map[search.FieldLabel]*search.Field{
+			"Collection ID":          {FieldPath: "reportconfiguration.resource_scope.ScopeReference.CollectionId", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+			"Embedded Collection ID": {FieldPath: "reportconfiguration.scope_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+			"Report Name":            {FieldPath: "reportconfiguration.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+			"Report Type":            {FieldPath: "reportconfiguration.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+			"User ID":                {FieldPath: "reportconfiguration.creator.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+			"User Name":              {FieldPath: "reportconfiguration.creator.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_REPORT_CONFIGURATIONS},
+		}))
+		enumregistry.AddValues("reportconfiguration.Filter.VulnReportFilters.access_scope_rules.cluster_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportconfiguration.Filter.VulnReportFilters.access_scope_rules.namespace_label_selectors.requirements.op", map[string]int32{"EXISTS": 3, "IN": 1, "NOT_EXISTS": 4, "NOT_IN": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("reportconfiguration.Filter.VulnReportFilters.fixability", map[string]int32{"BOTH": 0, "FIXABLE": 1, "NOT_FIXABLE": 2})
+		enumregistry.AddValues("reportconfiguration.Filter.VulnReportFilters.image_types", map[string]int32{"DEPLOYED": 0, "WATCHED": 1})
+		enumregistry.AddValues("reportconfiguration.Filter.VulnReportFilters.severities", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("reportconfiguration.last_run_status.report_status", map[string]int32{"FAILURE": 1, "SUCCESS": 0})
+		enumregistry.AddValues("reportconfiguration.resource_scope.ScopeReference.EntityScope.rules.entity", map[string]int32{"ENTITY_TYPE_CLUSTER": 3, "ENTITY_TYPE_DEPLOYMENT": 1, "ENTITY_TYPE_NAMESPACE": 2, "ENTITY_TYPE_UNSET": 0})
+		enumregistry.AddValues("reportconfiguration.resource_scope.ScopeReference.EntityScope.rules.field", map[string]int32{"FIELD_ANNOTATION": 4, "FIELD_ID": 1, "FIELD_LABEL": 3, "FIELD_NAME": 2, "FIELD_UNSET": 0})
+		enumregistry.AddValues("reportconfiguration.resource_scope.ScopeReference.EntityScope.rules.values.match_type", map[string]int32{"EXACT": 0, "REGEX": 1})
+		enumregistry.AddValues("reportconfiguration.schedule.interval_type", map[string]int32{"DAILY": 1, "MONTHLY": 3, "UNSET": 0, "WEEKLY": 2})
+		enumregistry.AddValues("reportconfiguration.type", map[string]int32{"VULNERABILITY": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_REPORT_SNAPSHOT,
 		}...)

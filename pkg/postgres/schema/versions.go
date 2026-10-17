@@ -3,10 +3,8 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,19 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Version)(nil)), "versions")
+		schema = &walker.Schema{
+			Table:    "versions",
+			Type:     "*storage.Version",
+			TypeName: "Version",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "SeqNum", ProtoBufName: "seq_num", ColumnName: "SeqNum", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetSeqNum()", false), Search: walker.SearchField{FieldName: "Current Sequence Number", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVersion()", false), Search: walker.SearchField{FieldName: "Version", Enabled: true}},
+			{Schema: schema, Name: "LastPersisted", ProtoBufName: "last_persisted", ColumnName: "LastPersisted", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastPersisted()", false), Search: walker.SearchField{FieldName: "Last Persisted", Enabled: true}},
+			{Schema: schema, Name: "MinSeqNum", ProtoBufName: "min_seq_num", ColumnName: "MinSeqNum", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetMinSeqNum()", false), Search: walker.SearchField{FieldName: "Minimum Sequence Number", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema

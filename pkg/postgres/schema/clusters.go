@@ -3,14 +3,13 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,8 +26,51 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
+		schema = &walker.Schema{
+			Table:    "clusters",
+			Type:     "*storage.Cluster",
+			TypeName: "Cluster",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.ClusterType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Cluster Platform Type", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Cluster Label", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Status_ProviderMetadata_Cluster_Type", Type: "storage.ClusterMetadata_Type", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ClusterMetadata_Type", ObjectGetter: walker.MakeObjectGetter("GetStatus().GetProviderMetadata().GetCluster().GetType()", false), Search: walker.SearchField{FieldName: "Cluster Type", Enabled: true}},
+			{Schema: schema, Name: "Version", ProtoBufName: "version", ColumnName: "Status_OrchestratorMetadata_Version", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetStatus().GetOrchestratorMetadata().GetVersion()", false), Search: walker.SearchField{FieldName: "Cluster Kubernetes Version", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, map[search.FieldLabel]*search.Field{
+			"Admission Control Status":   {FieldPath: "cluster.health_status.admission_control_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster":                    {FieldPath: "cluster.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster ID":                 {FieldPath: "cluster.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster Kubernetes Version": {FieldPath: "cluster.status.orchestrator_metadata.version", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster Label":              {FieldPath: "cluster.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster Platform Type":      {FieldPath: "cluster.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster Status":             {FieldPath: "cluster.health_status.overall_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Cluster Type":               {FieldPath: "cluster.status.provider_metadata.cluster.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Collector Status":           {FieldPath: "cluster.health_status.collector_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Last Contact":               {FieldPath: "cluster.health_status.last_contact.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_CLUSTERS},
+			"Scanner Status":             {FieldPath: "cluster.health_status.scanner_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+			"Sensor Status":              {FieldPath: "cluster.health_status.sensor_health_status", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTERS},
+		}))
+		enumregistry.AddValues("cluster.collection_method", map[string]int32{"CORE_BPF": 4, "EBPF": 3, "KERNEL_MODULE": 2, "NO_COLLECTION": 1, "UNSET_COLLECTION": 0})
+		enumregistry.AddValues("cluster.health_status.admission_control_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("cluster.health_status.collector_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("cluster.health_status.overall_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("cluster.health_status.scanner_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("cluster.health_status.sensor_health_status", map[string]int32{"DEGRADED": 3, "HEALTHY": 4, "UNAVAILABLE": 1, "UNHEALTHY": 2, "UNINITIALIZED": 0})
+		enumregistry.AddValues("cluster.helm_config.static_config.collection_method", map[string]int32{"CORE_BPF": 4, "EBPF": 3, "KERNEL_MODULE": 2, "NO_COLLECTION": 1, "UNSET_COLLECTION": 0})
+		enumregistry.AddValues("cluster.helm_config.static_config.type", map[string]int32{"GENERIC_CLUSTER": 0, "KUBERNETES_CLUSTER": 1, "OPENSHIFT4_CLUSTER": 5, "OPENSHIFT_CLUSTER": 2})
+		enumregistry.AddValues("cluster.managed_by", map[string]int32{"MANAGER_TYPE_HELM_CHART": 2, "MANAGER_TYPE_KUBERNETES_OPERATOR": 3, "MANAGER_TYPE_MANUAL": 1, "MANAGER_TYPE_UNKNOWN": 0})
+		enumregistry.AddValues("cluster.status.provider_metadata.cluster.type", map[string]int32{"AKS": 1, "ARO": 2, "EKS": 3, "GKE": 4, "OCP": 5, "OSD": 6, "ROSA": 7, "UNSPECIFIED": 0})
+		enumregistry.AddValues("cluster.status.sensor_version_compatibility", map[string]int32{"SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD": 3, "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND": 2, "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD": 5, "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND": 4, "SENSOR_VERSION_COMPATIBILITY_MATCHED": 1, "SENSOR_VERSION_COMPATIBILITY_UNKNOWN": 0})
+		enumregistry.AddValues("cluster.status.upgrade_status.most_recent_process.progress.upgrade_state", map[string]int32{"PRE_FLIGHT_CHECKS_COMPLETE": 3, "PRE_FLIGHT_CHECKS_FAILED": 12, "UPGRADER_LAUNCHED": 2, "UPGRADER_LAUNCHING": 1, "UPGRADE_COMPLETE": 10, "UPGRADE_ERROR_ROLLBACK_FAILED": 15, "UPGRADE_ERROR_ROLLED_BACK": 14, "UPGRADE_ERROR_ROLLING_BACK": 13, "UPGRADE_ERROR_UNKNOWN": 16, "UPGRADE_INITIALIZATION_ERROR": 11, "UPGRADE_INITIALIZING": 0, "UPGRADE_OPERATIONS_DONE": 4, "UPGRADE_TIMED_OUT": 17})
+		enumregistry.AddValues("cluster.status.upgrade_status.most_recent_process.type", map[string]int32{"CERT_ROTATION": 1, "UPGRADE": 0})
+		enumregistry.AddValues("cluster.status.upgrade_status.upgradability", map[string]int32{"AUTO_UPGRADE_POSSIBLE": 3, "MANUAL_UPGRADE_REQUIRED": 2, "SENSOR_VERSION_HIGHER": 4, "UNSET": 0, "UP_TO_DATE": 1})
+		enumregistry.AddValues("cluster.type", map[string]int32{"GENERIC_CLUSTER": 0, "KUBERNETES_CLUSTER": 1, "OPENSHIFT4_CLUSTER": 5, "OPENSHIFT_CLUSTER": 2})
+
 		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)

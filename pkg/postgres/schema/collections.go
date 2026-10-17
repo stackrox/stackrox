@@ -3,14 +3,12 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,8 +30,44 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ResourceCollection)(nil)), "collections")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COLLECTIONS, "resourcecollection", (*storage.ResourceCollection)(nil)))
+		schema = &walker.Schema{
+			Table:    "collections",
+			Type:     "*storage.ResourceCollection",
+			TypeName: "ResourceCollection",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "collections_embedded_collections",
+			Type:         "*storage.ResourceCollection_EmbeddedResourceCollection",
+			TypeName:     "ResourceCollection_EmbeddedResourceCollection",
+			ObjectGetter: "GetEmbeddedCollections()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "collectionID", ProtoBufName: "", ColumnName: "collections_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("collectionID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Search: walker.SearchField{FieldName: "Embedded Collection ID", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("ResourceCollection", "id", false, true, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Collection ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Collection Name", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "CreatedBy_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCreatedBy().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "UpdatedBy_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetUpdatedBy().GetName()", false), Search: walker.SearchField{FieldName: "User Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COLLECTIONS, map[search.FieldLabel]*search.Field{
+			"Collection ID":          {FieldPath: "resourcecollection.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COLLECTIONS},
+			"Collection Name":        {FieldPath: "resourcecollection.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COLLECTIONS},
+			"Embedded Collection ID": {FieldPath: "resourcecollection.embedded_collections.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COLLECTIONS},
+			"User ID":                {FieldPath: "resourcecollection.updated_by.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COLLECTIONS},
+			"User Name":              {FieldPath: "resourcecollection.updated_by.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COLLECTIONS},
+		}))
+		enumregistry.AddValues("resourcecollection.resource_selectors.rules.operator", map[string]int32{"AND": 1, "OR": 0})
+		enumregistry.AddValues("resourcecollection.resource_selectors.rules.values.match_type", map[string]int32{"EXACT": 0, "REGEX": 1})
+
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableCollectionsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)

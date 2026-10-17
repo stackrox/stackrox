@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -32,7 +30,20 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanSettingBindingV2)(nil)), "compliance_operator_scan_setting_binding_v2")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_scan_setting_binding_v2",
+			Type:     "*storage.ComplianceOperatorScanSettingBindingV2",
+			TypeName: "ComplianceOperatorScanSettingBindingV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Compliance Scan Setting Binding Name", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ScanSettingName", ProtoBufName: "scan_setting_name", ColumnName: "ScanSettingName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanSettingName()", false), Search: walker.SearchField{FieldName: "Compliance Scan Config Name", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[2].SetReference("Cluster", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -40,7 +51,11 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS, "complianceoperatorscansettingbindingv2", (*storage.ComplianceOperatorScanSettingBindingV2)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                           {FieldPath: "complianceoperatorscansettingbindingv2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS},
+			"Compliance Scan Config Name":          {FieldPath: "complianceoperatorscansettingbindingv2.scan_setting_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS},
+			"Compliance Scan Setting Binding Name": {FieldPath: "complianceoperatorscansettingbindingv2.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS},
+		}))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorScanSettingBindingV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS, schema)

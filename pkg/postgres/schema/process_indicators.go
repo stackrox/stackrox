@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -35,7 +33,30 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
+		schema = &walker.Schema{
+			Table:    "process_indicators",
+			Type:     "*storage.ProcessIndicator",
+			TypeName: "ProcessIndicator",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Process ID", Enabled: true}},
+			{Schema: schema, Name: "DeploymentId", ProtoBufName: "deployment_id", ColumnName: "DeploymentId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeploymentId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ContainerName", ProtoBufName: "container_name", ColumnName: "ContainerName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetContainerName()", false), Search: walker.SearchField{FieldName: "Container Name", Enabled: true}},
+			{Schema: schema, Name: "PodId", ProtoBufName: "pod_id", ColumnName: "PodId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPodId()", false), Search: walker.SearchField{FieldName: "Pod ID", Enabled: true}},
+			{Schema: schema, Name: "PodUid", ProtoBufName: "pod_uid", ColumnName: "PodUid", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPodUid()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Pod UID", Enabled: true}},
+			{Schema: schema, Name: "ContainerId", ProtoBufName: "container_id", ColumnName: "Signal_ContainerId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetContainerId()", false), Search: walker.SearchField{FieldName: "Container ID", Enabled: true}},
+			{Schema: schema, Name: "Time", ProtoBufName: "time", ColumnName: "Signal_Time", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetTime()", false), Search: walker.SearchField{FieldName: "Process Creation Time", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Signal_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetName()", false), Search: walker.SearchField{FieldName: "Process Name", Enabled: true}},
+			{Schema: schema, Name: "Args", ProtoBufName: "args", ColumnName: "Signal_Args", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetArgs()", false), Search: walker.SearchField{FieldName: "Process Arguments", Enabled: true}},
+			{Schema: schema, Name: "ExecFilePath", ProtoBufName: "exec_file_path", ColumnName: "Signal_ExecFilePath", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetExecFilePath()", false), Search: walker.SearchField{FieldName: "Process Path", Enabled: true}},
+			{Schema: schema, Name: "Uid", ProtoBufName: "uid", ColumnName: "Signal_Uid", Type: "uint32", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "uint32", ObjectGetter: walker.MakeObjectGetter("GetSignal().GetUid()", false), Search: walker.SearchField{FieldName: "Process UID", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ContainerStartTime", ProtoBufName: "container_start_time", ColumnName: "ContainerStartTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetContainerStartTime()", false), Search: walker.SearchField{FieldName: "Process Container Start Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("Deployment", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment": DeploymentsSchema,
 		}
@@ -43,7 +64,22 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_INDICATORS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                   {FieldPath: "processindicator.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Container ID":                 {FieldPath: "processindicator.signal.container_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Container Name":               {FieldPath: "processindicator.container_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Deployment ID":                {FieldPath: "processindicator.deployment_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Namespace":                    {FieldPath: "processindicator.namespace", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Pod ID":                       {FieldPath: "processindicator.pod_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Pod UID":                      {FieldPath: "processindicator.pod_uid", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process Arguments":            {FieldPath: "processindicator.signal.args", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process Container Start Time": {FieldPath: "processindicator.container_start_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process Creation Time":        {FieldPath: "processindicator.signal.time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process ID":                   {FieldPath: "processindicator.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process Name":                 {FieldPath: "processindicator.signal.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process Path":                 {FieldPath: "processindicator.signal.exec_file_path", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_PROCESS_INDICATORS},
+			"Process UID":                  {FieldPath: "processindicator.signal.uid", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_PROCESS_INDICATORS},
+		}))
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)

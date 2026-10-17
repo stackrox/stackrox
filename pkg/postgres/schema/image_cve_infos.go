@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,8 +29,25 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEInfo)(nil)), "image_cve_infos")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_CVE_INFOS, "imagecveinfo", (*storage.ImageCVEInfo)(nil)))
+		schema = &walker.Schema{
+			Table:    "image_cve_infos",
+			Type:     "*storage.ImageCVEInfo",
+			TypeName: "ImageCVEInfo",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "CVE Info", Enabled: true}},
+			{Schema: schema, Name: "FixAvailableTimestamp", ProtoBufName: "fix_available_timestamp", ColumnName: "FixAvailableTimestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetFixAvailableTimestamp()", false), Search: walker.SearchField{FieldName: "CVE Fix Available Timestamp", Enabled: true}},
+			{Schema: schema, Name: "FirstSystemOccurrence", ProtoBufName: "first_system_occurrence", ColumnName: "FirstSystemOccurrence", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetFirstSystemOccurrence()", false), Search: walker.SearchField{FieldName: "First System Occurrence Timestamp", Enabled: true}},
+			{Schema: schema, Name: "Cve", ProtoBufName: "cve", ColumnName: "Cve", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCve()", false), Search: walker.SearchField{FieldName: "CVE", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_CVE_INFOS, map[search.FieldLabel]*search.Field{
+			"CVE":                               {FieldPath: "imagecveinfo.cve", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGE_CVE_INFOS},
+			"CVE Fix Available Timestamp":       {FieldPath: "imagecveinfo.fix_available_timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_IMAGE_CVE_INFOS},
+			"CVE Info":                          {FieldPath: "imagecveinfo.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_IMAGE_CVE_INFOS},
+			"First System Occurrence Timestamp": {FieldPath: "imagecveinfo.first_system_occurrence.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_IMAGE_CVE_INFOS},
+		}))
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageCveInfosStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_CVE_INFOS, schema)

@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	excludeFiles = set.NewStringSet("all.go", "schema_test.go")
+	excludeFiles = set.NewStringSet("all.go", "schema_test.go", "validate_generated_test.go")
 )
 
 type SchemaTestSuite struct {
