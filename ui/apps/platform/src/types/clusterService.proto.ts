@@ -28,9 +28,3 @@ export type ClustersResponse = {
     // Map secured clusters whose sensors have 'UNHEALTHY' status by clusterId to retention info.
     clusterIdToRetentionInfo: ClusterIdToRetentionInfo;
 };
-
-export type ClusterDefaultsResponse = {
-    mainImageRepository: string;
-    collectorImageRepository: string;
-    kernelSupportAvailable: boolean;
-};
