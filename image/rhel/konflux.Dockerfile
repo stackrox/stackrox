@@ -44,7 +44,7 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     done
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:1930dcc16ed498688ce0bd34b16c418338186d095a38c98e2cc1b64ae91ac68a as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:d23bd29d08e80d4351e76aa0a7ace5725198a716b5c635601f230643ee101d35 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -66,7 +66,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:ecc9eba659d04c56b12da3efb83483349d57aa08734ad3e64e9bd6128806c7cc
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a0a1514e2e999adeef699f5b3827050e76e8e61584a569bad7cc013bc449d239
 
 ARG PG_VERSION
 
