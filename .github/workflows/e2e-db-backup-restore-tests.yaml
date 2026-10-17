@@ -11,12 +11,28 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+      ci-job-name:
+        description: Unique CI job name.
+        type: string
+        default: gke-db-backup-restore-tests
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
+      cluster-name-prefix:
+        description: Prefix for the provisioned cluster name. Maximum 20 characters.
+        type: string
+        default: dbbr
   workflow_dispatch:
     inputs:
       tag:
         description: Image tag to test.
         type: string
         required: true
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,13 +49,22 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-tests
+      CI_JOB_NAME: ${{ inputs.ci-job-name || 'gke-db-backup-restore-tests' }}
+      USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
+      CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix || 'dbbr' }}
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       STORAGE_CLASS: faster
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
+
+    - name: Validate workflow input
+      run: |
+        if [[ "${#CLUSTER_NAME_PREFIX}" -gt 20 ]]; then
+          echo "::error::Workflow input cluster-name-prefix must not be larger than 20 characters."
+          exit 1
+        fi
 
     - name: Checkout repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -64,7 +89,7 @@ jobs:
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        scripts/ci/gke.sh provision_gke_cluster dbbr
+        scripts/ci/gke.sh provision_gke_cluster "${CLUSTER_NAME_PREFIX}"
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
