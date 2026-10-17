@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -231,6 +232,53 @@ func (s *handlerTestSuite) TestDownloadNodeReport_RejectsImageType() {
 	s.downloadAndVerify(userContext, reportSnapshot.GetReportId(), http.StatusBadRequest, nil)
 }
 
+func (s *handlerTestSuite) TestDownloadNodeReportReaderAccess() {
+	orig := s.handler.expectedType
+	s.handler.expectedType = storage.ReportSnapshot_NODE_VULNERABILITY
+	defer func() { s.handler.expectedType = orig }()
+
+	reportSnapshot := fixtures.GetReportSnapshot()
+	reportSnapshot.ReportId = uuid.NewV4().String()
+	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
+	reportSnapshot.Type = storage.ReportSnapshot_NODE_VULNERABILITY
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
+	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	owner := reportSnapshot.GetRequester()
+	ownerContext := s.getReaderContextForUser(owner)
+	blob, blobData := fixtures.GetBlobWithData()
+	blobName := common.GetReportBlobPath(reportSnapshot.GetReportConfigurationId(), reportSnapshot.GetReportId())
+
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+		DoAndReturn(func(ctx context.Context, _ string) (*storage.ReportSnapshot, bool, error) {
+			allowed, err := sac.ForResource(resources.WorkflowAdministration).ReadAllowed(ctx)
+			s.Require().NoError(err)
+			s.Require().True(allowed)
+			return reportSnapshot, true, nil
+		}).Times(1)
+	s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
+			allowed, err := sac.ForResource(resources.Administration).ReadAllowed(ctx)
+			s.Require().NoError(err)
+			s.Require().True(allowed)
+			_, err = writer.Write(blobData.Bytes())
+			return blob, true, err
+		}).Times(1)
+	s.reportSnapshotDataStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ *storage.ReportSnapshot) error {
+			allowed, err := sac.ForResource(resources.WorkflowAdministration).WriteAllowed(ctx)
+			s.Require().NoError(err)
+			s.Require().True(allowed)
+			return nil
+		}).Times(1)
+	s.downloadAndVerify(ownerContext, reportSnapshot.GetReportId(), http.StatusOK, blobData.Bytes())
+
+	otherUser := &storage.SlimUser{Id: "other-user", Name: "Other User"}
+	otherUserContext := s.getReaderContextForUser(otherUser)
+	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+		Return(reportSnapshot, true, nil).Times(1)
+	s.downloadAndVerify(otherUserContext, reportSnapshot.GetReportId(), http.StatusForbidden, nil)
+}
+
 func (s *handlerTestSuite) downloadAndVerify(ctx context.Context, id string, code int, expectData []byte) {
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://example.com/api/reports/jobs/download?id=%s", id), nil)
 	req = req.WithContext(ctx)
@@ -252,4 +300,16 @@ func (s *handlerTestSuite) getContextForUser(user *storage.SlimUser) context.Con
 	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
+}
+
+func (s *handlerTestSuite) getReaderContextForUser(user *storage.SlimUser) context.Context {
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Node, resources.Cluster),
+	))
+	return authn.ContextWithIdentity(ctx, mockID, s.T())
 }

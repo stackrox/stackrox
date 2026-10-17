@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -630,7 +631,7 @@ func generateReportSnapshot(
 		if nodeFilters != nil {
 			nodeFilters = nodeFilters.CloneVT()
 			if requestType == storage.ReportStatus_ON_DEMAND {
-				nodeFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+				nodeFilters.AccessScopeRules = common.ExtractAccessScopeRulesForResource(requesterID, resources.Node)
 			}
 			snapshot.Filter = &storage.ReportSnapshot_NodeVulnReportFilters{
 				NodeVulnReportFilters: nodeFilters,
@@ -752,7 +753,7 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		// Convert API filters to storage filters.
 		storageFilters := &storage.NodeVulnerabilityReportFilters{
 			Query:            nodeFilters.GetQuery(),
-			AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+			AccessScopeRules: common.ExtractAccessScopeRulesForResource(requesterID, resources.Node),
 		}
 
 		switch nodeFilters.GetCvesSince().(type) {

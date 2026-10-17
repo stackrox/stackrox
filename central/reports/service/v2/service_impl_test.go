@@ -853,7 +853,7 @@ func (s *ReportServiceTestSuite) mockNotifierStoreCalls(reqNotifier *apiV2.Notif
 	notifierIDExits, isValidationError, isUpdate bool) {
 	if notifierIDExits {
 		s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
-			Return(&storage.Notifier{Type: notifiers.EmailType}, true, nil).Times(1)
+			Return(&storage.Notifier{Id: reqNotifier.GetEmailConfig().GetNotifierId(), Type: notifiers.EmailType}, true, nil).Times(1)
 	} else {
 		s.notifierDataStore.EXPECT().GetScrubbedNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
 			Return(nil, false, nil).Times(1)
