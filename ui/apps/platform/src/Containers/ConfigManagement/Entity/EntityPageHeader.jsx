@@ -18,7 +18,7 @@ const EntityPageHeader = ({ entityType, entityId }) => {
         <PageHeader
             header={header}
             subHeader={subHeader}
-            classes="z-1 pr-0 ignore-react-onclickoutside"
+            classes="z-1 pr-0"
         >
             <div className="flex flex-1 justify-end items-center h-full pl-2">
                 <EntitiesMenu

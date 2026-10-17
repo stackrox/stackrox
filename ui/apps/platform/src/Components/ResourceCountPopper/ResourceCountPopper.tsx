@@ -1,18 +1,33 @@
-import PropTypes from 'prop-types';
+import type { ReactNode } from 'react';
 import pluralize from 'pluralize';
 import { ArrowRightCircle } from 'react-feather';
 
 import Popper from 'Components/Popper';
 
-const renderKeyValuePairs = (data) => {
-    return data.map(({ key, value }) => (
-        <div className="mt-2" key={key}>
-            {key} : {value}
-        </div>
-    ));
+type KeyValuePair = {
+    key: string;
+    value: string | number | boolean;
 };
 
-const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName }) => {
+function renderKeyValuePairs(data: KeyValuePair[]): ReactNode {
+    return data.map(({ key, value }) => (
+        <div className="mt-2" key={key}>
+            {key} : {String(value)}
+        </div>
+    ));
+}
+
+type ResourceCountPopperProps = {
+    data: KeyValuePair[];
+    label: string;
+    renderContent?: (data: KeyValuePair[]) => ReactNode;
+};
+
+function ResourceCountPopper({
+    data,
+    label,
+    renderContent = renderKeyValuePairs,
+}: ResourceCountPopperProps) {
     const { length } = data;
     const buttonContent = (
         <div className="flex justify-between items-center">
@@ -20,13 +35,13 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             <ArrowRightCircle size={12} />
         </div>
     );
+
     return (
         <Popper
             disabled={!length}
             placement="bottom"
-            reactOutsideClassName={reactOutsideClassName}
             buttonClass={`w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-sm ${
-                length && 'hover:bg-base-200'
+                length ? 'hover:bg-base-200' : ''
             }`}
             buttonContent={buttonContent}
             popperContent={
@@ -36,24 +51,6 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             }
         />
     );
-};
-
-ResourceCountPopper.propTypes = {
-    data: PropTypes.arrayOf(
-        PropTypes.shape({
-            key: PropTypes.string.isRequired,
-            value: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool])
-                .isRequired,
-        })
-    ).isRequired,
-    label: PropTypes.string.isRequired,
-    reactOutsideClassName: PropTypes.string,
-    renderContent: PropTypes.func,
-};
-
-ResourceCountPopper.defaultProps = {
-    reactOutsideClassName: null,
-    renderContent: renderKeyValuePairs,
-};
+}
 
 export default ResourceCountPopper;
