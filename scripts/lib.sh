@@ -46,6 +46,22 @@ die() {
 }
 export -f die
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: validate_image_tag <tag>"
+    fi
+    local tag="$1"
+    if [[ -z "$tag" ]]; then
+        die "image tag is empty (got $(printf %q "$tag"))"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag contains whitespace; image tags must not include spaces, tabs, or newlines (got $(printf %q "$tag"))"
+    fi
+}
+export -f validate_image_tag
+
 # Start a collapsible group in GitHub Actions logs
 github_group() {
     if is_GITHUB_ACTIONS; then
