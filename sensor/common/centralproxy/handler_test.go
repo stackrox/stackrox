@@ -449,7 +449,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 			}, nil
 		})
 
-		h := newTestHandler(t, baseURL, mockTransport, newK8sAuthorizer(fakeClient), "test-token")
+		h := newTestHandler(t, baseURL, mockTransport, newK8sAuthorizerFromClient(fakeClient, fakeClient.Discovery()), "test-token")
 		h.centralReachable.Store(true)
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
