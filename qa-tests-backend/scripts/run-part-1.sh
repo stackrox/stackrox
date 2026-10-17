@@ -73,9 +73,68 @@ central:
   pauseReconciliation: true
   resourceProfile: ci
   portForwarding: false
+  spec:
+    overlays:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: central-worker
+      patches:
+      - path: spec.template.spec.containers[name:central-worker].env[-1]
+        value: |
+          name: GOMEMLIMIT
+          value: 100MiB
+    central:
+      resources:
+        requests:
+          cpu: 150m
+          memory: 1Gi
+        limits:
+          memory: 1Gi
+      db:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+    centralWorker:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 128Mi
+    scannerV4:
+      db:
+        resources:
+          requests:
+            cpu: 100m
+          limits:
+            memory: 6Gi
+      indexer:
+        resources:
+          requests:
+            cpu: 50m
+          limits:
+            memory: 2Gi
+      matcher:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 256Mi
 securedCluster:
   pauseReconciliation: true
   resourceProfile: ci
+  spec:
+    sensor:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 512Mi
+        limits:
+          memory: 512Mi
 EOF
 
         deploy_stackrox_with_roxie_compat "$config_file"
