@@ -43,7 +43,10 @@ func (s *apiTokenDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage)
+	s.dataStore = &datastoreImpl{
+		storage:         s.storage,
+		scheduleStorage: nil,
+	}
 }
 
 func (s *apiTokenDataStoreTestSuite) TearDownTest() {
