@@ -23,7 +23,7 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
-    cluster=GKECluster("ui-e2e-test"),
+    cluster=GKECluster("ui-e2e-test", sample_resources=True),
     pre_test=PreSystemTests(),
     test=UIE2eTest(),
     post_test=PostClusterTest(

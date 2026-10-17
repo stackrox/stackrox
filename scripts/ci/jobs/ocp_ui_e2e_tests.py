@@ -19,7 +19,7 @@ os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
+    cluster=AutomationFlavorsCluster(sample_resources=True),
     pre_test=PreSystemTests(),
     test=UIE2eTest(),
     post_test=PostClusterTest(
