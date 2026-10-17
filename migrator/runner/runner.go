@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	migVersion "github.com/stackrox/rox/migrator/version"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,59 +45,73 @@ func init() {
 func Run(databases *types.Databases) error {
 	log.WriteToStderrf("In runner.Run")
 
-	dbSeqNum, err := getCurrentSeqNum(databases)
+	source, err := migVersion.ReadVersionGormDB(sac.WithAllAccess(context.Background()), databases.GormDB)
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
 	}
+	dbSeqNum := source.SeqNum
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	if dbSeqNum == 0 {
-		log.WriteToStderr("Sequence number of 0 means starting fresh, no migrations to execute")
-		return nil
-	}
-	if dbSeqNum > currSeqNum {
-		log.WriteToStderrf("DB sequence number %d is greater than the latest one we have (%d). This means "+
-			"we are in a rollback.", dbSeqNum, currSeqNum)
-	}
-	if dbSeqNum < currSeqNum {
-		log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...", dbSeqNum, currSeqNum)
-		if err := runMigrations(databases, dbSeqNum); err != nil {
-			return err
-		}
-	} else {
+	switch {
+	case dbSeqNum == 0:
+		log.WriteToStderr("No version metadata; treating database as a fresh installation and skipping migrations.")
+	case dbSeqNum > currSeqNum:
+		log.WriteToStderrf("DB sequence number %d is greater than binary sequence %d; rolling back without migrations.", dbSeqNum, currSeqNum)
+	case dbSeqNum == currSeqNum:
 		log.WriteToStderrf("DB is up to date at version %d. Nothing to do here.", dbSeqNum)
+	default:
+		log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...", dbSeqNum, currSeqNum)
+		return runMigrations(databases, *source, migrations.Get)
 	}
 
-	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
-	// there are no migrations executed.
-	return UpdateToCurrentVersion(databases)
+	// The caller publishes the target version only after applying all schemas.
+	return nil
 }
 
 // UpdateToCurrentVersion updates the stored version to the current binary version
 func UpdateToCurrentVersion(databases *types.Databases) error {
+	minimum, err := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return errors.Wrap(err, "determining minimum supported database sequence")
+	}
+	ctx := sac.WithAllAccess(context.Background())
+	source, err := migVersion.ReadVersionGormDB(ctx, databases.GormDB)
+	if err != nil {
+		return errors.Wrap(err, "reading version before publishing completed migration")
+	}
 	currentVersion := &versionStorage.Version{
 		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(pkgMigrations.MinimumSupportedDBVersionSeqNum()),
+		MinSeqNum:     int32(max(source.MinimumSeqNum, minimum)),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-	err := updateVersion(ctx, databases, currentVersion)
+	err = migVersion.UpdateVersionPostgres(ctx, databases.PostgresDB, currentVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.GetSeqNum())
 	}
 	return nil
 }
 
-func runMigrations(databases *types.Databases, startingSeqNum int) error {
-	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
-		// Add an outer transaction so migrations can be wrapped in a transaction.
-		ctx := sac.WithAllAccess(context.Background())
+func migrationCheckpoint(source pkgMigrations.MigrationVersion, sequence, minimum int) *versionStorage.Version {
+	return &versionStorage.Version{
+		SeqNum:        int32(sequence),
+		Version:       source.MainVersion,
+		MinSeqNum:     int32(max(source.MinimumSeqNum, minimum)),
+		LastPersisted: protoconv.ConvertTimeToTimestampOrNil(source.LastPersisted),
+	}
+}
 
-		// Set the context with the databases so the wrapped transaction can be used
+func runMigrations(databases *types.Databases, source pkgMigrations.MigrationVersion, lookup func(int) (types.Migration, bool)) error {
+	minimum, err := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	if err != nil {
+		return errors.Wrap(err, "determining minimum supported database sequence")
+	}
+	ctx := sac.WithAllAccess(context.Background())
+	for seqNum := source.SeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
+		// Reset the context in case the previous migration replaced it.
 		databases.DBCtx = ctx
 
-		migration, ok := migrations.Get(seqNum)
+		migration, ok := lookup(seqNum)
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
@@ -111,31 +125,13 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			}
 		}
 
-		tx, err := databases.PostgresDB.Begin(ctx)
+		err = migVersion.UpdateVersionPostgres(ctx, databases.PostgresDB, migrationCheckpoint(source, int(migration.VersionAfter.GetSeqNum()), minimum))
 		if err != nil {
-			return err
-		}
-		ctx = pgPkg.ContextWithTx(ctx, tx)
-
-		err = updateVersion(ctx, databases, migration.VersionAfter)
-		if err != nil {
-			return wrapRollback(ctx, tx, errors.Wrapf(err, "failed to update version after migration %d", seqNum))
+			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}
 
-		err = tx.Commit(ctx)
-		if err != nil {
-			return wrapRollback(ctx, tx, errors.Wrapf(err, "unable to commit migration starting at %d", seqNum))
-		}
 		log.WriteToStderrf("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
 	}
 
 	return nil
-}
-
-func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
-	rollbackErr := tx.Rollback(ctx)
-	if rollbackErr != nil {
-		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-	}
-	return err
 }
