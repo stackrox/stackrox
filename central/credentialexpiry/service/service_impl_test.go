@@ -53,6 +53,15 @@ func TestEnsureTLSAndReturnAddr(t *testing.T) {
 		{
 			endpoint: "https://scanner.stackrox:8080/ping", expectedOut: "scanner.stackrox:8080",
 		},
+		{
+			endpoint: "https://[::1]/", expectedOut: "[::1]:443",
+		},
+		{
+			endpoint: "https://[::1]:8443/", expectedOut: "[::1]:8443",
+		},
+		{
+			endpoint: "https://[fd00::1]/ping", expectedOut: "[fd00::1]:443",
+		},
 	} {
 		c := testCase
 		t.Run(c.endpoint, func(t *testing.T) {
