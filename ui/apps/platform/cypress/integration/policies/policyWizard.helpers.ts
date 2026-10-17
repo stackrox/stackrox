@@ -1,5 +1,6 @@
-import { selectors } from './Policies.selectors';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import { hasFeatureFlag } from '../../helpers/features';
+import { selectors } from './Policies.selectors';
 
 // --- Form Interaction ---
 
@@ -61,7 +62,41 @@ export function addInclusionWithNamespace(namespace: string) {
 
 export function addExclusionWithDeployment(deploymentName: string) {
     cy.contains('button', 'Add exclusion').click();
-    cy.get('[aria-label="Deployment name"]').type(deploymentName);
+    cy.get('[aria-label="Workload name"]').type(deploymentName);
+}
+
+function workloadKindCheckboxId(label: 'CronJobs' | 'Jobs') {
+    return label === 'CronJobs' ? 'exclude-workload-kind-CRON_JOB' : 'exclude-workload-kind-JOB';
+}
+
+export function toggleWorkloadKindExclusion(label: 'CronJobs' | 'Jobs') {
+    cy.contains('h4', 'By kind');
+    // "Jobs" is a substring of "CronJobs", so a label text match clicks the wrong checkbox.
+    cy.get(`label[for="${workloadKindCheckboxId(label)}"]`).click();
+}
+
+export function assertWorkloadKindExclusion(label: 'CronJobs' | 'Jobs', isChecked: boolean) {
+    cy.get(`#${workloadKindCheckboxId(label)}`).should(isChecked ? 'be.checked' : 'not.be.checked');
+}
+
+export function goToWizardStep(stepName: string) {
+    // Nested steps such as Resources stay hidden until their expandable parent is open.
+    cy.contains('button.pf-v6-c-wizard__nav-link', stepName).then(($step) => {
+        const collapsedParent = $step
+            .parents('.pf-v6-c-wizard__nav-item.pf-m-expandable:not(.pf-m-expanded)')
+            .filter((_, el) => !Cypress.$(el).children('.pf-v6-c-wizard__nav-link').is($step));
+        if (collapsedParent.length > 0) {
+            cy.wrap(collapsedParent.last()).children('button.pf-v6-c-wizard__nav-link').click();
+        }
+    });
+    cy.contains('button.pf-v6-c-wizard__nav-link', stepName).click();
+}
+
+export function skipFiltersStepIfPresent() {
+    if (hasFeatureFlag('ROX_EVALUATION_FILTER') && hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')) {
+        assertStepHeading('Filters');
+        clickNext();
+    }
 }
 
 // --- Step 5: Actions ---
