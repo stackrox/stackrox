@@ -47,10 +47,6 @@ import (
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
-	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
-	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
-	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
-	complianceService "github.com/stackrox/rox/central/compliance/service"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -431,8 +427,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
 		collectionService.Singleton(),
-		complianceManagerService.Singleton(),
-		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
 		debugService.Singleton(),
@@ -829,12 +823,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/api/compliance/export/csv",
-			Authorizer:    user.With(permissions.View(resources.Compliance)),
-			ServerHandler: complianceHandlers.CSVHandler(),
-			Compression:   true,
-		},
-		{
 			Route:         "/api/risk/timeline/export/csv",
 			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.DeploymentExtension)),
 			ServerHandler: timeline.CSVHandler(),
@@ -867,7 +855,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/splunk/ta/compliance",
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
-			ServerHandler: splunk.NewComplianceHandler(complianceDatastore.Singleton()),
+			ServerHandler: splunk.NewComplianceHandler(),
 			Compression:   true,
 		},
 		{

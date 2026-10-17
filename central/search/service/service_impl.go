@@ -11,8 +11,6 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/mappings"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/compliance/aggregation"
-	complianceSearch "github.com/stackrox/rox/central/compliance/search"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -58,7 +56,6 @@ var (
 		for cat, optMap := range mapping.GetEntityOptionsMap() {
 			result[cat] = search.MultiMapFromMaps(optMap)
 		}
-		result[v1.SearchCategory_COMPLIANCE] = complianceSearch.SearchOptionsMultiMap
 		return result
 	}()
 )
@@ -104,7 +101,6 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SECRETS:            s.secrets,
 		v1.SearchCategory_NAMESPACES:         s.namespaces,
 		v1.SearchCategory_NODES:              s.nodes,
-		v1.SearchCategory_COMPLIANCE:         s.aggregator,
 		v1.SearchCategory_RISKS:              s.risks,
 		v1.SearchCategory_CLUSTERS:           s.clusters,
 		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts,
@@ -150,7 +146,6 @@ type serviceImpl struct {
 	bindings          roleBindingDataStore.DataStore
 	clusters          clusterDataStore.DataStore
 	categories        categoriesDataStore.DataStore
-	aggregator        aggregation.Aggregator
 	authorizer        authz.Authorizer
 	imageIntegrations imageIntegrationDataStore.DataStore
 }

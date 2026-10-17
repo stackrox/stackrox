@@ -5,7 +5,6 @@ import (
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -54,7 +53,6 @@ type Builder interface {
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
 	WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder
-	WithAggregator(aggregation.Aggregator) Builder
 	WithImageIntegrationStore(store imageIntegrationDataStore.DataStore) Builder
 
 	Build() Service
@@ -75,7 +73,6 @@ type serviceBuilder struct {
 	bindings          roleBindingDataStore.DataStore
 	clusters          clusterDataStore.DataStore
 	categories        categoryDataStore.DataStore
-	aggregator        aggregation.Aggregator
 	imageIntegrations imageIntegrationDataStore.DataStore
 }
 
@@ -150,11 +147,6 @@ func (b *serviceBuilder) WithRoleBindingStore(store roleBindingDataStore.DataSto
 	return b
 }
 
-func (b *serviceBuilder) WithAggregator(aggregator aggregation.Aggregator) Builder {
-	b.aggregator = aggregator
-	return b
-}
-
 func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) Builder {
 	b.clusters = store
 	return b
@@ -184,7 +176,6 @@ func (b *serviceBuilder) Build() Service {
 		risks:             b.risks,
 		roles:             b.roles,
 		bindings:          b.bindings,
-		aggregator:        b.aggregator,
 		clusters:          b.clusters,
 		categories:        b.categories,
 		imageIntegrations: b.imageIntegrations,
@@ -208,7 +199,6 @@ func NewService() Service {
 		WithRiskStore(riskDataStore.Singleton()).
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
-		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
 		WithImageIntegrationStore(imageIntegrationDataStore.Singleton()).
 		WithPolicyCategoryDataStore(categoryDataStore.Singleton())
