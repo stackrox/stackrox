@@ -50,3 +50,28 @@ Path in artifacts:
 ```
 download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html
 ```
+
+## Nongroovy node-disruption monitoring
+
+Set `GKE_NODE_DISRUPTION_WATCH=true` to monitor nodes during `NonGroovyE2e`.
+Unset or any other value preserves the existing execution path. GHA nongroovy
+jobs explicitly enable it; Prow jobs remain opt-in. This setting is independent
+of `GKE_SPOT` and does not change cluster provisioning.
+
+The monitor establishes a healthy raw NodeList baseline and watches from its
+collection resourceVersion before starting `tests/e2e/run.sh`. A private Unix
+socket `kubectl proxy` handles kubeconfig authentication; no extra Python
+packages or network listener are needed. Deletion or a MODIFIED node without
+Ready=True fails fast; ADDED events are ignored. These events establish node
+disruption, not its cause or proof of Spot preemption. Baseline/watch errors
+also fail closed. Clean watch expiration resumes from the last event/bookmark
+resourceVersion (or the original collection version on an idle watch), without
+relisting. Renewal failures, including HTTP 410 history loss, fail closed rather
+than silently losing disruption coverage. Product processes receive TERM, then
+KILL after five seconds.
+
+`ARTIFACT_DIR/node-monitor.xml` contains the stable testcase
+`ci.gke.node / NoNodeDisruption`: pass for healthy monitoring regardless of the
+product result, failure for disruption/monitor errors, skipped for cancellation.
+The GHA adapter alone publishes the `failed` step output used to skip recovery;
+ordinary product failures do not set that output to true.
