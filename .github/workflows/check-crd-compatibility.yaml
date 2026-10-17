@@ -35,11 +35,26 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh check-crd-compatibility
+
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout crd-schema-checker
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         repository: openshift/crd-schema-checker
@@ -47,10 +62,12 @@ jobs:
         ref: c313b6407231f6d1aabfb602f0823708f8c6b9fb # 2025-09-05
 
     - name: Build crd-schema-checker
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         make -C .crd-schema-checker
 
     - name: Get previous released version
+      if: steps.ci-decision.outputs.action != 'skip'
       id: get_previous_released_version
       run: |
         make -C operator bundle-post-process
@@ -58,6 +75,7 @@ jobs:
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
     - name: Checkout previous released version
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -65,6 +83,7 @@ jobs:
         path: .old-stackrox
 
     - name: Run crd-schema-checker for platform operator
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         set -e
         old_path=.old-stackrox/operator/config/crd/bases

@@ -23,6 +23,7 @@ central/sensor/service/connection/sensor-central-data-flow.excalidraw.svg
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
+ci/select/test_resolver.py
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
 deploy/charts/monitoring/dashboards/*.json
 generated/**/*.pb.go
