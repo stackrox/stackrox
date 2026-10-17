@@ -256,7 +256,7 @@ func (x *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 type AdministrationEvent_Resource struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty" search:"Resource Type,hidden"` // @gotags: search:"Resource Type,hidden"
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" search:"Resource ID,hidden"`     // @gotags: search:"Resource ID,hidden"
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
