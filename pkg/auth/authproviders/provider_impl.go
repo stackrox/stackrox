@@ -2,6 +2,7 @@ package authproviders
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,13 +29,16 @@ var _ Provider = (*providerImpl)(nil)
 
 // If you add new data fields to this class, make sure you make commensurate modifications
 // to the cloneWithoutMutex and copyWithoutMutex functions below.
+// Exceptions: applyCtx, applyMu, and backendGeneration are live-provider-only; never propagate to clones.
 type providerImpl struct {
-	mutex sync.RWMutex
+	mutex   sync.RWMutex
+	applyMu sync.Mutex // serializes the full ApplyOptions operation; held during CreateBackend
 
 	storedInfo     *storage.AuthProvider
 	backendFactory BackendFactory
 
 	backend                    Backend
+	backendGeneration          uint64 // incremented on each successful Phase 3 commit; protected by mutex
 	backendCreationDone        concurrency.ErrorSignal
 	lastBackendCreationAttempt time.Time
 
@@ -45,6 +49,10 @@ type providerImpl struct {
 	doNotStore bool
 
 	validateCallback func() error
+
+	// applyCtx threads the caller's context to CreateBackend inside ApplyOptions.
+	// Set only on clones; never stored on the live provider.
+	applyCtx context.Context
 }
 
 // Accessor functions.
@@ -173,10 +181,22 @@ func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, all
 	}
 
 	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
+	oldBackend := p.backend
 	p.backend = backend
+	enabled := p.storedInfo.GetEnabled()
 	p.backendCreationDone.SignalWithError(err)
+	concurrency.UnsafeUnlock(&p.mutex)
+
+	// Fire lifecycle hooks outside the mutex so provider accessors can safely
+	// acquire the read lock from within hook implementations.
+	if enabled {
+		if oldBackend != nil {
+			oldBackend.OnDisable(p)
+		}
+		if backend != nil {
+			backend.OnEnable(p)
+		}
+	}
 }
 
 func (p *providerImpl) Backend() Backend {
@@ -227,20 +247,128 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 	return backend.Validate(ctx, claims)
 }
 
-// We must lock the provider when applying options to it.
-func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
+// applyOptionsLocked runs the full option-apply cycle. Callers must hold applyMu.
+// If persistFn is non-nil it is called on the modified clone after any backend
+// rebuild and before the clone is committed to the live provider; a persistence
+// failure leaves the live provider unchanged (no rollback required).
+func (p *providerImpl) applyOptionsLocked(persistFn ProviderOption, options ...ProviderOption) error {
+	var (
+		priorBackend        Backend
+		staleBackend        Backend
+		wasEnabled          bool
+		needsBackendRebuild bool
+		modifiedProvider    *providerImpl
+	)
 
-	// Try updates on a copy of the provider
-	modifiedProvider := cloneWithoutMutex(p)
-	if err := applyOptions(modifiedProvider, options...); err != nil {
+	// Phase 1: under p.mutex, apply options to a clone and detect config drift.
+	// CreateBackend is deferred so we do not hold the mutex during a slow network call.
+	err := func() error {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
+
+		wasEnabled = p.storedInfo.GetEnabled()
+		priorBackend = p.backend
+
+		modifiedProvider = cloneWithoutMutex(p)
+		if err := applyOptions(modifiedProvider, options...); err != nil {
+			return err
+		}
+
+		// If an option (e.g. WithConfig) changed the stored config, the existing
+		// backend is stale and must be replaced.
+		if modifiedProvider.backend != nil && modifiedProvider.backendFactory != nil &&
+			!maps.Equal(modifiedProvider.storedInfo.GetConfig(), modifiedProvider.backend.Config()) {
+			staleBackend = modifiedProvider.backend
+			modifiedProvider.backend = nil
+			needsBackendRebuild = true
+			return nil
+		}
+
+		// No drift. If no persistence is required, commit now while the lock is held.
+		if persistFn == nil {
+			copyWithoutMutex(p, modifiedProvider)
+		}
+		return nil
+	}()
+	if err != nil {
 		return err
 	}
 
-	// If updates succeed, apply them.
-	copyWithoutMutex(p, modifiedProvider)
+	// For the no-rebuild, no-persist path the commit already happened above.
+	// Fire hooks for the WithBackendFromFactory late-registration case and return.
+	if !needsBackendRebuild && persistFn == nil {
+		if priorBackend == nil && modifiedProvider.backend != nil && modifiedProvider.storedInfo.GetEnabled() {
+			modifiedProvider.backend.OnEnable(p)
+		}
+		return nil
+	}
+
+	// Phase 2: rebuild backend outside the lock when config drift was detected.
+	if needsBackendRebuild {
+		baseCtx := modifiedProvider.applyCtx
+		if baseCtx == nil {
+			baseCtx = context.Background()
+		}
+		rebuildCtx, cancel := context.WithTimeout(baseCtx, asyncBackendCreationTimeout)
+		defer cancel()
+		newBackend, err := modifiedProvider.backendFactory.CreateBackend(
+			rebuildCtx,
+			modifiedProvider.storedInfo.GetId(),
+			AllUIEndpoints(modifiedProvider.storedInfo),
+			modifiedProvider.storedInfo.GetConfig(),
+			modifiedProvider.storedInfo.GetClaimMappings(),
+		)
+		if err != nil {
+			return errors.Wrap(err, "failed to rebuild backend after config change")
+		}
+		modifiedProvider.backend = newBackend
+		modifiedProvider.storedInfo.Config = newBackend.Config()
+	}
+
+	// Phase 3: under the lock, check for a concurrent createBackendAsync, persist,
+	// then commit. Persist runs inside the critical section so that a conflict
+	// detected after persist cannot leave the DB ahead of the live provider.
+	if err := func() error {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
+		if p.backend != priorBackend {
+			return errors.New("backend was concurrently updated; retry the operation")
+		}
+		if persistFn != nil {
+			if err := persistFn(modifiedProvider); err != nil {
+				return err
+			}
+		}
+		copyWithoutMutex(p, modifiedProvider)
+		p.backendGeneration++
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	// Phase 4: fire lifecycle hooks outside the mutex so provider accessors can safely
+	// acquire the read lock from within hook implementations.
+	//
+	// Use wasEnabled (pre-update) for OnDisable so we clean up stale backends
+	// regardless of whether the provider is currently enabled.
+	if staleBackend != nil && wasEnabled {
+		staleBackend.OnDisable(p)
+	}
+	// Fire OnEnable only when ApplyOptions itself introduced the backend (priorBackend == nil)
+	// — e.g. the WithBackendFromFactory late-registration path — because updatedNoLock is
+	// not called afterwards in that flow.
+	if priorBackend == nil && modifiedProvider.backend != nil && modifiedProvider.storedInfo.GetEnabled() {
+		modifiedProvider.backend.OnEnable(p)
+	}
+
 	return nil
+}
+
+// We must lock the provider when applying options to it.
+func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
+	p.applyMu.Lock()
+	defer p.applyMu.Unlock()
+	return p.applyOptionsLocked(nil, options...)
 }
 
 func (p *providerImpl) MarkAsActive() error {

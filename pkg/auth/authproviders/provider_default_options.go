@@ -2,6 +2,7 @@ package authproviders
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -73,10 +74,16 @@ func DefaultRoleMapperOption(fn func(id string) permissions.RoleMapper) Provider
 }
 
 // DefaultBackend sets a backend from the pool of backend factories if one is not set.
+// If a backend already exists but its config no longer matches the stored config,
+// the stale backend is discarded so a fresh one is built with the updated config.
 func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFactory) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.backend != nil {
-			return nil
+			if !maps.Equal(pr.storedInfo.GetConfig(), pr.backend.Config()) {
+				pr.backend = nil
+			} else {
+				return nil
+			}
 		}
 
 		// Get the backend factory for the type of provider.

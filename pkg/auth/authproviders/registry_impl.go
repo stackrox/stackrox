@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -169,7 +170,7 @@ func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, f
 			continue
 		}
 		go func(p Provider) {
-			if err := p.ApplyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
+			if err := p.ApplyOptions(WithContext(ctx), WithBackendFromFactory(ctx, factory)); err != nil {
 				log.Errorf("Failed to apply options: %v", err)
 			}
 		}(provider)
@@ -206,20 +207,69 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 }
 
 func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	provider := r.providers[id]
+	// Release the registry lock before the update: CreateBackend can be slow
+	// (up to asyncBackendCreationTimeout) and must not stall other registry ops.
+	provider := func() Provider {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		return r.providers[id]
+	}()
 	if provider == nil {
 		return nil, fmt.Errorf("provider with ID %s not found", id)
 	}
 
-	// Run the updates with an update to the store added.
-	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
+	impl := provider.(*providerImpl)
+
+	// Hold applyMu for the snapshot + apply + persist + commit cycle, then
+	// release it BEFORE acquiring r.mutex for the lifecycle hooks. This avoids
+	// a lock cycle with DeleteProvider (which holds r.mutex → applyMu).
+	impl.applyMu.Lock()
+
+	originalName := concurrency.WithRLock1(&impl.mutex, func() string {
+		return impl.storedInfo.GetName()
+	})
+
+	allOptions := append(options, WithContext(ctx), ValidateNameIfChanged(ctx, r.store, originalName))
+	err := impl.applyOptionsLocked(UpdateStore(ctx, r.store), allOptions...)
+
+	// Snapshot the committed state while applyMu is still held. This snapshot
+	// includes a generation counter so that if a concurrent UpdateProvider
+	// commits a newer backend and fires its hooks before this call acquires
+	// r.mutex, the stale-hook check below will detect the mismatch and skip.
+	var hookBackend Backend
+	var hookEnabled bool
+	var hookGeneration uint64
+	if err == nil {
+		impl.mutex.RLock()
+		hookBackend = impl.backend
+		hookEnabled = impl.storedInfo.GetEnabled()
+		hookGeneration = impl.backendGeneration
+		concurrency.UnsafeRUnlock(&impl.mutex)
+	}
+
+	concurrency.UnsafeUnlock(&impl.applyMu)
+
+	if err != nil {
 		return nil, err
 	}
-	r.updatedNoLock(provider)
+
+	// Fire lifecycle hooks under r.mutex. Recheck that the provider was not
+	// deleted between applyMu.Unlock() and r.mutex.Lock(), and that no
+	// concurrent UpdateProvider committed a newer backend in the meantime.
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if hookBackend != nil && r.providers[id] == provider {
+		currentGen := concurrency.WithRLock1(&impl.mutex, func() uint64 {
+			return impl.backendGeneration
+		})
+		if currentGen == hookGeneration {
+			if hookEnabled {
+				hookBackend.OnEnable(provider)
+			} else {
+				hookBackend.OnDisable(provider)
+			}
+		}
+	}
 
 	return provider, nil
 }
