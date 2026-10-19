@@ -14,6 +14,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+
 ### Removed Features
 
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
@@ -21,18 +23,17 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 ### Technical Changes
+
+- ROX-36950: Central DB cleans up recognized physical backups from earlier PostgreSQL major-version upgrades after verifying the new backup, or earlier if needed to reclaim upgrade space. The current upgrade's rollback backup is retained without age-based expiration.
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
 - ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
 - ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
 - ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
-
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
 
 ## [5.0.0]
-
-
 
 ### Added Features
 

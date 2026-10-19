@@ -85,6 +85,9 @@ roxie_config_from_environment_compat() {
 
     handle_pod_security_policies
 
+    info "Configuring Konflux images..."
+    handle_konflux_images "$config_file"
+
     info "Configuring TRUSTED_CA_FILE..."
     handle_trusted_ca_file "$config_file"
 
@@ -250,7 +253,6 @@ collect_feature_flags() {
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
-    env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
     env_with_default ROX_COMPLIANCE_SURFACE_STALE_DATA "true"
     env_with_default ROX_COMPLIANCE_CUSTOM_NODE_ROLES "true"
     env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
@@ -263,6 +265,15 @@ collect_feature_flags() {
     # Defaults unchanged, but can be modified by test suites.
     env_with_default ROX_SENSITIVE_FILE_ACTIVITY
     env_with_default ROX_BASE_IMAGE_DETECTION
+}
+
+handle_konflux_images() {
+    local config_file="$1"
+
+    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+        info "USE_KONFLUX_IMAGES=true: deploying with Konflux-built images"
+        patch_yaml "$config_file" ".roxie.konfluxImages = true"
+    fi
 }
 
 handle_pod_security_policies() {
