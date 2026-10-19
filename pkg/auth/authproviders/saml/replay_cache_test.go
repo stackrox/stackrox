@@ -206,4 +206,3 @@ func TestReplayCache_EmptyAssertionID(t *testing.T) {
 	assert.True(t, cache.add("", expiresAt))
 	assert.False(t, cache.add("", expiresAt))
 }
-
