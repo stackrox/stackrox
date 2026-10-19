@@ -15,13 +15,13 @@ const (
 )
 
 // AllTLSSecretNames contains all TLS secret names used by SecuredCluster services.
-// Keep in sync with the constants above.
+// Scanner V2 (ScannerTLSSecretName / ScannerDbTLSSecretName) is intentionally excluded: it has
+// been removed and sensor no longer creates those secrets, so the operator must not require them
+// when verifying TLS-secret CA consistency (otherwise the SecuredCluster stays Irreconcilable).
 var AllTLSSecretNames = []string{
 	SensorTLSSecretName,
 	CollectorTLSSecretName,
 	AdmissionControlTLSSecretName,
-	ScannerTLSSecretName,
-	ScannerDbTLSSecretName,
 	ScannerV4IndexerTLSSecretName,
 	ScannerV4DbTLSSecretName,
 }

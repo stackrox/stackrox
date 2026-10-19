@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   labels:
     app: rhacs-operator
   name: securedclusters.platform.stackrox.io
@@ -36,7 +36,7 @@ spec:
           responsible for the connection to Central, and Collector, which performs host-level collection of process and
           network events.<p>
           **Important:** Please see the _Installation Prerequisites_ on the main RHACS operator page before deploying, or
-          consult the RHACS documentation on creating cluster init bundles.
+          consult the RHACS documentation on creating cluster registration secrets (CRS).
         properties:
           apiVersion:
             description: |-
@@ -401,7 +401,9 @@ spec:
                               description: Selects a key of a ConfigMap.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -1032,8 +1034,8 @@ spec:
                 type: string
               scanner:
                 description: |-
-                  Settings for the Scanner component, which is responsible for vulnerability scanning of container
-                  images stored in a cluster-local image repository.
+                  Obsolete field. This field will be removed in a future release.
+                  The legacy Scanner has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
@@ -1339,19 +1341,15 @@ spec:
                         type: array
                     type: object
                   scannerComponent:
-                    description: |-
-                      If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-                      (not recommended).
-                      If you do so, all the settings in this section will have no effect.
-                      The default is: AutoSense.
+                    description: 'Obsolete: The legacy Scanner has been removed. This
+                      field is ignored.'
                     enum:
                     - AutoSense
                     - Disabled
                     type: string
                 type: object
               scannerV4:
-                description: Settings for the Scanner V4 components, which can run
-                  in addition to the previously existing Scanner components
+                description: Settings for the Scanner V4 components
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1717,9 +1715,7 @@ spec:
                       unless there is a Central resource in the same namespace.
                       In that case typically a central Scanner V4 will be deployed as a component of Central.
                       A value of "Disabled" means that Scanner V4 should not be installed.
-                      If this field is not specified or set to "Default", the following defaulting takes place:
-                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
-                      * for new installations starting with ACS 4.8, the default is: AutoSense.
+                      The default is: AutoSense.
                     enum:
                     - Default
                     - AutoSense

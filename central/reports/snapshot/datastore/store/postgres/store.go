@@ -104,6 +104,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		pgutils.NilOrUUID(obj.GetReportId()),
 		pgutils.NilOrString(obj.GetReportConfigurationId()),
 		obj.GetName(),
+		obj.GetType(),
 		obj.GetReportStatus().GetRunState(),
 		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
 		protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
@@ -115,7 +116,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, Type, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,7 @@ var copyColsReportSnapshots = []string{
 	"reportid",
 	"reportconfigurationid",
 	"name",
+	"type",
 	"reportstatus_runstate",
 	"reportstatus_queuedat",
 	"reportstatus_completedat",
@@ -170,6 +172,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			pgutils.NilOrUUID(obj.GetReportId()),
 			pgutils.NilOrString(obj.GetReportConfigurationId()),
 			obj.GetName(),
+			obj.GetType(),
 			obj.GetReportStatus().GetRunState(),
 			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
 			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),

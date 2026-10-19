@@ -92,13 +92,6 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-db-tls secret failed")
 	}
 
-	if err := r.reconcileScannerTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-tls secret failed")
-	}
-	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-db-tls secret failed")
-	}
-
 	if err := r.reconcileScannerV4IndexerTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
 	}
@@ -348,20 +341,6 @@ func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.C
 	return r.DeleteSecret(ctx, "central-db-tls")
 }
 
-func (r *createCentralTLSExtensionRun) reconcileScannerTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData, commonLabels.TLSSecretLabels())
-	}
-	return r.DeleteSecret(ctx, "scanner-tls")
-}
-
-func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, commonLabels.TLSSecretLabels())
-	}
-	return r.DeleteSecret(ctx, "scanner-db-tls")
-}
-
 func (r *createCentralTLSExtensionRun) reconcileScannerV4IndexerTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
 		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, commonLabels.TLSSecretLabels())
@@ -445,22 +424,6 @@ func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject,
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap types.SecretDataMap, _ bool) error {
-	return r.validateServiceTLSData(storage.ServiceType_SCANNER_SERVICE, "", fileMap)
-}
-
-func (r *createCentralTLSExtensionRun) generateScannerTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
-	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
-	if err := r.generateServiceTLSData(mtls.ScannerSubject, "", fileMap); err != nil {
-		return nil, err
-	}
-	return fileMap, nil
-}
-
-func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap types.SecretDataMap, _ bool) error {
-	return r.validateServiceTLSData(storage.ServiceType_SCANNER_DB_SERVICE, "", fileMap)
-}
-
 func (r *createCentralTLSExtensionRun) validateCentralDBTLSData(fileMap types.SecretDataMap, _ bool) error {
 	return r.validateServiceTLSData(storage.ServiceType_CENTRAL_DB_SERVICE, "", fileMap)
 }
@@ -475,14 +438,6 @@ func (r *createCentralTLSExtensionRun) validateScannerV4MatcherTLSData(fileMap t
 
 func (r *createCentralTLSExtensionRun) validateScannerV4DBTLSData(fileMap types.SecretDataMap, _ bool) error {
 	return r.validateServiceTLSData(storage.ServiceType_SCANNER_V4_DB_SERVICE, "", fileMap)
-}
-
-func (r *createCentralTLSExtensionRun) generateScannerDBTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
-	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
-	if err := r.generateServiceTLSData(mtls.ScannerDBSubject, "", fileMap); err != nil {
-		return nil, err
-	}
-	return fileMap, nil
 }
 
 func (r *createCentralTLSExtensionRun) generateCentralDBTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {

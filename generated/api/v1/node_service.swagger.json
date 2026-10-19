@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "NodeService"
+      "name": "NodeService",
+      "description": "storage.Node represents information about a node in the cluster."
     }
   ],
   "consumes": [
@@ -306,6 +307,9 @@
           "$ref": "#/definitions/storageExploit"
         },
         "cisaKev": {
+          "type": "boolean"
+        },
+        "knownRansomwareCampaign": {
           "type": "boolean"
         }
       }

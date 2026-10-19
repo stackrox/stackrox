@@ -40,7 +40,7 @@ func waitForVMCondition(ctx context.Context, client v2.VirtualMachineServiceClie
 	err := pollUntil(ctx, opts, desc, func(ctx context.Context) (bool, string, error) {
 		cur, err := client.GetVirtualMachine(ctx, &v2.GetVirtualMachineRequest{Id: id})
 		if err != nil {
-			return false, "", err
+			return false, "", fmt.Errorf("get virtual machine %s: %w", id, err)
 		}
 		done, detail := check(cur)
 		if done {
@@ -145,6 +145,12 @@ func rawListQueryNamespaceAndName(namespace, name string) string {
 	return fmt.Sprintf("%s:%q+%s:%q", search.Namespace, namespace, search.VirtualMachineName, name)
 }
 
+// rawListQueryNamespaceNameGuestOS adds an exact Guest OS match so search
+// hits the same string List/GetVM return.
+func rawListQueryNamespaceNameGuestOS(namespace, name, guestOS string) string {
+	return fmt.Sprintf("%s+%s:%q", rawListQueryNamespaceAndName(namespace, name), search.GuestOS, guestOS)
+}
+
 // ListVMByNamespaceName returns the first VirtualMachine in Central whose namespace and name
 // match the given values. Returns (nil, nil) when no match is found.
 func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceClient, namespace, name string) (*v2.VirtualMachine, error) {
@@ -154,7 +160,7 @@ func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceC
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list virtual machines: %w", err)
 	}
 	if vms := resp.GetVirtualMachines(); len(vms) > 0 {
 		return vms[0], nil

@@ -585,6 +585,21 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 	assert.Nil(t, scan)
 }
 
+func TestGetVirtualMachineScan_EmptyNameUsesID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := s4ClientMocks.NewMockScanner(ctrl)
+	mockClient.EXPECT().GetVulnerabilities(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("scanner service unavailable"))
+
+	scanner := &scannerv4{scannerClient: mockClient}
+	scan, err := scanner.GetVirtualMachineScan(&storage.VirtualMachine{Id: "vm-id"}, &v4.IndexReport{Contents: &v4.Contents{}})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `failed to get vulnerability report for VM "vm-id"`)
+	assert.Nil(t, scan)
+}
+
 func TestNewVirtualMachineScanner(t *testing.T) {
 	t.Run("successful creation", func(it *testing.T) {
 		ctrl := gomock.NewController(t)

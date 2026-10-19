@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:034554e4e112a6754c1b9be3e0661d42231751da43fb8173a82e953de3d01057
+FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:04dc558560697443edac184d16684147eba4d6bb7a6dd646928ad433def33c95
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -36,6 +36,8 @@ RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
     chown -R postgres:postgres /var/lib/postgresql && \
     chown -R postgres:postgres /var/run/postgresql && \
+    # Update ownership of directories that are owned by the original postgres uid.
+    chown -R postgres /var/lib/pgsql && chown -R postgres /opt/app-root && \
     dnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum

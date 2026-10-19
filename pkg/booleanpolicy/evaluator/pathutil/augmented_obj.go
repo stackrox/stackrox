@@ -110,6 +110,10 @@ type AugmentedValue interface {
 	// It panics if Index(i) on the reflect.Value panics.
 	Index(int) AugmentedValue
 	PathFromRoot() *Path
+	// WithUnderlying returns a copy of this value with a different underlying
+	// reflect.Value, keeping the path from root and augment tree. Used when a
+	// protobuf oneof is unset so empty-string queries can still match.
+	WithUnderlying(newVal reflect.Value) AugmentedValue
 }
 
 type augmentedValue struct {
@@ -132,6 +136,12 @@ func (v *augmentedValue) Index(i int) AugmentedValue {
 
 func (v *augmentedValue) Underlying() reflect.Value {
 	return v.underlying
+}
+
+func (v *augmentedValue) WithUnderlying(newVal reflect.Value) AugmentedValue {
+	cp := *v
+	cp.underlying = newVal
+	return &cp
 }
 
 func (v *augmentedValue) TakeStep(metaStep MetaStep) (AugmentedValue, bool) {

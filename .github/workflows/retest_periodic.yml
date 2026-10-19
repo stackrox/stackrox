@@ -10,7 +10,7 @@ jobs:
   retest:
     if:  ${{ github.repository_owner == 'stackrox' }}
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -23,6 +23,9 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
+
+    - name: Test
+      run: cd tools/retest && go test ./...
 
     - name: Retest
       env:

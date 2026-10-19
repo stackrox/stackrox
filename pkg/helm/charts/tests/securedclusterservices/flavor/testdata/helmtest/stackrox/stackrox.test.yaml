@@ -11,7 +11,7 @@ tests:
     availableSchemas:
     - openshift-4.12
   set:
-    scanner.disable: false
+    scannerV4.disable: false
   expect: |
-    assertScannerIs("stackrox.io/scanner-slim:3.0.99.0")
-    assertScannerDBIs("stackrox.io/scanner-db-slim:3.0.99.0")
+    assertScannerIs("stackrox.io/scanner-v4:3.0.99.0")
+    assertScannerDBIs("stackrox.io/scanner-v4-db:3.0.99.0")

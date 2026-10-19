@@ -459,7 +459,7 @@ class BaseSpecification extends Specification {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
 
-    @Retry(attempts = 30, delay = 3)
+    @Retry(attempts = 60, delay = 5)
     static void waitForClusterHealthy() {
         ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
         assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY

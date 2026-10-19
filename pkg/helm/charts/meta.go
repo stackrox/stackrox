@@ -20,11 +20,6 @@ type MetaValues struct {
 	FactRegistry                     string
 	FactImageRemote                  string
 	FactImageTag                     string
-	ScannerImageRemote               string
-	ScannerSlimImageRemote           string
-	ScannerImageTag                  string
-	ScannerDBImageRemote             string
-	ScannerDBSlimImageRemote         string
 	ScannerV4ImageRemote             string
 	ScannerV4DBImageRemote           string
 	ScannerV4ImageTag                string
@@ -69,33 +64,28 @@ type MetaValues struct {
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
 func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 	metaValues := MetaValues{
-		Versions:                 imageFlavor.Versions,
-		MainRegistry:             imageFlavor.MainRegistry,
-		ImageRemote:              imageFlavor.MainImageName,
-		ImageTag:                 imageFlavor.MainImageTag,
-		CentralDBImageTag:        imageFlavor.CentralDBImageTag,
-		CentralDBImageRemote:     imageFlavor.CentralDBImageName,
-		CollectorRegistry:        imageFlavor.CollectorRegistry,
-		CollectorImageRemote:     imageFlavor.CollectorImageName,
-		CollectorImageTag:        imageFlavor.CollectorImageTag,
-		FactRegistry:             imageFlavor.FactRegistry,
-		FactImageRemote:          imageFlavor.FactImageName,
-		FactImageTag:             imageFlavor.FactImageTag,
-		ScannerImageRemote:       imageFlavor.ScannerImageName,
-		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
-		ScannerImageTag:          imageFlavor.ScannerImageTag,
-		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
-		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
-		ScannerV4ImageRemote:     imageFlavor.ScannerV4ImageName,
-		ScannerV4DBImageRemote:   imageFlavor.ScannerV4DBImageName,
-		ScannerV4ImageTag:        imageFlavor.ScannerV4ImageTag,
-		RenderMode:               "renderAll",
-		ChartRepo:                imageFlavor.ChartRepo,
-		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
-		Operator:                 false,
-		ReleaseBuild:             buildinfo.ReleaseBuild,
-		FeatureFlags:             features.GetFeatureFlagsAsGenericMap(),
-		TelemetryEnabled:         true,
+		Versions:               imageFlavor.Versions,
+		MainRegistry:           imageFlavor.MainRegistry,
+		ImageRemote:            imageFlavor.MainImageName,
+		ImageTag:               imageFlavor.MainImageTag,
+		CentralDBImageTag:      imageFlavor.CentralDBImageTag,
+		CentralDBImageRemote:   imageFlavor.CentralDBImageName,
+		CollectorRegistry:      imageFlavor.CollectorRegistry,
+		CollectorImageRemote:   imageFlavor.CollectorImageName,
+		CollectorImageTag:      imageFlavor.CollectorImageTag,
+		FactRegistry:           imageFlavor.FactRegistry,
+		FactImageRemote:        imageFlavor.FactImageName,
+		FactImageTag:           imageFlavor.FactImageTag,
+		ScannerV4ImageRemote:   imageFlavor.ScannerV4ImageName,
+		ScannerV4DBImageRemote: imageFlavor.ScannerV4DBImageName,
+		ScannerV4ImageTag:      imageFlavor.ScannerV4ImageTag,
+		RenderMode:             "renderAll",
+		ChartRepo:              imageFlavor.ChartRepo,
+		ImagePullSecrets:       imageFlavor.ImagePullSecrets,
+		Operator:               false,
+		ReleaseBuild:           buildinfo.ReleaseBuild,
+		FeatureFlags:           features.GetFeatureFlagsAsGenericMap(),
+		TelemetryEnabled:       true,
 
 		AutoSensePodSecurityPolicies: true,
 	}

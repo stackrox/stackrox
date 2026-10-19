@@ -71,6 +71,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -210,15 +211,58 @@ class Kubernetes {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
+    @CompileDynamic
     boolean updateDeploymentNoWait(Deployment deployment, int maxRetries = 0) {
-        K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
-        if (k8sdeployment) {
-            log.debug "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
-                    "found in namespace ${deployment.namespace}. Updating..."
-        } else {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+        K8sDeployment existing = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
+        if (!existing) {
             log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+            return createDeploymentNoWait(deployment, maxRetries)
         }
-        return createDeploymentNoWait(deployment, maxRetries)
+        log.debug "Deployment ${deployment.name} with version ${existing.metadata.resourceVersion} " +
+                "found in namespace ${deployment.namespace}. Updating..."
+        // Edit the live object rather than createOrReplace (CREATE then REPLACE).
+        // createOrReplace is recorded as CREATE enforcement.
+        // Always retry 409s a few times: the deployment controller often updates
+        // status right after create, so a PATCH with a stale resourceVersion
+        // conflicts. maxRetries=0 still uses that floor; a larger maxRetries
+        // raises it. Do not retry 403; admission denials must fail immediately.
+        K8sDeployment desired = toK8sDeployment(deployment)
+        int maxAttempts = Math.max(maxRetries, 5)
+        for (int i = 0; i < maxAttempts; i++) {
+            try {
+                this.deployments.inNamespace(deployment.namespace)
+                        .withName(deployment.name)
+                        .edit { K8sDeployment current ->
+                            new DeploymentBuilder(current)
+                                    .editMetadata()
+                                    .withLabels(desired.metadata.labels)
+                                    .withAnnotations(desired.metadata.annotations)
+                                    .endMetadata()
+                                    .editSpec()
+                                    .withReplicas(desired.spec.replicas)
+                                    .withMinReadySeconds(desired.spec.minReadySeconds)
+                                    .withTemplate(desired.spec.template)
+                                    .endSpec()
+                                    .build()
+                        }
+                log.debug "Told the orchestrator to update " + deployment.name
+                return true
+            } catch (KubernetesClientException e) {
+                if (e.code == 409 && i < maxAttempts - 1) {
+                    log.debug "Conflict updating ${deployment.name}, retrying " +
+                            "(attempt ${i + 1} of ${maxAttempts})"
+                    sleep 1000
+                    continue
+                }
+                log.warn("Error updating k8s deployment: ", e)
+                return false
+            } catch (Exception e) {
+                log.warn("Error updating k8s deployment: ", e)
+                return false
+            }
+        }
+        return false
     }
 
     void updateDeployment(Deployment deployment) {
@@ -2089,15 +2133,8 @@ class Kubernetes {
     */
 
     @CompileDynamic
-    boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
-        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
-
-        // Create service if needed
-        if (deployment.exposeAsService) {
-            createService(deployment)
-        }
-
-        K8sDeployment d = new K8sDeployment(
+    private K8sDeployment toK8sDeployment(Deployment deployment) {
+        return new K8sDeployment(
                 metadata: new ObjectMeta(
                         name: deployment.name,
                         namespace: deployment.namespace,
@@ -2116,9 +2153,20 @@ class Kubernetes {
                                 ),
                                 spec: generatePodSpec(deployment)
                         )
-
                 )
         )
+    }
+
+    @CompileDynamic
+    boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
+        // Create service if needed
+        if (deployment.exposeAsService) {
+            createService(deployment)
+        }
+
+        K8sDeployment d = toK8sDeployment(deployment)
 
         try {
             withK8sClientRetry(maxNumRetries, 1) {
@@ -2402,7 +2450,9 @@ class Kubernetes {
         // Allow override of imagePullPolicy for quay.io images. Typically used
         // to set to Never to help keep the list of quay.io prebuilt images up
         // to date for image-prefetcher. Why not all images? See ROX-25258.
-        if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
+        if (deployment.imagePullPolicyOverride) {
+            container.setImagePullPolicy(deployment.imagePullPolicyOverride)
+        } else if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
             container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
         }
         if (deployment.livenessProbeDefined) {
@@ -2630,8 +2680,91 @@ class Kubernetes {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
         }
-        if (waitForDeletion) {
-            waitForNamespaceDeletion(ns)
+        if (waitForDeletion && !waitForNamespaceDeletion(ns)) {
+            // A namespace that is still listed is a failed cleanup, not a soft warning.
+            throw new OrchestratorManagerException(
+                    "Timed out waiting for namespace ${ns} to be deleted${namespaceDeletionDiagnostics(ns)}")
+        }
+    }
+
+    // deleteManagedWorkloads removes deployments, replica sets, and pods so
+    // namespace deletion is not held by a pod's termination. A second delete
+    // with grace period 0 shortens a termination already in progress.
+    @CompileDynamic
+    void deleteManagedWorkloads(String ns) {
+        Timer t = new Timer(20, 1)
+        boolean sawNoPods = false
+        while (t.IsValid()) {
+            if (namespaceGone(ns)) {
+                return
+            }
+            deleteCollectionQuietly { client.apps().deployments().inNamespace(ns).delete() }
+            deleteCollectionQuietly { client.apps().replicaSets().inNamespace(ns).delete() }
+            deleteCollectionQuietly { client.pods().inNamespace(ns).withGracePeriod(0L).delete() }
+            if (listPodsQuietly(ns).isEmpty()) {
+                // A second empty read covers a replica set that creates one
+                // more pod after it is told to delete.
+                if (sawNoPods) {
+                    return
+                }
+                sawNoPods = true
+                continue
+            }
+            sawNoPods = false
+        }
+        def stuck = listPodsQuietly(ns).collect {
+            "${it.metadata?.name} phase=${it.status?.phase} finalizers=${it.metadata?.finalizers}"
+        }
+        log.info "Workloads still present in ${ns} before namespace deletion: ${stuck}"
+    }
+
+    @CompileDynamic
+    private boolean namespaceGone(String ns) {
+        try {
+            return client.namespaces().withName(ns).get() == null
+        } catch (KubernetesClientException e) {
+            return e.code == 404
+        }
+    }
+
+    @CompileDynamic
+    private void deleteCollectionQuietly(Closure deletion) {
+        try {
+            deletion.call()
+        } catch (KubernetesClientException e) {
+            if (e.code != 404) {
+                log.warn "Resource delete during namespace cleanup failed: ${e.message}"
+            }
+        }
+    }
+
+    @CompileDynamic
+    private List listPodsQuietly(String ns) {
+        try {
+            return client.pods().inNamespace(ns).list()?.items ?: []
+        } catch (KubernetesClientException e) {
+            if (e.code == 404) {
+                return []
+            }
+            throw e
+        }
+    }
+
+    @CompileDynamic
+    private String namespaceDeletionDiagnostics(String ns) {
+        try {
+            def remaining = client.namespaces().withName(ns).get()
+            if (remaining == null) {
+                return ""
+            }
+            def pods = listPodsQuietly(ns).collect {
+                "${it.metadata?.name}(phase=${it.status?.phase}, finalizers=${it.metadata?.finalizers})"
+            }
+            return " (phase=${remaining.status?.phase}," +
+                    " deletionTimestamp=${remaining.metadata?.deletionTimestamp}," +
+                    " finalizers=${remaining.metadata?.finalizers}, pods=${pods})"
+        } catch (Exception e) {
+            return " (failed to collect namespace diagnostics: ${e.message})"
         }
     }
 

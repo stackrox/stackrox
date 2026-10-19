@@ -124,8 +124,8 @@ var (
 		// delegation, the scan attempt should be retried.
 		//
 		// ex:
-		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
-		"no connection to",
+		// - no connection to cluster "remote", verify the cluster is healthy and connected
+		"no connection to cluster",
 
 		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
 		// or 504 (Gateway Timeout) along with some HTML, retry when this happens.

@@ -374,6 +374,12 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	}
 
 	newAlert.FirstOccurred = old.GetFirstOccurred()
+	// Sensor's payload does not set Inactive; keep the stored flag on the merged alert.
+	if oldDep := old.GetDeployment(); oldDep != nil && oldDep.GetInactive() {
+		if newDep := newAlert.GetDeployment(); newDep != nil {
+			newDep.Inactive = true
+		}
+	}
 	return newAlert
 }
 
@@ -427,7 +433,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	}
 
 	// Phase 2: fetch full alerts for matched keys and merge.
-	mergedAlertIDs, mergedNew, mergedUpdated, mergeErr := d.fetchAndMergeCandidates(ctx, mergeCandidates)
+	_, mergedNew, mergedUpdated, mergeErr := d.fetchAndMergeCandidates(ctx, mergeCandidates)
 	if mergeErr != nil {
 		err = mergeErr
 		return
@@ -435,12 +441,25 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	newAlerts = append(newAlerts, mergedNew...)
 	updatedAlerts = append(updatedAlerts, mergedUpdated...)
 
-	// Find old alerts no longer being produced, and identify inactive deployments.
 	deploymentsBeingRemoved := set.NewStringSet()
 	for _, f := range oldAlertFilters {
 		if depID := f.removedDeploymentID(); depID != "" {
 			deploymentsBeingRemoved.Add(depID)
 		}
+	}
+
+	for _, a := range newAlerts {
+		d.stampInactiveIfDeploymentGone(a, deploymentsBeingRemoved)
+	}
+	for _, a := range updatedAlerts {
+		d.stampInactiveIfDeploymentGone(a, deploymentsBeingRemoved)
+	}
+
+	// IDs already in updatedAlerts were stamped in memory. Re-fetching them
+	// would upsert the stored blob and drop merged processes.
+	alreadyUpdated := set.NewStringSet()
+	for _, a := range updatedAlerts {
+		alreadyUpdated.Add(a.GetId())
 	}
 
 	var needInactiveIDs []string
@@ -454,10 +473,10 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 		if key.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
 			key.GetState() == storage.ViolationState_ATTEMPTED {
-			if mergedAlertIDs.Contains(key.GetId()) {
-				continue
-			}
 			if key.HasDeployment() && !key.IsDeploymentInactive() {
+				if alreadyUpdated.Contains(key.GetId()) {
+					continue
+				}
 				depID := key.GetDeploymentId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
 					needInactiveIDs = append(needInactiveIDs, key.GetId())
@@ -466,7 +485,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		}
 	}
 
-	// Mark deployments inactive for alerts not already handled by the merge phase.
+	// Stored runtime alerts with no incoming write still need an inactive stamp.
 	inactiveUpdates, inactiveErr := d.markDeploymentsInactive(ctx, needInactiveIDs)
 	if inactiveErr != nil {
 		err = inactiveErr
@@ -479,9 +498,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 }
 
 // fetchAndMergeCandidates fetches full alerts for merge candidates and merges
-// them with incoming alerts. Returns the set of merged alert IDs (to skip in
-// inactive marking), any alerts treated as new (deleted between phases), and
-// any updated alerts from merging.
+// them with incoming alerts. Returns merged IDs, alerts treated as new
+// (deleted between phases), and updated alerts from merging.
 func (d *alertManagerImpl) fetchAndMergeCandidates(ctx context.Context, candidates []mergeCandidate) (mergedIDs set.StringSet, newAlerts, updatedAlerts []*storage.Alert, err error) {
 	mergedIDs = set.NewStringSet()
 	if len(candidates) == 0 {
@@ -544,6 +562,22 @@ func (d *alertManagerImpl) markDeploymentsInactive(ctx context.Context, alertIDs
 		}
 	}
 	return updated, nil
+}
+
+// stampInactiveIfDeploymentGone sets deployment.Inactive when the deployment is
+// being removed or is already gone. Sensor can still send runtime alerts after that.
+func (d *alertManagerImpl) stampInactiveIfDeploymentGone(alert *storage.Alert, deploymentsBeingRemoved set.StringSet) {
+	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME &&
+		alert.GetState() != storage.ViolationState_ATTEMPTED {
+		return
+	}
+	dep := alert.GetDeployment()
+	if dep == nil || dep.GetInactive() {
+		return
+	}
+	if deploymentsBeingRemoved.Contains(dep.GetId()) || d.runtimeDetector.DeploymentInactive(dep.GetId()) {
+		dep.Inactive = true
+	}
 }
 
 func (d *alertManagerImpl) shouldMarkAlertResolved(old alertviews.AlertMatcher, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {

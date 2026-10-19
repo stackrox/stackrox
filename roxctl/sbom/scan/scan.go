@@ -54,8 +54,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "scan",
-		Short: "[DEV PREVIEW] Scan the specified SBOM and return scan results",
-		Long:  "[DEV PREVIEW] Scan the specified SBOM and return scan results. You must have write permissions to the `Image` resource. Currently supports SPDX 2.3 JSON documents with content types: [`application/spdx+json`, `text/spdx+json`].",
+		Short: "(Technology Preview) Scan the specified SBOM and return scan results",
+		Long: "(Technology Preview) Scan the specified SBOM and return scan results. " +
+			"You must have write permissions to the `Image` resource. Currently supports SPDX 2.3 JSON documents with content types: " +
+			"[`application/spdx+json`, `text/spdx+json`]." +
+			common.TechPreviewLongText,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := sbomScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err

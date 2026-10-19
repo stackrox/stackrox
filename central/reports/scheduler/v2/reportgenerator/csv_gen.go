@@ -32,6 +32,7 @@ var (
 		"NVDCVSS",
 		"EPSS Probability Percentage",
 		"Discovered At",
+		"Image Created Date",
 		"Reference",
 		"Advisory Name",
 		"Advisory Link",
@@ -61,16 +62,79 @@ func originDisplayName(origin storage.VulnOrigin) string {
 	return origin.String()
 }
 
-// GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
-func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
-	// add header for component version
+func formatCSVRow(r *ImageCVEQueryResponse) []string {
+	var epssScore string
+	if r.GetEPSSProbability() != nil {
+		epssScore = strconv.FormatFloat(*r.GetEPSSProbability()*100, 'f', 3, 64)
+	} else {
+		epssScore = "Not Available"
+	}
+
+	csvRow := []string{
+		r.GetCluster(),
+		r.GetNamespace(),
+		r.GetDeployment(),
+		r.GetImage(),
+		r.GetComponent(),
+		r.GetComponentVersion(),
+		r.GetCVE(),
+		strconv.FormatBool(r.GetFixable()),
+		r.GetFixedByVersion(),
+		strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
+		strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+		strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
+		epssScore}
+
+	if features.KnownExploitedVulnerabilities.Enabled() {
+		var cisaKev string
+		if r.GetCisaKev() != nil {
+			cisaKev = strconv.FormatBool(*r.GetCisaKev())
+		} else {
+			cisaKev = "Not Available"
+		}
+		var knownRansomware string
+		if r.GetKnownRansomwareCampaign() != nil {
+			knownRansomware = strconv.FormatBool(*r.GetKnownRansomwareCampaign())
+		} else {
+			knownRansomware = "Not Available"
+		}
+		csvRow = append(csvRow, cisaKev, knownRansomware)
+	}
+
+	csvRow = append(csvRow,
+		r.GetDiscoveredAtImage(),
+		r.GetImageCreatedAt(),
+		r.Link,
+		r.GetAdvisoryName(),
+		r.GetAdvisoryLink(),
+		originDisplayName(r.GetOrigin()),
+	)
+
+	return csvRow
+}
+
+func formatCol() []string {
 	csvHeaderCols := csvHeader
 	if features.KnownExploitedVulnerabilities.Enabled() {
 		csvHeaderCols = append(csvHeaderCols[:0:0], csvHeader...)
 		epssIdx := slices.Index(csvHeaderCols, "EPSS Probability Percentage")
-		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV")
+		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV", "Known Ransomware Campaign")
 	}
-	csvWriter := csv.NewGenericWriter(csvHeaderCols, true)
+	return csvHeaderCols
+}
+
+func csvReportName(configName string) string {
+	truncatedName := configName
+	if len(configName) > 80 {
+		truncatedName = configName[0:80] + "..."
+	}
+	now := time.Now()
+	return fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, now.Format("02_January_2006"))
+}
+
+// GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
+func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
+	csvWriter := csv.NewGenericWriter(formatCol(), true)
 
 	for _, r := range cveResponses {
 		var epssScore string
@@ -101,10 +165,17 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			} else {
 				cisaKev = "Not Available"
 			}
-			row = append(row, cisaKev)
+			var knownRansomware string
+			if r.GetKnownRansomwareCampaign() != nil {
+				knownRansomware = strconv.FormatBool(*r.GetKnownRansomwareCampaign())
+			} else {
+				knownRansomware = "Not Available"
+			}
+			row = append(row, cisaKev, knownRansomware)
 		}
 		row = append(row,
 			r.GetDiscoveredAtImage(),
+			r.GetImageCreatedAt(),
 			r.Link,
 			r.GetAdvisoryName(),
 			r.GetAdvisoryLink(),
@@ -121,17 +192,10 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	truncatedName := configName
-	if len(configName) > 80 {
-		truncatedName = configName[0:80] + "..."
-	}
-
-	now := time.Now()
-	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, now.Format("02_January_2006"))
 	header := &zip.FileHeader{
-		Name:     reportName,
+		Name:     csvReportName(configName),
 		Method:   zip.Deflate,
-		Modified: now,
+		Modified: time.Now(),
 	}
 	zipFile, err := zipWriter.CreateHeader(header)
 	if err != nil {
@@ -146,4 +210,5 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 		return nil, errors.Wrapf(err, "unable to close the zip file for report config %s", configName)
 	}
 	return &zipBuf, nil
+
 }

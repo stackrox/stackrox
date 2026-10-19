@@ -43,8 +43,6 @@ const (
 	sensorSecretName           = securedcluster.SensorTLSSecretName
 	collectorSecretName        = securedcluster.CollectorTLSSecretName
 	admissionControlSecretName = securedcluster.AdmissionControlTLSSecretName
-	scannerSecretName          = securedcluster.ScannerTLSSecretName
-	scannerDbSecretName        = securedcluster.ScannerDbTLSSecretName
 	scannerV4IndexerSecretName = securedcluster.ScannerV4IndexerTLSSecretName
 	scannerV4DbSecretName      = securedcluster.ScannerV4DbTLSSecretName
 )
@@ -397,19 +395,12 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 				secretsData: map[string]map[string][]byte{sensorSecretName: nil},
 			},
 		},
-		"corrupted data in scanner DB secret": {
-			k8sClientConfig: fakeK8sClientConfig{
-				secretsData: map[string]map[string][]byte{scannerDbSecretName: nil},
-			},
-		},
 		"corrupted data in all secured cluster secrets": {
 			k8sClientConfig: fakeK8sClientConfig{
 				secretsData: map[string]map[string][]byte{
 					sensorSecretName:           nil,
 					collectorSecretName:        nil,
 					admissionControlSecretName: nil,
-					scannerSecretName:          nil,
-					scannerDbSecretName:        nil,
 					scannerV4IndexerSecretName: nil,
 					scannerV4DbSecretName:      nil,
 				},
@@ -573,14 +564,11 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 	testCases := map[string]struct {
 		secretNames []string
 	}{
-		"wrong owner for sensor secret":                  {secretNames: []string{sensorSecretName}},
-		"wrong owner for collector secret":               {secretNames: []string{collectorSecretName}},
-		"wrong owner for admission controller secret":    {secretNames: []string{admissionControlSecretName}},
-		"wrong owner for scanner secret":                 {secretNames: []string{scannerSecretName}},
-		"wrong owner for scanner db secret":              {secretNames: []string{scannerDbSecretName}},
-		"wrong owner for scanner v4 indexer secret":      {secretNames: []string{scannerV4IndexerSecretName}},
-		"wrong owner for scanner v4 db secret":           {secretNames: []string{scannerV4DbSecretName}},
-		"wrong owner for scanner and scanner db secrets": {secretNames: []string{scannerSecretName, scannerDbSecretName}},
+		"wrong owner for sensor secret":               {secretNames: []string{sensorSecretName}},
+		"wrong owner for collector secret":            {secretNames: []string{collectorSecretName}},
+		"wrong owner for admission controller secret": {secretNames: []string{admissionControlSecretName}},
+		"wrong owner for scanner v4 indexer secret":   {secretNames: []string{scannerV4IndexerSecretName}},
+		"wrong owner for scanner v4 db secret":        {secretNames: []string{scannerV4DbSecretName}},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -801,8 +789,6 @@ func getAllSecuredClusterCertificates(t require.TestingT) map[string]*mtls.Issue
 		sensorSecretName:           getCertificate(t, storage.ServiceType_SENSOR_SERVICE),
 		collectorSecretName:        getCertificate(t, storage.ServiceType_COLLECTOR_SERVICE),
 		admissionControlSecretName: getCertificate(t, storage.ServiceType_ADMISSION_CONTROL_SERVICE),
-		scannerSecretName:          getCertificate(t, storage.ServiceType_SCANNER_SERVICE),
-		scannerDbSecretName:        getCertificate(t, storage.ServiceType_SCANNER_DB_SERVICE),
 		scannerV4IndexerSecretName: getCertificate(t, storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 		scannerV4DbSecretName:      getCertificate(t, storage.ServiceType_SCANNER_V4_DB_SERVICE),
 	}
@@ -829,8 +815,6 @@ func getSecuredClusterIssueCertsSuccessResponse(
 		sensorSecretName:           storage.ServiceType_SENSOR_SERVICE,
 		collectorSecretName:        storage.ServiceType_COLLECTOR_SERVICE,
 		admissionControlSecretName: storage.ServiceType_ADMISSION_CONTROL_SERVICE,
-		scannerSecretName:          storage.ServiceType_SCANNER_SERVICE,
-		scannerDbSecretName:        storage.ServiceType_SCANNER_DB_SERVICE,
 		scannerV4IndexerSecretName: storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
 		scannerV4DbSecretName:      storage.ServiceType_SCANNER_V4_DB_SERVICE,
 	}

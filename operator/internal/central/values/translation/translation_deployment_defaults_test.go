@@ -17,8 +17,6 @@ func TestDeploymentDefaults(t *testing.T) {
 	componentPaths := []testingUtils.ComponentPath{
 		{Name: "central", NodeSelectorPath: "central.nodeSelector", TolerationsPath: "central.tolerations"},
 		{Name: "central-db", NodeSelectorPath: "central.db.nodeSelector", TolerationsPath: "central.db.tolerations"},
-		{Name: "scanner", NodeSelectorPath: "scanner.nodeSelector", TolerationsPath: "scanner.tolerations"},
-		{Name: "scanner-db", NodeSelectorPath: "scanner.dbNodeSelector", TolerationsPath: "scanner.dbTolerations"},
 		{Name: "scannerV4-indexer", NodeSelectorPath: "scannerV4.indexer.nodeSelector", TolerationsPath: "scannerV4.indexer.tolerations"},
 		{Name: "scannerV4-matcher", NodeSelectorPath: "scannerV4.matcher.nodeSelector", TolerationsPath: "scannerV4.matcher.tolerations"},
 		{Name: "scannerV4-db", NodeSelectorPath: "scannerV4.db.nodeSelector", TolerationsPath: "scannerV4.db.tolerations"},

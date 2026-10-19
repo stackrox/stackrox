@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 var (
@@ -30,12 +31,14 @@ func New(storage datastore.DataStore,
 	processor notifier.Processor,
 	policyCleaner policycleaner.PolicyCleaner,
 	reporter integrationhealth.Reporter,
-	cryptoKey string) Service {
+	cryptoKey string,
+	db postgres.DB) Service {
 	return &serviceImpl{
 		storage:       storage,
 		processor:     processor,
 		policyCleaner: policyCleaner,
 		reporter:      reporter,
 		cryptoKey:     cryptoKey,
+		db:            db,
 	}
 }

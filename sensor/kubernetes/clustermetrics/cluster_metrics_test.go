@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,6 +20,8 @@ const (
 	// Must be larger than defaultInterval. You may want to increase it if you plan
 	// to step through the code with a debugger.
 	metricsTimeout = 300 * time.Millisecond
+
+	testAgentVersion470 = "4.7.0-12-gabcdef0123"
 )
 
 func TestClusterMetrics(t *testing.T) {
@@ -96,7 +99,7 @@ func (f *fakeClusterIDPeeker) GetNoWait() string {
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval)
+	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval, nil)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -123,7 +126,7 @@ func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponent
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
-	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.client)
+	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.client, nil)
 
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
@@ -150,4 +153,62 @@ func (s *ClusterMetricsTestSuite) addNode(name coreV1.ResourceName, cpu resource
 		},
 	}, metaV1.CreateOptions{})
 	s.Require().NoError(err)
+}
+
+type fakeVMStatsSource struct {
+	stats vmscraper.Stats
+}
+
+func (f *fakeVMStatsSource) Stats() vmscraper.Stats {
+	return f.stats
+}
+
+func (s *ClusterMetricsTestSuite) TestNilVMStatsSource() {
+	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, nil)
+	impl, ok := metrics.(*clusterMetricsImpl)
+	s.Require().True(ok)
+
+	cm, err := impl.collectMetrics()
+	s.Require().NoError(err)
+	s.Nil(cm.GetVirtualMachineMetrics(),
+		"nil vmStatsSource must produce nil virtual_machine_metrics, not a zero-valued one")
+}
+
+func (s *ClusterMetricsTestSuite) TestTypedNilVMStatsSource() {
+	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, (*vmscraper.VMScraper)(nil))
+	impl, ok := metrics.(*clusterMetricsImpl)
+	s.Require().True(ok)
+
+	cm, err := impl.collectMetrics()
+	s.Require().NoError(err)
+	s.Nil(cm.GetVirtualMachineMetrics(),
+		"typed-nil *VMScraper must not panic and must omit virtual_machine_metrics")
+}
+
+func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
+	src := &fakeVMStatsSource{
+		stats: vmscraper.Stats{
+			TrackedVMs: 5,
+			VMsScanned: 3,
+			VersionCounts: map[string]int{
+				testAgentVersion470: 2,
+				"unknown":           1,
+			},
+		},
+	}
+	cm := NewWithInterval(&fakeClusterIDPeeker{}, s.client, 10*time.Millisecond, src)
+	s.Require().NoError(cm.Start())
+	defer cm.Stop()
+	cm.Notify(common.SensorComponentEventCentralReachable)
+
+	select {
+	case msg := <-cm.ResponsesC():
+		vmm := msg.GetClusterMetrics().GetVirtualMachineMetrics()
+		s.Require().NotNil(vmm, "VirtualMachineMetrics must be present when vmStatsSource is non-nil")
+		s.Equal(int32(5), vmm.GetTrackedVms())
+		s.Equal(int32(3), vmm.GetVmsScanned())
+		s.Equal(map[string]int32{testAgentVersion470: 2, "unknown": 1}, vmm.GetRoxagentVersionCounts())
+	case <-time.After(metricsTimeout):
+		s.Fail("timeout waiting for cluster metrics with VM data")
+	}
 }

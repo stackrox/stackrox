@@ -27,7 +27,8 @@ type Store interface {
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-comparison determines whether a full replace or scan_time-only
 	// update is performed. CVE created_at timestamps are preserved across
-	// delete/re-insert cycles.
+	// delete/re-insert cycles. Also stamps last_agent_contact: this is the
+	// scrape-derived path.
 	// NOTE: Mutates parts in-place (Scan.ScanTime, Scan.Hash, CVE CreatedAt).
 	UpsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error
 
@@ -42,6 +43,8 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	// Get returns the VM with the given ID.
 	Get(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error)
+	// GetWithLatestScan returns a VM and its latest scan in one query.
+	GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error)
 	// GetMany returns the VMs with the given IDs.
 	GetMany(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error)
 

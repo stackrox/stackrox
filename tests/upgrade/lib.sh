@@ -5,19 +5,28 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+central_deployment_count() {
+    curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
+        -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
+        "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r
+}
+
 wait_for_central_reconciliation() {
     info "Waiting for central reconciliation"
 
-    # Reconciliation is rather slow in this case, since the central has a DB with a bunch of deployments,
-    # none of which exist. So when sensor connects, the reconciliation deletion takes a while to flush.
-    # This causes flakiness with the smoke tests.
-    # To mitigate this, wait for the deployments to get deleted before running the tests.
+    # Sensor reconnect flushes deployments that no longer exist on the
+    # cluster. Smoke flakes if that leftover count is still high.
     local success=0
+    local i
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST -d "{\"operationName\":\"summary_counts\",\"variables\":{},\"query\":\"query summary_counts {\n  clusterCount\n  nodeCount\n  violationCount\n  deploymentCount\n  imageCount\n  secretCount\n}\"}" "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r)"
+        numDeployments="$(central_deployment_count)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
-        [[ -n "$numDeployments" ]]
+        # GraphQL returns null while Central is still coming up; retry.
+        if [[ -z "$numDeployments" || "$numDeployments" == "null" ]]; then
+            sleep 10
+            continue
+        fi
         if [[ "$numDeployments" -lt 100 ]]; then
             success=1
             break
@@ -25,29 +34,6 @@ wait_for_central_reconciliation() {
         sleep 10
     done
     [[ "$success" == 1 ]]
-}
-
-wait_for_scanner_to_be_ready() {
-    echo "Waiting for scanner to be ready"
-    start_time="$(date '+%s')"
-    while true; do
-      scanner_json="$(kubectl -n stackrox get deploy/scanner -o json)"
-      replicas="$(jq '.status.replicas' <<<"${scanner_json}")"
-      readyReplicas="$(jq '.status.readyReplicas' <<<"${scanner_json}")"
-      echo "scanner replicas: $replicas"
-      echo "scanner readyReplicas: $readyReplicas"
-      if [[  "$replicas" == "$readyReplicas" ]]; then
-        break
-      fi
-      if (( $(date '+%s') - start_time > 1200 )); then
-        kubectl -n stackrox get pod -o wide
-        kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 20m"
-        exit 1
-      fi
-      sleep 5
-    done
-    echo "Scanner is ready"
 }
 
 validate_upgrade() {
@@ -115,69 +101,83 @@ wait_for_background_migrations() {
 }
 
 get_target_bg_migration_seqnum() {
-    grep -oP 'CurrentBgMigrationSeqNum\s*=\s*\K[0-9]+' \
+    sed -n 's/^const CurrentBgMigrationSeqNum = \([0-9][0-9]*\)$/\1/p' \
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
-deploy_earlier_postgres_central() {
+deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-
-    # Let's try helm
-    ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
-
-    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
-         --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
-         --set central.db.enabled=true \
-         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
-         --set central.persistence.none=true \
-         --set central.exposure.loadBalancer.enabled=true \
-         --set system.enablePodSecurityPolicies=false \
-         --set central.image.tag="${EARLIER_TAG}" \
-         --set central.db.image.tag="${EARLIER_TAG}" \
-         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.resources.limits.memory="6Gi"
-
-    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
-    # the scripts.  So we will give it a minute for things to get started before we proceed
-    sleep 60
-
-    ROX_USERNAME="admin"
+    local roxie_envrc
+    roxie_envrc="$(mktemp)"
+    roxie deploy central --verbose \
+        --single-namespace \
+        --envrc "${roxie_envrc}" \
+        --tag "${EARLIER_TAG}" \
+        --resources ci \
+        --pause-reconciliation `# subsequent tests mangle resources and image` \
+        --exposure loadbalancer \
+        --set central.spec.central.db.persistence.persistentVolumeClaim.storageClassName=premium-rwo `# i.e. type: pd-ssd` \
+        --set central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName=premium-rwo \
+        "$@"
+    # shellcheck disable=SC1090
+    source "${roxie_envrc}"
+    rm -f "${roxie_envrc}"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-restore_4_6_backup() {
-    info "Restoring a 4.6 backup into a newer central"
+# upgrade_operator_to_head upgrades the operator to the HEAD version
+# and resumes central reconciliation so the upgrade is processed.
+upgrade_operator_to_head() {
+    local namespace="${1:-stackrox}"
+    local image_tag="${2:-$CURRENT_TAG}"
 
-    restore_4_6_postgres_backup
+    info "Upgrading central to HEAD version with Scanner V4"
+
+    roxie deploy operator --verbose \
+        --single-namespace \
+        --tag "${image_tag}"
+
+    # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
+    # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
+    kubectl -n "${namespace}" patch centrals.platform.stackrox.io stackrox-central-services --type merge \
+        -p '{"spec":{"customize":{"envVars":[{"name": "SCANNER_V4_MATCHER_READINESS","value":"vulnerability"}]}}}'
+
+    kubectl annotate -n "${namespace}" centrals.platform.stackrox.io stackrox-central-services \
+        stackrox.io/pause-reconcile-
+
+    export SCANNER_V4_VULN_READINESS=true
+    wait_for_api "$namespace"
+    wait_for_central_db "$namespace"
+    wait_for_scanner_V4 "$namespace"
+}
+
+restore_backup() {
+    info "Restoring a backup into a newer central"
+
+    restore_postgres_backup
 }
 
 force_rollback() {
-    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+    info "Forcing a rollback to ${EARLIER_TAG}"
 
     local upgradeStatus
     upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "${EARLIER_TAG}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
     local config_patch
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 }
 
 validate_sensor_bundle_via_upgrader() {
@@ -487,4 +487,36 @@ preamble() {
     else
         require_executable yq
     fi
+}
+
+deploy_scaled_workload() {
+    info "Deploying a scaled workload"
+
+    roxie deploy secured-cluster --verbose \
+        --single-namespace \
+        --tag "${EARLIER_TAG}" \
+        --resources ci \
+        --pause-reconciliation \
+        --early-readiness \
+        --set securedCluster.spec.clusterName=scale-remote
+
+    ./scale/launch_workload.sh scale-test
+
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    wait_for_api
+
+    info "Sleep for a bit to let the scale build"
+    # shellcheck disable=SC2034
+    for i in $(seq 1 150); do
+        echo -n .
+        sleep 5
+    done
+
+    info "Done with our nap for scaling"
 }

@@ -6,6 +6,10 @@
     { "profileName": "ocp4-cis" },
     { "profileName": "ocp4-cis-node" },
     { "profileName": "ocp4-cis-1-7" },
-    { "profileName": "ocp4-cis-node-1-7" }
+    { "profileName": "ocp4-cis-node-1-7" },
+    { "profileName": "ocp5-cis" },
+    { "profileName": "ocp5-cis-node" },
+    { "profileName": "ocp5-cis-1-7" },
+    { "profileName": "ocp5-cis-node-1-7" }
   ]
 }

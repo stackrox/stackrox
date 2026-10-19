@@ -34,6 +34,10 @@ message VirtualMachineV2 {
 
   google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
 
+  // last_agent_contact is the last successful pull-mode scrape that landed in Central.
+  // Unset means never scraped; GetVM maps age against ROX_VIRTUAL_MACHINES_AGENT_STALE_AFTER.
+  google.protobuf.Timestamp last_agent_contact = 13; // @gotags: search:"Last Agent Contact,hidden" sql:"type(timestamptz)" hash:"ignore"
+
   enum Note {
     MISSING_METADATA = 0;
     MISSING_SCAN_DATA = 1;

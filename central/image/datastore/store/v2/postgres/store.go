@@ -423,10 +423,17 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 
 type hashWrapper struct {
 	Components []*storage.EmbeddedImageScanComponent `hash:"set"`
+	Count      int
+	VulnCount  int
 }
 
 func populateImageScanHash(scan *storage.ImageScan) error {
-	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, &hashstructure.HashOptions{ZeroNil: true})
+	components := scan.GetComponents()
+	vulnCount := 0
+	for _, c := range components {
+		vulnCount += len(c.GetVulns())
+	}
+	hash, err := hashstructure.Hash(hashWrapper{Components: components, Count: len(components), VulnCount: vulnCount}, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}

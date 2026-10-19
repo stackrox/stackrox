@@ -53,7 +53,7 @@ fi
 # Set API_ENDPOINT since we know it from the port-forward
 export API_ENDPOINT="localhost:8000"
 
-# Get admin password from SHARED_DIR (saved by stackrox-install-helm step)
+# Get admin password from SHARED_DIR (saved by stackrox-install-roxie step)
 if [[ -n "${SHARED_DIR:-}" && -f "${SHARED_DIR}/rox_admin_password" ]]; then
     export ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
     info "Retrieved admin password from SHARED_DIR"
@@ -89,11 +89,23 @@ else
     info "Warning: Failed to get central diagnostics"
 fi
 
+# Collect collector metrics
+COLLECTOR_METRICS_OUTPUT="collector-metrics"
+info "Collecting collector metrics to ${COLLECTOR_METRICS_OUTPUT}"
+if "${ROOT}/scripts/ci/collect-collector-metrics.sh" stackrox "${COLLECTOR_METRICS_OUTPUT}"; then
+    info "Collected collector metrics to ${COLLECTOR_METRICS_OUTPUT}"
+else
+    info "Warning: Failed to collect collector metrics"
+fi
+
 # Store artifacts to OpenShift CI artifact directory
 if [[ -n "${ARTIFACT_DIR:-}" ]]; then
     info "Copying diagnostics to ${ARTIFACT_DIR}"
     if [[ -d "${DIAGNOSTIC_OUTPUT}" ]]; then
         cp -r "${DIAGNOSTIC_OUTPUT}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${DIAGNOSTIC_OUTPUT}"
+    fi
+    if [[ -d "${COLLECTOR_METRICS_OUTPUT}" ]]; then
+        cp -r "${COLLECTOR_METRICS_OUTPUT}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${COLLECTOR_METRICS_OUTPUT}"
     fi
 else
     info "Warning: ARTIFACT_DIR not set, diagnostics not copied to artifacts"

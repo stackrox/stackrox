@@ -59,10 +59,8 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          memory: "2000Mi"
         limits:
           cpu: "6000m"
-          memory: "2000Mi"
     db:
       resources:
         requests:

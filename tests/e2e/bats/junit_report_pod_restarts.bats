@@ -2,6 +2,23 @@
 
 load "../../../scripts/test_helpers.bats"
 
+# Real previous-log names from collect-service-logs.sh: <pod>-<container>-previous.log.
+# Matcher/indexer pods are scanner-v4-matcher-* / scanner-v4-indexer-*, not scanner-v4-*.
+@test "POD_CONTAINERS_MAP matches scanner-v4-matcher and indexer previous logs" {
+    source "${BATS_TEST_DIRNAME}/../lib.sh"
+
+    local matcher_re indexer_re
+    matcher_re="${POD_CONTAINERS_MAP["pod: scanner-v4-matcher - container: matcher"]}"
+    indexer_re="${POD_CONTAINERS_MAP["pod: scanner-v4-indexer - container: indexer"]}"
+
+    [[ -n "${matcher_re}" ]]
+    [[ -n "${indexer_re}" ]]
+    [[ "scanner-v4-matcher-b49db6cbf-kg6p8-matcher-previous.log" =~ ${matcher_re} ]]
+    [[ "scanner-v4-indexer-65d57884b9-c8dt2-indexer-previous.log" =~ ${indexer_re} ]]
+    # Combined scanner-v4-<rs>-<hash> names must not match (those pods do not exist).
+    [[ ! "scanner-v4-111111111-11111-matcher-previous.log" =~ ${matcher_re} ]]
+}
+
 @test "junit_report_pod_restarts - clean" {
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 
@@ -37,7 +54,7 @@ load "../../../scripts/test_helpers.bats"
     POD_CONTAINERS_MAP=()
 
     # Deployment failure
-    POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+    POD_CONTAINERS_MAP["pod: scanner-v4-matcher - container: matcher"]="scanner-v4-matcher-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
     # DaemonSet failure (with two pods failed)
     POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
     # No failure
@@ -49,7 +66,7 @@ load "../../../scripts/test_helpers.bats"
     # 1 without failure and 3 failed (4 in output, but 1 de-duplicated)
     [ "${#lines[@]}" -eq 4 ]
     assert_line 'Success: Check unexpected pod restarts pod: sensor - container: sensor'
-    assert_line 'Fail: Check unexpected pod restarts pod: scanner-v4 - container: matcher'
+    assert_line 'Fail: Check unexpected pod restarts pod: scanner-v4-matcher - container: matcher'
     assert_line 'Fail: Check unexpected pod restarts pod: collector - container: node-inventory'
     assert_line 'Fail: Check unexpected pod restarts unknown'
 }

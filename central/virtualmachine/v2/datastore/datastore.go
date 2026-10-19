@@ -18,6 +18,8 @@ type DataStore interface {
 
 	// GetVirtualMachine returns the VM with the given ID.
 	GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error)
+	// GetVirtualMachineWithLatestScan returns the VM and its latest scan together.
+	GetVirtualMachineWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error)
 	// GetManyVirtualMachines returns the VMs with the given IDs.
 	GetManyVirtualMachines(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error)
 
@@ -32,7 +34,8 @@ type DataStore interface {
 
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-based change detection avoids unnecessary writes. CVE created_at
-	// timestamps are preserved across scan replacements.
+	// timestamps are preserved across scan replacements. Also stamps
+	// last_agent_contact: this is the scrape-derived path.
 	UpsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error
 
 	// DeleteVirtualMachines removes VMs and all associated data (FK cascade).

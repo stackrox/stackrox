@@ -1,32 +1,16 @@
 import type { ReactElement } from 'react';
-import {
-    Alert,
-    Breadcrumb,
-    BreadcrumbItem,
-    PageSection,
-    Tab,
-    TabTitleText,
-    Tabs,
-    Title,
-} from '@patternfly/react-core';
+import { Alert, Breadcrumb, BreadcrumbItem, PageSection, Title } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import { clustersBasePath, clustersClusterRegistrationSecretsPath } from 'routePaths';
 
-import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
 
 const title = 'Secure a cluster with a cluster registration secret';
 const headingLevel = 'h2';
 
-const operatorTab = 'Operator';
-const helmChartTab = 'Helm chart';
-
 function SecureClusterPage(): ReactElement {
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('tab', [operatorTab, helmChartTab]);
-
     return (
         <>
             <PageTitle title="Secure a cluster" />
@@ -42,28 +26,8 @@ function SecureClusterPage(): ReactElement {
             <PageSection>
                 <Title headingLevel="h1">Secure a cluster with a cluster registration secret</Title>
             </PageSection>
-            <PageSection type="tabs">
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={(_event, tabKey) => setActiveTabKey(tabKey)}
-                    usePageInsets
-                    mountOnEnter
-                    unmountOnExit
-                >
-                    <Tab eventKey={operatorTab} title={<TabTitleText>{operatorTab}</TabTitleText>}>
-                        <PageSection>
-                            <SecureClusterUsingOperator headingLevel={headingLevel} />
-                        </PageSection>
-                    </Tab>
-                    <Tab
-                        eventKey={helmChartTab}
-                        title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
-                    >
-                        <PageSection>
-                            <SecureClusterUsingHelmChart headingLevel={headingLevel} />
-                        </PageSection>
-                    </Tab>
-                </Tabs>
+            <PageSection>
+                <SecureClusterUsingOperator headingLevel={headingLevel} />
             </PageSection>
             <PageSection>
                 <Alert

@@ -24,7 +24,10 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
+import {
+    vulnerabilityImageConfigurationsReportsDetailsPath,
+    vulnerabilityImageConfigurationsReportsPath,
+} from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -42,16 +45,22 @@ import HelpIconTh from 'Components/HelpIconTh';
 import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { deleteReportConfiguration, reportDownloadURL } from 'services/ReportsService';
-import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
+import {
+    deleteReportConfiguration,
+    fetchReportHistory,
+    reportDownloadURL,
+    runReportRequest,
+} from 'services/ReportsService';
+import type {
+    ImageVulnerabilityReportConfiguration,
+    ImageVulnerabilityReportResourceScope,
+} from 'services/ReportsService.types';
 
 import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportsModal from '../../Reports/components/DeleteReportsModal';
-import type { ImageVulnerabilityResourceScope } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
-import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -61,7 +70,7 @@ function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfig
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityConfigurationsReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityImageConfigurationsReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -111,9 +120,12 @@ function ConfigReportsTab() {
         perPage,
         sortOption,
     });
-    const { reportSnapshots, isLoading: isLoadingReportSnapshots } =
-        useWatchLastSnapshotForReports(reportConfigurations);
+    const { reportSnapshots, isLoading: isLoadingReportSnapshots } = useWatchLastSnapshotForReports(
+        reportConfigurations,
+        fetchReportHistory
+    );
     const { isRunning, runError, runReport } = useRunReport({
+        runReportRequest,
         onCompleted: ({ reportNotificationMethod }) => {
             if (reportNotificationMethod === 'EMAIL') {
                 addToast('The report has been sent to the configured email notifier', 'success');
@@ -156,7 +168,7 @@ function ConfigReportsTab() {
 
     // Because callback function exists independent of conditional rendering,
     // TypeScript does not know for sure that it is has a collectionScope property.
-    function onClickCollectionLink(resourceScope: ImageVulnerabilityResourceScope) {
+    function onClickCollectionLink(resourceScope: ImageVulnerabilityReportResourceScope) {
         if ('collectionScope' in resourceScope) {
             setCollectionModalId(resourceScope.collectionScope.collectionId);
         }
@@ -380,7 +392,7 @@ function ConfigReportsTab() {
                         )}
                         {reportConfigurations.map((report, rowIndex) => {
                             const vulnReportURL = generatePath(
-                                vulnerabilityConfigurationReportDetailsPath,
+                                vulnerabilityImageConfigurationsReportsDetailsPath,
                                 {
                                     reportId: report.id,
                                 }

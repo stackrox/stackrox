@@ -49,7 +49,7 @@ export const defaultColumns = {
         isShownByDefault: true,
     },
     cveSeverity: {
-        title: 'CVE severity',
+        title: 'Top CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -91,6 +91,9 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             cveBaseInfo {
                 epss {
                     epssProbability
+                }
+                exploit {
+                    knownRansomwareCampaignUse
                 }
             }
             operatingSystem
@@ -145,7 +148,7 @@ function DeploymentVulnerabilitiesTable({
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
-                        CVE severity
+                        Top CVE severity
                     </Th>
                     <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
@@ -199,13 +202,8 @@ function DeploymentVulnerabilitiesTable({
                         const labels: ReactNode[] = [];
                         if (
                             isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                            isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
-                            // Add in deploymentWithVulnerabilitiesFragment following epss:
-                            // exploit {
-                            //     knownRansomwareCampaignUse
-                            // }
                             labels.push(<KnownExploitLabel key="exploit" isCompact />);
                             if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                 labels.push(
@@ -263,7 +261,7 @@ function DeploymentVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
                                         modifier="nowrap"
-                                        dataLabel="CVE severity"
+                                        dataLabel="Top CVE severity"
                                     >
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     </Td>

@@ -105,13 +105,14 @@ jobs:
             print(f'{k} = {v}')
 
         jobs_registry = [
-            Job(name='e2e-byodb-tests'),
+            Job(name='e2e-byodb-tests', require_pr_label=True),
             Job(name='e2e-db-backup-restore-tests'),
             Job(name='e2e-gke-upgrade-tests'),
-            Job(name='e2e-nongroovy-tests'),
+            Job(name='e2e-nongroovy-tests-gke'),
+            Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
             Job(name='e2e-qa-tests-gke', require_pr_label=True),
             Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
+            Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
         ]
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
@@ -135,7 +136,7 @@ jobs:
   wait-for-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
       IMAGE_PREFIX: ""
@@ -190,19 +191,15 @@ jobs:
           rhacs-eng/${{ env.IMAGE_PREFIX }}fact:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}main:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}roxctl:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator-bundle:v${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
           rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator:${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
       IMAGE_PREFIX: "release-"
@@ -266,15 +263,26 @@ jobs:
       group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-nongroovy-tests:
+  e2e-nongroovy-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-nongroovy-tests.yaml
+    uses: ./.github/workflows/e2e-nongroovy-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests-gke }}
     secrets: inherit
     concurrency:
-      group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-nongroovy-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-nongroovy-tests-gke-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-nongroovy-tests-gke-konflux.yaml
+    with:
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests-gke-konflux }}
+    secrets: inherit
+    concurrency:
+      group: e2e-nongroovy-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-qa-tests-gke:
@@ -288,15 +296,15 @@ jobs:
       group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-qa-tests-ocp-4-22:
-    needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-qa-tests-ocp-4-22.yaml
+  e2e-qa-tests-ocp-fips-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-qa-tests-ocp-fips-konflux.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-4-22 }}
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-fips-konflux }}
     secrets: inherit
     concurrency:
-      group: e2e-qa-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-qa-tests-ocp-fips-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-qa-tests-gke-konflux:

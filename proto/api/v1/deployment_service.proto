@@ -52,6 +52,10 @@ message ExportDeploymentResponse {
   storage.Deployment deployment = 1;
 }
 
+message DeploymentRiskAISummaryResponse {
+  string summary = 1;
+}
+
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
   // GetDeployment returns a deployment given its ID.
@@ -62,6 +66,11 @@ service DeploymentService {
   // GetDeploymentWithRisk returns a deployment and its risk given its ID.
   rpc GetDeploymentWithRisk(ResourceByID) returns (GetDeploymentWithRiskResponse) {
     option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}"};
+  }
+
+  // GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
+  rpc GetDeploymentRiskAISummary(ResourceByID) returns (DeploymentRiskAISummaryResponse) {
+    option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}/ai-summary"};
   }
 
   // CountDeployments returns the number of deployments.

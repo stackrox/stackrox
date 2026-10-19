@@ -20,7 +20,6 @@ import {
     baseImagesPath,
     clustersBasePath,
     collectionsBasePath,
-    complianceBasePath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
     configManagementPath,
@@ -162,28 +161,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     path: complianceEnhancedSchedulesPath,
                     routeKey: 'compliance-schedules',
                 },
-                {
-                    type: 'separator',
-                    key: 'preceding-classic-compliance',
-                },
-                {
-                    type: 'link',
-                    content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
-                    path: complianceBasePath,
-                    routeKey: 'compliance',
-                    isActive: (location) =>
-                        Boolean(
-                            matchPath({ path: `${complianceBasePath}/*` }, location.pathname)
-                        ) &&
-                        !matchPath(
-                            { path: `${complianceEnhancedCoveragePath}/*` },
-                            location.pathname
-                        ) &&
-                        !matchPath(
-                            { path: `${complianceEnhancedSchedulesPath}/*` },
-                            location.pathname
-                        ),
-                },
             ],
         },
         {
@@ -247,7 +224,9 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'link',
-                    content: 'Collections',
+                    content: (
+                        <NavigationContent variant="Deprecated">Collections</NavigationContent>
+                    ),
                     path: collectionsBasePath,
                     routeKey: 'collections',
                 },

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
 	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
+	openshiftAuth "github.com/stackrox/rox/central/auth/openshift"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -144,7 +145,7 @@ import (
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
-	v2Service "github.com/stackrox/rox/central/reports/service/v2"
+	nodeReportServiceV2 "github.com/stackrox/rox/central/reports/service/v2/node"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -218,6 +219,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/grpc/versionheader"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -382,11 +384,7 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		pruning.Singleton().Start()
-	} else {
-		log.Info("Pruning is managed by central-worker, skipping start in Central")
-	}
+	pruning.Singleton().Start()
 	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
 	}
@@ -493,6 +491,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
+	if features.NodeVulnerabilityReports.Enabled() {
+		servicesToRegister = append(servicesToRegister, nodeReportServiceV2.Singleton())
+	}
+
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
@@ -581,6 +583,9 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		if features.ACMAccessControlDelegation.Enabled() {
+			authProviderBackendFactories[openshift.TypeNameWithACMAccessControlDelegation] = openshift.NewFactoryWithACMAccessControlDelegation
+		}
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
@@ -598,6 +603,8 @@ func startGRPCServer() {
 	}
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
+
+	openshiftAuth.SeedMetricsAuthProvider(authProviderRegisteringCtx, registry, roleDataStore.Singleton(), groupDataStore.Singleton())
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
@@ -657,6 +664,8 @@ func startGRPCServer() {
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
+
+	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.CentralVersionServerInterceptor())
 
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
@@ -993,7 +1002,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
 		Authorizer:    user.With(permissions.View(resources.Image)),
-		ServerHandler: v2Service.NewDownloadHandler(),
+		ServerHandler: reportServiceV2.NewDownloadHandler(),
 		Compression:   true,
 	})
 
@@ -1001,7 +1010,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/node/jobs/download",
 			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
-			ServerHandler: v2Service.NewDownloadHandler(),
+			ServerHandler: reportServiceV2.NewNodeDownloadHandler(),
 			Compression:   true,
 		})
 	}
@@ -1057,9 +1066,7 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 	}
-	if !env.CentralWorkerEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
-	}
+	stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
 	stoppables = append(stoppables, []stoppableWithName{
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},

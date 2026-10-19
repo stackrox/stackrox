@@ -11,10 +11,12 @@ from ci_tests import UIE2eTest
 from post_tests import PostClusterTest, FinalPost
 
 # set required test parameters
-os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
+# Optimize Scanner V4 startup time by loading only RHEL vulnerability bundles
+# UI tests only scan RHEL/UBI images (OpenShift platform, StackRox, operators, nodes)
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),

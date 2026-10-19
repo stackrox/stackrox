@@ -77,6 +77,11 @@ message DatabaseBackupStatus {
   storage.BackupInfo backup_info = 1;
 }
 
+message LightspeedStatusResponse {
+  bool available = 1;
+  string message = 2;
+}
+
 // Provides availability of certain functionality of Central Services in the current configuration.
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 message CentralServicesCapabilities {
@@ -138,5 +143,10 @@ service MetadataService {
 
   rpc GetCentralCapabilities(Empty) returns (CentralServicesCapabilities) {
     option (google.api.http) = {get: "/v1/central-capabilities"};
+  }
+
+  // GetLightspeedStatus returns the availability status of the Lightspeed AI service.
+  rpc GetLightspeedStatus(Empty) returns (LightspeedStatusResponse) {
+    option (google.api.http) = {get: "/v1/lightspeed/status"};
   }
 }

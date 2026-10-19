@@ -3,8 +3,10 @@ import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
 import type { ReportPageAction } from 'Components/Reports/reports.types';
+import type { SchedulePageAction } from 'Containers/ComplianceEnhanced/Schedules/compliance.scanConfigs.utils';
 import type { ImageType } from 'services/ReportsService.types';
 import type { Telemetry } from 'types/config.proto';
+import type { Schedule } from 'types/schedule.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -64,6 +66,8 @@ export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
 
 export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
     'Image Vulnerability Reports Wizard Save Clicked';
+export const NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
+    'Node Vulnerability Reports Wizard Save Clicked';
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
@@ -384,6 +388,16 @@ export type AnalyticsEvent =
               resourceScope: string;
           };
       }
+    | {
+          event: typeof NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED;
+          properties: {
+              action: ReportPageAction;
+              cvesSince: 'allVuln'; // | 'sinceLastSentScheduledReport' | 'sinceStartDate'
+              intervalType: Schedule['intervalType'];
+              notifiers: number;
+              resourceScope: string;
+          };
+      }
     /**
      * Tracks each time the user clicks the "Create Bundle" button
      * source: 'No Clusters' is superseded by the following event in 4.10
@@ -536,6 +550,11 @@ export type AnalyticsEvent =
           properties: {
               success: true | false;
               errorMessage: string;
+              action: SchedulePageAction;
+              clusters: number;
+              intervalType: Schedule['intervalType'];
+              notifiers: number;
+              profiles: number;
           };
       }
     | {

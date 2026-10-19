@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# shellcheck source=./feature-flag-env.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -221,8 +224,6 @@ function launch_central {
     add_args -i "${MAIN_IMAGE}"
 
     add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    add_args "--scanner-image=${SCANNER_IMAGE}"
-    add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -321,6 +322,9 @@ function launch_central {
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )
+        if [[ -n "${SCANNER_V4_DB_CLAIM_NAME:-}" ]]; then
+          helm_args+=(--set-string "scannerV4DbPvcClaimName=${SCANNER_V4_DB_CLAIM_NAME}")
+        fi
         if [[ "${is_local_dev}" == "true" ]]; then
           helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi
@@ -343,6 +347,16 @@ function launch_central {
     ${KUBE_COMMAND:-kubectl} get namespace "${central_namespace}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
+    # Release roxctl generate omits feature-flag env from the bundle. Copy
+    # whatever is set in this process onto Central so CI/dev overrides apply.
+    local feature_flag_list_file
+    feature_flag_list_file="$(realpath "${common_dir}/../../pkg/features/list.go")"
+    local feature_flag_env=()
+    local _ff_assignment
+    while IFS= read -r _ff_assignment; do
+        feature_flag_env+=("${_ff_assignment}")
+    done < <(feature_flag_env_assignments "${feature_flag_list_file}")
+
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       echo "Deploying central using Helm..."
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
@@ -356,10 +370,6 @@ function launch_central {
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
       fi
-      if [[ "$SCANNER_SUPPORT" != "true" ]]; then
-        helm_args+=(--set scanner.disable=true)
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -383,6 +393,25 @@ function launch_central {
 
       # Shorten signing key watcher poll for e2e tests (production default is 4h).
       helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+
+      # Skip ROX_SCANNER_V4 / ROX_LEGACY_SCANNER: the chart already sets them
+      # from scanner config; customize.envVars would add a duplicate env name.
+      # See is_helm_owned_feature_flag in feature-flag-env.sh.
+      local helm_feature_flag_env=()
+      if (( ${#feature_flag_env[@]} > 0 )); then
+        while IFS= read -r _ff_assignment; do
+          helm_feature_flag_env+=("${_ff_assignment}")
+        done < <(printf '%s\n' "${feature_flag_env[@]}" | omit_helm_owned_feature_flags)
+      fi
+      if (( ${#helm_feature_flag_env[@]} > 0 )); then
+        echo "Injecting feature flag env into Central: ${helm_feature_flag_env[*]}"
+        local _ff_var _ff_val
+        for _ff_assignment in "${helm_feature_flag_env[@]}"; do
+          _ff_var="${_ff_assignment%%=*}"
+          _ff_val="${_ff_assignment#*=}"
+          helm_args+=(--set-string "customize.central.envVars.${_ff_var}=${_ff_val}")
+        done
+      fi
 
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
@@ -429,6 +458,12 @@ function launch_central {
             --set-json "customize.envVars.SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
           )
         fi
+      fi
+
+      if [[ -n "${ROX_CENTRAL_WORKER_ENABLED:-}" ]]; then
+        helm_args+=(
+          --set "centralWorker.enabled=${ROX_CENTRAL_WORKER_ENABLED}"
+        )
       fi
 
       if [[ -n "$EXTERNAL_DB" ]]; then
@@ -483,6 +518,9 @@ function launch_central {
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
         helm_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
       fi
+      if [[ -n "${SCANNER_V4_DB_CLAIM_NAME:-}" ]]; then
+        helm_args+=(--set-string "scannerV4.db.persistence.persistentVolumeClaim.claimName=${SCANNER_V4_DB_CLAIM_NAME}")
+      fi
 
       # Add a custom values file to Helm
       if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
@@ -509,8 +547,13 @@ function launch_central {
       # requiring a second rollout via a post-launch `set env`.
       central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
       if [[ -f "${central_deployment}" ]]; then
+        local central_env=(ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+        if (( ${#feature_flag_env[@]} > 0 )); then
+          echo "Injecting feature flag env into Central: ${feature_flag_env[*]}"
+          central_env+=("${feature_flag_env[@]}")
+        fi
         ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
-          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
+          "${central_env[@]}" > "${central_deployment}.tmp"
         mv "${central_deployment}.tmp" "${central_deployment}"
       else
         echo >&2 "WARNING: ${central_deployment} not found; Central will deploy with the default signing key watch interval and rely on the test's set env fallback."
@@ -545,11 +588,6 @@ function launch_central {
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
-          echo "Deploying Scanner..."
-          if [[ -n "${REGISTRY_USERNAME}" ]]; then
-            "${unzip_dir}/scanner/scripts/setup.sh"
-          fi
-          launch_service "${unzip_dir}" scanner
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
               echo "Deploying ScannerV4..."
@@ -586,14 +624,6 @@ function launch_central {
               echo >&2 "Possible reason for this: the roxctl in PATH does not support Scanner V4."
             fi
           fi
-
-          if [[ -n "$CI" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-          elif [[ "${is_local_dev}" == "true" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-          fi
           echo
       fi
     fi
@@ -611,7 +641,11 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
+    # Central-db is waited first because it needs to be online before Central can start.
     rollout_wait_timeout="10m"
+    if [[ -z "$EXTERNAL_DB" ]]; then
+        kubectl -n "${central_namespace}" rollout status deploy/central-db --timeout="${rollout_wait_timeout}"
+    fi
     kubectl -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
@@ -903,10 +937,6 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=false")
       fi
 
-      if [[ "$SENSOR_SCANNER_SUPPORT" == "true" ]]; then
-        helm_args+=(--set scanner.disable=false)
-      fi
-
       if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
         helm_args+=(--set scannerV4.disable=false)
       fi
@@ -925,6 +955,12 @@ function launch_sensor {
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
+
+      # Scan every 9-11 minutes with Helm deployments.
+      helm_args+=(
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL=10m
+        --set customize.envVars.ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
+      )
 
       if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         helm_args+=(
@@ -971,7 +1007,7 @@ function launch_sensor {
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
         kubectl create namespace "${sensor_namespace}" &>/dev/null || true
-        kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
+        kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/../../scripts/pull-secret.sh" stackrox docker.io)
       fi
 
       if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
@@ -1071,6 +1107,10 @@ function launch_sensor {
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
         kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
+
+      # Scan every 9-11 minutes with manifest deployments.
+      kubectl -n "${sensor_namespace}" set env ds/collector --containers=compliance \
+        ROX_NODE_SCANNING_INTERVAL=10m ROX_NODE_SCANNING_INTERVAL_DEVIATION=60s
     fi
 
     collector_env=()

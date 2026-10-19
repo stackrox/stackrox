@@ -4,9 +4,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Divider,
-    Flex,
-    FlexItem,
     PageSection,
     Spinner,
     Title,
@@ -17,7 +14,7 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import ScanConfigWizardForm from './Wizard/ScanConfigWizardForm';
+import ScanConfigWizardPageSection from './Wizard/ScanConfigWizardPageSection';
 import { defaultScanConfigFormValues } from './Wizard/useFormikScanConfig';
 import { convertScanConfigToFormik } from './compliance.scanConfigs.utils';
 
@@ -38,53 +35,50 @@ function EditScanConfigDetail({
 
     return (
         <>
-            <PageTitle title="Edit Compliance Scan Schedule Details" />
+            <PageTitle title="Edit Compliance Scan Schedule" />
             <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
                     </BreadcrumbItemLink>
-                    {!isLoading && !error && scanConfig && (
+                    {scanConfig && (
                         <BreadcrumbItem isActive>Edit {scanConfig.scanName}</BreadcrumbItem>
                     )}
                 </Breadcrumb>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
-                {!isLoading && !error && scanConfig && (
-                    <Flex
-                        alignItems={{ default: 'alignItemsCenter' }}
-                        className="pf-v6-u-py-lg pf-v6-u-px-lg"
-                    >
-                        <FlexItem flex={{ default: 'flex_1' }}>
-                            <Title headingLevel="h1">Edit {scanConfig.scanName}</Title>
-                        </FlexItem>
-                    </Flex>
-                )}
-            </PageSection>
-            <Divider component="div" />
-            <PageSection isFilled>
-                {isLoading ? (
+            {isLoading ? (
+                <PageSection isFilled>
                     <Bullseye>
                         <Spinner />
                     </Bullseye>
-                ) : (
-                    error && (
-                        <Alert
-                            variant="warning"
-                            title="Unable to fetch scan schedule"
-                            component="p"
-                            isInline
-                        >
-                            {getAxiosErrorMessage(error)}
-                        </Alert>
-                    )
-                )}
-                {!isLoading && scanConfig && (
-                    <PageSection padding={{ default: 'noPadding' }} isFilled>
-                        <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
-                    </PageSection>
-                )}
-            </PageSection>
+                </PageSection>
+            ) : (
+                <>
+                    {scanConfig && (
+                        <PageSection>
+                            <Title headingLevel="h1">Edit {scanConfig.scanName}</Title>
+                        </PageSection>
+                    )}
+                    {error && (
+                        <PageSection>
+                            <Alert
+                                variant="warning"
+                                title="Unable to fetch scan schedule"
+                                component="p"
+                                isInline
+                            >
+                                {getAxiosErrorMessage(error)}
+                            </Alert>
+                        </PageSection>
+                    )}
+                    {scanConfig && (
+                        <ScanConfigWizardPageSection
+                            initialFormValues={parsedScanConfig}
+                            pageAction="edit"
+                        />
+                    )}
+                </>
+            )}
         </>
     );
 }

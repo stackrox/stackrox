@@ -1,6 +1,8 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 
 import objects.Deployment
@@ -72,6 +74,11 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     .setImage("non-existent:image"),
     ]
 
+    // Enabling disabled deploy-time policies re-evaluates every cluster workload.
+    // OpenShift platform namespaces make that queue several minutes long.
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            (isRaceBuild() || Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 450 : 120
+
     @Shared
     private List<String> disabledPolicyIds
 
@@ -127,7 +134,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation for #policyName is triggered"
-        assert waitForViolation(deploymentName, policyName, isRaceBuild() ? 450 : 120)
+        assert waitForViolation(deploymentName, policyName, WAIT_FOR_VIOLATION_TIMEOUT)
 
         where:
         "Data inputs are:"

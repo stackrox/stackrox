@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "DeploymentService"
+      "name": "DeploymentService",
+      "description": "DeploymentService APIs can be used to manage deployments."
     }
   ],
   "consumes": [
@@ -329,6 +330,37 @@
         ]
       }
     },
+    "/v1/deploymentswithrisk/{id}/ai-summary": {
+      "get": {
+        "summary": "GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.",
+        "operationId": "DeploymentService_GetDeploymentRiskAISummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeploymentRiskAISummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DeploymentService"
+        ]
+      }
+    },
     "/v1/export/deployments": {
       "get": {
         "operationId": "DeploymentService_ExportDeployments",
@@ -425,7 +457,7 @@
         "UNKNOWN"
       ],
       "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+      "description": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
     "LabelSelectorRequirement": {
       "type": "object",
@@ -996,7 +1028,7 @@
         "CLUSTER_ADMIN"
       ],
       "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+      "description": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
     },
     "storagePortConfig": {
       "type": "object",
@@ -1110,7 +1142,7 @@
         "SERVICEACCOUNT"
       ],
       "default": "UNKNOWN",
-      "title": "Next tag: 9"
+      "description": "Next tag: 9"
     },
     "storageSecurityContext": {
       "type": "object",
@@ -1247,6 +1279,14 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1DeploymentRiskAISummaryResponse": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
         }
       }
     },

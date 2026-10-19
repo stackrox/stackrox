@@ -74,6 +74,21 @@ func (mr *MockDataStoreMockRecorder) CountDeployments(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), ctx)
 }
 
+// DeploymentExists mocks base method.
+func (m *MockDataStore) DeploymentExists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeploymentExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeploymentExists indicates an expected call of DeploymentExists.
+func (mr *MockDataStoreMockRecorder) DeploymentExists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentExists", reflect.TypeOf((*MockDataStore)(nil).DeploymentExists), ctx, id)
+}
+
 // GetContainerImageViews mocks base method.
 func (m *MockDataStore) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
 	m.ctrl.T.Helper()
@@ -148,6 +163,21 @@ func (m *MockDataStore) GetImagesForDeployment(ctx context.Context, deployment *
 func (mr *MockDataStoreMockRecorder) GetImagesForDeployment(ctx, deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetImagesForDeployment), ctx, deployment)
+}
+
+// GetV2ImageIDsForDigests mocks base method.
+func (m *MockDataStore) GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetV2ImageIDsForDigests", ctx, digests)
+	ret0, _ := ret[0].(map[string][]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetV2ImageIDsForDigests indicates an expected call of GetV2ImageIDsForDigests.
+func (mr *MockDataStoreMockRecorder) GetV2ImageIDsForDigests(ctx, digests any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetV2ImageIDsForDigests", reflect.TypeOf((*MockDataStore)(nil).GetV2ImageIDsForDigests), ctx, digests)
 }
 
 // ListDeployment mocks base method.

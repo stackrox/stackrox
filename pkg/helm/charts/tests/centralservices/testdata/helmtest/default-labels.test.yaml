@@ -14,9 +14,9 @@ tests:
     labels(.deployments.central) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
     labels(.deployments.central) | ."app.kubernetes.io/component" | assertThat(. == "central")
 
-- name: Scanner
+- name: Scanner V4
   expect: |
-    labels(.services.scanner) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
-    labels(.services.scanner) | ."app.kubernetes.io/component" | assertThat(. == "scanner")
-    labels(.deployments.scanner) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
-    labels(.deployments.scanner) | ."app.kubernetes.io/component" | assertThat(. == "scanner")
+    labels(.services["scanner-v4-indexer"]) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.services["scanner-v4-indexer"]) | ."app.kubernetes.io/component" | assertThat(. == "scanner-v4")
+    labels(.deployments["scanner-v4-indexer"]) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.deployments["scanner-v4-indexer"]) | ."app.kubernetes.io/component" | assertThat(. == "scanner-v4")

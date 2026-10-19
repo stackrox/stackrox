@@ -492,6 +492,18 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 	bundle, err := os.ReadFile("testdata/bundle.json")
 	require.NoError(t, err)
 
+	// Pin the Rekor and CT log public keys used to sign the fixtures above instead of
+	// relying on cosign's default behaviour of fetching them from the live Sigstore TUF
+	// root (tuf-repo-cdn.sigstore.dev). That live fetch makes the test flaky/non-hermetic
+	// whenever the public CDN is unreachable or rate-limits CI (see ROX-36683). These are
+	// the same public keys embedded in github.com/sigstore/sigstore's vendored TUF
+	// repository (pkg/tuf/repository/targets/{rekor,ctfe_2022}.pub) and correspond exactly
+	// to the log IDs recorded in the fixtures (verified via the log's SHA-256 key ID).
+	rekorPubKey, err := os.ReadFile("testdata/rekor_pub.pem")
+	require.NoError(t, err)
+	ctfePubKey, err := os.ReadFile("testdata/ctfe_2022_pub.pem")
+	require.NoError(t, err)
+
 	imgWithTlog, err := generateImageWithCosignSignature(imgStringWithTlog, b64SignatureWithTlog,
 		b64PayloadWithTlog, certPEMWithTlog, chainPEMWithTlog, bundle)
 	require.NoError(t, err, "creating image with signature")
@@ -603,10 +615,15 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 					&storage.SignatureIntegration{
 						CosignCertificates: []*storage.CosignCertificateVerification{
 							{
-								CertificateIdentity:   ".*",
-								CertificateOidcIssuer: ".*",
+								// Pin the real Fulcio intermediate/root chain (the same data cosign would
+								// otherwise fetch live from the Sigstore TUF root) so that certificate chain
+								// validation does not require network access to tuf-repo-cdn.sigstore.dev.
+								CertificateChainPemEnc: string(chainPEMWithTlog),
+								CertificateIdentity:    ".*",
+								CertificateOidcIssuer:  ".*",
 								CertificateTransparencyLog: &storage.CertificateTransparencyLogVerification{
-									Enabled: true,
+									Enabled:         true,
+									PublicKeyPemEnc: string(ctfePubKey),
 								},
 							},
 						},
@@ -614,6 +631,7 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 						TransparencyLog: &storage.TransparencyLogVerification{
 							Enabled:         true,
 							ValidateOffline: true,
+							PublicKeyPemEnc: string(rekorPubKey),
 						},
 					},
 				)
@@ -633,7 +651,8 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 								CertificateIdentity:    ".*",
 								CertificateOidcIssuer:  ".*",
 								CertificateTransparencyLog: &storage.CertificateTransparencyLogVerification{
-									Enabled: true,
+									Enabled:         true,
+									PublicKeyPemEnc: string(ctfePubKey),
 								},
 							},
 						},
@@ -649,13 +668,17 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 					&storage.SignatureIntegration{
 						CosignCertificates: []*storage.CosignCertificateVerification{
 							{
-								CertificateIdentity:   ".*",
-								CertificateOidcIssuer: ".*",
+								// See comment above on pinning the Fulcio chain locally instead of relying
+								// on a live TUF fetch.
+								CertificateChainPemEnc: string(chainPEMWithTlog),
+								CertificateIdentity:    ".*",
+								CertificateOidcIssuer:  ".*",
 							},
 						},
 						TransparencyLog: &storage.TransparencyLogVerification{
 							Enabled:         true,
 							ValidateOffline: true,
+							PublicKeyPemEnc: string(rekorPubKey),
 						},
 					},
 				)

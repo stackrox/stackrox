@@ -132,7 +132,7 @@ function ClusterDetailsPage() {
     return (
         <>
             <PageTitle title="Compliance coverage - Cluster" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink
                         to={generatePathWithScanConfig(coverageProfileClustersPath, {
@@ -161,7 +161,6 @@ function ClusterDetailsPage() {
                     setSelectedScanConfigName={setSelectedScanConfigName}
                 />
             </PageSection>
-            <Divider component="div" />
             <PageSection>
                 <Flex
                     direction={{ default: 'column' }}
@@ -209,7 +208,6 @@ function ClusterDetailsPage() {
                     </>
                 )}
             </PageSection>
-            <Divider component="div" />
             <PageSection>
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}

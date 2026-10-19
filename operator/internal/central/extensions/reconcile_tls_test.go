@@ -257,8 +257,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":            verifyCentralCert,
 				"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
 				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
@@ -295,8 +293,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec:     basicSpecWithScanner(true, true),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
 				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
@@ -326,16 +322,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			InterceptedK8sAPICalls: creatingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
-		"When creating a new scanner-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true, false),
-			InterceptedK8sAPICalls: creatingSecretFails("scanner-tls"),
-			ExpectedError:          "reconciling scanner-tls secret",
-		},
-		"When creating a new scanner-db-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true, false),
-			InterceptedK8sAPICalls: creatingSecretFails("scanner-db-tls"),
-			ExpectedError:          "reconciling scanner-db-tls secret",
-		},
 		"When creating a new scanner-v4-indexer-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false, true),
 			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-indexer-tls"),
@@ -360,16 +346,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: gettingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
-		},
-		"When getting an existing scanner-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true, false),
-			InterceptedK8sAPICalls: gettingSecretFails("scanner-tls"),
-			ExpectedError:          "reconciling scanner-tls secret",
-		},
-		"When getting an existing scanner-db-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true, false),
-			InterceptedK8sAPICalls: gettingSecretFails("scanner-db-tls"),
-			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
 		"When getting an existing scanner-v4-indexer-tls secret fails with a non-404 error, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false, true),
@@ -408,12 +384,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExistingManaged:        []*v1.Secret{existingCentralDB},
 			InterceptedK8sAPICalls: secretIsAlreadyDeleted("central-db-tls"),
 		},
-		"When deleting an existing scanner-tls secret fails, an error should be returned": {
-			Deleted:                true,
-			ExistingManaged:        []*v1.Secret{existingScanner},
-			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
-			ExpectedError:          "reconciling scanner-tls secret",
-		},
 		"When deleting an existing scanner-v4-indexer-tls secret fails, an error should be returned": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScannerV4Indexer},
@@ -431,22 +401,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExistingManaged:        []*v1.Secret{existingScannerV4DB},
 			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-db-tls"),
 			ExpectedError:          "reconciling scanner-v4-db-tls secret",
-		},
-		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
-			Deleted:                true,
-			ExistingManaged:        []*v1.Secret{existingScanner},
-			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-tls"),
-		},
-		"When deleting an existing scanner-db-tls secret fails, an error should be returned": {
-			Deleted:                true,
-			ExistingManaged:        []*v1.Secret{existingScannerDB},
-			InterceptedK8sAPICalls: deletingSecretFails("scanner-db-tls"),
-			ExpectedError:          "reconciling scanner-db-tls secret",
-		},
-		"When deleting an existing scanner-db-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
-			Deleted:                true,
-			ExistingManaged:        []*v1.Secret{existingScannerDB},
-			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-db-tls"),
 		},
 	}
 
@@ -1058,8 +1012,6 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 	}
 
 	subjects := []mtls.Subject{
-		mtls.ScannerSubject,
-		mtls.ScannerDBSubject,
 		mtls.CentralDBSubject,
 	}
 
@@ -1209,10 +1161,6 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 						currentTime: time.Now(),
 					}
 					switch subject {
-					case mtls.ScannerSubject:
-						tt.assert(t, r.validateScannerTLSData(tt.fileMap, true))
-					case mtls.ScannerDBSubject:
-						tt.assert(t, r.validateScannerDBTLSData(tt.fileMap, true))
 					case mtls.CentralDBSubject:
 						tt.assert(t, r.validateCentralDBTLSData(tt.fileMap, true))
 					}

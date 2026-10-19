@@ -72,28 +72,28 @@ func (s *imageServiceSuite) TestGetImage() {
 		expectedResponse  *sensor.GetImageResponse
 	}{
 		"Cache hit and central is unreachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(s.mockCache, 1, createScannedImage(imageName, imageID)),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache hit and central is reachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(s.mockCache, 1, createScannedImage(imageName, imageID)),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache miss and central is unreachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"Cache miss and central is reachable": {
-			request:           createImageRequest(imageName, imageID, false),
+			request:           createImageRequest(imageName, imageID),
 			notify:            common.SensorComponentEventCentralReachable,
 			expectCache:       expectCacheHelper(s.mockCache, 1, nil),
 			expectRegistry:    expectRegistryHelper(s.mockRegistryStore, 1, false),
@@ -102,7 +102,7 @@ func (s *imageServiceSuite) TestGetImage() {
 			expectedResponse:  createImageResponse(imageName, imageID),
 		},
 		"Cache miss, central is reachable and returns error": {
-			request:           createImageRequest(imageName, imageID, false),
+			request:           createImageRequest(imageName, imageID),
 			notify:            common.SensorComponentEventCentralReachable,
 			expectCache:       expectCacheHelper(s.mockCache, 1, nil),
 			expectRegistry:    expectRegistryHelper(s.mockRegistryStore, 1, false),
@@ -111,14 +111,14 @@ func (s *imageServiceSuite) TestGetImage() {
 			expectedResponse:  nil,
 		},
 		"Cache miss, local scan, central is unreachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"Cache miss, local scan, central is reachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectRegistry:   expectRegistryHelper(s.mockRegistryStore, 1, true),
@@ -127,7 +127,7 @@ func (s *imageServiceSuite) TestGetImage() {
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache miss, local scan returns error, central is reachable": {
-			request:          createImageRequest(imageName, imageID, false),
+			request:          createImageRequest(imageName, imageID),
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectRegistry:   expectRegistryHelper(s.mockRegistryStore, 1, true),
@@ -212,9 +212,8 @@ func createScannedImage(name, id string) cache.Value {
 	}}
 }
 
-func createImageRequest(name, id string, scanInline bool) *sensor.GetImageRequest {
+func createImageRequest(name, id string) *sensor.GetImageRequest {
 	return &sensor.GetImageRequest{
-		ScanInline: scanInline,
 		Image: &storage.ContainerImage{
 			Id: id,
 			Name: &storage.ImageName{

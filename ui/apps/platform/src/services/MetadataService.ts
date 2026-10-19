@@ -56,3 +56,12 @@ export function fetchCentralCapabilities(): Promise<CentralServicesCapabilities>
         .get<CentralServicesCapabilities>('/v1/central-capabilities')
         .then((response) => response.data);
 }
+
+export type LightspeedStatus = {
+    available: boolean;
+    message: string;
+};
+
+export function fetchLightspeedStatus(): Promise<LightspeedStatus> {
+    return axios.get<LightspeedStatus>('/v1/lightspeed/status').then((response) => response.data);
+}

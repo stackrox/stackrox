@@ -4,6 +4,8 @@
   "shortName": "PCI-DSS",
   "profiles": [
     { "profileName": "ocp4-pci-dss-4-0" },
-    { "profileName": "ocp4-pci-dss-node-4-0" }
+    { "profileName": "ocp4-pci-dss-node-4-0" },
+    { "profileName": "ocp5-pci-dss-4-0" },
+    { "profileName": "ocp5-pci-dss-node-4-0" }
   ]
 }

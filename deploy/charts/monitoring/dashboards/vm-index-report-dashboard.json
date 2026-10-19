@@ -261,7 +261,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rox_sensor_vsock_pull_requests_total{status=\"success\"})",
+          "expr": "sum(rox_sensor_vsock_pull_scrape_total{status=\"success\"})",
           "legendFormat": "Success",
           "range": true,
           "refId": "A"
@@ -326,7 +326,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rox_sensor_vsock_pull_requests_total{status=\"unchanged\"})",
+          "expr": "sum(rox_sensor_vsock_pull_get_report_total{status=\"unchanged\"})",
           "legendFormat": "Unchanged",
           "range": true,
           "refId": "A"
@@ -483,7 +483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Running total of full index reports Sensor sent to Central (rox_sensor_vsock_pull_requests_total{status=\"success\"}). Each step up is one or more forwards. A paced wave is a run of +1 steps a few seconds apart. A dump is one large jump. A Sensor restart resets the counter to 0. Unchanged pulls are not counted.",
+      "description": "Running total of full index reports Sensor sent to Central (rox_sensor_vsock_pull_scrape_total{status=\"success\"}). Each step up is one or more forwards. A paced wave is a run of +1 steps a few seconds apart. A dump is one large jump. A Sensor restart resets the counter to 0. Unchanged pulls are not counted.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -581,7 +581,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rox_sensor_vsock_pull_requests_total{status=\"success\"})",
+          "expr": "sum(rox_sensor_vsock_pull_scrape_total{status=\"success\"})",
           "legendFormat": "success",
           "range": true,
           "refId": "A"
@@ -2517,7 +2517,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Rate of scrape results. success = new report sent to Central. unchanged = agent had nothing new. The rest are errors (dial, timeout, not_ready, busy, and so on). Retryable errors should continue at backoff, not at 1 per tick for the whole fleet.",
+      "description": "Rate of scrape results across the three layered counters (transport, GetReport, scrape). success = new report sent to Central. unchanged = agent had nothing new. The rest are errors (dial, timeout, not_ready, busy, and so on). Retryable errors should continue at backoff, not at 1 per tick for the whole fleet.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2717,6 +2717,96 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "abnormal_close"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unexpected"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "internal_error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unknown_agent_error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "malformed_request"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "request_too_large"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -2750,7 +2840,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (rate(rox_sensor_vsock_pull_requests_total[$__rate_interval]))",
+          "expr": "sum by (status) (rate(rox_sensor_vsock_pull_transport_total[$__rate_interval]) or rate(rox_sensor_vsock_pull_get_report_total[$__rate_interval]) or rate(rox_sensor_vsock_pull_scrape_total[$__rate_interval]))",
           "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
@@ -3019,7 +3109,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(rox_sensor_vsock_pull_requests_total{status=~\"success|unchanged\"}[$__rate_interval]))",
+          "expr": "sum(rate(rox_sensor_vsock_pull_scrape_total{status=\"success\"}[$__rate_interval]) or rate(rox_sensor_vsock_pull_get_report_total{status=\"unchanged\"}[$__rate_interval]))",
           "legendFormat": "success+unchanged",
           "range": true,
           "refId": "A"
@@ -3030,7 +3120,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(rox_sensor_vsock_pull_requests_total{status=~\"dial_error|timeout|read_error|not_ready|busy|send_error\"}[$__rate_interval]))",
+          "expr": "sum(rate(rox_sensor_vsock_pull_transport_total{status=~\"dial_error|timeout|read_error|abnormal_close|unexpected\"}[$__rate_interval]) or rate(rox_sensor_vsock_pull_get_report_total{status=~\"not_ready|busy|internal_error|unknown_agent_error\"}[$__rate_interval]) or rate(rox_sensor_vsock_pull_scrape_total{status=\"send_error\"}[$__rate_interval]))",
           "legendFormat": "retryable errors",
           "range": true,
           "refId": "B"
@@ -3041,7 +3131,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(rox_sensor_vsock_pull_requests_total{status=~\"invalid_report|unknown_method\"}[$__rate_interval]))",
+          "expr": "sum(rate(rox_sensor_vsock_pull_scrape_total{status=\"invalid_report\"}[$__rate_interval]) or rate(rox_sensor_vsock_pull_get_report_total{status=~\"unknown_method|malformed_request|request_too_large\"}[$__rate_interval]))",
           "legendFormat": "permanent failures",
           "range": true,
           "refId": "C"

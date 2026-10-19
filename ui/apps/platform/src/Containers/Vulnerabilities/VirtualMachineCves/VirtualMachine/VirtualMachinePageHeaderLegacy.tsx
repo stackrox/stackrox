@@ -1,6 +1,5 @@
 import { Alert, Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 
-import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -46,10 +45,7 @@ function VirtualMachinePageHeaderLegacy({
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                <Title headingLevel="h1">{virtualMachine.name}</Title>
-                <TechnologyPreviewLabel />
-            </Flex>
+            <Title headingLevel="h1">{virtualMachine.name}</Title>
             <LabelGroup numLabels={5}>
                 <Label>
                     In: {virtualMachine.clusterName}/{virtualMachine.namespace}

@@ -26,6 +26,9 @@ type Queue[T comparable] struct {
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
+	// afterEmptyPull runs after pullWait sees an empty queue and before it waits.
+	// Tests inject a Push in that window; production leaves it nil.
+	afterEmptyPull func()
 }
 
 // OptionFunc provides options for the queue.
@@ -87,34 +90,59 @@ func (q *Queue[T]) Pull() T {
 // PullBlocking will pull an item from the queue, potentially waiting until one is available.
 // In case the waitable signals done, the default value of T will be returned.
 func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
-	item, ok := q.pull()
-	// In case multiple go routines are pull blocking, we have to ensure that the result of pull
-	// is valid, hence the additional for loop here.
-	for ; !ok; item, ok = q.pull() {
-		select {
-		case <-waitable.Done():
-			return item
-		case <-q.notEmptySignal.Done():
-		}
-	}
+	item, _ := q.pullWait(waitable)
 	return item
 }
 
 // Seq returns a iterator function that yields items from the queue as they become available.
 // The iterator will continue until the provided waitable signals done.
+//
+// Note: Seq checks for cancellation before each pull. If the waitable signals done while items
+// remain in the queue, Seq will exit immediately without consuming them. This differs from
+// PullBlocking, which performs an initial pull before checking whether the waitable is done.
 func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 	return func(yield func(T) bool) {
 		for {
+			// Ensure responsive cancellation even when queue has items
 			select {
 			case <-waitable.Done():
 				return
-			case <-q.notEmptySignal.Done():
-				if item, ok := q.pull(); ok && !yield(item) {
-					return
-				}
+			default:
+			}
+
+			item, ok := q.pullWait(waitable)
+			if !ok {
+				return
+			}
+
+			if !yield(item) {
+				return
 			}
 		}
 	}
+}
+
+// pullWait waits for an item to become available in the queue, blocking until
+// either an item is retrieved or the waitable signals done.
+// Returns the item and true if retrieved, or zero value and false if cancelled.
+func (q *Queue[T]) pullWait(waitable concurrency.Waitable) (T, bool) {
+	item, ok := q.pull()
+	// Keep retrying until we actually get an item or the waitable signals done.
+	// This prevents lost wakeup: if we're signaled but another consumer
+	// takes the item before we pull, we must continue waiting.
+	for !ok {
+		if q.afterEmptyPull != nil {
+			q.afterEmptyPull()
+		}
+		select {
+		case <-waitable.Done():
+			var nilT T
+			return nilT, false
+		case <-q.notEmptySignal.Done():
+		}
+		item, ok = q.pull()
+	}
+	return item, true
 }
 
 func (q *Queue[T]) innerPull() (T, bool) {
@@ -122,6 +150,12 @@ func (q *Queue[T]) innerPull() (T, bool) {
 	defer q.mutex.Unlock()
 
 	if q.queue.Len() == 0 {
+		// Reset signal while observing empty queue under lock.
+		// This prevents the race where a Push signals after we check
+		// but before we wait - the signal and our observation are atomic.
+		if q.notEmptySignal.IsDone() {
+			q.notEmptySignal.Reset()
+		}
 		var nilT T
 		return nilT, false
 	}
@@ -152,6 +186,10 @@ func (q *Queue[T]) innerPush(item T) bool {
 	}
 
 	q.queue.PushBack(item)
+	// Signal while holding the lock, atomically with PushBack.
+	// This prevents the race where a consumer observes empty and resets
+	// the signal after we've added the item but before we signal.
+	q.notEmptySignal.Signal()
 	return true
 }
 
@@ -166,7 +204,6 @@ func (q *Queue[T]) Push(item T) {
 		return
 	}
 
-	q.notEmptySignal.Signal()
 	if q.counterMetric != nil {
 		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 		q.counterMetric.WithLabelValues(metrics.Add.String()).Inc()

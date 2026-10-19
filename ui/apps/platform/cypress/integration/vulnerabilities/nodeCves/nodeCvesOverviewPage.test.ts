@@ -12,7 +12,7 @@ import {
     routeMatcherMapForEntityCounts,
     routeMatcherMapForNodeCves,
     routeMatcherMapForNodes,
-    visitFirstNodeLinkFromTable,
+    staticResponseMapForNodes,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
 import {
@@ -25,7 +25,7 @@ import {
 } from '../../../helpers/tableHelpers';
 import {
     expectRequestedPagination,
-    expectRequestedQuery,
+    expectRequestedQueryToIncludeSubstrings,
     expectRequestedSort,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
@@ -111,12 +111,19 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should link a Node table row to the correct Node detail page', () => {
-        visitNodeCveOverviewPage();
-        visitEntityTab('Node');
-
-        visitFirstNodeLinkFromTable().then((name) => {
-            cy.get('h1').contains(name);
+        // This table lists nodes that have unsnoozed CVEs. A scan with none leaves
+        // it empty, so CI cannot rely on live rows. Mock the list and assert hrefs.
+        visitNodeCveOverviewPage(routeMatcherMapForNodes, staticResponseMapForNodes, {
+            entityTab: 'Node',
         });
+
+        cy.get('tbody tr td[data-label="Node"] a')
+            .first()
+            .then(($link) => {
+                const linkHref = $link.attr('href');
+                expect(linkHref).to.match(/\/node-cves\/nodes\/1$/);
+                expect($link.text()).to.include('cypress-node-1');
+            });
     });
 
     it('should sort CVE table columns', () => {
@@ -187,6 +194,8 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should sort Node table columns', () => {
+        // Sorting asserts request payloads. The table may have zero rows when
+        // no unsnoozed Node CVEs exist; headers still trigger those requests.
         interceptAndWatchRequests(routeMatcherMapForNodes).then(
             ({
                 waitForRequests,
@@ -249,16 +258,20 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should filter the CVE table', () => {
+        // expectRequestedQueryToIncludeSubstrings asserts items to be independent
+        // of order in concatenated query string
+        // of CVE Snoozed that is outside scope of test
         interceptAndWatchRequests(routeMatcherMapForNodeCves).then(
             ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
                 // Visit Node tab and wait for initial load
                 visitNodeCveOverviewPage();
                 waitForRequests();
 
+                // Observed tab
                 // filtering by CVE name should only display rows with a matching name
                 filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('CVE:r/CVE-2021-1234')
+                    expectRequestedQueryToIncludeSubstrings(['CVE:r/CVE-2021-1234'])
                 );
                 // Do not assert on cell contents as the filter value is mocked
                 filterHelpers.clearFilters();
@@ -268,7 +281,7 @@ describe('Node CVEs - Overview Page', () => {
                 // filtering by Severity should not report counts for hidden severities
                 applyLocalSeverityFilters('Low');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
+                    expectRequestedQueryToIncludeSubstrings(['Severity:LOW_VULNERABILITY_SEVERITY'])
                 );
                 assertOnEachRowForColumn('Nodes by severity', (_, cell) => {
                     const { critical, important, moderate, low } = getSeverityLabelCounts(cell);
@@ -282,7 +295,9 @@ describe('Node CVEs - Overview Page', () => {
 
                 // filtering by CVSS should only display rows with a CVSS in range
                 filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
-                waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVSS:<8'));
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQueryToIncludeSubstrings(['CVSS:<8'])
+                );
                 assertOnEachRowForColumn('Top CVSS', (_, cell) => {
                     const cvss = parseFloat(cell.innerText.replace(/[^0-9.]/g, ''));
                     expect(cvss).to.be.lessThan(8);
@@ -298,13 +313,17 @@ describe('Node CVEs - Overview Page', () => {
                 waitForRequests();
                 filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('CVE:r/CVE-2021-1234+CVSS:<8')
+                    expectRequestedQueryToIncludeSubstrings(['CVE:r/CVE-2021-1234', 'CVSS:<8'])
                 );
             }
         );
     });
 
     it('should filter the Node table', () => {
+        // expectRequestedQueryToIncludeSubstrings asserts items to be independent
+        // of order in concatenated query string
+        // of CVE Snoozed that is outside scope of test
+        // Row-content checks no-op when the table is empty (no unsnoozed Node CVEs).
         interceptAndWatchRequests(routeMatcherMapForNodes).then(
             ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
                 // Visit Node tab and wait for initial load
@@ -312,11 +331,12 @@ describe('Node CVEs - Overview Page', () => {
                 visitEntityTab('Node');
                 waitForRequests();
 
+                // Observed tab
                 // filtering by Node name should only display rows with a matching name
                 const nodeNameFilter = 'a';
                 filterHelpers.addAutocompleteFilter('Node', 'Name', nodeNameFilter);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery(`Node:r/${nodeNameFilter}`)
+                    expectRequestedQueryToIncludeSubstrings([`Node:r/${nodeNameFilter}`])
                 );
                 assertOnEachRowForColumn('Node', (_, cell) => {
                     expect(cell.innerText).to.match(new RegExp(nodeNameFilter, 'i'));
@@ -328,7 +348,7 @@ describe('Node CVEs - Overview Page', () => {
                 // filtering by Severity should not report counts for hidden severities
                 applyLocalSeverityFilters('Low');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
+                    expectRequestedQueryToIncludeSubstrings(['Severity:LOW_VULNERABILITY_SEVERITY'])
                 );
                 assertOnEachRowForColumn('CVEs by severity', (_, cell) => {
                     const { critical, important, moderate, low } = getSeverityLabelCounts(cell);
@@ -344,7 +364,7 @@ describe('Node CVEs - Overview Page', () => {
                 const clusterNameFilter = 'a';
                 filterHelpers.addAutocompleteFilter('Cluster', 'Name', clusterNameFilter);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery(`Cluster:r/${clusterNameFilter}`)
+                    expectRequestedQueryToIncludeSubstrings([`Cluster:r/${clusterNameFilter}`])
                 );
                 assertOnEachRowForColumn('Cluster', (_, cell) => {
                     expect(cell.innerText).to.match(new RegExp(clusterNameFilter, 'i'));
@@ -356,7 +376,7 @@ describe('Node CVEs - Overview Page', () => {
                 const osFilter = 'red hat';
                 filterHelpers.addPlainTextFilter('Node', 'Operating System', osFilter);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery(`Operating System:r/${osFilter}`)
+                    expectRequestedQueryToIncludeSubstrings([`Operating System:r/${osFilter}`])
                 );
                 assertOnEachRowForColumn('Operating system', (_, cell) => {
                     expect(cell.innerText).to.match(new RegExp(osFilter, 'i'));
@@ -372,7 +392,10 @@ describe('Node CVEs - Overview Page', () => {
                 waitForRequests();
                 filterHelpers.addAutocompleteFilter('Cluster', 'Name', clusterNameFilter);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery(`Node:r/${nodeNameFilter}+Cluster:r/${clusterNameFilter}`)
+                    expectRequestedQueryToIncludeSubstrings([
+                        `Node:r/${nodeNameFilter}`,
+                        `Cluster:r/${clusterNameFilter}`,
+                    ])
                 );
             }
         );

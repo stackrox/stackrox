@@ -4,7 +4,7 @@ apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: scanner-v4-indexer
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ quote ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "horizontalpodautoscaler" "scanner-v4-indexer") | nindent 4 }}
   annotations:

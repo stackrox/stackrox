@@ -12,9 +12,9 @@ func VirtualMachineV2(vm *virtualMachineV1.VirtualMachine) *storage.VirtualMachi
 		return nil
 	}
 
-	guestOS := vm.GetFacts()[pkgVM.GuestOSKey]
-	if guestOS == "" {
-		guestOS = pkgVM.UnknownGuestOS
+	informerOS := vm.GetFacts()[pkgVM.GuestOSKey]
+	if informerOS == "" {
+		informerOS = pkgVM.UnknownGuestOS
 	}
 
 	return &storage.VirtualMachineV2{
@@ -23,7 +23,7 @@ func VirtualMachineV2(vm *virtualMachineV1.VirtualMachine) *storage.VirtualMachi
 		Namespace: vm.GetNamespace(),
 		ClusterId: vm.GetClusterId(),
 		Facts:     vm.GetFacts(),
-		GuestOs:   guestOS,
+		GuestOs:   pkgVM.DisplayGuestOS(vm.GetFacts(), informerOS),
 		State:     convertVirtualMachineV2State(vm.GetState()),
 		VsockCid:  vm.GetVsockCid(),
 	}

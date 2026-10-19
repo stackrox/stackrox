@@ -162,6 +162,37 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	return results, nil
 }
 
+type v2ImageIDsByDigestView struct {
+	ImageIDs    []string `db:"image_id"`
+	ImageDigest string   `db:"image_sha"`
+}
+
+func (f *fullStoreImpl) GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	if len(digests) == 0 {
+		return nil, nil
+	}
+	q := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.ImageSHA, digests...).
+		ProtoQuery()
+	q.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Distinct().Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
+	}
+	q.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{pkgSearch.ImageSHA.String()},
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	result := make(map[string][]string, len(digests))
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(row *v2ImageIDsByDigestView) error {
+		result[row.ImageDigest] = row.ImageIDs
+		return nil
+	})
+	return result, err
+}
+
 // NewFullTestStore is used for testing.
 func NewFullTestStore(ctx context.Context, _ testing.TB, store Store, db postgres.DB, gormDB *gorm.DB) store.Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)

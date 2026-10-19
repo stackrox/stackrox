@@ -14,6 +14,16 @@ import (
 // Signatures have been generated via cosign:
 // $ cosign generate-key-pair
 // $ cosign sign -y ttl.sh/88795dd4-270c-4eb7-b3d4-50241d5bc04c@sha256:f2e98ad37e4970f48e85946972ac4acb5574c39f27c624efbd9b17a3a402bfe4 --key=cosign.key
+//
+// The same `cosign sign` invocation also uploads the signature to the public-good
+// Sigstore Rekor transparency log (this is cosign's default behaviour). The resulting
+// Rekor bundle (SignedEntryTimestamp + Payload) is what is stored verbatim in
+// testdata/bundle_bench_test.json. Because that SET was signed by the production Rekor
+// instance, offline verification must be given the matching production Rekor public key
+// (testdata/rekor_pub.pem); otherwise verification falls back to fetching trusted keys
+// from Sigstore's TUF repository over the network, which made this test non-hermetic in CI
+// (ROX-36684). If the bundle is ever regenerated against a different Rekor instance,
+// testdata/rekor_pub.pem must be updated to match.
 const (
 	// pemMatchingPubKey matches the b64Signature.
 	pemMatchingPubKey = `-----BEGIN PUBLIC KEY-----
@@ -42,6 +52,10 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	bundle, err := os.ReadFile("testdata/bundle_bench_test.json")
+	require.NoError(t, err)
+	// Pinned production Rekor key matching the SET in bundle_bench_test.json; see the
+	// package-level comment above. Shared with cosign_sig_verifier_test.go (ROX-36683).
+	rekorPubKey, err := os.ReadFile("testdata/rekor_pub.pem")
 	require.NoError(t, err)
 	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, bundle)
 	require.NoError(t, err, "creating test image")
@@ -74,6 +88,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				TransparencyLog: &storage.TransparencyLogVerification{
 					Enabled:         true,
 					ValidateOffline: true,
+					PublicKeyPemEnc: string(rekorPubKey),
 				},
 			},
 			result: &storage.ImageSignatureVerificationResult{

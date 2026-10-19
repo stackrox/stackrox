@@ -13,6 +13,7 @@ import (
 	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher/mocks"
+	vmstore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
@@ -104,6 +105,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   false,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -136,6 +138,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   false,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -160,6 +163,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 				gomock.InOrder(
 					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -173,6 +177,45 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
 						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
+					},
+				},
+			}),
+		},
+		"remove event keeps stored agent facts": {
+			action: central.ResourceAction_REMOVE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
+			expectFn: func() {
+				gomock.InOrder(
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(&vmInfo.Info{
+						ID: ownerUID,
+						AgentFacts: map[string]string{
+							pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.8",
+							pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusActive,
+							pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+							pkgVM.AgentVersionKey:      "development",
+						},
+					}),
+				)
+			},
+			expectedMsg: component.NewEvent(&central.SensorEvent{
+				Id:     ownerUID,
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &virtualMachineV1.VirtualMachine{
+						Id:        ownerUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts: map[string]string{
+							pkgVM.GuestOSKey:           pkgVM.UnknownGuestOS,
+							pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.8",
+							pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusActive,
+							pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+							pkgVM.AgentVersionKey:      "development",
+						},
 					},
 				},
 			}),
@@ -193,7 +236,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdate(gomock.Eq(
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
 					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
@@ -201,14 +244,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1).Return(
-					&vmInfo.Info{
-						ID:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						VSOCKCID:  nil,
-						Running:   false,
-					})
+				).Times(1)
+				s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1).Return(nil)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -229,7 +266,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_UPDATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdate(gomock.Eq(
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
 					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
@@ -237,14 +274,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1).Return(
-					&vmInfo.Info{
-						ID:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						VSOCKCID:  nil,
-						Running:   false,
-					})
+				).Times(1)
+				s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1).Return(nil)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -266,6 +297,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
 				s.store.EXPECT().Remove(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1)
+				s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1).Return(nil)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -286,7 +318,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_SYNC_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdate(gomock.Eq(
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
 					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
@@ -294,14 +326,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1).Return(
-					&vmInfo.Info{
-						ID:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						VSOCKCID:  nil,
-						Running:   false,
-					})
+				).Times(1)
+				s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1).Return(nil)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -352,6 +378,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 							Running:   true,
 						}),
 					).Times(1),
+					s.store.EXPECT().Get(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(nil),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -405,6 +432,54 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			} else {
 				s.Assert().Nil(actual)
 			}
+		})
+	}
+}
+
+// Test_OwnerlessVMIScheduledThenRunningIsScrapable covers an ownerless VMI first
+// seen before Running: later Running must reach the store and ListRunning.
+func (s *virtualMachineInstanceSuite) Test_OwnerlessVMIScheduledThenRunningIsScrapable() {
+	cases := map[string]struct {
+		buildVMI func(phase v1.VirtualMachineInstancePhase) *v1.VirtualMachineInstance
+	}{
+		"should mark ownerless VMI running after Scheduled then Running": {
+			buildVMI: func(phase v1.VirtualMachineInstancePhase) *v1.VirtualMachineInstance {
+				vmi := newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, "", "", nil, phase)
+				vmi.OwnerReferences = nil
+				return vmi
+			},
+		},
+		"should mark ReplicaSet-owned VMI running after Scheduled then Running": {
+			buildVMI: func(phase v1.VirtualMachineInstancePhase) *v1.VirtualMachineInstance {
+				return newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "VirtualMachineInstanceReplicaSet", nil, phase)
+			},
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			realStore := vmstore.NewVirtualMachineStore()
+			d := NewVirtualMachineInstanceDispatcher(clusterID, realStore)
+
+			scheduled := d.ProcessEvent(toUnstructured(tc.buildVMI(v1.Scheduled)), nil, central.ResourceAction_CREATE_RESOURCE)
+			s.Require().NotNil(scheduled)
+			stored := realStore.Get(vmInfo.VMID(vmiUID))
+			s.Require().NotNil(stored)
+			s.False(stored.Running)
+			s.Empty(realStore.ListRunning())
+
+			running := d.ProcessEvent(toUnstructured(tc.buildVMI(v1.Running)), nil, central.ResourceAction_UPDATE_RESOURCE)
+			s.Require().NotNil(running)
+			s.Require().Len(running.ForwardMessages, 1)
+			vmEvent := running.ForwardMessages[0].GetVirtualMachine()
+			s.Require().NotNil(vmEvent)
+			s.Equal(virtualMachineV1.VirtualMachine_RUNNING, vmEvent.GetState())
+
+			stored = realStore.Get(vmInfo.VMID(vmiUID))
+			s.Require().NotNil(stored)
+			s.True(stored.Running)
+			runningList := realStore.ListRunning()
+			s.Require().Len(runningList, 1)
+			s.Equal(vmInfo.VMID(vmiUID), runningList[0].ID)
 		})
 	}
 }

@@ -15,9 +15,6 @@ var (
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
 
-	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
-	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL")
-
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
@@ -35,6 +32,12 @@ var (
 
 	// ComplianceRemediationV2 enables the remediation feature of the compliance v2 integration.
 	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", enabled)
+
+	// ComplianceSurfaceStaleData gates surfacing stale compliance data in Coverage views (ROX-35712). Default off.
+	ComplianceSurfaceStaleData = registerFeature("Surface stale compliance data in Coverage views", "ROX_COMPLIANCE_SURFACE_STALE_DATA")
+
+	// ComplianceCustomNodeRoles gates configurable node roles in compliance scan configurations (ROX-34167). Default off.
+	ComplianceCustomNodeRoles = registerFeature("Enable configurable node roles in compliance scan configurations", "ROX_COMPLIANCE_CUSTOM_NODE_ROLES")
 
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
@@ -99,10 +102,7 @@ var (
 	// KnownExploitedVulnerabilities enables support for CISA Known Exploited Vulnerabilities (KEV) data.
 	//
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
-	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
-
-	// Display Compliance Dashboard (Deprecated) in user interface (not displayed by default starting in 4.11 release).
-	DeprecatedComplianceDashboard = registerFeature("Display Compliance Dashboard (Deprecated) in user interface", "ROX_DEPRECATED_COMPLIANCE_DASHBOARD")
+	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV", enabled)
 
 	// SensitiveFileActivity enables monitoring of sensitive files.
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)
@@ -128,11 +128,14 @@ var (
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING", enabled)
 
+	// VulnerabilityReportStreamingDownload enables streaming downloadable vulnerability reports directly to blob storage.
+	VulnerabilityReportStreamingDownload = registerFeature("Enables streaming downloadable vulnerability reports to blob storage", "ROX_VULNERABILITY_REPORT_STREAMING_DOWNLOAD", enabled)
+
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
-	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
+	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS", enabled)
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
-	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
@@ -143,11 +146,20 @@ var (
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 
+	// PolicyWorkloadKindExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
+	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
+
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
-	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
-	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+	// LegacyScanner enables Scanner V2 integration. Off by default; locked in release builds.
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", unchangeableInProd)
+
+	// ACMAccessControlDelegation enables AuthProviders with role lookup delegation to ACM access control information.
+	ACMAccessControlDelegation = registerFeature("Enable ACS access control integration with Red Hat Advanced Cluster Management", "ROX_ACM_ACCESS_CONTROL_DELEGATION")
+
+	// LightspeedRiskSummary enables Lightspeed AI risk summary
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -194,7 +206,7 @@ var (
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
-	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING", enabled)
 
 	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)

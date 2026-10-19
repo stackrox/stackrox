@@ -63,8 +63,8 @@ _compatibility_test() {
         deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
         kubectl -n stackrox get deploy,ds -o wide
 
-        # Wait for scanner v2 deployment to be ready so that it can register its
-        # Clairify integration with Central before CertExpiryTest runs.
+        # Old versions under test may still deploy Scanner V2. Wait only when that
+        # workload exists; HEAD installs Scanner V4 instead.
         # TODO(https://github.com/stackrox/roxie/issues/269): replace with --early-readiness=false roxie flag,
         # once we no longer need to deploy 4.9
         if retrying_kubectl </dev/null -n stackrox get deployment scanner >/dev/null 2>&1; then

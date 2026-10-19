@@ -27,8 +27,6 @@ var (
 			createServiceCertificate(storage.ServiceType_SENSOR_SERVICE),
 			createServiceCertificate(storage.ServiceType_ADMISSION_CONTROL_SERVICE),
 			createServiceCertificate(storage.ServiceType_COLLECTOR_SERVICE),
-			createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
-			createServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
 			createServiceCertificate(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 			createServiceCertificate(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 		},
@@ -50,8 +48,6 @@ func TestEnsureServiceCertificates(t *testing.T) {
 		securedcluster.SensorTLSSecretName,
 		securedcluster.CollectorTLSSecretName,
 		securedcluster.AdmissionControlTLSSecretName,
-		securedcluster.ScannerTLSSecretName,
-		securedcluster.ScannerDbTLSSecretName,
 		securedcluster.ScannerV4IndexerTLSSecretName,
 		securedcluster.ScannerV4DbTLSSecretName,
 	}

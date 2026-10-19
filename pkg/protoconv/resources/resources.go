@@ -106,7 +106,7 @@ func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	if templateInterface.Type().Kind() == reflect.Pointer && !templateInterface.IsNil() {
 		templateInterface = templateInterface.Elem()
 	}
-	podTemplate, ok := templateInterface.Interface().(v1.PodTemplateSpec)
+	podTemplate, ok := reflect.TypeAssert[v1.PodTemplateSpec](templateInterface)
 	if !ok {
 		return v1.PodTemplateSpec{}, errors.New("not a valid PodTemplateSpec")
 	}
@@ -356,12 +356,12 @@ func (w *DeploymentWrap) populateReplicas(spec reflect.Value, obj interface{}) {
 		return
 	}
 
-	replicasPointer, ok := replicaField.Interface().(*int32)
+	replicasPointer, ok := reflect.TypeAssert[*int32](replicaField)
 	if ok && replicasPointer != nil {
 		w.Deployment.Replicas = int64(*replicasPointer)
 	}
 
-	replicas, ok := replicaField.Interface().(int32)
+	replicas, ok := reflect.TypeAssert[int32](replicaField)
 	if ok {
 		w.Deployment.Replicas = int64(replicas)
 	}

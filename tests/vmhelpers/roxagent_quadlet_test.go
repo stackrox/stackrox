@@ -3,10 +3,12 @@
 package vmhelpers
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -29,9 +31,32 @@ func TestOverlayQuadletContainer(t *testing.T) {
 	require.NotContains(t, out, "Image=quay.io/stackrox-io/main:latest")
 	require.NotContains(t, out, "AuthFile=")
 	require.NotContains(t, out, "REGISTRY_AUTH_FILE")
-	require.Contains(t, out, "Exec=serve --host-path /host --rescan-interval "+E2ERescanInterval.String()+" --repo-cpe-url "+url)
+	require.Contains(t, out, overlayExecLine(url))
 	require.Contains(t, out, "Notify=true")
 	require.Contains(t, out, "TimeoutStartSec=600")
+}
+
+func TestOverlayQuadletContainer_OmitsRepoCPEURLWhenEmpty(t *testing.T) {
+	t.Parallel()
+
+	src, err := os.ReadFile(filepath.Join(repoRoot(), "compliance", "virtualmachines", "roxagent", "quadlet", "roxagent.container"))
+	require.NoError(t, err)
+
+	const image = "quay.io/rhacs-eng/main:e2e-test"
+	for name, url := range map[string]string{
+		"empty":      "",
+		"whitespace": "  \t",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, err := overlayQuadletContainer(src, image, url, "")
+			require.NoError(t, err)
+			out := string(got)
+			require.Contains(t, out, overlayExecLine(""))
+			require.NotContains(t, out, "--repo-cpe-url")
+			require.NotContains(t, out, "--repo-cpe-url ")
+		})
+	}
 }
 
 func TestOverlayQuadletContainer_RegistryAuthFile(t *testing.T) {
@@ -64,11 +89,6 @@ func TestOverlayQuadletContainer_Errors(t *testing.T) {
 			src:          src,
 			repo2cpeURL:  "https://example.test/mapping.json",
 			errSubstring: "image is empty",
-		},
-		"should reject empty repo2cpe URL": {
-			src:          src,
-			image:        "example:latest",
-			errSubstring: "repo2cpeURL is empty",
 		},
 		"should reject missing Image=": {
 			src:          []byte("[Container]\nExec=serve\n"),
@@ -131,6 +151,102 @@ func TestIsVsockUnavailableOutput(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			require.Equal(t, tc.want, isVsockUnavailableOutput(tc.output))
+		})
+	}
+}
+
+const scpBannerTimeoutStderr = "Connection timed out during banner exchange\nConnection to UNKNOWN port 65535 timed out\nscp: Connection closed\nexit status 255"
+
+func TestWrapSCPError(t *testing.T) {
+	t.Parallel()
+	copyErr := errors.New("exit status 1")
+	tests := map[string]struct {
+		stderr        string
+		wantTransport bool
+		wantStalled   bool
+		wantAuth      bool
+	}{
+		"banner timeout is SSH transport": {
+			stderr:        scpBannerTimeoutStderr,
+			wantTransport: true,
+			wantStalled:   true,
+		},
+		"auth failure is terminal not transport": {
+			stderr:   "Permission denied (publickey).\r\n",
+			wantAuth: true,
+		},
+		"remote command failure is not SSH transport": {
+			stderr: "install.sh: no such file\nexit status 1",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			err := wrapSCPError("/tmp/install.sh", "/guest/install.sh", tc.stderr, copyErr)
+			require.Error(t, err)
+			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
+			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
+		})
+	}
+}
+
+func TestRetryCopyToGuest(t *testing.T) {
+	t.Parallel()
+	copyErr := errors.New("exit status 1")
+	tests := map[string]struct {
+		stderr           string
+		succeedOnAttempt int
+		wantAttempts     int
+		wantErr          bool
+		wantTransport    bool
+		wantStalled      bool
+		wantAuth         bool
+	}{
+		"retries banner timeout then succeeds": {
+			stderr:           scpBannerTimeoutStderr,
+			succeedOnAttempt: 3,
+			wantAttempts:     3,
+		},
+		"gives up on persistent banner timeout": {
+			stderr:        scpBannerTimeoutStderr,
+			wantAttempts:  3,
+			wantErr:       true,
+			wantTransport: true,
+			wantStalled:   true,
+		},
+		"does not retry terminal SSH auth": {
+			stderr:       "Permission denied (publickey).\r\n",
+			wantAttempts: 1,
+			wantErr:      true,
+			wantAuth:     true,
+		},
+		"does not retry remote command failure": {
+			stderr:       "install.sh: permission denied",
+			wantAttempts: 1,
+			wantErr:      true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			attempts := 0
+			err := retryCopyToGuest(t.Context(), nil, "/tmp/install.sh", "/guest/install.sh", 3, time.Millisecond, func() (string, error) {
+				attempts++
+				if tc.succeedOnAttempt > 0 && attempts >= tc.succeedOnAttempt {
+					return "", nil
+				}
+				return tc.stderr, copyErr
+			})
+			require.Equal(t, tc.wantAttempts, attempts)
+			if !tc.wantErr {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			require.Equal(t, tc.wantTransport, errors.Is(err, errSSHTransport))
+			require.Equal(t, tc.wantStalled, errors.Is(err, ErrSSHConnectivityStalled))
+			require.Equal(t, tc.wantAuth, errors.Is(err, ErrSSHAuthenticationFailed))
 		})
 	}
 }

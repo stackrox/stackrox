@@ -1,4 +1,6 @@
 values:
+  scannerV4:
+    disable: false
   imagePullSecrets:
     allowNone: true
 release:
@@ -22,3 +24,29 @@ tests:
     meta.namespaceOverride: my-stackrox
   expect: |
     verifyNamespace("my-stackrox")
+- name: "should honor the namespace override for scanner V4 indexer endpoint"
+  release:
+    namespace: default
+  set:
+    meta.namespaceOverride: my-stackrox
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4_INDEXER_ENDPOINT"]
+      | assertThat(. == "scanner-v4-indexer.my-stackrox.svc:8443")
+- name: "should honor the namespace override for scanner V4 monitoring"
+  server:
+    availableSchemas:
+    - openshift-4.12
+    - com.coreos
+  release:
+    namespace: default
+  set:
+    meta.namespaceOverride: my-stackrox
+    env.openshift: 4
+    monitoring.openshift.enabled: true
+  expect: |
+    .servicemonitors["scanner-v4-monitor-default"]
+      | assertThat(.spec.namespaceSelector.matchNames[0] == "my-stackrox")
+    .servicemonitors["scanner-v4-monitor-default"]
+      | .spec.endpoints[] | .tlsConfig.serverName | assertThat(endswith(".my-stackrox.svc"))
+    .rolebindings["rhacs-scanner-v4-auth-reader-default"]
+      | .subjects[] | select(.name == "scanner-v4") | assertThat(.namespace == "my-stackrox")

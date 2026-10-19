@@ -218,6 +218,20 @@ export function expectRequestedQuery(expectedQuery) {
     };
 }
 
+// Asserts one or more items to be independent
+// of order in concatenated query string
+// of absence, presence, or value of items outside scope of test (for example, CVE Snoozed)
+export function expectRequestedQueryToIncludeSubstrings(expectedQuerySubstrings) {
+    return ({ query }) => {
+        expectedQuerySubstrings.forEach((expectedQuery) => {
+            expect(query).to.include(
+                expectedQuery,
+                `Expected query to include ${expectedQuery} but received ${query}`
+            );
+        });
+    };
+}
+
 export function expectRequestedPagination(expectedPagination) {
     return (variables) => {
         const { pagination } = variables;

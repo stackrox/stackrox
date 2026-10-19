@@ -112,6 +112,24 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 	ed.containerIDs[containerID] = container
 }
 
+// Clone returns a deep copy of the EntityData that can be mutated independently of the original.
+func (ed *EntityData) Clone() *EntityData {
+	if ed == nil {
+		return nil
+	}
+	clone := &EntityData{
+		ips:          maps.Clone(ed.ips),
+		containerIDs: maps.Clone(ed.containerIDs),
+	}
+	if ed.endpoints != nil {
+		clone.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo, len(ed.endpoints))
+		for ep, infos := range ed.endpoints {
+			clone.endpoints[ep] = slices.Clone(infos)
+		}
+	}
+	return clone
+}
+
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
 // endpoint.
 type Store struct {
@@ -128,6 +146,10 @@ type Store struct {
 	pastSensors HeritageManager
 	// heritageApplied ensures that past heritage data is applied to the current instance only once.
 	heritageApplied concurrency.Signal
+	// applyHeritageLock serializes concurrent ApplyDataFromHeritageOnce calls. With the PubSub
+	// concurrent lane, deployment events are processed on separate goroutines, so the heritage
+	// apply can be entered concurrently; without this lock the "apply once" guard would race.
+	applyHeritageLock sync.Mutex
 
 	// Cache enriched data for the current instance of Sensor.
 	// This data won't be stored into config map.
@@ -204,6 +226,13 @@ func (e *Store) ApplyDataFromHeritageOnce() {
 	if e.heritageApplied.IsDone() {
 		return
 	}
+	// Serialize concurrent callers and re-check under the lock: the initial IsDone check above
+	// is only a fast path. Two goroutines could both pass it before either signals completion.
+	e.applyHeritageLock.Lock()
+	defer e.applyHeritageLock.Unlock()
+	if e.heritageApplied.IsDone() {
+		return
+	}
 	if !e.pastSensors.IsEnabled() {
 		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
 		e.heritageApplied.Signal()
@@ -238,14 +267,32 @@ func (e *Store) applyHeritageData(dg dataGetter) bool {
 		return false
 	}
 
-	e.currentSensorLock.RLock()
-	defer e.currentSensorLock.RUnlock()
+	var deploymentID string
+	var modEntityData *EntityData
+	// Clone under the read lock and mutate the private copy. The shared currentSensorEntityData
+	// is also referenced by concurrent Apply() calls (see onDeploymentCreateOrUpdate), so mutating
+	// it in place would race with those readers.
+	concurrency.WithRLock(&e.currentSensorLock, func() {
+		deploymentID = e.currentSensorDeploymentID
+		modEntityData = e.currentSensorEntityData.Clone()
+	})
+
+	// Snapshot the current Sensor's endpoints once. Each past entry derives its endpoints from
+	// this immutable snapshot; deriving from modEntityData.endpoints instead would compound the
+	// endpoints added for earlier past entries, growing exponentially with the number of entries.
+	srcEndpoints := maps.Clone(modEntityData.endpoints)
+	changed := false
 	for _, entry := range past {
-		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
-		modEntityData := e.currentSensorEntityData
-		if applyPastToEntityData(modEntityData, entry) {
-			e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), deploymentID)
+		if applyPastToEntityData(modEntityData, srcEndpoints, entry) {
+			changed = true
 		}
+	}
+	// modEntityData accumulates every past entry, so a single Apply after the loop suffices.
+	// Applying inside the loop re-sent the whole growing object as an incremental update on each
+	// iteration; the store dedupes with sets so the result was identical, just extra work.
+	if changed {
+		e.Apply(map[string]*EntityData{deploymentID: modEntityData}, true)
 	}
 	return true
 }
@@ -266,7 +313,11 @@ func (e *Store) HasCurrentSensorMetadata() bool {
 }
 
 // applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.
-func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool {
+// srcEndpoints is an immutable snapshot of the current Sensor's endpoints; past endpoints are
+// derived from it rather than from data.endpoints so that endpoints added for earlier past entries
+// are neither re-derived (which compounds exponentially across past entries) nor mutated while
+// being ranged over.
+func applyPastToEntityData(data *EntityData, srcEndpoints map[net.NumericEndpoint][]EndpointTargetInfo, past *heritage.SensorMetadata) bool {
 	if _, found := data.containerIDs[past.ContainerID]; found {
 		// The cluster entities store knows about this past instance of sensor. Skip adding.
 		log.Debugf("Cluster entities store already knows about container %s. Skipping.", past.ContainerID)
@@ -277,9 +328,14 @@ func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool
 	pastIP := net.ParseIP(past.PodIP)
 	// Adding additional pod IP to the Sensor deployment
 	data.AddIP(pastIP)
-	for endpoint, infos := range data.endpoints {
-		// Craft endpoint with the same port and proto but with past IP
+	// Craft endpoints with the same port and proto but with the past IP.
+	for endpoint, infos := range srcEndpoints {
 		newEndpoint := net.MakeNumericEndpoint(pastIP, endpoint.IPAndPort.Port, endpoint.L4Proto)
+		if _, exists := data.endpoints[newEndpoint]; exists {
+			// The past pod IP coincides with an endpoint that already exists (e.g. the current
+			// Sensor's IP was previously used by this past instance); nothing new to add.
+			continue
+		}
 		// Container port and port name included in `infos` remain the same
 		for _, info := range infos {
 			data.AddEndpoint(newEndpoint, info)

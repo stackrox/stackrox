@@ -2,9 +2,11 @@ package nodeindex
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -115,15 +118,57 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 	log.Infof("Scanned index report and found %d components for node %s",
 		len(node.GetScan().GetComponents()), nodeDatastore.NodeString(node))
+	incomingScanTime := node.GetScan().GetScanTime()
 
 	// Update the whole node in the database with the new and previous information.
-	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	err = p.upsertNodeIfClusterActive(ctx, node)
 	if err != nil {
 		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
 	}
 
+	// The store may have rejected this scan as not newer than what's already persisted, in which case it
+	// rewrites node.Scan in place to the previously stored one before returning - see isUpdated() in
+	// central/node/datastore/store/postgres/store.go. Comparing scan times here, on the same object we just
+	// tried to upsert, tells us definitively whether the fresh scan we just processed actually landed.
+	persistedScanTime := node.GetScan().GetScanTime()
+	switch cmp := protocompat.CompareTimestamps(incomingScanTime, persistedScanTime); {
+	case cmp > 0:
+		// The store kept a scan_time older than the one we just processed. isUpdated() only rejects scans
+		// that are not strictly newer than the stored one, so a fresh scan should have been accepted here;
+		// a persisted scan older than the processed one means the fresh scan was silently dropped, which the
+		// freshness guard should never do.
+		log.Warnf("Persisted scan_time for node %s is older than the freshly processed scan_time: "+
+			"processed=%s persisted=%s. The store kept an older scan than the one just processed, which the "+
+			"freshness guard should have accepted - possible scan regression.",
+			nodeDatastore.NodeString(node),
+			protocompat.ConvertTimestampToString(incomingScanTime, time.RFC3339Nano),
+			protocompat.ConvertTimestampToString(persistedScanTime, time.RFC3339Nano))
+	case cmp < 0:
+		// The store kept a scan_time newer than the one we just processed - the expected shape of an
+		// isUpdated() rejection, where node.Scan was rewritten back to the newer stored scan.
+		log.Warnf("Persisted scan_time for node %s does not match the freshly processed scan_time: "+
+			"processed=%s persisted=%s. The store rejected this scan as not newer than the stored one.",
+			nodeDatastore.NodeString(node),
+			protocompat.ConvertTimestampToString(incomingScanTime, time.RFC3339Nano),
+			protocompat.ConvertTimestampToString(persistedScanTime, time.RFC3339Nano))
+	}
+
 	sendComplianceAck(ctx, node, injector)
 	return nil
+}
+
+func (p *pipelineImpl) upsertNodeIfClusterActive(ctx context.Context, node *storage.Node) error {
+	active, release := lifecycle.Singleton().Enter(node.GetClusterId())
+	if !active {
+		return nil
+	}
+	defer release()
+
+	_, exists, err := p.clusterStore.GetClusterName(ctx, node.GetClusterId())
+	if err != nil || !exists {
+		return err
+	}
+	return p.riskManager.CalculateRiskAndUpsertNode(node)
 }
 
 func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.MessageInjector) {

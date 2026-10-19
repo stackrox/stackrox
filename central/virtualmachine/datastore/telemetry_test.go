@@ -25,9 +25,10 @@ var (
 	arbitraryNowFunc = func() time.Time { return arbitraryNow }
 )
 
+// TestVirtualMachineTelemetry covers the v1 gatherer, which only runs when the enhanced data model is off.
 func TestVirtualMachineTelemetry(t *testing.T) {
-	// Ensure feature flag is enabled for these tests
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 
 	tests := map[string]struct {
 		vms                            []*storage.VirtualMachine

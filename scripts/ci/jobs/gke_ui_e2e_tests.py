@@ -16,9 +16,11 @@ os.environ["KUBERNETES_PROVIDER"] = "gke"
 
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
-os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
+# Optimize Scanner V4 startup time by loading only RHEL vulnerability bundles
+# UI tests only scan RHEL/UBI images (StackRox components) - no user workloads deployed
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
 
 ClusterTestRunner(
     cluster=GKECluster("ui-e2e-test"),

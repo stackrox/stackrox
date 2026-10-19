@@ -55,6 +55,7 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 		authProviderDS,
 		tokenIssuerFactory,
 		mapperFactory,
+		nil,
 	)
 
 	ctx := sac.WithAllAccess(context.Background())

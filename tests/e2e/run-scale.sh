@@ -38,8 +38,19 @@ scale_test() {
 }
 
 deploy_stackrox_in_scale_mode() {
-    "$ROOT/deploy/k8s/deploy.sh"
-    
+    local roxie_envrc; roxie_envrc="$(mktemp)"
+
+    "${ROOT}/scripts/roxie.sh" --verbose deploy \
+            --single-namespace \
+            --resources ci \
+            --pause-reconciliation \
+            --envrc "$roxie_envrc"
+
+    extend_roxie_envrc "$roxie_envrc"
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+    rm -f "$roxie_envrc"
+
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
     export_central_basic_auth_creds
 

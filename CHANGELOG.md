@@ -14,6 +14,28 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+
+### Removed Features
+
+- ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
+
+### Deprecated Features
+
+### Technical Changes
+
+- ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
+- ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
+- ROX-37048: Central writes its version in `Rh-Central-Version` gRPC response header to authenticated clients. `roxctl` compares this version with its own version and reports a warning to stderr if the version skew is outside of a supported range.
+- ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
+- ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
+- ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
+- ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
+
+## [5.0.0]
+
+### Added Features
+
 - ROX-32148: Virtual machine scanning is now enabled by default. RHEL VMs created with OpenShift Virtualization can be scanned for package vulnerabilities after installing roxagent in the guest.
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
@@ -24,15 +46,26 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
 - ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
   DSSE envelope verification for sigstore bundle-format signatures.
+- ROX-36858: Added more supported labels to the image and node vulnerability central custom metrics.
+- Pruning (garbage collection) and vulnerability report scheduling now run in a separate `central-worker` deployment by default instead of inside Central. Disable with the Helm value `centralWorker.enabled=false` or `spec.centralWorker.enabled: false` in the Central CR.
 
 ### Removed Features
+
+- Compliance container no longer collects Scanner V2 node inventories. Node scanning continues via Scanner V4 index reports, as long as Scanner V4 is enabled.
+- ROX-36654: Removed legacy scanner (StackRox Scanner) across all installation methods.
 
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
 - ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
+- The `priority` field on API responses for deployments, images, nodes, and components is deprecated and will be removed in a future release. Use the `risk_score` field on the same objects instead. Sorting by "Risk Priority" in search queries is also deprecated; sort by "Risk Score" instead. For clusters and namespaces, the `priority` field will be removed and replaced by a `risk_score` field where applicable.
+- ROX-37014: The Images by severity, Nodes by severity, CVEs by severity, and Virtual machines by severity counts—including summary widgets and table columns—are deprecated and will be removed in a future release to improve page performance
 
 ### Technical Changes
+- ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
+- ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
+- ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
+- ROX-36490: The virtual machine enhanced data model (`ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL`) is now enabled by default.
 - ROX-32969: The `roxctl-linux` symlink has been removed from the `/assets/downloads/cli/` directory inside the main container image. Only the architecture-specific binaries (`roxctl-linux-amd64`, `roxctl-linux-arm64`, etc.) remain. This change does not affect CLI downloads from the Central UI or any other supported download path.
 - ROX-33078: Fixed telemetry gatherer failing to report database size metrics when using an external database. The database name is now read from the connection config instead of using the hardcoded default.
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
@@ -40,6 +73,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
 - ROX-36509: Improved Central memory efficiency by optimizing process filter data structures in high-cardinality scenarios. The `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` environment variable now accepts values up to 255; higher values are automatically clamped with a warning.
+- ROX-36432: Fixed node scan results (`scan.scanTime`) silently freezing on installs whose default Scanner V4 integration lacked the `NODE_SCANNER` category. Central now restores the default categories on startup. Affected nodes move from Scanner V2 results to Scanner V4 results, so their vulnerability counts may change.
 
 ## [4.11.0]
 

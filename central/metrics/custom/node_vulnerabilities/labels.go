@@ -19,13 +19,18 @@ var lazyLabels = tracker.LazyLabelGetters[*finding]{
 	"CVE":       func(f *finding) string { return f.vulnerability.GetCveBaseInfo().GetCve() },
 	"CVSS":      func(f *finding) string { return strconv.FormatFloat(float64(f.vulnerability.GetCvss()), 'f', 1, 32) },
 	"Severity":  func(f *finding) string { return f.vulnerability.GetSeverity().String() },
-	"IsFixable": func(f *finding) string { return strconv.FormatBool(f.vulnerability.GetFixedBy() != "") },
 	"IsSnoozed": func(f *finding) string { return strconv.FormatBool(f.vulnerability.GetSnoozed()) },
 	"EPSSPercentile": func(f *finding) string {
 		return strconv.FormatFloat(float64(f.vulnerability.GetCveBaseInfo().GetEpss().GetEpssPercentile()), 'f', 1, 32)
 	},
 	"EPSSProbability": func(f *finding) string {
 		return strconv.FormatFloat(float64(f.vulnerability.GetCveBaseInfo().GetEpss().GetEpssProbability()), 'f', 1, 32)
+	},
+
+	"IsFixable":  func(f *finding) string { return strconv.FormatBool(f.vulnerability.GetFixedBy() != "") },
+	"HasCisaKev": func(f *finding) string { return strconv.FormatBool(f.vulnerability.GetCveBaseInfo().GetCisaKev()) },
+	"Published": func(f *finding) string {
+		return strconv.FormatInt(f.vulnerability.GetCveBaseInfo().GetPublishedOn().GetSeconds(), 10)
 	},
 }
 

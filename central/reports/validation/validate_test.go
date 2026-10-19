@@ -52,6 +52,12 @@ func TestValidateEntityScope(t *testing.T) {
 			),
 			expectError: false,
 		},
+		"label key with empty value is valid": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, apiV2.ScopeField_FIELD_LABEL, exactValue("required=")),
+			),
+			expectError: false,
+		},
 		"valid multiple rules different entities": {
 			scope: makeEntityScope(
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, apiV2.ScopeField_FIELD_NAME, exactValue("prod")),
@@ -64,7 +70,7 @@ func TestValidateEntityScope(t *testing.T) {
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_UNSET, apiV2.ScopeField_FIELD_NAME, exactValue("x")),
 			),
 			expectError: true,
-			errContains: "Unexpected entity scope rule:",
+			errContains: "unexpected entity scope rule:",
 		},
 		"unset field": {
 			scope: makeEntityScope(
@@ -79,7 +85,7 @@ func TestValidateEntityScope(t *testing.T) {
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_NAME, exactValue("b")),
 			),
 			expectError: true,
-			errContains: "Duplicate",
+			errContains: "duplicate",
 		},
 		"no values in rule": {
 			scope: makeEntityScope(
@@ -126,7 +132,7 @@ func TestValidateEntityScope(t *testing.T) {
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, apiV2.ScopeField_FIELD_ANNOTATION, exactValue("k=v")),
 			),
 			expectError: true,
-			errContains: "Annotation",
+			errContains: "annotation",
 		},
 		"annotation value missing equals sign": {
 			scope: makeEntityScope(
@@ -214,7 +220,7 @@ func TestValidateSchedule(t *testing.T) {
 				},
 			},
 			expectError: true,
-			errContains: "Daily schedule must not specify",
+			errContains: "daily schedule must not specify",
 		},
 		{
 			testname: "Daily schedule with days_of_month is invalid",
@@ -229,7 +235,7 @@ func TestValidateSchedule(t *testing.T) {
 				},
 			},
 			expectError: true,
-			errContains: "Daily schedule must not specify",
+			errContains: "daily schedule must not specify",
 		},
 		{
 			testname: "Valid weekly schedule",
@@ -293,6 +299,7 @@ func TestValidateReportFiltersQuery(t *testing.T) {
 	v := &Validator{}
 	baseFilters := func(query string) *apiV2.ReportConfiguration {
 		return &apiV2.ReportConfiguration{
+			Type: apiV2.ReportConfiguration_VULNERABILITY,
 			Filter: &apiV2.ReportConfiguration_VulnReportFilters{
 				VulnReportFilters: &apiV2.VulnerabilityReportFilters{
 					ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{apiV2.VulnerabilityReportFilters_DEPLOYED},
@@ -319,7 +326,7 @@ func TestValidateReportFiltersQuery(t *testing.T) {
 			err := v.validateReportFilters(baseFilters(tc.query))
 			if tc.expectError {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "Invalid query")
+				assert.Contains(t, err.Error(), "invalid query")
 			} else {
 				assert.NoError(t, err)
 			}

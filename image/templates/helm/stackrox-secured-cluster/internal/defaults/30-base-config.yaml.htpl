@@ -9,6 +9,10 @@ createSecrets: true
 
 exposeMonitoring: false
 
+# Undocumented, test-only. Keep global resource names static by default for production
+# safety; see config-shape.yaml and srox.optionalGlobalResourceName.
+namespacePrefixGlobalResources: false
+
 helmManaged: [< not .KubectlOutput >]
 
 [< if .Operator >]

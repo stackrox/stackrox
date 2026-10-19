@@ -67,7 +67,7 @@
         {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
         {{- if $.Release.IsUpgrade -}}
           {{- $lookupOut := dict -}}
-          {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-indexer-tls") -}}
+          {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $._rox._namespace "scanner-v4-indexer-tls") -}}
           {{- if not $lookupOut.result -}}
             {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
             {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
@@ -87,7 +87,7 @@
       {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
       {{- if $.Release.IsUpgrade -}}
         {{- $lookupOut := dict -}}
-        {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-matcher-tls") -}}
+        {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $._rox._namespace "scanner-v4-matcher-tls") -}}
         {{- if not $lookupOut.result -}}
           {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
           {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
@@ -105,7 +105,7 @@
       {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
       {{- if $.Release.IsUpgrade -}}
         {{- $lookupOut := dict -}}
-        {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-db-tls") -}}
+        {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $._rox._namespace "scanner-v4-db-tls") -}}
         {{- if not $lookupOut.result -}}
           {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
           {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
@@ -117,7 +117,7 @@
       {{/* We need special handling here, because 'generate' will default to 'false' on upgrades. */}}
       {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
       {{- $lookupOut := dict -}}
-      {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-db-password") -}}
+      {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $._rox._namespace "scanner-v4-db-password") -}}
       {{- if not $lookupOut.result -}}
         {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
         {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
@@ -139,7 +139,7 @@
   {{/* Special handling for the secured-cluster-services chart in case it gets deployed
        to the same namespace as central-services. */}}
   {{ $centralDeployment := dict }}
-  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $._rox._namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
     {{ $_ := set $components "indexer" false }}

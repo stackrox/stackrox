@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -1607,7 +1607,7 @@ spec:
                   enabled:
                     description: |-
                       If set to true, pruning and reporting jobs run in a separate Deployment.
-                      The default is: false.
+                      The default is: true.
                     type: boolean
                   hostAliases:
                     description: HostAliases allows configuring additional hostnames
@@ -1997,7 +1997,9 @@ spec:
                               description: Selects a key of a ConfigMap.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -2268,8 +2270,8 @@ spec:
                 type: array
               scanner:
                 description: |-
-                  Settings for the Scanner component, which is responsible for vulnerability scanning of container
-                  images.
+                  Obsolete field. This field will be removed in a future release.
+                  The legacy Scanner has been removed. This field is ignored.
                 properties:
                   analyzer:
                     description: Settings pertaining to the analyzer deployment, such
@@ -2601,8 +2603,7 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                description: Settings for the Scanner V4 component, which can run
-                  in addition to the previously existing Scanner components
+                description: Settings for the Scanner V4 component
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -3130,9 +3131,7 @@ spec:
                   scannerComponent:
                     description: |-
                       Can be specified as "Enabled" or "Disabled".
-                      If this field is not specified, the following defaulting takes place:
-                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
-                      * for new installations starting with ACS 4.8, the default is: Enabled.
+                      The default is: Enabled.
                     enum:
                     - Default
                     - Enabled

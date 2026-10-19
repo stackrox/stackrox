@@ -38,7 +38,7 @@ func createBasePredicate(fullPath string, fieldType reflect.Type, value string) 
 	case reflect.Bool:
 		return createBoolPredicate(fullPath, value)
 	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
-		if enum, ok := reflect.Zero(fieldType).Interface().(protoreflect.ProtoEnum); ok {
+		if enum, ok := reflect.TypeAssert[protoreflect.ProtoEnum](reflect.Zero(fieldType)); ok {
 			return createEnumPredicate(fullPath, value, enum)
 		}
 		return createIntPredicate(fullPath, value)

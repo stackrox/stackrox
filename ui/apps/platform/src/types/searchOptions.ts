@@ -37,6 +37,7 @@ export const searchFieldLabels = [
     'CVE Published On',
     'CVE Fix Available Timestamp',
     'CVE Created Time',
+    'CVE Origin',
     'CVE Snoozed',
     'CVE Snooze Expiry',
     'CVSS',
@@ -46,8 +47,8 @@ export const searchFieldLabels = [
     'CVE Orphaned',
     'CVE Orphaned Time',
     'EPSS Probability',
-    'Known Exploit', // frontend only pending backend implementation see obsolete #16887
-    'Known Ransomware Campaign', // frontend only pending backend implementation see obsolete #16887
+    'CISA KEV',
+    'Known Ransomware Campaign',
     'Advisory Name',
     'Advisory Link',
     //

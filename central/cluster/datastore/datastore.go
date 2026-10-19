@@ -23,6 +23,8 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,6 +46,7 @@ var (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
+	GetClusterID(ctx context.Context, name string) (string, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 	GetClustersForSAC() ([]effectiveaccessscope.Cluster, error)
@@ -100,6 +103,8 @@ func New(
 	networkBaselineMgr networkBaselineManager.Manager,
 	compliancePruner compliancePruning.Pruner,
 	clusterInitStore clusterInitStore.Store,
+	virtualMachines virtualMachineDataStore.DataStore,
+	virtualMachinesV2 virtualMachineV2DataStore.DataStore,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:            clusterStorage,
@@ -126,6 +131,8 @@ func New(
 		nameToIDCache:             simplecache.New(),
 		compliancePruner:          compliancePruner,
 		clusterInitStore:          clusterInitStore,
+		virtualMachineDataStore:   virtualMachines,
+		virtualMachineV2DataStore: virtualMachinesV2,
 	}
 
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {

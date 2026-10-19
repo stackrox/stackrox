@@ -8,6 +8,7 @@ import (
 // The issued cert and key are added to the passed in fileMap.
 // It is extracted out to avoid duplicating the generating code and the file names between central and roxctl,
 // and is not intended to be more generally reusable.
+// TODO(ROX-36705): To remove.
 func IssueScannerCerts(fileMap map[string][]byte, ca mtls.CA, opts ...mtls.IssueCertOption) error {
 	return IssueOtherServiceCerts(fileMap, ca, []mtls.Subject{mtls.ScannerSubject, mtls.ScannerDBSubject}, opts...)
 }

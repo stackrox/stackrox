@@ -149,6 +149,10 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(i
 	return ds.storage.WalkByQuery(ctx, q, wrappedFn)
 }
 
+func (ds *datastoreImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
+	return ds.storage.WalkMetadataByQuery(ctx, q, fn)
+}
+
 // CountImages delegates to the underlying store.
 func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	if _, err := imagesSAC.ReadAllowed(ctx); err != nil {

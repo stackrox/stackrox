@@ -321,6 +321,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimesta
 		"cvebaseinfo_createdat",
 		"cvebaseinfo_epss_epssprobability",
 		"cvebaseinfo_cisakev",
+		"cvebaseinfo_knownransomwarecampaign",
 		"cvss",
 		"severity",
 		"impactscore",
@@ -364,6 +365,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimesta
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			obj.GetCveBaseInfo().GetCisaKev(),
+			obj.GetCveBaseInfo().GetKnownRansomwareCampaign(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
@@ -420,10 +422,17 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.ImageV2) (bool, bool, err
 
 type hashWrapper struct {
 	Components []*storage.EmbeddedImageScanComponent `hash:"set"`
+	Count      int
+	VulnCount  int
 }
 
 func populateImageScanHash(scan *storage.ImageScan) error {
-	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, &hashstructure.HashOptions{ZeroNil: true})
+	components := scan.GetComponents()
+	vulnCount := 0
+	for _, c := range components {
+		vulnCount += len(c.GetVulns())
+	}
+	hash, err := hashstructure.Hash(hashWrapper{Components: components, Count: len(components), VulnCount: vulnCount}, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}

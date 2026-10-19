@@ -19,7 +19,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/enricher/kev"
-	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -45,6 +44,11 @@ const (
 	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
 
 	rhelRepositoryKey = "rhel-cpe-repository"
+
+	// unsetCPE is the bound form of an unset CPE. Every released StackRox
+	// component emits and accepts this form, so keep it on the wire instead of
+	// the empty string ClairCore now produces for unset CPEs.
+	unsetCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
 )
 
 var (
@@ -86,13 +90,6 @@ var (
 		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
-
-	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
-	vexUpdater = (*vex.Updater)(nil).Name()
-	// rhccRepoName is the name of the "Gold Repository".
-	rhccRepoName = rhcc.GoldRepo.Name
-	// rhccRepoURI is the URI of the "Gold Repository".
-	rhccRepoURI = rhcc.GoldRepo.URI
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -118,7 +115,6 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 		return nil, nil
 	}
 	filterPackages(r)
-	filterVulnerabilities(r)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
@@ -257,6 +253,10 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 	if err != nil {
 		return nil, err
 	}
+	cpeStr, err := toCPEString(p.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("package %q: %w", p.ID, err)
+	}
 	return &v4.Package{
 		Id:                p.ID,
 		Name:              p.Name,
@@ -268,7 +268,7 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 		RepositoryHint:    p.RepositoryHint,
 		Module:            p.Module,
 		Arch:              p.Arch,
-		Cpe:               toCPEString(p.CPE),
+		Cpe:               cpeStr,
 	}, nil
 }
 
@@ -322,6 +322,10 @@ func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 	if d == nil {
 		return nil, nil
 	}
+	cpeStr, err := toCPEString(d.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("distribution %q: %w", d.ID, err)
+	}
 	return &v4.Distribution{
 		Id:              d.ID,
 		Did:             d.DID,
@@ -330,7 +334,7 @@ func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 		VersionCodeName: d.VersionCodeName,
 		VersionId:       VersionID(d),
 		Arch:            d.Arch,
-		Cpe:             toCPEString(d.CPE),
+		Cpe:             cpeStr,
 		PrettyName:      d.PrettyName,
 	}, nil
 }
@@ -339,12 +343,16 @@ func v4Repository(r *claircore.Repository) (*v4.Repository, error) {
 	if r == nil {
 		return nil, nil
 	}
+	cpeStr, err := toCPEString(r.CPE)
+	if err != nil {
+		return nil, fmt.Errorf("repository %q: %w", r.ID, err)
+	}
 	return &v4.Repository{
 		Id:   r.ID,
 		Name: r.Name,
 		Key:  r.Key,
 		Uri:  r.URI,
-		Cpe:  toCPEString(r.CPE),
+		Cpe:  cpeStr,
 	}, nil
 }
 
@@ -825,8 +833,15 @@ func toPackageKind(s string) types.PackageKind {
 	return k
 }
 
-func toCPEString(c cpe.WFN) string {
-	return c.BindFS()
+func toCPEString(c cpe.WFN) (string, error) {
+	if errors.Is(c.Valid(), cpe.ErrUnset) {
+		return unsetCPE, nil
+	}
+	b, err := c.AppendText(nil)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func toDigestString(digest claircore.Digest) string {
@@ -834,6 +849,9 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
+	if s == "" {
+		return cpe.WFN{}, nil
+	}
 	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
@@ -1148,106 +1166,6 @@ func filterPackages(report *claircore.VulnerabilityReport) {
 			delete(report.PackageVulnerabilities, pkgID)
 		}
 	}
-}
-
-// filterVulnerabilities filters out vulnerabilities from the given vulnerability report.
-// Note: This function only modifies the report's PackageVulnerabilities map.
-// It is non-trivial to remove all unreferenced vulnerabilities from the report's
-// Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
-// extra vulnerabilities. It is up to the client to handle this.
-func filterVulnerabilities(report *claircore.VulnerabilityReport) {
-	// We only filter out non-Red Hat vulnerabilities found in Red Hat layers (if configured to do so) at this time.
-	if !features.ScannerV4RedHatLayers.Enabled() {
-		return
-	}
-
-	redhatLayers := rhccLayers(report)
-	if redhatLayers.IsEmpty() {
-		// This image is neither an official Red Hat image nor based on one, so nothing to do here.
-		return
-	}
-	for pkgID, pkg := range report.Packages {
-		// Sanity check.
-		if pkg == nil {
-			continue
-		}
-
-		envs, found := report.Environments[pkgID]
-		if !found {
-			// Did not find a related environment, so we cannot determine the layer.
-			continue
-		}
-
-		// Just use the first environment.
-		// It is possible there are multiple environments associated with this package;
-		// however, for our purposes, we only need the first one,
-		// as the layer index will always be the same between different environments.
-		// Quay does this, too: https://github.com/quay/quay/blob/v3.10.3/data/secscan_model/secscan_v4_model.py#L583.
-		// We also do this in our own client code.
-		env := envs[0]
-		// If this package was introduced in a non-Red Hat layer, skip it.
-		if !redhatLayers.Contains(env.IntroducedIn.String()) {
-			continue
-		}
-
-		var n int
-		for _, vulnID := range report.PackageVulnerabilities[pkgID] {
-			vuln := report.Vulnerabilities[vulnID]
-			// Sanity check.
-			if vuln == nil {
-				continue
-			}
-
-			// If the vulnerability did not come from Red Hat's VEX data, then skip it.
-			if vuln.Updater != vexUpdater {
-				continue
-			}
-
-			report.PackageVulnerabilities[pkgID][n] = vulnID
-			n++
-		}
-
-		// Hint to the GC the filtered vulnerabilities are no longer needed.
-		clear(report.PackageVulnerabilities[pkgID][n:])
-		report.PackageVulnerabilities[pkgID] = report.PackageVulnerabilities[pkgID][:n:n]
-
-		// If there aren't any vulnerabilities from Red Hat's VEX data,
-		// then delete the whole entry.
-		if n == 0 {
-			delete(report.PackageVulnerabilities, pkgID)
-		}
-	}
-}
-
-// rhccLayers returns a set of SHAs for the layers in official Red Hat images.
-// TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
-// as the old build system.
-func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
-	layers := set.NewStringSet()
-
-	var rhccID string
-	for id, repo := range report.Repositories {
-		if repo.Name == rhccRepoName && repo.URI == rhccRepoURI {
-			rhccID = id
-			break
-		}
-	}
-	if rhccID == "" {
-		// Not an official Red Hat image nor based on one.
-		return layers.Freeze()
-	}
-
-	for _, envs := range report.Environments {
-		for _, env := range envs {
-			for _, repoID := range env.RepositoryIDs {
-				if repoID == rhccID {
-					layers.Add(env.IntroducedIn.String())
-				}
-			}
-		}
-	}
-
-	return layers.Freeze()
 }
 
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.

@@ -93,10 +93,31 @@ func validateWaitOptions(desc string, opts WaitOptions) error {
 	return nil
 }
 
+// isTransientPollError reports gRPC failures that should not abort a Central wait.
+// Unavailable/DeadlineExceeded/ResourceExhausted/Aborted are typical of a busy
+// Central or a short network blip; Unimplemented and InvalidArgument are not.
+func isTransientPollError(err error) bool {
+	if err == nil || IsAuthenticationExpired(err) {
+		return false
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	switch st.Code() {
+	case codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted, codes.Aborted:
+		return true
+	default:
+		return false
+	}
+}
+
 // pollUntil is the poll loop for Central gRPC scan-lifecycle waits.
 // Use this instead of k8s wait.PollUntilContextCancel when you need:
 //   - auth-expiry fail-fast: aborts immediately on expired kubeconfig tokens
 //     instead of burning the full timeout,
+//   - retry of transient gRPC codes until Timeout (v2 scan waits issue more
+//     RPCs per poll than the legacy GetVirtualMachine path),
 //   - structured diagnostics: each poll returns a detail string so timeout
 //     errors report exactly which stage was stuck.
 //
@@ -121,15 +142,21 @@ func pollUntil(ctx context.Context, opts WaitOptions, desc string, poll func(ctx
 			if IsAuthenticationExpired(err) {
 				return fmt.Errorf("vmhelpers: %s: %w: %v", desc, ErrAuthenticationExpired, err)
 			}
-			return fmt.Errorf("vmhelpers: %s: %w", desc, err)
-		}
-		if done {
+			if !isTransientPollError(err) {
+				return fmt.Errorf("vmhelpers: %s: %w", desc, err)
+			}
+			if lastDetail == "" {
+				lastDetail = err.Error()
+			}
+			if opts.Logf != nil {
+				opts.Logf("poll %s: waiting (transient: %v)", desc, err)
+			}
+		} else if done {
 			if opts.Logf != nil && detail != "" {
 				opts.Logf("poll %s: done (%s)", desc, detail)
 			}
 			return nil
-		}
-		if opts.Logf != nil && detail != "" {
+		} else if opts.Logf != nil && detail != "" {
 			opts.Logf("poll %s: waiting (%s)", desc, detail)
 		}
 		if time.Now().After(deadline) {

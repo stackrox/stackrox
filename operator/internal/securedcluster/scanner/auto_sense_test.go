@@ -18,16 +18,16 @@ var securedCluster = platform.SecuredCluster{
 	},
 }
 
-func TestAutoSenseLocalScannerSupportShouldBeEnabled(t *testing.T) {
+func TestAutoSenseLocalScannerAlwaysReturnsDisabled(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion).Build()
 
 	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	assert.True(t, config.EnableLocalImageScanning)
-	assert.True(t, config.DeployScannerResources)
+	assert.False(t, config.EnableLocalImageScanning)
+	assert.False(t, config.DeployScannerResources)
 }
 
-func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
+func TestAutoSenseLocalScannerIgnoresCentralPresence(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion, &platform.Central{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testutils.TestNamespace,
@@ -38,11 +38,11 @@ func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
 
 	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	assert.False(t, config.DeployScannerResources, "Expected Scanner resource deployment to be disabled if Central is present")
-	assert.True(t, config.EnableLocalImageScanning, "Expected Local Image Scanning feature to be enabled.")
+	assert.False(t, config.DeployScannerResources)
+	assert.False(t, config.EnableLocalImageScanning)
 }
 
-func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
+func TestAutoSenseLocalScannerIgnoresCentralInDifferentNamespace(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion, &platform.Central{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "another-namespace",
@@ -53,6 +53,6 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 
 	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	require.True(t, config.DeployScannerResources)
-	require.True(t, config.EnableLocalImageScanning)
+	assert.False(t, config.DeployScannerResources)
+	assert.False(t, config.EnableLocalImageScanning)
 }

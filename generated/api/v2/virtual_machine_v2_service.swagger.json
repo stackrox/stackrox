@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "VirtualMachineV2Service"
+      "name": "VirtualMachineV2Service",
+      "description": "NOTE: RPC ordering matters for grpc-gateway routing. The gateway prepends\neach handler (last registered = first matched), so wildcard routes like\n{id} must be defined FIRST to end up at the back of the matching list.\nLiteral routes defined after will match before the wildcard."
     }
   ],
   "consumes": [
@@ -767,10 +768,11 @@
       "type": "string",
       "enum": [
         "AGENT_STATUS_UNKNOWN",
-        "AGENT_STATUS_ACTIVE"
+        "AGENT_STATUS_ACTIVE",
+        "AGENT_STATUS_INACTIVE"
       ],
       "default": "AGENT_STATUS_UNKNOWN",
-      "description": "Agent status enriched from a separate data source (not on VirtualMachineV2 storage)."
+      "description": "AgentStatus is roxagent liveness from scrape freshness, computed on GetVM\n(not a stored enum). UNKNOWN means never scraped; INACTIVE means scraped, then quiet."
     },
     "v2AggregateBy": {
       "type": "object",

@@ -73,6 +73,21 @@ func (mr *MockStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
 }
 
+// Exists mocks base method.
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
+}
+
 // Get mocks base method.
 func (m *MockStore) Get(ctx context.Context, id string) (*storage.Deployment, bool, error) {
 	m.ctrl.T.Helper()
@@ -170,6 +185,21 @@ func (mr *MockStoreMockRecorder) GetManyListDeployments(ctx any, ids ...any) *go
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, ids...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyListDeployments", reflect.TypeOf((*MockStore)(nil).GetManyListDeployments), varargs...)
+}
+
+// GetV2ImageIDsForDigests mocks base method.
+func (m *MockStore) GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetV2ImageIDsForDigests", ctx, digests)
+	ret0, _ := ret[0].(map[string][]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetV2ImageIDsForDigests indicates an expected call of GetV2ImageIDsForDigests.
+func (mr *MockStoreMockRecorder) GetV2ImageIDsForDigests(ctx, digests any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetV2ImageIDsForDigests", reflect.TypeOf((*MockStore)(nil).GetV2ImageIDsForDigests), ctx, digests)
 }
 
 // Search mocks base method.

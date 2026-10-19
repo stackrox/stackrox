@@ -24,7 +24,10 @@ func newTestBackend(_ testing.TB) newBackendFunc {
 		b := &backend{
 			id:                  id,
 			baseRedirectURLPath: callbackURL,
-			openshiftConnector:  nil,
+			connectorFactory: func() (callbackAndRefreshConnector, error) {
+				return nil, nil
+			},
+			openshiftConnector: nil,
 		}
 		registerBackend(b)
 		return b, nil

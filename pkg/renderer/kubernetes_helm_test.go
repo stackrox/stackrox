@@ -54,9 +54,7 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 		FactImageRemote: "fact",
 		FactImageTag:    "0.1.0",
 
-		ScannerSlimImageRemote: "scanner",
-		ScannerImageTag:        "3.0.11-slim",
-		ScannerV4ImageTag:      "4.4.0.x-92-g9e8a347ffe",
+		ScannerV4ImageTag: "4.4.0.x-92-g9e8a347ffe",
 
 		CollectionMethod: "CORE_BPF",
 

@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { useDispatch } from 'react-redux';
 import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
-import { actions } from 'reducers/feedback';
 import { apidocsPath, apidocsPathV2 } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';
 
 function HelpMenu(): ReactElement {
     const { releaseBuild, version } = useMetadata();
     const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
-    const dispatch = useDispatch();
 
     return (
         <Dropdown
@@ -40,12 +37,6 @@ function HelpMenu(): ReactElement {
                 </DropdownItem>
                 <DropdownItem component={(props) => <Link {...props} to={apidocsPathV2} />}>
                     API Reference (v2)
-                </DropdownItem>
-                <DropdownItem
-                    component="button"
-                    onClick={() => dispatch(actions.setFeedbackModalVisibility(true))}
-                >
-                    Share feedback
                 </DropdownItem>
                 {version && (
                     <>

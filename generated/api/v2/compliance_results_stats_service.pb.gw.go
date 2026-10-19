@@ -43,9 +43,6 @@ func request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -59,6 +56,9 @@ func request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx conte
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceProfileStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -95,14 +95,14 @@ func request_ComplianceResultsStatsService_GetComplianceProfilesStats_0(ctx cont
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceProfilesStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -131,9 +131,6 @@ func request_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(c
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -147,6 +144,9 @@ func request_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(c
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceProfilesClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -184,9 +184,6 @@ func request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(ctx 
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -208,6 +205,9 @@ func request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(ctx 
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceProfileCheckStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -253,9 +253,6 @@ func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx c
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -269,6 +266,9 @@ func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx c
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceClusterScanStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -305,14 +305,14 @@ func request_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0(ct
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceOverallClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -341,9 +341,6 @@ func request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -357,6 +354,9 @@ func request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx conte
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err

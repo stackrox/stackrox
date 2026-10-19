@@ -13,12 +13,16 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,10 +36,17 @@ const (
 
 	getVMStmt   = "SELECT serialized FROM " + vmTable + " WHERE Id = $1"
 	getScanStmt = "SELECT serialized FROM " + scanTable + " WHERE VmV2Id = $1"
+
+	// VM facts, notes, and VSOCK CID, plus scan notes, require the serialized blobs.
+	// LATERAL selects the newest UUIDv7 scan ID; LEFT JOIN retains VMs without scans.
+	getVMWithLatestScanStmt = "SELECT vm.serialized, scan.serialized FROM " + vmTable + " AS vm" +
+		" LEFT JOIN LATERAL (SELECT serialized FROM " + scanTable +
+		" WHERE VmV2Id = vm.Id ORDER BY Id DESC LIMIT 1) AS scan ON true WHERE vm.Id = $1"
 )
 
 var (
-	schema = pkgSchema.VirtualMachineV2Schema()
+  schema = pkgSchema.VirtualMachineV2Schema()
+	vmSAC  = sac.ForResource(resources.VirtualMachine)
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -69,8 +80,8 @@ func (s *storeImpl) EnsureExists(ctx context.Context, vmID, clusterID string) er
 		}
 
 		const stmt = "INSERT INTO " + vmTable +
-			" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
-			" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+			" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, LastAgentContact, serialized)" +
+			" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 			" ON CONFLICT(Id) DO NOTHING"
 
 		_, err := s.db.Exec(ctx, stmt,
@@ -82,6 +93,7 @@ func (s *storeImpl) EnsureExists(ctx context.Context, vmID, clusterID string) er
 			vm.GetGuestOs(),
 			vm.GetState(),
 			protocompat.NilOrTime(vm.GetLastUpdated()),
+			protocompat.NilOrTime(vm.GetLastAgentContact()),
 			serialized,
 		)
 		return err
@@ -124,6 +136,11 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 				return errors.Wrapf(rbErr, "rollback after: %v", err)
 			}
 			return err
+		}
+
+		// Sensor informer upserts never carry last_agent_contact; keep the scrape stamp.
+		if existingVM != nil && vm.GetLastAgentContact() == nil {
+			vm.LastAgentContact = existingVM.GetLastAgentContact()
 		}
 
 		if existingVM != nil && existingVM.GetHash() == hash {
@@ -174,17 +191,19 @@ func (s *storeImpl) insertVM(ctx context.Context, tx *postgres.Tx, vm *storage.V
 		vm.GetGuestOs(),
 		vm.GetState(),
 		protocompat.NilOrTime(vm.GetLastUpdated()),
+		protocompat.NilOrTime(vm.GetLastAgentContact()),
 		serialized,
 	}
 
 	const stmt = "INSERT INTO " + vmTable +
-		" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
-		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+		" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, LastAgentContact, serialized)" +
+		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 		" ON CONFLICT(Id) DO UPDATE SET" +
 		" Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace," +
 		" ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName," +
 		" GuestOs = EXCLUDED.GuestOs, State = EXCLUDED.State," +
-		" LastUpdated = EXCLUDED.LastUpdated, serialized = EXCLUDED.serialized"
+		" LastUpdated = EXCLUDED.LastUpdated, LastAgentContact = EXCLUDED.LastAgentContact," +
+		" serialized = EXCLUDED.serialized"
 	_, err = tx.Exec(ctx, stmt, values...)
 	return err
 }
@@ -200,8 +219,8 @@ func (s *storeImpl) updateVMTimestamp(ctx context.Context, tx *postgres.Tx, vm *
 		return err
 	}
 
-	const stmt = "UPDATE " + vmTable + " SET LastUpdated = $2, serialized = $3 WHERE Id = $1"
-	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(vm.GetLastUpdated()), serialized)
+	const stmt = "UPDATE " + vmTable + " SET LastUpdated = $2, LastAgentContact = $3, serialized = $4 WHERE Id = $1"
+	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(vm.GetLastUpdated()), protocompat.NilOrTime(vm.GetLastAgentContact()), serialized)
 	return err
 }
 
@@ -313,7 +332,10 @@ func (s *storeImpl) touchVMLastUpdated(ctx context.Context, tx *postgres.Tx, vmI
 	if existingVM == nil {
 		return errox.NotFound.Newf("VM %s not found", vmID)
 	}
-	existingVM.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&t)
+	ts := protocompat.ConvertTimeToTimestampOrNil(&t)
+	existingVM.LastUpdated = ts
+	// UpsertScan is the scrape-derived path (index-report SYNC), so last contact moves with last_updated.
+	existingVM.LastAgentContact = ts
 	return s.updateVMTimestamp(ctx, tx, existingVM)
 }
 
@@ -685,6 +707,44 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.VirtualMachine
 			return nil, false, nil
 		}
 		return vm, true, nil
+	})
+}
+
+// GetWithLatestScan reads the VM and its latest scan in one snapshot.
+func (s *storeImpl) GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "VirtualMachineV2WithLatestScan")
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresVMStatementTimeout.DurationSetting())
+	defer cancel()
+	return pgutils.Retry3(queryCtx, func() (*common.VMWithLatestScan, bool, error) {
+		var db postgres.Queryable = s.db
+		if tx, exists := postgres.TxFromContext(queryCtx); exists {
+			db = tx
+		}
+		var vmBytes, scanBytes []byte
+		err := db.QueryRow(queryCtx, getVMWithLatestScanStmt, pgutils.NilOrUUID(id)).Scan(&vmBytes, &scanBytes)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		if err != nil {
+			return nil, false, errors.Wrap(err, "reading VM and latest scan")
+		}
+		vm := &storage.VirtualMachineV2{}
+		if err := vm.UnmarshalVT(vmBytes); err != nil {
+			return nil, false, errors.Wrap(err, "decoding VM")
+		}
+		// Match the scope filtering of Get: inaccessible VMs are not found, and
+		// neither their metadata nor their scan is returned to the caller.
+		if allowed, err := vmSAC.ReadAllowed(queryCtx, sac.ClusterScopeKey(vm.GetClusterId()), sac.NamespaceScopeKey(vm.GetNamespace())); err != nil || !allowed {
+			return nil, false, err
+		}
+		result := &common.VMWithLatestScan{VM: vm}
+		if scanBytes != nil {
+			result.Scan = &storage.VirtualMachineScanV2{}
+			if err := result.Scan.UnmarshalVT(scanBytes); err != nil {
+				return nil, false, errors.Wrap(err, "decoding latest VM scan")
+			}
+		}
+		return result, true, nil
 	})
 }
 

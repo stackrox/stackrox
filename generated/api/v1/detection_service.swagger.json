@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "DetectionService"
+      "name": "DetectionService",
+      "description": "DetectionService APIs can be used to check for build and deploy time policy violations."
     }
   ],
   "consumes": [
@@ -279,7 +280,19 @@
         "UNKNOWN"
       ],
       "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+      "description": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "ExclusionExcludeByKind": {
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExclusionWorkloadKind"
+          }
+        }
+      },
+      "description": "ExcludeByKind excludes all workloads of the selected Kubernetes kinds."
     },
     "ExclusionImage": {
       "type": "object",
@@ -288,6 +301,16 @@
           "type": "string"
         }
       }
+    },
+    "ExclusionWorkloadKind": {
+      "type": "string",
+      "enum": [
+        "WORKLOAD_KIND_UNSPECIFIED",
+        "CRON_JOB",
+        "JOB"
+      ],
+      "default": "WORKLOAD_KIND_UNSPECIFIED",
+      "description": "WorkloadKind is a Kubernetes workload kind that can be excluded from a policy in bulk."
     },
     "FileAccessFileMetadata": {
       "type": "object",
@@ -1092,15 +1115,18 @@
         "name": {
           "type": "string"
         },
-        "deployment": {
-          "$ref": "#/definitions/storageExclusionDeployment"
-        },
         "image": {
           "$ref": "#/definitions/ExclusionImage"
         },
         "expiration": {
           "type": "string",
           "format": "date-time"
+        },
+        "deployment": {
+          "$ref": "#/definitions/storageExclusionDeployment"
+        },
+        "excludeByKind": {
+          "$ref": "#/definitions/ExclusionExcludeByKind"
         }
       }
     },
@@ -1250,7 +1276,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "description": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePermissionLevel": {
       "type": "string",
@@ -1263,7 +1289,7 @@
         "CLUSTER_ADMIN"
       ],
       "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+      "description": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
     },
     "storagePolicy": {
       "type": "object",
@@ -1314,7 +1340,7 @@
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
           },
-          "description": "Define deployments or images that should be excluded from this policy."
+          "description": "Define deployments, images, or workload kinds that should be excluded from this policy."
         },
         "scope": {
           "type": "array",

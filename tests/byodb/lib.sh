@@ -19,7 +19,8 @@ deploy_external_postgres() {
     kubectl create namespace database
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
-    kubectl wait --for=condition=Ready pod -l app=postgres -n database --timeout=180s
+    # The StatefulSet exists, but its pod may not have been created yet.
+    kubectl rollout status statefulset/postgres -n database --timeout=180s
 }
 
 preamble() {

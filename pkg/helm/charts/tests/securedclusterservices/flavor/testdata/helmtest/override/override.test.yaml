@@ -11,8 +11,8 @@ tests:
     availableSchemas:
     - openshift-4.12
   set:
-    scanner.disable: false
+    scannerV4.disable: false
   expect: |
-    .deployments["scanner-db"] | toyaml | print
-    assertScannerIs("test.registry/scanner-slim:custom-scanner")
-    assertScannerDBIs("test.registry/scanner-db-slim:custom-scanner")
+    .deployments["scanner-v4-db"] | toyaml | print
+    assertScannerIs("test.registry/scanner-v4:custom-scanner")
+    assertScannerDBIs("test.registry/scanner-v4-db:custom-scanner")

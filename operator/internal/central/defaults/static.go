@@ -41,16 +41,6 @@ var staticDefaults = platform.CentralSpec{
 			Enabled: new(true),
 		},
 	},
-	Scanner: &platform.ScannerComponentSpec{
-		Analyzer: &platform.ScannerAnalyzerComponent{
-			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: new(platform.ScannerAutoScalingEnabled),
-				Replicas:    new(int32(3)),
-				MinReplicas: new(int32(2)),
-				MaxReplicas: new(int32(5)),
-			},
-		},
-	},
 	ScannerV4: &platform.ScannerV4Spec{
 		// ScannerComponent field is set using a dedicated defaulting flow.
 		Indexer: &platform.ScannerV4Component{
@@ -89,7 +79,7 @@ var staticDefaults = platform.CentralSpec{
 		Policies: new(platform.NetworkPoliciesEnabled),
 	},
 	CentralWorker: &platform.CentralWorkerSpec{
-		Enabled: new(false),
+		Enabled: new(true),
 	},
 	ConfigAsCode: &platform.ConfigAsCodeSpec{
 		ComponentPolicy: new(platform.ConfigAsCodeComponentEnabled),

@@ -11,7 +11,7 @@ on:
 
 jobs:
   offline-bundle-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >
       github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
@@ -36,7 +36,7 @@ jobs:
 
   offline-bundle-generate:
     needs: offline-bundle-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +69,7 @@ jobs:
         if-no-files-found: error
 
   offline-bundle-upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
     - offline-bundle-generate
     steps:
@@ -125,9 +125,15 @@ jobs:
     - offline-bundle-matrix
     - offline-bundle-generate
     - offline-bundle-upload
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'schedule' && failure()
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     steps:
-    - name: Send Slack notification on workflow failure
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update offline vulnerabilities bundle"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    - uses: ./.github/actions/notify-slack-on-failure
+      with:
+        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

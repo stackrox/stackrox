@@ -25,6 +25,8 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
@@ -75,5 +77,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		clusterRanker, networkBaselineManager, compliancePruner, clusterInitStore)
+		clusterRanker, networkBaselineManager, compliancePruner, clusterInitStore,
+		virtualMachineDataStore.GetTestPostgresDataStore(t, pool),
+		virtualMachineV2DataStore.GetTestPostgresDataStore(t, pool))
 }

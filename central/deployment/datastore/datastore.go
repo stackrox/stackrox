@@ -34,6 +34,8 @@ type DataStore interface {
 	ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
 
 	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	// DeploymentExists reports whether the deployment is stored, without fetching or copying it.
+	DeploymentExists(ctx context.Context, id string) (bool, error)
 	GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error)
 	CountDeployments(ctx context.Context) (int, error)
 	// UpsertDeployment adds or updates a deployment. If the deployment exists, the tags in the deployment are taken from
@@ -48,6 +50,8 @@ type DataStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
+
+	GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error)
 }
 
 func newDataStore(

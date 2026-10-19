@@ -22,6 +22,36 @@ openshift_ci_mods
 openshift_ci_import_creds
 
 setup_gcp
+
+# Pre-flight DNS check (mitigation for DPTP-5138)
+info "Pre-flight DNS health check (DPTP-5138 mitigation)"
+
+_check_dns() {
+    local domain="$1"
+    getent hosts "$domain" >/dev/null 2>&1
+}
+
+dns_check_failed=false
+for domain in oauth2.googleapis.com compute.googleapis.com storage.googleapis.com; do
+    if retry 5 true _check_dns "$domain"; then
+        info "✓ DNS OK for $domain"
+    else
+        warn "⚠️  DNS resolution FAILED for $domain after retries"
+        dns_check_failed=true
+    fi
+done
+
+if [[ "$dns_check_failed" == "true" ]]; then
+    local error_msg="DNS is broken after retries (likely persistent node-resolver issue - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
+
+    # Generate structured JUnit report for better CI dashboard visibility
+    if [[ -n "${ARTIFACT_DIR:-}" ]] && command -v save_junit_failure >/dev/null 2>&1; then
+        save_junit_failure "DNS_Preflight_Check" "DNS resolution failed" "$error_msg"
+    fi
+
+    die "$error_msg"
+fi
+
 set_ci_shared_export started_at "$(date -u +%s)"
 
 if [[ -z "${SHARED_DIR:-}" ]]; then

@@ -31,40 +31,6 @@ export type ImageDetails = {
     baseImage: BaseImage | null;
 };
 
-export const imageDetailsFragment = gql`
-    fragment ImageDetails on Image {
-        deploymentCount
-        operatingSystem
-        metadata {
-            v1 {
-                created
-            }
-        }
-        dataSource {
-            name
-        }
-        scanTime
-        scanNotes
-        notes
-        signatureCount
-        signatureVerificationData {
-            results {
-                description
-                status
-                verificationTime
-                verifiedImageReferences
-                verifierId
-                verifierName
-            }
-        }
-        baseImage {
-            imageSha
-            names
-            created
-        }
-    }
-`;
-
 export const imageV2DetailsFragment = gql`
     fragment ImageV2Details on ImageV2 {
         deploymentCount

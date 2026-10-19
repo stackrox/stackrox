@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -96,11 +95,10 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	// set up tables
 	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
-	var schema *graphql.Schema
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	if features.FlattenImageData.Enabled() {
 		imgV2DataStore := resolvers.CreateTestImageV2Datastore(bts.b, bts.testDB, mockCtrl)
-		bts.resolver, schema = resolvers.SetupTestResolver(bts.b,
+		bts.resolver, _ = resolvers.SetupTestResolver(bts.b,
 			imagesView.NewImageView(bts.testDB.DB),
 			imgV2DataStore,
 			resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
@@ -110,7 +108,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		)
 	} else {
 		imageDataStore := resolvers.CreateTestImageDatastore(bts.b, bts.testDB, mockCtrl)
-		bts.resolver, schema = resolvers.SetupTestResolver(bts.b,
+		bts.resolver, _ = resolvers.SetupTestResolver(bts.b,
 			imagesView.NewImageView(bts.testDB.DB),
 			imageDataStore,
 			resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
@@ -127,7 +125,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore, schema)
+		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore)
 }
 
 func BenchmarkEntityScopeReportGenerator(b *testing.B) {
@@ -136,11 +134,10 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 	testDB := pgtest.ForT(b)
 
 	watchedImageDatastore := watchedImageDS.GetTestPostgresDataStore(b, testDB.DB)
-	var schema *graphql.Schema
 	var resolver *resolvers.Resolver
 	if features.FlattenImageData.Enabled() {
 		imgV2DataStore := resolvers.CreateTestImageV2Datastore(b, testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(b,
+		resolver, _ = resolvers.SetupTestResolver(b,
 			imagesView.NewImageView(testDB.DB),
 			imgV2DataStore,
 			resolvers.CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
@@ -150,7 +147,7 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		)
 	} else {
 		imageDataStore := resolvers.CreateTestImageDatastore(b, testDB, mockCtrl)
-		resolver, schema = resolvers.SetupTestResolver(b,
+		resolver, _ = resolvers.SetupTestResolver(b,
 			imagesView.NewImageView(testDB.DB),
 			imageDataStore,
 			resolvers.CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
@@ -166,7 +163,7 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 
 	reportGenerator := newReportGeneratorImpl(testDB, nil, resolver.DeploymentDataStore,
 		watchedImageDatastore, nil, nil, nil, clusterDatastore,
-		nsDatastore, resolver.ImageCVEV2DataStore, schema)
+		nsDatastore, resolver.ImageCVEV2DataStore)
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},

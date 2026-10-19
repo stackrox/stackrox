@@ -106,6 +106,7 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 		obj.GetCveBaseInfo().GetCisaKev(),
+		obj.GetCveBaseInfo().GetKnownRansomwareCampaign(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -115,7 +116,7 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev = EXCLUDED.CveBaseInfo_CisaKev, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev, CveBaseInfo_KnownRansomwareCampaign, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_CisaKev = EXCLUDED.CveBaseInfo_CisaKev, CveBaseInfo_KnownRansomwareCampaign = EXCLUDED.CveBaseInfo_KnownRansomwareCampaign, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -128,6 +129,7 @@ var copyColsClusterCves = []string{
 	"cvebaseinfo_createdat",
 	"cvebaseinfo_epss_epssprobability",
 	"cvebaseinfo_cisakev",
+	"cvebaseinfo_knownransomwarecampaign",
 	"cvss",
 	"severity",
 	"impactscore",
@@ -174,6 +176,7 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			obj.GetCveBaseInfo().GetCisaKev(),
+			obj.GetCveBaseInfo().GetKnownRansomwareCampaign(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

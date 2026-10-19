@@ -81,6 +81,16 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     return (
         <>
             <PageTitle title="Collections" />
+            <Alert
+                title="Collections are deprecated and will be removed in a future release"
+                component="p"
+                variant="info"
+                isInline
+            >
+                Collection scope is deprecated for scheduled image vulnerability reports. To prepare
+                for future updates, we recommend updating each scheduled report in Vulnerability
+                reporting to use Custom scope.
+            </Alert>
             <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex direction={{ default: 'column' }}>

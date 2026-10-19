@@ -11,7 +11,7 @@ indexer:
   enable: true
   database:
     conn_string: >
-      host=scanner-v4-db.{{ .Release.Namespace }}.svc
+      host=scanner-v4-db.{{ ._rox._namespace }}.svc
       port=5432
       sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
       user=postgres
@@ -29,11 +29,11 @@ indexer:
     password_file: /run/secrets/stackrox.io/secrets/password
   get_layer_timeout: 1m
   {{- if ._rox.env.centralServices }}
-  repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=repo2cpe
-  name_to_repos_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=name2repos
+  repository_to_cpe_url: https://central.{{ ._rox._namespace }}.svc/api/extensions/scannerdefinitions?file=repo2cpe
+  name_to_repos_url: https://central.{{ ._rox._namespace }}.svc/api/extensions/scannerdefinitions?file=name2repos
   {{- else }}
-  repository_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=repo2cpe
-  name_to_repos_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=name2repos
+  repository_to_cpe_url: https://sensor.{{ ._rox._namespace }}.svc/scanner/definitions?file=repo2cpe
+  name_to_repos_url: https://sensor.{{ ._rox._namespace }}.svc/scanner/definitions?file=name2repos
   {{- end }}
   repository_to_cpe_file: /run/mappings/repository-to-cpe.json
   name_to_repos_file: /run/mappings/container-name-repos-map.json
