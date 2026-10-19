@@ -11,11 +11,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
+	"github.com/stackrox/rox/pkg/mtls/clientca"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -68,7 +67,7 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 // OpenShift client CA without requiring certificates for console proxy callers.
 func newMetricsProxyTLSConfig(initialCert tls.Certificate, client kubernetes.Interface) *tls.Config {
 	config, updateClientCA, updateServerCert := proxyTLSConfig(initialCert)
-	watcher := k8scfgwatch.NewConfigMapWatcher(client, updateClientCA)
+	watcher := clientca.NewWatcher(client, updateClientCA)
 	watcher.Watch(context.Background(), env.SecureMetricsClientCANamespace.Setting(),
 		env.SecureMetricsClientCAConfigMap.Setting())
 
@@ -87,7 +86,7 @@ func newMetricsProxyTLSConfig(initialCert tls.Certificate, client kubernetes.Int
 	return config
 }
 
-func proxyTLSConfig(initialCert tls.Certificate) (*tls.Config, func(*v1.ConfigMap), func(*tls.Certificate)) {
+func proxyTLSConfig(initialCert tls.Certificate) (*tls.Config, func([]*x509.Certificate), func(*tls.Certificate)) {
 	var clientCAs atomic.Pointer[x509.CertPool]
 	clientCAs.Store(x509.NewCertPool())
 	var serverCert atomic.Pointer[tls.Certificate]
@@ -105,15 +104,14 @@ func proxyTLSConfig(initialCert tls.Certificate) (*tls.Config, func(*v1.ConfigMa
 		return live, nil
 	}
 
-	updateClientCA := func(cm *v1.ConfigMap) {
-		if cm == nil {
-			return
-		}
-		pem := cm.Data[env.SecureMetricsClientCAKey.Setting()]
+	updateClientCA := func(certs []*x509.Certificate) {
 		pool := x509.NewCertPool()
-		if !pool.AppendCertsFromPEM([]byte(pem)) {
+		if len(certs) == 0 {
 			log.Warn("OpenShift Prometheus client CA is missing or invalid; retaining previous CA")
 			return
+		}
+		for _, cert := range certs {
+			pool.AddCert(cert)
 		}
 		clientCAs.Store(pool)
 	}

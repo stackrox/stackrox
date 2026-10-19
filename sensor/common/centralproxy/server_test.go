@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/mtls/clientca"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -49,12 +50,17 @@ func TestProxyTLSVerifiesOptionalPrometheusCertificate(t *testing.T) {
 	require.NoError(t, err)
 	untrustedClientCert := signedTestCertificate(t, untrustedCA, untrustedKey,
 		env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
-	config, updateClientCA, _ := proxyTLSConfig(serverCert)
+	config, onClientCA, _ := proxyTLSConfig(serverCert)
+	updateClientCA := clientca.OnUpdate(onClientCA)
 	updateClientCA(&v1.ConfigMap{
 		Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER}))},
 	})
 	assert.True(t, config.SessionTicketsDisabled)
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/console" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		if err := authenticateMetricsScrape(r); err != nil {
 			http.Error(w, "invalid client", http.StatusUnauthorized)
 			return
@@ -66,6 +72,13 @@ func TestProxyTLSVerifiesOptionalPrometheusCertificate(t *testing.T) {
 	t.Cleanup(server.Close)
 	rootCAs := x509.NewCertPool()
 	rootCAs.AddCert(ca)
+	consoleTransport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: rootCAs,
+		ServerName: "localhost", MinVersion: tls.VersionTLS12}}
+	t.Cleanup(consoleTransport.CloseIdleConnections)
+	consoleResponse, err := (&http.Client{Transport: consoleTransport}).Get(server.URL + "/console")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, consoleResponse.StatusCode)
+	require.NoError(t, consoleResponse.Body.Close())
 
 	for _, tc := range []struct {
 		name     string
@@ -93,6 +106,11 @@ func TestProxyTLSVerifiesOptionalPrometheusCertificate(t *testing.T) {
 			require.NoError(t, response.Body.Close())
 		})
 	}
+
+	updateClientCA(&v1.ConfigMap{Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): "invalid-PEM"}})
+	liveConfig, err := config.GetConfigForClient(nil)
+	require.NoError(t, err)
+	assert.NotEmpty(t, liveConfig.ClientCAs.Subjects())
 
 	updateClientCA(&v1.ConfigMap{Data: map[string]string{
 		env.SecureMetricsClientCAKey.Setting(): string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: untrustedDER})),
