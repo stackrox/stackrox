@@ -5,58 +5,6 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
-# Build Roxie resource overrides even while running in the historical checkout.
-upgrade_resource_args() {
-    UPGRADE_RESOURCE_ARGS=()
-    case "${UPGRADE_TEST_RESOURCE_PROFILE:-}" in
-        "") return 0 ;;
-        ci) ;;
-        *) echo "Unknown upgrade resource profile: ${UPGRADE_TEST_RESOURCE_PROFILE}" >&2; return 1 ;;
-    esac
-    local prefix component
-    local components=()
-    case "$1" in
-        central)
-            prefix=central
-            components=(central central.db scanner.analyzer scannerV4.indexer scannerV4.db)
-            ;;
-        secured-cluster)
-            prefix=securedCluster
-            components=(sensor scanner.analyzer scannerV4.indexer)
-            ;;
-        *) echo "Unknown upgrade chart: $1" >&2; return 1 ;;
-    esac
-    for component in "${components[@]}"; do
-        UPGRADE_RESOURCE_ARGS+=(--set "${prefix}.spec.${component}.resources.requests.cpu=500m")
-    done
-}
-
-# On one node the scale launcher leaves resources unchanged, so the CI profile
-# needs no follow-up patches. Other callers retain the historical CPU workaround.
-reconcile_upgrade_central_resources() {
-    local deployment patch node_count
-    case "${UPGRADE_TEST_RESOURCE_PROFILE:-}" in
-        ci)
-            node_count="$(kubectl get nodes -o json | jq -er '.items | length')" || return 1
-            if [[ "$node_count" != 1 ]]; then
-                echo "CI upgrade resource profile requires exactly one node; found ${node_count}" >&2
-                return 1
-            fi
-            return 0
-            ;;
-        "") ;;
-        *) echo "Unknown upgrade resource profile: ${UPGRADE_TEST_RESOURCE_PROFILE}" >&2; return 1 ;;
-    esac
-    for deployment in central central-db; do
-        if [[ "$deployment" == central ]]; then
-            patch='{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
-        else
-            patch='{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
-        fi
-        kubectl -n stackrox patch "deploy/${deployment}" --type=strategic -p "$patch"
-    done
-}
-
 central_deployment_count() {
     curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
         -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
@@ -160,14 +108,11 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    upgrade_resource_args central
-
     local roxie_envrc
     roxie_envrc="$(mktemp)"
     roxie deploy central --verbose \
         --single-namespace \
         --envrc "${roxie_envrc}" \
-        "${UPGRADE_RESOURCE_ARGS[@]}" \
         --tag "${EARLIER_TAG}" \
         --resources ci \
         --pause-reconciliation `# subsequent tests mangle resources and image` \
@@ -547,9 +492,7 @@ preamble() {
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
-    upgrade_resource_args secured-cluster
     roxie deploy secured-cluster --verbose \
-        "${UPGRADE_RESOURCE_ARGS[@]}" \
         --single-namespace \
         --tag "${EARLIER_TAG}" \
         --resources ci \
@@ -559,7 +502,13 @@ deploy_scaled_workload() {
 
     ./scale/launch_workload.sh scale-test
 
-    reconcile_upgrade_central_resources
+    # The historical scale script requests 5 CPUs per component. Leave room for
+    # both scanners by reducing Central and Central DB's CPU reservations.
+    kubectl -n stackrox patch deploy/central --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    # Init-container requests also count toward the pod's CPU reservation.
+    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
+        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
     wait_for_api
 
     info "Sleep for a bit to let the scale build"
