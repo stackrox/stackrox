@@ -169,6 +169,9 @@ func dispatchPlan(input dispatchInput, resolved *result, d defaults) map[string]
 		runs := legacyDispatch(job, input)
 		if input.enforce && resolved != nil && d.actions[job.name] != "" {
 			runs = !input.fork && resolved.jobs[job.name]
+			if input.pullRequest && job.requireKonflux && !slices.Contains(input.labels, "konflux-build") {
+				runs = false
+			}
 		}
 		jobs[job.name] = runs
 		anyRuns = anyRuns || runs

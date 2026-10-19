@@ -45,9 +45,6 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
-    # TODO(ROX-37371): Decide binary distribution and recovery when the selector
-    # cannot compile or run. A prebuilt binary removes compilation failures,
-    # but dispatch still needs a fallback independent of the binary.
     - uses: ./.github/actions/ci-select
 
     - name: Print the CI decision

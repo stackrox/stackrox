@@ -6,7 +6,8 @@ enables selection; without it, the gates run jobs and report the plan.
 
 This is a port of the implementation at StackRox PR #23166, commit
 `5457183f73f67bfe6f7e13d591916b8ea1703a46`. It keeps that implementation's
-sample rules, defaults, and enforcement behavior. The PR description and
+resolver semantics and fixtures, with sample rules adapted for this PR
+demonstration. The PR description and
 some Python tests describe earlier policies; the implementation and the
 fixture cases define this prototype's behavior.
 
@@ -61,6 +62,12 @@ named jobs a run, skip, or default vote. `*` names every job. A run vote
 wins a conflict with a skip vote. A default is used only when there is no
 run or skip vote. The final `remaining` rule covers jobs with no earlier
 vote; it must use `*` for exactly one action.
+
+For this PR demonstration, the checked-in `remaining` rule temporarily uses
+`skip = ["*"]`. Jobs run only when an earlier rule selects them or a running
+job requires them. `ci-run-all-tests` still selects every job. The
+`ci/decision-defaults` file remains the fallback for unreadable diffs or failed
+resolution.
 
 The supported conditions are:
 
@@ -125,9 +132,9 @@ The GHA gate reads `CI_BASE`, `CI_HEAD`, `CI_REPO`, `CI_PR`, `CI_COMMIT`,
 `CI_DECISION_OUT` optionally saves the decision. `CI_SELECT_ROOT` locates
 the checkout; the wrapper sets it automatically.
 
-The `should-dispatch` job calls `ci-select gha-dispatch-ci`, replacing the
-inline Python dispatcher. Go retrieves current PR labels and writes the
-job map plus `wait-for-gha-images` and `wait-for-konflux-images` outputs.
+The `should-dispatch` job calls `ci-select gha-dispatch-ci` directly.
+Go retrieves current PR labels and writes the job map plus
+`wait-for-gha-images` and `wait-for-konflux-images` outputs.
 It reads `GITHUB_EVENT_NAME`, the metadata variables listed earlier, and
 `CI_IS_FORK`, `CI_IS_DRAFT`, and `CI_UI_ONLY`. Fork rejection is preserved.
 With enforcement disabled, non-PR events, or unusable defaults, it follows
@@ -158,23 +165,16 @@ before building the binary and collecting the diff. The action requires Go
 toolchain selection only for the build command, so Go can download the
 toolchain required by `go.mod` without changing `PATH` or `GOTOOLCHAIN` for
 later steps. Individual gated jobs tolerate build failure and proceed with
-their normal work. The decision and e2e dispatch
-workflows require a successful build. Prow builds once at dispatch entry;
-build failure bypasses selection and runs the job.
-
-### Open gap: build and runtime failure recovery
-
-GHA's `should-dispatch` has no fallback if the selector cannot compile, is
-missing, or fails to run. These failures block E2E dispatch. Defaults and the
-label-lookup fallback work only while the binary is running.
+their normal work. The decision and e2e dispatch workflows require a
+successful build. Prow builds once at dispatch entry; build failure bypasses
+selection and runs the job.
 
 The distribution model remains an open decision: build the selector in each
 job, or provide a prebuilt binary. A prebuilt binary avoids compilation
-failures in the dispatch job but can still fail to start or execute. Either
-model needs a backup dispatch path independent of the selector binary,
-including when both compilation and execution are unavailable. The fallback
-policy must account for fork rejection, draft and label restrictions, and
-image-wait outputs. This prototype leaves that recovery path unimplemented.
+failures in the dispatch job but can still fail to start or execute.
+Build and runtime failure recovery remains an open design question. For this
+demonstration, a build or execution failure stops e2e dispatch; all dispatch
+policy stays in Go.
 
 These integration costs still need validation in real CI:
 
@@ -189,10 +189,9 @@ These integration costs still need validation in real CI:
   Existing outer workflow conditions remain in effect. Prow setup performed
   before `dispatch.sh` remains outside this gate.
 - The rules and job inventory are samples, not a reviewed production map.
-  In particular, the sample OCP target name and the dispatched Konflux target
-  name differ; an unenrolled target follows existing dispatch rules.
-  The nongroovy GHA target is `e2e-nongroovy-tests-gke`; its separate
-  `e2e-nongroovy-tests-gke-konflux` job is not enrolled in the sample rules.
+  All eight dispatched GHA e2e targets are enrolled. Konflux targets require
+  the `konflux-build` label even when selection is enforced, because that
+  label starts their PR image builds.
 - `image-wait` still requests image waiting on every PR. A language port
   does not make those waits cheaper or change required-check behavior.
 
@@ -213,3 +212,14 @@ The suite also covers current sample rules, dispatcher
 fallbacks, fork rejection, `/test` timing, HTTP pagination, CLI outputs, git
 diffs, and wrapper exit behavior. They do not contact GitHub or create CI
 clusters.
+
+The CI-tooling fixture records the complete changed-path list for this
+prototype, including its build action and import-validator change. Tests
+verify its enforced skips, shadow behavior, run-all override, and mixed
+product changes.
+
+To demonstrate selection on the PR, compare runs triggered by removing and
+adding `ci-dispatcher-enforce`, then add `ci-run-all-tests` to check the
+override. With enforcement on, the CI-tooling diff skips PostgreSQL, Sensor,
+scanner DB integration, and e2e execution. The gated jobs complete successfully
+after skipping their work. Image waiting still runs under the sample policy.

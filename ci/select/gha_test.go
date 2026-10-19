@@ -62,6 +62,46 @@ func TestDispatchPlan(t *testing.T) {
 	}
 }
 
+func TestDispatchInventory(t *testing.T) {
+	m, err := loadMapping("../test-domains.toml")
+	require.NoError(t, err)
+	text, err := os.ReadFile("../decision-defaults")
+	require.NoError(t, err)
+	d, err := parseDefaults(string(text))
+	require.NoError(t, err)
+	for _, job := range dispatchJobs {
+		assert.Contains(t, m.Jobs, job.name)
+		assert.Contains(t, d.actions, job.name)
+	}
+	for name, test := range map[string]struct {
+		files, labels []string
+		konflux       bool
+	}{
+		"docs with Konflux": {files: []string{"README.md"}, labels: []string{"konflux-build"}},
+		"CI with Konflux":   {files: []string{"ci/select/gha.go"}, labels: []string{"konflux-build"}},
+		"run all without images": {
+			files: []string{"README.md"}, labels: []string{"ci-run-all-tests"},
+		},
+		"run all with images": {
+			files: []string{"README.md"}, labels: []string{"ci-run-all-tests", "konflux-build"}, konflux: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, err := resolve(test.files, test.labels, m, d, metadata{})
+			require.NoError(t, err)
+			input := dispatchInput{pullRequest: true, enforce: true, labels: test.labels}
+			plan := dispatchPlan(input, &resolved, d)
+			jobs := map[string]bool{}
+			require.NoError(t, json.Unmarshal([]byte(plan["jobs"]), &jobs))
+			for _, job := range dispatchJobs {
+				if job.requireKonflux {
+					assert.Equal(t, test.konflux, jobs[job.name], job.name)
+				}
+			}
+		})
+	}
+}
+
 func TestChangedFiles(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("CI_SELECT_ROOT", root)
