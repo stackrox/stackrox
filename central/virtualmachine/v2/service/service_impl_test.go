@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/virtualmachine/scan"
 	scanDSMocks "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/mocks"
 	vmDSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -774,7 +775,7 @@ func TestGetVM(t *testing.T) {
 				Id: testVMID,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(nil, false, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(nil, false, nil)
 			},
 			expectedError: "not found",
 		},
@@ -783,8 +784,7 @@ func TestGetVM(t *testing.T) {
 				Id: testVMID,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(vm1, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: vm1, Scan: scan1}, true, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
@@ -802,8 +802,7 @@ func TestGetVM(t *testing.T) {
 				Id: testVMID,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(vm1, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: vm1}, true, nil)
 			},
 			expectedResult: storagetov2.VirtualMachineV2ToDetail(vm1),
 		},
@@ -819,8 +818,7 @@ func TestGetVM(t *testing.T) {
 					VsockCid: 42,
 					Facts:    map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"},
 				}
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(neverScraped, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: neverScraped}, true, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(&storage.VirtualMachineV2{
@@ -841,8 +839,7 @@ func TestGetVM(t *testing.T) {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				fresh := vm1.CloneVT()
 				fresh.LastAgentContact = timestamppb.New(time.Now().Add(-time.Hour))
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(fresh, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: fresh}, true, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
@@ -858,8 +855,7 @@ func TestGetVM(t *testing.T) {
 				fresh := vm1.CloneVT()
 				fresh.Facts = map[string]string{"activationStatus": "inactive"}
 				fresh.LastAgentContact = timestamppb.New(time.Now().Add(-time.Hour))
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(fresh, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: fresh}, true, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
@@ -876,8 +872,7 @@ func TestGetVM(t *testing.T) {
 				stale := vm1.CloneVT()
 				stale.Facts = map[string]string{"agentVersion": "5.0.x-174-g6b7ccc2192"}
 				stale.LastAgentContact = timestamppb.New(time.Now().Add(-13 * time.Hour))
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(stale, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(&common.VMWithLatestScan{VM: stale}, true, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
@@ -891,17 +886,16 @@ func TestGetVM(t *testing.T) {
 				Id: testVMID,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(nil, false, errors.New("db error"))
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(nil, false, errors.New("db error"))
 			},
 			expectedError: "db error",
 		},
-		"scan search error": {
+		"scan decoding error": {
 			request: &v2.GetVMRequest{
 				Id: testVMID,
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, testVMID).Return(vm1, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, errors.New("scan error"))
+				mockVM.EXPECT().GetVirtualMachineWithLatestScan(ctx, testVMID).Return(nil, false, errors.New("scan error"))
 			},
 			expectedError: "scan error",
 		},
