@@ -53,6 +53,10 @@ rules:
 - apiGroups: ["olm.operatorframework.io"]
   resources: ["clusterextensions", "clusterextensions/finalizers"]
   verbs: ["get", "list", "watch", "update", "patch"]
+# Need to manage ClusterObjectSets created by OLMv1 for bundle installation
+- apiGroups: ["olm.operatorframework.io"]
+  resources: ["clusterobjectsets", "clusterobjectsets/finalizers"]
+  verbs: ["*"]
 ---
 # Bind the installer SA to the ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
