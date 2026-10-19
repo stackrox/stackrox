@@ -152,9 +152,13 @@ attempts for transport/server failures, and pagination for labels/comments.
 
 ## Bootstrap and prototype limits
 
-GHA uses `.github/actions/ci-select` to install the Go version from `go.mod`
-and build the binary before the gate. Individual gated jobs tolerate build
-failure and proceed with their normal work. The decision and e2e dispatch
+GHA uses `.github/actions/ci-select` to trust the checkout's Git ownership
+before building the binary and collecting the diff. The action requires Go
+1.21 or later on the runner or in the job container. It enables automatic
+toolchain selection only for the build command, so Go can download the
+toolchain required by `go.mod` without changing `PATH` or `GOTOOLCHAIN` for
+later steps. Individual gated jobs tolerate build failure and proceed with
+their normal work. The decision and e2e dispatch
 workflows require a successful build. Prow builds once at dispatch entry;
 build failure bypasses selection and runs the job.
 
