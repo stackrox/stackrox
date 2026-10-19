@@ -1019,6 +1019,7 @@ func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilterPreservesCac
 
 func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilter() {
 	clusterID := fixtureconsts.Cluster1
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("previously-valid-.*"))
 
 	testCluster := &storage.Cluster{
 		Id:        clusterID,
@@ -1070,7 +1071,13 @@ func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilterWithNoPersisten
 	err := s.datastore.buildCache(sac.WithAllAccess(s.T().Context()))
 	s.Require().NoError(err)
 	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
-	s.False(ok)
+	s.Require().True(ok)
+	for _, namespace := range []string{"", "any-namespace"} {
+		matched, matchErr := s.datastore.MatchProcessIndicator(sac.WithAllAccess(s.T().Context()),
+			&storage.ProcessIndicator{ClusterId: clusterID, Namespace: namespace})
+		s.NoError(matchErr)
+		s.True(matched)
+	}
 	name, ok := s.datastore.idToNameCache.Get(clusterID)
 	s.True(ok)
 	s.Equal("test", name)

@@ -208,10 +208,13 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 
-		if err := clusterPkg.ValidateConfiguredNamespaceFilter(c); err != nil {
-			log.Errorf("Could not compile filter regexp: %v", err)
-			ds.idToNamespaceFilterCache.Remove(c.GetId())
-		} else if filter := clusterPkg.GetNamespaceFilter(c); filter != nil {
+		configuredFilterErr := clusterPkg.ValidateConfiguredNamespaceFilter(c)
+		if configuredFilterErr != nil {
+			log.Errorf("Could not compile filter regexp: %v", configuredFilterErr)
+		}
+		// Keep NoPersistence in effect even when the stored filter is invalid.
+		filter := clusterPkg.GetNamespaceFilter(c)
+		if filter != nil && (configuredFilterErr == nil || clusterPkg.IsNoPersistenceEnabled(c)) {
 			compiledFilter, err := regexp.Compile(*filter)
 
 			if err == nil {
@@ -221,9 +224,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 				ds.idToNamespaceFilterCache.Remove(c.GetId())
 			}
 		} else {
-			// We got empty filter building the cluster. There should be no
-			// prior cache at this point, but just in case make sure it's
-			// invalidated.
+			// Empty or invalid filters must not leave a stale cache entry.
 			ds.idToNamespaceFilterCache.Remove(c.GetId())
 		}
 

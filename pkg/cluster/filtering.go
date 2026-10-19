@@ -44,6 +44,11 @@ func GetNamespaceFilter(cluster *storage.Cluster) *string {
 	return new(filter)
 }
 
+// IsNoPersistenceEnabled reports whether process indicators must not be persisted for the cluster.
+func IsNoPersistenceEnabled(cluster *storage.Cluster) bool {
+	return getProcessIndicatorsConfig(cluster).GetNoPersistence()
+}
+
 func getProcessIndicatorsConfig(cluster *storage.Cluster) *storage.DynamicClusterConfig_ProcessIndicatorsConfig {
 	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
 		return cluster.GetDynamicConfig().GetProcessIndicators()
