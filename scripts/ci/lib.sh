@@ -2806,13 +2806,13 @@ get_olm_version() {
   ocp_version="$(get_ocp_version)"
 
   if [[ -z "$ocp_version" ]]; then
-    info "Not an OpenShift cluster, using OLMv0"
+    info "Not an OpenShift cluster, using OLMv0" >&2
     echo "v0"
     return
   fi
 
   if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-    info "Could not parse OCP version '$ocp_version', defaulting to OLMv0"
+    info "Could not parse OCP version '$ocp_version', defaulting to OLMv0" >&2
     echo "v0"
     return
   fi
@@ -2825,10 +2825,10 @@ get_olm_version() {
   if [[ $major -gt 4 ]] || \
      [[ $major -eq 4 && $minor -gt 20 ]] || \
      [[ $major -eq 4 && $minor -eq 20 && $patch -ge 1 ]]; then
-    info "OCP version $ocp_version >= 4.20.1, using OLMv1"
+    info "OCP version $ocp_version >= 4.20.1, using OLMv1" >&2
     echo "v1"
   else
-    info "OCP version $ocp_version < 4.20.1, using OLMv0"
+    info "OCP version $ocp_version < 4.20.1, using OLMv0" >&2
     echo "v0"
   fi
 }
