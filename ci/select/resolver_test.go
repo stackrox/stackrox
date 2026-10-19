@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -151,6 +152,44 @@ func TestCurrentRules(t *testing.T) {
 	}
 }
 
+func TestCIToolingSelection(t *testing.T) {
+	text, err := os.ReadFile("testdata/ci-tooling-files")
+	require.NoError(t, err)
+	files := readList(string(text))
+	require.NotEmpty(t, files)
+	for name, test := range map[string]struct {
+		files, labels []string
+		enforce       bool
+		want          string
+		matchesCI     bool
+	}{
+		"enforced":          {files: files, enforce: true, want: "skip", matchesCI: true},
+		"shadow":            {files: files, want: "run", matchesCI: true},
+		"run all":           {files: files, labels: []string{"ci-run-all-tests"}, enforce: true, want: "run", matchesCI: true},
+		"mixed product":     {files: append(slices.Clone(files), "sensor/common/example.go"), enforce: true, want: "skip"},
+		"other action":      {files: append(slices.Clone(files), ".github/actions/job-preamble/action.yaml"), enforce: true, want: "skip"},
+		"other tool source": {files: []string{"tools/roxvet/analyzers/validateimports/other.go"}, enforce: true, want: "skip"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+				test.files, test.labels, false, metadata{})
+			require.NoError(t, err)
+			assert.NotContains(t, resolved.log, "using decision-defaults")
+			assert.Equal(t, test.matchesCI, strings.Contains(resolved.log, `rule "ci-tooling" matches every changed file`))
+			for _, job := range []string{
+				"go-postgres", "sensor-integration-tests", "db-integration-tests",
+				"e2e-byodb-tests", "e2e-db-backup-restore-tests", "e2e-gke-upgrade-tests",
+				"e2e-nongroovy-tests-gke", "e2e-nongroovy-tests-gke-konflux",
+			} {
+				assert.Equal(t, test.want, gateAction(job, resolved.jobs, d, test.enforce, false), job)
+			}
+			assert.True(t, resolved.jobs["go"])
+			assert.True(t, resolved.jobs["style-check"])
+			assert.True(t, resolved.jobs["wait-for-images"])
+		})
+	}
+}
+
 func TestSelectorTestsGate(t *testing.T) {
 	for name, test := range map[string]struct {
 		files   []string
@@ -240,19 +279,17 @@ func TestResolverMixedCIToolingAndProduct(t *testing.T) {
 	assert.NotContains(t, resolved.log, `rule "ci-tooling" skips`)
 }
 
-func TestResolverUnmatchedFileUsesDefaults(t *testing.T) {
+func TestResolverUnmatchedFileSkipsRemaining(t *testing.T) {
 	m, err := loadMapping("../test-domains.toml")
 	require.NoError(t, err)
 	text, err := os.ReadFile("../decision-defaults")
 	require.NoError(t, err)
 	d, err := parseDefaults(string(text))
 	require.NoError(t, err)
-	expected, err := parseDecision(d.decision())
-	require.NoError(t, err)
-	delete(expected, "selector-tests")
 	resolved, err := resolve([]string{"notes/todo.txt"}, nil, m, d, metadata{})
 	require.NoError(t, err)
-	assert.Equal(t, expected, resolved.jobs)
+	assert.Equal(t, map[string]bool{"style-check": true, "wait-for-images": true, "should-dispatch": true}, resolved.jobs)
+	assert.NotContains(t, resolved.log, "takes default")
 	assert.Contains(t, resolved.log, `rule "skip-selector-tests" skips target "selector-tests"`)
 }
 

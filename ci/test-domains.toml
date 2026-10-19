@@ -1,7 +1,7 @@
 # Rules are walked from top to bottom.
 # One rule saying run and another saying skip runs the target. The last
-# rule covers every target that no earlier rule decided. default = ["*"]
-# reads ci/decision-defaults.
+# rule skips every target that no earlier rule decided for the PR demonstration.
+# ci/decision-defaults supplies decisions when resolution fails.
 
 version = 1
 
@@ -17,9 +17,10 @@ jobs = [
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
   "e2e-nongroovy-tests-gke",
+  "e2e-nongroovy-tests-gke-konflux",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
-  "e2e-qa-tests-ocp-4-22",
+  "e2e-qa-tests-ocp-fips-konflux",
   "gke-nongroovy-e2e-tests",
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
@@ -113,9 +114,10 @@ skip = [
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
   "e2e-nongroovy-tests-gke",
+  "e2e-nongroovy-tests-gke-konflux",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
-  "e2e-qa-tests-ocp-4-22",
+  "e2e-qa-tests-ocp-fips-konflux",
   "gke-nongroovy-e2e-tests",
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
@@ -129,6 +131,8 @@ name = "ci-tooling"
 when = "every-file-matches"
 paths = [
   '^\.github/workflows/',
+  '^\.github/actions/ci-select/',
+  '^tools/roxvet/analyzers/validateimports/analyzer\.go$',
   '^\.openshift-ci/',
   '^ci/select/',
   '^ci/decision-defaults$',
@@ -139,9 +143,10 @@ skip = [
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
   "e2e-nongroovy-tests-gke",
+  "e2e-nongroovy-tests-gke-konflux",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
-  "e2e-qa-tests-ocp-4-22",
+  "e2e-qa-tests-ocp-fips-konflux",
   "gke-nongroovy-e2e-tests",
   "gke-qa-e2e-tests",
   "gke-ui-e2e-tests",
@@ -240,11 +245,12 @@ skip = [
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
   "e2e-nongroovy-tests-gke",
+  "e2e-nongroovy-tests-gke-konflux",
   "gke-nongroovy-e2e-tests",
   "gke-qa-e2e-tests",
   "e2e-qa-tests-gke",
   "e2e-qa-tests-gke-konflux",
-  "e2e-qa-tests-ocp-4-22",
+  "e2e-qa-tests-ocp-fips-konflux",
   "ocp-vm-scanning-e2e-tests",
 ]
 
@@ -262,7 +268,7 @@ name = "operator-only"
 when = "every-file-matches"
 paths = ['^operator/', '\.crd\.yaml$', '^config-controller/']
 run = ["check-crd-compatibility", "go"]
-skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "e2e-nongroovy-tests-gke", "gke-nongroovy-e2e-tests"]
+skip = ["sensor-integration-tests", "go-postgres", "db-integration-tests", "e2e-nongroovy-tests-gke", "e2e-nongroovy-tests-gke-konflux", "gke-nongroovy-e2e-tests"]
 
 # roxctl-Only
 [[rules]]
@@ -356,7 +362,7 @@ skip = ["e2e-db-backup-restore-tests"]
 name = "skip-e2e-nongroovy"
 when = "every-file-matches"
 paths = ['^ui/', '^docs/', '\.md$', '^operator/']
-skip = ["e2e-nongroovy-tests-gke", "gke-nongroovy-e2e-tests"]
+skip = ["e2e-nongroovy-tests-gke", "e2e-nongroovy-tests-gke-konflux", "gke-nongroovy-e2e-tests"]
 
 [[rules]]
 name = "skip-e2e-upgrade-all"
@@ -370,11 +376,11 @@ name = "image-wait"
 when = "always"
 run = ["wait-for-images"]
 
-# Tier 12: Remaining (default fallback)
+# Tier 12: Remaining (temporary PR demonstration policy)
 [[rules]]
 name = "remaining"
 when = "remaining"
-default = ["*"]
+skip = ["*"]
 
 [requires]
 wait-for-images = ["should-dispatch"]
@@ -382,6 +388,7 @@ e2e-byodb-tests = ["wait-for-images"]
 e2e-db-backup-restore-tests = ["wait-for-images"]
 e2e-gke-upgrade-tests = ["wait-for-images"]
 e2e-nongroovy-tests-gke = ["wait-for-images"]
+e2e-nongroovy-tests-gke-konflux = ["wait-for-images"]
 e2e-qa-tests-gke = ["wait-for-images"]
-e2e-qa-tests-ocp-4-22 = ["wait-for-images"]
+e2e-qa-tests-ocp-fips-konflux = ["wait-for-images"]
 e2e-qa-tests-gke-konflux = ["wait-for-images"]
