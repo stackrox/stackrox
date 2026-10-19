@@ -18,6 +18,7 @@ import (
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
 )
 
@@ -48,7 +49,14 @@ func (s *HandlerTestSuite) SetupSuite() {
 }
 
 func (s *HandlerTestSuite) SetupTest() {
-	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	// Register MachineConfigPoolList too: node-role discovery (on by default) lists MachineConfigPools on every
+	// create/update, and the fake client panics on List for an unregistered GVR instead of returning an error.
+	// No pools are seeded, so discovery falls back to master+worker, matching this suite's existing expectations.
+	scanSettingBinding, err := runtimeObjToUnstructured(&v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	s.Require().NoError(err)
+	s.client = fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+		machineConfigPoolGVR: "MachineConfigPoolList",
+	}, scanSettingBinding)
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
