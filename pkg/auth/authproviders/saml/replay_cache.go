@@ -1,10 +1,10 @@
 package saml
 
 import (
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Clock is a function that returns the current time. Used for testing.
@@ -90,9 +90,9 @@ func (c *replayCache) start() {
 			case <-ticker.C:
 				c.prune()
 			case <-c.stopSig.Done():
-				c.cleanupMu.Lock()
-				c.isRunning = false
-				c.cleanupMu.Unlock()
+				concurrency.WithLock(&c.cleanupMu, func() {
+					c.isRunning = false
+				})
 				return
 			}
 		}

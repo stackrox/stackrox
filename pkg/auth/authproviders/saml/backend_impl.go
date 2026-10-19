@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
-	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
+	events "github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
