@@ -9,7 +9,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 source "$ROOT/scripts/lib.sh"
 source "$ROOT/scripts/ci/lib.sh"
-source "$ROOT/operator/hack/common.sh"
 
 # Determine which OLM deployment target to use based on OCP version
 get_olm_deploy_target() {

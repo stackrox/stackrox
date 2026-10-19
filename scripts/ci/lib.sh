@@ -2772,3 +2772,43 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     shift
     "$fn" "$@"
 fi
+
+# OLM version detection for operator e2e tests
+
+get_ocp_version() {
+  # Returns OCP version as X.Y.Z, or empty string if not an OpenShift cluster
+  "${SCRIPTS_ROOT}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null || echo ""
+}
+
+get_olm_version() {
+  # Returns "v1" if OLMv1 should be used (OCP >= 4.20.1), "v0" otherwise
+  local ocp_version
+  ocp_version="$(get_ocp_version)"
+
+  if [[ -z "$ocp_version" ]]; then
+    info "Not an OpenShift cluster, using OLMv0"
+    echo "v0"
+    return
+  fi
+
+  if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+    info "Could not parse OCP version '$ocp_version', defaulting to OLMv0"
+    echo "v0"
+    return
+  fi
+
+  local major="${BASH_REMATCH[1]}"
+  local minor="${BASH_REMATCH[2]}"
+  local patch="${BASH_REMATCH[3]}"
+
+  # Check if version >= 4.20.1
+  if [[ $major -gt 4 ]] || \
+     [[ $major -eq 4 && $minor -gt 20 ]] || \
+     [[ $major -eq 4 && $minor -eq 20 && $patch -ge 1 ]]; then
+    info "OCP version $ocp_version >= 4.20.1, using OLMv1"
+    echo "v1"
+  else
+    info "OCP version $ocp_version < 4.20.1, using OLMv0"
+    echo "v0"
+  fi
+}
