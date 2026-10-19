@@ -76,7 +76,6 @@ jobs:
 
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
@@ -93,13 +92,16 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
     - name: Determine image references
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       id: image-references
       run: &image-references |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
@@ -122,6 +124,7 @@ jobs:
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for images
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -139,7 +142,6 @@ jobs:
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
@@ -154,17 +156,21 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
     - name: Determine image references
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       id: image-references
       run: *image-references
 
     - name: Wait for Konflux images
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}

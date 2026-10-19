@@ -8,9 +8,13 @@ style-check run
 selector-tests run
 go run
 go-postgres run
+go-bench run
+build-images run
+check-dependent-images-exist run
 sensor-integration-tests run
 should-dispatch run
 wait-for-images run
+wait-for-konflux-images run
 e2e-byodb-tests run
 e2e-db-backup-restore-tests run
 e2e-gke-upgrade-tests run

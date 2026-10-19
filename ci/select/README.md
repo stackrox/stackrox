@@ -144,6 +144,19 @@ Event labels may be stale; explicit job labels and the existing fork, draft,
 UI-only, and Konflux rules still apply. With no event labels, it applies those
 rules with an empty label list.
 
+GHA e2e job labels explicitly select their matching targets. Selected GHA
+targets require `wait-for-images`, which requires `build-images`; Konflux
+targets require `wait-for-konflux-images`. With enforcement enabled, no
+selected consumer means no image waiting or image build. Konflux builds
+remain controlled by their existing external integration and label.
+
+The Build workflow resolves `build-images` once in `define-job-matrix` and
+passes its action to every build job. The matrix stays populated so required
+check names remain present. On a skip, every build, artifact, and push step
+is skipped, and the jobs finish successfully. Image-wait jobs use the same
+step-level approach, allowing downstream reusable workflows to report their
+required e2e checks as skipped. No image placeholders are published.
+
 `prow-gate.sh` defines `ci_decision_allows`. It pipes the existing CI
 library's `get_pr_details` JSON into `ci-select prow-ci JOB`. Go reads the
 Prow environment, fetches comments, handles rehearsal labels in the PR
@@ -192,8 +205,9 @@ These integration costs still need validation in real CI:
   All eight dispatched GHA e2e targets are enrolled. Konflux targets require
   the `konflux-build` label even when selection is enforced, because that
   label starts their PR image builds.
-- `image-wait` still requests image waiting on every PR. A language port
-  does not make those waits cheaper or change required-check behavior.
+- Benchmarks and dependent collector/fact image checks are enrolled. Product
+  Go changes select benchmarks; collector/fact version changes select their
+  image checks. Miscellaneous policy checks always run.
 
 The Go tests retain the 18 resolver fixture cases and 33 invalid-rule cases
 from the Python prototype. They compare decisions and explanation logs
@@ -218,8 +232,18 @@ prototype, including its build action and import-validator change. Tests
 verify its enforced skips, shadow behavior, run-all override, and mixed
 product changes.
 
+`testdata/gha-required-checks.json` records the 22 required GitHub Actions
+check contexts from the active `master` ruleset. Workflow tests verify that
+their jobs remain defined and execute the default PR build-matrix script to
+check its required variants. Other tests verify that build and image-wait
+gates skip work at step level, preserving the checks and dependency chain.
+Selector tests run when enrolled workflows or the build action change.
+
 To demonstrate selection on the PR, compare runs triggered by removing and
 adding `ci-dispatcher-enforce`, then add `ci-run-all-tests` to check the
 override. With enforcement on, the CI-tooling diff skips PostgreSQL, Sensor,
-scanner DB integration, and e2e execution. The gated jobs complete successfully
-after skipping their work. Image waiting still runs under the sample policy.
+scanner DB integration, benchmarks, image builds, image waiting, and e2e
+execution. The gated jobs complete successfully after skipping their work.
+Verify the required contexts from the ruleset individually; a green workflow
+alone does not prove that all required checks were reported. The required
+Prow status and the PR's draft state remain outside this GHA demonstration.

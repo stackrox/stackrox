@@ -1,4 +1,5 @@
 .github/actions/ci-select/action.yaml
+.github/workflows/build.yaml
 .github/workflows/check-crd-compatibility.yaml
 .github/workflows/ci-decision.yaml
 .github/workflows/ci-select-tests.yaml
@@ -33,6 +34,7 @@ ci/select/testdata/corners.toml
 ci/select/testdata/defaults
 ci/select/testdata/defaults-go-postgres-skip
 ci/select/testdata/edge_cases.json
+ci/select/testdata/gha-required-checks.json
 ci/select/testdata/invalid/bad-pattern.toml
 ci/select/testdata/invalid/bad-version.toml
 ci/select/testdata/invalid/broken.toml
@@ -69,5 +71,6 @@ ci/select/testdata/invalid/unknown-job.toml
 ci/select/testdata/invalid/unknown-when.toml
 ci/select/testdata/rejected_rules.json
 ci/select/testdata/rules.toml
+ci/select/workflows_test.go
 ci/test-domains.toml
 tools/roxvet/analyzers/validateimports/analyzer.go
