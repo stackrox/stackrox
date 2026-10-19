@@ -130,20 +130,17 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
 	if req.GetPermissionSetId() != "" {
-		if sensorClusterID == "" {
-			return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
-		}
 		if req.GetPermissionSetId() != centralproxy.ConsoleProxyPermissionSetID {
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 		}
-		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
 			return nil, err
 		}
-		return p.enforceLifetimeLimit(req)
-	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err
