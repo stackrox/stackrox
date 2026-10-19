@@ -574,6 +574,41 @@ func TestReconcileNodeRolesBoundsTotalPassTime(t *testing.T) {
 	assert.Less(t, updated, numScanSettings, "the budget must cut the pass short before every ScanSetting is reached")
 }
 
+// TestReconcileNodeRolesBoundsSlowList proves nodeRoleReconcilePassBudget also bounds the initial ScanSetting list,
+// not just the per-ScanSetting updates (see TestReconcileNodeRolesBoundsTotalPassTime above): the list is made to
+// fail repeatedly with a much longer handlerRetryTimeout than the pass budget, so if the list were still bounded
+// only by handlerRetryTimeout, it would run far longer and use far more of the retry budget than asserted here.
+func TestReconcileNodeRolesBoundsSlowList(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+
+	const (
+		attemptDelay = 100 * time.Millisecond
+		passBudget   = 150 * time.Millisecond // enough for only one List attempt plus a bit of backoff
+	)
+
+	m, client := newReconcileHandler(reconcileNamespace, mcps("master", "worker"), newScanSetting("ss", []string{masterRole}, true))
+	m.handlerAPICallTimeout = time.Second
+	m.handlerRetryTimeout = 5 * time.Second // much longer than passBudget: proves the budget, not this, bounds the list
+	m.handlerMaxRetries = 10
+	m.nodeRoleReconcilePassBudget = passBudget
+
+	var listAttempts int
+	client.PrependReactor("list", "scansettings", func(k8stesting.Action) (bool, runtime.Object, error) {
+		listAttempts++
+		time.Sleep(attemptDelay)
+		return true, nil, errors.New("server is busy")
+	})
+	client.ClearActions()
+
+	start := time.Now()
+	assert.NotPanics(t, m.reconcileNodeRoles)
+	elapsed := time.Since(start)
+
+	assert.Less(t, elapsed, m.handlerRetryTimeout, "the pass budget, not handlerRetryTimeout, must bound a slow/retried ScanSetting list")
+	assert.Less(t, listAttempts, m.handlerMaxRetries, "the pass budget should cut retries short before handlerMaxRetries is reached")
+	assert.Zero(t, countActions(client.Actions(), "update", "scansettings"), "no update should be attempted when the list itself never succeeded")
+}
+
 // TestRequestReconcileCoalescesAndNeverBlocks covers requestReconcile's non-blocking send: repeated calls with
 // nothing draining the channel must never block the caller (the informer's event-processing goroutine), and must
 // coalesce into a single pending reconcile.

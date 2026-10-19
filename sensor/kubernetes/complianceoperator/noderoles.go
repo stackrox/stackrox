@@ -28,6 +28,10 @@ import (
 // behavior (does a scan for a discovered role actually match real Nodes).
 const nodeRolePrefix = "node-role.kubernetes.io/"
 
+// allRolesRole is Compliance Operator's reserved ScanSetting role value meaning "every node", which CO rejects
+// when combined with any other role. See discoverNodeRoles.
+const allRolesRole = "@all"
+
 const (
 	// mcpInformerStartupSyncTimeout bounds how long Start() waits for the MachineConfigPool informer's initial
 	// List+Watch to populate its cache, so a slow or unreachable API server can never block Sensor startup
@@ -86,8 +90,7 @@ func mcpRole(obj interface{}) string {
 	return getFirstNodeRole(matchLabels)
 }
 
-// fallbackDefaultNodeRoles are the static node roles used when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is off, or as
-// a safe default when discovery is enabled but fails or finds nothing.
+// fallbackDefaultNodeRoles are the static node roles used when discovery is off, unavailable, or finds nothing.
 func fallbackDefaultNodeRoles() []string {
 	return []string{masterRole, workerRole}
 }
@@ -154,21 +157,25 @@ func (m *handlerImpl) adaptiveDefaultNodeRoles() ([]string, error) {
 // when the informer isn't available at all (ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES off, non-OpenShift, or it
 // failed to start) or its cache hasn't synced within mcpCacheSyncCallTimeout.
 func (m *handlerImpl) discoverNodeRoles() ([]string, error) {
-	if m.mcpLister == nil {
+	lister := m.getMCPLister()
+	if lister == nil {
 		return nil, errors.New("MachineConfigPool informer is not available")
 	}
 	if !m.waitForMCPCacheSync(mcpCacheSyncCallTimeout) {
 		return nil, errors.New("MachineConfigPool informer cache is not synced")
 	}
 
-	objs, err := m.mcpLister.List(labels.Everything())
+	objs, err := lister.List(labels.Everything())
 	if err != nil {
 		return nil, errors.Wrap(err, "listing MachineConfigPools from cache")
 	}
 
 	roles := set.NewStringSet()
 	for _, obj := range objs {
-		if role := mcpRole(obj); role != "" {
+		// allRolesRole is a reserved ScanSetting role value CO treats specially (targets every node) and rejects
+		// combined with any other role. It should never show up as an actual node-role label, but skip it
+		// defensively so a ScanSetting update is never rejected if it somehow did.
+		if role := mcpRole(obj); role != "" && role != allRolesRole {
 			roles.Add(role)
 		}
 	}
@@ -176,29 +183,69 @@ func (m *handlerImpl) discoverNodeRoles() ([]string, error) {
 	return roles.AsSortedSlice(func(i, j string) bool { return i < j }), nil
 }
 
+// getMCPLister returns the MachineConfigPool lister set up by startMCPRoleInformer, or nil if it hasn't run yet or
+// found MachineConfigPools unavailable. Guarded by mcpMu: see the handlerImpl field comment.
+func (m *handlerImpl) getMCPLister() cache.GenericLister {
+	m.mcpMu.RLock()
+	defer m.mcpMu.RUnlock()
+	return m.mcpLister
+}
+
+// getMCPInformerSynced returns the MachineConfigPool informer's HasSynced func set up by startMCPRoleInformer, or
+// nil under the same conditions as getMCPLister. Guarded by mcpMu: see the handlerImpl field comment.
+func (m *handlerImpl) getMCPInformerSynced() cache.InformerSynced {
+	m.mcpMu.RLock()
+	defer m.mcpMu.RUnlock()
+	return m.mcpInformerSynced
+}
+
+// setMCPInformer publishes a successfully started MachineConfigPool informer's lister and sync check, guarded by
+// mcpMu: see the handlerImpl field comment.
+func (m *handlerImpl) setMCPInformer(lister cache.GenericLister, synced cache.InformerSynced) {
+	m.mcpMu.Lock()
+	defer m.mcpMu.Unlock()
+	m.mcpLister = lister
+	m.mcpInformerSynced = synced
+}
+
+// probeMachineConfigPools issues a single, non-retried List call to cheaply detect the common case where
+// MachineConfigPools don't exist at all (e.g. a non-OpenShift cluster). startMCPRoleInformer uses this instead of
+// callWithRetry: that permanent "not found" error would otherwise be retried with exponential backoff (several
+// seconds) on every non-OpenShift install for no benefit.
+func (m *handlerImpl) probeMachineConfigPools(ctx context.Context) error {
+	callCtx, cancel := context.WithTimeout(ctx, m.handlerAPICallTimeout)
+	defer cancel()
+	_, err := m.client.Resource(machineConfigPoolGVR).List(callCtx, v1.ListOptions{})
+	return err
+}
+
 // startMCPRoleInformer wires up the MachineConfigPool informer that backs node-role auto-discovery. It is a no-op
 // (and leaves m.mcpLister nil, so discoverNodeRoles reports an error and every caller falls back to master+worker)
 // when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is off, or when MachineConfigPools aren't listable at all (e.g. a
 // non-OpenShift cluster, where the CRD doesn't exist). It must never block Start() indefinitely or make it fail:
-// every problem is logged and degrades gracefully instead.
+// every problem is logged and degrades gracefully instead. It is run in its own goroutine from Start(), so
+// blocking here (the probe retry below, or waiting for the initial cache sync) never delays Sensor's startup.
 func (m *handlerImpl) startMCPRoleInformer() {
 	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
 		return
 	}
 
-	// Probe whether MachineConfigPools exist before starting an informer for them: on non-OpenShift clusters the
-	// CRD is absent, and a SharedIndexInformer for a resource that can never be listed would just retry forever
-	// in the background for no benefit.
-	if err := m.callWithRetry(func(ctx context.Context) error {
-		_, err := m.client.Resource(machineConfigPoolGVR).List(ctx, v1.ListOptions{})
-		return err
-	}); err != nil {
+	// A single, non-retried probe first: on non-OpenShift clusters the MachineConfigPool CRD is permanently
+	// absent (NotFound), and that's the common case this needs to detect cheaply, see probeMachineConfigPools.
+	// meta.IsNoMatchError is defensive and effectively unreachable through this dynamic client (it issues a
+	// direct REST call, not a RESTMapper lookup, so a missing CRD surfaces as NotFound, not NoMatch); it's kept
+	// here in case that ever changes, since it would be just as permanent as NotFound.
+	if err := m.probeMachineConfigPools(m.ctx()); err != nil {
 		if kubeAPIErr.IsNotFound(err) || meta.IsNoMatchError(err) {
 			log.Infof("MachineConfigPools are not available, likely not an OpenShift cluster; node-role auto-discovery disabled, using %v", fallbackDefaultNodeRoles())
-		} else {
-			log.Warnf("Could not list MachineConfigPools, node-role auto-discovery disabled, using %v: %v", fallbackDefaultNodeRoles(), err)
+			return
 		}
-		return
+		// Anything else might be transient (e.g. the API server briefly unreachable during startup): retry
+		// before giving up, unlike the permanent case above.
+		if err := m.callWithRetry(m.probeMachineConfigPools); err != nil {
+			log.Warnf("Could not list MachineConfigPools, node-role auto-discovery disabled, using %v: %v", fallbackDefaultNodeRoles(), err)
+			return
+		}
 	}
 
 	factory := dynamicinformer.NewDynamicSharedInformerFactory(m.client, 0)
@@ -212,8 +259,7 @@ func (m *handlerImpl) startMCPRoleInformer() {
 		return
 	}
 
-	m.mcpLister = informer.Lister()
-	m.mcpInformerSynced = informer.Informer().HasSynced
+	m.setMCPInformer(informer.Lister(), informer.Informer().HasSynced)
 
 	factory.Start(m.stopSignal.Done())
 	if !m.waitForMCPCacheSync(mcpInformerStartupSyncTimeout) {
@@ -246,12 +292,13 @@ func (m *handlerImpl) requestReconcile() {
 // the given timeout with the handler's lifetime (m.stopSignal). Returns false immediately if the informer was
 // never started (m.mcpInformerSynced is nil).
 func (m *handlerImpl) waitForMCPCacheSync(timeout time.Duration) bool {
-	if m.mcpInformerSynced == nil {
+	synced := m.getMCPInformerSynced()
+	if synced == nil {
 		return false
 	}
 	ctx, cancel := context.WithTimeout(m.ctx(), timeout)
 	defer cancel()
-	return cache.WaitForCacheSync(ctx.Done(), m.mcpInformerSynced)
+	return cache.WaitForCacheSync(ctx.Done(), synced)
 }
 
 // reconcileNodeRoles recomputes the auto-discovered node roles and brings every ACS-managed ScanSetting in line with the
@@ -279,17 +326,18 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		return
 	}
 
-	scanSettings, err := m.getResourcesInCluster(complianceoperator.ScanSetting)
+	// Bound the whole pass, including the initial ScanSetting list below, not just each individual update:
+	// without this, a reconcile pass over N ScanSettings could occupy the single-writer loop for up to
+	// handlerRetryTimeout (the list) plus N*handlerRetryTimeout (the updates), see nodeRoleReconcilePassBudget.
+	passCtx, cancel := context.WithTimeout(m.ctx(), m.nodeRoleReconcilePassBudget)
+	defer cancel()
+
+	scanSettings, err := m.getResourcesInClusterCtx(passCtx, complianceoperator.ScanSetting)
 	if err != nil {
 		// The compliance operator CRDs may be absent (e.g. non-OpenShift). Log and return gracefully; never crash.
 		log.Warnf("Could not list ScanSettings to reconcile node roles: %v", err)
 		return
 	}
-
-	// Bound the whole pass, not just each individual update: without this, a reconcile pass over N ScanSettings
-	// could occupy the single-writer loop for up to N*handlerRetryTimeout, see nodeRoleReconcilePassBudget.
-	passCtx, cancel := context.WithTimeout(m.ctx(), m.nodeRoleReconcilePassBudget)
-	defer cancel()
 
 	var errList errorhelpers.ErrorList
 	for _, scanSetting := range scanSettings {

@@ -69,7 +69,9 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.Require().NoError(s.requestHandler.Start())
 }
 
-func (s *HandlerTestSuite) TearDownSuite() {
+func (s *HandlerTestSuite) TearDownTest() {
+	// SetupTest Start()s a fresh handlerImpl (and its run() goroutine and MachineConfigPool informer) for every
+	// test; stop it here instead of once in TearDownSuite, or every test but the last leaks both.
 	s.requestHandler.Stop()
 }
 

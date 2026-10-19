@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -54,8 +55,13 @@ type handlerImpl struct {
 	handlerRetryTimeout   time.Duration
 
 	// Node-role auto-discovery (ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES). mcpLister and mcpInformerSynced are set
-	// by startMCPRoleInformer in Start() when MachineConfigPools are listable (OpenShift only); they stay nil
-	// otherwise, and discoverNodeRoles reports an error so every caller falls back to master+worker.
+	// by startMCPRoleInformer, which runs in its own goroutine (see Start()) so a slow or unreachable API server
+	// can never delay the rest of Sensor's startup. They stay nil when MachineConfigPools aren't listable
+	// (non-OpenShift) or discovery failed to start, and discoverNodeRoles reports an error so every caller falls
+	// back to master+worker. mcpMu guards both fields: they are written from the startMCPRoleInformer goroutine
+	// and read from run() (triggered independently by the informer's own event handlers), so plain field access
+	// would be a data race.
+	mcpMu                       sync.RWMutex
 	mcpLister                   cache.GenericLister
 	mcpInformerSynced           cache.InformerSynced
 	roleReconcileTrigger        chan struct{}
@@ -104,7 +110,10 @@ func (m *handlerImpl) Start() error {
 	}
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
-	m.startMCPRoleInformer()
+	// Runs in the background, like run() above: probing for MachineConfigPools and waiting for the informer's
+	// initial cache sync can take several seconds (or longer on a slow/unreachable API server), and must never
+	// delay Sensor's sequential component startup. See startMCPRoleInformer for how it degrades gracefully.
+	go m.startMCPRoleInformer()
 	return nil
 }
 
@@ -645,6 +654,11 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 	}
 }
 
+// handleSyncScanCfgRequest spawns its own goroutine (pre-existing, kept as-is here) that calls processSyncScanCfg
+// directly instead of going through the single-writer run() loop, so it can race reconcileNodeRoles (also writing
+// ScanSettings) on the same objects. This is an accepted trade-off, not a bug: both paths go through
+// callWithRetryWithOnConflictCallback, so a lost race surfaces as a Conflict that gets retried with the latest
+// object, and the two converge on a consistent final state instead of silently clobbering each other.
 func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceScanConfigRequest) error {
 	go func() {
 		select {
@@ -669,9 +683,16 @@ func generateScanIndex(namespace string, scanName string) string {
 }
 
 func (m *handlerImpl) getResourcesInCluster(api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
+	return m.getResourcesInClusterCtx(m.ctx(), api)
+}
+
+// getResourcesInClusterCtx is getResourcesInCluster with an explicit parent context, so a caller can bound the
+// retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall deadline, see
+// nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime context.
+func (m *handlerImpl) getResourcesInClusterCtx(ctx context.Context, api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	var resourcesInCluster *unstructured.UnstructuredList
-	err := m.callWithRetry(func(ctx context.Context) error {
+	err := m.callWithRetryCtx(ctx, func(ctx context.Context) error {
 		var err error
 		resourcesInCluster, err = resourceInterface.List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 		return errors.Wrap(err, "listing resources in cluster")
@@ -948,7 +969,14 @@ func onConflictErrorWrapper(fn onConflictCall) onRetriableCallError {
 }
 
 func (m *handlerImpl) callWithRetry(fn retriableCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryCtx(m.ctx(), fn)
+}
+
+// callWithRetryCtx is callWithRetry with an explicit parent context, so a caller can bound the retry window
+// tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall deadline, see
+// nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime context.
+func (m *handlerImpl) callWithRetryCtx(ctx context.Context, fn retriableCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, nil)
 }
