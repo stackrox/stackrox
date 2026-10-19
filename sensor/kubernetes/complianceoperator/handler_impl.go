@@ -189,6 +189,7 @@ func (m *handlerImpl) run() {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
 			}
 		case <-m.roleReconcileTrigger:
+			log.Debugf("Node-role reconcile triggered by MachineConfigPool informer")
 			m.reconcileNodeRoles()
 		case <-m.stopSignal.Done():
 			return

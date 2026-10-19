@@ -365,6 +365,8 @@ func (m *handlerImpl) reconcileScanSettingRoles(ctx context.Context, scanSetting
 		return nil
 	}
 
+	log.Debugf("Reconciling node roles on namespaces/%s/scansettings/%s: %v -> %v", namespace, name, currentRoles, desiredRoles)
+
 	updated := scanSetting.DeepCopy()
 	if err := setScanSettingRoles(updated, desiredRoles); err != nil {
 		return err
