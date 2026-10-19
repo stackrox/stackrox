@@ -36,8 +36,8 @@ const (
 var (
 	// defaultConfiguration provides the default values for the scanner configuration.
 	defaultConfiguration = Config{
-		HTTPListenAddr: "127.0.0.1:9443",
-		GRPCListenAddr: "127.0.0.1:8443",
+		HTTPListenAddr: "localhost:9443",
+		GRPCListenAddr: "localhost:8443",
 		Indexer: IndexerConfig{
 			Enable: true,
 			Database: Database{
