@@ -1045,6 +1045,37 @@ func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilter() {
 	s.False(ok)
 }
 
+func (s *clusterDataStoreTestSuite) TestBuildCacheIncorrectFilterWithNoPersistence() {
+	clusterID := fixtureconsts.Cluster1
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "[",
+					NoPersistence:          true,
+				},
+			},
+		},
+	}
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("previously-valid-.*"))
+	s.clusterStore.EXPECT().Walk(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, fn func(*storage.Cluster) error) error {
+			return fn(testCluster)
+		})
+	s.clusterHealthStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := s.datastore.buildCache(sac.WithAllAccess(s.T().Context()))
+	s.Require().NoError(err)
+	_, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	s.False(ok)
+	name, ok := s.datastore.idToNameCache.Get(clusterID)
+	s.True(ok)
+	s.Equal("test", name)
+}
+
 func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilter() {
 	clusterID := fixtureconsts.Cluster1
 	testCluster := &storage.Cluster{

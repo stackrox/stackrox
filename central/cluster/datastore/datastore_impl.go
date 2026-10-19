@@ -208,7 +208,10 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 
-		if filter := clusterPkg.GetNamespaceFilter(c); filter != nil {
+		if err := clusterPkg.ValidateConfiguredNamespaceFilter(c); err != nil {
+			log.Errorf("Could not compile filter regexp: %v", err)
+			ds.idToNamespaceFilterCache.Remove(c.GetId())
+		} else if filter := clusterPkg.GetNamespaceFilter(c); filter != nil {
 			compiledFilter, err := regexp.Compile(*filter)
 
 			if err == nil {
