@@ -19,6 +19,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
+- ROX-37265: To get additional filtering coverage for Red Hat layers in newer Konflux-built images, the `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` flag must now be set on Central. The existing Scanner V4 Matcher setting remains for backward compatibility, but its filtering has coverage gaps for these images.
 
 **Full Changelog**: [4.11.5...4.11.6](https://github.com/stackrox/stackrox/compare/4.11.5...4.11.6)
 
