@@ -49,6 +49,7 @@ describe('getRedactedOriginProperties', () => {
         });
     });
 
+    // Be aware that compliance/controls route has been removed.
     test('scrubs top level string search values', () => {
         const originalSearchParams = [
             's[groupBy]=CLUSTER',
@@ -71,6 +72,7 @@ describe('getRedactedOriginProperties', () => {
         });
     });
 
+    // Be aware that compliance/controls route has been removed.
     test('scrubs only s and s2 search keys', () => {
         const originalSearchParams = [
             's[bogus%20standard]=NIST%20SP%20800-190',

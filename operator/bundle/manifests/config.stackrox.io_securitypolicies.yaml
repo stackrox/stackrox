@@ -171,6 +171,11 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-validations:
+                  - message: at most one of the fields in [deployment excludeByKind]
+                      may be set
+                    rule: (has(self.deployment)?1:0)+(has(self.excludeByKind)?1:0)
+                      <= 1
                 type: array
               isDefault:
                 description: IsDefault is unused

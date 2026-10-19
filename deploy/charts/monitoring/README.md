@@ -21,6 +21,8 @@ On OpenShift, Helm may fail an upgrade with a ServiceAccount `imagePullSecrets` 
 
 Roxie can install the same chart as add-on release `roxie-addon-monitoring` via `central.availableAddOns.monitoring`.
 
+For a custom Scanner V4 DB PVC, set `scannerV4DbPvcClaimName` to the same name as Central's `scannerV4.db.persistence.persistentVolumeClaim.claimName` when installing monitoring. Classic deploy can set `SCANNER_V4_DB_CLAIM_NAME` to pass the same name to both charts; a custom claim specified only in `ROX_CENTRAL_EXTRA_HELM_VALUES_FILE` will not change the monitoring chart.
+
 ## OpenShift
 
 When the cluster exposes `security.openshift.io/v1/SecurityContextConstraints`, the chart:

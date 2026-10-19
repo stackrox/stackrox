@@ -1,5 +1,5 @@
 ARG PG_VERSION=16
-FROM registry.redhat.io/rhel9/postgresql-${PG_VERSION}:latest@sha256:9c2756fd953226125c779e3e2bba17a2b4c04f1b58ca28026a3c2e2cc1ae6cad AS final
+FROM registry.redhat.io/rhel9/postgresql-${PG_VERSION}:latest@sha256:791a6f14563178d1bbcd3515bc7dc80c1ae0788a829ff26551cdedbf8f50f0d2 AS final
 
 USER root
 
@@ -41,7 +41,11 @@ RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
 
 COPY LICENSE /licenses/LICENSE
 
-COPY image/postgres/scripts \
+COPY \
+    image/postgres/scripts/backup-cleanup.sh \
+    image/postgres/scripts/cert-watcher.sh \
+    image/postgres/scripts/docker-entrypoint.sh \
+    image/postgres/scripts/init-entrypoint.sh \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"
