@@ -183,51 +183,6 @@ function run_oc_adm_must_gather() {
 
 # OLMv1-specific functions
 
-function get_ocp_version() {
-  # Returns OCP version as X.Y.Z, or empty string if not an OpenShift cluster
-  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null || echo ""
-}
-
-function get_olm_version() {
-  # Returns "v1" if OLMv1 should be used (OCP >= 4.20.1), "v0" otherwise
-  local ocp_version
-  ocp_version="$(get_ocp_version)"
-
-  if [[ -z "$ocp_version" ]]; then
-    log "Not an OpenShift cluster, using OLMv0"
-    echo "v0"
-    return
-  fi
-
-  if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-    log "Could not parse OCP version '$ocp_version', defaulting to OLMv0"
-    echo "v0"
-    return
-  fi
-
-  local major="${BASH_REMATCH[1]}"
-  local minor="${BASH_REMATCH[2]}"
-  local patch="${BASH_REMATCH[3]}"
-
-  # Check if version >= 4.20.1
-  if [[ $major -gt 4 ]] || \
-     [[ $major -eq 4 && $minor -gt 20 ]] || \
-     [[ $major -eq 4 && $minor -eq 20 && $patch -ge 1 ]]; then
-    log "OCP version $ocp_version >= 4.20.1, using OLMv1"
-    echo "v1"
-  else
-    log "OCP version $ocp_version < 4.20.1, using OLMv0"
-    echo "v0"
-  fi
-}
-
-# Backwards-compatible wrapper for existing scripts
-function should_use_olmv1() {
-  # Returns 0 (true) if OLMv1 should be used, 1 (false) otherwise
-  # Kept for backwards compatibility; prefer get_olm_version() for new code
-  [[ "$(get_olm_version)" == "v1" ]]
-}
-
 function wait_for_clusterextension_installed() {
   local -r operator_ns="$1"
   local -r extension_name="$2"
