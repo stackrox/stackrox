@@ -22,17 +22,7 @@ on:
       cluster-name-prefix:
         description: Prefix for the provisioned cluster name. Maximum 20 characters.
         type: string
-        default: dbbr
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Image tag to test.
-        type: string
-        required: true
-      use-konflux-images:
-        description: Use Konflux-built images.
-        type: boolean
-        default: false
+        default: e2e-dbbr
 
 permissions:
   contents: read

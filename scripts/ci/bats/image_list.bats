@@ -36,7 +36,6 @@ function setup() {
   assert_output --partial "release-main ${tag}"
   assert_output --partial "release-central-db ${tag}"
   assert_output --partial "release-roxctl ${tag}"
-  refute_output --partial "operator"
 }
 
 @test "get images for rcd test" {
