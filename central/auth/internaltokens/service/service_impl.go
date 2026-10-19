@@ -43,6 +43,11 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+
+	accessReadChecker = sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Access),
+	)
 )
 
 type serviceImpl struct {
@@ -97,10 +102,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	var tokenRole *tokens.InternalRole
 	switch req.GetPermissionSetId() {
 	case centralproxy.ConsoleProxyPermissionSetID:
-		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Access),
-		))
+		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 		tokenRole, err = s.roleManager.createSensorConsoleRole(roleReadCtx, s.roles, req.GetClusterScopes())
 	default:
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
