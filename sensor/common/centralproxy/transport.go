@@ -295,7 +295,7 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
 		},
-		Lifetime:        durationpb.New(tokenTTL),
+		Lifetime: durationpb.New(tokenTTL),
 	}
 
 	switch namespaceScope {
