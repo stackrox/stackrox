@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
 )
 
@@ -51,6 +52,14 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+
+	// Node-role auto-discovery (ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES). mcpLister and mcpInformerSynced are set
+	// by startMCPRoleInformer in Start() when MachineConfigPools are listable (OpenShift only); they stay nil
+	// otherwise, and discoverNodeRoles reports an error so every caller falls back to master+worker.
+	mcpLister                   cache.GenericLister
+	mcpInformerSynced           cache.InformerSynced
+	roleReconcileTrigger        chan struct{}
+	nodeRoleReconcilePassBudget time.Duration
 }
 
 func (m *handlerImpl) Name() string {
@@ -81,13 +90,21 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		handlerMaxRetries:     defaultMaxRetries,
 		handlerAPICallTimeout: defaultAPICallTimeout,
 		handlerRetryTimeout:   defaultRetryTimeout,
+
+		roleReconcileTrigger:        make(chan struct{}, 1),
+		nodeRoleReconcilePassBudget: defaultNodeRoleReconcilePassBudget,
 	}
 }
 
 func (m *handlerImpl) Start() error {
-	defer m.started.Store(true)
+	// Guards against a double-Start leaking a second run() goroutine and starting a second MachineConfigPool
+	// informer.
+	if !m.started.CompareAndSwap(false, true) {
+		return nil
+	}
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
+	m.startMCPRoleInformer()
 	return nil
 }
 
@@ -162,6 +179,8 @@ func (m *handlerImpl) run() {
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
 			}
+		case <-m.roleReconcileTrigger:
+			m.reconcileNodeRoles()
 		case <-m.stopSignal.Done():
 			return
 		}
@@ -224,11 +243,11 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.defaultNodeRoles())
 }
 
-func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) bool {
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -286,9 +305,14 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		log.Warn(err)
 	}
 
+	// Compute the node roles once for this request and reuse them below. If discovery fails and ssObj already
+	// exists, its current roles are preserved instead of being replaced by the static fallback.
+	discoveredRoles, discoverErr := m.adaptiveDefaultNodeRoles()
+	roles := resolveNodeRolesForUpdate(discoveredRoles, discoverErr, ssObj)
+
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
-		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), roles)
 	}
 
 	// Invalid case because scan setting is created first, so we should not have a situation where
@@ -298,7 +322,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -331,7 +355,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
 			}
@@ -757,6 +781,17 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
+	// Run discovery once for this sync batch and reuse the outcome for every ScanSetting below. If discovery
+	// fails, an existing ScanSetting keeps its current roles instead of losing them to the static fallback; a new
+	// one still gets the fallback.
+	discoveredRoles, discoverErr := m.adaptiveDefaultNodeRoles()
+	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+		return convertCentralRequestToScanSetting(namespace, req, cron, resolveNodeRolesForUpdate(discoveredRoles, discoverErr, nil))
+	}
+	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+		return updateScanSettingFromUpdateRequest(obj, req, resolveNodeRolesForUpdate(discoveredRoles, discoverErr, obj))
+	}
+
 	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
@@ -771,8 +806,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
-			updateScanSettingFromUpdateRequest,
-			convertCentralRequestToScanSetting,
+			updateScanSetting,
+			convertScanSetting,
 			complianceoperator.ScanSetting,
 		); err != nil {
 			errList.AddError(err)
@@ -919,7 +954,15 @@ func (m *handlerImpl) callWithRetry(fn retriableCall) error {
 }
 
 func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryWithOnConflictCallbackCtx(m.ctx(), fn, onConflict)
+}
+
+// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context, so
+// a caller can bound the retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall
+// deadline, see nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime
+// context.
+func (m *handlerImpl) callWithRetryWithOnConflictCallbackCtx(ctx context.Context, fn retriableCall, onConflict onConflictCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
 }
