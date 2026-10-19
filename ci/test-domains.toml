@@ -10,9 +10,13 @@ jobs = [
   "selector-tests",
   "go",
   "go-postgres",
+  "go-bench",
+  "build-images",
+  "check-dependent-images-exist",
   "sensor-integration-tests",
   "should-dispatch",
   "wait-for-images",
+  "wait-for-konflux-images",
   "e2e-byodb-tests",
   "e2e-db-backup-restore-tests",
   "e2e-gke-upgrade-tests",
@@ -81,6 +85,54 @@ name = "area-label-roxctl"
 when = "label-exists"
 label = "area/roxctl"
 run = ["local-roxctl-tests"]
+
+[[rules]]
+name = "job-label-e2e-byodb-tests"
+when = "label-exists"
+label = "e2e-byodb-tests"
+run = ["e2e-byodb-tests"]
+
+[[rules]]
+name = "job-label-e2e-db-backup-restore-tests"
+when = "label-exists"
+label = "e2e-db-backup-restore-tests"
+run = ["e2e-db-backup-restore-tests"]
+
+[[rules]]
+name = "job-label-e2e-gke-upgrade-tests"
+when = "label-exists"
+label = "e2e-gke-upgrade-tests"
+run = ["e2e-gke-upgrade-tests"]
+
+[[rules]]
+name = "job-label-e2e-nongroovy-tests-gke"
+when = "label-exists"
+label = "e2e-nongroovy-tests-gke"
+run = ["e2e-nongroovy-tests-gke"]
+
+[[rules]]
+name = "job-label-e2e-nongroovy-tests-gke-konflux"
+when = "label-exists"
+label = "e2e-nongroovy-tests-gke-konflux"
+run = ["e2e-nongroovy-tests-gke-konflux"]
+
+[[rules]]
+name = "job-label-e2e-qa-tests-gke"
+when = "label-exists"
+label = "e2e-qa-tests-gke"
+run = ["e2e-qa-tests-gke"]
+
+[[rules]]
+name = "job-label-e2e-qa-tests-gke-konflux"
+when = "label-exists"
+label = "e2e-qa-tests-gke-konflux"
+run = ["e2e-qa-tests-gke-konflux"]
+
+[[rules]]
+name = "job-label-e2e-qa-tests-ocp-fips-konflux"
+when = "label-exists"
+label = "e2e-qa-tests-ocp-fips-konflux"
+run = ["e2e-qa-tests-ocp-fips-konflux"]
 
 # Tier 2: High-Impact Changes (run everything)
 # These files can change code the path rules do not name.
@@ -160,6 +212,8 @@ skip = [
 name = "selector-tests"
 when = "any-file-matches"
 paths = [
+  '^\.github/actions/ci-select/',
+  '^\.github/workflows/(build|unit-tests|style|e2e-dispatch|check-crd-compatibility|scanner-db-integration-tests|ci-select-tests|ci-decision)\.yaml$',
   '^ci/select/',
   '^ci/test-domains\.toml$',
   '^ci/decision-defaults$',
@@ -213,6 +267,18 @@ name = "skip-golangci-for-non-go"
 when = "every-file-matches"
 paths = ['^ui/', '^docs/', '\.md$', '^\.github/', '^\.openshift-ci/', '^scripts/ci/']
 skip = ["golangci-lint"]
+
+[[rules]]
+name = "go-benchmarks"
+when = "any-file-matches"
+paths = ['^(central|sensor|pkg|roxctl|operator|scanner)/.*\.go$']
+run = ["go-bench"]
+
+[[rules]]
+name = "dependent-image-versions"
+when = "any-file-matches"
+paths = ['^COLLECTOR_VERSION$', '^FACT_VERSION$']
+run = ["check-dependent-images-exist"]
 
 # Tier 7: Generated Files
 [[rules]]
@@ -370,12 +436,6 @@ when = "every-file-matches"
 paths = ['^ui/', '^docs/', '\.md$']
 skip = ["e2e-gke-upgrade-tests"]
 
-# Tier 11: Image Wait (always run)
-[[rules]]
-name = "image-wait"
-when = "always"
-run = ["wait-for-images"]
-
 # Tier 12: Remaining (temporary PR demonstration policy)
 [[rules]]
 name = "remaining"
@@ -383,12 +443,13 @@ when = "remaining"
 skip = ["*"]
 
 [requires]
-wait-for-images = ["should-dispatch"]
+wait-for-images = ["should-dispatch", "build-images"]
+wait-for-konflux-images = ["should-dispatch"]
 e2e-byodb-tests = ["wait-for-images"]
 e2e-db-backup-restore-tests = ["wait-for-images"]
 e2e-gke-upgrade-tests = ["wait-for-images"]
 e2e-nongroovy-tests-gke = ["wait-for-images"]
-e2e-nongroovy-tests-gke-konflux = ["wait-for-images"]
+e2e-nongroovy-tests-gke-konflux = ["wait-for-konflux-images"]
 e2e-qa-tests-gke = ["wait-for-images"]
-e2e-qa-tests-ocp-fips-konflux = ["wait-for-images"]
-e2e-qa-tests-gke-konflux = ["wait-for-images"]
+e2e-qa-tests-ocp-fips-konflux = ["wait-for-konflux-images"]
+e2e-qa-tests-gke-konflux = ["wait-for-konflux-images"]

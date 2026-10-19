@@ -182,6 +182,9 @@ func dispatchPlan(input dispatchInput, resolved *result, d defaults) map[string]
 	}
 	// The Konflux label is required for its PR builds even when selection is enforced.
 	waitKonflux := !input.pullRequest || (slices.Contains(input.labels, "konflux-build") && anyRuns)
+	if input.enforce && resolved != nil && d.actions["wait-for-konflux-images"] != "" {
+		waitKonflux = !input.fork && slices.Contains(input.labels, "konflux-build") && resolved.jobs["wait-for-konflux-images"]
+	}
 	encoded, _ := json.Marshal(jobs)
 	return map[string]string{
 		"jobs":                    string(encoded),

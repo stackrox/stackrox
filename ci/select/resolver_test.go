@@ -125,11 +125,13 @@ func TestCurrentRules(t *testing.T) {
 		files, labels, runs, skips []string
 		complete                   bool
 	}{
-		"docs":                   {files: []string{"README.md"}, runs: []string{"style-check", "wait-for-images", "should-dispatch"}, complete: true},
+		"docs":                   {files: []string{"README.md"}, runs: []string{"style-check"}, complete: true},
 		"shared product":         {files: []string{"sensor/common/foo.go", "central/policy/service.go"}, runs: []string{"go", "go-postgres", "sensor-integration-tests"}},
 		"module":                 {files: []string{"go.mod"}, runs: m.Jobs, complete: true},
 		"run all overrides docs": {files: []string{"README.md"}, labels: []string{"ci-run-all-tests"}, runs: m.Jobs, complete: true},
 		"CI":                     {files: []string{"ci/select/gha.go"}, skips: []string{"e2e-byodb-tests", "go-postgres"}},
+		"collector version":      {files: []string{"COLLECTOR_VERSION"}, runs: []string{"check-dependent-images-exist"}},
+		"fact version":           {files: []string{"FACT_VERSION"}, runs: []string{"check-dependent-images-exist"}},
 	}
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -185,7 +187,9 @@ func TestCIToolingSelection(t *testing.T) {
 			}
 			assert.True(t, resolved.jobs["go"])
 			assert.True(t, resolved.jobs["style-check"])
-			assert.True(t, resolved.jobs["wait-for-images"])
+			assert.Equal(t, name == "run all", resolved.jobs["wait-for-images"])
+			assert.Equal(t, name == "run all", resolved.jobs["build-images"])
+			assert.Equal(t, name == "run all" || name == "mixed product", resolved.jobs["go-bench"])
 		})
 	}
 }
@@ -204,14 +208,15 @@ func TestSelectorTestsGate(t *testing.T) {
 		"rules":                {files: []string{"ci/test-domains.toml"}, enforce: true, want: "run"},
 		"defaults":             {files: []string{"ci/decision-defaults"}, enforce: true, want: "run"},
 		"Prow dispatcher":      {files: []string{".openshift-ci/dispatch.sh"}, enforce: true, want: "skip"},
-		"build action":         {files: []string{".github/actions/ci-select/action.yaml"}, enforce: true, want: "skip"},
-		"test workflow":        {files: []string{".github/workflows/ci-select-tests.yaml"}, enforce: true, want: "skip"},
-		"GHA dispatcher":       {files: []string{".github/workflows/e2e-dispatch.yaml"}, enforce: true, want: "skip"},
-		"decision workflow":    {files: []string{".github/workflows/ci-decision.yaml"}, enforce: true, want: "skip"},
-		"CRD workflow":         {files: []string{".github/workflows/check-crd-compatibility.yaml"}, enforce: true, want: "skip"},
-		"scanner workflow":     {files: []string{".github/workflows/scanner-db-integration-tests.yaml"}, enforce: true, want: "skip"},
-		"style workflow":       {files: []string{".github/workflows/style.yaml"}, enforce: true, want: "skip"},
-		"unit workflow":        {files: []string{".github/workflows/unit-tests.yaml"}, enforce: true, want: "skip"},
+		"build action":         {files: []string{".github/actions/ci-select/action.yaml"}, enforce: true, want: "run"},
+		"test workflow":        {files: []string{".github/workflows/ci-select-tests.yaml"}, enforce: true, want: "run"},
+		"GHA dispatcher":       {files: []string{".github/workflows/e2e-dispatch.yaml"}, enforce: true, want: "run"},
+		"decision workflow":    {files: []string{".github/workflows/ci-decision.yaml"}, enforce: true, want: "run"},
+		"CRD workflow":         {files: []string{".github/workflows/check-crd-compatibility.yaml"}, enforce: true, want: "run"},
+		"scanner workflow":     {files: []string{".github/workflows/scanner-db-integration-tests.yaml"}, enforce: true, want: "run"},
+		"style workflow":       {files: []string{".github/workflows/style.yaml"}, enforce: true, want: "run"},
+		"build workflow":       {files: []string{".github/workflows/build.yaml"}, enforce: true, want: "run"},
+		"unit workflow":        {files: []string{".github/workflows/unit-tests.yaml"}, enforce: true, want: "run"},
 		"dependencies":         {files: []string{"go.mod"}, enforce: true, want: "run"},
 		"dependency checksums": {files: []string{"go.sum"}, enforce: true, want: "run"},
 		"mixed changes":        {files: []string{"ci/select/gha.go", "sensor/common/example.go"}, enforce: true, want: "run"},
@@ -288,7 +293,7 @@ func TestResolverUnmatchedFileSkipsRemaining(t *testing.T) {
 	require.NoError(t, err)
 	resolved, err := resolve([]string{"notes/todo.txt"}, nil, m, d, metadata{})
 	require.NoError(t, err)
-	assert.Equal(t, map[string]bool{"style-check": true, "wait-for-images": true, "should-dispatch": true}, resolved.jobs)
+	assert.Equal(t, map[string]bool{"style-check": true}, resolved.jobs)
 	assert.NotContains(t, resolved.log, "takes default")
 	assert.Contains(t, resolved.log, `rule "skip-selector-tests" skips target "selector-tests"`)
 }

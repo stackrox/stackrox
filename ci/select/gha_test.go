@@ -102,6 +102,29 @@ func TestDispatchInventory(t *testing.T) {
 	}
 }
 
+func TestGHAImageDependencies(t *testing.T) {
+	for name, test := range map[string]struct {
+		labels                      []string
+		build, waitGHA, waitKonflux bool
+	}{
+		"no consumers": {},
+		"GHA consumer": {labels: []string{"e2e-gke-upgrade-tests"}, build: true, waitGHA: true},
+		"Konflux consumer": {
+			labels: []string{"e2e-nongroovy-tests-gke-konflux", "konflux-build"}, waitKonflux: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+				[]string{"README.md"}, test.labels, false, metadata{})
+			require.NoError(t, err)
+			assert.Equal(t, test.build, resolved.jobs["build-images"])
+			plan := dispatchPlan(dispatchInput{pullRequest: true, enforce: true, labels: test.labels}, &resolved, d)
+			assert.Equal(t, fmt.Sprint(test.waitGHA), plan["wait-for-gha-images"])
+			assert.Equal(t, fmt.Sprint(test.waitKonflux), plan["wait-for-konflux-images"])
+		})
+	}
+}
+
 func TestChangedFiles(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("CI_SELECT_ROOT", root)
