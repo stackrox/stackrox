@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>stackrox/stackrox CI job matrix</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1b1f24;
+    --muted: #5b6470;
+    --border: #d9dee3;
+    --row-alt: #f6f8fa;
+    --accent: #0969da;
+    --pill-bg: #eef1f4;
+    --dup-bg: #fff8e1;
+    --dup-border: #e8c547;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #9aa7b2;
+      --border: #30363d;
+      --row-alt: #161b22;
+      --accent: #58a6ff;
+      --pill-bg: #21262d;
+      --dup-bg: #2a2412;
+      --dup-border: #8a7221;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 1.5rem 2rem 3rem;
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 0.2rem; }
+  .subtitle { color: var(--muted); margin: 0 0 1.2rem; }
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.2rem;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+  }
+  .stat .n { font-size: 1.2rem; font-weight: 600; }
+  .stat .l { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 11;
+    background: var(--bg);
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+  .controls input[type="search"] {
+    flex: 1 1 auto;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 0.9rem;
+  }
+  .controls select {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 0.9rem;
+  }
+  .controls label.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--fg);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  .hint { color: var(--muted); font-size: 0.85rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+  thead th {
+    position: sticky;
+    top: var(--controls-height, 0px);
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th .arrow { opacity: 0.5; margin-left: 0.2rem; }
+  tbody td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0.6rem;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr.is-duplicate { background: var(--dup-bg); }
+  tbody tr.is-duplicate:nth-child(even) { background: var(--dup-bg); }
+  .name { font-weight: 600; }
+  .source-pill, .trigger-pill, .family-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--pill-bg);
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+  .source-pill[data-source="Prow"] { border: 1px solid #8957e5; color: #8957e5; }
+  .source-pill[data-source="GitHub Actions"] { border: 1px solid #1a7f37; color: #1a7f37; }
+  .trigger-pill { border: 1px solid var(--border); margin: 0 0.2rem 0.2rem 0; cursor: help; }
+  .trigger-pill[data-trigger="pre-merge"] { border-color: #0969da; color: #0969da; }
+  .trigger-pill[data-trigger="post-merge"] { border-color: #1a7f37; color: #1a7f37; }
+  .trigger-pill[data-trigger="periodic"] { border-color: #8250df; color: #8250df; }
+  .trigger-pill[data-trigger="nightly"] { border-color: #bc4c00; color: #bc4c00; font-weight: 600; }
+  .trigger-pill[data-trigger="manual"] { border-color: var(--muted); color: var(--muted); }
+  .trigger-pill[data-trigger="reusable"] { border-color: var(--muted); color: var(--muted); border-style: dashed; }
+  .trigger-pill[data-trigger="unknown"] { border-color: #cf222e; color: #cf222e; }
+  .req-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .req-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    cursor: help;
+    background: var(--pill-bg);
+    border: 1px solid var(--border);
+  }
+  .req-pill.req-mandatory { border-color: #1a7f37; color: #1a7f37; }
+  .req-pill.req-optin { border-color: #bc4c00; color: #bc4c00; }
+  .req-pill.req-labelgated { border-color: #8250df; color: #8250df; }
+  .req-pill.req-blocks { border-color: #1a7f37; color: #1a7f37; }
+  .req-pill.req-nonblocking { border-color: #bc4c00; color: #bc4c00; }
+  .na { color: var(--muted); }
+  .family-pill.is-duplicate { border: 1px solid var(--dup-border); font-weight: 600; cursor: pointer; }
+  .branches { color: var(--muted); font-size: 0.78rem; }
+  .cluster-type { white-space: nowrap; }
+  #error {
+    display: none;
+    border: 1px solid #cf222e;
+    background: #fff0f0;
+    color: #82181a;
+    padding: 0.9rem 1.1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    max-width: 60rem;
+  }
+  #error code { background: rgba(0,0,0,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+  #empty { display: none; color: var(--muted); padding: 1.5rem 0; }
+</style>
+</head>
+<body>
+  <h1>stackrox/stackrox CI job matrix</h1>
+  <p class="subtitle">Inventory of every test run via GitHub Actions and Prow, generated by <code>tools/job-matrix</code>.</p>
+
+  <div id="error">
+    <strong>Couldn't load <code>job-matrix.json</code>.</strong>
+    <p>If you opened this file directly (<code>file://...</code>), the browser blocks local fetches like this.
+    Serve the <code>tmp/</code> directory instead, e.g. from the repo root:</p>
+    <pre>python3 -m http.server --directory tmp 8000</pre>
+    <p>then open <code>http://localhost:8000/job-matrix.html</code>.</p>
+    <p class="hint" id="error-detail"></p>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="controls">
+    <div class="controls-row">
+      <input type="search" id="search" placeholder="Search name, description, cluster type...">
+    </div>
+    <div class="controls-row">
+      <select id="source-filter">
+        <option value="all">All sources</option>
+        <option value="Prow">Prow</option>
+        <option value="GitHub Actions">GitHub Actions</option>
+      </select>
+      <select id="trigger-filter">
+        <option value="all">All triggers</option>
+        <option value="pre-merge">pre-merge</option>
+        <option value="post-merge">post-merge</option>
+        <option value="periodic">periodic</option>
+        <option value="nightly">nightly</option>
+        <option value="manual">manual</option>
+        <option value="reusable">reusable</option>
+        <option value="unknown">unknown</option>
+      </select>
+      <select id="run-requirement-filter">
+        <option value="all">All run requirements</option>
+        <option value="mandatory">Mandatory</option>
+        <option value="opt-in">Opt-in</option>
+      </select>
+      <select id="blocking-filter">
+        <option value="all">All merge policies</option>
+        <option value="blocks-merge">Blocks merge</option>
+        <option value="non-blocking">Non-blocking</option>
+      </select>
+      <select id="label-gated-filter">
+        <option value="all">All label gating</option>
+        <option value="label-gated">Label-gated</option>
+        <option value="not-label-gated">Not label-gated</option>
+      </select>
+      <label class="checkbox">
+        <input type="checkbox" id="dup-only">
+        Duplicates only
+      </label>
+      <span class="hint" id="count-hint"></span>
+    </div>
+  </div>
+
+  <div id="empty">No tests match the current filters.</div>
+  <table id="table" aria-live="polite">
+    <thead>
+      <tr>
+        <th data-key="name">Name</th>
+        <th data-key="source">Source</th>
+        <th data-key="cluster_type">Cluster type</th>
+        <th data-key="triggers">Trigger</th>
+        <th data-key="runs_automatically">Merge requirement</th>
+        <th data-key="test_family">Test family</th>
+        <th data-key="description">Description</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+  const TRIGGER_DESCRIPTIONS = {
+    "pre-merge": "Runs automatically against proposed changes (a pull request) before they can merge.",
+    "post-merge": "Runs after a change has already merged, to validate the resulting merge commit.",
+    "periodic": "Runs on a fixed schedule, independent of any code change.",
+    "nightly": "Runs roughly once a day against a nightly build, independent of any single pull request or merge.",
+    "manual": "Only runs when a person explicitly triggers it.",
+    "reusable": "Never runs on its own; only runs when another workflow calls it.",
+    "unknown": "The trigger for this job could not be determined.",
+  };
+
+  let allTests = [];
+  let duplicateFamilies = {};
+  let sortKey = "name";
+  let sortDir = 1;
+
+  const el = (id) => document.getElementById(id);
+
+  async function load() {
+    try {
+      const res = await fetch("job-matrix.json", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const data = await res.json();
+      allTests = data.tests || [];
+      duplicateFamilies = data.duplicate_families || {};
+      renderSummary();
+      render();
+    } catch (err) {
+      el("error").style.display = "block";
+      el("error-detail").textContent = String(err);
+      el("table").style.display = "none";
+    }
+  }
+
+  function renderSummary() {
+    const bySource = {};
+    for (const t of allTests) bySource[t.source] = (bySource[t.source] || 0) + 1;
+    const nightlyCount = allTests.filter((t) => (t.triggers || []).includes("nightly")).length;
+    const optInCount = allTests.filter((t) => t.runs_automatically === false).length;
+    const stats = [
+      { n: allTests.length, l: "total tests" },
+      ...Object.entries(bySource).map(([source, n]) => ({ n, l: source })),
+      { n: Object.keys(duplicateFamilies).length, l: "duplicate families" },
+      { n: nightlyCount, l: "nightly-only" },
+      { n: optInCount, l: "opt-in presubmits" },
+    ];
+    el("summary").innerHTML = stats
+      .map((s) => `<div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`)
+      .join("");
+  }
+
+  function isDuplicate(test) {
+    return Boolean(test.test_family && duplicateFamilies[test.test_family]);
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function isPreMerge(test) {
+    return (test.triggers || []).includes("pre-merge");
+  }
+
+  // The merge-requirement column's run-condition half means something for
+  // any pre-merge job: Prow presubmits have ci-operator's always_run, and
+  // GitHub Actions workflows can be gated on a PR label instead of running
+  // unconditionally.
+  function runRequirementState(test) {
+    if (!isPreMerge(test)) return null;
+    if (test.source === "Prow") return test.runs_automatically ? "mandatory" : "opt-in";
+    return test.required_label ? "label-gated" : "mandatory";
+  }
+
+  // The merge-requirement column's blocking half (optional: true) only
+  // exists as a concept for Prow -- GitHub Actions has no equivalent visible
+  // in the workflow YAML (whether a check blocks merge is a
+  // branch-protection setting we don't have).
+  function isMergeRequirementApplicable(test) {
+    return test.source === "Prow" && isPreMerge(test);
+  }
+
+  function blockingState(test) {
+    if (!isMergeRequirementApplicable(test)) return null;
+    return test.optional ? "non-blocking" : "blocks-merge";
+  }
+
+  function sortValue(test, key) {
+    if (key === "triggers") return (test.triggers || []).join(",");
+    if (key === "runs_automatically") {
+      const order = { "opt-in": 1, "label-gated": 1, mandatory: 2 };
+      return order[runRequirementState(test)] || -1;
+    }
+    return test[key] || "";
+  }
+
+  function getFiltered() {
+    const q = el("search").value.trim().toLowerCase();
+    const source = el("source-filter").value;
+    const trigger = el("trigger-filter").value;
+    const runRequirement = el("run-requirement-filter").value;
+    const blocking = el("blocking-filter").value;
+    const labelGated = el("label-gated-filter").value;
+    const dupOnly = el("dup-only").checked;
+
+    let filtered = allTests.filter((t) => {
+      if (source !== "all" && t.source !== source) return false;
+      if (trigger !== "all" && !(t.triggers || []).includes(trigger)) return false;
+      if (runRequirement !== "all" && runRequirementState(t) !== runRequirement) return false;
+      if (blocking !== "all" && blockingState(t) !== blocking) return false;
+      if (labelGated === "label-gated" && runRequirementState(t) !== "label-gated") return false;
+      if (labelGated === "not-label-gated" && runRequirementState(t) === "label-gated") return false;
+      if (dupOnly && !isDuplicate(t)) return false;
+      if (q) {
+        const haystack = [t.name, t.description, t.cluster_type, t.test_family, t.source]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      const av = sortValue(a, sortKey);
+      const bv = sortValue(b, sortKey);
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return 1 * sortDir;
+      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+    });
+
+    return filtered;
+  }
+
+  function render() {
+    const filtered = getFiltered();
+    el("count-hint").textContent = `${filtered.length} of ${allTests.length} tests`;
+    el("empty").style.display = filtered.length === 0 ? "block" : "none";
+    el("table").style.display = filtered.length === 0 ? "none" : "table";
+
+    el("rows").innerHTML = filtered
+      .map((t) => {
+        const dup = isDuplicate(t);
+        const triggers = (t.triggers || [])
+          .map(
+            (tr) =>
+              `<span class="trigger-pill" data-trigger="${escapeHTML(tr)}" title="${escapeHTML(TRIGGER_DESCRIPTIONS[tr] || "")}">${escapeHTML(tr)}</span>`
+          )
+          .join("");
+        let mergeRequirement;
+        if (!isPreMerge(t)) {
+          mergeRequirement = `<span class="na">—</span>`;
+        } else {
+          const runState = runRequirementState(t);
+          const runPill =
+            runState === "mandatory"
+              ? `<span class="req-pill req-mandatory" title="${
+                  t.source === "Prow"
+                    ? "ci-operator always_run is true (the default): runs automatically on every PR."
+                    : "Runs on every PR; no label or other opt-in is required."
+                }">Mandatory</span>`
+              : runState === "opt-in"
+              ? `<span class="req-pill req-optin" title="ci-operator always_run: false. Won't run on a PR unless someone comments /test ${escapeHTML(t.name)}.">Opt-in</span>`
+              : `<span class="req-pill req-labelgated" title="Only runs once the &quot;${escapeHTML(t.required_label)}&quot; label is applied to the PR.">Label-gated</span>`;
+          const blockState = blockingState(t);
+          const blockingPill =
+            blockState === "blocks-merge"
+              ? `<span class="req-pill req-blocks" title="ci-operator optional is false (the default): must pass (or not run) for the PR to merge.">Blocks Merge</span>`
+              : blockState === "non-blocking"
+              ? `<span class="req-pill req-nonblocking" title="ci-operator optional: true. Can run and fail without blocking merge.">Non-blocking</span>`
+              : "";
+          mergeRequirement = `<div class="req-stack">${runPill}${blockingPill}</div>`;
+        }
+        const branches = (t.branches || []).length
+          ? `<div class="branches">${escapeHTML(t.branches.join(", "))}</div>`
+          : "";
+        const family = t.test_family
+          ? `<span class="family-pill${dup ? " is-duplicate" : ""}" title="${dup ? "Click to see the whole family" : ""}" data-family="${escapeHTML(t.test_family)}">${escapeHTML(t.test_family)}</span>`
+          : "";
+        return `<tr class="${dup ? "is-duplicate" : ""}">
+          <td><div class="name">${escapeHTML(t.name)}</div><div class="hint">${escapeHTML(t.source_ref || "")}</div></td>
+          <td><span class="source-pill" data-source="${escapeHTML(t.source)}">${escapeHTML(t.source)}</span></td>
+          <td class="cluster-type">${escapeHTML(t.cluster_type || "Unknown")}</td>
+          <td>${triggers}</td>
+          <td>${mergeRequirement}</td>
+          <td>${family}${branches}</td>
+          <td>${escapeHTML(t.description || "Unknown")}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  document.querySelectorAll("thead th").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key) {
+        sortDir *= -1;
+      } else {
+        sortKey = key;
+        sortDir = 1;
+      }
+      document.querySelectorAll("thead th .arrow").forEach((a) => a.remove());
+      th.insertAdjacentHTML("beforeend", `<span class="arrow">${sortDir === 1 ? "↑" : "↓"}</span>`);
+      render();
+    });
+  });
+
+  el("rows").addEventListener("click", (e) => {
+    const pill = e.target.closest(".family-pill.is-duplicate");
+    if (!pill) return;
+    el("search").value = pill.dataset.family;
+    el("dup-only").checked = false;
+    render();
+  });
+
+  el("search").addEventListener("input", render);
+  el("source-filter").addEventListener("change", render);
+  el("trigger-filter").addEventListener("change", render);
+  el("run-requirement-filter").addEventListener("change", render);
+  el("blocking-filter").addEventListener("change", render);
+  el("label-gated-filter").addEventListener("change", render);
+  el("dup-only").addEventListener("change", render);
+
+  // Keep the table header pinned right below the filters bar, whatever
+  // height that bar happens to be (it wraps to more than one line on
+  // narrow viewports).
+  const controlsEl = document.querySelector(".controls");
+  const updateControlsHeight = () => {
+    document.documentElement.style.setProperty("--controls-height", `${controlsEl.offsetHeight}px`);
+  };
+  new ResizeObserver(updateControlsHeight).observe(controlsEl);
+  updateControlsHeight();
+
+  load();
+</script>
+</body>
+</html>
