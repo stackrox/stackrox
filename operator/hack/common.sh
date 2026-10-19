@@ -195,7 +195,7 @@ function wait_for_clusterextension_installed() {
   local max_attempts=60
   local attempt=0
   while (( attempt < max_attempts )); do
-    (( attempt++ ))
+    (( ++attempt )) # Pre-increment to avoid set -e exit when attempt=0
 
     local installed_status
     installed_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Installed")].status}' 2>/dev/null || echo "")
