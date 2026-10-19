@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -129,10 +128,6 @@ func (t *scopedTokenTransport) SetClient(conn grpc.ClientConnInterface) {
 func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	scope := req.Header.Get(stackroxNamespaceHeader)
 	permissionSetID := proxyPermissionSetFromContext(req.Context())
-	cacheKey := scope
-	if permissionSetID != "" {
-		cacheKey = "\x00" + permissionSetID
-	}
 
 	// Buffer the request body upfront so we can replay it on retry.
 	var bodyBytes []byte
@@ -168,7 +163,7 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
-		t.tokenProvider.invalidateToken(cacheKey)
+		t.tokenProvider.invalidateToken(scope, permissionSetID)
 		return t.doRoundTrip(req, scope, permissionSetID)
 	}
 
@@ -206,8 +201,9 @@ type tokenProvider struct {
 	clusterIDGetter   clusterIDGetter
 	tokenCache        expiringcache.Cache[string, string]
 	metricsTokenCache expiringcache.Cache[string, string]
-	// tokenGroup coalesces concurrent token requests for the same namespace scope.
-	tokenGroup *coalescer.Coalescer[string]
+	// Each token type has its own coalescer, so equal scope and permission-set IDs cannot share a request.
+	tokenGroup        *coalescer.Coalescer[string]
+	metricsTokenGroup *coalescer.Coalescer[string]
 }
 
 // newTokenProvider creates a new tokenProvider.
@@ -217,6 +213,7 @@ func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 		tokenCache:        expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
 		metricsTokenCache: expiringcache.NewExpiringCache[string, string](metricsTokenCacheTTL),
 		tokenGroup:        coalescer.New[string](),
+		metricsTokenGroup: coalescer.New[string](),
 	}
 }
 
@@ -238,15 +235,15 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 //
 // Concurrent requests for the same scope are coalesced to reduce load on Central.
 func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
-	return p.getToken(ctx, namespaceScope, "", p.tokenCache)
+	return p.getToken(ctx, namespaceScope, "", p.tokenCache, p.tokenGroup)
 }
 
 func (p *tokenProvider) getTokenForPermissionSet(ctx context.Context, permissionSetID string) (string, error) {
-	return p.getToken(ctx, "\x00"+permissionSetID, permissionSetID, p.metricsTokenCache)
+	return p.getToken(ctx, permissionSetID, permissionSetID, p.metricsTokenCache, p.metricsTokenGroup)
 }
 
 func (p *tokenProvider) getToken(ctx context.Context, cacheKey, permissionSetID string,
-	cache expiringcache.Cache[string, string],
+	cache expiringcache.Cache[string, string], group *coalescer.Coalescer[string],
 ) (string, error) {
 	client := p.client.Load()
 	if client == nil {
@@ -260,15 +257,15 @@ func (p *tokenProvider) getToken(ctx context.Context, cacheKey, permissionSetID 
 		return token, nil
 	}
 
-	// Slow path: coalesce concurrent requests for the same scope.
-	return p.tokenGroup.Coalesce(ctx, cacheKey, func() (string, error) { //nolint:wrapcheck
+	// Slow path: coalesce concurrent requests for the same cache key.
+	return group.Coalesce(ctx, cacheKey, func() (string, error) { //nolint:wrapcheck
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if token, ok := cache.Get(cacheKey); ok {
 			incrementTokenRequest(tokenResultCacheHit)
 			return token, nil
 		}
 
-		log.Debug("Token cache miss, requesting from Central")
+		log.Debugf("Token cache miss for key %q, requesting from Central", cacheKey)
 
 		// Use a background context with timeout to ensure the shared function is independent
 		// of the initial request context while still having a bounded lifetime.
@@ -328,17 +325,18 @@ func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.Token
 	return token, nil
 }
 
-// invalidateToken removes the cached token for the given scope.
+// invalidateToken removes the cached token for the scope or permission set.
 // It also removes the coalescer key so subsequent callers will
 // trigger a fresh token request rather than joining any in-progress request.
 // Note: This does not cancel already running requests; they will complete
 // normally but their results will not be used by new callers.
-func (p *tokenProvider) invalidateToken(scope string) {
-	if strings.HasPrefix(scope, "\x00") {
-		p.metricsTokenCache.Remove(scope)
-	} else {
-		p.tokenCache.Remove(scope)
+func (p *tokenProvider) invalidateToken(scope, permissionSetID string) {
+	if permissionSetID != "" {
+		p.metricsTokenCache.Remove(permissionSetID)
+		p.metricsTokenGroup.Forget(permissionSetID)
+		return
 	}
+	p.tokenCache.Remove(scope)
 	p.tokenGroup.Forget(scope)
 }
 
