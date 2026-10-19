@@ -126,7 +126,6 @@ jobs:
         GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-        LOAD_BALANCER: lb
       run: |
         tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
@@ -303,7 +302,6 @@ jobs:
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-        LOAD_BALANCER: lb
       run: |
         tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
