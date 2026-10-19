@@ -8,6 +8,10 @@ const (
 	APITokenCreated = "api-token-created"
 	APITokenExpired = "api-token-expired"
 
+	// Auth provider codes
+	SAMLAssertionReplay    = "saml-assertion-replay"
+	SAMLAssertionWithoutID = "saml-assertion-without-id"
+
 	// Backup codes.
 	GCSGeneric          = "gcs-generic"
 	S3CompatibleGeneric = "s3compatible-generic"
