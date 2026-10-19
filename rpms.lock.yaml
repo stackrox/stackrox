@@ -1916,10 +1916,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/747d7b41b00b790b051291153bf8c1d9390ce9f368df1b11f56ff5b87a5ba989-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/0e3b490ec52aa5104530f050674441271040995bf88c27f7198a3f5c40fd4909-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 847094
-    checksum: sha256:747d7b41b00b790b051291153bf8c1d9390ce9f368df1b11f56ff5b87a5ba989
+    size: 851166
+    checksum: sha256:0e3b490ec52aa5104530f050674441271040995bf88c27f7198a3f5c40fd4909
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-12.el8_10.ppc64le.rpm
@@ -3847,10 +3847,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/ab47a88c7720ecd3705cf94e57bfe0fdd15145954c90c29c9c4964e9e4e51703-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/b249c5e3f8b0c85a7c7a5c4d75040dccf5e8827c9de733cb43c38041617973e5-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 839292
-    checksum: sha256:ab47a88c7720ecd3705cf94e57bfe0fdd15145954c90c29c9c4964e9e4e51703
+    size: 843331
+    checksum: sha256:b249c5e3f8b0c85a7c7a5c4d75040dccf5e8827c9de733cb43c38041617973e5
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-12.el8_10.s390x.rpm
@@ -3923,13 +3923,6 @@ arches:
     name: perl-Net-SSLeay
     evr: 1.88-2.module+el8.6.0+13392+f0897f98
     sourcerpm: perl-Net-SSLeay-1.88-2.module+el8.6.0+13392+f0897f98.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/perl-URI-1.73-3.el8.noarch.rpm
-    repoid: rhel-8-for-s390x-appstream-rpms
-    size: 118948
-    checksum: sha256:dd6a948e5a656701156c618e202c0b6defd11ba6f162b6790cbb42cea15141ae
-    name: perl-URI
-    evr: 1.73-3.el8
-    sourcerpm: perl-URI-1.73-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/perl-libnet-3.11-3.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 123808
@@ -4938,6 +4931,13 @@ arches:
     name: perl-Time-Local
     evr: 1:1.280-1.el8
     sourcerpm: perl-Time-Local-1.280-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/p/perl-URI-1.73-4.el8_10.noarch.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 118476
+    checksum: sha256:6fa3940b15d2795fda5dbf1c5751cfdd8f984fe8db4820351a11bd4fb37db4cb
+    name: perl-URI
+    evr: 1.73-4.el8_10
+    sourcerpm: perl-URI-1.73-4.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/p/perl-Unicode-Normalize-1.25-396.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 87108
@@ -5300,12 +5300,6 @@ arches:
     checksum: sha256:29f51f6c0a352cc9dbbc1f7b5a04de7a8a50611fe7c1ec32c7ebce4a1b456689
     name: perl-Net-SSLeay
     evr: 1.88-2.module+el8.6.0+13392+f0897f98
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/perl-URI-1.73-3.el8.src.rpm
-    repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 126236
-    checksum: sha256:dad920c0cd599360aff44efb33d8de6245b937dd296b011c645db1464fcc4ce9
-    name: perl-URI
-    evr: 1.73-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/perl-libnet-3.11-3.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 106574
@@ -5960,6 +5954,12 @@ arches:
     checksum: sha256:37a06155836500c22854a0ed2cd1e19e2cb9464eafef8e2b72159923a13b9aa7
     name: perl-Time-Local
     evr: 1:1.280-1.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/p/perl-URI-1.73-4.el8_10.src.rpm
+    repoid: rhel-8-for-s390x-baseos-source-rpms
+    size: 127863
+    checksum: sha256:856866ba388316338d323c3f772c225f9e59a3fed317d4e04208e6369a02c3e0
+    name: perl-URI
+    evr: 1.73-4.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/p/perl-Unicode-Normalize-1.25-396.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 51863
@@ -6147,10 +6147,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/187c0d8db728afd48f3237ad0b73414191d8d6b59bef1c9e9d3ef5e2749d8c0c-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/f63c38f2d2234c238708309e09e811be609038d6c36ff3fdc8c8ef2d3f7a12ec-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 841898
-    checksum: sha256:187c0d8db728afd48f3237ad0b73414191d8d6b59bef1c9e9d3ef5e2749d8c0c
+    size: 846262
+    checksum: sha256:f63c38f2d2234c238708309e09e811be609038d6c36ff3fdc8c8ef2d3f7a12ec
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-12.el8_10.x86_64.rpm
@@ -8065,7 +8065,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/40ee00d2229682195591d1d437c5b045cfca832be9aa21de6c77e066aa83748f-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/7d24ab10b94f53a50eeb52ae92666f8ef0ca85675358549829b1c31c1ff25589-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 867284
-    checksum: sha256:40ee00d2229682195591d1d437c5b045cfca832be9aa21de6c77e066aa83748f
+    size: 872509
+    checksum: sha256:7d24ab10b94f53a50eeb52ae92666f8ef0ca85675358549829b1c31c1ff25589
