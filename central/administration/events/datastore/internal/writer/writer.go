@@ -26,15 +26,17 @@ import (
 type Writer interface {
 	Upsert(ctx context.Context, obj *events.AdministrationEvent) error
 	Flush(ctx context.Context) error
-	// DropForResource removes buffered events for the given resource ID so a
-	// later Flush cannot persist them after the resource has been deleted.
+	// DropForResource removes buffered events for the given resource ID and
+	// rejects later Upsert calls for that resource so a later Flush cannot
+	// persist them after the resource has been deleted.
 	DropForResource(resourceID string)
 }
 
 // New returns a new writer instance.
 func New(store store.Store) Writer {
 	return &writerImpl{
-		buffer: make(map[string]*storage.AdministrationEvent),
-		store:  store,
+		buffer:           make(map[string]*storage.AdministrationEvent),
+		droppedResources: make(map[string]struct{}),
+		store:            store,
 	}
 }
