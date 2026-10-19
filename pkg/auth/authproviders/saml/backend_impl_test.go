@@ -132,7 +132,7 @@ func TestConsumeSAMLResponse_ReplayProtection(t *testing.T) {
 		responseID:             "_response_1_",
 		assertionID:            "_assertion_1_",
 		userEMail:              "attacker@evil.com",
-		})
+	})
 	encoded := base64.StdEncoding.EncodeToString([]byte(xml))
 
 	// First consumption should succeed
@@ -163,27 +163,27 @@ func TestConsumeSAMLResponse_DifferentAssertionsAccepted(t *testing.T) {
 
 	defer backend.replayCache.stop()
 
-	 // First SAML response (with assertion ID "_assertion_1")
+	// First SAML response (with assertion ID "_assertion_1")
 	xml1 := samlResponseXML(t, samlResponseParams{
-	conditionsNotBefore:    now.Add(-5 * time.Minute),
-	conditionsNotOnOrAfter: now.Add(5 * time.Minute),
-	subjectNotOnOrAfter:    now.Add(10 * time.Minute),
-	audience:               testAudience,
-	responseID:             "_response_1_",
-	assertionID:            "_assertion_1_",
-	userEMail:              "attacker@evil.com",
+		conditionsNotBefore:    now.Add(-5 * time.Minute),
+		conditionsNotOnOrAfter: now.Add(5 * time.Minute),
+		subjectNotOnOrAfter:    now.Add(10 * time.Minute),
+		audience:               testAudience,
+		responseID:             "_response_1_",
+		assertionID:            "_assertion_1_",
+		userEMail:              "attacker@evil.com",
 	})
 	encoded1 := base64.StdEncoding.EncodeToString([]byte(xml1))
 
-	 // Create a second SAML response with a different assertion ID
+	// Create a second SAML response with a different assertion ID
 	xml2 := samlResponseXML(t, samlResponseParams{
-	conditionsNotBefore:    now.Add(-5 * time.Minute),
-	conditionsNotOnOrAfter: now.Add(5 * time.Minute),
-	subjectNotOnOrAfter:    now.Add(10 * time.Minute),
-	audience:               testAudience,
-	responseID:             "_response_2_",
-	assertionID:            "_assertion_2_",
-	userEMail:              "user@example.com",
+		conditionsNotBefore:    now.Add(-5 * time.Minute),
+		conditionsNotOnOrAfter: now.Add(5 * time.Minute),
+		subjectNotOnOrAfter:    now.Add(10 * time.Minute),
+		audience:               testAudience,
+		responseID:             "_response_2_",
+		assertionID:            "_assertion_2_",
+		userEMail:              "user@example.com",
 	})
 	encoded2 := base64.StdEncoding.EncodeToString([]byte(xml2))
 
