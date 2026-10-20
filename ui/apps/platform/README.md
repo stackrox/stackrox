@@ -32,7 +32,7 @@ be set for this option._
 Note that `roxie` sets `$ROX_BASE_URL` in the environment automatically in the subshell it launches
 at the end of `deploy`. You can also enter one with `roxie shell` if you see errors such as:
 
-```
+```text
 8:27:37 AM [vite] http proxy error: /v1/metadata
 AggregateError [ECONNREFUSED]:
 ```
