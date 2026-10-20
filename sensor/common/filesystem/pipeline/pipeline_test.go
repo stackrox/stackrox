@@ -72,7 +72,7 @@ func newTestPipeline(t *testing.T) *testPipeline {
 	clusterStore := clusterentities.NewStore(0, nil, false)
 	dispatcher := newTestDispatcher(t)
 	activityChan := make(chan *sensorAPI.FileActivity, 10)
-	p := NewFileSystemPipeline(mockDetector, clusterStore, activityChan, dispatcher)
+	p := NewFileSystemPipeline(mockDetector, clusterStore, activityChan, dispatcher, nil)
 	t.Cleanup(func() { p.Stop() })
 	return &testPipeline{
 		Pipeline:     p,

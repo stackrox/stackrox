@@ -156,6 +156,7 @@ func (m *KubernetesEvent) CloneVT() *KubernetesEvent {
 	r.UserAgent = m.UserAgent
 	r.ResponseStatus = m.ResponseStatus.CloneVT()
 	r.RequestUri = m.RequestUri
+	r.AuditStage = m.AuditStage
 	if m.ObjectArgs != nil {
 		r.ObjectArgs = m.ObjectArgs.(interface {
 			CloneVT() isKubernetesEvent_ObjectArgs
@@ -406,6 +407,9 @@ func (this *KubernetesEvent) EqualVT(that *KubernetesEvent) bool {
 		return false
 	}
 	if this.RequestUri != that.RequestUri {
+		return false
+	}
+	if this.AuditStage != that.AuditStage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -828,6 +832,15 @@ func (m *KubernetesEvent) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if len(m.AuditStage) > 0 {
+		i -= len(m.AuditStage)
+		copy(dAtA[i:], m.AuditStage)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.AuditStage)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	}
 	if len(m.RequestUri) > 0 {
 		i -= len(m.RequestUri)
 		copy(dAtA[i:], m.RequestUri)
@@ -1159,6 +1172,10 @@ func (m *KubernetesEvent) SizeVT() (n int) {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.RequestUri)
+	if l > 0 {
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.AuditStage)
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -2394,6 +2411,38 @@ func (m *KubernetesEvent) UnmarshalVT(dAtA []byte) error {
 				}
 				m.ObjectArgs = &KubernetesEvent_PodAttachArgs_{PodAttachArgs: v}
 			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuditStage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AuditStage = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3655,6 +3704,42 @@ func (m *KubernetesEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				m.ObjectArgs = &KubernetesEvent_PodAttachArgs_{PodAttachArgs: v}
 			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuditStage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.AuditStage = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

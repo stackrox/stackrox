@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
+	"github.com/stackrox/rox/sensor/common/interactivesessions"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
@@ -46,6 +47,7 @@ type serviceImpl struct {
 
 	connectionManager *connectionManager
 	pubSubDispatcher  common.PubSubDispatcher
+	sessionTracker    *interactivesessions.Tracker
 
 	offlineMode *atomic.Bool
 	stopperLock sync.Mutex
@@ -250,6 +252,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			// sending the audit logs based on that state.
 			if s.offlineMode.Load() {
 				continue
+			}
+			if s.sessionTracker != nil {
+				s.sessionTracker.Observe(t.AuditEvents)
 			}
 			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
 				if err := s.pubSubDispatcher.Publish(&detectorEvents.AuditLogEvent{AuditEvents: t.AuditEvents}); err != nil {

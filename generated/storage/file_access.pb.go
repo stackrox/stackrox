@@ -284,9 +284,11 @@ type FileAccess struct {
 	// information.
 	Process *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
 	// The hostname/name of the node where the file activity occurred
-	Hostname      string `protobuf:"bytes,6,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Hostname string `protobuf:"bytes,6,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	// Kubernetes exec or attach session unambiguously associated with this activity.
+	InteractiveSession *FileAccess_InteractiveSession `protobuf:"bytes,7,opt,name=interactive_session,json=interactiveSession,proto3" json:"interactive_session,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *FileAccess) Reset() {
@@ -361,6 +363,97 @@ func (x *FileAccess) GetHostname() string {
 	return ""
 }
 
+func (x *FileAccess) GetInteractiveSession() *FileAccess_InteractiveSession {
+	if x != nil {
+		return x.InteractiveSession
+	}
+	return nil
+}
+
+type FileAccess_InteractiveSession struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	EffectiveUser     string                 `protobuf:"bytes,1,opt,name=effective_user,json=effectiveUser,proto3" json:"effective_user,omitempty"`
+	AuthenticatedUser string                 `protobuf:"bytes,2,opt,name=authenticated_user,json=authenticatedUser,proto3" json:"authenticated_user,omitempty"`
+	AuditId           string                 `protobuf:"bytes,3,opt,name=audit_id,json=auditId,proto3" json:"audit_id,omitempty"`
+	Type              string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Confidence        string                 `protobuf:"bytes,5,opt,name=confidence,proto3" json:"confidence,omitempty"`
+	MatchBasis        string                 `protobuf:"bytes,6,opt,name=match_basis,json=matchBasis,proto3" json:"match_basis,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FileAccess_InteractiveSession) Reset() {
+	*x = FileAccess_InteractiveSession{}
+	mi := &file_storage_file_access_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileAccess_InteractiveSession) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileAccess_InteractiveSession) ProtoMessage() {}
+
+func (x *FileAccess_InteractiveSession) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_file_access_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileAccess_InteractiveSession.ProtoReflect.Descriptor instead.
+func (*FileAccess_InteractiveSession) Descriptor() ([]byte, []int) {
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *FileAccess_InteractiveSession) GetEffectiveUser() string {
+	if x != nil {
+		return x.EffectiveUser
+	}
+	return ""
+}
+
+func (x *FileAccess_InteractiveSession) GetAuthenticatedUser() string {
+	if x != nil {
+		return x.AuthenticatedUser
+	}
+	return ""
+}
+
+func (x *FileAccess_InteractiveSession) GetAuditId() string {
+	if x != nil {
+		return x.AuditId
+	}
+	return ""
+}
+
+func (x *FileAccess_InteractiveSession) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *FileAccess_InteractiveSession) GetConfidence() string {
+	if x != nil {
+		return x.Confidence
+	}
+	return ""
+}
+
+func (x *FileAccess_InteractiveSession) GetMatchBasis() string {
+	if x != nil {
+		return x.MatchBasis
+	}
+	return ""
+}
+
 type FileAccess_FileMetadata struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Uid      uint32                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
@@ -379,7 +472,7 @@ type FileAccess_FileMetadata struct {
 
 func (x *FileAccess_FileMetadata) Reset() {
 	*x = FileAccess_FileMetadata{}
-	mi := &file_storage_file_access_proto_msgTypes[2]
+	mi := &file_storage_file_access_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +484,7 @@ func (x *FileAccess_FileMetadata) String() string {
 func (*FileAccess_FileMetadata) ProtoMessage() {}
 
 func (x *FileAccess_FileMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_file_access_proto_msgTypes[2]
+	mi := &file_storage_file_access_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +497,7 @@ func (x *FileAccess_FileMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileAccess_FileMetadata.ProtoReflect.Descriptor instead.
 func (*FileAccess_FileMetadata) Descriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 0}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 1}
 }
 
 func (x *FileAccess_FileMetadata) GetUid() uint32 {
@@ -482,7 +575,7 @@ type FileAccess_File struct {
 
 func (x *FileAccess_File) Reset() {
 	*x = FileAccess_File{}
-	mi := &file_storage_file_access_proto_msgTypes[3]
+	mi := &file_storage_file_access_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -494,7 +587,7 @@ func (x *FileAccess_File) String() string {
 func (*FileAccess_File) ProtoMessage() {}
 
 func (x *FileAccess_File) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_file_access_proto_msgTypes[3]
+	mi := &file_storage_file_access_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -507,7 +600,7 @@ func (x *FileAccess_File) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileAccess_File.ProtoReflect.Descriptor instead.
 func (*FileAccess_File) Descriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 1}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 2}
 }
 
 func (x *FileAccess_File) GetEffectivePath() string {
@@ -547,7 +640,7 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x11ACL_TAG_GROUP_OBJ\x10\x03\x12\x11\n" +
 	"\rACL_TAG_GROUP\x10\x04\x12\x10\n" +
 	"\fACL_TAG_MASK\x10\x05\x12\x11\n" +
-	"\rACL_TAG_OTHER\x10\x06\"\xce\x06\n" +
+	"\rACL_TAG_OTHER\x10\x06\"\x84\t\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
@@ -555,7 +648,18 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a\xf8\x01\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x12W\n" +
+	"\x13interactive_session\x18\a \x01(\v2&.storage.FileAccess.InteractiveSessionR\x12interactiveSession\x1a\xda\x01\n" +
+	"\x12InteractiveSession\x12%\n" +
+	"\x0eeffective_user\x18\x01 \x01(\tR\reffectiveUser\x12-\n" +
+	"\x12authenticated_user\x18\x02 \x01(\tR\x11authenticatedUser\x12\x19\n" +
+	"\baudit_id\x18\x03 \x01(\tR\aauditId\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x05 \x01(\tR\n" +
+	"confidence\x12\x1f\n" +
+	"\vmatch_basis\x18\x06 \x01(\tR\n" +
+	"matchBasis\x1a\xf8\x01\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
@@ -605,33 +709,35 @@ func file_storage_file_access_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_file_access_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_storage_file_access_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_storage_file_access_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storage_file_access_proto_goTypes = []any{
-	(AclType)(0),                    // 0: storage.AclType
-	(AclEntry_AclTag)(0),            // 1: storage.AclEntry.AclTag
-	(FileAccess_Operation)(0),       // 2: storage.FileAccess.Operation
-	(*AclEntry)(nil),                // 3: storage.AclEntry
-	(*FileAccess)(nil),              // 4: storage.FileAccess
-	(*FileAccess_FileMetadata)(nil), // 5: storage.FileAccess.FileMetadata
-	(*FileAccess_File)(nil),         // 6: storage.FileAccess.File
-	(*timestamppb.Timestamp)(nil),   // 7: google.protobuf.Timestamp
-	(*ProcessIndicator)(nil),        // 8: storage.ProcessIndicator
+	(AclType)(0),                          // 0: storage.AclType
+	(AclEntry_AclTag)(0),                  // 1: storage.AclEntry.AclTag
+	(FileAccess_Operation)(0),             // 2: storage.FileAccess.Operation
+	(*AclEntry)(nil),                      // 3: storage.AclEntry
+	(*FileAccess)(nil),                    // 4: storage.FileAccess
+	(*FileAccess_InteractiveSession)(nil), // 5: storage.FileAccess.InteractiveSession
+	(*FileAccess_FileMetadata)(nil),       // 6: storage.FileAccess.FileMetadata
+	(*FileAccess_File)(nil),               // 7: storage.FileAccess.File
+	(*timestamppb.Timestamp)(nil),         // 8: google.protobuf.Timestamp
+	(*ProcessIndicator)(nil),              // 9: storage.ProcessIndicator
 }
 var file_storage_file_access_proto_depIdxs = []int32{
-	1, // 0: storage.AclEntry.tag:type_name -> storage.AclEntry.AclTag
-	6, // 1: storage.FileAccess.file:type_name -> storage.FileAccess.File
-	2, // 2: storage.FileAccess.operation:type_name -> storage.FileAccess.Operation
-	6, // 3: storage.FileAccess.moved:type_name -> storage.FileAccess.File
-	7, // 4: storage.FileAccess.timestamp:type_name -> google.protobuf.Timestamp
-	8, // 5: storage.FileAccess.process:type_name -> storage.ProcessIndicator
-	0, // 6: storage.FileAccess.FileMetadata.acl_type:type_name -> storage.AclType
-	3, // 7: storage.FileAccess.FileMetadata.acl_entries:type_name -> storage.AclEntry
-	5, // 8: storage.FileAccess.File.meta:type_name -> storage.FileAccess.FileMetadata
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: storage.AclEntry.tag:type_name -> storage.AclEntry.AclTag
+	7,  // 1: storage.FileAccess.file:type_name -> storage.FileAccess.File
+	2,  // 2: storage.FileAccess.operation:type_name -> storage.FileAccess.Operation
+	7,  // 3: storage.FileAccess.moved:type_name -> storage.FileAccess.File
+	8,  // 4: storage.FileAccess.timestamp:type_name -> google.protobuf.Timestamp
+	9,  // 5: storage.FileAccess.process:type_name -> storage.ProcessIndicator
+	5,  // 6: storage.FileAccess.interactive_session:type_name -> storage.FileAccess.InteractiveSession
+	0,  // 7: storage.FileAccess.FileMetadata.acl_type:type_name -> storage.AclType
+	3,  // 8: storage.FileAccess.FileMetadata.acl_entries:type_name -> storage.AclEntry
+	6,  // 9: storage.FileAccess.File.meta:type_name -> storage.FileAccess.FileMetadata
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_storage_file_access_proto_init() }
@@ -646,7 +752,7 @@ func file_storage_file_access_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_file_access_proto_rawDesc), len(file_storage_file_access_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

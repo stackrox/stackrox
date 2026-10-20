@@ -7,6 +7,16 @@ export type FileAccess = {
     timestamp: string; // ISO 8601 date string
     process: ProcessIndicator;
     hostname: string; // The hostname/name of the node where the file activity occurred
+    interactiveSession: InteractiveSession | null;
+};
+
+export type InteractiveSession = {
+    effectiveUser: string;
+    authenticatedUser: string;
+    auditId: string;
+    type: string;
+    confidence: string;
+    matchBasis: string;
 };
 
 export type File = {

@@ -229,6 +229,16 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidSta
 	}
 }
 
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderSendsInteractiveAuditLifecycleEvents() {
+	reader := &auditLogReaderImpl{}
+	for _, resource := range []string{"exec", "attach"} {
+		for _, stage := range []string{"ResponseStarted", "ResponseComplete", "Panic"} {
+			s.True(reader.shouldSendEvent(&auditEvent{ObjectRef: objectRef{Resource: "pods", Subresource: resource}, Stage: stage, Verb: "create"}))
+		}
+		s.False(reader.shouldSendEvent(&auditEvent{ObjectRef: objectRef{Resource: "pods", Subresource: resource}, Stage: "RequestReceived", Verb: "create"}))
+	}
+}
+
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNotInDenyList() {
 	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filter_verb.log")

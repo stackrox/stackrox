@@ -100,3 +100,12 @@ func TestAuditLogPipeline(t *testing.T) {
 		}
 	}
 }
+
+func TestAuditEventsForDetection(t *testing.T) {
+	events := newTestAuditEvents()
+	events.Events = append(events.Events, &storage.KubernetesEvent{Id: "started", AuditStage: "ResponseStarted"})
+
+	filtered := auditEventsForDetection(events)
+	require.Len(t, filtered.GetEvents(), 1)
+	assert.Equal(t, "event-1", filtered.GetEvents()[0].GetId())
+}

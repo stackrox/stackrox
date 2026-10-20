@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/events"
+	"github.com/stackrox/rox/sensor/common/interactivesessions"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -54,12 +55,13 @@ type Pipeline struct {
 	activityMutex         sync.Mutex
 
 	pubSubDispatcher common.PubSubDispatcher
+	sessionTracker   *interactivesessions.Tracker
 
 	wg     sync.WaitGroup
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity, pubSubDispatcher common.PubSubDispatcher, sessionTracker *interactivesessions.Tracker) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
@@ -67,6 +69,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 		activityChan:          activityChan,
 		clusterEntities:       clusterEntities,
 		pubSubDispatcher:      pubSubDispatcher,
+		sessionTracker:        sessionTracker,
 		stopper:               concurrency.NewStopper(),
 		msgCtx:                msgCtx,
 		bufferedActivity:      make(map[string]*bufferedActivityEntry),
@@ -120,6 +123,11 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 		Process:   indicator,
 		Hostname:  fs.GetHostname(),
 		Timestamp: fs.GetTimestamp(),
+	}
+	if p.sessionTracker != nil {
+		if event, found := p.sessionTracker.Match(indicator.GetNamespace(), indicator.GetPodId(), indicator.GetContainerName()); found {
+			access.InteractiveSession = interactiveSession(event)
+		}
 	}
 
 	switch fs.GetFile().(type) {
@@ -215,6 +223,25 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 	}
 
 	return access
+}
+
+func interactiveSession(event *storage.KubernetesEvent) *storage.FileAccess_InteractiveSession {
+	effectiveUser := event.GetUser().GetUsername()
+	if event.GetImpersonatedUser().GetUsername() != "" {
+		effectiveUser = event.GetImpersonatedUser().GetUsername()
+	}
+	sessionType := "exec"
+	if event.GetObject().GetResource() == storage.KubernetesEvent_Object_PODS_ATTACH {
+		sessionType = "attach"
+	}
+	return &storage.FileAccess_InteractiveSession{
+		EffectiveUser:     effectiveUser,
+		AuthenticatedUser: event.GetUser().GetUsername(),
+		AuditId:           event.GetId(),
+		Type:              sessionType,
+		Confidence:        "high",
+		MatchBasis:        "namespace/pod/container",
+	}
 }
 
 func (p *Pipeline) buildIndicator(fs *sensorAPI.FileActivity) *storage.ProcessIndicator {

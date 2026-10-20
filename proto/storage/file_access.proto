@@ -44,6 +44,14 @@ enum AclType {
 // but will only be stored embedded in an Alert. As a result, it
 // does not currently define a primary key.
 message FileAccess {
+  message InteractiveSession {
+    string effective_user = 1;
+    string authenticated_user = 2;
+    string audit_id = 3;
+    string type = 4;
+    string confidence = 5;
+    string match_basis = 6;
+  }
   message FileMetadata {
     uint32 uid = 1;
     uint32 gid = 2;
@@ -100,4 +108,7 @@ message FileAccess {
 
   // The hostname/name of the node where the file activity occurred
   string hostname = 6;
+
+  // Kubernetes exec or attach session unambiguously associated with this activity.
+  InteractiveSession interactive_session = 7;
 }

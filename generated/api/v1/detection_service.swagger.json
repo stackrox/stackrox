@@ -350,6 +350,29 @@
         }
       }
     },
+    "FileAccessInteractiveSession": {
+      "type": "object",
+      "properties": {
+        "effectiveUser": {
+          "type": "string"
+        },
+        "authenticatedUser": {
+          "type": "string"
+        },
+        "auditId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string"
+        },
+        "matchBasis": {
+          "type": "string"
+        }
+      }
+    },
     "FileAccessOperation": {
       "type": "string",
       "enum": [
@@ -1166,6 +1189,10 @@
         "hostname": {
           "type": "string",
           "title": "The hostname/name of the node where the file activity occurred"
+        },
+        "interactiveSession": {
+          "$ref": "#/definitions/FileAccessInteractiveSession",
+          "description": "Kubernetes exec or attach session unambiguously associated with this activity."
         }
       },
       "description": "FileAccess contains fields related to arbitrary file accesses\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."

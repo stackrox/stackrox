@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
+	"github.com/stackrox/rox/sensor/common/interactivesessions"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
 
@@ -36,7 +37,7 @@ type Service interface {
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
-func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress, pubSubDispatcher common.PubSubDispatcher) Service {
+func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress, pubSubDispatcher common.PubSubDispatcher, sessionTracker *interactivesessions.Tracker) Service {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &serviceImpl{
@@ -48,6 +49,7 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 		auditEvents:               auditEventsInput,
 		auditLogCollectionManager: auditLogCollectionManager,
 		pubSubDispatcher:          pubSubDispatcher,
+		sessionTracker:            sessionTracker,
 		connectionManager:         newConnectionManager(),
 		offlineMode:               offlineMode,
 		stopper:                   set.NewSet[concurrency.Stopper](),

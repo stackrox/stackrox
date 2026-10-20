@@ -163,7 +163,7 @@ func (KubernetesEvent_Object_Resource) EnumDescriptor() ([]byte, []int) {
 	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 0, 0}
 }
 
-// Next Tag: 22
+// Next Tag: 23
 type KubernetesEvent struct {
 	state     protoimpl.MessageState  `protogen:"open.v1"`
 	Id        string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -187,6 +187,7 @@ type KubernetesEvent struct {
 	UserAgent        string                          `protobuf:"bytes,18,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty" policy:"User Agent"`                      // @gotags: policy:"User Agent"
 	ResponseStatus   *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus,proto3" json:"response_status,omitempty"`
 	RequestUri       string                          `protobuf:"bytes,20,opt,name=request_uri,json=requestUri,proto3" json:"request_uri,omitempty"` // Field will not be used for policy detection
+	AuditStage       string                          `protobuf:"bytes,22,opt,name=audit_stage,json=auditStage,proto3" json:"audit_stage,omitempty"` // Kubernetes audit lifecycle stage. Field will not be used for policy detection.
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -321,6 +322,13 @@ func (x *KubernetesEvent) GetResponseStatus() *KubernetesEvent_ResponseStatus {
 func (x *KubernetesEvent) GetRequestUri() string {
 	if x != nil {
 		return x.RequestUri
+	}
+	return ""
+}
+
+func (x *KubernetesEvent) GetAuditStage() string {
+	if x != nil {
+		return x.AuditStage
 	}
 	return ""
 }
@@ -663,7 +671,7 @@ var File_storage_kube_event_proto protoreflect.FileDescriptor
 
 const file_storage_kube_event_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\f\n" +
+	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd6\f\n" +
 	"\x0fKubernetesEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x128\n" +
@@ -680,7 +688,9 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"user_agent\x18\x12 \x01(\tR\tuserAgent\x12P\n" +
 	"\x0fresponse_status\x18\x13 \x01(\v2'.storage.KubernetesEvent.ResponseStatusR\x0eresponseStatus\x12\x1f\n" +
 	"\vrequest_uri\x18\x14 \x01(\tR\n" +
-	"requestUri\x1a\x88\x03\n" +
+	"requestUri\x12\x1f\n" +
+	"\vaudit_stage\x18\x16 \x01(\tR\n" +
+	"auditStage\x1a\x88\x03\n" +
 	"\x06Object\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
 	"\bresource\x18\x02 \x01(\x0e2(.storage.KubernetesEvent.Object.ResourceR\bresource\x12\x1d\n" +

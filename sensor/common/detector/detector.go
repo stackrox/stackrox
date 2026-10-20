@@ -585,6 +585,10 @@ func (d *detectorImpl) handleScanResultEvent(event pubsub.Event) error {
 }
 
 func (d *detectorImpl) detectAndAlertForAuditLog(auditEvents *sensor.AuditEvents) {
+	auditEvents = auditEventsForDetection(auditEvents)
+	if len(auditEvents.GetEvents()) == 0 {
+		return
+	}
 	alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
@@ -626,6 +630,20 @@ func (d *detectorImpl) detectAndAlertForAuditLog(auditEvents *sensor.AuditEvents
 	case <-d.serializerStopper.Flow().StopRequested():
 	case d.output <- expiringMessage:
 	}
+}
+
+func auditEventsForDetection(auditEvents *sensor.AuditEvents) *sensor.AuditEvents {
+	filtered := make([]*storage.KubernetesEvent, 0, len(auditEvents.GetEvents()))
+	for _, event := range auditEvents.GetEvents() {
+		if event.GetAuditStage() == "ResponseStarted" {
+			continue
+		}
+		filtered = append(filtered, event)
+	}
+	if len(filtered) == len(auditEvents.GetEvents()) {
+		return auditEvents
+	}
+	return &sensor.AuditEvents{Events: filtered}
 }
 
 func (d *detectorImpl) runAuditLogEventDetector() {

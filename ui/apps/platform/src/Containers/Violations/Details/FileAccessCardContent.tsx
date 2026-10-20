@@ -96,7 +96,7 @@ type FileAccessCardContentProps = {
 };
 
 function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElement {
-    const { file, operation, moved, timestamp, process, hostname } = event;
+    const { file, operation, moved, timestamp, process, hostname, interactiveSession } = event;
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -132,6 +132,18 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                 )}
                 {Number.isInteger(process?.signal?.uid) && (
                     <DescriptionListItem term="Process UID" desc={process.signal.uid} />
+                )}
+                {interactiveSession && (
+                    <DescriptionListItem term="Kubernetes actor" desc={interactiveSession.effectiveUser} />
+                )}
+                {interactiveSession && (
+                    <DescriptionListItem term="Interactive session" desc={interactiveSession.type} />
+                )}
+                {interactiveSession && (
+                    <DescriptionListItem
+                        term="Attribution"
+                        desc={`${interactiveSession.confidence} confidence (${interactiveSession.matchBasis})`}
+                    />
                 )}
             </DescriptionList>
             {file.meta && <Title headingLevel="h4">File metadata</Title>}
