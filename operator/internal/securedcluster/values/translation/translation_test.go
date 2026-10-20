@@ -1090,6 +1090,24 @@ func TestTranslatePartialMatch(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"central custom metrics enabled without general monitoring setting": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Custom: &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.enabled":        true,
+				"monitoring.openshift.custom.enabled": true,
+			},
+		},
 		"central custom metrics enabled": {
 			args: args{
 				sc: platform.SecuredCluster{

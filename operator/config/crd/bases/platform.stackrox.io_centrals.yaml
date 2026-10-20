@@ -2190,8 +2190,6 @@ spec:
                       enabled:
                         description: 'The default is: true.'
                         type: boolean
-                    required:
-                    - enabled
                     type: object
                 type: object
               network:
