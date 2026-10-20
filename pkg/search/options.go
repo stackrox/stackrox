@@ -48,6 +48,7 @@ var (
 	PolicyName         = newFieldLabel("Policy")
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")
+	SkipImageLayers    = newFieldLabel("Skip Image Layers")
 
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
 	Description    = newFieldLabel("Description")

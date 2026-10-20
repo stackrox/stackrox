@@ -152,6 +152,9 @@ function ViolationDetailsPage(): ReactElement {
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
                                 lifecycleStage={alert.lifecycleStage}
+                                evaluationFilter={policy.evaluationFilter}
+                                lifecycleStages={policy.lifecycleStages}
+                                eventSource={policy.eventSource}
                             />
                         </PageSection>
                     </Tab>

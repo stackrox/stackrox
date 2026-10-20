@@ -1380,6 +1380,9 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 		lifecycleStages    []storage.LifecycleStage
 		eventSource        storage.EventSource
 		skipContainerTypes []storage.SkipContainerType
+		skipImageLayers    storage.SkipImageLayers
+		setSkipImageLayers bool
+		enableFeature      bool
 		expectError        bool
 	}{
 		"build-only with skip init is rejected": {
@@ -1419,17 +1422,82 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
 			skipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 		},
+		// Image layer filtering tests
+		"SKIP_NONE is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_NONE,
+			setSkipImageLayers: true,
+		},
+		"SKIP_BASE at BUILD with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_BASE at DEPLOY with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_BASE at RUNTIME with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_APP at BUILD with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_APP,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_APP at DEPLOY with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_APP,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_APP at RUNTIME with feature enabled is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipImageLayers:    storage.SkipImageLayers_SKIP_APP,
+			setSkipImageLayers: true,
+			enableFeature:      true,
+		},
+		"SKIP_BASE with feature disabled is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+			setSkipImageLayers: true,
+			enableFeature:      false,
+			expectError:        true,
+		},
+		"unknown image layer filter value is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipImageLayers:    storage.SkipImageLayers(999),
+			setSkipImageLayers: true,
+			enableFeature:      true,
+			expectError:        true,
+		},
 	}
 
 	for name, tc := range tests {
 		s.Run(name, func() {
+			if tc.enableFeature {
+				s.T().Setenv(features.ImageLayerFilter.EnvVar(), "true")
+			}
+
 			policy := &storage.Policy{
 				LifecycleStages: tc.lifecycleStages,
 				EventSource:     tc.eventSource,
 			}
-			if tc.skipContainerTypes != nil {
+			if tc.skipContainerTypes != nil || tc.setSkipImageLayers {
 				policy.EvaluationFilter = &storage.EvaluationFilter{
 					SkipContainerTypes: tc.skipContainerTypes,
+				}
+				if tc.setSkipImageLayers {
+					policy.EvaluationFilter.SkipImageLayers = tc.skipImageLayers
 				}
 			}
 
