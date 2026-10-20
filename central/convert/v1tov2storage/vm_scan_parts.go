@@ -157,6 +157,10 @@ func convertComponentNotes(notes []storage.EmbeddedVirtualMachineScanComponent_N
 		switch n {
 		case storage.EmbeddedVirtualMachineScanComponent_UNSCANNED:
 			out = append(out, storage.VirtualMachineComponentV2_UNSCANNED)
+		case storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING:
+			out = append(out, storage.VirtualMachineComponentV2_CPE_MISSING)
+		case storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN:
+			out = append(out, storage.VirtualMachineComponentV2_REPO_UNKNOWN)
 		default:
 			out = append(out, storage.VirtualMachineComponentV2_UNSPECIFIED)
 		}
