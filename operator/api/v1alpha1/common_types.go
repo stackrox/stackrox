@@ -367,12 +367,30 @@ type OpenShiftMonitoring struct {
 	// The default is: true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled *bool `json:"enabled"`
+
+	// Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+	// Independent of openshift.enabled for SecuredCluster. The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Custom *OpenShiftCustomMonitoring `json:"custom,omitempty"`
+}
+
+// OpenShiftCustomMonitoring configures scraping Central's custom metrics.
+type OpenShiftCustomMonitoring struct {
+	// The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // IsOpenShiftMonitoringDisabled returns true if OpenShiftMonitoring is disabled.
 // This function is nil safe.
 func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
 	return m != nil && m.OpenShiftMonitoring != nil && m.OpenShiftMonitoring.Enabled != nil && !*m.OpenShiftMonitoring.Enabled
+}
+
+// IsOpenShiftCustomMonitoringEnabled reports whether Central custom metrics scraping is enabled.
+func (m *GlobalMonitoring) IsOpenShiftCustomMonitoringEnabled() bool {
+	return m != nil && m.OpenShiftMonitoring != nil && m.OpenShiftMonitoring.Custom != nil &&
+		m.OpenShiftMonitoring.Custom.Enabled != nil && *m.OpenShiftMonitoring.Custom.Enabled
 }
 
 // Set this to Disabled to prevent the operator from creating NetworkPolicy objects.

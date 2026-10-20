@@ -105,11 +105,6 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 
-	// Allows OpenShift Prometheus to scrape Central custom metrics through this Sensor's proxy.
-	// Independent of monitoring.openshift.enabled. The default is: false.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=19,displayName="Central Custom Metrics Scraping",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	CentralCustomMetrics *bool `json:"centralCustomMetrics,omitempty"`
-
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride *string `json:"registryOverride,omitempty"`

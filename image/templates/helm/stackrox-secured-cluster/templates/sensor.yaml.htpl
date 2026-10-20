@@ -174,7 +174,7 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
-          {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
+          {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
           - containerPort: 9444
             name: proxy-https
           {{- end }}
@@ -247,7 +247,7 @@ spec:
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
         {{- end }}
-        {{- if ._rox.monitoring.openshift.centralCustomMetrics.enabled }}
+        {{- if ._rox.monitoring.openshift.custom.enabled }}
         - name: ROX_SECURED_CLUSTER_METRICS_ENABLED
           value: "true"
         {{- end }}
@@ -293,7 +293,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
-        {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
+        {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
         - name: proxy-tls-volume
           mountPath: /run/secrets/stackrox.io/proxy-tls/
           readOnly: true
@@ -376,7 +376,7 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
-      {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
+      {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
       - name: proxy-tls-volume
         secret:
           secretName: sensor-proxy-tls
@@ -417,7 +417,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
+{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -425,6 +425,7 @@ metadata:
   namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
+    stackrox.io/sensor-proxy: "true"
   annotations:
     {{- $annotations := dict -}}
     {{- $_ := set $annotations "service.beta.openshift.io/serving-cert-secret-name" "sensor-proxy-tls" -}}

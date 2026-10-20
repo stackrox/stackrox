@@ -636,6 +636,18 @@ spec:
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
           - description: |-
+              Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+              Independent of openshift.enabled for SecuredCluster. The default is: false.
+            displayName: Custom
+            path: monitoring.openshift.custom
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: 'The default is: false.'
+            displayName: Enabled
+            path: monitoring.openshift.custom.enabled
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          - description: |-
               To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
               The default is: Enabled.
             displayName: Network Policies
@@ -1079,13 +1091,6 @@ spec:
             displayName: Virtual Machines Settings
             path: virtualMachines
           - description: |-
-              Allows OpenShift Prometheus to scrape Central custom metrics through this Sensor's proxy.
-              Independent of monitoring.openshift.enabled. The default is: false.
-            displayName: Central Custom Metrics Scraping
-            path: centralCustomMetrics
-            x-descriptors:
-              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-          - description: |-
               Deprecated field. This field will be removed in a future release.
               Miscellaneous settings.
             displayName: Miscellaneous
@@ -1226,6 +1231,18 @@ spec:
           - description: 'The default is: true.'
             displayName: Enabled
             path: monitoring.openshift.enabled
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          - description: |-
+              Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+              Independent of openshift.enabled for SecuredCluster. The default is: false.
+            displayName: Custom
+            path: monitoring.openshift.custom
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: 'The default is: false.'
+            displayName: Enabled
+            path: monitoring.openshift.custom.enabled
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
           - description: |-
