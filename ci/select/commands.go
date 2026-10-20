@@ -28,7 +28,7 @@ func newCommand(code *int) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "ci-select",
 		Short: "Select and gate StackRox CI jobs for a pull request",
-		Long: `Select CI jobs from changed paths, pull-request labels, TOML rules, and job defaults.
+		Long: `Select CI jobs from changed paths, pull-request labels, YAML rules, and job defaults.
 
 Use resolve, validate, gha, and prow with local input files to inspect a plan.
 The *-ci commands read the CI environment and integrate with GitHub Actions or Prow.
@@ -130,7 +130,7 @@ Use --log-out to save the explanation. An empty files list means no files change
 		cmd.Example = "  ci-select resolve --files-file files.txt --labels-file labels.txt --decision-out decision.txt --log-out resolver.log"
 	case "validate ":
 		cmd.Short = "Validate the rules, job defaults, and dependency graph"
-		cmd.Example = "  ci-select validate\n  ci-select validate --rules ci/select/testdata/rules.toml --defaults ci/select/testdata/defaults"
+		cmd.Example = "  ci-select validate\n  ci-select validate --rules ci/select/testdata/rules.yaml --defaults ci/select/testdata/defaults"
 	case "gha print":
 		cmd.Short = "Print the decision and its explanation using local input files"
 		cmd.Example = "  ci-select gha print --files-file files.txt --labels-file labels.txt"
@@ -142,7 +142,7 @@ If the diff is unavailable, use --files-unknown to fall back to job defaults.`
 		cmd.Example = "  ci-select " + command + " gate --job go --files-file files.txt --labels-file labels.txt --enforce"
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&o.rules, "rules", "ci/test-domains.toml", "Path to the TOML selection rules")
+	flags.StringVar(&o.rules, "rules", "ci/test-domains.yaml", "Path to the YAML selection rules")
 	flags.StringVar(&o.defaults, "defaults", "ci/decision-defaults", "Path to the per-job run/skip defaults")
 	if command != "validate" {
 		flags.StringVar(&o.files, "files-file", "", "Changed paths file, one path per line")

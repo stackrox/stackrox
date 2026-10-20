@@ -63,7 +63,7 @@ func TestDispatchPlan(t *testing.T) {
 }
 
 func TestDispatchInventory(t *testing.T) {
-	m, err := loadMapping("../test-domains.toml")
+	m, err := loadMapping("../test-domains.yaml")
 	require.NoError(t, err)
 	text, err := os.ReadFile("../decision-defaults")
 	require.NoError(t, err)
@@ -114,7 +114,7 @@ func TestGHAImageDependencies(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults",
 				[]string{"README.md"}, test.labels, false, metadata{})
 			require.NoError(t, err)
 			assert.Equal(t, test.build, resolved.jobs["build-images"])

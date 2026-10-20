@@ -7,7 +7,7 @@
         "central/policy/service.go"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults-go-postgres-skip"
     },
     "expect": {
@@ -23,7 +23,7 @@
         "central/policy/service.go"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -38,7 +38,7 @@
         "README.md"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -54,7 +54,7 @@
         "README.md"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -69,7 +69,7 @@
         "notes/todo.txt"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -86,7 +86,7 @@
       "labels": [
         "ci-run-all-tests"
       ],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -103,7 +103,7 @@
       "labels": [
         "ci-run-all-tests"
       ],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -122,7 +122,7 @@
       "labels": [
         "ci-run-all-tests"
       ],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -135,7 +135,7 @@
     "input": {
       "files": [],
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -148,7 +148,7 @@
     "input": {
       "files": null,
       "labels": [],
-      "rules": "ci/select/testdata/rules.toml",
+      "rules": "ci/select/testdata/rules.yaml",
       "defaults": "ci/select/testdata/defaults"
     },
     "expect": {
@@ -161,7 +161,7 @@
     "input": {
       "files": [],
       "labels": [],
-      "rules": "\n            version = 1\n            jobs = [\"suite\", \"images\"]\n            [[rules]]\n            name = \"suite\"\n            when = \"always\"\n            run = [\"suite\"]\n            [[rules]]\n            name = \"hold-images\"\n            when = \"always\"\n            skip = [\"images\"]\n            [[rules]]\n            name = \"remaining\"\n            when = \"remaining\"\n            default = [\"*\"]\n            [requires]\n            suite = [\"images\"]\n        ",
+      "rules": "\nversion: 1\njobs:\n  - suite\n  - images\n\nrules:\n  - name: suite\n    when: always\n    run:\n      - suite\n  - name: hold-images\n    when: always\n    skip:\n      - images\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\nrequires:\n  suite:\n    - images\n\n",
       "defaults": "\n            suite skip\n            images skip\n        "
     },
     "expect": {
@@ -172,7 +172,7 @@
   {
     "name": "Rules where left and right require each other should be rejected",
     "input": {
-      "rules": "\n            version = 1\n            jobs = [\"left\", \"right\"]\n            [[rules]]\n            name = \"run-left\"\n            when = \"always\"\n            run = [\"left\"]\n            [[rules]]\n            name = \"remaining\"\n            when = \"remaining\"\n            default = [\"*\"]\n            [requires]\n            left = [\"right\"]\n            right = [\"left\"]\n        "
+      "rules": "\nversion: 1\njobs:\n  - left\n  - right\n\nrules:\n  - name: run-left\n    when: always\n    run:\n      - left\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\nrequires:\n  left:\n    - right\n  right:\n    - left\n\n"
     },
     "expect": {
       "error": "requires cycle at left"
@@ -186,7 +186,7 @@
         "central/policy/service.go"
       ],
       "labels": [],
-      "rules": "\n            version = 1\n            jobs = [\"go-postgres\", \"sensor-integration-tests\"]\n            [[rules]]\n            name = \"sensor\"\n            when = \"any-file-matches\"\n            paths = ['^sensor/']\n            run = [\"sensor-integration-tests\"]\n            skip = [\"go-postgres\"]\n            [[rules]]\n            name = \"central-policy\"\n            when = \"any-file-matches\"\n            paths = ['^central/policy/']\n            run = [\"go-postgres\"]\n            skip = [\"sensor-integration-tests\"]\n            [[rules]]\n            name = \"remaining\"\n            when = \"remaining\"\n            default = [\"*\"]\n        ",
+      "rules": "\nversion: 1\njobs:\n  - go-postgres\n  - sensor-integration-tests\n\nrules:\n  - name: sensor\n    when: any-file-matches\n    paths:\n      - '^sensor/'\n    run:\n      - sensor-integration-tests\n    skip:\n      - go-postgres\n  - name: central-policy\n    when: any-file-matches\n    paths:\n      - '^central/policy/'\n    run:\n      - go-postgres\n    skip:\n      - sensor-integration-tests\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\n\n",
       "defaults": "\n            go-postgres run\n            sensor-integration-tests run\n        "
     },
     "expect": {
@@ -202,7 +202,7 @@
         "central/policy/service.go"
       ],
       "labels": [],
-      "rules": "\n            version = 1\n            jobs = [\"go-postgres\", \"sensor-integration-tests\"]\n            [[rules]]\n            name = \"central-policy\"\n            when = \"any-file-matches\"\n            paths = ['^central/policy/']\n            run = [\"go-postgres\"]\n            skip = [\"sensor-integration-tests\"]\n            [[rules]]\n            name = \"sensor\"\n            when = \"any-file-matches\"\n            paths = ['^sensor/']\n            run = [\"sensor-integration-tests\"]\n            skip = [\"go-postgres\"]\n            [[rules]]\n            name = \"remaining\"\n            when = \"remaining\"\n            default = [\"*\"]\n        ",
+      "rules": "\nversion: 1\njobs:\n  - go-postgres\n  - sensor-integration-tests\n\nrules:\n  - name: central-policy\n    when: any-file-matches\n    paths:\n      - '^central/policy/'\n    run:\n      - go-postgres\n    skip:\n      - sensor-integration-tests\n  - name: sensor\n    when: any-file-matches\n    paths:\n      - '^sensor/'\n    run:\n      - sensor-integration-tests\n    skip:\n      - go-postgres\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\n\n",
       "defaults": "\n            go-postgres run\n            sensor-integration-tests run\n        "
     },
     "expect": {
@@ -215,7 +215,7 @@
     "input": {
       "files": [],
       "labels": [],
-      "rules": "ci/select/testdata/corners.toml",
+      "rules": "ci/select/testdata/corners.yaml",
       "defaults": "ci/select/testdata/corners-defaults"
     },
     "expect": {
@@ -230,7 +230,7 @@
         "cmd/main.go"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/corners.toml",
+      "rules": "ci/select/testdata/corners.yaml",
       "defaults": "ci/select/testdata/corners-defaults"
     },
     "expect": {
@@ -249,7 +249,7 @@
         "notes/b"
       ],
       "labels": [],
-      "rules": "ci/select/testdata/corners.toml",
+      "rules": "ci/select/testdata/corners.yaml",
       "defaults": "ci/select/testdata/corners-defaults"
     },
     "expect": {
@@ -266,7 +266,7 @@
       "labels": [
         "ci-suite"
       ],
-      "rules": "ci/select/testdata/corners.toml",
+      "rules": "ci/select/testdata/corners.yaml",
       "defaults": "ci/select/testdata/corners-defaults"
     },
     "expect": {

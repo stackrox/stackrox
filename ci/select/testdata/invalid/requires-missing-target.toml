@@ -1,8 +1,0 @@
-version = 1
-jobs = ["unit"]
-[[rules]]
-name = "rest"
-when = "remaining"
-skip = ["*"]
-[requires]
-unit = ["missing"]

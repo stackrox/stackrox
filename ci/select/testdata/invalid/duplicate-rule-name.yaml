@@ -1,0 +1,13 @@
+version: 1
+jobs:
+  - unit
+
+rules:
+  - name: same
+    when: always
+    run:
+      - unit
+  - name: same
+    when: remaining
+    skip:
+      - '*'

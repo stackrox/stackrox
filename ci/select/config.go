@@ -1,43 +1,88 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
+	"go.yaml.in/yaml/v3"
 )
 
 type rule struct {
-	Name     string   `toml:"name"`
-	When     string   `toml:"when"`
-	Paths    []string `toml:"paths"`
-	Label    string   `toml:"label"`
-	Run      []string `toml:"run"`
-	Skip     []string `toml:"skip"`
-	Default  []string `toml:"default"`
+	Name     string   `json:"name"`
+	When     string   `json:"when"`
+	Paths    []string `json:"paths"`
+	Label    string   `json:"label"`
+	Run      []string `json:"run"`
+	Skip     []string `json:"skip"`
+	Default  []string `json:"default"`
 	patterns []*regexp.Regexp
 }
 
 type mapping struct {
-	Version  int                 `toml:"version"`
-	Jobs     []string            `toml:"jobs"`
-	Rules    []rule              `toml:"rules"`
-	Requires map[string][]string `toml:"requires"`
+	Version  int                 `json:"version"`
+	Jobs     []string            `json:"jobs"`
+	Rules    []rule              `json:"rules"`
+	Requires map[string][]string `json:"requires"`
 }
 
 func loadMapping(path string) (mapping, error) {
 	var result mapping
-	meta, err := toml.DecodeFile(path, &result)
+	text, err := os.ReadFile(path)
 	if err != nil {
-		return result, errors.Wrap(err, "read TOML rules")
+		return result, errors.Wrap(err, "read YAML rules")
 	}
-	if meta.IsDefined("requires") && meta.Type("requires") != "Hash" {
-		return result, errors.New("requires must be a table")
+	var document map[string]any
+	decoder := yaml.NewDecoder(bytes.NewReader(text))
+	if err := decoder.Decode(&document); err != nil {
+		return result, errors.Wrap(err, "read YAML rules")
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		if err != nil {
+			return result, errors.Wrap(err, "read YAML rules")
+		}
+		return result, errors.New("rules must contain a single YAML document")
+	}
+	if err := checkYAMLValues(document); err != nil {
+		return result, err
+	}
+	// JSON decoding enforces scalar types; YAML decoding into strings also
+	// accepts numbers and booleans.
+	text, err = json.Marshal(document)
+	if err != nil {
+		return result, errors.Wrap(err, "read YAML rules")
+	}
+	if err := json.Unmarshal(text, &result); err != nil {
+		return result, errors.Wrap(err, "read YAML rules")
 	}
 	return result, result.validate()
+}
+
+func checkYAMLValues(value any) error {
+	switch value := value.(type) {
+	case nil:
+		return errors.New("YAML rules must not contain null values")
+	case map[string]any:
+		for _, child := range value {
+			if err := checkYAMLValues(child); err != nil {
+				return err
+			}
+		}
+	case []any:
+		for _, child := range value {
+			if err := checkYAMLValues(child); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (m *mapping) validate() error {

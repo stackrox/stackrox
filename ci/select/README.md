@@ -23,7 +23,7 @@ ci/select/bin/ci-select validate
 
 The build compiles only `ci/select`; it does not build Central, Sensor, or
 roxctl. The executable is ignored by Git. The root module already provides
-the TOML, error-wrapping, and test dependencies. Python, `jq`, and `curl` are
+the YAML, error-wrapping, and test dependencies. Python, `jq`, and `curl` are
 not required by the executable. Git is required to collect CI diffs and
 Prow's head commit timestamp.
 
@@ -45,9 +45,14 @@ ci/select/bin/ci-select resolve \
   --decision-out decision.txt --log-out resolver.log
 ```
 
-The default configuration paths are `ci/test-domains.toml` and
+The default configuration paths are `ci/test-domains.yaml` and
 `ci/decision-defaults`. Override them with `--rules` and `--defaults`.
 Without `--decision-out`, the resolver writes the decision to stdout.
+
+The rules file uses YAML block lists and supports standalone and inline
+`#` comments. Single-quote regular expressions to preserve backslashes, and
+quote `'*'` so YAML treats it as a string rather than an alias.
+Use one YAML document and omit optional fields instead of setting them to null.
 
 The decision lists jobs to run, one per line. An absent job is skipped.
 `# no job runs` represents a valid decision to run nothing; blank text is
@@ -64,7 +69,16 @@ run or skip vote. The final `remaining` rule covers jobs with no earlier
 vote; it must use `*` for exactly one action.
 
 For this PR demonstration, the checked-in `remaining` rule temporarily uses
-`skip = ["*"]`. Jobs run only when an earlier rule selects them or a running
+the following policy:
+
+```yaml
+- name: remaining
+  when: remaining
+  skip:
+    - '*'
+```
+
+Jobs run only when an earlier rule selects them or a running
 job requires them. `ci-run-all-tests` still selects every job. The
 `ci/decision-defaults` file remains the fallback for unreadable diffs or failed
 resolution.
@@ -213,7 +227,7 @@ The Go tests retain the 18 resolver fixture cases and 33 invalid-rule cases
 from the Python prototype. They compare decisions and explanation logs
 (excluding the timestamp) and the complete selected-job set. The fixture
 loaders check counts and unique names so a case cannot disappear silently.
-Rejected-rule tests check the rejection reason; typed TOML decoding errors
+Rejected-rule tests check the rejection reason; typed configuration errors
 must identify the offending field.
 
 Named resolver tests also check the design example, mixed CI/product changes,

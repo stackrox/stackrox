@@ -1,6 +1,0 @@
-version = 1
-jobs = []
-[[rules]]
-name = "rest"
-when = "remaining"
-skip = ["*"]
