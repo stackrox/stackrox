@@ -386,7 +386,16 @@ export_test_environment() {
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
-    ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
+    local _lb_default="lb"
+    # Dual-mode/IPv6-primary OpenShift clusters expose Central via a route:
+    # LoadBalancer exposure there would need a dualstack NLB (classic LBs have
+    # no IPv6 support), which the route avoids entirely.
+    if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+        _lb_default="route"
+    elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+        _lb_default="route"
+    fi
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
