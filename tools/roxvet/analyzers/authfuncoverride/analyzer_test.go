@@ -36,3 +36,12 @@ func TestUserAuthorizerVerifier(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, NewAnalyzer(UserAuthorizerVerifier), "c")
 }
+
+// TestExcludedPkgPaths verifies that packages matching an excluded path prefix are
+// skipped entirely. Package "d" contains a violation that would normally be flagged;
+// excluding it must produce zero diagnostics (the file carries no // want markers, so
+// any unexpected diagnostic would cause the test to fail).
+func TestExcludedPkgPaths(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, NewAnalyzer(UserAuthorizerVerifier, "d"), "d")
+}

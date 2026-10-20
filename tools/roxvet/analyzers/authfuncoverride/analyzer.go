@@ -3,6 +3,7 @@ package authfuncoverride
 import (
 	"go/ast"
 	"go/types"
+	"strings"
 
 	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
@@ -30,8 +31,10 @@ type AuthorizerVerifier func(authorizerExpr ast.Expr, pass *analysis.Pass) bool
 // NewAnalyzer returns an Analyzer that validates AuthFuncOverride methods.
 // verifier is invoked with the authorizer expression and the analysis pass; if nil any
 // authorizer is accepted. Returning false from the verifier causes a diagnostic.
-func NewAnalyzer(verifier AuthorizerVerifier) *analysis.Analyzer {
-	a := &authFuncOverrideAnalyzer{verifier: verifier}
+// excludedPkgPaths lists package path prefixes that are skipped entirely; any package
+// whose path starts with one of these prefixes is not analysed.
+func NewAnalyzer(verifier AuthorizerVerifier, excludedPkgPaths ...string) *analysis.Analyzer {
+	a := &authFuncOverrideAnalyzer{verifier: verifier, excludedPkgPaths: excludedPkgPaths}
 	return &analysis.Analyzer{
 		Name:     "authfuncoverride",
 		Doc:      doc,
@@ -41,12 +44,18 @@ func NewAnalyzer(verifier AuthorizerVerifier) *analysis.Analyzer {
 }
 
 type authFuncOverrideAnalyzer struct {
-	verifier AuthorizerVerifier
+	verifier         AuthorizerVerifier
+	excludedPkgPaths []string
 }
 
 var nodeFilter = []ast.Node{(*ast.FuncDecl)(nil)}
 
 func (a *authFuncOverrideAnalyzer) run(pass *analysis.Pass) (any, error) {
+	for _, excluded := range a.excludedPkgPaths {
+		if strings.HasPrefix(pass.Pkg.Path(), excluded) {
+			return nil, nil
+		}
+	}
 	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	common.FilteredPreorder(insp, common.Not(ast.IsGenerated), nodeFilter, func(n ast.Node) {
 		fn := n.(*ast.FuncDecl)
