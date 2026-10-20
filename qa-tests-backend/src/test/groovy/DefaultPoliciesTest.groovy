@@ -463,11 +463,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
-                // StackRox Scanner reports 100+ CVEs between Low and Critical.
-                // Scanner V4 reports fewer CVEs (~78) and a different minimum
-                // severity (Moderate in this case). Using \\d{2,} and \\w+ to accept both outcomes.
+                // Scanner versions report different counts of distinct CVEs and minimum
+                // severities. Use a regex to accept both outcomes.
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                     " contains \\d{2,} CVEs with severities ranging between " +
+                     " contains \\d{2,} distinct CVEs with severities ranging between " +
                      "\\w+ and \\w+" | []
 
         "Service Configuration"           | 2.0f     |

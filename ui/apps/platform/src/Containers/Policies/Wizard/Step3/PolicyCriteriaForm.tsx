@@ -22,8 +22,6 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
-
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
             const newPolicySection = {
@@ -88,7 +86,6 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
     }
 
     return (
-        // TODO: (vjw, 15-Nov-2023) remove the DndProvider after the PolicyCriteriaModal flag has been made unflagged
         /*
         (dv 2024-05-01) Upgrading to React types 18 causes a type error below
 
@@ -127,17 +124,12 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                     </Flex>
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
-                {!showPolicyCriteriaModal && (
-                    <Flex
-                        className="pf-v6-u-h-100 pf-v6-u-pt-lg"
-                        id="policy-criteria-keys-container"
-                    >
-                        <PolicyCriteriaKeys
-                            keys={filteredDescriptors}
-                            eventSource={values.eventSource}
-                        />
-                    </Flex>
-                )}
+                <Flex className="pf-v6-u-h-100 pf-v6-u-pt-lg" id="policy-criteria-keys-container">
+                    <PolicyCriteriaKeys
+                        keys={filteredDescriptors}
+                        eventSource={values.eventSource}
+                    />
+                </Flex>
             </Flex>
         </DndProvider>
     );

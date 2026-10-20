@@ -91,7 +91,6 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-			WithAggregator(nil).
 			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
 			Build().(*serviceImpl)
 
@@ -137,7 +136,6 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-			WithAggregator(nil).
 			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
 			Build().(*serviceImpl)
 
@@ -190,7 +188,6 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-			WithAggregator(nil).
 			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
 			Build().(*serviceImpl)
 
@@ -233,7 +230,6 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-			WithAggregator(nil).
 			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
 			Build().(*serviceImpl)
 
@@ -269,7 +265,6 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithAggregator(nil).
 		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
 
 	s := builder.Build()
@@ -367,7 +362,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
 		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
@@ -471,7 +465,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
 		WithPolicyCategoryDataStore(categoriesDS)
 
 	service := builder.Build().(*serviceImpl)
@@ -523,8 +516,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
-		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil)
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	service := builder.Build().(*serviceImpl)
@@ -597,7 +589,6 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
 		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)

@@ -13,8 +13,6 @@ const legacyPageLabels = {
 const useCaseLabels = {
     [useCaseTypes.CONFIG_MANAGEMENT]: 'Configuration Management',
     [useCaseTypes.VULN_MANAGEMENT]: 'Vulnerability Management',
-    [useCaseTypes.COMPLIANCE]: 'Compliance',
-    COMPLIANCE: 'Compliance',
     RISK: 'Risk',
     SECRET: 'Secret',
     POLICY: 'Policy',
