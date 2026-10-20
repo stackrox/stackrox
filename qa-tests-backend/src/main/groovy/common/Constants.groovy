@@ -7,7 +7,6 @@ class Constants {
     static final String ORCHESTRATOR_NAMESPACE = "qa"
     static final String STACKROX_NAMESPACE = "stackrox"
     static final boolean SCHEDULES_SUPPORTED = false
-    static final boolean CHECK_CVES_IN_COMPLIANCE = false
     static final boolean RUN_FLAKEY_TESTS = false
     static final String EMAIL_NOTIFER_FROM = "stackrox"
     static final String EMAIL_NOTIFER_SENDER = "${UUID.randomUUID()}@stackrox.com"
