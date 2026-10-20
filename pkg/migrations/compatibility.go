@@ -95,8 +95,8 @@ func CheckUpgradeCompatibility(source MigrationVersion, target string, targetSeq
 			rejection = fmt.Sprintf("Central upgrade blocked: cannot upgrade database from ACS %s to ACS %s. Minimum supported source: ACS %s. First upgrade through an intermediate Operator release, such as ACS %s, and wait for Central to become ready before retrying. Consult support before downgrading an Operator whose Scanner database has already upgraded.", xy, target, minimum.Version, next)
 		}
 	}
-	if rejection == "" || unsafe {
-		return rejection, nil
+	if unsafe {
+		return "", nil
 	}
 	return "", &CompatibilityError{Message: rejection}
 }
