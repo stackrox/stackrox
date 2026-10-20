@@ -13,8 +13,9 @@ os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["USE_ROXIE_DEPLOY"] = "true"
-# Workload identities are only set up for `openshift-4` infra clusters.
-if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
+# Workload identities are only set up for GCP `openshift-4` infra clusters.
+if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', '') \
+        and os.environ.get('CLOUD_PROVIDER', 'gcp') != 'aws':
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"
 
 enable_sfa_for_ocp()
