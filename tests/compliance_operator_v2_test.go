@@ -13,6 +13,7 @@ import (
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis"
 	complianceoperatorv1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	machineconfigurationv1client "github.com/openshift/client-go/machineconfiguration/clientset/versioned/typed/machineconfiguration/v1"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -1394,4 +1395,119 @@ func TestComplianceV2AutodiscoverNodeRoles(t *testing.T) {
 	ks.checkLogsMatch(ctx, namespaces.StackRox, sensorPodLabels, sensorContainer,
 		"Sensor did not fail to list MachineConfigPools while auto-discovering node roles",
 		logmatchers.ContainsNoLinesMatchingAfter(mcpListFailureLog, sensorLogFromByte))
+}
+
+// createReactiveTestMachineConfigPool creates a zero-node MachineConfigPool whose nodeSelector carries the given
+// synthetic node-role label, and returns a function that deletes it. Sensor derives roles from a pool's
+// spec.nodeSelector.matchLabels, not from node membership, so a pool matching no real Nodes still exercises
+// discovery without disrupting the cluster. The machineConfigSelector includes the worker role so MCO can render
+// the pool cleanly from existing worker MachineConfigs.
+func createReactiveTestMachineConfigPool(ctx context.Context, t *testing.T, role string) func() {
+	mcfgClient, err := machineconfigurationv1client.NewForConfig(getConfig(t))
+	require.NoError(t, err, "failed to create machineconfiguration client")
+
+	pool := &mcfgv1.MachineConfigPool{
+		ObjectMeta: metav1.ObjectMeta{Name: role},
+		Spec: mcfgv1.MachineConfigPoolSpec{
+			MachineConfigSelector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{{
+					Key:      "machineconfiguration.openshift.io/role",
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   []string{"worker", role},
+				}},
+			},
+			NodeSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{nodeRoleLabelPrefix + role: ""},
+			},
+		},
+	}
+	_, err = mcfgClient.MachineConfigPools().Create(ctx, pool, metav1.CreateOptions{})
+	require.NoErrorf(t, err, "failed to create MachineConfigPool %s", role)
+
+	return func() {
+		if err := mcfgClient.MachineConfigPools().Delete(context.Background(), role, metav1.DeleteOptions{}); err != nil && !errors2.IsNotFound(err) {
+			t.Logf("failed to delete MachineConfigPool %s: %v", role, err)
+		}
+	}
+}
+
+// waitForScanSettingRoles polls until the named ScanSetting's roles equal want (order-insensitive), or fails.
+func waitForScanSettingRoles(ctx context.Context, t *testing.T, dynClient ctrlClient.Client, name string, want []string) {
+	t.Helper()
+	wantSet := set.NewStringSet(want...)
+	var last []string
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var ss complianceoperatorv1.ScanSetting
+		err := dynClient.Get(ctx, types.NamespacedName{Name: name, Namespace: coNamespaceV2}, &ss)
+		require.NoErrorf(c, err, "failed to get ScanSetting %s", name)
+		last = append([]string(nil), ss.Roles...)
+		assert.Truef(c, set.NewStringSet(ss.Roles...).Equal(wantSet),
+			"ScanSetting %s roles = %v, want %v", name, ss.Roles, want)
+	}, defaultTimeout, defaultInterval, "ScanSetting %s roles never converged to %v (last seen %v)", name, want, last)
+}
+
+// TestComplianceV2ReactiveNodeRoles verifies the REACTIVE half of node-role auto-discovery: once a scan config
+// exists, Sensor keeps its ScanSetting.roles in sync with the cluster's MachineConfigPools as they change, with no
+// recreation of the config. TestComplianceV2AutodiscoverNodeRoles covers only create-time discovery.
+//
+// It creates a scan config, then adds a synthetic MachineConfigPool and asserts the new role appears on the existing
+// ScanSetting, then deletes the pool and asserts the role disappears again. The synthetic pool matches no real
+// Nodes, so it exercises Sensor's discovery (which reads spec.nodeSelector.matchLabels) without disrupting the
+// cluster, and its scans would be NOT-APPLICABLE, so this does not call waitForFirstScanToRevealNodeTargeting.
+//
+// Not parallel: it mutates cluster-wide MachineConfigPools, which would perturb
+// TestComplianceV2AutodiscoverNodeRoles' live role derivation if the two overlapped.
+func TestComplianceV2ReactiveNodeRoles(t *testing.T) {
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+
+	baselineRoles := deriveNodeRolesFromMachineConfigPools(ctx, t)
+	t.Logf("baseline node roles (from current MachineConfigPools): %v", baselineRoles)
+
+	// Synthetic role, unique per run; matches no real Node, so it never targets real workloads.
+	reactiveRole := fmt.Sprintf("e2e-reactive-%s", strings.ToLower(uuid.NewV4().String()[:8]))
+	withReactiveRole := append(append([]string(nil), baselineRoles...), reactiveRole)
+
+	testID := fmt.Sprintf("reactive-roles-%s", uuid.NewV4().String())
+	req := &v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			// Node profile, no node roles specified, so Sensor fills them in. Unique to this test to avoid
+			// Central's rejection of two scan configs sharing a profile on the same cluster.
+			Profiles:     []string{"ocp4-high-node"},
+			Description:  "e2e reactive node roles",
+			ScanSchedule: initialSchedule,
+		},
+	}
+	resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	// Create-time discovery: the ScanSetting starts with the baseline roles.
+	waitForScanSettingRoles(ctx, t, dynClient, testID, baselineRoles)
+
+	// Reactive add: creating a MachineConfigPool must add its role to the EXISTING ScanSetting, no recreate.
+	deletePool := createReactiveTestMachineConfigPool(ctx, t, reactiveRole)
+	poolDeleted := false
+	t.Cleanup(func() {
+		if !poolDeleted {
+			deletePool()
+		}
+	})
+	t.Logf("created MachineConfigPool %q; expecting ScanSetting %s roles -> %v", reactiveRole, testID, withReactiveRole)
+	waitForScanSettingRoles(ctx, t, dynClient, testID, withReactiveRole)
+
+	// Reactive delete: removing the pool must revert the ScanSetting's roles to the baseline.
+	deletePool()
+	poolDeleted = true
+	t.Logf("deleted MachineConfigPool %q; expecting ScanSetting %s roles -> %v", reactiveRole, testID, baselineRoles)
+	waitForScanSettingRoles(ctx, t, dynClient, testID, baselineRoles)
 }
