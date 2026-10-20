@@ -39,6 +39,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37014: The Images by severity, Nodes by severity, CVEs by severity, and Virtual machines by severity counts—including summary widgets and table columns—are deprecated and will be removed in a future release to improve page performance
 
 ### Technical Changes
+- ROX-36432: Fixed node scan results (`scan.scanTime`) silently freezing on installs whose default Scanner V4 integration lacked the `NODE_SCANNER` category. Central now restores the default categories on startup. Affected nodes move from Scanner V2 results to Scanner V4 results, so their vulnerability counts may change.
 - ROX-36784: Scanner V4 node indexing on OpenShift now reads the host RPM database Claircore reports: SQLite on RHEL 9+ (`/usr/share/rpm`, `/usr/lib/sysimage/rpm`) and Berkeley DB on RHEL 8 (`/usr/share/rpm`, `/usr/lib/sysimage/rpm-ostree-base-db`).
 - ROX-36824: Diagnostic bundles now redact the value of the `openshift.io/token-secret.value` annotation on secrets. Previously this OpenShift-managed annotation, which contains a plaintext service account token on generated dockercfg secrets, was included unredacted in the bundle.
 - ROX-36660: The **Fixable → CVE is not yet fixable** policy criterion now matches Scanner V4 CVEs that have no fix version. Scanner V4 leaves `Fixed By` unset instead of empty (Scanner V2 always set an empty string), so the matcher previously skipped those CVEs.
