@@ -160,6 +160,11 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'The default is: false.'
+        displayName: Enabled
+        path: monitoring.openshift.custom.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: 'The default is: true.'
         displayName: Enabled
         path: monitoring.openshift.enabled
@@ -318,6 +323,13 @@ spec:
           Cannot be used together with pinToNodes.
         displayName: Node Selector
         path: customize.deploymentDefaults.nodeSelector
+      - description: |-
+          Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+          Independent of openshift.enabled for SecuredCluster. The default is: false.
+        displayName: Custom
+        path: monitoring.openshift.custom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -1029,6 +1041,11 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'The default is: false.'
+        displayName: Enabled
+        path: monitoring.openshift.custom.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: 'The default is: true.'
         displayName: Enabled
         path: monitoring.openshift.enabled
@@ -1176,6 +1193,13 @@ spec:
           Cannot be used together with pinToNodes.
         displayName: Node Selector
         path: customize.deploymentDefaults.nodeSelector
+      - description: |-
+          Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+          Independent of openshift.enabled for SecuredCluster. The default is: false.
+        displayName: Custom
+        path: monitoring.openshift.custom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -1423,13 +1447,6 @@ spec:
       - description: Settings for the virtual machine scraper.
         displayName: Virtual Machines Settings
         path: virtualMachines
-      - description: |-
-          Allows OpenShift Prometheus to scrape Central custom metrics through this Sensor's proxy.
-          Independent of monitoring.openshift.enabled. The default is: false.
-        displayName: Central Custom Metrics Scraping
-        path: centralCustomMetrics
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: |-
           Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).

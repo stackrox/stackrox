@@ -17,17 +17,19 @@ tests:
   set:
     env.openshift: 4
     monitoring.openshift.enabled: false
-    monitoring.openshift.centralCustomMetrics.enabled: true
+    monitoring.openshift.custom.enabled: true
   expect: |
     .servicemonitors["sensor-monitor-stackrox"] | assertThat(. == null)
     .servicemonitors["sensor-central-metrics-stackrox"].metadata.namespace | assertThat(. == "openshift-monitoring")
     .servicemonitors["sensor-central-metrics-stackrox"].spec.endpoints[].path | assertThat(. == "/proxy/central/metrics")
     .servicemonitors["sensor-central-metrics-stackrox"].spec.endpoints[].tlsConfig.serverName | assertThat(. == "sensor-proxy.stackrox.svc")
-    .servicemonitors["sensor-central-metrics-stackrox"].spec.selector.matchLabels["app.kubernetes.io/component"] | assertThat(. == "sensor-proxy")
+    .servicemonitors["sensor-central-metrics-stackrox"].spec.selector.matchLabels["stackrox.io/sensor-proxy"] | assertThat(. == "true")
     .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. != null)
     .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
     .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
-    .services["sensor-proxy"] | assertThat(. != null)
+    .services["sensor-proxy"].metadata.labels["stackrox.io/sensor-proxy"] | assertThat(. == "true")
+    .services.sensor.metadata.labels["stackrox.io/sensor-proxy"] | assertThat(. == null)
+    .services["sensor-webhook"].metadata.labels["stackrox.io/sensor-proxy"] | assertThat(. == null)
     .networkpolicys["sensor-proxy"] | assertThat(. != null)
     .deployments.sensor.spec.template.spec.containers[0].env[] |
       select(.name == "ROX_SECURED_CLUSTER_METRICS_ENABLED") | assertThat(.value == "true")
@@ -35,7 +37,7 @@ tests:
 - name: "Central custom metrics opt-in is ignored outside OpenShift"
   set:
     env.openshift: false
-    monitoring.openshift.centralCustomMetrics.enabled: true
+    monitoring.openshift.custom.enabled: true
   expect: |
     .servicemonitors["sensor-central-metrics-stackrox"] | assertThat(. == null)
     [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_SECURED_CLUSTER_METRICS_ENABLED")] | length | assertThat(. == 0)

@@ -86,7 +86,7 @@ spec:
   policyTypes:
     - Ingress
 {{- end }}
-{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.centralCustomMetrics.enabled) }}
+{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -111,7 +111,7 @@ spec:
         - port: 9444
           protocol: TCP
     [<- end >]
-    {{- if ._rox.monitoring.openshift.centralCustomMetrics.enabled }}
+    {{- if ._rox.monitoring.openshift.custom.enabled }}
     - from:
         - namespaceSelector:
             matchLabels:
