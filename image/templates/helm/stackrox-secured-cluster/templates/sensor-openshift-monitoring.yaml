@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.centralCustomMetrics.enabled -}}
+{{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled -}}
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -188,7 +188,7 @@ spec:
 {{- end -}}
 {{- end -}}
 
-{{- if and ._rox.monitoring.openshift.centralCustomMetrics.enabled (not ._rox.monitoring.openshift.enabled) }}
+{{- if and ._rox.monitoring.openshift.custom.enabled (not ._rox.monitoring.openshift.enabled) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -209,7 +209,7 @@ subjects:
     namespace: "{{ .Release.Namespace }}"
 {{- end }}
 
-{{- if ._rox.monitoring.openshift.centralCustomMetrics.enabled }}
+{{- if ._rox.monitoring.openshift.custom.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -233,7 +233,7 @@ spec:
       serverName: "sensor-proxy.{{ .Release.Namespace }}.svc"
   selector:
     matchLabels:
-      app.kubernetes.io/component: sensor-proxy
+      stackrox.io/sensor-proxy: "true"
   namespaceSelector:
     matchNames:
     - "{{ .Release.Namespace }}"

@@ -169,9 +169,11 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	monitoring := translation.NewValuesBuilder()
 	openshiftMonitoring := translation.NewValuesBuilder()
 	openshiftMonitoring.SetBoolValue("enabled", !sc.Spec.Monitoring.IsOpenShiftMonitoringDisabled())
-	centralCustomMetrics := translation.NewValuesBuilder()
-	centralCustomMetrics.SetBool("enabled", sc.Spec.CentralCustomMetrics)
-	openshiftMonitoring.AddChild("centralCustomMetrics", &centralCustomMetrics)
+	if sc.Spec.Monitoring.IsOpenShiftCustomMonitoringEnabled() {
+		custom := translation.NewValuesBuilder()
+		custom.SetBoolValue("enabled", true)
+		openshiftMonitoring.AddChild("custom", &custom)
+	}
 	monitoring.AddChild("openshift", &openshiftMonitoring)
 	v.AddChild("monitoring", &monitoring)
 
