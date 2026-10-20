@@ -235,6 +235,10 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
+	// Any MachineConfigPool events that arrived while compliance was disabled were dropped by
+	// reconcileNodeRoles' gate, so request one reconcile now that it's active again. This mirrors
+	// reconcileOnceReady, which covers the other gate: compliance not yet ready at startup.
+	m.requestReconcile()
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 

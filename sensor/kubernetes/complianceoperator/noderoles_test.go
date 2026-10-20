@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -214,8 +216,7 @@ func TestDiscoverDefaultNodeRoles(t *testing.T) {
 }
 
 // TestRolesForCreate covers the create path's policy: discovered roles win, every non-authoritative outcome falls back
-// to master+worker. It also pins the exact text of the warning it logs for a fallback: a downstream e2e test matches
-// this same text against live Sensor logs to detect a silent fallback, so a wording change here must be deliberate.
+// to master+worker, logging a warning on the fallback.
 func TestRolesForCreate(t *testing.T) {
 	cases := map[string]struct {
 		disc       roleDiscoveryResult
@@ -252,7 +253,7 @@ func TestRolesForCreate(t *testing.T) {
 
 			warns := logs.FilterMessageSnippet("Could not auto-discover node roles, falling back to").Len()
 			if c.wantWarnFB {
-				assert.Equal(t, 1, warns, "a downstream e2e test matches this exact text against live Sensor logs; keep the two in sync")
+				assert.Equal(t, 1, warns, "a non-authoritative outcome must log exactly one fallback warning")
 			} else {
 				assert.Zero(t, warns)
 			}
@@ -745,6 +746,22 @@ func TestReconcileOnceReady(t *testing.T) {
 
 		assert.Empty(t, m.roleReconcileTrigger, "a stopped handler must not request a reconcile")
 	})
+}
+
+// TestEnableComplianceRequestsReconcile covers the re-enable path: MachineConfigPool events that arrive while
+// compliance is disabled are dropped by reconcileNodeRoles' gate, so re-enabling must request one reconcile to
+// catch up, mirroring reconcileOnceReady for the not-ready-at-startup gate.
+func TestEnableComplianceRequestsReconcile(t *testing.T) {
+	m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
+	m.disabled = concurrency.NewSignal()
+	m.disabled.Signal()
+	// Buffered so enableCompliance's response send doesn't block without a run() loop draining it.
+	m.response = make(chan *message.ExpiringMessage, 1)
+
+	m.enableCompliance(&central.EnableComplianceRequest{Id: "test"})
+
+	assert.False(t, m.disabled.IsDone(), "enable must clear the disabled signal")
+	assert.Len(t, m.roleReconcileTrigger, 1, "re-enabling compliance must request exactly one reconcile")
 }
 
 // TestRunPeriodicTickReconciles proves the safety-net tick in run() actually drives a reconcile: with a short interval

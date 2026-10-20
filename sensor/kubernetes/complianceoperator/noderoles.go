@@ -147,8 +147,7 @@ func (d roleDiscoveryResult) reason() string {
 	}
 }
 
-// rolesForCreate picks the roles for a new ScanSetting: discovered roles, else the fallback (nothing to preserve). The
-// warning wording is matched by a downstream e2e test against live Sensor logs, so change it deliberately.
+// rolesForCreate picks the roles for a new ScanSetting: discovered roles, else the fallback (nothing to preserve).
 func (d roleDiscoveryResult) rolesForCreate() []string {
 	if d.outcome == nodeRolesDiscovered {
 		return d.roles
@@ -315,6 +314,11 @@ func (m *handlerImpl) reconcileNodeRoles() {
 		return
 	}
 	if m.disabled.IsDone() || !m.complianceIsReady.IsDone() {
+		// A trigger that lands here is dropped; it is re-requested when compliance becomes ready
+		// (reconcileOnceReady) or is re-enabled (enableCompliance), and the periodic tick is a further
+		// backstop. Log it so the drop is visible when troubleshooting at Debug level.
+		log.Debugf("Skipping node-role reconciliation: compliance not active (disabled=%t, ready=%t)",
+			m.disabled.IsDone(), m.complianceIsReady.IsDone())
 		return
 	}
 	if m.complianceOperatorInfo.GetNamespace() == "" {
