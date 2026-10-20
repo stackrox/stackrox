@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/installmethod"
+	"github.com/stackrox/rox/sensor/common/interactivesessions"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
@@ -128,11 +129,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
+	interactiveSessionTracker := interactivesessions.New()
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC(), internalMessageDispatcher)
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC(), internalMessageDispatcher, interactiveSessionTracker)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -330,7 +332,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
-		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher, interactiveSessionTracker)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
 	}

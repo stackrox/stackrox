@@ -132,6 +132,20 @@ func (s *ComplianceAuditLogSenderTestSuite) TestSendUsesReceivedTimeIfStageTimeI
 	s.validateSentMessage(msg, event)
 }
 
+func (s *ComplianceAuditLogSenderTestSuite) TestSendPreservesInteractiveAuditLifecycle() {
+	client, sender := s.getMocks()
+	event := s.fakeAuditEvent("create", "pods", "some-pod", "ns")
+	event.ObjectRef.Subresource = "exec"
+	event.RequestURI = "/api/v1/namespaces/ns/pods/some-pod/exec?container=main&command=sh&command=-c"
+	event.Stage = "ResponseStarted"
+
+	s.NoError(sender.Send(context.Background(), &event))
+	sent := client.sendList[0].GetAuditEvents().GetEvents()[0]
+	s.Equal("ResponseStarted", sent.GetAuditStage())
+	s.Equal("main", sent.GetPodExecArgs().GetContainer())
+	s.Equal([]string{"sh", "-c"}, sent.GetPodExecArgs().GetCommands())
+}
+
 func (s *ComplianceAuditLogSenderTestSuite) getMocks() (*mockClient, *auditLogSenderImpl) {
 	client := &mockClient{
 		sendList: []*sensor.MsgFromCompliance{},

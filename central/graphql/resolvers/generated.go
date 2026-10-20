@@ -708,6 +708,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("FileAccess", []string{
 		"file: FileAccess_File",
 		"hostname: String!",
+		"interactiveSession: FileAccess_InteractiveSession",
 		"moved: FileAccess_File",
 		"operation: FileAccess_Operation!",
 		"process: ProcessIndicator",
@@ -727,6 +728,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"uid: Int!",
 		"username: String!",
 		"xattrName: String!",
+	}))
+	utils.Must(builder.AddType("FileAccess_InteractiveSession", []string{
+		"auditId: String!",
+		"authenticatedUser: String!",
+		"confidence: String!",
+		"effectiveUser: String!",
+		"matchBasis: String!",
+		"type: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileAccess_Operation(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
@@ -8420,6 +8429,11 @@ func (resolver *fileAccessResolver) Hostname(ctx context.Context) string {
 	return value
 }
 
+func (resolver *fileAccessResolver) InteractiveSession(ctx context.Context) (*fileAccess_InteractiveSessionResolver, error) {
+	value := resolver.data.GetInteractiveSession()
+	return resolver.root.wrapFileAccess_InteractiveSession(value, true, nil)
+}
+
 func (resolver *fileAccessResolver) Moved(ctx context.Context) (*fileAccess_FileResolver, error) {
 	value := resolver.data.GetMoved()
 	return resolver.root.wrapFileAccess_File(value, true, nil)
@@ -8576,6 +8590,78 @@ func (resolver *fileAccess_FileMetadataResolver) Username(ctx context.Context) s
 
 func (resolver *fileAccess_FileMetadataResolver) XattrName(ctx context.Context) string {
 	value := resolver.data.GetXattrName()
+	return value
+}
+
+type fileAccess_InteractiveSessionResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.FileAccess_InteractiveSession
+}
+
+func (resolver *Resolver) wrapFileAccess_InteractiveSession(value *storage.FileAccess_InteractiveSession, ok bool, err error) (*fileAccess_InteractiveSessionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileAccess_InteractiveSessionResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileAccess_InteractiveSessions(values []*storage.FileAccess_InteractiveSession, err error) ([]*fileAccess_InteractiveSessionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileAccess_InteractiveSessionResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileAccess_InteractiveSessionResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapFileAccess_InteractiveSessionWithContext(ctx context.Context, value *storage.FileAccess_InteractiveSession, ok bool, err error) (*fileAccess_InteractiveSessionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileAccess_InteractiveSessionResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileAccess_InteractiveSessionsWithContext(ctx context.Context, values []*storage.FileAccess_InteractiveSession, err error) ([]*fileAccess_InteractiveSessionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileAccess_InteractiveSessionResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileAccess_InteractiveSessionResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) AuditId(ctx context.Context) string {
+	value := resolver.data.GetAuditId()
+	return value
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) AuthenticatedUser(ctx context.Context) string {
+	value := resolver.data.GetAuthenticatedUser()
+	return value
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) Confidence(ctx context.Context) string {
+	value := resolver.data.GetConfidence()
+	return value
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) EffectiveUser(ctx context.Context) string {
+	value := resolver.data.GetEffectiveUser()
+	return value
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) MatchBasis(ctx context.Context) string {
+	value := resolver.data.GetMatchBasis()
+	return value
+}
+
+func (resolver *fileAccess_InteractiveSessionResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
 	return value
 }
 

@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-//Next Tag: 22
+//Next Tag: 23
 message KubernetesEvent {
   enum APIVerb {
     UNKNOWN = 0;
@@ -64,6 +64,7 @@ message KubernetesEvent {
   string user_agent = 18; // @gotags: policy:"User Agent"
   ResponseStatus response_status = 19;
   string request_uri = 20; // Field will not be used for policy detection
+  string audit_stage = 22; // Kubernetes audit lifecycle stage. Field will not be used for policy detection.
 
   message PodExecArgs {
     string container = 1;
