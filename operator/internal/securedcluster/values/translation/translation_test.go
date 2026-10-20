@@ -476,9 +476,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
 								Enabled: new(true),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
 							},
 						},
-						CentralCustomMetrics: new(true),
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Analyzer: &platform.ScannerAnalyzerComponent{
@@ -841,7 +841,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
-						"centralCustomMetrics": map[string]interface{}{
+						"custom": map[string]interface{}{
 							"enabled": true,
 						},
 					},
@@ -1090,6 +1090,42 @@ func TestTranslatePartialMatch(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"central custom metrics enabled": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: new(false),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.enabled":                      false,
+				"monitoring.openshift.custom.enabled": true,
+			},
+		},
+		"central custom metrics disabled": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Custom: &platform.OpenShiftCustomMonitoring{Enabled: new(false)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.custom.enabled": nil,
+			},
+		},
 		"unset network": {
 			args: args{
 				sc: platform.SecuredCluster{
