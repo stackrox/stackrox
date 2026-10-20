@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,6 +30,90 @@ func TestGHAOutputs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "action=skip\n", string(text))
 	assert.Equal(t, string(text), output.String())
+}
+
+func TestGHACommentOutput(t *testing.T) {
+	for name, test := range map[string]struct {
+		args        []string
+		invalidPath bool
+		wantComment bool
+	}{
+		"should write comment when printing the plan": {wantComment: true},
+		"should accept an empty job argument":         {args: []string{""}, wantComment: true},
+		"should not write comment when gating a job":  {args: []string{"go"}},
+		"should report comment write failures":        {invalidPath: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("CI_SELECT_ROOT", "../..")
+			t.Setenv("CI_BASE", "missing-ref")
+			t.Setenv("CI_HEAD", "HEAD")
+			t.Setenv("CI_COMMIT", "0123456789abcdef")
+			t.Setenv("CI_REPO", "stackrox/stackrox")
+			t.Setenv("CI_ENFORCE", "true")
+			t.Setenv("GITHUB_OUTPUT", "")
+			t.Setenv("GITHUB_STEP_SUMMARY", "")
+			path := filepath.Join(t.TempDir(), "comment.md")
+			if test.invalidPath {
+				path = filepath.Join(path, "missing", "comment.md")
+			} else if test.wantComment {
+				writeTestFile(t, path, "stale decision", 0o600)
+			}
+			t.Setenv("CI_COMMENT_OUT", path)
+			var output bytes.Buffer
+			err := ghaCI(t.Context(), test.args, &output, &bytes.Buffer{})
+			if test.invalidPath {
+				require.ErrorContains(t, err, "write decision comment")
+				return
+			}
+			require.NoError(t, err)
+			if !test.wantComment {
+				_, err := os.Stat(path)
+				assert.ErrorIs(t, err, os.ErrNotExist)
+				return
+			}
+			text, err := os.ReadFile(path)
+			require.NoError(t, err)
+			assert.Contains(t, string(text), "[0123456](https://github.com/stackrox/stackrox/commit/0123456789abcdef)")
+			assert.Contains(t, string(text), "<summary>Resolver log</summary>")
+			assert.NotContains(t, string(text), "stale decision")
+			assert.Contains(t, output.String(), "Decision:\n")
+			assert.Contains(t, output.String(), "Log:\n")
+		})
+	}
+}
+
+func TestPlanComment(t *testing.T) {
+	for name, test := range map[string]struct {
+		commit, shortSHA, decision, log, mode string
+		enforce                               bool
+	}{
+		"should show the enforced decision and collapse the log": {
+			commit: "abcdef0123456789", shortSHA: "abcdef0", decision: "go\nstyle\n", log: "matched Go rule\n",
+			enforce: true, mode: "Selection is enforced",
+		},
+		"should explain preview mode when no jobs are selected": {
+			commit: "123456789abcdef0", shortSHA: "1234567", decision: "# no job runs\n", log: "all jobs skipped\n",
+			mode: "jobs run regardless of this decision",
+		},
+		"should preserve log text containing HTML and Markdown": {
+			commit: "abc", shortSHA: "abc", decision: "go\n", log: "</pre></details><details open>\n```\nlabel: a & b\n",
+			mode: "Selection is in preview mode",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			comment := planComment(result{decision: test.decision, log: test.log}, test.enforce,
+				metadata{repo: "stackrox/stackrox", commit: test.commit})
+			assert.Contains(t, comment, fmt.Sprintf("[%s](https://github.com/stackrox/stackrox/commit/%s)", test.shortSHA, test.commit))
+			assert.Contains(t, comment, test.mode)
+			visible, collapsed, found := strings.Cut(comment, "<details>\n<summary>Resolver log</summary>")
+			require.True(t, found)
+			assert.Contains(t, visible, "<pre>"+html.EscapeString(test.decision)+"</pre>")
+			assert.Contains(t, collapsed, "<pre>"+html.EscapeString(test.log)+"</pre>")
+			assert.Equal(t, 1, strings.Count(comment, "<details>"))
+			assert.Equal(t, 1, strings.Count(comment, "</details>"))
+			assert.NotContains(t, comment, "<details open>")
+		})
+	}
 }
 
 func TestDispatchPlan(t *testing.T) {

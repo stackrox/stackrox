@@ -1,8 +1,7 @@
 name: CI decision
 
-# Prints the decision for a pull request. It does not start or stop other
-# jobs. The label ci-dispatcher-enforce is read by the jobs that follow
-# the decision.
+# Reports the decision for a pull request. The label ci-dispatcher-enforce
+# is read by the jobs that follow the decision.
 
 on:
   pull_request:
@@ -15,6 +14,11 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-decision-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   decision:
@@ -37,4 +41,26 @@ jobs:
           CI_BASE: ${{ github.event.pull_request.base.sha }}
           CI_HEAD: ${{ github.event.pull_request.head.sha }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: ci/select/gha-gate.sh
+          CI_COMMENT_OUT: ${{ runner.temp }}/ci-decision-comment.md
+        run: ci/select/bin/ci-select gha-ci
+
+      - name: Check PR head before commenting
+        id: head
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          current_sha=$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')
+          if [[ "$current_sha" == "$CI_COMMIT" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on the PR
+        if: ${{ steps.head.outputs.current == 'true' }}
+        uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # ratchet:mshick/add-pr-comment@v3
+        with:
+          message-id: ci-resolver-decision
+          message-path: ${{ runner.temp }}/ci-decision-comment.md

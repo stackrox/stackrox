@@ -146,6 +146,13 @@ The GHA gate reads `CI_BASE`, `CI_HEAD`, `CI_REPO`, `CI_PR`, `CI_COMMIT`,
 `CI_DECISION_OUT` optionally saves the decision. `CI_SELECT_ROOT` locates
 the checkout; the wrapper sets it automatically.
 
+With no job argument, `CI_COMMENT_OUT` optionally saves a formatted PR comment.
+The CI decision workflow creates or updates one `github-actions[bot]` comment
+per PR, identified by `ci-resolver-decision`. It shows the short PR head SHA,
+enforcement mode, and decision, with the resolver log collapsed under
+**Resolver log**. Fork PRs retain the workflow log and step summary but do
+not receive a comment. Runs for an outdated PR head do not post a comment.
+
 The `should-dispatch` job calls `ci-select gha-dispatch-ci` directly.
 Go retrieves current PR labels and writes the job map plus
 `wait-for-gha-images` and `wait-for-konflux-images` outputs.

@@ -62,7 +62,8 @@ Without enforcement, dispatchers report the planned decision and let jobs run.`,
 With a job argument, write action=run or action=skip to GITHUB_OUTPUT.
 With no job argument, print the plan and append it to GITHUB_STEP_SUMMARY.
 CI_ENFORCE=true applies the decision; otherwise the job runs.
-CI_DECISION_OUT optionally saves the decision file.`,
+CI_DECISION_OUT optionally saves the decision file.
+CI_COMMENT_OUT optionally saves a PR comment with the plan when no job is given.`,
 		Example: "  ci-select gha-ci\n  ci-select gha-ci go",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
