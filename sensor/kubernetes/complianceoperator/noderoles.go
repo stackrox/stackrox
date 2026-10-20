@@ -41,8 +41,7 @@ const (
 	// ScanSettings. Reconciliation runs on the same single-writer loop that processes Central requests, so an
 	// unbounded pass (one retry-timeout-bounded update per ScanSetting) would delay request processing by
 	// multiples of handlerRetryTimeout as the number of managed ScanSettings grows. Kept below
-	// componentProcessTimeout (sensor/common/sensor/component_queue.go, 30s, not exported) so a request already
-	// queued when a reconcile pass starts still gets handled before its own ProcessMessage deadline expires.
+	// componentProcessTimeout (sensor/common/sensor/component_queue.go, 30s, not exported).
 	defaultNodeRoleReconcilePassBudget = 20 * time.Second
 
 	// minNodeRoleReconcileInterval is the floor for the periodic reconcile interval, so a too-small configured value
@@ -96,9 +95,7 @@ func fallbackDefaultNodeRoles() []string {
 	return []string{masterRole, workerRole}
 }
 
-// nodeRoleOutcome classifies a discovery attempt so each caller picks its own policy instead of inferring intent from
-// an overloaded (roles, error) pair. Only nodeRolesDiscovered and nodeRolesDisabled are authoritative; on the other two
-// an update or reconcile leaves existing roles untouched rather than overwriting them with the fallback.
+// nodeRoleOutcome classifies a discovery attempt so each caller picks its own policy.
 type nodeRoleOutcome int
 
 const (
@@ -112,32 +109,31 @@ const (
 	nodeRolesUnavailable
 )
 
-// nodeRoleDiscovery is the outcome of discoverDefaultNodeRoles.
-type nodeRoleDiscovery struct {
+// roleDiscoveryResult is the outcome of discoverDefaultNodeRoles.
+type roleDiscoveryResult struct {
 	roles   []string // set only when outcome == nodeRolesDiscovered
 	outcome nodeRoleOutcome
 	err     error // set only when outcome == nodeRolesUnavailable, for logging
 }
 
-// discoverDefaultNodeRoles runs discovery once and classifies the result; it never fails. The single place the flag
-// gate and the empty-vs-unavailable distinction live, shared by every caller.
-func (m *handlerImpl) discoverDefaultNodeRoles() nodeRoleDiscovery {
+// discoverDefaultNodeRoles runs discovery and classifies the result.
+func (m *handlerImpl) discoverDefaultNodeRoles() roleDiscoveryResult {
 	if !env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
-		return nodeRoleDiscovery{outcome: nodeRolesDisabled}
+		return roleDiscoveryResult{outcome: nodeRolesDisabled}
 	}
 	roles, err := m.discoverNodeRoles()
 	switch {
 	case err != nil:
-		return nodeRoleDiscovery{outcome: nodeRolesUnavailable, err: err}
+		return roleDiscoveryResult{outcome: nodeRolesUnavailable, err: err}
 	case len(roles) == 0:
-		return nodeRoleDiscovery{outcome: nodeRolesEmpty}
+		return roleDiscoveryResult{outcome: nodeRolesEmpty}
 	default:
-		return nodeRoleDiscovery{roles: roles, outcome: nodeRolesDiscovered}
+		return roleDiscoveryResult{roles: roles, outcome: nodeRolesDiscovered}
 	}
 }
 
 // reason renders an outcome for a log line.
-func (d nodeRoleDiscovery) reason() string {
+func (d roleDiscoveryResult) reason() string {
 	switch d.outcome {
 	case nodeRolesDisabled:
 		return "node-role auto-discovery is disabled"
@@ -153,7 +149,7 @@ func (d nodeRoleDiscovery) reason() string {
 
 // rolesForCreate picks the roles for a new ScanSetting: discovered roles, else the fallback (nothing to preserve). The
 // warning wording is matched by a downstream e2e test against live Sensor logs, so change it deliberately.
-func (d nodeRoleDiscovery) rolesForCreate() []string {
+func (d roleDiscoveryResult) rolesForCreate() []string {
 	if d.outcome == nodeRolesDiscovered {
 		return d.roles
 	}
@@ -166,7 +162,7 @@ func (d nodeRoleDiscovery) rolesForCreate() []string {
 // rolesForUpdate picks the roles for a possibly-existing ScanSetting. Discovered roles win; flag off overwrites with the
 // fallback (legacy). On a non-authoritative outcome an existing ScanSetting keeps its roles, so a transient failure or
 // empty cache can't strip a custom role; a not-yet-existing one still gets the fallback.
-func (d nodeRoleDiscovery) rolesForUpdate(existing *unstructured.Unstructured) []string {
+func (d roleDiscoveryResult) rolesForUpdate(existing *unstructured.Unstructured) []string {
 	switch d.outcome {
 	case nodeRolesDiscovered:
 		return d.roles

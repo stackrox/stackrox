@@ -111,15 +111,16 @@ func (m *handlerImpl) Start() error {
 	if !m.started.CompareAndSwap(false, true) {
 		return nil
 	}
+
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
-	// Runs in the background, like run() above: probing for MachineConfigPools and waiting for the informer's
-	// initial cache sync can take several seconds (or longer on a slow/unreachable API server), and must never
-	// delay Sensor's sequential component startup. See startMCPRoleInformer for how it degrades gracefully.
+
+	// Runs in the background to avoid delaying Sensor's sequential component startup.
 	go m.startMCPRoleInformer()
-	// Early sync-time informer triggers can land before complianceIsReady, where reconcileNodeRoles drops them. This
-	// one-shot re-triggers once ready so the first reconcile isn't deferred to the periodic tick.
+
+	// One-shot reconcile in case informer triggers arrive before complianceIsReady
 	go m.reconcileOnceReady()
+
 	return nil
 }
 
@@ -181,9 +182,10 @@ func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 
 func (m *handlerImpl) run() {
 	// Safety-net reconcile tick: catches passes skipped or cut short between MachineConfigPool events.
-	// reconcileNodeRoles is idempotent and a no-op once converged (and when the feature is off).
+	// reconcileNodeRoles is idempotent and a no-op once converged.
 	reconcileTicker := time.NewTicker(m.nodeRoleReconcileInterval)
 	defer reconcileTicker.Stop()
+
 	for !m.stopSignal.IsDone() {
 		select {
 		case req := <-m.request:
@@ -994,9 +996,7 @@ func (m *handlerImpl) callWithRetry(fn retriableCall) error {
 	return m.callWithRetryCtx(m.ctx(), fn)
 }
 
-// callWithRetryCtx is callWithRetry with an explicit parent context, so a caller can bound the retry window
-// tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall deadline, see
-// nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime context.
+// callWithRetryCtx is callWithRetry with an explicit parent context.
 func (m *handlerImpl) callWithRetryCtx(ctx context.Context, fn retriableCall) error {
 	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
@@ -1007,10 +1007,7 @@ func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onCo
 	return m.callWithRetryWithOnConflictCallbackCtx(m.ctx(), fn, onConflict)
 }
 
-// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context, so
-// a caller can bound the retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall
-// deadline, see nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime
-// context.
+// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context.
 func (m *handlerImpl) callWithRetryWithOnConflictCallbackCtx(ctx context.Context, fn retriableCall, onConflict onConflictCall) error {
 	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()

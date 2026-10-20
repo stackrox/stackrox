@@ -218,25 +218,25 @@ func TestDiscoverDefaultNodeRoles(t *testing.T) {
 // this same text against live Sensor logs to detect a silent fallback, so a wording change here must be deliberate.
 func TestRolesForCreate(t *testing.T) {
 	cases := map[string]struct {
-		disc       nodeRoleDiscovery
+		disc       roleDiscoveryResult
 		want       []string
 		wantWarnFB bool // expect the "Could not auto-discover node roles, falling back to" warning
 	}{
 		"discovered: use the discovered roles": {
-			disc: nodeRoleDiscovery{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
+			disc: roleDiscoveryResult{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
 			want: []string{"infra"},
 		},
 		"disabled: fallback, no warning (flag off is intentional)": {
-			disc: nodeRoleDiscovery{outcome: nodeRolesDisabled},
+			disc: roleDiscoveryResult{outcome: nodeRolesDisabled},
 			want: []string{masterRole, workerRole},
 		},
 		"empty: fallback with warning": {
-			disc:       nodeRoleDiscovery{outcome: nodeRolesEmpty},
+			disc:       roleDiscoveryResult{outcome: nodeRolesEmpty},
 			want:       []string{masterRole, workerRole},
 			wantWarnFB: true,
 		},
 		"unavailable: fallback with warning": {
-			disc:       nodeRoleDiscovery{outcome: nodeRolesUnavailable, err: errors.New("informer not available")},
+			disc:       roleDiscoveryResult{outcome: nodeRolesUnavailable, err: errors.New("informer not available")},
 			want:       []string{masterRole, workerRole},
 			wantWarnFB: true,
 		},
@@ -272,21 +272,21 @@ func TestRolesForUpdate(t *testing.T) {
 		}
 		return obj
 	}
-	unavailable := nodeRoleDiscovery{outcome: nodeRolesUnavailable, err: errors.New("MachineConfigPool informer is not available")}
-	empty := nodeRoleDiscovery{outcome: nodeRolesEmpty}
+	unavailable := roleDiscoveryResult{outcome: nodeRolesUnavailable, err: errors.New("MachineConfigPool informer is not available")}
+	empty := roleDiscoveryResult{outcome: nodeRolesEmpty}
 
 	cases := map[string]struct {
-		disc     nodeRoleDiscovery
+		disc     roleDiscoveryResult
 		existing *unstructured.Unstructured
 		want     []string
 	}{
 		"discovered: use the discovered roles regardless of existing state": {
-			disc:     nodeRoleDiscovery{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
+			disc:     roleDiscoveryResult{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
 			existing: newScanSettingObj([]string{masterRole, workerRole}),
 			want:     []string{"infra"},
 		},
 		"disabled: overwrite existing roles with the fallback (legacy behavior)": {
-			disc:     nodeRoleDiscovery{outcome: nodeRolesDisabled},
+			disc:     roleDiscoveryResult{outcome: nodeRolesDisabled},
 			existing: newScanSettingObj([]string{"infra"}),
 			want:     []string{masterRole, workerRole},
 		},
