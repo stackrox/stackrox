@@ -116,9 +116,11 @@ Commit: [%s](https://github.com/%s/commit/%s)
 
 %s
 
-### Decision
+### CI jobs to run
 
 <pre>%s</pre>
+
+Jobs covered by CI selection but not listed above are skipped when selection is enforced.
 
 <details>
 <summary>Resolver log</summary>
