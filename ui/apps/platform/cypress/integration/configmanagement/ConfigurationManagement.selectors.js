@@ -9,16 +9,6 @@ export const dashboardSelectors = {
     getWidget: (title) => {
         return `[data-testid="widget"]:contains('${title}')`;
     },
-    cisStandardsAcrossClusters: {
-        widget: '[data-testid="compliance-by-controls"]',
-        select: {
-            input: '[data-testid="compliance-by-controls"] .react-select__control',
-            value: '[data-testid="compliance-by-controls"] .react-select__single-value',
-            options: '[data-testid="compliance-by-controls"] .react-select__option',
-        },
-        passingControlsLink: 'a:contains("Controls Passing")',
-        failingControlsLinks: 'a:contains("Controls Failing")',
-    },
     horizontalBars: '.rv-xy-plot__series.rv-xy-plot__series--bar > rect',
 };
 

@@ -33,6 +33,13 @@ cadvisorMetricRelabelConfigs: []
 centralDbPvcUsageWarningRatio: 0.8
 centralDbPvcUsageCriticalRatio: 0.9
 
+# Scanner V4 DB PVC space-usage alerting. Same mechanism as central-db above; the
+# warning and critical alerts fire when this PVC exceeds these fill ratios.
+# Match scannerV4.db.persistence.persistentVolumeClaim.claimName in the Central chart.
+scannerV4DbPvcClaimName: scanner-v4-db
+scannerV4DbPvcUsageWarningRatio: 0.8
+scannerV4DbPvcUsageCriticalRatio: 0.9
+
 kube-state-metrics:
   releaseNamespace: true
   # Align with the parent monitoring Deployment UIDs. Upstream defaults use

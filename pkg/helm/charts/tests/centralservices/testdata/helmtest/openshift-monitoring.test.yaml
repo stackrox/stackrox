@@ -90,6 +90,84 @@ tests:
         .prometheusrules["central-telemeter-stackrox"].spec.groups |
           assertThat(all(.[]; .name != "rhacs.central-db"))
 
+- name: "Scanner V4 DB PVC space alerts"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+    scannerV4:
+      disable: false
+  tests:
+    - name: "warning and critical alerts are created"
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups |
+          assertThat(any(.[]; .name == "rhacs.scanner-v4-db"))
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups[] |
+          select(.name == "rhacs.scanner-v4-db") | .rules | [
+            assertThat(length == 2),
+            assertThat(all(.[]; .alert == "ScannerV4DBPersistentVolumeFillingUp")),
+            assertThat(any(.[]; .labels.severity == "warning")),
+            assertThat(any(.[]; .labels.severity == "critical"))
+          ]
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups[] |
+          select(.name == "rhacs.scanner-v4-db") | .rules[] |
+          select(.labels.severity == "warning") |
+          assertThat(.expr | contains("persistentvolumeclaim=\"scanner-v4-db\"") and contains("> 0.8"))
+
+    - name: "custom claim name is honoured"
+      set:
+        scannerV4.db.persistence.persistentVolumeClaim.claimName: my-scanner-v4-db
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"].spec.groups[] |
+          select(.name == "rhacs.scanner-v4-db") | .rules[0] |
+          assertThat(.expr | contains("persistentvolumeclaim=\"my-scanner-v4-db\""))
+
+    - name: "omitted when scanner-v4-db is not PVC-backed"
+      set:
+        scannerV4.db.persistence.none: true
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"] | assertThat(. == null)
+
+    - name: "omitted when Scanner V4 is disabled"
+      set:
+        scannerV4.disable: true
+      expect: |
+        .prometheusrules["scanner-v4-db-stackrox"] | assertThat(. == null)
+
+- name: "Custom metrics"
+  set:
+    env.openshift: 4
+  tests:
+    - name: "openshift metrics disabled"
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics disabled"
+      set:
+        monitoring.openshift.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics enabled"
+      set:
+        monitoring.openshift.enabled: true
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "https"),
+            assertThat(.spec.endpoints[].path == "/metrics"),
+            assertThat(.spec.endpoints[].scheme == "https"),
+            assertThat(.spec.endpoints[].tlsConfig.caFile == "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt")
+          ]
+
+    - name: "custom metrics disabled on managed services"
+      set:
+        monitoring.openshift.enabled: true
+        monitoring.openshift.custom.enabled: true
+        env.managedServices: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
+
 - name: "When enabled with Scanner V4"
   set:
     monitoring.openshift.enabled: true
@@ -182,6 +260,7 @@ tests:
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
         .services["central-ocp"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
