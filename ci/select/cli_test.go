@@ -24,7 +24,7 @@ func TestResolveCLI(t *testing.T) {
 	writeTestFile(t, files, "README.md\n", 0o600)
 	writeTestFile(t, labels, "", 0o600)
 	decision, log := filepath.Join(root, "decision"), filepath.Join(root, "log")
-	args := []string{"resolve", "--rules", "testdata/rules.toml", "--defaults", "testdata/defaults",
+	args := []string{"resolve", "--rules", "testdata/rules.yaml", "--defaults", "testdata/defaults",
 		"--files-file", files, "--labels-file", labels, "--decision-out", decision, "--log-out", log}
 	code, err := run(t.Context(), args, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
 	require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestResolveCLI(t *testing.T) {
 	text, err = os.ReadFile(log)
 	require.NoError(t, err)
 	assert.Contains(t, string(text), "requires it")
-	args[2] = "testdata/invalid/bad-version.toml"
+	args[2] = "testdata/invalid/bad-version.yaml"
 	code, err = run(t.Context(), args, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
 	require.Error(t, err)
 	assert.NotZero(t, code)
@@ -52,26 +52,26 @@ func TestResolveCLIEmptyDiffAndFailures(t *testing.T) {
 		expected, errorText    string
 	}{
 		"empty known diff": {
-			rules: "testdata/corners.toml", defaults: "testdata/corners-defaults", files: files, expected: "unit\n",
+			rules: "testdata/corners.yaml", defaults: "testdata/corners-defaults", files: files, expected: "unit\n",
 		},
 		"invalid rules": {
-			rules: "testdata/invalid/bad-version.toml", defaults: "testdata/corners-defaults", files: files,
+			rules: "testdata/invalid/bad-version.yaml", defaults: "testdata/corners-defaults", files: files,
 			errorText: "unsupported rules version: 2",
 		},
 		"broken rules": {
-			rules: "testdata/invalid/broken.toml", defaults: "testdata/corners-defaults", files: files,
-			errorText: "read TOML rules",
+			rules: "testdata/invalid/broken.yaml", defaults: "testdata/corners-defaults", files: files,
+			errorText: "read YAML rules",
 		},
 		"missing changed files": {
-			rules: "testdata/corners.toml", defaults: "testdata/corners-defaults", files: filepath.Join(inputs, "missing"),
+			rules: "testdata/corners.yaml", defaults: "testdata/corners-defaults", files: filepath.Join(inputs, "missing"),
 			errorText: "read changed files",
 		},
 		"invalid defaults": {
-			rules: "testdata/corners.toml", defaults: fixturePath(t, "unit maybe\n"), files: files,
+			rules: "testdata/corners.yaml", defaults: fixturePath(t, "unit maybe\n"), files: files,
 			errorText: "decision must be run or skip",
 		},
 		"missing defaults": {
-			rules: "testdata/corners.toml", defaults: filepath.Join(inputs, "missing"), files: files,
+			rules: "testdata/corners.yaml", defaults: filepath.Join(inputs, "missing"), files: files,
 			errorText: "read decision-defaults",
 		},
 	} {
@@ -120,8 +120,8 @@ func TestResolveCLIProcess(t *testing.T) {
 		rules string
 		fail  bool
 	}{
-		"success":       {rules: "testdata/rules.toml"},
-		"invalid rules": {rules: "testdata/invalid/bad-version.toml", fail: true},
+		"success":       {rules: "testdata/rules.yaml"},
+		"invalid rules": {rules: "testdata/invalid/bad-version.yaml", fail: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			folder := t.TempDir()

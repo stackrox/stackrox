@@ -152,5 +152,5 @@ func rootDir() string {
 }
 
 func rulePaths() (string, string) {
-	return filepath.Join(rootDir(), "ci/test-domains.toml"), filepath.Join(rootDir(), "ci/decision-defaults")
+	return filepath.Join(rootDir(), "ci/test-domains.yaml"), filepath.Join(rootDir(), "ci/decision-defaults")
 }

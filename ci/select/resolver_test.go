@@ -95,17 +95,19 @@ func assertRejectedRule(t *testing.T, path, expected string) {
 	t.Helper()
 	_, err := loadMapping(path)
 	require.Error(t, err)
-	// TOML's typed decoder reports the offending key for type errors.
 	typeErrors := map[string]string{
-		"jobs-not-a-list.toml":    "jobs",
-		"rule-not-a-table.toml":   "rules",
-		"label-not-a-string.toml": "rules.label",
-		"run-not-a-list.toml":     "rules.run",
-		"paths-not-strings.toml":  "rules.paths",
+		"jobs-not-a-list.yaml":      "jobs",
+		"rule-not-a-table.yaml":     "rules",
+		"label-not-a-string.yaml":   "rules.label",
+		"run-not-a-list.yaml":       "rules.run",
+		"paths-not-strings.yaml":    "rules.paths",
+		"requires-not-a-table.yaml": "requires",
 	}
 	if key, found := typeErrors[filepath.Base(path)]; found {
-		assert.Contains(t, err.Error(), "read TOML rules")
-		assert.Contains(t, err.Error(), `last key "`+key+`"`)
+		assert.Contains(t, err.Error(), "read YAML rules")
+		var typeError *json.UnmarshalTypeError
+		require.ErrorAs(t, err, &typeError)
+		assert.Equal(t, key, typeError.Field)
 		return
 	}
 	expected = strings.ReplaceAll(expected, "'", `"`)
@@ -115,7 +117,7 @@ func assertRejectedRule(t *testing.T, path, expected string) {
 }
 
 func TestCurrentRules(t *testing.T) {
-	m, err := loadMapping("../test-domains.toml")
+	m, err := loadMapping("../test-domains.yaml")
 	require.NoError(t, err)
 	text, err := os.ReadFile("../decision-defaults")
 	require.NoError(t, err)
@@ -173,7 +175,7 @@ func TestCIToolingSelection(t *testing.T) {
 		"other tool source": {files: []string{"tools/roxvet/analyzers/validateimports/other.go"}, enforce: true, want: "skip"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults",
 				test.files, test.labels, false, metadata{})
 			require.NoError(t, err)
 			assert.NotContains(t, resolved.log, "using decision-defaults")
@@ -205,7 +207,7 @@ func TestSelectorTestsGate(t *testing.T) {
 		"selector":             {files: []string{"ci/select/resolver.go"}, enforce: true, want: "run"},
 		"selector tests":       {files: []string{"ci/select/resolver_test.go"}, enforce: true, want: "run"},
 		"test fixtures":        {files: []string{"ci/select/testdata/edge_cases.json"}, enforce: true, want: "run"},
-		"rules":                {files: []string{"ci/test-domains.toml"}, enforce: true, want: "run"},
+		"rules":                {files: []string{"ci/test-domains.yaml"}, enforce: true, want: "run"},
 		"defaults":             {files: []string{"ci/decision-defaults"}, enforce: true, want: "run"},
 		"Prow dispatcher":      {files: []string{".openshift-ci/dispatch.sh"}, enforce: true, want: "skip"},
 		"build action":         {files: []string{".github/actions/ci-select/action.yaml"}, enforce: true, want: "run"},
@@ -230,7 +232,7 @@ func TestSelectorTestsGate(t *testing.T) {
 		"unknown diff":         {unknown: true, enforce: true, want: "run"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			resolved, d, err := openDecision("../test-domains.toml", "../decision-defaults",
+			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults",
 				test.files, test.labels, test.unknown, metadata{})
 			require.NoError(t, err)
 			assert.Equal(t, test.want, gateAction("selector-tests", resolved.jobs, d, test.enforce, false))
@@ -239,14 +241,14 @@ func TestSelectorTestsGate(t *testing.T) {
 }
 
 func TestMissingRulesUseDefaults(t *testing.T) {
-	resolved, _, err := openDecision("testdata/missing.toml", "testdata/defaults", nil, nil, false, metadata{})
+	resolved, _, err := openDecision("testdata/missing.yaml", "testdata/defaults", nil, nil, false, metadata{})
 	require.NoError(t, err)
 	assert.True(t, resolved.jobs["go"])
 	assert.Contains(t, resolved.log, "using decision-defaults")
 }
 
 func TestResolverDesignExample(t *testing.T) {
-	resolved, _, err := openDecision("testdata/rules.toml", "testdata/defaults",
+	resolved, _, err := openDecision("testdata/rules.yaml", "testdata/defaults",
 		[]string{"README.md"}, nil, false,
 		metadata{repo: "stackrox/stackrox", pr: "23035", commit: "a1b2c3d12345"})
 	require.NoError(t, err)
@@ -270,7 +272,7 @@ func TestResolverDesignExample(t *testing.T) {
 }
 
 func TestResolverMixedCIToolingAndProduct(t *testing.T) {
-	m, err := loadMapping("testdata/rules.toml")
+	m, err := loadMapping("testdata/rules.yaml")
 	require.NoError(t, err)
 	text, err := os.ReadFile("testdata/defaults")
 	require.NoError(t, err)
@@ -285,7 +287,7 @@ func TestResolverMixedCIToolingAndProduct(t *testing.T) {
 }
 
 func TestResolverUnmatchedFileSkipsRemaining(t *testing.T) {
-	m, err := loadMapping("../test-domains.toml")
+	m, err := loadMapping("../test-domains.yaml")
 	require.NoError(t, err)
 	text, err := os.ReadFile("../decision-defaults")
 	require.NoError(t, err)
@@ -299,18 +301,23 @@ func TestResolverUnmatchedFileSkipsRemaining(t *testing.T) {
 }
 
 func TestResolverCheckRequiresJob(t *testing.T) {
-	rules := fixturePath(t, `version = 1
-jobs = ["go", "go-check"]
-[[rules]]
-name = "matrix"
-when = "always"
-run = ["go-check"]
-[[rules]]
-name = "remaining"
-when = "remaining"
-default = ["*"]
-[requires]
-go-check = ["go"]
+	rules := fixturePath(t, `version: 1
+jobs:
+  - go
+  - go-check
+
+rules:
+  - name: matrix
+    when: always
+    run:
+      - go-check
+  - name: remaining
+    when: remaining
+    default:
+      - '*'
+requires:
+  go-check:
+    - go
 `)
 	m, err := loadMapping(rules)
 	require.NoError(t, err)
@@ -332,20 +339,20 @@ func TestOpenDecisionFallbacks(t *testing.T) {
 		decision, reason string
 	}{
 		"empty known diff": {
-			rules: "testdata/corners.toml", decision: "unit\n", reason: "nothing-changed",
+			rules: "testdata/corners.yaml", decision: "unit\n", reason: "nothing-changed",
 		},
 		"unknown diff": {
-			rules: "testdata/corners.toml", unknown: true, decision: "# no job runs\n", reason: "changed files are unknown",
+			rules: "testdata/corners.yaml", unknown: true, decision: "# no job runs\n", reason: "changed files are unknown",
 		},
 		"invalid version": {
-			rules: "testdata/invalid/bad-version.toml", files: []string{"README.md"},
+			rules: "testdata/invalid/bad-version.yaml", files: []string{"README.md"},
 			decision: "# no job runs\n", reason: "unsupported rules version: 2",
 		},
 		"missing rules": {
-			rules: "testdata/missing.toml", decision: "# no job runs\n", reason: "resolver failed:",
+			rules: "testdata/missing.yaml", decision: "# no job runs\n", reason: "resolver failed:",
 		},
-		"broken TOML": {
-			rules: "testdata/invalid/broken.toml", decision: "# no job runs\n", reason: "resolver failed:",
+		"broken YAML": {
+			rules: "testdata/invalid/broken.yaml", decision: "# no job runs\n", reason: "resolver failed:",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -366,7 +373,7 @@ func TestOpenDecisionFallbacks(t *testing.T) {
 }
 
 func TestResolverDefaultsMismatch(t *testing.T) {
-	m, err := loadMapping("testdata/corners.toml")
+	m, err := loadMapping("testdata/corners.yaml")
 	require.NoError(t, err)
 	for name, text := range map[string]string{
 		"missing target": "unit run\n",
@@ -383,7 +390,7 @@ func TestResolverDefaultsMismatch(t *testing.T) {
 				assert.Contains(t, err.Error(), "decision-defaults has unknown target unowned")
 			}
 			defaultsPath := fixturePath(t, text)
-			resolved, _, err := openDecision("testdata/corners.toml", defaultsPath, nil, nil, false, metadata{})
+			resolved, _, err := openDecision("testdata/corners.yaml", defaultsPath, nil, nil, false, metadata{})
 			require.NoError(t, err)
 			assert.Equal(t, d.decision(), resolved.decision)
 			assert.Contains(t, resolved.log, "using decision-defaults")
@@ -397,7 +404,7 @@ func TestOpenDecisionUnusableDefaults(t *testing.T) {
 		"invalid": fixturePath(t, "unit maybe\n"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, _, err := openDecision("testdata/corners.toml", path, nil, nil, false, metadata{})
+			_, _, err := openDecision("testdata/corners.yaml", path, nil, nil, false, metadata{})
 			require.Error(t, err)
 		})
 	}

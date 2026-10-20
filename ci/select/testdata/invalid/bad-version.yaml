@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  - unit
+
+rules:
+  - name: rest
+    when: remaining
+    skip:
+      - '*'
