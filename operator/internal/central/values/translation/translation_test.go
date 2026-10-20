@@ -31,6 +31,32 @@ func TestReadBaseValues(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetGlobalMonitoringCustomMetrics(t *testing.T) {
+	tests := map[string]struct {
+		custom *platform.OpenShiftCustomMonitoring
+		want   bool
+	}{
+		"unset":    {},
+		"disabled": {custom: &platform.OpenShiftCustomMonitoring{Enabled: new(false)}},
+		"enabled":  {custom: &platform.OpenShiftCustomMonitoring{Enabled: new(true)}, want: true},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			values, err := translation.GetGlobalMonitoring(&platform.GlobalMonitoring{
+				OpenShiftMonitoring: &platform.OpenShiftMonitoring{Custom: tt.custom},
+			}).Build()
+			require.NoError(t, err)
+			custom, err := values.PathValue("openshift.custom.enabled")
+			if tt.want {
+				require.NoError(t, err)
+				require.Equal(t, true, custom)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestTranslate(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
@@ -74,6 +100,36 @@ func TestTranslate(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"custom metrics enabled": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Custom: &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+						"custom":  map[string]interface{}{"enabled": true},
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{"createClaim": false},
+						},
+					},
+				},
+			},
+		},
 		"minimal spec": {
 			args: args{
 				c: platform.Central{
