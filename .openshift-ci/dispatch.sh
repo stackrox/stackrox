@@ -11,6 +11,12 @@ if [[ -n "${ARTIFACT_DIR:-}" ]]; then
         > "${ARTIFACT_DIR}/dispatch-inputs.json" || echo "Could not dump dispatcher inputs" >&2
 fi
 
+# Temporary metadata experiment: upload inputs without running the UI suite.
+if [[ "${1:-}" == "gke-ui-e2e-tests" ]]; then
+    echo "Metadata-only experiment: gke-ui-e2e-tests exits after dumping dispatcher inputs"
+    exit 0
+fi
+
 # shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../tests/e2e/lib.sh
