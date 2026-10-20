@@ -311,6 +311,51 @@ _pg_want_help() {
 	return 1
 }
 
+### STACKROX MODIFIED - Always run the server binaries matching the on-disk
+### data directory. If init-entrypoint.sh declined or failed to upgrade, starting
+### the newer server against it would make the pod crashloop.
+###
+### The base image ships the previous major under
+### /usr/lib64/pgsql/postgresql-<major> (see POSTGRESQL_PREV_VERSION).
+###
+### This function returns 0. Parameter $1 is the root of the previous binaries.
+rox_use_matching_binaries() {
+	local prev_dir="$1"
+	local major_regex='^[0-9]+$'
+	local data_version binary_version matching_bin_dir
+
+	# A fresh install has no usable PG_VERSION file yet.
+	[ -s "$PGDATA/PG_VERSION" ] || return 0
+
+	data_version="$(< "$PGDATA/PG_VERSION")" || true
+	if ! [[ "$data_version" =~ $major_regex ]]; then
+		printf >&2 'Cannot read a valid major version from %s/PG_VERSION: "%s"\n' \
+			"$PGDATA" "$data_version"
+		return 0
+	fi
+
+	binary_version="$(postgres -V 2>/dev/null | sed 's/postgres (PostgreSQL) \([0-9]*\).*/\1/')" || true
+	if ! [[ "$binary_version" =~ $major_regex ]]; then
+		printf >&2 'Cannot read a valid major version from postgres -V: "%s"\n' \
+			"$binary_version"
+		return 0
+	fi
+
+	[ "$data_version" -lt "$binary_version" ] || return 0
+
+	# Binaries for the data version, which is the previous major.
+	matching_bin_dir="${prev_dir}/postgresql-${data_version}/bin"
+	if [ ! -x "$matching_bin_dir/postgres" ]; then
+		printf >&2 'Data are in PostgreSQL %s, but there is no executable %s/postgres; startup will fail\n' \
+			"$data_version" "$matching_bin_dir"
+		return 0
+	fi
+
+	printf >&2 'Data are still in PostgreSQL %s, starting the binaries in %s\n' \
+		"$data_version" "$matching_bin_dir"
+	export PATH="$matching_bin_dir:$PATH"
+}
+
 _main() {
 	# if first arg looks like a flag, assume we want to run postgres server
 	if [ "${1:0:1}" = '-' ]; then
@@ -318,6 +363,12 @@ _main() {
 	fi
 
 	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
+		### STACKROX MODIFIED - Must run before anything that resolves a
+		### PostgreSQL binary through PATH. The server itself is launched as
+		### `flock ... "$@" &` below, which resolves `postgres` at exec time,
+		### so exporting PATH here is enough.
+		rox_use_matching_binaries /usr/lib64/pgsql
+
 		docker_setup_env
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
