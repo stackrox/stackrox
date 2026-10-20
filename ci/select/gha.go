@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"os"
 	"os/exec"
@@ -73,7 +74,15 @@ func ghaCI(ctx context.Context, args []string, output, diagnostic io.Writer) err
 	}
 	enforce := os.Getenv("CI_ENFORCE") == "true"
 	if len(args) == 0 || args[0] == "" {
-		return printPlan(resolved, enforce, output)
+		if err := printPlan(resolved, enforce, output); err != nil {
+			return err
+		}
+		if path := os.Getenv("CI_COMMENT_OUT"); path != "" {
+			if err := os.WriteFile(path, []byte(planComment(resolved, enforce, envMetadata())), 0o600); err != nil {
+				return errors.Wrap(err, "write decision comment")
+			}
+		}
+		return nil
 	}
 	job := args[0]
 	planned := gateAction(job, resolved.jobs, d, true, false)
@@ -93,6 +102,31 @@ func printPlan(resolved result, enforce bool, output io.Writer) error {
 		return errors.Wrap(err, "print decision plan")
 	}
 	return appendFile(os.Getenv("GITHUB_STEP_SUMMARY"), "## CI decision\n\n```\n"+body+"```\n")
+}
+
+func planComment(resolved result, enforce bool, meta metadata) string {
+	mode := "Selection is in preview mode (`ci-dispatcher-enforce` is absent); jobs run regardless of this decision."
+	if enforce {
+		mode = "Selection is enforced (`ci-dispatcher-enforce` is set)."
+	}
+	shortSHA := meta.commit[:min(7, len(meta.commit))]
+	return fmt.Sprintf(`## CI decision
+
+Commit: [%s](https://github.com/%s/commit/%s)
+
+%s
+
+### Decision
+
+<pre>%s</pre>
+
+<details>
+<summary>Resolver log</summary>
+
+<pre>%s</pre>
+
+</details>
+`, shortSHA, meta.repo, meta.commit, mode, html.EscapeString(resolved.decision), html.EscapeString(resolved.log))
 }
 
 func appendFile(path, text string) error {
