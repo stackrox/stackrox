@@ -5,6 +5,12 @@
 # hands off to the test/build script in *scripts/ci/jobs*.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+
+if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+    jq -n --arg cwd "$PWD" --args -f "$ROOT/.openshift-ci/dispatch-inputs.jq" -- "$@" \
+        > "${ARTIFACT_DIR}/dispatch-inputs.json" || echo "Could not dump dispatcher inputs" >&2
+fi
+
 # shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../tests/e2e/lib.sh
